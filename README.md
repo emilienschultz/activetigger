@@ -1,7 +1,6 @@
 # (py) Active Tigger
 
-Python refactoring of ActiveTigger (Julien Boelaert) https://gitlab.univ-lille.fr/julien.boelaert/activetigger
-
+Python refactoring of ActiveTigger (Julien Boelaert & Etienne Ollion) https://gitlab.univ-lille.fr/julien.boelaert/activetigger
 
 # Current roadmap
 
