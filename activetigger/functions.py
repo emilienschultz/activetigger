@@ -5,6 +5,8 @@ import spacy
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -41,12 +43,13 @@ class SimpleModel():
             self.standardize()
 
         # Select model
-        if model == "KNN":
+        if model == "knn":
             self.model = KNeighborsClassifier(n_neighbors=len(self.labels))
-        
+        if model == "lasso":
+            self.model = LogisticRegression(penalty="l1",solver="liblinear")
+            
         # Fit model
         self.model.fit(self.X, self.Y)
-
         self.precision = self.compute_precision()
 
     def standardize(self):
