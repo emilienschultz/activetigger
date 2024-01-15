@@ -6,9 +6,9 @@ from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-
-
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
 from sklearn.metrics import precision_score
@@ -32,6 +32,14 @@ class SimpleModel():
                  **kwargs
                  ):
         
+        self.available_models = ["simplebayes",
+                                 "liblinear",
+                                 "knn",
+                                 "randomforest",
+                                 "lasso"]
+
+        # Data curation
+        
         # Drop NaN
         df = data[[label]+predictors].dropna()
 
@@ -44,10 +52,69 @@ class SimpleModel():
 
         # Select model
         if model == "knn":
-            self.model = KNeighborsClassifier(n_neighbors=len(self.labels))
+            n_neighbors = len(self.labels)
+            if "n_neighbors" in kwargs:
+                n_neighbors = kwargs["n_neighbors"]
+            self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
+
         if model == "lasso":
-            self.model = LogisticRegression(penalty="l1",solver="liblinear")
-            
+            # Cfloat, default=1.0
+            C = 1
+            if "lasso_params" in kwargs:
+                C = kwargs["lasso_params"]
+            self.model = LogisticRegression(penalty="l1",
+                                            solver="liblinear",
+                                            C = C)
+        if model == "naivebayes":
+        # only dfm as predictor
+            alpha = 1
+            if "smooth" in kwargs:
+                alpha = kwargs["smooth"]
+            if "prior" in kwargs:
+                if kwargs["prior"] == "uniform":
+                    fit_prior = True
+                    class_prior = None
+                if kwargs["prior"] == "docfreq":
+                    fit_prior = False
+                    class_prior = None #TODO
+                if kwargs["prior"] == "termfreq":
+                    fit_prior = False
+                    class_prior = None #TODO
+            if kwargs["distribution"] == "multinomial":
+                self.model = MultinomialNB(alpha=alpha,
+                                           fit_prior=fit_prior,
+                                           class_prior=class_prior)
+            elif kwargs["distribution"] == "bernouilli":
+                self.model = BernoulliNB(alpha=alpha,
+                                           fit_prior=fit_prior,
+                                           class_prior=class_prior)
+
+        if model == "liblinear":
+            # Liblinear : method = 1 : multimodal logistic regression l2
+            C = 32
+            if "cost" in kwargs: # params  Liblinear Cost 
+                C = kwargs["cost"]
+            self.model = LogisticRegression(penalty='l2', 
+                                            solver='lbfgs',
+                                            C = C)
+
+        if model == "randomforest":
+            # params  Num. trees mtry  Sample fraction
+            #Number of variables randomly sampled as candidates at each split: 
+            # it is “mtry” in R and it is “max_features” Python
+            #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
+            n_estimators: int = 500
+            max_features: None|int = None 
+            if "n_estimators" in kwargs: 
+                n_estimators = kwargs["n_estimators"]
+            if "max_features" in kwargs: 
+                max_features = kwargs["max_features"]
+            # TODO ADD SAMPLE.FRACTION
+
+            self.model = RandomForestClassifier(n_estimators=100, 
+                                                random_state=42,
+                                                max_features=max_features)
+
         # Fit model
         self.model.fit(self.X, self.Y)
         self.precision = self.compute_precision()
