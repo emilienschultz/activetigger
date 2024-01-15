@@ -8,10 +8,10 @@ __version__ = "0.0.1"
 class ActiveTigger():
     def __init__(self,
                  project_name:str,
-                 file:str=None,
+                 file:str|None=None,
                  n_rows:int=0,
-                 cat:list = None,
-                 col_text:str = None,
+                 cat:list|None = None,
+                 col_text:str|None = None,
                  **kwargs
                  ):
         # start server

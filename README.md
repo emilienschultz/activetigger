@@ -1,14 +1,14 @@
 # (py) Active Tigger
 
-Passage en Python de l'interface de codage Active Tigger
-
+Python refactoring of ActiveTigger (Julien Boelaert & Etienne Ollion) https://gitlab.univ-lille.fr/julien.boelaert/activetigger
 
 # Current roadmap
 
-- calculate embeddings when a dataset is loaded
-- storage with sqlite
-- train model
-- deal with multiple schemes for one project (both frontend and backend)
+- simple model implementation
+- database/storage
+- bert model implementation
+- multiple schemes for one project (both frontend and backend)
+- test units
 
 # Technical specifications
 
