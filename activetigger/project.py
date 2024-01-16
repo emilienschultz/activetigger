@@ -39,6 +39,11 @@ class Project():
         self.params: None|list = None
         self.content = None
         self.simplemodel:None|SimpleModel = None
+        # temporary simplemodel params
+        self.simplemodel_params:dict = {
+                                            "model":"liblinear",
+                                            "features":"all"
+                                        }
 
         # If project exist
         if self.exists(project_name):
@@ -65,26 +70,39 @@ class Project():
         """
 
         ## TO DO : tests que tous les paramètres ont bien été renseignés
+        # Le premier schéma enregistré est appelé default
         
         if not Path(project_name).exists():
             os.makedirs(project_name)
         else:
             print("Erreur, le dossier existe") # gérer la gestion des erreurs
 
+        # Load data
+        self.content = pd.read_csv(kwargs["file"],
+                                   index_col=0,
+                                   low_memory=False,
+                                   nrows=kwargs["n_rows"])
+
         # Manage parameters
         if not "col_text" in kwargs:
             kwargs["col_text"] = "text"
+        if "col_tags" in kwargs: # if existing tag column
+            kwargs["cat"] = list(self.content[kwargs["col_tags"]].dropna().unique())
         if not "sbert" in kwargs:
             kwargs["sbert"] = False
         if not "fasttext" in kwargs:
             kwargs["fasttext"] = False
+
+        # TODO : test que les colonnes utilisées existent bien
             
         self.params = {
                     "project_name":project_name,
                     "origin_file":kwargs["file"],
                     "n_rows":kwargs["n_rows"],
-                    "cat":{"default":kwargs["cat"]},
                     "col_text":kwargs["col_text"],
+                    "col_tags":"labels_default",
+                    "scheme":"default",
+                    "cat":{"default":kwargs["cat"]},
                     "embeddings":{
                         "sbert":kwargs["sbert"],
                         "fasttext":kwargs["fasttext"],
@@ -94,16 +112,13 @@ class Project():
         self.schemes = Schemes(self.name)
         self.schemes.add("default",kwargs["cat"])
         self.schemes.select("default")
-        
-        self.save_params()
 
-        # Manage data
-        self.content = pd.read_csv(kwargs["file"],
-                                   index_col=0,
-                                   low_memory=False,
-                                   nrows=kwargs["n_rows"])
-        
-        self.content[self.schemes.col] = None
+        if "col_tags" in kwargs: # if existing tag column
+            self.content[self.schemes.col] = self.content[kwargs["col_tags"]]
+        else:
+            self.content[self.schemes.col] = None
+
+        self.save_params()
         self.load_predictions()
         self.save_data()
 
@@ -142,18 +157,28 @@ class Project():
                 emb_sbert.to_csv(file)
             return emb_sbert
             
-    def fit_simplemodel(self,
-                        predictors:list,
-                        model:str="liblinear",
-                        **kwargs):
+    def fit_simplemodel(self, 
+                        params:dict) -> SimpleModel:
         """
-        Create and fit a simple model on current data
+        Create and fit a simple model with project data
+            params (dict): parameters for the model
         """
-        s = SimpleModel(model,
-                        data = self.content,
-                        label = self.schemes.col,
-                        predictors=predictors,
-                        **kwargs)
+
+        # build the dataset with label + predictors
+        # use self.simplemodel_params for model option
+
+        df_features = self.features.get(params["features"])
+        label = self.schemes.col
+        predictors = df_features.columns
+        data = pd.concat([self.content[label],
+                          df_features],
+                          axis=1)
+        
+        s = SimpleModel(params["model"],
+                        data = data,
+                        label = label,
+                        predictors = predictors
+                        )
         return s
 
     def load_params(self):
@@ -167,8 +192,8 @@ class Project():
         self.schemes = Schemes(self.name)
         self.schemes.load({
             "project_name":self.name,
-            "name":"default",
-            "labels":self.params["cat"]["default"],
+            "name":self.params["scheme"],
+            "labels":self.params["cat"][self.params["scheme"]],
             "available":self.params["cat"]
             })
 
@@ -216,9 +241,10 @@ class Project():
 
     def get_next(self,
                  mode:str = "deterministic",
-                 on:str = "untagged") -> dict:
+                 on:str = "untagged",
+                 tag:None|str = None) -> dict:
         """
-        Get next item
+        Get next item from content to tag
 
         TODO : gérer les cases tagguées/non tagguées etc.
         """
@@ -231,7 +257,16 @@ class Project():
         if mode == "random":
             element_id = self.content[f].sample(random_state=42).index[0]
         if mode == "maxprob":
-            element_id = self.content[f].sort_values("prob",ascending=False).index[0]
+            # if no available simplemodel, buid
+            if self.simplemodel is None:
+                self.simplemodel = self.fit_simplemodel(self.simplemodel_params)
+            # select a tag if not selected
+            if tag is None:
+                tag = self.schemes.labels[0] # first label
+
+            element_id = self.simplemodel.proba[tag].sort_values(ascending=False).index[0]
+           
+            #element_id = self.content[f].sort_values("prob",ascending=False).index[0]
 
         # TODO : put a lock on the element when sent ?
 
@@ -261,21 +296,48 @@ class Features():
 
     TODO : test for the length of the data
     """
+
     def __init__(self, project_name:str) -> None:
         self.project_name = project_name
         self.available:list = []
+        self.map:dict = {}
         self.content = None
 
     def __repr__(self) -> str:
         return f"Available features : {self.available}"
 
-    def add(self, name:str, content:DataFrame):
+    def add(self, name:str, 
+            content:DataFrame) -> None:
+        """
+        Add feature to class
+        """
+        # save information
         self.available.append(name)
+        content.columns = [f"{name}_{i}" for i in content.columns]
+        self.map[name] = list(content.columns)
+        # create the dataset
         if self.content is None:
             self.content = content
         else:
             self.content = pd.concat([self.content,content],
                                      axis=1)
+            
+    def get(self,features:list|str = "all"):
+        """
+        Get specific features
+        """
+        cols = []
+        print(features)
+        if features == "all":
+            features = self.available
+
+        for i in features:
+            if i in self.available:
+                cols += self.map[i]
+            else:
+                print(f"Feature {i} doesn't exist")
+
+        return self.content[cols]
 
 class Schemes():
     """
