@@ -13,30 +13,27 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score
 
-
 # nexts steps : 
-# - connect simplemodel to server
 # - deal multiple schemes
-
 
 class SimpleModel():
     """
-    Managing fit/predict
+    Managing simple models
+    (params/fit/predict)
     """
-
     def __init__(self,
-                 model:str,
-                 data:DataFrame,
-                 label:str,
-                 predictors:list,
-                 standardize:bool=False,
-                 **kwargs
+                 model: str|None=None,
+                 data: DataFrame|None = None,
+                 col_label: str|None = None,
+                 col_predictors: list|None = None,
+                 model_params: dict = {},
+                 standardize: bool = False
                  ):
         """
         Initialize simpe model for data
         model (str): type of models
         data (DataFrame): dataset
-        label (str): column of the tags
+        col_label (str): column of the tags
         predictor (list): columns of predictors
         standardize (bool): predictor standardisation
         **kwargs: parameters for models
@@ -47,96 +44,130 @@ class SimpleModel():
                                  "knn",
                                  "randomforest",
                                  "lasso"]
-        
-        self.col_label = label
-        self.col_predictors = predictors
+        self.current = model
+        self.df = None
+        self.col_label = None
+        self.col_predictors = None
+        self.X = None
+        self.Y = None
+        self.labels = None
+        self.model = None
+        self.model_params = {"variable":"à implémenter"}
+        self.proba = None
+        self.precision = None
+        self.standardize = None
 
+        # Initialize data for the simplemodek
+        if data is not None and col_predictors is not None:
+            self.load_data(data, col_label, col_predictors, standardize)
+
+        # Train model on the data
+        if self.current in self.available_models:
+            self.model_params = model_params
+            self.fit_model()
+
+    def __repr__(self) -> str:
+        return str(self.current)
+
+    def load_data(self, 
+                  data, 
+                  col_label, 
+                  col_predictors,
+                  standardize):
         # Build the data set & missing predictors
         # For the moment remove missing predictors
-        f_na = data[predictors].isna().sum(axis=1)>0
-        
+        self.col_label = col_label
+        self.col_predictors = col_predictors
+        self.standardize = standardize
+
+        f_na = data[self.col_predictors].isna().sum(axis=1)>0        
         if f_na.sum()>0:
             print(f"There is {f_na.sum()} predictor rows with missing values")
 
         if standardize:
-            df_pred = self.standardize(data[~f_na][predictors])
+            df_pred = self.standardize(data[~f_na][self.col_predictors])
         else:
-            df_pred = data[~f_na][predictors]
+            df_pred = data[~f_na][self.col_predictors]
 
-        self.df = pd.concat([data[~f_na][label],df_pred],axis=1)
-        
+        self.df = pd.concat([data[~f_na][self.col_label],df_pred],axis=1)
+    
         # data for training
         f_label = self.df[self.col_label].notnull()
-        self.Y = self.df[f_label][label]
-        self.X = self.df[f_label][predictors]
+        self.Y = self.df[f_label][self.col_label]
+        self.X = self.df[f_label][self.col_predictors]
 
         self.labels = self.Y.unique()
 
+    def fit_model(self):
+        """
+        Fit model
+        """
+
         # Select model
-        if model == "knn":
+        if self.current == "knn":
             n_neighbors = len(self.labels)
-            if "n_neighbors" in kwargs:
-                n_neighbors = kwargs["n_neighbors"]
+            if "n_neighbors" in self.model_params:
+                n_neighbors = self.model_params["n_neighbors"]
             self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
 
-        if model == "lasso":
+        if self.current == "lasso":
             # Cfloat, default=1.0
             C = 1
-            if "lasso_params" in kwargs:
-                C = kwargs["lasso_params"]
+            if "lasso_params" in self.model_params:
+                C = self.model_params["lasso_params"]
             self.model = LogisticRegression(penalty="l1",
                                             solver="liblinear",
                                             C = C)
-        if model == "naivebayes":
-            if not "distribution" in kwargs:
+        if self.current == "naivebayes":
+            if not "distribution" in self.model_params:
                 raise TypeError("Missing distribution parameter for naivebayes")
             
         # only dfm as predictor
             alpha = 1
-            if "smooth" in kwargs:
-                alpha = kwargs["smooth"]
+            if "smooth" in self.model_params:
+                alpha = self.model_params["smooth"]
             fit_prior = True
             class_prior = None
-            if "prior" in kwargs:
-                if kwargs["prior"] == "uniform":
+            if "prior" in self.model_params:
+                if self.model_params["prior"] == "uniform":
                     fit_prior = True
                     class_prior = None
-                if kwargs["prior"] == "docfreq":
+                if self.model_params["prior"] == "docfreq":
                     fit_prior = False
                     class_prior = None #TODO
-                if kwargs["prior"] == "termfreq":
+                if self.model_params["prior"] == "termfreq":
                     fit_prior = False
                     class_prior = None #TODO
  
-            if kwargs["distribution"] == "multinomial":
+            if self.model_params["distribution"] == "multinomial":
                 self.model = MultinomialNB(alpha=alpha,
                                            fit_prior=fit_prior,
                                            class_prior=class_prior)
-            elif kwargs["distribution"] == "bernouilli":
+            elif self.model_params["distribution"] == "bernouilli":
                 self.model = BernoulliNB(alpha=alpha,
                                            fit_prior=fit_prior,
                                            class_prior=class_prior)
 
-        if model == "liblinear":
+        if self.current == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
             C = 32
-            if "cost" in kwargs: # params  Liblinear Cost 
-                C = kwargs["cost"]
+            if "cost" in self.model_params: # params  Liblinear Cost 
+                C = self.model_params["cost"]
             self.model = LogisticRegression(penalty='l2', 
                                             solver='lbfgs',
                                             C = C)
 
-        if model == "randomforest":
+        if self.current == "randomforest":
             # params  Num. trees mtry  Sample fraction
             #Number of variables randomly sampled as candidates at each split: 
             # it is “mtry” in R and it is “max_features” Python
             #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
             n_estimators: int = 500
             max_features: None|int = None 
-            if "n_estimators" in kwargs: 
-                n_estimators = kwargs["n_estimators"]
-            if "max_features" in kwargs: 
-                max_features = kwargs["max_features"]
+            if "n_estimators" in self.model_params: 
+                n_estimators = self.model_params["n_estimators"]
+            if "max_features" in self.model_params: 
+                max_features = self.model_params["max_features"]
             # TODO ADD SAMPLE.FRACTION
 
             self.model = RandomForestClassifier(n_estimators=100, 
@@ -148,6 +179,15 @@ class SimpleModel():
         self.proba = pd.DataFrame(self.predict_proba(self.df[self.col_predictors]),
                                  columns = self.model.classes_)
         self.precision = self.compute_precision()
+
+    def update(self,content):
+        """
+        Update the model
+        """
+        self.current = content["current"]
+        self.model_params = content["parameters"]
+        self.fit_model()
+        return True
 
     def standardize(self,df):
         """
@@ -179,6 +219,17 @@ class SimpleModel():
             return self.proba[self.df[self.col_label].isnull()]
         
         return self.proba
+    
+    def get_params(self):
+        params = {
+            "available":self.available_models,
+            "current":self.current,
+            "predictors":self.col_predictors,
+            "parameters":self.model_params
+            # add params e.g. standardization
+        }
+        return params
+
         
 def to_dfm(texts: Series,
            tfidf:bool=False,

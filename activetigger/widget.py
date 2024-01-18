@@ -1,7 +1,9 @@
 import ipywidgets as widgets
 from IPython.display import display
+import json
 
-from server import Schemes
+from project import Schemes
+from server import Server
 
 import logging
 logging.basicConfig(filename='log.log', 
@@ -9,6 +11,10 @@ logging.basicConfig(filename='log.log',
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+
+# Est-ce qu'il ne faudrait pas faire passer la liste des modes
+# de sélection en dynamique (envoyé par le backend)
+# Ca éviterait de sélectionner a priori l'étiquette
 
 # gérer la forme des requêtes
 # {"project_name","type","content" + "user"}
@@ -26,12 +32,13 @@ class Widget():
     Widget
     """
     def __init__(self):        
-        self.server = None # endpoint
-        self.project_name = None
-        self.schemes = None
+        self.server: None|Server = None # endpoint
+        self.project_name: None|str = None
+        self.schemes: None|Schemes= None
+        self.simplemodel_params: dict = {}
         self.state = None
-        self.history = []
-        self.components = {}
+        self.history: list = []
+        self.components: dict = {}
         logging.info("Start widget")
     
     def connect(self,server,project_name):
@@ -41,9 +48,9 @@ class Widget():
         self.project_name = project_name
         self.server = server
         self.mode = "deterministic"
-        #self.params = self.get_params()
         self.schemes = self.get_schemes()
         self.state = self.get_next()
+        self.simplemodel_params = self.get_simplemodel_params()
         self.create_widget()
         logging.info("Connecting and launching widget")
         
@@ -56,6 +63,14 @@ class Widget():
         req = self.server.get(req)
         s.load(req["content"])
         return s
+    
+    def get_simplemodel_params(self):
+        req = {
+                "project_name":self.project_name,
+                "type":"simplemodel"            
+        }
+        req = self.server.get(req)
+        return req["content"]
     
     def get_next(self,mode="deterministic"):
         """
@@ -84,17 +99,7 @@ class Widget():
               }
         logging.info(f"Get a specific element from server {req}")
         return self.server.get(req)
-    
-    #def get_params(self):
-    #    """
-    #    Get project params
-    #    """
-    #    req = {
-    #            "project_name":self.project_name,
-    #            "type":"params"
-    #           }
-    #    return self.server.get(req)
-    
+
     def update_schemes(self):
         """
         Update scheme
@@ -197,6 +202,17 @@ class Widget():
         self.components["delete_labels"].children = [i for i in self.components["delete_labels"].children if i.description != b.description]
         b.close() # destroy button
 
+    def push_simplemodel(self):
+        req = {
+                "type":"update_simplemodel",
+                "project_name":self.project_name,
+                "content": {
+                        "current": self.components["models"].children[0].value,
+                        "embeddings":self.components["models"].children[1].value,
+                        "parameters":self.components["models"].children[2].value}
+                }
+        req = self.server.post(req)
+
     def create_widget(self):
         """
         Create the widget
@@ -260,6 +276,34 @@ class Widget():
         
         self.components["delete_labels"] = widgets.VBox([self.__add_button_remove_label(i) for i in self.schemes.labels])
 
+        # Simple model parameters
+
+        # TODO : il manque la sélection des embeddings + du label d'intérêt
+
+        select_model =  widgets.Dropdown(
+                    options=self.simplemodel_params["available"],
+                    description=''
+                )
+        
+        options_list = ["embedding 1","embedding 2"]
+        select_embeddings = widgets.SelectMultiple(
+            options=options_list,
+            value=[], 
+            description='Embeddings'
+        )
+
+        model_params = widgets.Textarea(
+            value=json.dumps(self.simplemodel_params["parameters"]))
+        
+        model_valid = widgets.Button(description="⚙️ Compute")
+        def change_simplemodel(b):
+            self.push_simplemodel()
+        model_valid.on_click(change_simplemodel)
+        self.components["models"] = widgets.HBox([select_model,
+                                                  select_embeddings,
+                                                  model_params,
+                                                  model_valid])
+
         # Tabs for the two menus
         self.components["footer"] = widgets.Tab([
                         self.components["current_scheme"],
@@ -268,7 +312,7 @@ class Widget():
                                     widgets.VBox([new_cat,self.components["delete_labels"]])]
                                     ),
                         widgets.Text(disabled = True,value="Embeddings"),
-                        widgets.Text(disabled = True,value="Models")
+                        self.components["models"]
 
                         ], 
                         titles = ['Annotations', 

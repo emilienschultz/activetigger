@@ -15,6 +15,12 @@ logging.basicConfig(filename='log.log',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+# check the computation of the model + its use for maxprob
+
+# optimiser le calcul des embeddings avec GPU
+
+# lancer un processus indépendant pour calculer les embeddings
+
 # use Pydantic & BaseModel to type data in API and automatically
 # generate the JSON content https://realpython.com/api-integration-in-python/ 
 
@@ -33,31 +39,25 @@ class Project():
         Initialize a project (load or create)
         """
 
-        self.name = project_name
-        self.schemes:None|Schemes = None
+        self.name: str = project_name
+        self.schemes: Schemes = Schemes(self.name)
         self.features = Features(project_name=self.name)
-        self.params: None|list = None
-        self.content = None
-        self.simplemodel:None|SimpleModel = None
-        # temporary simplemodel params
-        self.simplemodel_params:dict = {
-                                            "model":"liblinear",
-                                            "features":"all"
-                                        }
+        self.params: dict = {}
+        self.content: DataFrame = DataFrame()
+        self.simplemodel:SimpleModel = SimpleModel()
 
-        # If project exist
+        # load or create project    
         if self.exists(project_name):
              self.load_params()
              self.load_data()
-        # If not
         else:
              self.create(project_name, **kwargs)
 
         # Compute embeddings as features
-        if self.params["embeddings"]["sbert"]:
+        if self.params["embeddings"]["sbert"] or kwargs["sbert"]:
             self.features.add("sbert",
                               self.compute_embeddings(emb="sbert"))
-        if self.params["embeddings"]["fasttext"]:
+        if self.params["embeddings"]["fasttext"] or kwargs["fasttext"]:
             self.features.add("fasttext",
                               self.compute_embeddings(emb="fasttext"))
     
@@ -109,7 +109,6 @@ class Project():
                     }
                   }
         
-        self.schemes = Schemes(self.name)
         self.schemes.add("default",kwargs["cat"])
         self.schemes.select("default")
 
@@ -119,7 +118,6 @@ class Project():
             self.content[self.schemes.col] = None
 
         self.save_params()
-        self.load_predictions()
         self.save_data()
 
     def load_predictions(self):
@@ -145,6 +143,8 @@ class Project():
                 print("Starting to compute fasttext embeddings")
                 emb_fasttext = functions.to_fasttext(self.content[self.params["col_text"]])
                 emb_fasttext.to_csv(file)
+            self.params["embeddings"]["fasttext"] = True
+            self.save_params()
             return emb_fasttext
         if emb == "sbert":
             file = f"{self.name}/sbert"
@@ -155,10 +155,13 @@ class Project():
                 print("Starting to compute sbert embeddings")
                 emb_sbert = functions.to_sbert(self.content[self.params["col_text"]])
                 emb_sbert.to_csv(file)
+            self.params["embeddings"]["sbert"] = True
+            self.save_params()
             return emb_sbert
             
-    def fit_simplemodel(self, 
-                        params:dict) -> SimpleModel:
+    def fit_simplemodel(self,
+                        model:str,
+                        features:list|str) -> SimpleModel:
         """
         Create and fit a simple model with project data
             params (dict): parameters for the model
@@ -167,17 +170,17 @@ class Project():
         # build the dataset with label + predictors
         # use self.simplemodel_params for model option
 
-        df_features = self.features.get(params["features"])
-        label = self.schemes.col
-        predictors = df_features.columns
-        data = pd.concat([self.content[label],
+        df_features = self.features.get(features)
+        col_label = self.schemes.col
+        col_predictors = df_features.columns
+        data = pd.concat([self.content[col_label],
                           df_features],
                           axis=1)
         
-        s = SimpleModel(params["model"],
+        s = SimpleModel(model=model,
                         data = data,
-                        label = label,
-                        predictors = predictors
+                        col_label = col_label,
+                        col_predictors = col_predictors
                         )
         return s
 
@@ -252,22 +255,22 @@ class Project():
         # Pour le moment uniquement les cases non nulles
         f = self.content[self.schemes.col].isnull()
 
-        if mode == "deterministic":
+        if mode == "deterministic": # next row
             element_id = self.content[f].index[0]
-        if mode == "random":
+        if mode == "random": # random row
             element_id = self.content[f].sample(random_state=42).index[0]
-        if mode == "maxprob":
-            # if no available simplemodel, buid
-            if self.simplemodel is None:
-                self.simplemodel = self.fit_simplemodel(self.simplemodel_params)
-            # select a tag if not selected
-            if tag is None:
-                tag = self.schemes.labels[0] # first label
+        if mode == "maxprob": # higher prob row
+            if self.simplemodel.current is None: # if no model, build default
+                print("Build default simple model")
+                self.simplemodel = self.fit_simplemodel(model = "liblinear",
+                                                        features = "all"
+                                                        )
+            if tag is None: # default label to first
+                tag = self.schemes.labels[0]
 
-            element_id = self.simplemodel.proba[tag].sort_values(ascending=False).index[0]
-           
-            #element_id = self.content[f].sort_values("prob",ascending=False).index[0]
-
+            # higher predict value
+            element_id = self.simplemodel.proba[f][tag].sort_values(ascending=False).index[0]
+        
         # TODO : put a lock on the element when sent ?
 
         # Pour le moment uniquement l'id et le texte (dans le futur ajouter tous les éléments)

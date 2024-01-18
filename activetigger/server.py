@@ -1,3 +1,5 @@
+from project import Project
+
 import logging
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -53,6 +55,13 @@ class Server():
                     "type":"schemes",
                     "content":p.schemes.dump()
                     }
+        
+        if req["type"] == "simplemodel":
+            return {
+
+                "type":"simplemodel",
+                "content":p.simplemodel.get_params()
+            }
 
         #if req["type"] == "params":
         #    return p.params
@@ -84,3 +93,10 @@ class Server():
         if req["type"] == "update_schemes":
             p.update_schemes(req["content"])
             return {"update_schemes":"success"}
+        
+        if req["type"] == "update_simplemodel":
+            # train a new simple model
+            # TODO : il y a un problème quand le modele est nul
+            # car il n'y a pas encore de sélection de label/embeddings
+            p.simplemodel.update(req["content"])
+            return {"update_simplemodel":"success"}
