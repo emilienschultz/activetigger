@@ -43,7 +43,8 @@ class Server():
         # deal responses
 
         if req["type"] == "next" :
-            req = p.get_next(req["mode"])
+            req = p.get_next(mode = req["content"]["mode"], 
+                             on = req["content"]["on"])
             return req
 
         if req["type"] == "element" :

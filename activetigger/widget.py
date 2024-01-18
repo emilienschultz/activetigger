@@ -47,7 +47,10 @@ class Widget():
         """
         self.project_name = project_name
         self.server = server
-        self.mode = "deterministic"
+        self.next = {
+                    "mode":"deterministic",
+                    "on":"untagged"
+                    }
         self.schemes = self.get_schemes()
         self.state = self.get_next()
         self.simplemodel_params = self.get_simplemodel_params()
@@ -72,14 +75,14 @@ class Widget():
         req = self.server.get(req)
         return req["content"]
     
-    def get_next(self,mode="deterministic"):
+    def get_next(self, next={"mode":"deterministic","on":"untagged"}):
         """
         Get next element to annotate
         """
         req = {
                 "project_name":self.project_name,
                 "type":"next",
-                "mode":mode
+                "content":next
               }
         req = self.server.get(req)
         logging.info(f"Get next element from server {req}")
@@ -146,7 +149,7 @@ class Widget():
         # push label, get next element, change text
         self.push_label(self.state,b.description)
         self.history.append(self.state)
-        self.state = self.get_next(self.mode)
+        self.state = self.get_next(self.next)
         self.components["text"].value = self.state["content"]["text"]
         
     def __back(self,b):
@@ -224,24 +227,61 @@ class Widget():
         retour.on_click(self.__back)
 
         # Select mode
+
+        mode_label = widgets.Dropdown(
+            options=self.schemes.labels,
+            description='',
+            value = self.schemes.labels[0],
+            layout={'width': '100px'},
+            disabled=True,
+        )
+        def on_change_label(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                self.next["label"] = change['new'].lower()
+        mode_label.observe(on_change_label)
+
+
         mode_menu = widgets.Dropdown(
             options=['Deterministic', 'Random','MaxProb'],
             value='Deterministic',
             description='Selection :',
+            layout={'width': '200px'},
             disabled=False,
         )
-        
         def on_change(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.mode = change['new'].lower()
-
+                self.next["mode"] = change['new'].lower()
+            # Case of maxprob
+            if self.next["mode"].lower() == "maxprob":
+                mode_label.disabled = False
+                self.next["label"] = self.schemes.labels[0]
+            if self.next["mode"].lower() != "maxprob":
+                mode_label.disabled = True
+                self.next["label"] = None
+            
         mode_menu.observe(on_change)
+
+        mode_rows = widgets.Dropdown(
+            options=["All","Tagged","Untagged"],
+            value='Untagged',
+            description='',
+            layout={'width': '100px'},
+            disabled=False,
+        )
+        def on_change_mode_rows(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                self.next["on"] = change['new'].lower()
+        mode_rows.observe(on_change_mode_rows)
 
         # Information
         self.information = widgets.Text(disabled=True,layout={'width': '200px'})
         self.__display_info('Widget initialized')
 
-        self.components["header"] = widgets.HBox([retour,mode_menu,self.information])
+        self.components["header"] = widgets.HBox([retour,
+                                                  mode_menu,
+                                                  mode_rows,
+                                                  mode_label,
+                                                  self.information])
         
         # Text area
         self.components["text"] = widgets.Textarea(value=self.state["content"]["text"],
