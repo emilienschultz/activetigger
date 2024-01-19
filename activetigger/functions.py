@@ -26,8 +26,8 @@ class SimpleModel():
                  data: DataFrame|None = None,
                  col_label: str|None = None,
                  col_predictors: list|None = None,
-                 model_params: dict = {},
-                 standardize: bool = False
+                 standardize: bool = False,
+                 model_params: dict|None = None
                  ):
         """
         Initialize simpe model for data
@@ -36,15 +36,36 @@ class SimpleModel():
         col_label (str): column of the tags
         predictor (list): columns of predictors
         standardize (bool): predictor standardisation
-        **kwargs: parameters for models
+        model_params: parameters for models
         """
+
+        # logique : des modèles avec des valeurs par défauts
+        # ou bien initialisés avec une chaine d'options
+        # TODO: vérifier quela chaine est bien formée car cela a des conséquences
+
+        self.available_models = {
+            #"simplebayes": {
+            #        "distribution":"multinomial",
+            #        "smooth":1,
+            #        "prior":"uniform"
+            #    },
+            "liblinear": {
+                    "cost":1
+                },
+            "knn" : {
+                    "n_neighbors":3
+                },
+            "randomforest": {
+                    "n_estimators":500,
+                    "max_features":None
+                 },
+            "lasso": {
+                    "C":32
+                    }
+                }     
         
-        self.available_models = ["simplebayes",
-                                 "liblinear",
-                                 "knn",
-                                 "randomforest",
-                                 "lasso"]
-        self.current = model
+        self.name = model
+
         self.df = None
         self.col_label = None
         self.col_predictors = None
@@ -52,22 +73,28 @@ class SimpleModel():
         self.Y = None
         self.labels = None
         self.model = None
-        self.model_params = {"variable":"à implémenter"}
         self.proba = None
         self.precision = None
         self.standardize = None
+        self.model_params = None
 
-        # Initialize data for the simplemodek
+        # Initialize data for the simplemodel
         if data is not None and col_predictors is not None:
             self.load_data(data, col_label, col_predictors, standardize)
 
+        if self.name is not None:
+            if model_params is None:
+                self.model_params = self.available_models[self.name]
+            else:
+                self.model_params = model_params
+
         # Train model on the data
-        if self.current in self.available_models:
+        if self.name in self.available_models:
             self.model_params = model_params
             self.fit_model()
 
     def __repr__(self) -> str:
-        return str(self.current)
+        return str(self.name)
 
     def load_data(self, 
                   data, 
@@ -101,24 +128,20 @@ class SimpleModel():
     def fit_model(self):
         """
         Fit model
+
+        TODO: add naive bayes
         """
 
         # Select model
-        if self.current == "knn":
-            n_neighbors = len(self.labels)
-            if "n_neighbors" in self.model_params:
-                n_neighbors = self.model_params["n_neighbors"]
-            self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
+        if self.name == "knn":
+            self.model = KNeighborsClassifier(n_neighbors=self.model_params["n_neighbors"])
 
-        if self.current == "lasso":
-            # Cfloat, default=1.0
-            C = 1
-            if "lasso_params" in self.model_params:
-                C = self.model_params["lasso_params"]
+        if self.name == "lasso":
             self.model = LogisticRegression(penalty="l1",
                                             solver="liblinear",
-                                            C = C)
-        if self.current == "naivebayes":
+                                            C = self.model_params["lasso_params"])
+        """
+        if self.name == "naivebayes":
             if not "distribution" in self.model_params:
                 raise TypeError("Missing distribution parameter for naivebayes")
             
@@ -147,34 +170,29 @@ class SimpleModel():
                 self.model = BernoulliNB(alpha=alpha,
                                            fit_prior=fit_prior,
                                            class_prior=class_prior)
+            self.model_params = {
+                                    "distribution":self.model_params["distribution"],
+                                    "smooth":alpha,
+                                    "prior":"uniform"
+                                }
+        """
 
-        if self.current == "liblinear":
+        if self.name == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
-            C = 32
-            if "cost" in self.model_params: # params  Liblinear Cost 
-                C = self.model_params["cost"]
             self.model = LogisticRegression(penalty='l2', 
                                             solver='lbfgs',
-                                            C = C)
+                                            C = self.model_params["cost"])
 
-        if self.current == "randomforest":
+        if self.name == "randomforest":
             # params  Num. trees mtry  Sample fraction
             #Number of variables randomly sampled as candidates at each split: 
             # it is “mtry” in R and it is “max_features” Python
             #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
-            n_estimators: int = 500
-            max_features: None|int = None 
-            if "n_estimators" in self.model_params: 
-                n_estimators = self.model_params["n_estimators"]
-            if "max_features" in self.model_params: 
-                max_features = self.model_params["max_features"]
-            # TODO ADD SAMPLE.FRACTION
-
-            self.model = RandomForestClassifier(n_estimators=100, 
+            self.model = RandomForestClassifier(n_estimators=self.model_params["n_estimators"], 
                                                 random_state=42,
-                                                max_features=max_features)
-        
-        # Fit model
+                                                max_features=self.model_params["max_features"])
+
+        # Fit modelmax_features
         self.model.fit(self.X, self.Y)
         self.proba = pd.DataFrame(self.predict_proba(self.df[self.col_predictors]),
                                  columns = self.model.classes_)
@@ -184,7 +202,7 @@ class SimpleModel():
         """
         Update the model
         """
-        self.current = content["current"]
+        self.name = content["current"]
         self.model_params = content["parameters"]
         self.fit_model()
         return True
@@ -223,7 +241,7 @@ class SimpleModel():
     def get_params(self):
         params = {
             "available":self.available_models,
-            "current":self.current,
+            "current":self.name,
             "predictors":self.col_predictors,
             "parameters":self.model_params
             # add params e.g. standardization

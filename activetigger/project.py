@@ -15,12 +15,8 @@ logging.basicConfig(filename='log.log',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-# check the computation of the model + its use for maxprob
-
 # optimiser le calcul des embeddings avec GPU
-
 # lancer un processus indépendant pour calculer les embeddings
-
 # use Pydantic & BaseModel to type data in API and automatically
 # generate the JSON content https://realpython.com/api-integration-in-python/ 
 
@@ -34,9 +30,10 @@ class Project():
     Project (database/params)
     """
 
-    def __init__(self, project_name : str, **kwargs):
+    def __init__(self, project_name : str, **kwargs) -> None:
         """
-        Initialize a project (load or create)
+        Initialize a project 
+        (load or create)
         """
 
         self.name: str = project_name
@@ -61,10 +58,13 @@ class Project():
             self.features.add("fasttext",
                               self.compute_embeddings(emb="fasttext"))
     
-    def exists(self, project_name):
+    def exists(self, project_name: str) -> bool:
+        """
+        Test if a project exists
+        """
         return Path(f"{project_name}/{project_name}.yaml").exists()
 
-    def create(self, project_name, **kwargs):
+    def create(self, project_name:str, **kwargs):
         """
         Create new project
         """
@@ -119,15 +119,6 @@ class Project():
 
         self.save_params()
         self.save_data()
-
-    def load_predictions(self):
-        file = f"{self.name}/{self.name}.pred"
-        if Path(file).exists():
-            proba = pd.read_csv(file,index_col=0)
-            self.content["proba"] = proba
-        else:
-            self.content["proba"] = None
-        return True
     
     def compute_embeddings(self,
                            emb:None|str = None):
@@ -158,17 +149,17 @@ class Project():
             self.params["embeddings"]["sbert"] = True
             self.save_params()
             return emb_sbert
-            
+    
     def fit_simplemodel(self,
                         model:str,
-                        features:list|str) -> SimpleModel:
+                        features:list|str,
+                        model_params: None|dict = None
+                        ) -> SimpleModel:
         """
         Create and fit a simple model with project data
-            params (dict): parameters for the model
         """
 
         # build the dataset with label + predictors
-        # use self.simplemodel_params for model option
 
         df_features = self.features.get(features)
         col_label = self.schemes.col
@@ -180,9 +171,20 @@ class Project():
         s = SimpleModel(model=model,
                         data = data,
                         col_label = col_label,
-                        col_predictors = col_predictors
+                        col_predictors = col_predictors,
+                        model_params=model_params
                         )
         return s
+    
+    def update_simplemodel(self, req:dict) -> dict:
+        if req["features"] is None or len(req["features"])==0:
+            return {"error":"no features"}
+        self.simplemodel = self.fit_simplemodel(
+                                model=req["current"],
+                                features=req["features"],
+                                model_params=req["parameters"]
+                                )
+        return {"success":"new simplemodel"}
 
     def load_params(self):
         """
@@ -200,7 +202,7 @@ class Project():
             "available":self.params["cat"]
             })
 
-    def save_params(self,params=None):
+    def save_params(self,params: None|dict=None) -> None:
         """
         Save YAML configuration file
         """
@@ -209,7 +211,10 @@ class Project():
         with open(f"{self.name}/{self.name}.yaml", 'w') as f:
             yaml.dump(params, f)
 
-    def update_schemes(self,json):
+    def update_schemes(self,json: dict) -> None:
+        """
+        Update schemes from frontend
+        """
         self.schemes.load(json)
         self.params["cat"] = self.schemes.available
         self.save_params()
@@ -242,6 +247,19 @@ class Project():
         self.content.loc[element_id,self.schemes.col] = label
         return True
 
+    def get_state(self):
+        """
+        Available options
+        """
+        options = {
+                    "selection_mode":["deterministic","random"],
+                    "available_features":self.features.available
+                   }
+        if self.simplemodel.name is not None:
+            options["selection_mode"].append("maxprob")
+
+        return options
+
     def get_next(self,
                  mode:str = "deterministic",
                  on:str = "untagged",
@@ -251,7 +269,7 @@ class Project():
 
         TODO : gérer les cases tagguées/non tagguées etc.
         """
-        
+
         # Pour le moment uniquement les cases non nulles
         f = self.content[self.schemes.col].isnull()
 
@@ -260,7 +278,7 @@ class Project():
         if mode == "random": # random row
             element_id = self.content[f].sample(random_state=42).index[0]
         if mode == "maxprob": # higher prob row
-            if self.simplemodel.current is None: # if no model, build default
+            if self.simplemodel.name is None: # if no model, build default
                 print("Build default simple model")
                 self.simplemodel = self.fit_simplemodel(model = "liblinear",
                                                         features = "all"
@@ -276,7 +294,8 @@ class Project():
         # Pour le moment uniquement l'id et le texte (dans le futur ajouter tous les éléments)
         return  {
                  "element_id":element_id,
-                 "content":self.get_element(element_id)
+                 "content":self.get_element(element_id),
+                 "options":self.get_state()
                 }
     
     def get_element(self,element_id):
@@ -294,10 +313,9 @@ class Project():
     
 class Features():
     """
-    Managing data features
-    Specific to a project
-
-    TODO : test for the length of the data
+    Project features
+    No duplicate of data
+    TODO : test for the length of the data/same index
     """
 
     def __init__(self, project_name:str) -> None:
@@ -330,7 +348,6 @@ class Features():
         Get specific features
         """
         cols = []
-        print(features)
         if features == "all":
             features = self.available
 
@@ -341,10 +358,11 @@ class Features():
                 print(f"Feature {i} doesn't exist")
 
         return self.content[cols]
+    
 
 class Schemes():
     """
-    Managing project schemes
+    Project Schemes
     """
     def __init__(self,project_name):
         self.project_name = project_name

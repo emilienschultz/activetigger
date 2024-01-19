@@ -10,12 +10,11 @@ class Server():
     """
     Backend
     """
-
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Start the server
         """
-        self.projects = {}
+        self.projects: dict = {}
         logging.warning('Still under development')
         logging.info("Start server")
 
@@ -27,20 +26,24 @@ class Server():
 
     # ENDPOINTS (in future FASTAPI)
 
-    def get(self, req):
+    def check_credentials(self, req: dict) -> Project|dict:
+        """
+        Check credentials and access to project
+        #TODO: users
+        """
+        if not req["project_name"] in self.projects:
+            return {"error":"project doesn't exist"}
+        p = self.projects[req["project_name"]]
+        return p
+
+    def get(self, req) -> dict:
         """
         Get data from server
         """
-        logging.info(f"Get request from frontend {req}")
-
-        # check credentials and parameters
-
-        if not req["project_name"] in self.projects:
-            return {"error":"project doesn't exist"}
-        
-        p = self.projects[req["project_name"]]
-
-        # deal responses
+        logging.info(f"Get request : {req}")
+        p:Project|dict = self.check_credentials(req)
+        if type(p) is dict:
+            return p
 
         if req["type"] == "next" :
             req = p.get_next(mode = req["content"]["mode"], 
@@ -59,45 +62,36 @@ class Server():
         
         if req["type"] == "simplemodel":
             return {
-
                 "type":"simplemodel",
                 "content":p.simplemodel.get_params()
             }
-
-        #if req["type"] == "params":
-        #    return p.params
-        
-        return {}
+                
+        return {"error":"request not found"}
     
-    def post(self, req):
+    def post(self, req:dict) -> dict:
         """
-        Deal post data
+        Manage post requests
         """
-        logging.info(f"Post request from frontend {req}")
+        logging.info(f"Post request : {req}")
+        p:Project|dict = self.check_credentials(req)
+        if type(p) is dict:
+            return p
 
-        # check credentials and parameters
-
-        if not req["project_name"] in self.projects:
-            return {"error":"project doesn't exist"}
-        
-        p = self.projects[req["project_name"]]
-
-        # manage post request
         if req["type"] == "label" :
-            p.add_label(req["content"]["element_id"]["element_id"],req["content"]["label"])
-            return {"add":"success"}
+            p.add_label(req["content"]["element_id"]["element_id"],
+                        req["content"]["label"])
+            return {"add_label":"success"}
         
         if req["type"] == "delete_label":
             p.delete_label(req["content"]["element_id"])
-            return {"delete":"success"}            
+            return {"delete_label":"success"}            
 
         if req["type"] == "update_schemes":
             p.update_schemes(req["content"])
             return {"update_schemes":"success"}
         
-        if req["type"] == "update_simplemodel":
+        if req["type"] == "simplemodel":
             # train a new simple model
-            # TODO : il y a un problème quand le modele est nul
-            # car il n'y a pas encore de sélection de label/embeddings
-            p.simplemodel.update(req["content"])
-            return {"update_simplemodel":"success"}
+            return p.update_simplemodel(req["content"])
+        
+        return {"error":"request not found"}

@@ -31,29 +31,32 @@ class Widget():
     """
     Widget
     """
-    def __init__(self):        
+    def __init__(self) -> None:        
         self.server: None|Server = None # endpoint
         self.project_name: None|str = None
         self.schemes: None|Schemes= None
         self.simplemodel_params: dict = {}
-        self.state = None
+        self.state = None # all current parameters #TODO be sure to refresh
+        self.next = {
+                    "mode":"deterministic",
+                    "on":"untagged",
+                    "label":None
+                    }
         self.history: list = []
         self.components: dict = {}
         logging.info("Start widget")
     
-    def connect(self,server,project_name):
+    def connect(self, 
+                server: Server,
+                project_name: str) -> None:
         """
         Initialize the frontend
         """
-        self.project_name = project_name
         self.server = server
-        self.next = {
-                    "mode":"deterministic",
-                    "on":"untagged"
-                    }
+        self.project_name = project_name
         self.schemes = self.get_schemes()
         self.state = self.get_next()
-        self.simplemodel_params = self.get_simplemodel_params()
+        self.simplemodel_params = self.get_simplemodel_params() # TODO : vérifier l'actualisation
         self.create_widget()
         logging.info("Connecting and launching widget")
         
@@ -75,14 +78,14 @@ class Widget():
         req = self.server.get(req)
         return req["content"]
     
-    def get_next(self, next={"mode":"deterministic","on":"untagged"}):
+    def get_next(self):
         """
         Get next element to annotate
         """
         req = {
                 "project_name":self.project_name,
                 "type":"next",
-                "content":next
+                "content":self.next
               }
         req = self.server.get(req)
         logging.info(f"Get next element from server {req}")
@@ -149,7 +152,7 @@ class Widget():
         # push label, get next element, change text
         self.push_label(self.state,b.description)
         self.history.append(self.state)
-        self.state = self.get_next(self.next)
+        self.state = self.get_next()
         self.components["text"].value = self.state["content"]["text"]
         
     def __back(self,b):
@@ -207,14 +210,21 @@ class Widget():
 
     def push_simplemodel(self):
         req = {
-                "type":"update_simplemodel",
+                "type":"simplemodel",
                 "project_name":self.project_name,
                 "content": {
                         "current": self.components["models"].children[0].value,
-                        "embeddings":self.components["models"].children[1].value,
-                        "parameters":self.components["models"].children[2].value}
+                        "features":self.components["models"].children[1].value,
+                        "parameters":json.loads(self.components["models"].children[2].value)}
                 }
+        # TODO: tester la formation de la chaine JSON
         req = self.server.post(req)
+        if "error" in req:
+            self.__display_info(str(req))
+        else:
+            # update widget with new menu
+            self.components["header"].children[1].options += ("maxprob",)
+            
 
     def create_widget(self):
         """
@@ -240,10 +250,9 @@ class Widget():
                 self.next["label"] = change['new'].lower()
         mode_label.observe(on_change_label)
 
-
         mode_menu = widgets.Dropdown(
-            options=['Deterministic', 'Random','MaxProb'],
-            value='Deterministic',
+            options=self.state["options"]["selection_mode"],
+            value='deterministic',
             description='Selection :',
             layout={'width': '200px'},
             disabled=False,
@@ -317,28 +326,37 @@ class Widget():
         self.components["delete_labels"] = widgets.VBox([self.__add_button_remove_label(i) for i in self.schemes.labels])
 
         # Simple model parameters
-
         # TODO : il manque la sélection des embeddings + du label d'intérêt
 
         select_model =  widgets.Dropdown(
-                    options=self.simplemodel_params["available"],
-                    description=''
+                    options=self.simplemodel_params["available"].keys(),
+                    description='',
+                    value=None
                 )
+        def on_change_model(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                # display parameters of the selected model
+                model_params.value = json.dumps(self.simplemodel_params["available"][change['new']])
+        select_model.observe(on_change_model)
         
-        options_list = ["embedding 1","embedding 2"]
         select_embeddings = widgets.SelectMultiple(
-            options=options_list,
+            options=self.state["options"]["available_features"],
             value=[], 
-            description='Embeddings'
+            description='Features'
         )
 
         model_params = widgets.Textarea(
-            value=json.dumps(self.simplemodel_params["parameters"]))
+            layout={'width': '200px'},
+            value=json.dumps(self.simplemodel_params["current"]))
+        
+        # TODO : afficher paramètre par défaut des modèles on-change "available"
+        # ou les paramètres du modèle actuel "current"
+        # et gérer l'envoi des bons paramètres pour l'entrainement du modèle
         
         model_valid = widgets.Button(description="⚙️ Compute")
-        def change_simplemodel(b):
+        def update_simplemodel(b):
             self.push_simplemodel()
-        model_valid.on_click(change_simplemodel)
+        model_valid.on_click(update_simplemodel)
         self.components["models"] = widgets.HBox([select_model,
                                                   select_embeddings,
                                                   model_params,
