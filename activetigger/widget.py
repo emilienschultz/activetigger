@@ -22,6 +22,9 @@ logging.basicConfig(filename='log.log',
 # gérer l'interface dynamique : 
 # - créer un nouveau système de codage
 
+# Unifier la gestion des informations de state ? 
+# intéger par exemple simplemodel
+
 class ConnexionError(Exception):
     def __init__(self, message="Error during the connexion"):
         self.message = message
@@ -34,14 +37,10 @@ class Widget():
     def __init__(self) -> None:        
         self.server: None|Server = None # endpoint
         self.project_name: None|str = None
-        self.schemes: None|Schemes= None
-        self.simplemodel_params: dict = {}
-        self.state = None # all current parameters #TODO be sure to refresh
-        self.next = {
-                    "mode":"deterministic",
-                    "on":"untagged",
-                    "label":None
-                    }
+        self.state = None # global parameters for this instance
+        self.current = None # current element to tag
+        self.schemes: None|Schemes= None # managing schemes
+        self.simplemodel_params: dict = {} # managing models
         self.history: list = []
         self.components: dict = {}
         logging.info("Start widget")
@@ -55,46 +54,62 @@ class Widget():
         self.server = server
         self.project_name = project_name
         self.schemes = self.get_schemes()
-        self.state = self.get_next()
-        self.simplemodel_params = self.get_simplemodel_params() # TODO : vérifier l'actualisation
+        self.state = self.get_state()
+        self.current = self.get_next()
+        self.simplemodel_params = self.get_simplemodel_params() # TODO : vérifier l'actualisation        
         self.create_widget()
         logging.info("Connecting and launching widget")
         
-    def get_schemes(self):
+    def get_schemes(self) -> Schemes:
+        """
+        Getting available schemes
+        """
         s = Schemes(self.project_name)
         req = {
                 "project_name":self.project_name,
                 "type":"schemes"
             }
-        req = self.server.get(req)
-        s.load(req["content"])
+        rep = self.server.get(req)
+        s.load(rep["content"])
         return s
     
     def get_simplemodel_params(self):
+        """
+        Getting available simplemodels
+        """
         req = {
                 "project_name":self.project_name,
                 "type":"simplemodel"            
         }
-        req = self.server.get(req)
-        return req["content"]
+        rep = self.server.get(req)
+        return rep["content"]
     
-    def get_next(self):
+    def get_state(self):
+        """
+        Get state of the project in the server
+        """
+        req = {
+                "project_name":self.project_name,
+                "type":"state"
+                }
+        rep = self.server.get(req)
+        return rep["content"]
+
+    def get_next(self) -> dict:
         """
         Get next element to annotate
         """
         req = {
                 "project_name":self.project_name,
                 "type":"next",
-                "content":self.next
+                "content":self.state
               }
-        req = self.server.get(req)
-        logging.info(f"Get next element from server {req}")
-        if "error" in req:
-            print(req)
+        rep = self.server.get(req) 
+        if "error" in rep:
             raise ConnexionError
-        return req
+        return rep
     
-    def get_element(self,element_id):
+    def get_element(self,element_id) -> dict:
         """
         Get element by id
         """
@@ -103,10 +118,10 @@ class Widget():
                 "type":"element",
                 "element_id":element_id
               }
-        logging.info(f"Get a specific element from server {req}")
-        return self.server.get(req)
+        rep = self.server.get(req)
+        return rep
 
-    def update_schemes(self):
+    def update_schemes(self) -> dict:
         """
         Update scheme
         """
@@ -119,7 +134,7 @@ class Widget():
         #self.params = self.get_params() #update params
         return {"send":"ok"}
 
-    def push_label(self,element_id,label):
+    def post_tag(self, element_id:int|str, label:str) -> dict:
         """
         Push annotation
         """
@@ -131,9 +146,10 @@ class Widget():
                             "label":label
                             }
             }
-        req = self.server.post(req)
+        rep = self.server.post(req)
+        return rep
 
-    def delete_label(self,element_id):
+    def delete_tag(self, element_id:int|str) -> dict:
         """
         Delete annotation
         """
@@ -143,28 +159,31 @@ class Widget():
                 "content":{"element_id":element_id}
 
         }
-        req = self.server.post(req)
+        rep = self.server.post(req)
+        return rep
 
-    def __on_button_click(self,b):
+    def __on_button_click(self,b) -> None:
         """
         Validation of a label
         """
         # push label, get next element, change text
-        self.push_label(self.state,b.description)
-        self.history.append(self.state)
-        self.state = self.get_next()
-        self.components["text"].value = self.state["content"]["text"]
+        self.post_tag(self.current["element_id"],b.description)
+        self.history.append(self.current)
+        self.current = self.get_next()
+        self.components["text"].value = self.current["content"]["text"]
+        return None
+
         
-    def __back(self,b):
+    def __back(self,b) -> None:
         """
         Reverse operation
         """
-        self.delete_label(self.state["element_id"])
-        self.state = self.history.pop()
-        self.components["text"].value = self.state["content"]["text"]
+        self.delete_tag(self.current["element_id"])
+        self.current = self.history.pop()
+        self.components["text"].value = self.current["content"]["text"]
         return None
     
-    def __add_label_to_scheme(self,a):
+    def __add_label_to_scheme(self,a) -> None:
         """
         Add a category, modify widget and save params
         """
@@ -224,7 +243,6 @@ class Widget():
         else:
             # update widget with new menu
             self.components["header"].children[1].options += ("maxprob",)
-            
 
     def create_widget(self):
         """
@@ -243,15 +261,14 @@ class Widget():
             description='',
             value = self.schemes.labels[0],
             layout={'width': '100px'},
-            disabled=True,
-        )
+            disabled=True)
         def on_change_label(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.next["label"] = change['new'].lower()
+                self.state["mode"]["label"] = change['new'].lower()
         mode_label.observe(on_change_label)
 
         mode_menu = widgets.Dropdown(
-            options=self.state["options"]["selection_mode"],
+            options=self.state["mode"]["available_modes"],
             value='deterministic',
             description='Selection :',
             layout={'width': '200px'},
@@ -259,14 +276,14 @@ class Widget():
         )
         def on_change(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.next["mode"] = change['new'].lower()
+                self.state["mode"]["mode"] = change['new'].lower()
             # Case of maxprob
-            if self.next["mode"].lower() == "maxprob":
-                mode_label.disabled = False
-                self.next["label"] = self.schemes.labels[0]
-            if self.next["mode"].lower() != "maxprob":
-                mode_label.disabled = True
-                self.next["label"] = None
+                if self.state["mode"]["mode"].lower() == "maxprob":
+                    mode_label.disabled = False
+                    self.state["mode"]["label"] = self.schemes.labels[0]
+                if self.state["mode"]["mode"].lower() != "maxprob":
+                    mode_label.disabled = True
+                    self.state["mode"]["label"] = None
             
         mode_menu.observe(on_change)
 
@@ -279,7 +296,7 @@ class Widget():
         )
         def on_change_mode_rows(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.next["on"] = change['new'].lower()
+                self.state["mode"]["on"] = change['new'].lower()
         mode_rows.observe(on_change_mode_rows)
 
         # Information
@@ -293,7 +310,7 @@ class Widget():
                                                   self.information])
         
         # Text area
-        self.components["text"] = widgets.Textarea(value=self.state["content"]["text"],
+        self.components["text"] = widgets.Textarea(value=self.current["content"]["text"],
                                         layout=widgets.Layout(width='700px',height='150px'), 
                                         description='')
         # Annotation
@@ -340,7 +357,7 @@ class Widget():
         select_model.observe(on_change_model)
         
         select_embeddings = widgets.SelectMultiple(
-            options=self.state["options"]["available_features"],
+            options=self.state["features"]["available_features"],
             value=[], 
             description='Features'
         )

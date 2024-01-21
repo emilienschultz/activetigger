@@ -247,19 +247,6 @@ class Project():
         self.content.loc[element_id,self.schemes.col] = label
         return True
 
-    def get_state(self):
-        """
-        Available options
-        """
-        options = {
-                    "selection_mode":["deterministic","random"],
-                    "available_features":self.features.available
-                   }
-        if self.simplemodel.name is not None:
-            options["selection_mode"].append("maxprob")
-
-        return options
-
     def get_next(self,
                  mode:str = "deterministic",
                  on:str = "untagged",
@@ -295,7 +282,7 @@ class Project():
         return  {
                  "element_id":element_id,
                  "content":self.get_element(element_id),
-                 "options":self.get_state()
+#                 "options":self.get_state()
                 }
     
     def get_element(self,element_id):
@@ -311,6 +298,38 @@ class Project():
         """
         return self.params
     
+    def get_state(self):
+        """
+        Send state of the project
+        """
+        selection_available = ["deterministic","random"]
+        if self.simplemodel.name is not None:
+            selection_available.append("maxprob")
+
+        options = {
+                    
+                    "mode":{
+                        "available_modes":selection_available,
+                        # For the moment mode/on/label are not in the state project side
+                        # default values
+                        "mode":"deterministic",
+                        "on":"untagged",
+                        "label":None
+
+                        },
+                    "features":{
+                            "available_features":self.features.available
+                          }
+                   }
+        
+
+
+        
+        return  {
+                 "type":"state",
+                 "content":options
+                }
+
 class Features():
     """
     Project features

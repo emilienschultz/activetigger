@@ -46,8 +46,12 @@ class Server():
             return p
 
         if req["type"] == "next" :
-            req = p.get_next(mode = req["content"]["mode"], 
-                             on = req["content"]["on"])
+            req = p.get_next(mode = req["content"]["mode"]["mode"], 
+                             on = req["content"]["mode"]["on"])
+            return req
+        
+        if req["type"] == "state" :
+            req = p.get_state()
             return req
 
         if req["type"] == "element" :
@@ -78,7 +82,7 @@ class Server():
             return p
 
         if req["type"] == "label" :
-            p.add_label(req["content"]["element_id"]["element_id"],
+            p.add_label(req["content"]["element_id"],
                         req["content"]["label"])
             return {"add_label":"success"}
         
