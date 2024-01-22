@@ -98,4 +98,10 @@ class Server():
             # train a new simple model
             return p.update_simplemodel(req["content"])
         
+        if req["type"] == "regex":
+            return p.add_regex(req["content"]["name"],req["content"]["value"])
+        
+        if req["type"] == "delete_feature":
+            return p.features.delete(req["content"]["name"])
+        
         return {"error":"request not found"}

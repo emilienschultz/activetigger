@@ -2,11 +2,12 @@ import os
 from pathlib import Path
 import yaml
 import pandas as pd
-import numpy as np
+import re
+import pyarrow.parquet as pq
 
 import functions
 from functions import SimpleModel
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 import logging
 logging.basicConfig(filename='log.log', 
@@ -329,12 +330,26 @@ class Project():
                  "type":"state",
                  "content":options
                 }
+    
+    def add_regex(self, name: str, value: str):
+        """
+        Add regex to features
+        """
+        if not name in self.features.available:
+            pattern = re.compile(value)
+            f = self.content[self.params["col_text"]].apply(lambda x: bool(pattern.search(x)))
+            self.features.add(name,f)
+            print(self.features.available)
+            return {"success":"added"}
+        else:
+            return {"error":"exists already"}
 
 class Features():
     """
     Project features
     No duplicate of data
     TODO : test for the length of the data/same index
+    TODO : load available features
     """
 
     def __init__(self, project_name:str) -> None:
@@ -345,14 +360,40 @@ class Features():
 
     def __repr__(self) -> str:
         return f"Available features : {self.available}"
+    
+    def save(self):
+        """
+        Save current state of embeddings
+        Temporary : parquet with metadata
+        """
+        metadata = {
+            "project_name":self.project_name,
+            "available":self.available,
+            "map":self.map
+        }
+        table = pq.Table.from_pandas(self.content, metadata=metadata)
+        pq.write_table(table, f"{self.project_name}/features.parquet")
 
-    def add(self, name:str, 
-            content:DataFrame) -> None:
+
+    def load(self):
         """
-        Add feature to class
+        Load existing features
+        Temporary : from parquet with metadata
         """
-        # save information
-        self.available.append(name)
+        table = pq.read_table(f"{self.project_name}/features.parquet")
+        metadata = table.schema.metadata
+        self.map = metadata["map"]
+        self.available = metadata["available"]
+        self.project_name = metadata["project_name"]
+
+    def add(self, 
+            name:str, 
+            content:DataFrame|Series) -> None:
+        """
+        Add feature(s)
+        """
+        if type(content)==Series:
+            content = pd.DataFrame(content)
         content.columns = [f"{name}_{i}" for i in content.columns]
         self.map[name] = list(content.columns)
         # create the dataset
@@ -361,6 +402,19 @@ class Features():
         else:
             self.content = pd.concat([self.content,content],
                                      axis=1)
+        self.available.append(name)
+
+    def delete(self, name:str):
+        """
+        Delete feature
+        """
+        if name in self.available:
+            col = self.get([name])
+            self.available.remove(name)
+            self.content.drop(columns=col)
+            return {"success":"feature deleted"}
+        else:
+            return {"error":"feature doesn't exist"}
             
     def get(self,features:list|str = "all"):
         """
@@ -412,6 +466,9 @@ class Schemes():
             raise IndexError
 
     def load(self,json):
+        """
+        Load data
+        """
         self.project_name = json["project_name"]
         self.name = json["name"]
         self.labels = json["labels"]
