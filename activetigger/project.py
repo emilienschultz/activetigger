@@ -2,11 +2,13 @@ import os
 from pathlib import Path
 import yaml
 import pandas as pd
-import numpy as np
+import re
+import pyarrow.parquet as pq
+import json
 
 import functions
 from functions import SimpleModel
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 import logging
 logging.basicConfig(filename='log.log', 
@@ -24,6 +26,11 @@ logging.basicConfig(filename='log.log',
 # - element
 # - options
 # - liste d'éléments
+
+# TODO : gérer la sauvegarde de tous les éléments
+# - schemes gérés avec les paramètres (mais ça doit changer)
+# - features gestion à part
+# - data + coding
 
 class Project():
     """
@@ -47,16 +54,9 @@ class Project():
         if self.exists(project_name):
              self.load_params()
              self.load_data()
+             self.features.load()
         else:
              self.create(project_name, **kwargs)
-
-        # Compute embeddings as features
-        if self.params["embeddings"]["sbert"] or kwargs["sbert"]:
-            self.features.add("sbert",
-                              self.compute_embeddings(emb="sbert"))
-        if self.params["embeddings"]["fasttext"] or kwargs["fasttext"]:
-            self.features.add("fasttext",
-                              self.compute_embeddings(emb="fasttext"))
     
     def exists(self, project_name: str) -> bool:
         """
@@ -116,6 +116,14 @@ class Project():
             self.content[self.schemes.col] = self.content[kwargs["col_tags"]]
         else:
             self.content[self.schemes.col] = None
+
+        # Add / compute embeddings as features
+        if self.params["embeddings"]["sbert"]:
+            self.features.add("sbert",
+                              self.compute_embeddings(emb="sbert"))
+        if self.params["embeddings"]["fasttext"]:
+            self.features.add("fasttext",
+                              self.compute_embeddings(emb="fasttext"))
 
         self.save_params()
         self.save_data()
@@ -232,6 +240,18 @@ class Project():
         Save data
         """
         self.content.to_csv(f"{self.name}/{self.name}.csv")
+
+    def save(self):
+        """
+        Save all
+        """
+        # data
+        self.content.to_csv(f"{self.name}/{self.name}.csv")
+        # params
+        self.save_params()
+        # features
+        self.features.save()
+        # simplemodels not saved
     
     def delete_label(self,element_id):
         """
@@ -329,12 +349,26 @@ class Project():
                  "type":"state",
                  "content":options
                 }
+    
+    def add_regex(self, name: str, value: str):
+        """
+        Add regex to features
+        """
+        if not name in self.features.available:
+            pattern = re.compile(value)
+            f = self.content[self.params["col_text"]].apply(lambda x: bool(pattern.search(x)))
+            self.features.add(name,f)
+            print(self.features.available)
+            return {"success":"added"}
+        else:
+            return {"error":"exists already"}
 
 class Features():
     """
     Project features
     No duplicate of data
     TODO : test for the length of the data/same index
+    TODO : load available features
     """
 
     def __init__(self, project_name:str) -> None:
@@ -345,14 +379,50 @@ class Features():
 
     def __repr__(self) -> str:
         return f"Available features : {self.available}"
+    
+    def save(self):
+        """
+        Save current state of embeddings
+        Temporary : CSV
+        """
+        metadata = {
+            "project_name":self.project_name,
+            "available":self.available,
+            "map":self.map
+        }
 
-    def add(self, name:str, 
-            content:DataFrame) -> None:
+        table = self.content.copy()
+        table["params"] = None
+        table["params"].iloc[0] = json.dumps(metadata)
+        table.to_csv(f"{self.project_name}/features.csv")
+
+    def load(self) -> bool:
         """
-        Add feature to class
+        Load existing features
+        Temporary : CSV
         """
-        # save information
-        self.available.append(name)
+        if Path(f"{self.project_name}/features.csv").exists():
+            table = pd.read_csv(f"{self.project_name}/features.csv", 
+                                index_col=0,
+                                low_memory=False)
+            metadata = json.loads(table["params"].iloc[0])
+            self.content = table.drop(columns="params").copy()
+            del table
+            self.map = metadata["map"]
+            self.available = metadata["available"]
+            self.project_name = metadata["project_name"]
+            return True
+        else:
+            return False
+
+    def add(self, 
+            name:str, 
+            content:DataFrame|Series) -> None:
+        """
+        Add feature(s)
+        """
+        if type(content)==Series:
+            content = pd.DataFrame(content)
         content.columns = [f"{name}_{i}" for i in content.columns]
         self.map[name] = list(content.columns)
         # create the dataset
@@ -361,6 +431,19 @@ class Features():
         else:
             self.content = pd.concat([self.content,content],
                                      axis=1)
+        self.available.append(name)
+
+    def delete(self, name:str):
+        """
+        Delete feature
+        """
+        if name in self.available:
+            col = self.get([name])
+            self.available.remove(name)
+            self.content.drop(columns=col)
+            return {"success":"feature deleted"}
+        else:
+            return {"error":"feature doesn't exist"}
             
     def get(self,features:list|str = "all"):
         """
@@ -412,6 +495,9 @@ class Schemes():
             raise IndexError
 
     def load(self,json):
+        """
+        Load data
+        """
         self.project_name = json["project_name"]
         self.name = json["name"]
         self.labels = json["labels"]

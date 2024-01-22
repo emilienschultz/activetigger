@@ -1,6 +1,8 @@
 import ipywidgets as widgets
 from IPython.display import display
 import json
+import re
+import time
 
 from project import Schemes
 from server import Server
@@ -24,6 +26,7 @@ logging.basicConfig(filename='log.log',
 
 # Unifier la gestion des informations de state ? 
 # intéger par exemple simplemodel
+# ajouter un décorateur
 
 class ConnexionError(Exception):
     def __init__(self, message="Error during the connexion"):
@@ -60,6 +63,10 @@ class Widget():
         self.create_widget()
         logging.info("Connecting and launching widget")
         
+    def _update_state(self):
+        # TODO
+        return None
+
     def get_schemes(self) -> Schemes:
         """
         Getting available schemes
@@ -121,7 +128,7 @@ class Widget():
         rep = self.server.get(req)
         return rep
 
-    def update_schemes(self) -> dict:
+    def post_schemes(self) -> dict:
         """
         Update scheme
         """
@@ -192,7 +199,7 @@ class Widget():
             return None
         # change schemes
         self.schemes.labels.append(a.value)
-        self.update_schemes()
+        self.post_schemes()
         # change widget
         self.components["current_scheme"].children += (self.__add_button_label(a.value),)
         self.components["delete_labels"].children += (self.__add_button_remove_label(a.value),)
@@ -222,7 +229,7 @@ class Widget():
     
     def __remove_label_from_scheme(self,b):
         self.schemes.labels.remove(b.description) #remove the label
-        self.update_schemes() # update server
+        self.post_schemes() # update server
         self.components["current_scheme"].children = [i for i in self.components["current_scheme"].children if i.description != b.description]
         self.components["delete_labels"].children = [i for i in self.components["delete_labels"].children if i.description != b.description]
         b.close() # destroy button
@@ -233,7 +240,7 @@ class Widget():
                 "project_name":self.project_name,
                 "content": {
                         "current": self.components["models"].children[0].value,
-                        "features":self.components["models"].children[1].value,
+                        "features":self.components["models"].children[2].value,
                         "parameters":json.loads(self.components["models"].children[2].value)}
                 }
         # TODO: tester la formation de la chaine JSON
@@ -243,6 +250,50 @@ class Widget():
         else:
             # update widget with new menu
             self.components["header"].children[1].options += ("maxprob",)
+
+    def is_valid_regex(self, pattern):
+        try:
+            re.compile(pattern)
+            return True
+        except re.error:
+            return False
+
+    def delete_feature(self):
+        """
+        Delete available feature
+        """
+        feature = self.components["features"].children[0].value
+        req = {
+            "project_name":self.project_name,
+            "type":"delete_feature",
+            "content":{"name":feature}
+        }
+        rep = self.server.post(req)
+
+        # update
+        self.components["features"].children[0].options = self.state["features"]["available_features"]
+        self.components["models"].children[2].options = self.state["features"]["available_features"]
+
+        return None
+
+    def post_regex(self):
+        """
+        Add new regex feature
+        """
+        regex = self.components["features"].children[2].value
+        if self.is_valid_regex(regex):
+            name = "regex_"+regex
+            req = {
+                "project_name":self.project_name,
+                "type":"regex",
+                "content":{"name":name,
+                           "value":regex}
+            }
+            rep = self.server.post(req)
+            # update widget : state, available features, simplemodel
+            # open question : why available_features update ?
+            self.components["features"].children[0].options = self.state["features"]["available_features"]
+            self.components["models"].children[2].options = self.state["features"]["available_features"]
 
     def create_widget(self):
         """
@@ -342,7 +393,10 @@ class Widget():
         
         self.components["delete_labels"] = widgets.VBox([self.__add_button_remove_label(i) for i in self.schemes.labels])
 
-        # Simple model parameters
+        #----------
+        # SimpleModel tab
+        #----------
+        
         # TODO : il manque la sélection des embeddings + du label d'intérêt
 
         select_model =  widgets.Dropdown(
@@ -356,7 +410,7 @@ class Widget():
                 model_params.value = json.dumps(self.simplemodel_params["available"][change['new']])
         select_model.observe(on_change_model)
         
-        select_embeddings = widgets.SelectMultiple(
+        select_features = widgets.SelectMultiple(
             options=self.state["features"]["available_features"],
             value=[], 
             description='Features'
@@ -375,23 +429,57 @@ class Widget():
             self.push_simplemodel()
         model_valid.on_click(update_simplemodel)
         self.components["models"] = widgets.HBox([select_model,
-                                                  select_embeddings,
+                                                  select_features,
                                                   model_params,
                                                   model_valid])
+        
+        #----------
+        # Regex tab
+        #----------
 
-        # Tabs for the two menus
+        available_features = widgets.Dropdown(
+                            options=self.state["features"]["available_features"],
+                            value=self.state["features"]["available_features"][0],
+                            layout={'width': '150px'}
+                        )
+        delete_feature = widgets.Button(description="Delete feature",
+                                        layout={'width': '150px'})
+        def func_delete_feature(b):
+            self.delete_feature()
+            b.disabled = True
+            time.sleep(1) 
+            b.disabled = False
+        delete_feature.on_click(func_delete_feature)
+
+        enter_regex = widgets.Textarea(layout={'width': '200px'},
+            value="Regex predictors")
+        valid_regex = widgets.Button(description="Add regex")
+        def add_regex(b):
+            self.post_regex()
+            b.disabled = True
+            time.sleep(1) 
+            b.disabled = False
+        valid_regex.on_click(add_regex)
+
+        self.components["features"] = widgets.HBox([available_features,delete_feature,
+                                                    enter_regex,valid_regex])
+
+
+        # ------------
+        # Tabs
+        # ------------
         self.components["footer"] = widgets.Tab([
                         self.components["current_scheme"],
                         widgets.HBox([
                                     schemes,
                                     widgets.VBox([new_cat,self.components["delete_labels"]])]
                                     ),
-                        widgets.Text(disabled = True,value="Embeddings"),
+                        self.components["features"],
                         self.components["models"]
 
                         ], 
                         titles = ['Annotations', 
-                          'Modifications', 'Embeddings', 'Models'])
+                          'Modifications', 'Features', 'Models'])
         
         # Display the widget
         display(self.components["header"])
