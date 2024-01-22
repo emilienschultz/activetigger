@@ -4,6 +4,7 @@ import yaml
 import pandas as pd
 import re
 import pyarrow.parquet as pq
+import json
 
 import functions
 from functions import SimpleModel
@@ -364,24 +365,31 @@ class Features():
     def save(self):
         """
         Save current state of embeddings
-        Temporary : parquet with metadata
+        Temporary : CSV
         """
         metadata = {
             "project_name":self.project_name,
             "available":self.available,
             "map":self.map
         }
-        table = pq.Table.from_pandas(self.content, metadata=metadata)
-        pq.write_table(table, f"{self.project_name}/features.parquet")
+
+        table = self.content.copy()
+        table["params"] = None
+        table["params"].iloc[0] = json.dumps(metadata)
+        table.to_csv(f"{self.project_name}/features.csv")
 
 
     def load(self):
         """
         Load existing features
-        Temporary : from parquet with metadata
+        Temporary : CSV
         """
-        table = pq.read_table(f"{self.project_name}/features.parquet")
-        metadata = table.schema.metadata
+        table = pd.read_csv(f"{self.project_name}/features.csv", 
+                            index_col=0,
+                            low_memory=False)
+        metadata = json.loads(table["params"].iloc[0])
+        self.content = table.drop(columns="params").copy()
+        del table
         self.map = metadata["map"]
         self.available = metadata["available"]
         self.project_name = metadata["project_name"]
