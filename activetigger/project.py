@@ -27,6 +27,11 @@ logging.basicConfig(filename='log.log',
 # - options
 # - liste d'éléments
 
+# TODO : gérer la sauvegarde de tous les éléments
+# - schemes gérés avec les paramètres (mais ça doit changer)
+# - features gestion à part
+# - data + coding
+
 class Project():
     """
     Project (database/params)
@@ -49,16 +54,9 @@ class Project():
         if self.exists(project_name):
              self.load_params()
              self.load_data()
+             self.features.load()
         else:
              self.create(project_name, **kwargs)
-
-        # Compute embeddings as features
-        if self.params["embeddings"]["sbert"] or kwargs["sbert"]:
-            self.features.add("sbert",
-                              self.compute_embeddings(emb="sbert"))
-        if self.params["embeddings"]["fasttext"] or kwargs["fasttext"]:
-            self.features.add("fasttext",
-                              self.compute_embeddings(emb="fasttext"))
     
     def exists(self, project_name: str) -> bool:
         """
@@ -118,6 +116,14 @@ class Project():
             self.content[self.schemes.col] = self.content[kwargs["col_tags"]]
         else:
             self.content[self.schemes.col] = None
+
+        # Add / compute embeddings as features
+        if self.params["embeddings"]["sbert"]:
+            self.features.add("sbert",
+                              self.compute_embeddings(emb="sbert"))
+        if self.params["embeddings"]["fasttext"]:
+            self.features.add("fasttext",
+                              self.compute_embeddings(emb="fasttext"))
 
         self.save_params()
         self.save_data()
@@ -234,6 +240,18 @@ class Project():
         Save data
         """
         self.content.to_csv(f"{self.name}/{self.name}.csv")
+
+    def save(self):
+        """
+        Save all
+        """
+        # data
+        self.content.to_csv(f"{self.name}/{self.name}.csv")
+        # params
+        self.save_params()
+        # features
+        self.features.save()
+        # simplemodels not saved
     
     def delete_label(self,element_id):
         """
@@ -378,21 +396,24 @@ class Features():
         table["params"].iloc[0] = json.dumps(metadata)
         table.to_csv(f"{self.project_name}/features.csv")
 
-
-    def load(self):
+    def load(self) -> bool:
         """
         Load existing features
         Temporary : CSV
         """
-        table = pd.read_csv(f"{self.project_name}/features.csv", 
-                            index_col=0,
-                            low_memory=False)
-        metadata = json.loads(table["params"].iloc[0])
-        self.content = table.drop(columns="params").copy()
-        del table
-        self.map = metadata["map"]
-        self.available = metadata["available"]
-        self.project_name = metadata["project_name"]
+        if Path(f"{self.project_name}/features.csv").exists():
+            table = pd.read_csv(f"{self.project_name}/features.csv", 
+                                index_col=0,
+                                low_memory=False)
+            metadata = json.loads(table["params"].iloc[0])
+            self.content = table.drop(columns="params").copy()
+            del table
+            self.map = metadata["map"]
+            self.available = metadata["available"]
+            self.project_name = metadata["project_name"]
+            return True
+        else:
+            return False
 
     def add(self, 
             name:str, 
