@@ -32,6 +32,8 @@ logging.basicConfig(filename='log.log',
 # - features gestion à part
 # - data + coding
 
+# TODO : gérer les éléments tagged dans next etc.
+
 class Project():
     """
     Project (database/params)
@@ -268,14 +270,21 @@ class Project():
         return True
 
     def get_next(self,
+                 scheme:str,
                  mode:str = "deterministic",
                  on:str = "untagged",
                  tag:None|str = None) -> dict:
         """
-        Get next item from content to tag
+        Get next item
+        Related to a specific scheme
 
         TODO : gérer les cases tagguées/non tagguées etc.
         """
+
+        # check if the current scheme is selected
+        if not self.schemes.name == scheme:
+            print("Change of scheme")
+            self.schemes.select(scheme)
 
         # Pour le moment uniquement les cases non nulles
         f = self.content[self.schemes.col].isnull()
@@ -335,8 +344,11 @@ class Project():
                         "mode":"deterministic",
                         "on":"untagged",
                         "label":None
-
                         },
+                    "scheme":{
+                                "current":self.schemes.name,
+                                "available":self.schemes.available
+                                },
                     "features":{
                             "available_features":self.features.available
                           }

@@ -47,7 +47,8 @@ class Server():
 
         if req["type"] == "next" :
             req = p.get_next(mode = req["content"]["mode"]["mode"], 
-                             on = req["content"]["mode"]["on"])
+                             on = req["content"]["mode"]["on"],
+                             scheme = req["content"]["scheme"]["current"])
             return req
         
         if req["type"] == "state" :
@@ -55,7 +56,7 @@ class Server():
             return req
 
         if req["type"] == "element" :
-            req = p.get_element(req["element_id"])
+            req = p.get_element(req["content"]["element_id"])
             return req
         
         if req["type"] == "schemes":
@@ -104,4 +105,10 @@ class Server():
         if req["type"] == "delete_feature":
             return p.features.delete(req["content"]["name"])
         
+        if req["type"] == "new_scheme":
+            if p.schemes.add(req["content"]["name"],[]):
+                return {"new_scheme":"created"}
+            else:
+                return {"error":"new scheme not created"}
+
         return {"error":"request not found"}

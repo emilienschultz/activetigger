@@ -13,20 +13,14 @@ logging.basicConfig(filename='log.log',
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-
-# Est-ce qu'il ne faudrait pas faire passer la liste des modes
-# de sélection en dynamique (envoyé par le backend)
-# Ca éviterait de sélectionner a priori l'étiquette
-
 # gérer la forme des requêtes
 # {"project_name","type","content" + "user"}
-
-# gérer l'interface dynamique : 
-# - créer un nouveau système de codage
 
 # Unifier la gestion des informations de state ? 
 # intéger par exemple simplemodel
 # ajouter un décorateur
+
+# TODO : SELECTIONNER UN NOUVEAU SCHEME
 
 class ConnexionError(Exception):
     def __init__(self, message="Error during the connexion"):
@@ -63,9 +57,6 @@ class Widget():
         self.create_widget()
         logging.info("Connecting and launching widget")
         
-    def _update_state(self):
-        # TODO
-        return None
 
     def get_schemes(self) -> Schemes:
         """
@@ -87,7 +78,7 @@ class Widget():
         req = {
                 "project_name":self.project_name,
                 "type":"simplemodel"            
-        }
+            }
         rep = self.server.get(req)
         return rep["content"]
     
@@ -106,10 +97,13 @@ class Widget():
         """
         Get next element to annotate
         """
+        # update current scheme (to move somewhere else)
+        state = self.state
+        state["scheme"]["current"] = self.schemes.name
         req = {
                 "project_name":self.project_name,
                 "type":"next",
-                "content":self.state
+                "content":state
               }
         rep = self.server.get(req) 
         if "error" in rep:
@@ -123,7 +117,8 @@ class Widget():
         req = {
                 "project_name":self.project_name,
                 "type":"element",
-                "element_id":element_id
+                "content":{"element_id":element_id,
+                           "scheme":self.schemes.name}
               }
         rep = self.server.get(req)
         return rep
@@ -138,7 +133,6 @@ class Widget():
                 "content":self.schemes.dump()
             }
         self.server.post(req)
-        #self.params = self.get_params() #update params
         return {"send":"ok"}
 
     def post_tag(self, element_id:int|str, label:str) -> dict:
@@ -149,6 +143,7 @@ class Widget():
                 "project_name":self.project_name,
                 "type":"label",
                 "content":  {
+                            "scheme":self.schemes.name,
                             "element_id":element_id,
                             "label":label
                             }
@@ -295,6 +290,19 @@ class Widget():
             self.components["features"].children[0].options = self.state["features"]["available_features"]
             self.components["models"].children[2].options = self.state["features"]["available_features"]
 
+    def create_scheme(self, b, name:str):
+        # push the scheme to server
+        req = {
+            "project_name":self.project_name,
+            "type":"new_scheme",
+            "content":{"name":name}
+        }
+        rep = self.server.post(req)
+        # update the interface
+        #self.schemes.add(name, []) # TODO : POURQUOI IL Y A UNE SYNCRO SERVEUR/FRONT ACTUELLEMENT ??
+        self.components["modify_schemes"].children[0].options+=(name,)
+        return None
+
     def create_widget(self):
         """
         Create the widget
@@ -369,6 +377,10 @@ class Widget():
         # A button for each category
         self.components["current_scheme"] = widgets.HBox([self.__add_button_label(i) for i in self.schemes.labels])
 
+        #----------
+        # Modify schemes
+        #----------
+
         # Menu to select scheme
         schemes = widgets.Select(
                     options= self.schemes.available.keys(),
@@ -378,7 +390,11 @@ class Widget():
                     )
         def on_change(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                print("Pas encore implémenté ",change)
+                # use the new scheme & display the buttons
+                self.schemes.select(change["new"])
+                self.components["current_scheme"].children = [self.__add_button_label(i) for i in self.schemes.labels]
+                self.components["delete_labels"].children = [self.__add_button_remove_label(i) for i in self.schemes.labels]
+                print("changement de schemes")
         schemes.observe(on_change)
 
         # Field to add a category
@@ -393,6 +409,21 @@ class Widget():
         
         self.components["delete_labels"] = widgets.VBox([self.__add_button_remove_label(i) for i in self.schemes.labels])
 
+        # new scheme
+        new_scheme_name = widgets.Text(
+            description="New scheme",
+            value="Name",
+            layout={'width': '200px'}
+        )
+        new_scheme_button = widgets.Button(description="Add scheme")
+        new_scheme_button.on_click(lambda b : self.create_scheme(b, new_scheme_name.value))
+
+        self.components["modify_schemes"] = widgets.HBox([
+                                    schemes,
+                                    widgets.VBox([new_cat,self.components["delete_labels"]]),
+                                    widgets.VBox([new_scheme_name,new_scheme_button])
+                                    ]
+                                    )
         #----------
         # SimpleModel tab
         #----------
@@ -470,10 +501,7 @@ class Widget():
         # ------------
         self.components["footer"] = widgets.Tab([
                         self.components["current_scheme"],
-                        widgets.HBox([
-                                    schemes,
-                                    widgets.VBox([new_cat,self.components["delete_labels"]])]
-                                    ),
+                        self.components["modify_schemes"],
                         self.components["features"],
                         self.components["models"]
 
