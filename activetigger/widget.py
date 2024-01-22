@@ -244,6 +244,9 @@ class Widget():
             # update widget with new menu
             self.components["header"].children[1].options += ("maxprob",)
 
+    def post_regex(self):
+        print("new regex")
+
     def create_widget(self):
         """
         Create the widget
@@ -378,6 +381,23 @@ class Widget():
                                                   select_embeddings,
                                                   model_params,
                                                   model_valid])
+        
+        #----------
+        # Regex tab
+        #----------
+
+        available_features = widgets.Dropdown(
+                            options=self.state["features"]["available_features"],
+                            value=self.state["features"]["available_features"][0]
+                        )
+        enter_regex = widgets.Textarea(layout={'width': '200px'},
+            value="Add regular expression")
+        valid_regex = widgets.Button(description="Add regex")
+        def post_regex(b):
+            self.post_regex()
+        valid_regex.on_click(post_regex)
+
+        self.components["features"] = widgets.HBox([available_features,enter_regex,valid_regex])
 
         # Tabs for the two menus
         self.components["footer"] = widgets.Tab([
@@ -386,12 +406,12 @@ class Widget():
                                     schemes,
                                     widgets.VBox([new_cat,self.components["delete_labels"]])]
                                     ),
-                        widgets.Text(disabled = True,value="Embeddings"),
+                        self.components["features"],
                         self.components["models"]
 
                         ], 
                         titles = ['Annotations', 
-                          'Modifications', 'Embeddings', 'Models'])
+                          'Modifications', 'Features', 'Models'])
         
         # Display the widget
         display(self.components["header"])
