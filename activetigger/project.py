@@ -1,13 +1,15 @@
+"""
+Classes available : Projet, Features, Schemes 
+"""
 import os
 from pathlib import Path
-import yaml
-import pandas as pd
+import yaml # type: ignore
+import pandas as pd # type: ignore
 import re
-import pyarrow.parquet as pq
+import pyarrow.parquet as pq # type: ignore
 import json
-
 import functions
-from functions import SimpleModel
+from models import SimpleModel, BertModel
 from pandas import DataFrame, Series
 
 import logging
@@ -32,6 +34,8 @@ logging.basicConfig(filename='log.log',
 # - features gestion à part
 # - data + coding
 
+# TODO : gérer les éléments tagged dans next etc.
+
 class Project():
     """
     Project (database/params)
@@ -49,6 +53,7 @@ class Project():
         self.params: dict = {}
         self.content: DataFrame = DataFrame()
         self.simplemodel:SimpleModel = SimpleModel()
+        self.bertmodel:BertModel = BertModel(path = f"{self.name}")
 
         # load or create project    
         if self.exists(project_name):
@@ -268,14 +273,21 @@ class Project():
         return True
 
     def get_next(self,
+                 scheme:str,
                  mode:str = "deterministic",
                  on:str = "untagged",
                  tag:None|str = None) -> dict:
         """
-        Get next item from content to tag
+        Get next item
+        Related to a specific scheme
 
         TODO : gérer les cases tagguées/non tagguées etc.
         """
+
+        # check if the current scheme is selected
+        if not self.schemes.name == scheme:
+            print("Change of scheme")
+            self.schemes.select(scheme)
 
         # Pour le moment uniquement les cases non nulles
         f = self.content[self.schemes.col].isnull()
@@ -335,8 +347,11 @@ class Project():
                         "mode":"deterministic",
                         "on":"untagged",
                         "label":None
-
                         },
+                    "scheme":{
+                                "current":self.schemes.name,
+                                "available":self.schemes.available
+                                },
                     "features":{
                             "available_features":self.features.available
                           }

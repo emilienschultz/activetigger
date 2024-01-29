@@ -47,7 +47,8 @@ class Server():
 
         if req["type"] == "next" :
             req = p.get_next(mode = req["content"]["mode"]["mode"], 
-                             on = req["content"]["mode"]["on"])
+                             on = req["content"]["mode"]["on"],
+                             scheme = req["content"]["scheme"]["current"])
             return req
         
         if req["type"] == "state" :
@@ -55,7 +56,7 @@ class Server():
             return req
 
         if req["type"] == "element" :
-            req = p.get_element(req["element_id"])
+            req = p.get_element(req["content"]["element_id"])
             return req
         
         if req["type"] == "schemes":
@@ -68,6 +69,12 @@ class Server():
             return {
                 "type":"simplemodel",
                 "content":p.simplemodel.get_params()
+            }
+        
+        if req["type"] == "bert":
+            return {
+                "type":"bert",
+                "content":p.bertmodel.get_params()
             }
                 
         return {"error":"request not found"}
@@ -104,4 +111,13 @@ class Server():
         if req["type"] == "delete_feature":
             return p.features.delete(req["content"]["name"])
         
+        if req["type"] == "new_scheme":
+            if p.schemes.add(req["content"]["name"],[]):
+                return {"new_scheme":"created"}
+            else:
+                return {"error":"new scheme not created"}
+        
+        if req["type"] == "train_bert":
+            return p.bertmodel.start_training(req["content"])
+
         return {"error":"request not found"}
