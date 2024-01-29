@@ -1,11 +1,13 @@
+"""
+Classes available : Projet, Features, Schemes 
+"""
 import os
 from pathlib import Path
-import yaml
-import pandas as pd
+import yaml # type: ignore
+import pandas as pd # type: ignore
 import re
-import pyarrow.parquet as pq
+import pyarrow.parquet as pq # type: ignore
 import json
-
 import functions
 from models import SimpleModel, BertModel
 from pandas import DataFrame, Series
@@ -51,7 +53,7 @@ class Project():
         self.params: dict = {}
         self.content: DataFrame = DataFrame()
         self.simplemodel:SimpleModel = SimpleModel()
-        self.bertmodel:BertModel = BertModel(path = f"{self.name}/bert")
+        self.bertmodel:BertModel = BertModel(path = f"{self.name}")
 
         # load or create project    
         if self.exists(project_name):
