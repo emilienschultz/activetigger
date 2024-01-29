@@ -37,6 +37,7 @@ class Widget():
         self.state = None # global parameters for this instance
         self.current = None # current element to tag
         self.schemes: None|Schemes= None # managing schemes
+        self.bert: None|dict = None # managing BERT params
         self.simplemodel_params: dict = {} # managing models
         self.history: list = []
         self.components: dict = {}
@@ -53,7 +54,8 @@ class Widget():
         self.schemes = self.get_schemes()
         self.state = self.get_state()
         self.current = self.get_next()
-        self.simplemodel_params = self.get_simplemodel_params() # TODO : vérifier l'actualisation        
+        self.simplemodel_params = self.get_simplemodel_params() # TODO : vérifier l'actualisation 
+        self.bert = self.get_bert()          
         self.create_widget()
         logging.info("Connecting and launching widget")
         
@@ -79,6 +81,17 @@ class Widget():
                 "project_name":self.project_name,
                 "type":"simplemodel"            
             }
+        rep = self.server.get(req)
+        return rep["content"]
+    
+    def get_bert(self):
+        """
+        Getting bert params
+        """
+        req = {
+                "project_name":self.project_name,
+                "type":"bert"            
+        }
         rep = self.server.get(req)
         return rep["content"]
     
@@ -303,6 +316,24 @@ class Widget():
         self.components["modify_schemes"].children[0].options+=(name,)
         return None
 
+    def train_bert(self):
+        """
+        Train Bert Model
+        """
+
+        req = {
+            "project_name":self.project_name,
+            "type":"train_bert",
+            "content":{
+                "name":self.components["bert"].children[1].value,
+                "type":self.components["bert"].children[2].value,
+                "params":json.loads(self.components["bert"].children[3].value)
+            }
+        }
+
+        rep = self.server.post(req)
+        return None
+
     def create_widget(self):
         """
         Create the widget
@@ -464,9 +495,9 @@ class Widget():
                                                   model_params,
                                                   model_valid])
         
-        #----------
-        # Regex tab
-        #----------
+        #-------------
+        # Features tab
+        #-------------
 
         available_features = widgets.Dropdown(
                             options=self.state["features"]["available_features"],
@@ -496,6 +527,37 @@ class Widget():
                                                     enter_regex,valid_regex])
 
 
+        #----------
+        # BERT tab
+        #----------
+        # bouton save ?
+
+        bert_available = widgets.Dropdown(
+            options=self.bert["models"]["trained"],
+            layout={'width': '200px'},
+            disabled=False)
+
+        bert_name = widgets.Text(value="Name",layout={'width': '150px'})
+
+        bert_choice = widgets.Dropdown(
+            options=self.bert["models"]["available"],
+            layout={'width': '200px'},
+            disabled=False)
+        #TODO : selection du modèle
+        
+        bert_params = widgets.Textarea(
+            layout={'width': '150px',"height":"200px"},
+            value=json.dumps(self.bert["params"]["default"]))
+        
+        bert_train = widgets.Button(description="⚙️ Train")
+        model_valid.on_click(self.train_bert)
+
+        self.components["bert"] = widgets.HBox([bert_available,
+                                                bert_name, 
+                                                bert_choice,
+                                                bert_params, 
+                                                bert_train])
+
         # ------------
         # Tabs
         # ------------
@@ -503,11 +565,14 @@ class Widget():
                         self.components["current_scheme"],
                         self.components["modify_schemes"],
                         self.components["features"],
-                        self.components["models"]
-
+                        self.components["models"],
+                        self.components["bert"],
+                        widgets.Textarea(value="Statistics",disabled=True)
                         ], 
                         titles = ['Annotations', 
-                          'Modifications', 'Features', 'Models'])
+                          'Modifications', 'Features',
+                          'Simple Models','Bert Models',
+                           'Statistics'])
         
         # Display the widget
         display(self.components["header"])

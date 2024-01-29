@@ -2,6 +2,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 import logging
 import json
+import os
 from pathlib import Path
 import torch
 import numpy as np
@@ -27,32 +28,19 @@ class BertModel():
     """
 
     def __init__(self,path:str) -> None:
+        """
+        All the data are sorted in path/bert/$NAME
+        """
+        self.name:str|None = None
         self.path:Path = Path(path) / "bert"
+        if not self.path.exists():
+            os.mkdir(self.path)
         self.model_name: None|str = None
         self.tokenizer: None|AutoTokenizer = None
         self.model: None|AutoModelForSequenceClassification = None
         self.pred: None|DataFrame = None
-
-    def train_bert(self, df:DataFrame,
-               col_text:str,
-               col_label:str,
-               model_name:str = "microsoft/Multilingual-MiniLM-L12-H384",
-               params:dict = {},
-               test_size:float = 0.2):
-        """
-    Train a bert modem
-    Parameters:
-    ----------
-    df (DataFrame): labelled data
-    col_text (str): text column
-    col_label (str): label column
-    model_name (str): model to use
-    params (dict) : training parameters
-    """
-        self.model_name = model_name
-        
-        if len(params) == 0:
-            params = {
+        self.params: None|dict = None
+        self.params_default = self.params = {
                 "batchsize":4,
                 "gradacc":1,
                 "epochs":3,
@@ -63,6 +51,46 @@ class BertModel():
                 "gpu":False,
                 "adapt":True
             }
+        self.available = ["microsoft/Multilingual-MiniLM-L12-H384",
+                          "almanach/camembert-base"]
+        # temporary (all available models)
+        self.trained:list = os.listdir(self.path)
+
+    def start_training(self, content:dict):
+        """
+        Manage initiating request
+        """
+        return {"error":"Pas encore implémenté"}
+
+    def train_bert(self,
+               name:str,
+               df:DataFrame,
+               col_text:str,
+               col_label:str,
+               model_name:str = "microsoft/Multilingual-MiniLM-L12-H384",
+               params:dict = {},
+               test_size:float = 0.2):
+        """
+    Train a bert modem
+    Parameters:
+    ----------
+    name (str): name of the model
+    df (DataFrame): labelled data
+    col_text (str): text column
+    col_label (str): label column
+    model_name (str): model to use
+    params (dict) : training parameters
+    """
+        self.name = name
+        self.model_name = model_name
+        
+        if len(params) == 0:
+            self.params = self.params_default
+            params = self.params
+
+        current_path = self.path / self.name
+        if not current_path.exists():
+            os.mkdir(current_path)
 
         logging.basicConfig(filename='predict.log',
                             format='%(asctime)s %(message)s',
@@ -78,6 +106,7 @@ class BertModel():
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         # Tokenize
+        print()
         if params["adapt"]:
             df = df.map(lambda e: self.tokenizer(e['text'], truncation=True, padding=True, max_length=512), batched=True)
         else:
@@ -100,7 +129,7 @@ class BertModel():
         eval_steps = total_steps // params["eval"]
         
         training_args = TrainingArguments(
-            output_dir = self.path / "train",
+            output_dir = current_path / "train",
             learning_rate=params["lrate"],
             weight_decay=params["wdecay"],
             num_train_epochs=params["epochs"],
@@ -127,29 +156,28 @@ class BertModel():
         trainer.train()
 
         # save model
-        self.model.save_pretrained(self.path)
-        logging.info(f"Model saved {self.path}")
+        self.model.save_pretrained(current_path)
+        self.trained.append(self.name)
+        logging.info(f"Model saved {current_path}")
 
         # remove intermediate steps
-        shutil.rmtree(self.path / "train")
+        shutil.rmtree(current_path / "train")
 
         return True
 
-    def load(self):
+    def load(self, name:str):
         """
         Load already trained model
         """
-        if self.path is None:
-            raise FileNotFoundError("path not defined")
-        if not (self.path / "config.json").exists():
-            raise FileNotFoundError("model not definsed")
+        if not (self.path / name / "config.json").exists():
+            raise FileNotFoundError("model not defined")
 
-        with open(self.path / "config.json", "r") as jsonfile:
+        with open(self.path / name / "config.json", "r") as jsonfile:
             modeltype = json.load(jsonfile)["_name_or_path"]
 
         self.model_name = modeltype
         self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
-        self.model = AutoModelForSequenceClassification.from_pretrained(self.path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(self.path / name)
 
         return True
 
@@ -201,6 +229,18 @@ class BertModel():
         
         return pred
         # vérifier l'ordre des labels pour éviter les soucis   
+    
+    def get_params(self):
+        """
+        Push params
+        """
+        content = {}
+        content["params"] = {"current":self.params,
+                             "default":self.params_default}
+        content["models"] = {"available":self.available,
+                             "current":self.model_name,
+                             "trained":self.trained}
+        return content
 
 class SimpleModel():
     """

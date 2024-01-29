@@ -70,6 +70,12 @@ class Server():
                 "type":"simplemodel",
                 "content":p.simplemodel.get_params()
             }
+        
+        if req["type"] == "bert":
+            return {
+                "type":"bert",
+                "content":p.bertmodel.get_params()
+            }
                 
         return {"error":"request not found"}
     
@@ -110,5 +116,8 @@ class Server():
                 return {"new_scheme":"created"}
             else:
                 return {"error":"new scheme not created"}
+        
+        if req["type"] == "train_bert":
+            return p.bertmodel.start_training(req["content"])
 
         return {"error":"request not found"}

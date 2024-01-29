@@ -7,7 +7,7 @@ import pyarrow.parquet as pq
 import json
 
 import functions
-from functions import SimpleModel
+from models import SimpleModel, BertModel
 from pandas import DataFrame, Series
 
 import logging
@@ -51,6 +51,7 @@ class Project():
         self.params: dict = {}
         self.content: DataFrame = DataFrame()
         self.simplemodel:SimpleModel = SimpleModel()
+        self.bertmodel:BertModel = BertModel(path = f"{self.name}/bert")
 
         # load or create project    
         if self.exists(project_name):
