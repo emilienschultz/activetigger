@@ -2,25 +2,27 @@
 
 Python refactoring of ActiveTigger (Julien Boelaert & Etienne Ollion) https://gitlab.univ-lille.fr/julien.boelaert/activetigger
 
+Work in progress ...
+
 # Current roadmap
 
-- simple model implementation
+- fastapi structure
 - database/storage
-- bert model implementation
-- multiple schemes for one project (both frontend and backend)
+- finish bertmodel implementation
+- queue management (rq)
+- multiuser
 - test units
+- clean ipywidget
 
 # Technical specifications
 
-- client/server architecture
-- with state server side
-- JSON for data interchange format
-- mixed data storage : sqlite + files for temporary data
-- backend Python (FastAPI)
-- frontend :
-    - widget (simplified)
+- REST-like client/server architecture
+    - JSON for data interchange format
+    - State-ful serversite
+- mixed data storage : sqlite + files
+- backend Python
+    - FastAPI
+    - Job management with RQ
+- frontend
+    - Jupyter widget (simplified)
     - Javascript (React ? Vue ?)
-
-## Open questions
-
-- Status code
