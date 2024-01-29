@@ -19,6 +19,11 @@ from sklearn.metrics import precision_score
 class BertModel():
     """
     Managing BertModel
+
+    TODO : metrics
+    TODO : tests
+    TODO : logs
+
     """
 
     def __init__(self,path:str) -> None:
@@ -59,6 +64,11 @@ class BertModel():
                 "adapt":True
             }
 
+        logging.basicConfig(filename='predict.log',
+                            format='%(asctime)s %(message)s',
+                            encoding='utf-8', level=logging.DEBUG)
+        logging.info(f"Start training {self.model_name}")
+
         labels = sorted(list(df[col_label].unique())) # alphabetical order
         label2id = {j:i for i,j in enumerate(labels)}
         id2label = {i:j for i,j in enumerate(labels)}
@@ -75,6 +85,7 @@ class BertModel():
 
         # Build test dataset
         df = df.train_test_split(test_size=test_size) #stratify_by_column="label"
+        logging.info(f"Train/test dataset created")
 
         # Model
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name, 
@@ -108,16 +119,16 @@ class BertModel():
             metric_for_best_model="eval_loss"
             )
         
+        logging.info(f"Start training")
         trainer = Trainer(model=self.model, 
                          args=training_args, 
                          train_dataset=df["train"], 
                          eval_dataset=df["test"])
-
         trainer.train()
 
         # save model
-        self.model.config.labels = label2id
         self.model.save_pretrained(self.path)
+        logging.info(f"Model saved {self.path}")
 
         # remove intermediate steps
         shutil.rmtree(self.path / "train")
@@ -136,9 +147,11 @@ class BertModel():
         with open(self.path / "config.json", "r") as jsonfile:
             modeltype = json.load(jsonfile)["_name_or_path"]
 
+        self.model_name = modeltype
         self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
         self.model = AutoModelForSequenceClassification.from_pretrained(self.path)
 
+        return True
 
     def predict(self, df, col_text = "text", gpu=False, batch = 128):
         """
