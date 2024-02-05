@@ -11,6 +11,7 @@ import json
 import functions
 from models import SimpleModel, BertModel
 from pandas import DataFrame, Series
+from pydantic import BaseModel
 
 import logging
 logging.basicConfig(filename='log.log', 
@@ -322,7 +323,10 @@ class Project():
         Get an element of the database
         """
         columns = ["text"]
-        return self.content.loc[element_id,columns]
+        return {"id":element_id,
+                "text":self.content.loc[element_id,"text"]
+                }
+
 
     def get_params(self):
         """
