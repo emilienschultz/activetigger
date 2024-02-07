@@ -41,7 +41,6 @@ class Project():
     """
     Project (database/params)
     """
-
     def __init__(self, project_name : str, **kwargs) -> None:
         """
         Initialize a project 

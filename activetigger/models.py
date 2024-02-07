@@ -27,7 +27,7 @@ class BertModel():
 
     """
 
-    def __init__(self,path:str) -> None:
+    def __init__(self, path:str) -> None:
         """
         All the data are sorted in path/bert/$NAME
         """
