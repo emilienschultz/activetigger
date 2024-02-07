@@ -190,7 +190,7 @@ class Server(Session):
                                 nrows=params.n_rows)
 
         # create the empty annotated file / features file
-        content[[]].to_csv(params.dir / self.labels_file, index=True)
+        content[[params.col_text]].to_csv(params.dir / self.labels_file, index=True)
         content[[]].to_csv(params.dir / self.features_file, index=True)
 
         """
@@ -225,7 +225,7 @@ class Project(Session):
         self.bertmodel: BertModel = BertModel(self.params.dir)
         self.simplemodel: SimpleModel = SimpleModel()
 
-        # harmonize labels columns with schemes
+        # harmonize labels columns with schemes TODO : better way ?
         for i in self.schemes.available():
             if not i in self.labels:
                 self.labels[i] = None
@@ -278,7 +278,7 @@ class Project(Session):
             self.content.to_csv(self.params.dir / self.data_file,
                             index=True)
         if d == "labels":
-            self.content.to_csv(self.params.dir / self.labels_file,
+            self.labels.to_csv(self.params.dir / self.labels_file,
                             index=True)
 
     def compute_embeddings(self,
