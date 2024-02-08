@@ -28,6 +28,14 @@ class NextModel(BaseModel):
     mode:str = "deterministic"
     on:str|None = "untagged"
 
+class SchemesModel(BaseModel):
+    """
+    Schemes model    
+    """
+    project_name:str
+    current:str
+    availables:dict
+
 class UserModel(BaseModel):
     name:str
     

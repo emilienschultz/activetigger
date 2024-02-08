@@ -12,7 +12,7 @@ import pyarrow.parquet as pq # type: ignore
 import json
 import functions
 from models import SimpleModel, BertModel
-from datamodels import ParamsModel
+from datamodels import ParamsModel, SchemesModel
 from pandas import DataFrame, Series
 from pydantic import BaseModel
 from fastapi import UploadFile
@@ -31,9 +31,9 @@ class Session():
     max_file_size: int = 50 * 1024 * 1024
     path: Path = Path("../projects")
     db: Path = Path('../projects/activetigger.db')
-    features_file:str = "features.csv"
-    labels_file:str = "labels.csv"
-    data_file:str = "data.csv"
+    features_file:str = "features.parquet"
+    labels_file:str = "labels.parquet"
+    data_file:str = "data.parquet"
 
 
 class Server(Session):
@@ -169,7 +169,7 @@ class Server(Session):
         os.makedirs(params.dir)
 
         # write data
-        with open(params.dir / "data.csv","wb") as f:
+        with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
         # parameters of projects
@@ -185,13 +185,17 @@ class Server(Session):
         self.update_project_parameters(params)
 
         # load only the number of rows for the project
-        content = pd.read_csv(params.dir / "data.csv", 
+        content = pd.read_csv(params.dir / "data_raw.csv", 
                                 index_col=0, 
                                 nrows=params.n_rows)
-
+        
+        content.index = [str(i) for i in content.index]
+        print(content.index)
+    
         # create the empty annotated file / features file
-        content[[params.col_text]].to_csv(params.dir / self.labels_file, index=True)
-        content[[]].to_csv(params.dir / self.features_file, index=True)
+        content.to_parquet(params.dir / self.data_file, index=True)
+        content[[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
+        content[[]].to_parquet(params.dir / self.features_file, index=True)
 
         """
         TODO : deal if already tagged column
@@ -267,19 +271,17 @@ class Project(Session):
         if d == "labels":
             file = self.params.dir / self.labels_file
         if not file is None :
-            content = pd.read_csv(file, index_col=0, low_memory=False)
+            content = pd.read_parquet(file)
         return content
-        
+    
     def save_data(self, d:str = "content"):
-        """
-        Save data in files
-        """
-        if d == "content":
-            self.content.to_csv(self.params.dir / self.data_file,
-                            index=True)
-        if d == "labels":
-            self.labels.to_csv(self.params.dir / self.labels_file,
-                            index=True)
+            """
+            Save data in files
+            """
+            if d == "content":
+                self.content.to_parquet(self.params.dir / self.data_file)
+            if d == "labels":
+                self.labels.to_parquet(self.params.dir / self.labels_file)
 
     def compute_embeddings(self,
                            emb:str) -> DataFrame:
@@ -310,7 +312,7 @@ class Project(Session):
         df_features = self.features.get(features)
         col_label = self.schemes.col
         col_predictors = df_features.columns
-        data = pd.concat([self.content[col_label],
+        data = pd.concat([self.labels[col_label],
                           df_features],
                           axis=1)
         
@@ -353,14 +355,14 @@ class Project(Session):
         """
         Delete a recorded tag
         """
-        self.content.loc[element_id,self.schemes.col] = None
+        self.labels.loc[element_id,self.schemes.col] = None
         return True
 
     def add_label(self,element_id,label):
         """
         Record a tag
         """
-        self.content.loc[element_id,self.schemes.col] = label
+        self.labels.loc[element_id,self.schemes.col] = label
         return True
 
     def get_next(self,
@@ -381,12 +383,12 @@ class Project(Session):
             self.schemes.select(scheme)
 
         # Pour le moment uniquement les cases non nulles
-        f = self.content[self.schemes.col].isnull()
+        f = self.labels[self.schemes.col].isnull()
 
         if mode == "deterministic": # next row
-            element_id = self.content[f].index[0]
+            element_id = self.labels[f].index[0]
         if mode == "random": # random row
-            element_id = self.content[f].sample(random_state=42).index[0]
+            element_id = self.labels[f].sample(random_state=42).index[0]
         if mode == "maxprob": # higher prob row
             if self.simplemodel.name is None: # if no model, build default
                 print("Build default simple model")
@@ -402,11 +404,7 @@ class Project(Session):
         # TODO : put a lock on the element when sent ?
 
         # Pour le moment uniquement l'id et le texte (dans le futur ajouter tous les éléments)
-        return  {
-                 "element_id":element_id,
-                 "content":self.get_element(element_id),
-#                 "options":self.get_state()
-                }
+        return  self.get_element(element_id)
     
     def get_element(self,element_id):
         """
@@ -443,17 +441,14 @@ class Project(Session):
                         },
                     "scheme":{
                                 "current":self.schemes.name,
-                                "available":self.schemes.available
+                                "available":self.schemes.available()
                                 },
                     "features":{
-                            "available_features":self.features.available
+                            "available_features":self.features.map.keys()
                           }
                    }
         
-        return  {
-                 "type":"state",
-                 "content":options
-                }
+        return  options
     
     def add_regex(self, name: str, value: str):
         """
@@ -496,7 +491,7 @@ class Features(Session):
         def find_strings_with_pattern(strings, pattern):
             matching_strings = [s for s in strings if re.match(pattern, s)]
             return matching_strings
-        data = pd.read_csv(self.path,index_col=0)
+        data = pd.read_parquet(self.path)
         var = set([i.split("_")[0] for i in data.columns])
         dic = {i:find_strings_with_pattern(data.columns,i) for i in var}
         return data, dic
@@ -581,7 +576,7 @@ class Schemes(Session):
         return f"Coding schemes available {self.available()}"
 
     def col_name(self):
-        return "labels_" + self.name
+        return self.name
 
     def select(self, name):
         available = self.available()
@@ -679,10 +674,8 @@ class Schemes(Session):
         self.available = json["available"]    
         self.col = self.col_name()    
     
-    def dump(self):
-        return {
-                "project_name":self.project_name,
-                "name":self.name,
-                "labels":self.labels,
-                "available":self.available()
-                }
+    def get(self):
+        return SchemesModel(project_name=self.project_name,
+                            current = self.name,
+                            availables=self.available()
+                            )
