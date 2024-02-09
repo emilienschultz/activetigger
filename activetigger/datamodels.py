@@ -65,3 +65,19 @@ class SchemeModel(BaseModel):
     project_name:str
     name:str
     tags:list[str]
+
+class RegexModel(BaseModel):
+    """
+    Regex
+    """
+    project_name:str
+    name:str
+    value:str
+
+class SimpleModelModel(BaseModel):
+    features:list
+    current:str
+    params:dict
+
+class BertModelModel(BaseModel):
+    name:str

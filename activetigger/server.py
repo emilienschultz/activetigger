@@ -1,123 +1,253 @@
-from project import Project
-
+from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form
 import logging
+from typing import Annotated
+from datamodels import ParamsModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
+from datamodels import RegexModel, SimpleModelModel, BertModelModel
+from project import Server, Project
+import json
+
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-class Server():
-    """
-    Backend
-    """
-    def __init__(self) -> None:
-        """
-        Start the server
-        """
-        self.projects: dict = {}
-        logging.warning('Still under development')
-        logging.info("Start server")
 
-    def start_project(self,project_name, **kwargs):
-        """
-        Initialize a project with a project_name
-        """
-        self.projects[project_name] = Project(project_name, **kwargs)
 
-    # ENDPOINTS (in future FASTAPI)
+# à terme toute demande de l'app aura les informations de la connexion
+# nom de l'utilisateur
+# accès autoris
+# projet connecté
+# Passer l'utilisateur en cookie lors de la connexion ?  https://www.tutorialspoint.com/fastapi/fastapi_cookie_parameters.htm
+# unwrapping pydandic object  UserInDB(**user_dict)
+# untiliser l'héritage de class & le filtrage
 
-    def check_credentials(self, req: dict) -> Project|dict:
-        """
-        Check credentials and access to project
-        #TODO: users
-        """
-        if not req["project_name"] in self.projects:
-            return {"error":"project doesn't exist"}
-        p = self.projects[req["project_name"]]
-        return p
 
-    def get(self, req) -> dict:
-        """
-        Get data from server
-        """
-        logging.info(f"Get request : {req}")
-        p:Project|dict = self.check_credentials(req)
-        if type(p) is dict:
-            return p
-
-        if req["type"] == "next" :
-            req = p.get_next(mode = req["content"]["mode"]["mode"], 
-                             on = req["content"]["mode"]["on"],
-                             scheme = req["content"]["scheme"]["current"])
-            return req
-        
-        if req["type"] == "state" :
-            req = p.get_state()
-            return req
-
-        if req["type"] == "element" :
-            req = p.get_element(req["content"]["element_id"])
-            return req
-        
-        if req["type"] == "schemes":
-            return {
-                    "type":"schemes",
-                    "content":p.schemes.dump()
-                    }
-        
-        if req["type"] == "simplemodel":
-            return {
-                "type":"simplemodel",
-                "content":p.simplemodel.get_params()
-            }
-        
-        if req["type"] == "bert":
-            return {
-                "type":"bert",
-                "content":p.bertmodel.get_params()
-            }
-                
-        return {"error":"request not found"}
+#######
+# API #
+#######
     
-    def post(self, req:dict) -> dict:
+server = Server()
+app = FastAPI()
+
+# ------------
+# Dependencies
+# ------------
+
+async def get_project(project_name: str) -> ParamsModel:
+    """
+    Fetch existing project associated with the request
+    """
+
+    # If project doesn't exist
+    if not server.exists(project_name):
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # If the project exist
+    if project_name in server.projects:
+        # If already loaded
+        return server.projects[project_name]
+    else:
+        # To load
+        server.start_project(project_name)
+        return server.projects[project_name]
+
+# TODO : gérer l'authentification de l'utilisateur
+async def verified_user(x_token: Annotated[str, Header()]):
+    # Cookie ou header ?
+    if False:
+        raise HTTPException(status_code=400, detail="Invalid user")
+    
+
+async def get_params(project_name:str = Form(),
+                     col_text:str = Form("text"),
+                     n_rows:int = Form(2000),
+                     col_tags:str = Form(None),
+                     embeddings:list = Form([])) -> ParamsModel:
+    """
+    Collect form data to project params
+    """
+    p = ParamsModel(project_name=project_name,
+                    col_text = col_text,
+                    n_rows=n_rows,
+                    col_tags=col_tags,
+                    embeddings=embeddings)
+    return p
+
+# ------
+# Routes
+# ------
+
+@app.get("/project/{name_project}")
+async def info_projects(name_project:str = "all"):
+    """
+    Get informations about projects
+    """
+    if name_project == "all":
+        return {"informations":"all"}
+
+    return {"informations":name_project}
+
+
+@app.get("/element", dependencies=[Depends(verified_user)])
+async def get_element(id:str, 
+                      project: Annotated[Project, Depends(get_project)],
+                      response_model=ElementModel) -> ElementModel:
+    """
+    Get specific element
+    """
+    try:
+        e = ElementModel(**project.get_element(id))
+        return e
+    except: # gérer la bonne erreur
+        raise HTTPException(status_code=404, detail="Element not found")
+
+
+@app.get("/schemes", dependencies=[Depends(verified_user)])
+async def get_schemes(project: Annotated[Project, Depends(get_project)]) -> SchemesModel:
         """
-        Manage post requests
+        Available scheme of a project
         """
-        logging.info(f"Post request : {req}")
-        p:Project|dict = self.check_credentials(req)
-        if type(p) is dict:
-            return p
+        return project.schemes.get()
 
-        if req["type"] == "label" :
-            p.add_label(req["content"]["element_id"],
-                        req["content"]["label"])
-            return {"add_label":"success"}
-        
-        if req["type"] == "delete_label":
-            p.delete_label(req["content"]["element_id"])
-            return {"delete_label":"success"}            
 
-        if req["type"] == "update_schemes":
-            p.update_schemes(req["content"])
-            return {"update_schemes":"success"}
+@app.get("/next", dependencies=[Depends(verified_user)])
+async def get_next(project: Annotated[Project, Depends(get_project)],
+                   scheme:str,
+                   mode:str = "deterministic",
+                   on:str = "untagged")-> ElementModel:
+    """
+    Get next element
+    """
+    e = project.get_next(scheme = scheme,
+                         mode = mode,
+                         on = on)
         
-        if req["type"] == "simplemodel":
-            # train a new simple model
-            return p.update_simplemodel(req["content"])
-        
-        if req["type"] == "regex":
-            return p.add_regex(req["content"]["name"],req["content"]["value"])
-        
-        if req["type"] == "delete_feature":
-            return p.features.delete(req["content"]["name"])
-        
-        if req["type"] == "new_scheme":
-            if p.schemes.add(req["content"]["name"],[]):
-                return {"new_scheme":"created"}
-            else:
-                return {"error":"new scheme not created"}
-        
-        if req["type"] == "train_bert":
-            return p.bertmodel.start_training(req["content"])
+    return ElementModel(**e)
 
-        return {"error":"request not found"}
+
+@app.get("/state", dependencies=[Depends(verified_user)])
+async def get_state(project: Annotated[Project, Depends(get_project)]):
+    """
+    Get state of a project
+    TODO: a datamodel
+    """
+    return project.get_state()
+
+
+@app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
+async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
+    """
+    Simplemodel parameters
+    """
+    return project.simplemodel.get_params()
+
+
+@app.get("/models/bert", dependencies=[Depends(verified_user)])
+async def get_bert(project: Annotated[Project, Depends(get_project)]):
+    """
+    bert parameters
+    """
+    return project.bertmodel.get_params()
+
+
+# ----- POST -----
+
+@app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
+async def post_schemes(action:Action,
+                          project: Annotated[Project, Depends(get_project)],
+                          scheme:SchemeModel):
+    """
+    Add, Update or Delete scheme
+    """
+    if action == "add":
+        r = project.schemes.add(scheme)
+        return r
+    if action == "delete":
+        r = project.schemes.delete(scheme)
+        return r
+    if action == "update":
+        r = project.schemes.update(scheme)
+        return r
+    
+    return {"error":"wrong route"}
+        
+
+@app.post("/annotation/{action}", dependencies=[Depends(verified_user)])
+async def post_annotation(action:Action,
+                          project: Annotated[Project, Depends(get_project)],
+                          annotation:AnnotationModel):
+    """
+    Add, Update, Delete annotations
+    """
+
+    # TODO : more esthetic way to give a AnnotatedModel
+
+    if action == "add":
+        if annotation.tag is None:
+            raise HTTPException(status_code=422, 
+                detail="Missing a tag")
+        return project.add_label(annotation.element_id, 
+                                 annotation.tag, 
+                                 annotation.scheme)
+    if action == "delete":
+        project.delete_label(annotation.element_id)
+        return {"success":"label deleted"}
+    
+    return {"error":"action doesn't exist"}
+
+
+@app.post("/features/regex", dependencies=[Depends(verified_user)])
+async def post_regex(project: Annotated[Project, Depends(get_project)],
+                          regex:RegexModel):
+    r = project.add_regex(regex.name,regex.value)
+    return r
+
+@app.post("/features/delete", dependencies=[Depends(verified_user)])
+async def delete_feature(project: Annotated[Project, Depends(get_project)],
+                     name:str):
+    r = project.features.delete(name)
+    return r
+
+@app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
+async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
+                     simplemodel:SimpleModelModel):
+    """
+    Compute simplemodel
+    """
+    r = project.update_simplemodel(simplemodel)
+    return r
+
+@app.post("/models/bert", dependencies=[Depends(verified_user)])
+async def post_bert(project: Annotated[Project, Depends(get_project)],
+                     bertmodel:BertModelModel):
+    """ 
+    Compute bertmodel
+    """
+    r = project.bertmodel.start_training(bertmodel)
+    return r
+
+@app.post("/project/new", dependencies=[Depends(verified_user)])
+async def new_project(project: Annotated[ParamsModel, Depends(get_params)],
+                      file: UploadFile = File(),
+                      ) -> ParamsModel:
+    """
+    Load new project
+    Parameters:
+        file (file)
+        n_rows (int)
+    """
+
+    # For the moment, only csv
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=422, 
+                detail="Only CSV file for the moment")
+        
+    # Test if project exist
+    if server.exists(project.project_name):
+        raise HTTPException(status_code=422, 
+                detail="Project already exist")
+
+    project = server.create_project(project, file)
+
+    return project
+    #return {"success":"project created"}
