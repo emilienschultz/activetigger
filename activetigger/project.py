@@ -55,6 +55,11 @@ class Server(Session):
         """
         Initialize the database
         """
+
+        # create the repertory if needed
+        if not self.path.exists():
+            os.makedirs(self.path)
+
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
 
