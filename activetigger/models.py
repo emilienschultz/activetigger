@@ -16,6 +16,7 @@ from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score
+from datamodels import BertModelModel
 
 class BertModel():
     """
@@ -56,7 +57,7 @@ class BertModel():
         # temporary (all available models)
         self.trained:list = os.listdir(self.path)
 
-    def start_training(self, content:dict):
+    def start_training(self, content:BertModelModel):
         """
         Manage initiating request
         """

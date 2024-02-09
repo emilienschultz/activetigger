@@ -110,17 +110,24 @@ class Server(Session):
             return None
 
     def exists(self, project_name):
-        existing = self.get_existing_projects()
+        existing = self.existing_projects()
         v = (project_name in existing)
         return v
 
-    def get_existing_projects(self):
+    def existing_projects(self):
         """
-        Projects already existing
+        Existing projects
         """
-        return [i for i in os.listdir(self.path) if os.path.isdir(self.path / i)]
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT project_name FROM projects"
+        cursor.execute(query)
+        existing_project = cursor.fetchall()
+        conn.close()
+        return [i[0] for i in existing_project]
 
-    def start_project(self,project_name):
+    def start_project(self,
+                      project_name:str):
         """
         Load project
         """
@@ -302,46 +309,7 @@ class Project(Session):
                                 model_params=simplemodel.params
                                 )
         return {"success":"new simplemodel"}
-
-    def save_params(self,params: None|dict=None) -> None:
-        """
-        Save YAML configuration file
-        """
-        if params is None:
-            params = self.params
-        with open(f"{self.name}/{self.name}.yaml", 'w') as f:
-            yaml.dump(params, f)
-
-    def update_schemes(self,json: dict) -> None:
-        """
-        Update schemes from frontend
-        """
-        self.schemes.load(json)
-        self.params["cat"] = self.schemes.available
-        self.save_params()
     
-    def delete_label(self,element_id):
-        """
-        Delete a recorded tag
-        """
-        self.schemes.content.loc[element_id,self.schemes.col] = None
-        return True
-
-    def add_label(self,element_id, tag, scheme = None):
-        """
-        Record a tag
-        """
-        if scheme is None: #current sheme
-            scheme = self.schemes.col
-
-        if not scheme in self.schemes.available():
-            return {"error":"scheme unavailable"}
-
-        self.schemes.content.loc[element_id,scheme] = tag
-
-        # TODO : ajouter dans l'historique qui a modifié le tag
-
-        return {"success":"tag added"}
 
     def get_next(self,
                  scheme:str,
@@ -546,7 +514,9 @@ class Schemes(Session):
         # Initialize the current scheme
         available = self.available()
         if len(available) == 0:
-            self.add("default",[])
+            self.add_scheme(SchemeModel(project_name=project_name, 
+                                 name = "default",
+                                 tags= []))
             self.select("default")
         else:
             self.select(list(available.keys())[0])
@@ -566,7 +536,7 @@ class Schemes(Session):
         else:
             raise IndexError
 
-    def add(self, scheme:SchemeModel):
+    def add_scheme(self, scheme:SchemeModel):
         """
         Add new scheme
         - in database
@@ -589,7 +559,7 @@ class Schemes(Session):
 
         return {"success":"scheme created"}
 
-    def update(self, scheme:SchemeModel):
+    def update_scheme(self, scheme:SchemeModel):
         """
         Update existing schemes from database
         """
@@ -607,7 +577,7 @@ class Schemes(Session):
         conn.close()
         return {"success":"scheme updated"}
         
-    def delete(self, scheme:SchemeModel):
+    def delete_scheme(self, scheme:SchemeModel):
         """
         Delete a scheme
         """
@@ -639,8 +609,6 @@ class Schemes(Session):
         else:
             return True
 
-
-
     def available(self):
         """
         Available schemes
@@ -653,19 +621,35 @@ class Schemes(Session):
         conn.commit()
         conn.close()
         return {i[0]:json.loads(i[1]) for i in results}
-
-    def load(self,json):
-        """
-        Load data
-        """
-        self.project_name = json["project_name"]
-        self.name = json["name"]
-        self.labels = json["labels"]
-        self.available = json["available"]    
-        self.col = self.col_name()    
-    
+   
     def get(self):
         return SchemesModel(project_name=self.project_name,
                             current = self.name,
                             availables=self.available()
                             )
+    
+    def delete_tag(self, 
+                   element_id:str,
+                   scheme:str):
+        """
+        Delete a recorded tag
+        """
+        self.content.loc[element_id,scheme] = None
+        return True
+
+    def push_tag(self,
+                  element_id:str, 
+                  tag:str,
+                  scheme:str = "current"):
+        """
+        Record a tag
+        """
+        if scheme == "current":
+            scheme = self.col
+
+        if not scheme in self.available():
+            return {"error":"scheme unavailable"}
+
+        self.content.loc[element_id, scheme] = tag
+
+        return {"success":"tag added"}

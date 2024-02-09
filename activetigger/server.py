@@ -77,16 +77,19 @@ async def get_params(project_name:str = Form(),
 # Routes
 # ------
 
-@app.get("/project/{name_project}")
-async def info_projects(name_project:str = "all"):
+@app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
+async def info_project(project_name:str = None):
     """
-    Get informations about projects
+    Get info on project
     """
-    if name_project == "all":
-        return {"informations":"all"}
+    return {project_name:server.db_get_project(project_name)}
 
-    return {"informations":name_project}
-
+@app.get("/projects", dependencies=[Depends(verified_user)])
+async def info_all_projects():
+    """
+    Get all available projects
+    """
+    return {"existing projects":server.existing_projects()}
 
 @app.get("/element", dependencies=[Depends(verified_user)])
 async def get_element(id:str, 
@@ -124,7 +127,6 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
         
     return ElementModel(**e)
 
-
 @app.get("/state", dependencies=[Depends(verified_user)])
 async def get_state(project: Annotated[Project, Depends(get_project)]):
     """
@@ -160,13 +162,13 @@ async def post_schemes(action:Action,
     Add, Update or Delete scheme
     """
     if action == "add":
-        r = project.schemes.add(scheme)
+        r = project.schemes.add_scheme(scheme)
         return r
     if action == "delete":
-        r = project.schemes.delete(scheme)
+        r = project.schemes.delete_scheme(scheme)
         return r
     if action == "update":
-        r = project.schemes.update(scheme)
+        r = project.schemes.update_scheme(scheme)
         return r
     
     return {"error":"wrong route"}
@@ -179,18 +181,16 @@ async def post_annotation(action:Action,
     """
     Add, Update, Delete annotations
     """
-
-    # TODO : more esthetic way to give a AnnotatedModel
-
     if action == "add":
         if annotation.tag is None:
             raise HTTPException(status_code=422, 
                 detail="Missing a tag")
-        return project.add_label(annotation.element_id, 
+        return project.schemes.push_tag(annotation.element_id, 
                                  annotation.tag, 
                                  annotation.scheme)
     if action == "delete":
-        project.delete_label(annotation.element_id)
+        project.schemes.delete_tag(annotation.element_id, 
+                                   annotation.scheme)
         return {"success":"label deleted"}
     
     return {"error":"action doesn't exist"}
