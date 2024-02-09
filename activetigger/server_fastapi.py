@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form
 import logging
 from typing import Annotated
-from datamodels import ParamsModel, ElementModel, SchemesModel
+from datamodels import ParamsModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
 from project_fastapi import Server, Project
 import json
 
@@ -147,6 +147,54 @@ async def get_bert(project: Annotated[Project, Depends(get_project)]):
     bert parameters
     """
     return project.bertmodel.get_params()
+
+
+# ----- POST -----
+
+@app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
+async def post_schemes(action:Action,
+                          project: Annotated[Project, Depends(get_project)],
+                          scheme:SchemeModel):
+    """
+    Add, Update or Delete scheme
+    """
+    if action == "add":
+        r = project.add_scheme(scheme)
+        return r
+    if action == "delete":
+        r = project.delete_scheme(scheme)
+        return r
+    if action == "update":
+        r = project.update_scheme(scheme)
+        return r
+    
+    return {"error":"wrong route"}
+        
+
+@app.post("/annotation/{action}", dependencies=[Depends(verified_user)])
+async def post_annotation(action:Action,
+                          project: Annotated[Project, Depends(get_project)],
+                          annotation:AnnotationModel):
+    """
+    Add, Update, Delete annotations
+    """
+
+    # TODO : more esthetic way to give a AnnotatedModel
+
+    if action == "add":
+        if annotation.tag is None:
+            raise HTTPException(status_code=422, 
+                detail="Missing a tag")
+        return project.add_label(annotation.element_id, 
+                                 annotation.tag, 
+                                 annotation.scheme)
+    if action == "delete":
+        project.delete_label(annotation.element_id)
+        return {"success":"label deleted"}
+    
+    return {"error":"action doesn't exist"}
+
+
 
 @app.post("/project/new", dependencies=[Depends(verified_user)])
 async def new_project(project: Annotated[ParamsModel, Depends(get_params)],

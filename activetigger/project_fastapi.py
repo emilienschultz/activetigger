@@ -12,7 +12,7 @@ import pyarrow.parquet as pq # type: ignore
 import json
 import functions
 from models import SimpleModel, BertModel
-from datamodels import ParamsModel, SchemesModel
+from datamodels import ParamsModel, SchemesModel, SchemeModel
 from pandas import DataFrame, Series
 from pydantic import BaseModel
 from fastapi import UploadFile
@@ -222,10 +222,11 @@ class Project(Session):
         self.name: str = project_name
         self.params: ParamsModel = self.load_params(project_name)
         self.schemes: Schemes = Schemes(project_name)
+        self.labels: DataFrame = self.load_data("labels")
+
         self.features: Features = Features(project_name,
                                            self.params.dir / self.features_file)
         self.content: DataFrame = self.load_data("content")
-        self.labels: DataFrame = self.load_data("labels")
         self.bertmodel: BertModel = BertModel(self.params.dir)
         self.simplemodel: SimpleModel = SimpleModel()
 
@@ -358,12 +359,21 @@ class Project(Session):
         self.labels.loc[element_id,self.schemes.col] = None
         return True
 
-    def add_label(self,element_id,label):
+    def add_label(self,element_id, tag, scheme = None):
         """
         Record a tag
         """
-        self.labels.loc[element_id,self.schemes.col] = label
-        return True
+        if scheme is None: #current sheme
+            scheme = self.schemes.col
+
+        if not scheme in self.schemes.available():
+            return {"error":"scheme unavailable"}
+
+        self.labels.loc[element_id,scheme] = tag
+
+        # TODO : ajouter dans l'historique qui a modifié le tag
+
+        return {"success":"tag added"}
 
     def get_next(self,
                  scheme:str,
@@ -462,7 +472,31 @@ class Project(Session):
         else:
             return {"error":"exists already"}
         
-
+    def add_scheme(self, scheme:SchemeModel):
+        """
+        Add a new scheme
+        # TODO : managing data in the schemes object
+        """
+        # add new column in the df
+        self.labels[scheme.name] = None
+        self.save_data(d="labels")
+        # modify scheme object
+        r = self.schemes.add(scheme.name, scheme.tags)
+        return r
+    
+    def delete_scheme(self, scheme:SchemeModel):
+        if not scheme.name in self.labels.columns:
+            return {"error":"scheme doesn't exist"}
+        self.labels = self.labels.drop(columns=scheme.name)
+        r = self.schemes.delete(scheme.name)
+        return r
+    
+    def update_scheme(self, scheme:SchemeModel):
+        if not scheme.name in self.labels.columns:
+            return {"error":"scheme doesn't exist"}
+        self.labels.drop(columns=scheme.name)
+        r = self.schemes.update(scheme.name, scheme.tags)
+        return r        
 
 class Features(Session):
     """
@@ -563,6 +597,7 @@ class Schemes(Session):
         self.name = None
         self.labels = None
         self.col = None
+        self.content = None
 
         # Initialize the current scheme
         available = self.available()
@@ -592,7 +627,7 @@ class Schemes(Session):
         Update existing schemes from database
         """
         if not self.exists(name):
-            return {"error":"scheme doesn't exist"}
+            return {"error":"scheme doesn't exist in db"}
         
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()

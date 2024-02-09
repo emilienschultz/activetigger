@@ -1,5 +1,11 @@
 from pydantic import BaseModel
 from pathlib import Path
+from enum import Enum
+
+class Action(str, Enum):
+    delete = "delete"
+    add = "add"
+    update = "update"
 
 class Scheme(BaseModel):
     """
@@ -40,5 +46,22 @@ class UserModel(BaseModel):
     name:str
     
 class ElementModel(BaseModel):
-    id:str
+    element_id:str
     text:str|None = None
+
+class AnnotationModel(BaseModel):
+    """
+    Specific Annotatoin
+    """
+    project_name:str
+    element_id:str
+    tag:str
+    scheme:str|None = None
+
+class SchemeModel(BaseModel):
+    """
+    Specific scheme
+    """
+    project_name:str
+    name:str
+    tags:list[str]
