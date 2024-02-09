@@ -493,11 +493,10 @@ def to_sbert(texts: Series,
     """
     sbert = SentenceTransformer(model)
     sbert.max_seq_length = 512
-    emb = sbert.encode(texts)
+    emb = sbert.encode(list(texts))
     emb = pd.DataFrame(emb,index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
     return emb
-
 
 
 ### TO REMOVE EVENTALLY
