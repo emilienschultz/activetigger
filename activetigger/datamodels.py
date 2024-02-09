@@ -56,7 +56,7 @@ class AnnotationModel(BaseModel):
     project_name:str
     element_id:str
     tag:str
-    scheme:str|None = None
+    scheme:str = "current"
 
 class SchemeModel(BaseModel):
     """
@@ -64,7 +64,7 @@ class SchemeModel(BaseModel):
     """
     project_name:str
     name:str
-    tags:list[str]
+    tags:list
 
 class RegexModel(BaseModel):
     """
