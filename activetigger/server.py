@@ -48,7 +48,7 @@ async def get_project(project_name: str) -> ParamsModel:
         return server.projects[project_name]
     else:
         # To load
-        server.start_project(project_name)
+        server.start_project(project_name)            
         return server.projects[project_name]
 
 # TODO : gérer l'authentification de l'utilisateur

@@ -25,6 +25,9 @@ class Session():
     Global session parameters
     TODO : load from yaml file
     """
+    logging.info("Starting session")
+    logging.warning('Still under development')
+
     max_file_size: int = 50 * 1024 * 1024
     path: Path = Path("../projects")
     db: Path = Path('../projects/activetigger.db')
@@ -35,14 +38,13 @@ class Session():
 
 class Server(Session):
     """
-    Projects manager managing fastapi requests
+    Server to manage projects
     """
     def __init__(self) -> None:
         """
         Start the server
         """
         logging.info("Starting server")
-        logging.warning('Still under development')
 
         self.projects: dict = {}
         self.time_start = datetime.now()
@@ -118,10 +120,10 @@ class Server(Session):
         existing = self.existing_projects()
         v = (project_name in existing)
         return v
-
+    
     def existing_projects(self):
         """
-        Existing projects
+        Get existing projects
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
@@ -130,13 +132,14 @@ class Server(Session):
         existing_project = cursor.fetchall()
         conn.close()
         return [i[0] for i in existing_project]
+    
+    def start_project(self, project_name:str):
+        """
+        Load project in server
+        """        
+        if not self.exists(project_name)
+            raise ValueError("Project don't exist")
 
-    def start_project(self,
-                      project_name:str):
-        """
-        Load project
-        """
-        # The project has to exist
         logging.info(f"Load project {project_name}")
         self.projects[project_name] = Project(project_name)
 
@@ -170,8 +173,6 @@ class Server(Session):
         - load data and save
         - initialize parameters
         - initialize files
-
-        TODO : move to parquet files
         """
         # create directory
         params.dir = self.path / params.project_name
@@ -216,7 +217,6 @@ class Server(Session):
 
         return params
     
-
 
 class Project(Session):
     """
@@ -409,6 +409,7 @@ class Project(Session):
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
         self.features.add(name,f)
     
+
 class Features(Session):
     """
     Manage project features
