@@ -13,7 +13,7 @@ from pandas import DataFrame, Series
 from pydantic import BaseModel
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
-
+import shutil
 import logging
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -167,6 +167,18 @@ class Server(Session):
         conn.commit()
         conn.close()
         return {"success":"project updated"}
+    
+    def remove_project_parameters(self, project_name:str) -> bool:
+        """
+        Delete database entry
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        cursor.execute(f"DELETE FROM projects WHERE project_name = ?", (project_name,))
+        cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_name,))
+        conn.commit()
+        conn.close()
+        return True
 
     def create_project(self, 
                        params:ParamsModel, 
@@ -210,6 +222,19 @@ class Server(Session):
         """
 
         return params
+
+    def delete_project(self, project_name:str) -> dict:
+        """
+        Delete a project
+        """
+
+        if self.exists(project_name):
+            params = self.db_get_project(project_name)
+            self.remove_project_parameters(project_name)
+            shutil.rmtree(params.dir)
+            return {"success":"project deleted"}
+        else:
+            return {"error":"project doesn't exist"}
 
 class Project(Session):
     """
