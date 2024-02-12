@@ -247,6 +247,9 @@ class SimpleModel():
     """
     Managing simple models
     (params/fit/predict)
+
+    Comment : the simplemodel can be empty
+    to still access to parameters
     """
     def __init__(self,
                  model: str|None=None,
@@ -292,7 +295,6 @@ class SimpleModel():
                 }     
         
         self.name = model
-
         self.df = None
         self.col_label = None
         self.col_predictors = None
@@ -302,22 +304,22 @@ class SimpleModel():
         self.model = None
         self.proba = None
         self.precision = None
-        self.standardize = None
+        self.normalize = None
         self.model_params = None
 
-        # Initialize data for the simplemodel
+        # Initialize data
         if data is not None and col_predictors is not None:
             self.load_data(data, col_label, col_predictors, standardize)
 
-        if self.name is not None:
+        # Initialize model
+        if self.name in self.available_models:
             if model_params is None:
                 self.model_params = self.available_models[self.name]
             else:
                 self.model_params = model_params
-
-        # Train model on the data
-        if self.name in self.available_models:
-            self.model_params = model_params
+        
+        # Fit model if everything available
+        if (not self.X is None) & (not self.Y is None) & (not self.name is None):
             self.fit_model()
 
     def __repr__(self) -> str:
@@ -332,24 +334,25 @@ class SimpleModel():
         # For the moment remove missing predictors
         self.col_label = col_label
         self.col_predictors = col_predictors
-        self.standardize = standardize
+        self.normalize = standardize
 
-        f_na = data[self.col_predictors].isna().sum(axis=1)>0        
+        f_na = data[self.col_predictors].isna().sum(axis=1)>0      
         if f_na.sum()>0:
             print(f"There is {f_na.sum()} predictor rows with missing values")
 
+        # normalize data
         if standardize:
             df_pred = self.standardize(data[~f_na][self.col_predictors])
         else:
             df_pred = data[~f_na][self.col_predictors]
 
+        # create global dataframe
         self.df = pd.concat([data[~f_na][self.col_label],df_pred],axis=1)
     
         # data for training
         f_label = self.df[self.col_label].notnull()
         self.Y = self.df[f_label][self.col_label]
         self.X = self.df[f_label][self.col_predictors]
-
         self.labels = self.Y.unique()
 
     def fit_model(self):
@@ -366,7 +369,7 @@ class SimpleModel():
         if self.name == "lasso":
             self.model = LogisticRegression(penalty="l1",
                                             solver="liblinear",
-                                            C = self.model_params["lasso_params"])
+                                            C = self.model_params["C"])
         """
         if self.name == "naivebayes":
             if not "distribution" in self.model_params:

@@ -282,11 +282,9 @@ class Project(Session):
 
         # Compute features if requested
         if ("sbert" in self.params.embeddings) & (not "sbert" in self.features.map):
-            self.features.add("sbert",
-                              self.compute_embeddings(emb="sbert"))
+            self.compute_embeddings(emb="sbert")
         if ("fasttext" in self.params.embeddings) & (not "fasttext" in self.features.map):
-            self.features.add("fasttext",
-                              self.compute_embeddings(emb="fasttext"))
+            self.compute_embeddings(emb="fasttext")
 
     def load_params(self, project_name:str) -> ParamsModel:
         """
@@ -305,25 +303,27 @@ class Project(Session):
         else:
             raise NameError(f"{project_name} does not exist.")
 
-
     def compute_embeddings(self,
-                           emb:str) -> DataFrame:
+                           emb:str) -> dict:
         """
         Compute embeddings
-        TODO : async ?
+        TODO : ASYNC TO TEST HERE
         """
         print("start compute embeddings ",emb, self.content.shape)
         if emb == "fasttext":
             emb_fasttext = functions.to_fasttext(self.content[self.params.col_text])
-            return emb_fasttext
+            self.features.add("fasttext", emb_fasttext)
+            return {"success":"fasttext embeddings computed"}
         if emb == "sbert":
             emb_sbert = functions.to_sbert(self.content[self.params.col_text])
-            return emb_sbert
+            self.features.add("sbert", emb_sbert)
+            return {"success":"sbert embeddings computed"}
         raise NameError(f"{emb} does not exist.")
     
     def fit_simplemodel(self,
                         model:str,
                         features:list|str,
+                        scheme:str,
                         model_params: None|dict = None
                         ) -> SimpleModel:
         """
@@ -333,7 +333,7 @@ class Project(Session):
         # build the dataset with label + predictors
 
         df_features = self.features.get(features)
-        col_label = self.schemes.col
+        col_label = self.schemes.col_name(scheme)
         col_predictors = df_features.columns
         data = pd.concat([self.schemes.content[col_label],
                           df_features],
@@ -351,8 +351,9 @@ class Project(Session):
         if simplemodel.features is None or len(simplemodel.features)==0:
             return {"error":"no features"}
         self.simplemodel = self.fit_simplemodel(
-                                model=simplemodel.current,
+                                model=simplemodel.model,
                                 features=simplemodel.features,
+                                scheme=simplemodel.scheme,
                                 model_params=simplemodel.params
                                 )
         return {"success":"new simplemodel"}
@@ -386,7 +387,8 @@ class Project(Session):
             if self.simplemodel.name is None: # if no model, build default
                 print("Build default simple model")
                 self.simplemodel = self.fit_simplemodel(model = "liblinear",
-                                                        features = "all"
+                                                        features = "all",
+                                                        scheme=self.schemes.name
                                                         )
             if tag is None: # default label to first
                 tag = self.schemes.labels[0] #type: ignore
@@ -580,8 +582,14 @@ class Schemes(Session):
         """
         self.content.to_parquet(self.path)
 
-    def col_name(self):
-        return self.name
+    def col_name(self, s = None):
+        """
+        Association name - column
+        (for the moment 1 - 1)
+        """
+        if not s:
+            return self.name
+        return s
 
     def select(self, name) -> None:
         """

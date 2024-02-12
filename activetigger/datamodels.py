@@ -79,8 +79,9 @@ class RegexModel(BaseModel):
 
 class SimpleModelModel(BaseModel):
     features:list
-    current:str
-    params:dict
+    model:str
+    params:dict|None
+    scheme:str
 
 class BertModelModel(BaseModel):
     name:str

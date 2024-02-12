@@ -149,6 +149,13 @@ async def get_bert(project: Annotated[Project, Depends(get_project)]):
     """
     return project.bertmodel.get_params()
 
+@app.get("/features/{project_name}", dependencies=[Depends(verified_user)])
+async def get_features(project: Annotated[Project, Depends(get_project)]):
+        """
+        Available scheme of a project
+        """
+        return {"features":list(project.features.map.keys())}
+
 
 # ----- POST -----
 
@@ -199,6 +206,12 @@ async def post_regex(project: Annotated[Project, Depends(get_project)],
     r = project.add_regex(regex.name,regex.value)
     return r
 
+@app.post("/features/embeddings/{name}", dependencies=[Depends(verified_user)])
+async def post_embeddings(project: Annotated[Project, Depends(get_project)],
+                          name:str):
+    r = project.compute_embeddings(name)
+    return r
+
 @app.post("/features/delete", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
                      name:str):
@@ -207,7 +220,7 @@ async def delete_feature(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
-                     simplemodel:SimpleModelModel):
+                           simplemodel:SimpleModelModel):
     """
     Compute simplemodel
     """
