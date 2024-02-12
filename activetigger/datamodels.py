@@ -21,10 +21,13 @@ class ParamsModel(BaseModel):
     col_text:str = "text"
     n_rows:int = 2000
     dir:Path|None = None
-    col_tags:str|None = None
     embeddings:list = []
-    n_skip:int|None = None
+    n_skip:int = 0
     schemes: list[Scheme] = []
+    langage:str = "fr"
+    #col_id:str = "index" TODO: select id
+    col_tags:str|None = None # TODO: load existing tags
+    #cols_context:list = [] TODO: select variable to keep
 
 class NextModel(BaseModel):
     """
