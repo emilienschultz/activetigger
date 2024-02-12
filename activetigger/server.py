@@ -90,8 +90,32 @@ class Server(Session):
         '''
         cursor.execute(create_table_sql)
 
-        # TODO : History table
-        # TODO : Users table
+        # Annotation history table
+        create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS annotations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                action TEXT,
+                user TEXT,
+                project TEXT,
+                element_id,
+                scheme TEXT,
+                tag TEXT
+            )
+        '''
+        cursor.execute(create_table_sql)
+
+        # User table
+        create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user TEXT,
+                key TEXT,
+                projects TEXT
+                  )
+        '''
+        cursor.execute(create_table_sql)
 
         conn.commit()
         conn.close()
@@ -663,7 +687,8 @@ class Schemes(Session):
                             current = self.name, #type: ignore
                             availables=self.available()
                             )
-    
+
+
     def delete_tag(self, 
                    element_id:str,
                    scheme:str) -> bool:
@@ -674,9 +699,10 @@ class Schemes(Session):
         return True
 
     def push_tag(self,
-                  element_id:str, 
-                  tag:str,
-                  scheme:str = "current"):
+                 element_id:str, 
+                 tag:str,
+                 scheme:str = "current",
+                 user:str = "user"):
         """
         Record a tag
         """
@@ -692,10 +718,27 @@ class Schemes(Session):
         # TODO : test if the tag is in in the tags
 
         if not self.content.loc[element_id, scheme] is None:
-            self.content.loc[element_id, scheme] = tag
-            self.save_data()
-            return {"success":"tag updated"}
+            r = {"success":"tag updated"}
         else:
-            self.content.loc[element_id, scheme] = tag
-            self.save_data()
-            return {"success":"tag added"}
+            r = {"success":"tag added"}
+        self.content.loc[element_id, scheme] = tag
+        self.log_action("add", user, element_id, self.name, tag)
+        self.save_data()
+        return r
+
+    def log_action(self, 
+                   action:str, 
+                   user:str, 
+                   element_id:str,
+                   scheme:str, 
+                   tag:str) -> bool:
+        """
+        Add annotation log
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "INSERT INTO annotations (action, user, project, element_id, scheme, tag) VALUES (?, ?, ?, ?, ?, ?)"
+        cursor.execute(query, (action, user, self.project_name, element_id, scheme, tag))
+        conn.commit()
+        conn.close()
+        return True
