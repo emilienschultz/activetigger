@@ -17,6 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score
 from datamodels import BertModelModel
+import concurrent.futures
 
 class BertModel():
     """
@@ -25,7 +26,6 @@ class BertModel():
     TODO : metrics
     TODO : tests
     TODO : logs
-
     """
 
     def __init__(self, path:Path) -> None:
@@ -57,20 +57,28 @@ class BertModel():
         # temporary (all available models)
         self.trained:list = os.listdir(self.path)
 
-    def start_training(self, content:BertModelModel):
         """
-        Manage initiating request
-        """
-        return {"error":"Pas encore implémenté"}
+            async def start_training(self, content:BertModelModel):
+
+                params = {
+                    "name":content.name
+                    "df":self
+                }
+
+                with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
+                    p = executor.submit(self.train_bert, content)
+                    r = p.result()
+                return {"error":"Pas encore implémenté"}
+        """    
 
     def train_bert(self,
                name:str,
                df:DataFrame,
                col_text:str,
                col_label:str,
-               model_name:str = "microsoft/Multilingual-MiniLM-L12-H384",
-               params:dict = {},
-               test_size:float = 0.2):
+               model_name:str,
+               params:dict,
+               test_size:float):
         """
     Train a bert modem
     Parameters:
@@ -84,21 +92,34 @@ class BertModel():
     """
         self.name = name
         self.model_name = model_name
-        
-        if len(params) == 0:
-            self.params = self.params_default
-            params = self.params
 
+        #  create repertory
         current_path = self.path / self.name
         if not current_path.exists():
             os.mkdir(current_path)
+
+        # default parameters
+        if len(params) == 0:
+            self.params = self.params_default
+            params = self.params
 
         logging.basicConfig(filename='predict.log',
                             format='%(asctime)s %(message)s',
                             encoding='utf-8', level=logging.DEBUG)
         logging.info(f"Start training {self.model_name}")
 
-        labels = sorted(list(df[col_label].unique())) # alphabetical order
+        # test labels missing values
+        if df[col_label].isnull().sum() > 0:
+            df = df[df[col_label].notnull()]
+            print(f"Missing labels - reducing training data to {len(df)}")
+
+        # test empty texts
+        if df[col_text].isnull().sum() > 0:
+            df = df[df[col_text].notnull()]
+            print(f"Missing texts - reducing training data to {len(df)}")
+
+        # formatting data
+        labels = sorted(list(df[col_label].dropna().unique())) # alphabetical order
         label2id = {j:i for i,j in enumerate(labels)}
         id2label = {i:j for i,j in enumerate(labels)}
         df["labels"] = df[col_label].copy().replace(label2id)
@@ -106,6 +127,7 @@ class BertModel():
         df = datasets.Dataset.from_pandas(df[["text", "labels"]])
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+
         # Tokenize
         print()
         if params["adapt"]:
@@ -149,6 +171,7 @@ class BertModel():
             metric_for_best_model="eval_loss"
             )
         
+        print(len(df),len(df["train"]),len(df["test"]))
         logging.info(f"Start training")
         trainer = Trainer(model=self.model, 
                          args=training_args, 
@@ -245,9 +268,8 @@ class BertModel():
 
 class SimpleModel():
     """
-    Managing simple models
-    (params/fit/predict)
-
+    Simple model
+    ------------
     Comment : the simplemodel can be empty
     to still access to parameters
     """
@@ -427,15 +449,6 @@ class SimpleModel():
         self.proba = pd.DataFrame(self.predict_proba(self.df[self.col_predictors]),
                                  columns = self.model.classes_)
         self.precision = self.compute_precision()
-
-    def update(self,content):
-        """
-        Update the model
-        """
-        self.name = content["current"]
-        self.model_params = content["parameters"]
-        self.fit_model()
-        return True
 
     def standardize(self,df):
         """

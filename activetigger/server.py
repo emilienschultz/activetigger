@@ -8,9 +8,8 @@ import pyarrow.parquet as pq # type: ignore
 import json
 import functions
 from models import SimpleModel, BertModel
-from datamodels import ParamsModel, SchemesModel, SchemeModel, SimpleModelModel, BertModelModel
+from datamodels import ParamsModel, SchemesModel, SchemeModel, SimpleModelModel
 from pandas import DataFrame, Series
-from pydantic import BaseModel
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
 import shutil
@@ -277,7 +276,7 @@ class Project(Session):
                                         self.params.dir / self.labels_file) #type: ignore
         self.features: Features = Features(project_name,
                                            self.params.dir / self.features_file) #type: ignore
-        self.bertmodel: BertModel = BertModel(self.params.dir) #type: ignore
+        self.bertmodel: BertModel = BertModel(self.params.dir)
         self.simplemodel: SimpleModel = SimpleModel()
 
         # Compute features if requested
@@ -575,6 +574,19 @@ class Schemes(Session):
 
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
+
+    def get_scheme_data(self, s:str) -> DataFrame:
+        """
+        Get dataframe of a scheme
+
+        Comment : first column is the text
+        """
+        if not s in self.available():
+            raise ValueError("Scheme doesn't exist")
+        
+        df = self.content.loc[:,[self.content.columns[0],s]].dropna()
+        df.columns = ["text","labels"]
+        return df
 
     def save_data(self) -> None:
         """
