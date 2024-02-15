@@ -87,7 +87,7 @@ class SimpleModelModel(BaseModel):
 class BertModelModel(BaseModel):
     name:str
     col_label:str
-    model_name:str = "microsoft/Multilingual-MiniLM-L12-H384"
+    model:str = "microsoft/Multilingual-MiniLM-L12-H384"
     params:dict = {}
     test_size:float = 0.2
     #df:DataFrame = DataFrame()

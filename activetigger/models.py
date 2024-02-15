@@ -17,7 +17,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score
 from datamodels import BertModelModel
-import concurrent.futures
+from multiprocessing import Process
+
+logging.basicConfig(filename = "log",
+                            format='%(asctime)s %(message)s',
+                            encoding='utf-8', level=logging.DEBUG)
 
 class BertModel():
     """
@@ -55,68 +59,97 @@ class BertModel():
         self.available = ["microsoft/Multilingual-MiniLM-L12-H384",
                           "almanach/camembert-base"]
         # temporary (all available models)
-        self.trained:list = os.listdir(self.path)
+        self.status:str|None = None
+        self.trained:list = os.listdir(self.path) #pour le moment pas de gestion
 
-        """
-            async def start_training(self, content:BertModelModel):
-
-                params = {
-                    "name":content.name
-                    "df":self
-                }
-
-                with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
-                    p = executor.submit(self.train_bert, content)
-                    r = p.result()
-                return {"error":"Pas encore implémenté"}
-        """    
-
-    def train_bert(self,
+    def start_training_process(self,
                name:str,
                df:DataFrame,
                col_text:str,
                col_label:str,
-               model_name:str,
+               model:str,
                params:dict,
                test_size:float):
         """
-    Train a bert modem
+        Manage the training of a model
+        """
+
+        # Set default parameters if needed
+        if len(params) == 0:
+            params = self.params_default
+
+        # Launch as a independant process
+        args = {
+                "path":self.path,
+                "name":name,
+                "df":df,
+                "col_label":col_label,
+                "col_text":col_text,
+                "model":model,
+                "params":params,
+                "test_size":test_size
+                }
+        #self.train_bert(**args)
+        process = Process(target=self.train_bert, 
+                          kwargs = args)
+        process.start()
+        
+        # statut de l'objet BERT (à voir si on garde)
+        self.name = name
+        self.model_name = model
+        self.status = "training"
+
+        return process
+
+    def train_bert(self,
+               path:Path,
+               name:str,
+               df:DataFrame,
+               col_text:str,
+               col_label:str,
+               model:str,
+               params:dict,
+               test_size:float):
+        """
+    Train a bert model and write it
+
     Parameters:
     ----------
+    path (Path): path to save the files
     name (str): name of the model
     df (DataFrame): labelled data
     col_text (str): text column
     col_label (str): label column
-    model_name (str): model to use
+    model (str): model to use
     params (dict) : training parameters
+    test_size (dict): train/test distribution
     """
-        self.name = name
-        self.model_name = model_name
 
-        #  create repertory
-        current_path = self.path / self.name
+        # pour le moment fichier status.log existe tant que l'entrainement est en cours
+
+        #  create repertory for the specific model
+        current_path = path / name
         if not current_path.exists():
             os.mkdir(current_path)
 
-        # default parameters
-        if len(params) == 0:
-            self.params = self.params_default
-            params = self.params
-
-        logging.basicConfig(filename='predict.log',
-                            format='%(asctime)s %(message)s',
-                            encoding='utf-8', level=logging.DEBUG)
-        logging.info(f"Start training {self.model_name}")
+        # logging the process
+        log_path = current_path / "status.log"
+        logger = logging.getLogger('train_bert_model')
+        file_handler = logging.FileHandler(log_path)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.info(f"Start {model}")
 
         # test labels missing values
         if df[col_label].isnull().sum() > 0:
             df = df[df[col_label].notnull()]
-            print(f"Missing labels - reducing training data to {len(df)}")
+            logger.info(f"Missing labels - reducing training data to {len(df)}")
 
         # test empty texts
         if df[col_text].isnull().sum() > 0:
             df = df[df[col_text].notnull()]
-            print(f"Missing texts - reducing training data to {len(df)}")
+            logger.info(f"Missing texts - reducing training data to {len(df)}")
 
         # formatting data
         labels = sorted(list(df[col_label].dropna().unique())) # alphabetical order
@@ -126,24 +159,27 @@ class BertModel():
         df["text"] = df[col_text]
         df = datasets.Dataset.from_pandas(df[["text", "labels"]])
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model)
 
         # Tokenize
         print()
         if params["adapt"]:
-            df = df.map(lambda e: self.tokenizer(e['text'], truncation=True, padding=True, max_length=512), batched=True)
+            df = df.map(lambda e: tokenizer(e['text'], truncation=True, padding=True, max_length=512), batched=True)
         else:
-            df = df.map(lambda e: self.tokenizer(e['text'], truncation=True, padding="max_length", max_length=512), batched=True)
+            df = df.map(lambda e: tokenizer(e['text'], truncation=True, padding="max_length", max_length=512), batched=True)
 
         # Build test dataset
         df = df.train_test_split(test_size=test_size) #stratify_by_column="label"
-        logging.info(f"Train/test dataset created")
+        logger.info(f"Train/test dataset created")
 
         # Model
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, 
+        bert = AutoModelForSequenceClassification.from_pretrained(model, 
                                                                 num_labels = len(labels),
                                                                 id2label = id2label,
                                                                 label2id = label2id)
+        
+        logger.info(f"Model loaded")
+
         if (params["gpu"]):
             self.model.cuda()
 
@@ -171,21 +207,26 @@ class BertModel():
             metric_for_best_model="eval_loss"
             )
         
-        print(len(df),len(df["train"]),len(df["test"]))
-        logging.info(f"Start training")
-        trainer = Trainer(model=self.model, 
+        logger.info(f"Start training")
+
+        class CustomLoggingCallback(TrainerCallback):
+            def on_step_end(self, args, state, control, **kwargs):
+                logger.info(f"Step {state.global_step}")
+
+        trainer = Trainer(model=bert, 
                          args=training_args, 
                          train_dataset=df["train"], 
-                         eval_dataset=df["test"])
+                         eval_dataset=df["test"],
+                         callbacks=[CustomLoggingCallback()])
         trainer.train()
 
         # save model
-        self.model.save_pretrained(current_path)
-        self.trained.append(self.name)
-        logging.info(f"Model saved {current_path}")
+        bert.save_pretrained(current_path)
+        logger.info(f"Model trained {current_path}")
 
-        # remove intermediate steps
+        # remove intermediate steps and logs if succeed
         shutil.rmtree(current_path / "train")
+        os.rename(log_path, current_path / "finished")
 
         return True
 

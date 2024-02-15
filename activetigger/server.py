@@ -45,7 +45,8 @@ class Server(Session):
         logging.info("Starting server")
 
         self.projects: dict = {}
-        self.time_start = datetime.now()
+        self.time_start:datetime = datetime.now()
+        self.processes:list = []
 
         if not self.db.exists():
             logging.info("Creating database")

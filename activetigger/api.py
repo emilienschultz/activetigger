@@ -4,6 +4,9 @@ from typing import Annotated
 from datamodels import ParamsModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
+import time
+from multiprocessing import Process
+
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -271,23 +274,22 @@ async def get_bert(project: Annotated[Project, Depends(get_project)]):
     """
     return {"error":"Pas implémenté"}#project.bertmodel.get_params()
 
-
 @app.post("/models/bert", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
                      bert:BertModelModel):
     """ 
     Compute bertmodel
     """
-    # add content (put it inside bert ?)
-    df = project.schemes.get_annotations(bert.col_label)
-
-    project.bertmodel.train_bert(name = bert.name,
-                                 df = df,
-                                 col_label = df.columns[0],
-                                 col_text = df.columns[1],
-                                 model_name = bert.model_name,
+    df = project.schemes.get_scheme_data(bert.col_label) #move it elswhere ?
+    p = project.bertmodel.start_training_process(name = bert.name,
+                                 df=df,
+                                 col_text=df.columns[0],
+                                 col_label=df.columns[1],
+                                 model=bert.model,
                                  params = bert.params,
-                                 test_size = bert.test_size)
-    
-    return {"success":"bert trained"}
+                                 test_size=bert.test_size)
+    server.processes.append(p)
+    return {"success":"bert under training"}
 
+    
+# add route to test the status of the training
