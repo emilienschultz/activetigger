@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
+from pandas import DataFrame
 
 class Action(str, Enum):
     delete = "delete"
@@ -79,8 +80,16 @@ class RegexModel(BaseModel):
 
 class SimpleModelModel(BaseModel):
     features:list
-    current:str
-    params:dict
+    model:str
+    params:dict|None
+    scheme:str
 
 class BertModelModel(BaseModel):
     name:str
+    col_label:str
+    model:str = "microsoft/Multilingual-MiniLM-L12-H384"
+    params:dict = {}
+    test_size:float = 0.2
+    #df:DataFrame = DataFrame()
+    #col_text:str|None = None
+    

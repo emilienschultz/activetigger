@@ -4,7 +4,9 @@ from typing import Annotated
 from datamodels import ParamsModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
-import json
+import time
+from multiprocessing import Process
+
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -76,6 +78,18 @@ async def get_params(project_name:str = Form(),
 # Routes
 # ------
 
+
+# Projects management
+#--------------------
+
+@app.get("/state/{project_name}", dependencies=[Depends(verified_user)])
+async def get_state(project: Annotated[Project, Depends(get_project)]):
+    """
+    Get state of a project
+    TODO: a datamodel
+    """
+    return project.get_state()
+
 @app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
 async def info_project(project_name:str = None):
     """
@@ -89,139 +103,6 @@ async def info_all_projects():
     Get all available projects
     """
     return {"existing projects":server.existing_projects()}
-
-@app.get("/element", dependencies=[Depends(verified_user)])
-async def get_element(id:str, 
-                      project: Annotated[Project, Depends(get_project)],
-                      response_model=ElementModel) -> ElementModel:
-    """
-    Get specific element
-    """
-    try:
-        e = ElementModel(**project.get_element(id))
-        return e
-    except: # gérer la bonne erreur
-        raise HTTPException(status_code=404, detail="Element not found")
-
-
-@app.get("/schemes/{project_name}", dependencies=[Depends(verified_user)])
-async def get_schemes(project: Annotated[Project, Depends(get_project)]) -> SchemesModel:
-        """
-        Available scheme of a project
-        """
-        return project.schemes.get()
-
-
-@app.get("/annotation/next", dependencies=[Depends(verified_user)])
-async def get_next(project: Annotated[Project, Depends(get_project)],
-                   scheme:str,
-                   mode:str = "deterministic",
-                   on:str = "untagged") -> ElementModel:
-    """
-    Get next element
-    """
-    e = project.get_next(scheme = scheme,
-                         mode = mode,
-                         on = on)
-        
-    return ElementModel(**e)
-
-@app.get("/state/{project_name}", dependencies=[Depends(verified_user)])
-async def get_state(project: Annotated[Project, Depends(get_project)]):
-    """
-    Get state of a project
-    TODO: a datamodel
-    """
-    return project.get_state()
-
-@app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
-    """
-    Simplemodel parameters
-    """
-    return project.simplemodel.get_params()
-
-
-@app.get("/models/bert", dependencies=[Depends(verified_user)])
-async def get_bert(project: Annotated[Project, Depends(get_project)]):
-    """
-    bert parameters
-    """
-    return project.bertmodel.get_params()
-
-
-# ----- POST -----
-
-@app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
-async def post_schemes(action:Action,
-                          project: Annotated[Project, Depends(get_project)],
-                          scheme:SchemeModel):
-    """
-    Add, Update or Delete scheme
-    """
-    if action == "add":
-        r = project.schemes.add_scheme(scheme)
-        return r
-    if action == "delete":
-        r = project.schemes.delete_scheme(scheme)
-        return r
-    if action == "update":
-        r = project.schemes.update_scheme(scheme)
-        return r
-    
-    return {"error":"wrong route"}
-        
-
-@app.post("/annotation/{action}", dependencies=[Depends(verified_user)])
-async def post_annotation(action:Action,
-                          project: Annotated[Project, Depends(get_project)],
-                          annotation:AnnotationModel):
-    """
-    Add, Update, Delete annotations
-    """
-    if action in ["add","update"]:
-        if annotation.tag is None:
-            raise HTTPException(status_code=422, 
-                detail="Missing a tag")
-        return project.schemes.push_tag(annotation.element_id, 
-                                        annotation.tag, 
-                                        annotation.scheme
-                                        )
-    if action == "delete":
-        project.schemes.delete_tag(annotation.element_id, 
-                                   annotation.scheme
-                                   )
-        return {"success":"label deleted"}
-
-@app.post("/features/regex", dependencies=[Depends(verified_user)])
-async def post_regex(project: Annotated[Project, Depends(get_project)],
-                          regex:RegexModel):
-    r = project.add_regex(regex.name,regex.value)
-    return r
-
-@app.post("/features/delete", dependencies=[Depends(verified_user)])
-async def delete_feature(project: Annotated[Project, Depends(get_project)],
-                     name:str):
-    r = project.features.delete(name)
-    return r
-
-@app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
-                     simplemodel:SimpleModelModel):
-    """
-    Compute simplemodel
-    """
-    r = project.update_simplemodel(simplemodel)
-    return r
-
-@app.post("/models/bert", dependencies=[Depends(verified_user)])
-async def post_bert(project: Annotated[Project, Depends(get_project)],
-                     bertmodel:BertModelModel):
-    """ 
-    Compute bertmodel
-    """
-    r = project.bertmodel.start_training(bertmodel)
-    return r
 
 @app.post("/project/new", dependencies=[Depends(verified_user)])
 async def new_project(project: Annotated[ParamsModel, Depends(get_params)],
@@ -248,3 +129,167 @@ async def new_project(project: Annotated[ParamsModel, Depends(get_params)],
 
     return project
     #return {"success":"project created"}
+
+
+# Annotation management
+#--------------------
+
+@app.get("/element", dependencies=[Depends(verified_user)])
+async def get_element(id:str, 
+                      project: Annotated[Project, Depends(get_project)],
+                      response_model=ElementModel) -> ElementModel:
+    """
+    Get specific element
+    """
+    try:
+        e = ElementModel(**project.get_element(id))
+        return e
+    except: # gérer la bonne erreur
+        raise HTTPException(status_code=404, detail="Element not found")
+    
+
+@app.post("/annotation/{action}", dependencies=[Depends(verified_user)])
+async def post_annotation(action:Action,
+                          project: Annotated[Project, Depends(get_project)],
+                          annotation:AnnotationModel):
+    """
+    Add, Update, Delete annotations
+    """
+    if action in ["add","update"]:
+        if annotation.tag is None:
+            raise HTTPException(status_code=422, 
+                detail="Missing a tag")
+        return project.schemes.push_tag(annotation.element_id, 
+                                        annotation.tag, 
+                                        annotation.scheme
+                                        )
+    if action == "delete":
+        project.schemes.delete_tag(annotation.element_id, 
+                                   annotation.scheme
+                                   )
+        return {"success":"label deleted"}
+    
+
+# Schemes management
+#-------------------
+
+
+@app.get("/schemes/{project_name}", dependencies=[Depends(verified_user)])
+async def get_schemes(project: Annotated[Project, Depends(get_project)]) -> SchemesModel:
+        """
+        Available scheme of a project
+        """
+        return project.schemes.get()
+
+
+@app.get("/annotation/next", dependencies=[Depends(verified_user)])
+async def get_next(project: Annotated[Project, Depends(get_project)],
+                   scheme:str,
+                   mode:str = "deterministic",
+                   on:str = "untagged") -> ElementModel:
+    """
+    Get next element
+    """
+    e = project.get_next(scheme = scheme,
+                         mode = mode,
+                         on = on)
+        
+    return ElementModel(**e)
+
+
+@app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
+async def post_schemes(action:Action,
+                          project: Annotated[Project, Depends(get_project)],
+                          scheme:SchemeModel):
+    """
+    Add, Update or Delete scheme
+    """
+    if action == "add":
+        r = project.schemes.add_scheme(scheme)
+        return r
+    if action == "delete":
+        r = project.schemes.delete_scheme(scheme)
+        return r
+    if action == "update":
+        r = project.schemes.update_scheme(scheme)
+        return r
+    
+    return {"error":"wrong route"}
+
+
+# Features management
+#--------------------
+
+@app.get("/features/{project_name}", dependencies=[Depends(verified_user)])
+async def get_features(project: Annotated[Project, Depends(get_project)]):
+        """
+        Available scheme of a project
+        """
+        return {"features":list(project.features.map.keys())}
+
+@app.post("/features/regex", dependencies=[Depends(verified_user)])
+async def post_regex(project: Annotated[Project, Depends(get_project)],
+                          regex:RegexModel):
+    r = project.add_regex(regex.name,regex.value)
+    return r
+
+
+@app.post("/features/embeddings/{name}", dependencies=[Depends(verified_user)])
+async def post_embeddings(project: Annotated[Project, Depends(get_project)],
+                          name:str):
+    r = project.compute_embeddings(name)
+    return r
+
+@app.post("/features/delete", dependencies=[Depends(verified_user)])
+async def delete_feature(project: Annotated[Project, Depends(get_project)],
+                     name:str):
+    r = project.features.delete(name)
+    return r
+
+
+# Models management
+#------------------
+
+@app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
+async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
+    """
+    Simplemodel parameters
+    """
+    return project.simplemodel.get_params()
+
+
+@app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
+async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
+                           simplemodel:SimpleModelModel):
+    """
+    Compute simplemodel
+    """
+    r = project.update_simplemodel(simplemodel)
+    return r
+
+@app.get("/models/bert", dependencies=[Depends(verified_user)])
+async def get_bert(project: Annotated[Project, Depends(get_project)]):
+    """
+    bert parameters
+    """
+    return {"error":"Pas implémenté"}#project.bertmodel.get_params()
+
+@app.post("/models/bert", dependencies=[Depends(verified_user)])
+async def post_bert(project: Annotated[Project, Depends(get_project)],
+                     bert:BertModelModel):
+    """ 
+    Compute bertmodel
+    """
+    df = project.schemes.get_scheme_data(bert.col_label) #move it elswhere ?
+    p = project.bertmodel.start_training_process(name = bert.name,
+                                 df=df,
+                                 col_text=df.columns[0],
+                                 col_label=df.columns[1],
+                                 model=bert.model,
+                                 params = bert.params,
+                                 test_size=bert.test_size)
+    server.processes.append(p)
+    return {"success":"bert under training"}
+
+    
+# add route to test the status of the training

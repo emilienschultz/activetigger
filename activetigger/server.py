@@ -8,9 +8,8 @@ import pyarrow.parquet as pq # type: ignore
 import json
 import functions
 from models import SimpleModel, BertModel
-from datamodels import ParamsModel, SchemesModel, SchemeModel, SimpleModelModel, BertModelModel
+from datamodels import ParamsModel, SchemesModel, SchemeModel, SimpleModelModel
 from pandas import DataFrame, Series
-from pydantic import BaseModel
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
 import shutil
@@ -46,7 +45,8 @@ class Server(Session):
         logging.info("Starting server")
 
         self.projects: dict = {}
-        self.time_start = datetime.now()
+        self.time_start:datetime = datetime.now()
+        self.processes:list = []
 
         if not self.db.exists():
             logging.info("Creating database")
@@ -90,8 +90,32 @@ class Server(Session):
         '''
         cursor.execute(create_table_sql)
 
-        # TODO : History table
-        # TODO : Users table
+        # Annotation history table
+        create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS annotations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                action TEXT,
+                user TEXT,
+                project TEXT,
+                element_id,
+                scheme TEXT,
+                tag TEXT
+            )
+        '''
+        cursor.execute(create_table_sql)
+
+        # User table
+        create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user TEXT,
+                key TEXT,
+                projects TEXT
+                  )
+        '''
+        cursor.execute(create_table_sql)
 
         conn.commit()
         conn.close()
@@ -253,16 +277,14 @@ class Project(Session):
                                         self.params.dir / self.labels_file) #type: ignore
         self.features: Features = Features(project_name,
                                            self.params.dir / self.features_file) #type: ignore
-        self.bertmodel: BertModel = BertModel(self.params.dir) #type: ignore
+        self.bertmodel: BertModel = BertModel(self.params.dir)
         self.simplemodel: SimpleModel = SimpleModel()
 
         # Compute features if requested
         if ("sbert" in self.params.embeddings) & (not "sbert" in self.features.map):
-            self.features.add("sbert",
-                              self.compute_embeddings(emb="sbert"))
+            self.compute_embeddings(emb="sbert")
         if ("fasttext" in self.params.embeddings) & (not "fasttext" in self.features.map):
-            self.features.add("fasttext",
-                              self.compute_embeddings(emb="fasttext"))
+            self.compute_embeddings(emb="fasttext")
 
     def load_params(self, project_name:str) -> ParamsModel:
         """
@@ -281,25 +303,27 @@ class Project(Session):
         else:
             raise NameError(f"{project_name} does not exist.")
 
-
     def compute_embeddings(self,
-                           emb:str) -> DataFrame:
+                           emb:str) -> dict:
         """
         Compute embeddings
-        TODO : async ?
+        TODO : ASYNC TO TEST HERE
         """
         print("start compute embeddings ",emb, self.content.shape)
         if emb == "fasttext":
             emb_fasttext = functions.to_fasttext(self.content[self.params.col_text])
-            return emb_fasttext
+            self.features.add("fasttext", emb_fasttext)
+            return {"success":"fasttext embeddings computed"}
         if emb == "sbert":
             emb_sbert = functions.to_sbert(self.content[self.params.col_text])
-            return emb_sbert
+            self.features.add("sbert", emb_sbert)
+            return {"success":"sbert embeddings computed"}
         raise NameError(f"{emb} does not exist.")
     
     def fit_simplemodel(self,
                         model:str,
                         features:list|str,
+                        scheme:str,
                         model_params: None|dict = None
                         ) -> SimpleModel:
         """
@@ -309,7 +333,7 @@ class Project(Session):
         # build the dataset with label + predictors
 
         df_features = self.features.get(features)
-        col_label = self.schemes.col
+        col_label = self.schemes.col_name(scheme)
         col_predictors = df_features.columns
         data = pd.concat([self.schemes.content[col_label],
                           df_features],
@@ -327,8 +351,9 @@ class Project(Session):
         if simplemodel.features is None or len(simplemodel.features)==0:
             return {"error":"no features"}
         self.simplemodel = self.fit_simplemodel(
-                                model=simplemodel.current,
+                                model=simplemodel.model,
                                 features=simplemodel.features,
+                                scheme=simplemodel.scheme,
                                 model_params=simplemodel.params
                                 )
         return {"success":"new simplemodel"}
@@ -362,7 +387,8 @@ class Project(Session):
             if self.simplemodel.name is None: # if no model, build default
                 print("Build default simple model")
                 self.simplemodel = self.fit_simplemodel(model = "liblinear",
-                                                        features = "all"
+                                                        features = "all",
+                                                        scheme=self.schemes.name
                                                         )
             if tag is None: # default label to first
                 tag = self.schemes.labels[0] #type: ignore
@@ -550,14 +576,33 @@ class Schemes(Session):
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
 
+    def get_scheme_data(self, s:str) -> DataFrame:
+        """
+        Get dataframe of a scheme
+
+        Comment : first column is the text
+        """
+        if not s in self.available():
+            raise ValueError("Scheme doesn't exist")
+        
+        df = self.content.loc[:,[self.content.columns[0],s]].dropna()
+        df.columns = ["text","labels"]
+        return df
+
     def save_data(self) -> None:
         """
         Save the element to file
         """
         self.content.to_parquet(self.path)
 
-    def col_name(self):
-        return self.name
+    def col_name(self, s = None):
+        """
+        Association name - column
+        (for the moment 1 - 1)
+        """
+        if not s:
+            return self.name
+        return s
 
     def select(self, name) -> None:
         """
@@ -663,7 +708,8 @@ class Schemes(Session):
                             current = self.name, #type: ignore
                             availables=self.available()
                             )
-    
+
+
     def delete_tag(self, 
                    element_id:str,
                    scheme:str) -> bool:
@@ -674,9 +720,10 @@ class Schemes(Session):
         return True
 
     def push_tag(self,
-                  element_id:str, 
-                  tag:str,
-                  scheme:str = "current"):
+                 element_id:str, 
+                 tag:str,
+                 scheme:str = "current",
+                 user:str = "user"):
         """
         Record a tag
         """
@@ -692,10 +739,27 @@ class Schemes(Session):
         # TODO : test if the tag is in in the tags
 
         if not self.content.loc[element_id, scheme] is None:
-            self.content.loc[element_id, scheme] = tag
-            self.save_data()
-            return {"success":"tag updated"}
+            r = {"success":"tag updated"}
         else:
-            self.content.loc[element_id, scheme] = tag
-            self.save_data()
-            return {"success":"tag added"}
+            r = {"success":"tag added"}
+        self.content.loc[element_id, scheme] = tag
+        self.log_action("add", user, element_id, self.name, tag)
+        self.save_data()
+        return r
+
+    def log_action(self, 
+                   action:str, 
+                   user:str, 
+                   element_id:str,
+                   scheme:str, 
+                   tag:str) -> bool:
+        """
+        Add annotation log
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "INSERT INTO annotations (action, user, project, element_id, scheme, tag) VALUES (?, ?, ?, ?, ?, ?)"
+        cursor.execute(query, (action, user, self.project_name, element_id, scheme, tag))
+        conn.commit()
+        conn.close()
+        return True

@@ -17,6 +17,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score
 from datamodels import BertModelModel
+from multiprocessing import Process
+
+logging.basicConfig(filename = "log",
+                            format='%(asctime)s %(message)s',
+                            encoding='utf-8', level=logging.DEBUG)
 
 class BertModel():
     """
@@ -25,7 +30,6 @@ class BertModel():
     TODO : metrics
     TODO : tests
     TODO : logs
-
     """
 
     def __init__(self, path:Path) -> None:
@@ -55,73 +59,127 @@ class BertModel():
         self.available = ["microsoft/Multilingual-MiniLM-L12-H384",
                           "almanach/camembert-base"]
         # temporary (all available models)
-        self.trained:list = os.listdir(self.path)
+        self.status:str|None = None
+        self.trained:list = os.listdir(self.path) #pour le moment pas de gestion
 
-    def start_training(self, content:BertModelModel):
-        """
-        Manage initiating request
-        """
-        return {"error":"Pas encore implémenté"}
-
-    def train_bert(self,
+    def start_training_process(self,
                name:str,
                df:DataFrame,
                col_text:str,
                col_label:str,
-               model_name:str = "microsoft/Multilingual-MiniLM-L12-H384",
-               params:dict = {},
-               test_size:float = 0.2):
+               model:str,
+               params:dict,
+               test_size:float):
         """
-    Train a bert modem
+        Manage the training of a model
+        """
+
+        # Set default parameters if needed
+        if len(params) == 0:
+            params = self.params_default
+
+        # Launch as a independant process
+        args = {
+                "path":self.path,
+                "name":name,
+                "df":df,
+                "col_label":col_label,
+                "col_text":col_text,
+                "model":model,
+                "params":params,
+                "test_size":test_size
+                }
+        #self.train_bert(**args)
+        process = Process(target=self.train_bert, 
+                          kwargs = args)
+        process.start()
+        
+        # statut de l'objet BERT (à voir si on garde)
+        self.name = name
+        self.model_name = model
+        self.status = "training"
+
+        return process
+
+    def train_bert(self,
+               path:Path,
+               name:str,
+               df:DataFrame,
+               col_text:str,
+               col_label:str,
+               model:str,
+               params:dict,
+               test_size:float):
+        """
+    Train a bert model and write it
+
     Parameters:
     ----------
+    path (Path): path to save the files
     name (str): name of the model
     df (DataFrame): labelled data
     col_text (str): text column
     col_label (str): label column
-    model_name (str): model to use
+    model (str): model to use
     params (dict) : training parameters
+    test_size (dict): train/test distribution
     """
-        self.name = name
-        self.model_name = model_name
-        
-        if len(params) == 0:
-            self.params = self.params_default
-            params = self.params
 
-        current_path = self.path / self.name
+        # pour le moment fichier status.log existe tant que l'entrainement est en cours
+
+        #  create repertory for the specific model
+        current_path = path / name
         if not current_path.exists():
             os.mkdir(current_path)
 
-        logging.basicConfig(filename='predict.log',
-                            format='%(asctime)s %(message)s',
-                            encoding='utf-8', level=logging.DEBUG)
-        logging.info(f"Start training {self.model_name}")
+        # logging the process
+        log_path = current_path / "status.log"
+        logger = logging.getLogger('train_bert_model')
+        file_handler = logging.FileHandler(log_path)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.info(f"Start {model}")
 
-        labels = sorted(list(df[col_label].unique())) # alphabetical order
+        # test labels missing values
+        if df[col_label].isnull().sum() > 0:
+            df = df[df[col_label].notnull()]
+            logger.info(f"Missing labels - reducing training data to {len(df)}")
+
+        # test empty texts
+        if df[col_text].isnull().sum() > 0:
+            df = df[df[col_text].notnull()]
+            logger.info(f"Missing texts - reducing training data to {len(df)}")
+
+        # formatting data
+        labels = sorted(list(df[col_label].dropna().unique())) # alphabetical order
         label2id = {j:i for i,j in enumerate(labels)}
         id2label = {i:j for i,j in enumerate(labels)}
         df["labels"] = df[col_label].copy().replace(label2id)
         df["text"] = df[col_text]
         df = datasets.Dataset.from_pandas(df[["text", "labels"]])
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model)
+
         # Tokenize
         print()
         if params["adapt"]:
-            df = df.map(lambda e: self.tokenizer(e['text'], truncation=True, padding=True, max_length=512), batched=True)
+            df = df.map(lambda e: tokenizer(e['text'], truncation=True, padding=True, max_length=512), batched=True)
         else:
-            df = df.map(lambda e: self.tokenizer(e['text'], truncation=True, padding="max_length", max_length=512), batched=True)
+            df = df.map(lambda e: tokenizer(e['text'], truncation=True, padding="max_length", max_length=512), batched=True)
 
         # Build test dataset
         df = df.train_test_split(test_size=test_size) #stratify_by_column="label"
-        logging.info(f"Train/test dataset created")
+        logger.info(f"Train/test dataset created")
 
         # Model
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, 
+        bert = AutoModelForSequenceClassification.from_pretrained(model, 
                                                                 num_labels = len(labels),
                                                                 id2label = id2label,
                                                                 label2id = label2id)
+        
+        logger.info(f"Model loaded")
+
         if (params["gpu"]):
             self.model.cuda()
 
@@ -149,20 +207,26 @@ class BertModel():
             metric_for_best_model="eval_loss"
             )
         
-        logging.info(f"Start training")
-        trainer = Trainer(model=self.model, 
+        logger.info(f"Start training")
+
+        class CustomLoggingCallback(TrainerCallback):
+            def on_step_end(self, args, state, control, **kwargs):
+                logger.info(f"Step {state.global_step}")
+
+        trainer = Trainer(model=bert, 
                          args=training_args, 
                          train_dataset=df["train"], 
-                         eval_dataset=df["test"])
+                         eval_dataset=df["test"],
+                         callbacks=[CustomLoggingCallback()])
         trainer.train()
 
         # save model
-        self.model.save_pretrained(current_path)
-        self.trained.append(self.name)
-        logging.info(f"Model saved {current_path}")
+        bert.save_pretrained(current_path)
+        logger.info(f"Model trained {current_path}")
 
-        # remove intermediate steps
+        # remove intermediate steps and logs if succeed
         shutil.rmtree(current_path / "train")
+        os.rename(log_path, current_path / "finished")
 
         return True
 
@@ -245,8 +309,10 @@ class BertModel():
 
 class SimpleModel():
     """
-    Managing simple models
-    (params/fit/predict)
+    Simple model
+    ------------
+    Comment : the simplemodel can be empty
+    to still access to parameters
     """
     def __init__(self,
                  model: str|None=None,
@@ -292,7 +358,6 @@ class SimpleModel():
                 }     
         
         self.name = model
-
         self.df = None
         self.col_label = None
         self.col_predictors = None
@@ -302,22 +367,22 @@ class SimpleModel():
         self.model = None
         self.proba = None
         self.precision = None
-        self.standardize = None
+        self.normalize = None
         self.model_params = None
 
-        # Initialize data for the simplemodel
+        # Initialize data
         if data is not None and col_predictors is not None:
             self.load_data(data, col_label, col_predictors, standardize)
 
-        if self.name is not None:
+        # Initialize model
+        if self.name in self.available_models:
             if model_params is None:
                 self.model_params = self.available_models[self.name]
             else:
                 self.model_params = model_params
-
-        # Train model on the data
-        if self.name in self.available_models:
-            self.model_params = model_params
+        
+        # Fit model if everything available
+        if (not self.X is None) & (not self.Y is None) & (not self.name is None):
             self.fit_model()
 
     def __repr__(self) -> str:
@@ -332,24 +397,25 @@ class SimpleModel():
         # For the moment remove missing predictors
         self.col_label = col_label
         self.col_predictors = col_predictors
-        self.standardize = standardize
+        self.normalize = standardize
 
-        f_na = data[self.col_predictors].isna().sum(axis=1)>0        
+        f_na = data[self.col_predictors].isna().sum(axis=1)>0      
         if f_na.sum()>0:
             print(f"There is {f_na.sum()} predictor rows with missing values")
 
+        # normalize data
         if standardize:
             df_pred = self.standardize(data[~f_na][self.col_predictors])
         else:
             df_pred = data[~f_na][self.col_predictors]
 
+        # create global dataframe
         self.df = pd.concat([data[~f_na][self.col_label],df_pred],axis=1)
     
         # data for training
         f_label = self.df[self.col_label].notnull()
         self.Y = self.df[f_label][self.col_label]
         self.X = self.df[f_label][self.col_predictors]
-
         self.labels = self.Y.unique()
 
     def fit_model(self):
@@ -366,7 +432,7 @@ class SimpleModel():
         if self.name == "lasso":
             self.model = LogisticRegression(penalty="l1",
                                             solver="liblinear",
-                                            C = self.model_params["lasso_params"])
+                                            C = self.model_params["C"])
         """
         if self.name == "naivebayes":
             if not "distribution" in self.model_params:
@@ -424,15 +490,6 @@ class SimpleModel():
         self.proba = pd.DataFrame(self.predict_proba(self.df[self.col_predictors]),
                                  columns = self.model.classes_)
         self.precision = self.compute_precision()
-
-    def update(self,content):
-        """
-        Update the model
-        """
-        self.name = content["current"]
-        self.model_params = content["parameters"]
-        self.fit_model()
-        return True
 
     def standardize(self,df):
         """
