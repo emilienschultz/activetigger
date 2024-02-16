@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form
 import logging
 from typing import Annotated
-from datamodels import ParamsModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
+from datamodels import ProjectModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import time
@@ -31,11 +31,12 @@ logging.basicConfig(filename='log.log',
 server = Server()
 app = FastAPI()
 
+
 # ------------
 # Dependencies
 # ------------
 
-async def get_project(project_name: str) -> ParamsModel:
+async def get_project(project_name: str) -> ProjectModel:
     """
     Fetch existing project associated with the request
     """
@@ -58,21 +59,6 @@ async def verified_user(x_token: Annotated[str, Header()]):
     # Cookie ou header ?
     if False:
         raise HTTPException(status_code=400, detail="Invalid user")    
-
-async def get_params(project_name:str = Form(),
-                     col_text:str = Form("text"),
-                     n_rows:int = Form(2000),
-                     col_tags:str = Form(None),
-                     embeddings:list = Form([])) -> ParamsModel:
-    """
-    Collect form data to project params
-    """
-    p = ParamsModel(project_name=project_name,
-                    col_text = col_text,
-                    n_rows=n_rows,
-                    col_tags=col_tags,
-                    embeddings=embeddings)
-    return p
 
 # ------
 # Routes
@@ -104,16 +90,40 @@ async def info_all_projects():
     """
     return {"existing projects":server.existing_projects()}
 
-@app.post("/project/new", dependencies=[Depends(verified_user)])
-async def new_project(project: Annotated[ParamsModel, Depends(get_params)],
-                      file: UploadFile = File(),
-                      ) -> ParamsModel:
+#async def new_project(project: Annotated[ProjectModel, Depends(get_params)],
+@app.post("/projects/new", dependencies=[Depends(verified_user)])
+async def new_project(
+                      file: Annotated[UploadFile, File()],
+                      project_name:str = Form(),
+                      col_text:str = Form(),
+                      col_id:str = Form(None),
+                      n_rows:int = Form(None),
+                      embeddings:list = Form(None),
+                      n_skip:int = Form(None),
+                      langage:str = Form(None),
+                      col_tags:str = Form(None),
+                      cols_context:list = Form(None)
+                      ) -> ProjectModel:
     """
     Load new project
-    Parameters:
         file (file)
-        n_rows (int)
+        multiple parameters
+    PAS LA SOLUTION LA PLUS JOLIE
+    https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
+
     """
+
+    # removing None parameters
+    params_in = {"project_name":project_name,"col_text":col_text,
+              "col_id":col_id,"n_rows":n_rows,"embeddings":embeddings,
+              "n_skip":n_skip,"langage":langage,"col_tags":col_tags,
+              "cols_context":cols_context}
+    params_out = params_in.copy()
+    for i in params_in:
+        if params_in[i] is None:
+            del params_out[i]
+
+    project = ProjectModel(**params_out)
 
     # For the moment, only csv
     if not file.filename.endswith('.csv'):
@@ -130,14 +140,45 @@ async def new_project(project: Annotated[ParamsModel, Depends(get_params)],
     return project
     #return {"success":"project created"}
 
+@app.post("/projects/delete", dependencies=[Depends(verified_user)])
+async def delete_project(project_name:str):
+    """
+    Delete a project
+    """
+    r = server.delete_project(project_name)
+    return r
+
 
 # Annotation management
 #--------------------
 
-@app.get("/element", dependencies=[Depends(verified_user)])
+@app.get("/elements/next", dependencies=[Depends(verified_user)])
+async def get_next(project: Annotated[Project, Depends(get_project)],
+                   scheme:str,
+                   mode:str = "deterministic",
+                   on:str = "untagged") -> ElementModel:
+    """
+    Get next element
+    """
+    e = project.get_next(scheme = scheme,
+                         mode = mode,
+                         on = on)
+        
+    return ElementModel(**e)
+
+@app.get("/elements/table", dependencies=[Depends(verified_user)])
+async def get_list_elements(project: Annotated[Project, Depends(get_project)],
+                            scheme:str, min:int = 0, max:int = 0,mode:str = "all",
+                        ):
+    
+    r = project.schemes.get_table_elements(scheme, min, max, mode)
+    return r
+    
+    
+
+@app.get("/elements/{id}", dependencies=[Depends(verified_user)])
 async def get_element(id:str, 
-                      project: Annotated[Project, Depends(get_project)],
-                      response_model=ElementModel) -> ElementModel:
+                      project: Annotated[Project, Depends(get_project)]) -> ElementModel:
     """
     Get specific element
     """
@@ -148,8 +189,8 @@ async def get_element(id:str,
         raise HTTPException(status_code=404, detail="Element not found")
     
 
-@app.post("/annotation/{action}", dependencies=[Depends(verified_user)])
-async def post_annotation(action:Action,
+@app.post("/tags/{action}", dependencies=[Depends(verified_user)])
+async def post_tag(action:Action,
                           project: Annotated[Project, Depends(get_project)],
                           annotation:AnnotationModel):
     """
@@ -174,33 +215,27 @@ async def post_annotation(action:Action,
 #-------------------
 
 
-@app.get("/schemes/{project_name}", dependencies=[Depends(verified_user)])
-async def get_schemes(project: Annotated[Project, Depends(get_project)]) -> SchemesModel:
+@app.get("/schemes", dependencies=[Depends(verified_user)])
+async def get_schemes(project: Annotated[Project, Depends(get_project)],
+                      scheme:str|None = None):
         """
         Available scheme of a project
         """
-        return project.schemes.get()
+        if scheme is None:
+            return project.schemes.get()
+        a = project.schemes.available()
+        if scheme in a:
+            return {"scheme":a[scheme]}
+        return {"error":"scheme not available"}
 
-
-@app.get("/annotation/next", dependencies=[Depends(verified_user)])
-async def get_next(project: Annotated[Project, Depends(get_project)],
-                   scheme:str,
-                   mode:str = "deterministic",
-                   on:str = "untagged") -> ElementModel:
-    """
-    Get next element
-    """
-    e = project.get_next(scheme = scheme,
-                         mode = mode,
-                         on = on)
-        
-    return ElementModel(**e)
 
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
-async def post_schemes(action:Action,
-                          project: Annotated[Project, Depends(get_project)],
-                          scheme:SchemeModel):
+async def post_schemes(
+                        action:Action,
+                        project: Annotated[Project, Depends(get_project)],
+                        scheme:SchemeModel
+                        ):
     """
     Add, Update or Delete scheme
     """
