@@ -1,19 +1,20 @@
-from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form
+from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form, Request
 import logging
 from typing import Annotated
 from datamodels import ProjectModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
-import time
+import functions
+import asyncio
 from multiprocessing import Process
-
+import time
+import pandas as pd
+import os
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
-
-
 
 # à terme toute demande de l'app aura les informations de la connexion
 # nom de l'utilisateur
@@ -27,10 +28,44 @@ logging.basicConfig(filename='log.log',
 #######
 # API #
 #######
-    
+
 server = Server()
 app = FastAPI()
 
+# middleware to update elements on events
+async def update():
+    """
+    Function to be executed before each request
+    """
+    print(f"Updated Value at {time.strftime('%H:%M:%S')}")
+    for p in server.projects:
+        project = server.projects[p]
+        # merge results of subprocesses
+        if (project.params.dir / "sbert.parquet").exists():
+            log = functions.log_process("sbert", project.params.dir / "log_process.log") 
+            log.info("Completing sbert computation")
+            df = pd.read_parquet(project.params.dir / "sbert.parquet")
+            project.features.add("sbert",df)
+            os.remove(project.params.dir / "sbert.parquet")
+            logging.info("SBERT embeddings added to project")
+        if (project.params.dir / "fasttext.parquet").exists():
+            log = functions.log_process("fasttext", project.params.dir / "log_process.log") 
+            log.info("Completing fasttext computation")
+            df = pd.read_parquet(project.params.dir / "fasttext.parquet")
+            project.features.add("fasttext",df)
+            os.remove(project.params.dir / "fasttext.parquet")
+            print("Adding fasttext embeddings")
+            logging.info("FASTTEXT embeddings added to project")
+
+
+@app.middleware("http")
+async def middleware(request: Request, call_next):
+    """
+    Middleware
+    """
+    await update()
+    response = await call_next(request)
+    return response
 
 # ------------
 # Dependencies
@@ -255,25 +290,63 @@ async def post_schemes(
 # Features management
 #--------------------
 
-@app.get("/features/{project_name}", dependencies=[Depends(verified_user)])
+@app.get("/features", dependencies=[Depends(verified_user)])
 async def get_features(project: Annotated[Project, Depends(get_project)]):
         """
         Available scheme of a project
         """
         return {"features":list(project.features.map.keys())}
 
-@app.post("/features/regex", dependencies=[Depends(verified_user)])
+@app.post("/features/add/regex", dependencies=[Depends(verified_user)])
 async def post_regex(project: Annotated[Project, Depends(get_project)],
                           regex:RegexModel):
     r = project.add_regex(regex.name,regex.value)
     return r
 
-
-@app.post("/features/embeddings/{name}", dependencies=[Depends(verified_user)])
+@app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           name:str):
-    r = project.compute_embeddings(name)
-    return r
+    
+    # multiple choice:
+    # [ ] use multiprocessing with future to deal with cpu-bound tasks
+    # [X] launch independant process with actualisation
+
+    log = functions.log_process(name, project.params.dir / "log_process.log") 
+    df = project.content[project.params.col_text]
+    if name == "sbert":
+        log.info("Start computing sbert")
+        args = {
+                "path":project.params.dir,
+                "texts":df,
+                "model":"distiluse-base-multilingual-cased-v1"
+                }
+        process = Process(target=functions.process_sbert, 
+                          kwargs = args)
+        process.start()
+        return {"success":"computing sbert, it could take a few minutes"}
+    if name == "fasttext":
+        log.info("Start computing fasttext")
+        args = {
+                "path":project.params.dir,
+                "texts":df,
+                "model":"/home/emilien/models/cc.fr.300.bin"
+                }
+        process = Process(target=functions.process_fasttext, 
+                          kwargs = args)
+        process.start()
+        return {"success":"computing fasttext, it could take a few minutes"}
+
+
+    #    log.info("start sbert computing")
+    #    future = server.pool.submit(functions.to_sbert,df)
+    #    def callback(x):
+    #        r = x.result()
+    #        project.features.add("sbert",r)
+    #        log.info("computing finished - adding the feature")
+    #        return True
+    #    future.add_done_callback(callback)
+    #    return {"success":"computing sbert, it could take a few minutes"}
+    return {"error":"not implemented"}
 
 @app.post("/features/delete", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],

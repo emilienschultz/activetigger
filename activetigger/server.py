@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import concurrent.futures
 from pathlib import Path
 import sqlite3
 import pandas as pd # type: ignore
@@ -32,6 +33,7 @@ class Session():
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
     data_file:str = "data.parquet"
+    n_workers = 4 #os.cpu_count()
 
 
 class Server(Session):
@@ -47,6 +49,8 @@ class Server(Session):
         self.projects: dict = {}
         self.time_start:datetime = datetime.now()
         self.processes:list = []
+        # to deal multiprocessing TODO: move to Processes ?
+        self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
 
         if not self.db.exists():
             logging.info("Creating database")
@@ -303,21 +307,31 @@ class Project(Session):
         else:
             raise NameError(f"{project_name} does not exist.")
 
-    def compute_embeddings(self,
+    async def compute_embeddings(self,
                            emb:str) -> dict:
         """
         Compute embeddings
-        TODO : ASYNC TO TEST HERE
+        TODO : AS A SUBPROCESS
         """
         print("start compute embeddings ",emb, self.content.shape)
         if emb == "fasttext":
-            emb_fasttext = functions.to_fasttext(self.content[self.params.col_text])
-            self.features.add("fasttext", emb_fasttext)
-            return {"success":"fasttext embeddings computed"}
+            f = functions.to_fasttext
+            #emb_fasttext = functions.to_fasttext(self.content[self.params.col_text])
+            #self.features.add("fasttext", emb_fasttext)
+            #return {"success":"fasttext embeddings computed"}
         if emb == "sbert":
-            emb_sbert = functions.to_sbert(self.content[self.params.col_text])
-            self.features.add("sbert", emb_sbert)
-            return {"success":"sbert embeddings computed"}
+            f = functions.to_sbert
+            #emb_sbert = functions.to_sbert(self.content[self.params.col_text])
+            #self.features.add("sbert", emb_sbert)
+            #return {"success":"sbert embeddings computed"}
+        #future = self.pool.submit(f, self.content[self.params.col_text])
+        #def call_back(future):
+        #    df = future.results()
+        #future.add_done_callback(call_back)
+        calc_emb = f(self.content[self.params.col_text])
+        self.features.add(emb, calc_emb)
+        return {"success":f"{emb} embeddings computed"}
+
         raise NameError(f"{emb} does not exist.")
     
     def fit_simplemodel(self,
