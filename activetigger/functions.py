@@ -481,6 +481,17 @@ def to_fasttext(texts: Series,
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
     return df
 
+def process_fasttext(texts: Series,
+                  path:Path,
+                  model:str = "/home/emilien/models/cc.fr.300.bin"):
+    texts_tk = tokenize(texts)
+    ft = fasttext.load_model(model)
+    emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
+    df = pd.DataFrame(emb,index=texts.index)
+    df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
+    df.to_parquet(path / "fasttext.parquet")
+
+
 def to_sbert(texts: Series, 
              model:str = "distiluse-base-multilingual-cased-v1") -> DataFrame:
     """
@@ -497,6 +508,24 @@ def to_sbert(texts: Series,
     emb = pd.DataFrame(emb,index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
     return emb
+
+def process_sbert(texts: Series,
+                  path:Path,
+                  model:str = "distiluse-base-multilingual-cased-v1"):
+    """
+    Compute sbert embedding
+    Args:
+        texts (pandas.Series): texts
+        model (str): model to use
+    Returns:
+        pandas.DataFrame: embeddings
+    """
+    sbert = SentenceTransformer(model)
+    sbert.max_seq_length = 512
+    emb = sbert.encode(list(texts))
+    emb = pd.DataFrame(emb,index=texts.index)
+    emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
+    emb.to_parquet(path / "sbert.parquet")
 
 
 ### TO REMOVE EVENTALLY
@@ -673,3 +702,14 @@ def predict(path,df,col_text = "text", gpu=False, batch = 128):
     
     return pred
     # vérifier l'ordre des labels pour éviter les soucis    
+
+def log_process(name, log_path):
+    """
+    start a log for a process
+    """
+    logger = logging.getLogger(name)
+    file_handler = logging.FileHandler(log_path)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    return logger

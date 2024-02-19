@@ -89,15 +89,15 @@ class BertModel():
                 "params":params,
                 "test_size":test_size
                 }
-        #self.train_bert(**args)
         process = Process(target=self.train_bert, 
                           kwargs = args)
         process.start()
         
-        # statut de l'objet BERT (à voir si on garde)
+        # update statut de l'objet BERT
         self.name = name
         self.model_name = model
-        self.status = "training"
+        self.status = "training" 
+        # TODO : UPDATE status when finished
 
         return process
 

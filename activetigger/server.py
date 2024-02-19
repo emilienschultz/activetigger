@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import concurrent.futures
 from pathlib import Path
 import sqlite3
 import pandas as pd # type: ignore
@@ -8,7 +9,7 @@ import pyarrow.parquet as pq # type: ignore
 import json
 import functions
 from models import SimpleModel, BertModel
-from datamodels import ParamsModel, SchemesModel, SchemeModel, SimpleModelModel
+from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
@@ -32,6 +33,7 @@ class Session():
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
     data_file:str = "data.parquet"
+    n_workers = 4 #os.cpu_count()
 
 
 class Server(Session):
@@ -47,6 +49,8 @@ class Server(Session):
         self.projects: dict = {}
         self.time_start:datetime = datetime.now()
         self.processes:list = []
+        # to deal multiprocessing TODO: move to Processes ?
+        self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
 
         if not self.db.exists():
             logging.info("Creating database")
@@ -121,7 +125,7 @@ class Server(Session):
         conn.close()
         return None
 
-    def db_get_project(self, project_name:str) -> ParamsModel|None:
+    def db_get_project(self, project_name:str) -> ProjectModel|None:
         """
         Get project from database
         """
@@ -134,7 +138,7 @@ class Server(Session):
         conn.close()
 
         if existing_project:
-            p = ParamsModel(**json.loads(existing_project[2]))
+            p = ProjectModel(**json.loads(existing_project[2]))
             return p
         else:
             return None
@@ -170,7 +174,7 @@ class Server(Session):
         self.projects[project_name] = Project(project_name)
         return True
 
-    def set_project_parameters(self, project: ParamsModel) -> dict:
+    def set_project_parameters(self, project: ProjectModel) -> dict:
         """
         Update project parameters in the DB
         """
@@ -205,8 +209,8 @@ class Server(Session):
         return True
 
     def create_project(self, 
-                       params:ParamsModel, 
-                       file:UploadFile) -> ParamsModel:
+                       params:ProjectModel, 
+                       file:UploadFile) -> ProjectModel:
         """
         Set up a new project
         - load data and save
@@ -271,7 +275,7 @@ class Project(Session):
         Load existing project
         """
         self.name: str = project_name
-        self.params: ParamsModel = self.load_params(project_name)
+        self.params: ProjectModel = self.load_params(project_name)
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file) #type: ignore
         self.schemes: Schemes = Schemes(project_name, 
                                         self.params.dir / self.labels_file) #type: ignore
@@ -286,7 +290,7 @@ class Project(Session):
         if ("fasttext" in self.params.embeddings) & (not "fasttext" in self.features.map):
             self.compute_embeddings(emb="fasttext")
 
-    def load_params(self, project_name:str) -> ParamsModel:
+    def load_params(self, project_name:str) -> ProjectModel:
         """
         Load params from database
         """
@@ -299,25 +303,35 @@ class Project(Session):
         conn.close()
 
         if existing_project:
-            return ParamsModel(**json.loads(existing_project[2]))
+            return ProjectModel(**json.loads(existing_project[2]))
         else:
             raise NameError(f"{project_name} does not exist.")
 
-    def compute_embeddings(self,
+    async def compute_embeddings(self,
                            emb:str) -> dict:
         """
         Compute embeddings
-        TODO : ASYNC TO TEST HERE
+        TODO : AS A SUBPROCESS
         """
         print("start compute embeddings ",emb, self.content.shape)
         if emb == "fasttext":
-            emb_fasttext = functions.to_fasttext(self.content[self.params.col_text])
-            self.features.add("fasttext", emb_fasttext)
-            return {"success":"fasttext embeddings computed"}
+            f = functions.to_fasttext
+            #emb_fasttext = functions.to_fasttext(self.content[self.params.col_text])
+            #self.features.add("fasttext", emb_fasttext)
+            #return {"success":"fasttext embeddings computed"}
         if emb == "sbert":
-            emb_sbert = functions.to_sbert(self.content[self.params.col_text])
-            self.features.add("sbert", emb_sbert)
-            return {"success":"sbert embeddings computed"}
+            f = functions.to_sbert
+            #emb_sbert = functions.to_sbert(self.content[self.params.col_text])
+            #self.features.add("sbert", emb_sbert)
+            #return {"success":"sbert embeddings computed"}
+        #future = self.pool.submit(f, self.content[self.params.col_text])
+        #def call_back(future):
+        #    df = future.results()
+        #future.add_done_callback(call_back)
+        calc_emb = f(self.content[self.params.col_text])
+        self.features.add(emb, calc_emb)
+        return {"success":f"{emb} embeddings computed"}
+
         raise NameError(f"{emb} does not exist.")
     
     def fit_simplemodel(self,
@@ -410,7 +424,8 @@ class Project(Session):
                 "text":self.content.loc[element_id,"text"]
                 }
 
-    def get_params(self) -> ParamsModel:
+
+    def get_params(self) -> ProjectModel:
         """
         Send parameters
         """
@@ -449,6 +464,9 @@ class Project(Session):
         """
         Add regex to features
         """
+        if name in self.features.map:
+            return {"error":"a feature already has this name"}
+
         pattern = re.compile(value)
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
         self.features.add(name,f)
@@ -588,6 +606,36 @@ class Schemes(Session):
         df = self.content.loc[:,[self.content.columns[0],s]].dropna()
         df.columns = ["text","labels"]
         return df
+    
+    def get_table_elements(self, scheme:str,
+                            min:int, max:int, 
+                            mode:str):
+        """
+        Get json data table for an interval
+        """
+        if not mode in ["tagged","untagged","all"]:
+            mode = "all"
+
+        if not scheme in self.available():
+            return {"error":"scheme not available"}
+
+        df = self.content.loc[:,[self.content.columns[0],scheme]]
+        df.columns = ["text","labels"]
+
+        if max == 0:
+            max = len(df)
+        if  max > len(df):
+            max = len(df)
+
+        if (min > len(df)):
+            return {"error":"min value too high"}
+
+        if mode == "tagged":
+            df = df[df["labels"].notnull()]
+        if mode == "untagged":
+            df = df[df["labels"].isnull()]
+
+        return df.iloc[min:max]
 
     def save_data(self) -> None:
         """
@@ -730,18 +778,22 @@ class Schemes(Session):
         if scheme == "current":
             scheme = self.col #type: ignore
 
-        if not scheme in self.available():
+        # test if the action is possible
+        a = self.available()
+        if not scheme in a:
             return {"error":"scheme unavailable"}
-        
+        if not tag in a[scheme]:
+            return {"error":"this tag doesn't belong to this scheme"}
         if not element_id in self.content.index:
             return {"error":"element doesn't exist"}
-        
-        # TODO : test if the tag is in in the tags
-
+    
+        # return message
         if not self.content.loc[element_id, scheme] is None:
             r = {"success":"tag updated"}
         else:
             r = {"success":"tag added"}
+
+        # make action
         self.content.loc[element_id, scheme] = tag
         self.log_action("add", user, element_id, self.name, tag)
         self.save_data()

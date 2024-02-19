@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from fastapi import UploadFile
 import server
-from datamodels import ParamsModel
+from datamodels import ProjectModel
 import os
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def project_params():
     """
     Parameters for a project
     """
-    return ParamsModel(
+    return ProjectModel(
         project_name = "pytest",
     )
 

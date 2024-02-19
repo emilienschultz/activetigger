@@ -3,6 +3,22 @@ from pathlib import Path
 from enum import Enum
 from pandas import DataFrame
 
+class ProjectModel(BaseModel):
+    """
+    Parameters of a project
+    """
+    project_name:str
+    col_text:str
+    col_id:str = "index" # by default, the index
+    n_rows:int = 2000
+    dir:Path|None = None
+    embeddings:list = []
+    n_skip:int = 0
+    schemes: list = []
+    langage:str = "fr"
+    col_tags:str|None = None # TODO: load existing tags
+    cols_context:list = [] # TODO: select variable to keep
+
 class Action(str, Enum):
     delete = "delete"
     add = "add"
@@ -13,22 +29,6 @@ class Scheme(BaseModel):
     Set of labels
     """
     labels:list[str]
-
-class ParamsModel(BaseModel):
-    """
-    Parameters of a project
-    """
-    project_name:str
-    col_text:str = "text"
-    n_rows:int = 2000
-    dir:Path|None = None
-    embeddings:list = []
-    n_skip:int = 0
-    schemes: list[Scheme] = []
-    langage:str = "fr"
-    #col_id:str = "index" TODO: select id
-    col_tags:str|None = None # TODO: load existing tags
-    #cols_context:list = [] TODO: select variable to keep
 
 class NextModel(BaseModel):
     """
