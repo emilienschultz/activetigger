@@ -464,6 +464,9 @@ class Project(Session):
         """
         Add regex to features
         """
+        if name in self.features.map:
+            return {"error":"a feature already has this name"}
+
         pattern = re.compile(value)
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
         self.features.add(name,f)
