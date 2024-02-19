@@ -224,6 +224,14 @@ async def get_element(id:str,
         raise HTTPException(status_code=404, detail="Element not found")
     
 
+@app.post("/tags/table", dependencies=[Depends(verified_user)])
+async def post_table_tags(project: Annotated[Project, Depends(get_project)],
+                          annotation:list[AnnotationModel]):
+    """
+    Deal with list of tags especially for batch update
+    """
+    return {"error":"not implemented"}
+
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
                           project: Annotated[Project, Depends(get_project)],
@@ -244,7 +252,6 @@ async def post_tag(action:Action,
                                    annotation.scheme
                                    )
         return {"success":"label deleted"}
-    
 
 # Schemes management
 #-------------------
