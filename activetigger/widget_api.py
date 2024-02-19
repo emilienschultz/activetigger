@@ -24,6 +24,12 @@ class Widget():
     def __init__(self) -> None:
         self.user = "local"
         self.project_name: None|str = None
+        self.scheme: dict = {
+                            "current":None,
+                            "mode":None,
+                            "on":None,
+                            "tag":None,
+                            }
         self.screen = None
 
     def _post(self,
@@ -54,7 +60,11 @@ class Widget():
     def start(self):
         """
         Menu to start the widget
+        - connect existing project
+        - start a new one
+        Add -> delete ?
         """
+        # Get existing projects
         existing = self._get("projects")
 
         # Existing projects
@@ -68,14 +78,15 @@ class Widget():
         # Start existing project
         start = widgets.Button(description="Connecter")
         def start_project(b):
-            self.name = existing_projects.value
-            self._project_interface()
+            self.project_name = existing_projects.value
+            print(existing_projects.value)
+            self.interface()
         start.on_click(start_project)
 
         # Create a new project
         create = widgets.Button(description="Nouveau projet")
         def create_project(b):
-            self._new_project()
+            self._create_new_project()
         create.on_click(create_project)
 
         # Display
@@ -83,7 +94,7 @@ class Widget():
         self.output = widgets.HBox([existing_projects, start, create])
         display(self.output)
 
-    def _new_project(self):
+    def _create_new_project(self):
         """
         Create a new project
         """
@@ -166,6 +177,64 @@ class Widget():
             return "File not csv"
         df = pd.read_csv(path)
         return df
+    
+    def _send_tag(self,tag):
+        # envoyer le tag
+        # récupérer un nouveau text à coder 
+        # actualiser
+        return None
 
-    def _project_interface(self):
+    def _update_schemes(self):
+        """
+        Put state parameters in the interface
+        """
+        state = self._get(route = f"state/{self.project_name}")
+        current = state["schemes"]["current"]
+
+        self._schemes.options = list(state["schemes"]["available"].keys())
+        self._schemes.value = current
+
+        self._mode_type.options = ["tagged", "untagged", "all"]
+        self._mode_type.value = state["modes"]["on"]
+        
+        self._mode_selection.options = state["modes"]["available_modes"]
+        self._mode_selection.value = state["modes"]["mode"]
+        
+        self._mode_label.options = state["schemes"]["available"][current]
+
+    def interface(self):
+        # Tab codage
+        #-----------
+        self._textarea = widgets.Textarea(value="",
+                                   layout=widgets.Layout(width='400px',height='150px'), 
+                                   description='')
+        self._schemes = widgets.Dropdown()
+        self._back = widgets.Button()
+        self._mode_selection = widgets.Dropdown()
+        self._mode_type = widgets.Dropdown()
+        self._mode_label = widgets.Dropdown()
+        self._labels = widgets.HBox()
         print("coucou")
+        self._update_schemes()
+
+        tab_annotate = widgets.VBox([
+                            self._schemes,
+                             widgets.HBox([self._back,
+                                self._mode_selection,
+                                self._mode_type,
+                                self._mode_label]),
+                              self._textarea,
+                              self._labels
+             ])
+
+        self.output = widgets.Tab([tab_annotate,tab_annotate],
+                                  titles = ["Annotate","Test"])
+        def on_tab_selected(change):
+            selected_tab_index = change['new']
+            print(f"Tab {selected_tab_index + 1} selected")
+        self.output.observe(on_tab_selected, names='selected_index')
+
+
+        # Afficher
+        clear_output()
+        display(self.output)

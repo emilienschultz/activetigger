@@ -191,13 +191,15 @@ async def delete_project(project_name:str):
 async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
                    mode:str = "deterministic",
-                   on:str = "untagged") -> ElementModel:
+                   on:str = "untagged",
+                   tag:str|None = None) -> ElementModel:
     """
     Get next element
     """
     e = project.get_next(scheme = scheme,
                          mode = mode,
-                         on = on)
+                         on = on,
+                         tag = tag)
         
     return ElementModel(**e)
 
