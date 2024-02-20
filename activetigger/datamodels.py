@@ -43,7 +43,6 @@ class SchemesModel(BaseModel):
     Schemes model    
     """
     project_name:str
-    current:str
     availables:dict
 
 class UserModel(BaseModel):

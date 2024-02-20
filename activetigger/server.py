@@ -385,11 +385,6 @@ class Project(Session):
         TODO : gérer les cases tagguées/non tagguées etc.
         """
 
-        # check if the current scheme is selected
-        if not self.schemes.name == scheme:
-            print("Change of scheme")
-            self.schemes.select(scheme)
-
         # Pour le moment uniquement les cases non nulles
         f = self.schemes.content[self.schemes.col].isnull()
 
@@ -402,10 +397,10 @@ class Project(Session):
                 print("Build default simple model")
                 self.simplemodel = self.fit_simplemodel(model = "liblinear",
                                                         features = "all",
-                                                        scheme=self.schemes.name
+                                                        scheme=scheme
                                                         )
             if tag is None: # default label to first
-                tag = self.schemes.labels[0] #type: ignore
+                tag = self.schemes.availables()[scheme][0] #type: ignore
 
             # higher predict value
             element_id = self.simplemodel.proba[f][tag].sort_values(ascending=False).index[0] #type: ignore
@@ -431,7 +426,7 @@ class Project(Session):
         """
         return self.params
     
-    def get_state(self) -> dict:
+    def get_state(self):
         """
         Send state of the project
         """
@@ -441,23 +436,17 @@ class Project(Session):
 
         options = {
                     "params":self.params,
-                    "modes":{
-                        "available_modes":selection_available,
-                        # For the moment mode/on/label are not in the state project side
-                        # default values
-                        "mode":"deterministic",
-                        "on":"untagged",
-                        "label":None
+                    "next":{
+                        "methods":selection_available,
+                        "sample":["untagged","all","tagged"],
                         },
                     "schemes":{
-                                "current":self.schemes.name,
                                 "available":self.schemes.available()
                                 },
                     "features":{
-                            "available_features":self.features.map.keys()
-                          }
+                            "available":list(self.features.map.keys())
+                            }
                    }
-        
         return  options
     
     def add_regex(self, name: str, value: str) -> dict:
@@ -574,8 +563,8 @@ class Schemes(Session):
         """
         self.project_name = project_name
         self.path = path
-        self.name = None
-        self.labels = None
+        #self.name = None
+        #self.labels = None
         self.col = None
 
         # Load data
@@ -587,9 +576,9 @@ class Schemes(Session):
             self.add_scheme(SchemeModel(project_name=project_name, 
                                  name = "default",
                                  tags= []))
-            self.select("default")
-        else: #else, select the first
-            self.select(list(available.keys())[0])
+            #self.select("default")
+        #else: #else, select the first
+        #    self.select(list(available.keys())[0])
 
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
@@ -643,26 +632,26 @@ class Schemes(Session):
         """
         self.content.to_parquet(self.path)
 
-    def col_name(self, s = None):
+    def col_name(self, s:str):
         """
         Association name - column
         (for the moment 1 - 1)
         """
-        if not s:
-            return self.name
+        #if not s:
+        #    return self.name
         return s
 
-    def select(self, name) -> None:
-        """
-        Select current scheme
-        """
-        available = self.available()
-        if name in available:
-            self.name = name
-            self.labels = available[name]
-            self.col = self.col_name()
-        else:
-            raise IndexError
+    #def select(self, name) -> None:
+    #    """
+    #    Select current scheme
+    #    """
+    #    available = self.available()
+    #    if name in available:
+    #        self.name = name
+    #        self.labels = available[name]
+    #        self.col = self.col_name()
+    #    else:
+    #        raise IndexError
 
     def add_scheme(self, scheme:SchemeModel):
         """
@@ -753,7 +742,6 @@ class Schemes(Session):
         state of the schemes
         """
         return SchemesModel(project_name=self.project_name,
-                            current = self.name, #type: ignore
                             availables=self.available()
                             )
 
@@ -770,14 +758,11 @@ class Schemes(Session):
     def push_tag(self,
                  element_id:str, 
                  tag:str,
-                 scheme:str = "current",
+                 scheme:str,
                  user:str = "user"):
         """
         Record a tag
         """
-        if scheme == "current":
-            scheme = self.col #type: ignore
-
         # test if the action is possible
         a = self.available()
         if not scheme in a:
@@ -795,7 +780,7 @@ class Schemes(Session):
 
         # make action
         self.content.loc[element_id, scheme] = tag
-        self.log_action("add", user, element_id, self.name, tag)
+        self.log_action("add", user, element_id, scheme, tag)
         self.save_data()
         return r
 

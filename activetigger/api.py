@@ -109,7 +109,9 @@ async def get_state(project: Annotated[Project, Depends(get_project)]):
     Get state of a project
     TODO: a datamodel
     """
-    return project.get_state()
+    r = project.get_state()
+    print(r)
+    return r
 
 @app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
 async def info_project(project_name:str = None):

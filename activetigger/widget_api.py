@@ -54,7 +54,7 @@ class Widget():
                     params = params,
                     data = data,
                     headers=headers)
-        
+        print(r.content)
         return json.loads(r.content)
 
     def start(self):
@@ -79,7 +79,7 @@ class Widget():
         start = widgets.Button(description="Connecter")
         def start_project(b):
             self.project_name = existing_projects.value
-            print(existing_projects.value)
+            self.state = self.get_state()
             self.interface()
         start.on_click(start_project)
 
@@ -93,6 +93,10 @@ class Widget():
         clear_output()
         self.output = widgets.HBox([existing_projects, start, create])
         display(self.output)
+
+    def get_state(self):
+        state = self._get(route = f"state/{self.project_name}")
+        return state
 
     def _create_new_project(self):
         """
@@ -184,25 +188,9 @@ class Widget():
         # actualiser
         return None
 
-    def _update_schemes(self):
-        """
-        Put state parameters in the interface
-        """
-        state = self._get(route = f"state/{self.project_name}")
-        current = state["schemes"]["current"]
-
-        self._schemes.options = list(state["schemes"]["available"].keys())
-        self._schemes.value = current
-
-        self._mode_type.options = ["tagged", "untagged", "all"]
-        self._mode_type.value = state["modes"]["on"]
-        
-        self._mode_selection.options = state["modes"]["available_modes"]
-        self._mode_selection.value = state["modes"]["mode"]
-        
-        self._mode_label.options = state["schemes"]["available"][current]
 
     def interface(self):
+        #-----------
         # Tab codage
         #-----------
         self._textarea = widgets.Textarea(value="",
@@ -214,9 +202,18 @@ class Widget():
         self._mode_type = widgets.Dropdown()
         self._mode_label = widgets.Dropdown()
         self._labels = widgets.HBox()
-        print("coucou")
-        self._update_schemes()
 
+        # populate
+        self._schemes.options = list(self.state["schemes"]["available"].keys())
+        self._schemes.value = self._schemes.options[0]
+
+        self._mode_type.options = self.state["next"]["sample"]
+        self._mode_type.value = self._mode_type.options[0]
+
+        self._mode_selection.options = self.state["next"]["methods"]
+        self._mode_selection.value = self._mode_selection.options[0]
+
+        # group in tab
         tab_annotate = widgets.VBox([
                             self._schemes,
                              widgets.HBox([self._back,
