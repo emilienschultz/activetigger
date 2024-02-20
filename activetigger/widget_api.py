@@ -227,6 +227,44 @@ class Widget():
         self._labels.children = buttons
         return True
 
+    def update_tab_annotations(self):
+        self.state = self.get_state()
+        self._schemes.options = list(self.state["schemes"]["available"].keys())
+        self._mode_selection.options = self.state["next"]["methods"]
+        self._mode_sample.options = self.state["next"]["sample"]
+
+    def update_tab_schemes(self): 
+        self.state = self.get_state()
+        self.select_scheme.options = list(self.state["schemes"]["available"].keys())
+        self.select_label.options = self.state["schemes"]["available"][self._schemes.value]
+
+    def create_scheme(self, s):
+        if s == "":
+            return "Empty"
+        params = {"project_name":self.project_name}
+        data = {
+                "project_name":self.project_name,
+                "name":s,
+                "tags":[]
+                }
+        r = self._post("/schemes/add", params = params, data = data)
+        print(r)
+        self.update_tab_schemes()
+        return r
+    
+    def delete_scheme(self, s):
+        if s == "":
+            return "Empty"
+        params = {"project_name":self.project_name}
+        data = {
+                "project_name":self.project_name,
+                "name":s,
+                }
+        r = self._post("/schemes/delete", params = params, data = data)
+        print(r)
+        self.update_tab_schemes()
+        return r
+
     def interface(self):
         #-----------
         # Tab codage
@@ -245,15 +283,11 @@ class Widget():
         self._mode_label = widgets.Dropdown()
         self._labels = widgets.HBox()
 
-        # populate
-        self._schemes.options = list(self.state["schemes"]["available"].keys())
+        # Populate
+        self.update_tab_annotations()
         self._schemes.value = self._schemes.options[0]
-        self._mode_selection.options = self.state["next"]["methods"]
         self._mode_selection.value = self._mode_selection.options[0]
-        self._mode_sample.options = self.state["next"]["sample"]
         self._mode_sample.value = self._mode_sample.options[0]
-        self._display_next()
-        self._display_buttons_labels()
 
         # group in tab
         tab_annotate = widgets.VBox([
@@ -265,17 +299,55 @@ class Widget():
                               self._textarea,
                               self._labels
              ])
-        def on_widget_change(w):
-            print("change")
-        tab_annotate.observe(on_widget_change, names='value')
 
-        self.output = widgets.Tab([tab_annotate,tab_annotate],
-                                  titles = ["Annotate","Test"])
+
+        #------------
+        # Tab schemes
+        #------------
+        new_scheme = widgets.Text(description="New scheme: ")
+        valid_new_scheme = widgets.Button(description = "Create")
+        valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
+        self.select_scheme = widgets.Dropdown(description="Schemes: ")
+        valid_delete_scheme = widgets.Button(description = "Delete")
+        valid_delete_scheme.on_click(lambda b : self.delete_scheme(self.select_scheme.value))
+        self.select_label = widgets.Dropdown(description="Labels: ")
+        valid_delete_label = widgets.Button(description = "Delete")
+        def delete_label(b):
+            print(b.description)
+        valid_delete_label.on_click(delete_label)
+        new_label = widgets.Text(description="New label: ")
+        valid_new_label = widgets.Button(description = "Create")
+        def create_label(b):
+            print(b.description)
+        valid_new_label.on_click(create_label)
+
+        # Populate
+        self.update_tab_schemes()
+        self.select_scheme.value = self._schemes.value
+        if len(self.select_label.options)>0:
+            self.select_label.value = self.select_label.options[0]
+        self._display_next()
+        self._display_buttons_labels()
+
+        # group in tab
+        tab_schemes = widgets.VBox([
+                            widgets.HBox([self.select_scheme, valid_delete_scheme]),
+                            widgets.HBox([new_scheme, valid_new_scheme]),
+                            widgets.HBox([self.select_label, valid_delete_label]),
+                            widgets.HBox([new_label, valid_new_label]),
+                        ])
+
+        # display global widget
+        self.output = widgets.Tab([tab_annotate,
+                                   tab_schemes],
+                                  titles = ["Annotate","Schemes"])
+        
+        # update state on tab change
         def on_tab_selected(change):
-            selected_tab_index = change['new']
-            print(f"Tab {selected_tab_index + 1} selected")
+            self.state = self.get_state()
+            self.update_tab_annotations()
+            self.update_tab_schemes()
         self.output.observe(on_tab_selected, names='selected_index')
-
 
         # Afficher
         clear_output()

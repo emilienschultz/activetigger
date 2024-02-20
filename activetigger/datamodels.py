@@ -67,7 +67,7 @@ class SchemeModel(BaseModel):
     """
     project_name:str
     name:str
-    tags:list
+    tags:list = []
 
 class RegexModel(BaseModel):
     """
