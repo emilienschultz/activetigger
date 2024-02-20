@@ -8,7 +8,7 @@ import io
 import re
 import time
 
-URL_SERVER = "http://127.0.0.1:8000/"
+URL_SERVER = "http://127.0.0.1:8000"
 headers = {'x-token': 'your_token'}
 
 
@@ -24,12 +24,13 @@ class Widget():
     def __init__(self) -> None:
         self.user = "local"
         self.project_name: None|str = None
-        self.scheme: dict = {
-                            "current":None,
-                            "mode":None,
-                            "on":None,
-                            "tag":None,
-                            }
+        #self.scheme: dict = {
+        #                    "current":None,
+        #                    "mode":None,
+        #                    "on":None,
+        #                    "tag":None,
+        #                    }
+        self.current_element = None
         self.screen = None
 
     def _post(self,
@@ -40,7 +41,7 @@ class Widget():
         url = URL_SERVER + route
         r = rq.post(url, 
                     params = params,
-                    data = data,
+                    json = data,
                     files=files,
                     headers=headers)
         return json.loads(r.content)
@@ -54,7 +55,6 @@ class Widget():
                     params = params,
                     data = data,
                     headers=headers)
-        print(r.content)
         return json.loads(r.content)
 
     def start(self):
@@ -65,7 +65,7 @@ class Widget():
         Add -> delete ?
         """
         # Get existing projects
-        existing = self._get("projects")
+        existing = self._get("/projects")
 
         # Existing projects
         existing_projects = widgets.Dropdown(
@@ -95,7 +95,7 @@ class Widget():
         display(self.output)
 
     def get_state(self):
-        state = self._get(route = f"state/{self.project_name}")
+        state = self._get(route = f"/state/{self.project_name}")
         return state
 
     def _create_new_project(self):
@@ -156,7 +156,7 @@ class Widget():
                     }
             files = {'file': (file.value,
                               open(file.value, 'rb'))}
-            self._post(route="projects/new", 
+            self._post(route="/projects/new", 
                        data=data,
                        files=files)
             print("créer le projet")
@@ -187,42 +187,87 @@ class Widget():
         # récupérer un nouveau text à coder 
         # actualiser
         return None
+    
+    def _display_next(self):
 
+        params = {
+                          "project_name":self.project_name,
+                          "scheme":self._schemes.value,
+                          "selection":self._mode_selection.value,
+                          "sample":self._mode_sample.value,
+                          "tag":None
+                      }
+        r = self._get(route = "/elements/next",
+                      params = params)
+        
+        self.current_element = r
+        self._textarea.value = r["text"]
+
+        return True
+
+    def _display_buttons_labels(self):
+        buttons = []
+        labels = self.state["schemes"]["available"][self._schemes.value]
+        def send_tag(v):
+            data = {
+                    "project_name":self.project_name,
+                    "scheme":self._schemes.value,
+                    "element_id":self.current_element["element_id"],
+                    "tag":v.description,
+                    }
+            self._post(route = "/tags/add",
+                       params = {"project_name":self.project_name},
+                       data = data)
+            # gérer les erreurs d'envoi ?
+            self._display_next()
+        for t in labels:
+            b = widgets.Button(description=t)
+            b.on_click(send_tag)
+            buttons.append(b)
+        self._labels.children = buttons
+        return True
 
     def interface(self):
         #-----------
         # Tab codage
         #-----------
         self._textarea = widgets.Textarea(value="",
-                                   layout=widgets.Layout(width='400px',height='150px'), 
+                                   layout=widgets.Layout(width='600px',height='150px'), 
                                    description='')
         self._schemes = widgets.Dropdown()
-        self._back = widgets.Button()
+        def on_change_scheme(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                self._display_buttons_labels()
+        self._schemes.observe(on_change_scheme)
+        self._back = widgets.Button(description = "back")
         self._mode_selection = widgets.Dropdown()
-        self._mode_type = widgets.Dropdown()
+        self._mode_sample = widgets.Dropdown()
         self._mode_label = widgets.Dropdown()
         self._labels = widgets.HBox()
 
         # populate
         self._schemes.options = list(self.state["schemes"]["available"].keys())
         self._schemes.value = self._schemes.options[0]
-
-        self._mode_type.options = self.state["next"]["sample"]
-        self._mode_type.value = self._mode_type.options[0]
-
         self._mode_selection.options = self.state["next"]["methods"]
         self._mode_selection.value = self._mode_selection.options[0]
+        self._mode_sample.options = self.state["next"]["sample"]
+        self._mode_sample.value = self._mode_sample.options[0]
+        self._display_next()
+        self._display_buttons_labels()
 
         # group in tab
         tab_annotate = widgets.VBox([
                             self._schemes,
                              widgets.HBox([self._back,
-                                self._mode_selection,
-                                self._mode_type,
-                                self._mode_label]),
+                                    self._mode_selection,
+                                    self._mode_sample,
+                                    self._mode_label]),
                               self._textarea,
                               self._labels
              ])
+        def on_widget_change(w):
+            print("change")
+        tab_annotate.observe(on_widget_change, names='value')
 
         self.output = widgets.Tab([tab_annotate,tab_annotate],
                                   titles = ["Annotate","Test"])

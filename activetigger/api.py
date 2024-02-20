@@ -192,16 +192,18 @@ async def delete_project(project_name:str):
 @app.get("/elements/next", dependencies=[Depends(verified_user)])
 async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
-                   mode:str = "deterministic",
-                   on:str = "untagged",
+                   selection:str = "deterministic",
+                   sample:str = "untagged",
                    tag:str|None = None) -> ElementModel:
     """
     Get next element
     """
-    e = project.get_next(scheme = scheme,
-                         mode = mode,
-                         on = on,
-                         tag = tag)
+    e = project.get_next(
+                        scheme = scheme,
+                        selection = selection,
+                        sample = sample,
+                        tag = tag
+                        )
         
     return ElementModel(**e)
 

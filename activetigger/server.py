@@ -375,8 +375,8 @@ class Project(Session):
 
     def get_next(self,
                  scheme:str,
-                 mode:str = "deterministic",
-                 on:str = "untagged",
+                 selection:str = "deterministic",
+                 sample:str = "untagged",
                  tag:None|str = None) -> dict:
         """
         Get next item
@@ -386,13 +386,13 @@ class Project(Session):
         """
 
         # Pour le moment uniquement les cases non nulles
-        f = self.schemes.content[self.schemes.col].isnull()
+        f = self.schemes.content[scheme].isnull()
 
-        if mode == "deterministic": # next row
+        if selection == "deterministic": # next row
             element_id = self.schemes.content[f].index[0]
-        if mode == "random": # random row
+        if selection == "random": # random row
             element_id = self.schemes.content[f].sample(random_state=42).index[0]
-        if mode == "maxprob": # higher prob row
+        if selection == "maxprob": # higher prob row
             if self.simplemodel.name is None: # if no model, build default
                 print("Build default simple model")
                 self.simplemodel = self.fit_simplemodel(model = "liblinear",
