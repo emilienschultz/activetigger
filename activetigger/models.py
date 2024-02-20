@@ -318,7 +318,7 @@ class SimpleModel():
                  model: str|None=None,
                  data: DataFrame|None = None,
                  col_label: str|None = None,
-                 col_predictors: list|None = None,
+                 col_predictors: list = [],
                  standardize: bool = False,
                  model_params: dict|None = None
                  ):
@@ -335,6 +335,8 @@ class SimpleModel():
         # logique : des modèles avec des valeurs par défauts
         # ou bien initialisés avec une chaine d'options
         # TODO: vérifier quela chaine est bien formée car cela a des conséquences
+
+        print("init simplemodel")
 
         self.available_models = {
             #"simplebayes": {
@@ -526,7 +528,7 @@ class SimpleModel():
         params = {
             "available":self.available_models,
             "current":self.name,
-            "predictors":self.col_predictors,
+            "features":self.col_predictors,
             "parameters":self.model_params
             # add params e.g. standardization
         }

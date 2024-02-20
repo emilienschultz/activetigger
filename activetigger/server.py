@@ -348,7 +348,7 @@ class Project(Session):
 
         df_features = self.features.get(features)
         col_label = self.schemes.col_name(scheme)
-        col_predictors = df_features.columns
+        col_predictors = list(df_features.columns)
         data = pd.concat([self.schemes.content[col_label],
                           df_features],
                           axis=1)
@@ -364,6 +364,8 @@ class Project(Session):
     def update_simplemodel(self, simplemodel: SimpleModelModel) -> dict:
         if simplemodel.features is None or len(simplemodel.features)==0:
             return {"error":"no features"}
+        if not simplemodel.model in list(self.simplemodel.available_models.keys()):
+            return {"error":"this model does not exist"}
         self.simplemodel = self.fit_simplemodel(
                                 model=simplemodel.model,
                                 features=simplemodel.features,
@@ -372,7 +374,6 @@ class Project(Session):
                                 )
         return {"success":"new simplemodel"}
     
-
     def get_next(self,
                  scheme:str,
                  selection:str = "deterministic",
@@ -445,7 +446,8 @@ class Project(Session):
                                 },
                     "features":{
                             "available":list(self.features.map.keys())
-                            }
+                            },
+                    "simplemodel":self.simplemodel.get_params()
                    }
         return  options
     

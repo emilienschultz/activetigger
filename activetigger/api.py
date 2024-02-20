@@ -376,7 +376,8 @@ async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
     """
     Simplemodel parameters
     """
-    return project.simplemodel.get_params()
+    r = project.simplemodel.get_params()
+    return r
 
 
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
