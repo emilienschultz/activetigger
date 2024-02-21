@@ -209,7 +209,10 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
-                            scheme:str, min:int = 0, max:int = 0,mode:str = "all",
+                            scheme:str,
+                            min:int = 0,
+                            max:int = 0,
+                            mode:str = "all",
                         ):
     
     r = project.schemes.get_table_elements(scheme, min, max, mode)

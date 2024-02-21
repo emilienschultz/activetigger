@@ -246,8 +246,21 @@ class Widget():
 
     def update_tab_simplemodel(self):
         self.state = self.get_state()
-        self.simplemodel_state.value = f"Current model: {self.state['simplemodel']['current']}"
+        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: {self.state['simplemodel']['current']}"
 
+
+    def update_tab_data(self):
+        params = {"project_name":self.project_name,
+                            "scheme":self._schemes.value,
+                            "min":self.sample_min.value,
+                            "max":self.sample_max.value,
+                            "mode":self.sample_type.value
+                            }
+        print(params)
+        r = self._get("/elements/table", params = params)
+        print(r)
+        html = pd.DataFrame(r).to_html()
+        self.display_table.value = html
 
     def create_scheme(self, s):
         if s == "":
@@ -370,6 +383,27 @@ class Widget():
                               self._labels
              ])
 
+        #---------
+        # Tab data
+        #---------
+        self.sample_type = widgets.Dropdown(description="On: ", value="all", options=["all","tagged","untagged"])
+        self.sample_min = widgets.IntText(value=0, description='Range:', disabled=False, layout={'width': '50px'})
+        self.sample_max = widgets.IntText(value=0, description='', disabled=False, layout={'width': '50px'})
+        valid_sample = widgets.Button(description = "Get")
+        #display_table = widgets.VBox()
+        self.display_table = widgets.HTML()
+
+        # Populate
+        self.sample_min.value = 0
+        self.sample_max.value = 10
+        self.sample_type.value = "all"
+        self.update_tab_data()
+
+        # Group in tab
+        tab_data = widgets.VBox([self.sample_type,
+                                 widgets.HBox([self.sample_min, self.sample_max, valid_sample]),
+                                 self.display_table
+                                  ])
 
         #------------
         # Tab schemes
@@ -414,6 +448,9 @@ class Widget():
         #----------------
         print(self.state)
         self.simplemodel_state = widgets.Text(disabled=True)
+        self.simplemodel_statistics= widgets.Text(disabled=True,
+                                                  value = "to implement")
+
         select_simplemodel =  widgets.Dropdown(description = "models")
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
@@ -428,7 +465,7 @@ class Widget():
                                                                features = select_features.value))
 
         # Populate
-        self.simplemodel_state.value = f"Current model: {self.state['simplemodel']['current']}"
+        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: {self.state['simplemodel']['current']}"
         select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
         select_features.options = self.state["features"]["available"]
         if not self.state['simplemodel']['parameters'] is None:
@@ -436,7 +473,7 @@ class Widget():
 
         # Group in tab
         tab_simplemodel = widgets.VBox([
-                            self.simplemodel_state,
+                            widgets.HBox([self.simplemodel_state,self.simplemodel_statistics]),
                             select_simplemodel,
                              widgets.HBox([select_features,
                                     simplemodel_params]),
@@ -446,9 +483,11 @@ class Widget():
 
         # display global widget
         self.output = widgets.Tab([tab_annotate,
+                                   tab_data,
                                    tab_schemes,
                                    tab_simplemodel],
                                   titles = ["Annotate",
+                                            "Data",
                                             "Schemes",
                                             "SimpleModel"])
         

@@ -307,6 +307,14 @@ class BertModel():
                              "trained":self.trained}
         return content
 
+# TODO : faire évoluer
+# les simplemodels sont associés à
+# - un utilisateur
+# - un codage
+# on va donc avoir une classe générale simplemodels qui permet cette gestion
+# et qui va assurer les services généraux (initier, etc.) et mutualiser les données
+# en mémoire vive, et des SimpleModel spécifique
+
 class SimpleModel():
     """
     Simple model
@@ -318,7 +326,7 @@ class SimpleModel():
                  model: str|None=None,
                  data: DataFrame|None = None,
                  col_label: str|None = None,
-                 col_predictors: list = [],
+                 col_predictors: list|None = None,
                  standardize: bool = False,
                  model_params: dict|None = None
                  ):
