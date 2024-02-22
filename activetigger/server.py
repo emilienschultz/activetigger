@@ -801,7 +801,7 @@ class Schemes(Session):
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = """
-                SELECT element_id 
+                SELECT element_id, time 
                 FROM annotations
                 WHERE project = ? AND user = ? AND scheme = ? AND action = ?
                 ORDER BY time DESC
