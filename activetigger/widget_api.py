@@ -256,11 +256,16 @@ class Widget():
                             "max":self.sample_max.value,
                             "mode":self.sample_type.value
                             }
-        print(params)
         r = self._get("/elements/table", params = params)
-        print(r)
-        html = pd.DataFrame(r).to_html()
-        self.display_table.value = html
+        df = pd.DataFrame(r)
+        buttons = []
+        for i,j in df.iterrows():
+            buttons.append(widgets.HBox([
+                #widgets.Checkbox(value=False, description=str(i), layout = {"width":"100px"}),
+                widgets.HTML(value=f"<small>{j['text']}</small>"),
+                widgets.Dropdown(options = ["test","lol"], layout = {"width":"100px"})
+            ]))
+        self.display_table.children = buttons
 
     def create_scheme(self, s):
         if s == "":
@@ -386,12 +391,14 @@ class Widget():
         #---------
         # Tab data
         #---------
-        self.sample_type = widgets.Dropdown(description="On: ", value="all", options=["all","tagged","untagged"])
-        self.sample_min = widgets.IntText(value=0, description='Range:', disabled=False, layout={'width': '50px'})
-        self.sample_max = widgets.IntText(value=0, description='', disabled=False, layout={'width': '50px'})
+        self.sample_type = widgets.Dropdown(description="On: ", value="all", options=["all","tagged","untagged"], layout={'width': '200px'})
+        self.sample_min = widgets.IntText(value=0, description='Min:', disabled=False, layout={'width': '200px'})
+        self.sample_max = widgets.IntText(value=0, description='Max:', disabled=False, layout={'width': '200px'})
+        self.display_table = widgets.VBox()
         valid_sample = widgets.Button(description = "Get")
-        #display_table = widgets.VBox()
-        self.display_table = widgets.HTML()
+        valid_sample.on_click(lambda b : self.update_tab_data())
+        modify_table = widgets.Button(description = "Modify (to implement)")
+        modify_table.on_click(lambda b : print("to implement"))
 
         # Populate
         self.sample_min.value = 0
@@ -400,9 +407,14 @@ class Widget():
         self.update_tab_data()
 
         # Group in tab
-        tab_data = widgets.VBox([self.sample_type,
-                                 widgets.HBox([self.sample_min, self.sample_max, valid_sample]),
-                                 self.display_table
+        tab_data = widgets.VBox([widgets.HBox([
+                                    self.sample_type, 
+                                    self.sample_min, 
+                                    self.sample_max, 
+                                    valid_sample
+                                    ]),
+                                 self.display_table,
+                                 modify_table
                                   ])
 
         #------------

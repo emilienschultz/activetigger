@@ -420,7 +420,6 @@ class Project(Session):
                 "text":self.content.loc[element_id,"text"]
                 }
 
-
     def get_params(self) -> ProjectModel:
         """
         Send parameters
@@ -565,11 +564,7 @@ class Schemes(Session):
         """
         self.project_name = project_name
         self.path = path
-        #self.name = None
-        #self.labels = None
         self.col = None
-
-        # Load data
         self.content = pd.read_parquet(self.path)
 
         # Initialize the current scheme
@@ -598,13 +593,16 @@ class Schemes(Session):
         df.columns = ["text","labels"]
         return df
     
-    def get_table_elements(self, scheme:str,
-                            min:int, max:int, 
-                            mode:str):
+    def get_table_elements(self, 
+                           scheme:str,
+                           min:int,
+                           max:int, 
+                           mode:str,
+                           user:str = "user"):
         """
         Get json data table for an interval
         """
-        if not mode in ["tagged","untagged","all"]:
+        if not mode in ["tagged","untagged","all","recent"]:
             mode = "all"
 
         if not scheme in self.available():
@@ -621,7 +619,13 @@ class Schemes(Session):
         if (min > len(df)):
             return {"error":"min value too high"}
 
-        if mode == "tagged":
+        if mode == "recent": # get recent annotations
+            print(user,scheme, max-min)
+            list_ids = self.get_recent_tags(user,scheme, max-min)
+            return df.loc[list_ids]
+
+        # TODO : user ?
+        if mode == "tagged": 
             df = df[df["labels"].notnull()]
         if mode == "untagged":
             df = df[df["labels"].isnull()]
@@ -785,6 +789,29 @@ class Schemes(Session):
         self.log_action("add", user, element_id, scheme, tag)
         self.save_data()
         return r
+
+    def get_recent_tags(self,
+                    user:str,
+                    scheme:str,
+                    n:int) -> list:
+        """
+        Get the id of the n last tags added/updated
+        by a user for a scheme of a project
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """
+                SELECT element_id 
+                FROM annotations
+                WHERE project = ? AND user = ? AND scheme = ? AND action = ?
+                ORDER BY time DESC
+                LIMIT ?
+                """
+        cursor.execute(query, (self.project_name,user,scheme, "add", n))
+        results = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return [i[0] for i in results]
 
     def log_action(self, 
                    action:str, 
