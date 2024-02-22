@@ -347,18 +347,22 @@ class Project(Session):
         """
 
         # build the dataset with label + predictors
-        print("start fit model")
         df_features = self.features.get(features)
         col_labels = self.schemes.col_name(scheme)
         col_features = list(df_features.columns)
-        print(col_labels,col_features)
         data = pd.concat([self.schemes.content[col_labels],
                           df_features],
                           axis=1)
-        print(data.shape)
-        self.simplemodels.add_simplemodel(user = user, scheme = scheme, features=features, name = model, df = data, 
-                             col_labels = col_labels, col_features = col_features,
-                             standardize = True, model_params = model_params) 
+        self.simplemodels.add_simplemodel(user = user, 
+                                          scheme = scheme, 
+                                          features=features, 
+                                          name = model, 
+                                          df = data, 
+                                          col_labels = col_labels, 
+                                          col_features = col_features,
+                                          model_params = model_params,
+                                          standardize = True
+                                          ) 
         
         #s = SimpleModel(model=model,
         #                data = data,
@@ -388,30 +392,35 @@ class Project(Session):
                  scheme:str,
                  selection:str = "deterministic",
                  sample:str = "untagged",
+                 user:str = "user",
                  tag:None|str = None) -> dict:
         """
         Get next item
         Related to a specific scheme
-
-        TODO : gérer les cases tagguées/non tagguées etc.
         """
 
-        # Pour le moment uniquement les cases non nulles
-        f = self.schemes.content[scheme].isnull()
+        # Select the sample
+        f = self.schemes.content[scheme].apply(lambda x : True)
+        if sample == "untagged":
+            f = self.schemes.content[scheme].isnull()
+        if sample == "tagged":
+            f = self.schemes.content[scheme].notnull()
 
+        # Type of selection
         if selection == "deterministic": # next row
             element_id = self.schemes.content[f].index[0]
         if selection == "random": # random row
             element_id = self.schemes.content[f].sample(random_state=42).index[0]
-        if selection == "maxprob": # higher prob row
+        if selection == "maxprob": # higher prob 
+            # only possible if the model has been trained
+            if not self.simplemodels.exists(user,scheme):
+                return {"error":"Simplemodel doesn't exist"}
             if tag is None: # default label to first
-                tag = self.schemes.availables()[scheme][0] #type: ignore
-            # TODO : CHANGE HERE
-            # higher predict value
-            element_id = self.simplemodels.proba[f][tag].sort_values(ascending=False).index[0] #type: ignore
+                tag = self.schemes.available()[scheme][0]
+            sm = self.simplemodels.get_model(user, scheme) # get model
+            element_id = sm.proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
         
         # TODO : put a lock on the element when sent ?
-
         # Pour le moment uniquement l'id et le texte (dans le futur ajouter tous les éléments)
         return  self.get_element(element_id)
     

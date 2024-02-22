@@ -353,6 +353,12 @@ class SimpleModels():
                 r[u][s] = self.existing[u][s].json()
         return r
         
+    def exists(self, user:str, scheme:str):
+        if user in self.existing:
+            if scheme in self.existing[user]:
+                return True
+        return False
+
     def get_model(self, user:str, scheme:str):
         """
         Select a specific model in the repo
@@ -361,7 +367,7 @@ class SimpleModels():
             return "This user has no model"
         if not scheme in self.existing[user]:
             return "The model for this scheme does not exist"
-        return self.existing["user"]["scheme"]
+        return self.existing[user][scheme]
     
     def load_data(self, 
                   data, 
@@ -371,27 +377,25 @@ class SimpleModels():
         """
         Load data
         """
-        self.col_label = col_label
-        self.col_predictors = col_predictors
-        self.normalize = standardize
-
-        f_na = data[self.col_predictors].isna().sum(axis=1)>0      
+        f_na = data[col_predictors].isna().sum(axis=1)>0      
         if f_na.sum()>0:
             print(f"There is {f_na.sum()} predictor rows with missing values")
 
-        # normalize data
+        # normalize X data
         if standardize:
-            df_pred = self.standardize(data[~f_na][self.col_predictors])
+            df_pred = self.standardize(data[~f_na][col_predictors])
         else:
-            df_pred = data[~f_na][self.col_predictors]
+            df_pred = data[~f_na][col_predictors]
 
-        # create global dataframe
-        self.df = pd.concat([data[~f_na][self.col_label],df_pred],axis=1)
+        # create global dataframe with no missing predictor
+        df = pd.concat([data[~f_na][col_label],df_pred],axis=1)
     
         # data for training
-        f_label = self.df[self.col_label].notnull()
-        Y = self.df[f_label][self.col_label]
-        X = self.df[f_label][self.col_predictors]
+        #f_label = df[self.col_label].notnull()
+        #Y = df[f_label][self.col_label]
+        #X = df[f_label][self.col_predictors]
+        Y = df[col_label]
+        X = df[col_predictors]
         labels = Y.unique()
         
         return X, Y, labels
@@ -401,7 +405,10 @@ class SimpleModels():
         Fit model
         TODO: add naive bayes
         """
-
+        # only keep tagged Y
+        f = Y.notnull()
+        X = X[f]
+        Y = Y[f]
         # default parameters
         if model_params is None:
             model_params = self.available_models[name]
@@ -432,7 +439,6 @@ class SimpleModels():
 
         # Fit modelmax_features
         model.fit(X, Y)
-
         return model, model_params
 
     def standardize(self,df):
@@ -462,6 +468,7 @@ class SimpleModels():
         if not user in self.existing:
             self.existing[user] = {}
         self.existing[user][scheme] = sm
+        print("model added")
 
 class SimpleModel():
     def __init__(self,
@@ -501,14 +508,18 @@ class SimpleModel():
         Compute proba
         """
         proba = model.predict_proba(X)
+        proba = pd.DataFrame(proba, 
+                             columns = model.classes_,
+                             index=X.index)
         return proba
     
     def compute_precision(self, model, X, Y, labels):
         """
         Compute precision score
         """
-        y_pred = model.predict(X)
-        precision = precision_score(list(Y), 
+        f = Y.notna()
+        y_pred = model.predict(X[f])
+        precision = precision_score(list(Y[f]), 
                                     list(y_pred),
                                     pos_label=labels[0])
         return precision

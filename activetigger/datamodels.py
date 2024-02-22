@@ -77,6 +77,9 @@ class RegexModel(BaseModel):
     name:str
     value:str
 
+class Error(BaseModel):
+    error:str
+
 class SimpleModelModel(BaseModel):
     features:list
     model:str

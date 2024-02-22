@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form, Request
 import logging
 from typing import Annotated
-from datamodels import ProjectModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
+from datamodels import ProjectModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel, Error
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
@@ -194,7 +194,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
                    selection:str = "deterministic",
                    sample:str = "untagged",
-                   tag:str|None = None) -> ElementModel:
+                   tag:str|None = None) -> ElementModel|Error:
     """
     Get next element
     """
@@ -204,8 +204,11 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         sample = sample,
                         tag = tag
                         )
-        
-    return ElementModel(**e)
+    if "error" in e:
+        r = Error(**e)
+    else:
+        r = ElementModel(**e)
+    return r
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
