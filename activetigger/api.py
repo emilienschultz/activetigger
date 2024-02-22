@@ -5,7 +5,7 @@ from datamodels import ProjectModel, ElementModel, SchemesModel, Action, Annotat
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
-import asyncio
+import json
 from multiprocessing import Process
 import time
 import pandas as pd
@@ -379,7 +379,7 @@ async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
     """
     Simplemodel parameters
     """
-    r = project.simplemodel.get_params()
+    r = project.simplemodels.available()
     return r
 
 

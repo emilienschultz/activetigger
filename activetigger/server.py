@@ -8,7 +8,7 @@ import re
 import pyarrow.parquet as pq # type: ignore
 import json
 import functions
-from models import SimpleModel, BertModel
+from models import BertModel, SimpleModels
 from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
@@ -33,6 +33,7 @@ class Session():
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
     data_file:str = "data.parquet"
+    default_user:str = "user"
     n_workers = 4 #os.cpu_count()
 
 
@@ -282,7 +283,7 @@ class Project(Session):
         self.features: Features = Features(project_name,
                                            self.params.dir / self.features_file) #type: ignore
         self.bertmodel: BertModel = BertModel(self.params.dir)
-        self.simplemodel: SimpleModel = SimpleModel()
+        self.simplemodels: SimpleModels = SimpleModels()
 
         # Compute features if requested
         if ("sbert" in self.params.embeddings) & (not "sbert" in self.features.map):
@@ -338,40 +339,49 @@ class Project(Session):
                         model:str,
                         features:list|str,
                         scheme:str,
+                        user:str = "user",
                         model_params: None|dict = None
-                        ) -> SimpleModel:
+                        ) -> bool:
         """
         Create and fit a simple model with project data
         """
 
         # build the dataset with label + predictors
-
+        print("start fit model")
         df_features = self.features.get(features)
-        col_label = self.schemes.col_name(scheme)
-        col_predictors = list(df_features.columns)
-        data = pd.concat([self.schemes.content[col_label],
+        col_labels = self.schemes.col_name(scheme)
+        col_features = list(df_features.columns)
+        print(col_labels,col_features)
+        data = pd.concat([self.schemes.content[col_labels],
                           df_features],
                           axis=1)
+        print(data.shape)
+        self.simplemodels.add_simplemodel(user = user, scheme = scheme, features=features, name = model, df = data, 
+                             col_labels = col_labels, col_features = col_features,
+                             standardize = True, model_params = model_params) 
         
-        s = SimpleModel(model=model,
-                        data = data,
-                        col_label = col_label,
-                        col_predictors = col_predictors,
-                        model_params=model_params
-                        )
-        return s
+        #s = SimpleModel(model=model,
+        #                data = data,
+        #                col_label = col_label,
+        #                col_predictors = col_predictors,
+        #                model_params=model_params
+        #                )
+        return True
     
     def update_simplemodel(self, simplemodel: SimpleModelModel) -> dict:
         if simplemodel.features is None or len(simplemodel.features)==0:
-            return {"error":"no features"}
-        if not simplemodel.model in list(self.simplemodel.available_models.keys()):
-            return {"error":"this model does not exist"}
-        self.simplemodel = self.fit_simplemodel(
-                                model=simplemodel.model,
-                                features=simplemodel.features,
-                                scheme=simplemodel.scheme,
-                                model_params=simplemodel.params
-                                )
+            return {"error":"Empty features"}
+        if not simplemodel.model in list(self.simplemodels.available_models.keys()):
+            return {"error":"Model doesn't exist"}
+        if not simplemodel.scheme in self.schemes.available():
+            return {"error":"Scheme doesn't exist"}
+        self.fit_simplemodel(
+                            model=simplemodel.model,
+                            features=simplemodel.features,
+                            scheme=simplemodel.scheme,
+                            user =simplemodel.user,
+                            model_params=simplemodel.params
+                            )
         return {"success":"new simplemodel"}
     
     def get_next(self,
@@ -394,17 +404,11 @@ class Project(Session):
         if selection == "random": # random row
             element_id = self.schemes.content[f].sample(random_state=42).index[0]
         if selection == "maxprob": # higher prob row
-            if self.simplemodel.name is None: # if no model, build default
-                print("Build default simple model")
-                self.simplemodel = self.fit_simplemodel(model = "liblinear",
-                                                        features = "all",
-                                                        scheme=scheme
-                                                        )
             if tag is None: # default label to first
                 tag = self.schemes.availables()[scheme][0] #type: ignore
-
+            # TODO : CHANGE HERE
             # higher predict value
-            element_id = self.simplemodel.proba[f][tag].sort_values(ascending=False).index[0] #type: ignore
+            element_id = self.simplemodels.proba[f][tag].sort_values(ascending=False).index[0] #type: ignore
         
         # TODO : put a lock on the element when sent ?
 
@@ -430,9 +434,9 @@ class Project(Session):
         """
         Send state of the project
         """
-        selection_available = ["deterministic","random"]
-        if self.simplemodel.name is not None:
-            selection_available.append("maxprob")
+        selection_available = ["deterministic","random","maxprob"]
+        #if self.simplemodel.name is not None:
+        #    selection_available.append("maxprob")
 
         options = {
                     "params":self.params,
@@ -446,7 +450,7 @@ class Project(Session):
                     "features":{
                             "available":list(self.features.map.keys())
                             },
-                    "simplemodel":self.simplemodel.get_params()
+                    "simplemodel":self.simplemodels.available()
                    }
         return  options
     

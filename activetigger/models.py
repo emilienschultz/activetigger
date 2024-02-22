@@ -314,97 +314,63 @@ class BertModel():
 # on va donc avoir une classe générale simplemodels qui permet cette gestion
 # et qui va assurer les services généraux (initier, etc.) et mutualiser les données
 # en mémoire vive, et des SimpleModel spécifique
-
-class SimpleModel():
+    
+class SimpleModels():
     """
-    Simple model
-    ------------
-    Comment : the simplemodel can be empty
-    to still access to parameters
+    Managing simplemodels
     """
-    def __init__(self,
-                 model: str|None=None,
-                 data: DataFrame|None = None,
-                 col_label: str|None = None,
-                 col_predictors: list|None = None,
-                 standardize: bool = False,
-                 model_params: dict|None = None
-                 ):
-        """
-        Initialize simpe model for data
-        model (str): type of models
-        data (DataFrame): dataset
-        col_label (str): column of the tags
-        predictor (list): columns of predictors
-        standardize (bool): predictor standardisation
-        model_params: parameters for models
-        """
-
-        # logique : des modèles avec des valeurs par défauts
-        # ou bien initialisés avec une chaine d'options
-        # TODO: vérifier quela chaine est bien formée car cela a des conséquences
-
-        print("init simplemodel")
-
-        self.available_models = {
-            #"simplebayes": {
-            #        "distribution":"multinomial",
-            #        "smooth":1,
-            #        "prior":"uniform"
-            #    },
-            "liblinear": {
-                    "cost":1
+    available_models = {
+        "liblinear": {
+                "cost":1
+            },
+        "knn" : {
+                "n_neighbors":3
+            },
+        "randomforest": {
+                "n_estimators":500,
+                "max_features":None
                 },
-            "knn" : {
-                    "n_neighbors":3
-                },
-            "randomforest": {
-                    "n_estimators":500,
-                    "max_features":None
-                 },
-            "lasso": {
-                    "C":32
-                    }
-                }     
-        
-        self.name = model
-        self.df = None
-        self.col_label = None
-        self.col_predictors = None
-        self.X = None
-        self.Y = None
-        self.labels = None
-        self.model = None
-        self.proba = None
-        self.precision = None
-        self.normalize = None
-        self.model_params = None
-
-        # Initialize data
-        if data is not None and col_predictors is not None:
-            self.load_data(data, col_label, col_predictors, standardize)
-
-        # Initialize model
-        if self.name in self.available_models:
-            if model_params is None:
-                self.model_params = self.available_models[self.name]
-            else:
-                self.model_params = model_params
-        
-        # Fit model if everything available
-        if (not self.X is None) & (not self.Y is None) & (not self.name is None):
-            self.fit_model()
+        "lasso": {
+                "C":32
+                }
+            }
+    
+    def __init__(self):
+        self.existing = {}
 
     def __repr__(self) -> str:
-        return str(self.name)
+        return str(self.available())
 
+    def available(self):
+        """
+        Available simplemodels
+        """
+        users = list(self.existing)
+        r = {}
+        for u in self.existing:
+            r[u] = {}
+            for s in self.existing[u]:
+                r[u][s] = self.existing[u][s].json()
+        return r
+        
+    def get_model(self, user:str, scheme:str):
+        """
+        Select a specific model in the repo
+        """
+        if not user in self.existing:
+            return "This user has no model"
+        if not scheme in self.existing[user]:
+            return "The model for this scheme does not exist"
+        return self.existing["user"]["scheme"]
+    
     def load_data(self, 
                   data, 
                   col_label, 
                   col_predictors,
                   standardize):
-        # Build the data set & missing predictors
-        # For the moment remove missing predictors
+        """
+        Load data
+        """
         self.col_label = col_label
         self.col_predictors = col_predictors
         self.normalize = standardize
@@ -424,82 +390,50 @@ class SimpleModel():
     
         # data for training
         f_label = self.df[self.col_label].notnull()
-        self.Y = self.df[f_label][self.col_label]
-        self.X = self.df[f_label][self.col_predictors]
-        self.labels = self.Y.unique()
-
-    def fit_model(self):
+        Y = self.df[f_label][self.col_label]
+        X = self.df[f_label][self.col_predictors]
+        labels = Y.unique()
+        
+        return X, Y, labels
+    
+    def fit_model(self, name, X, Y, model_params = None):
         """
         Fit model
-
         TODO: add naive bayes
         """
 
+        # default parameters
+        if model_params is None:
+            model_params = self.available_models[name]
+
         # Select model
-        if self.name == "knn":
-            self.model = KNeighborsClassifier(n_neighbors=self.model_params["n_neighbors"])
+        if name == "knn":
+            model = KNeighborsClassifier(n_neighbors=model_params["n_neighbors"])
 
-        if self.name == "lasso":
-            self.model = LogisticRegression(penalty="l1",
+        if name == "lasso":
+            model = LogisticRegression(penalty="l1",
                                             solver="liblinear",
-                                            C = self.model_params["C"])
-        """
-        if self.name == "naivebayes":
-            if not "distribution" in self.model_params:
-                raise TypeError("Missing distribution parameter for naivebayes")
-            
-        # only dfm as predictor
-            alpha = 1
-            if "smooth" in self.model_params:
-                alpha = self.model_params["smooth"]
-            fit_prior = True
-            class_prior = None
-            if "prior" in self.model_params:
-                if self.model_params["prior"] == "uniform":
-                    fit_prior = True
-                    class_prior = None
-                if self.model_params["prior"] == "docfreq":
-                    fit_prior = False
-                    class_prior = None #TODO
-                if self.model_params["prior"] == "termfreq":
-                    fit_prior = False
-                    class_prior = None #TODO
- 
-            if self.model_params["distribution"] == "multinomial":
-                self.model = MultinomialNB(alpha=alpha,
-                                           fit_prior=fit_prior,
-                                           class_prior=class_prior)
-            elif self.model_params["distribution"] == "bernouilli":
-                self.model = BernoulliNB(alpha=alpha,
-                                           fit_prior=fit_prior,
-                                           class_prior=class_prior)
-            self.model_params = {
-                                    "distribution":self.model_params["distribution"],
-                                    "smooth":alpha,
-                                    "prior":"uniform"
-                                }
-        """
+                                            C = model_params["C"])
 
-        if self.name == "liblinear":
+        if name == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
-            self.model = LogisticRegression(penalty='l2', 
+            model = LogisticRegression(penalty='l2', 
                                             solver='lbfgs',
-                                            C = self.model_params["cost"])
+                                            C = model_params["cost"])
 
-        if self.name == "randomforest":
+        if name == "randomforest":
             # params  Num. trees mtry  Sample fraction
             #Number of variables randomly sampled as candidates at each split: 
             # it is “mtry” in R and it is “max_features” Python
             #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
-            self.model = RandomForestClassifier(n_estimators=self.model_params["n_estimators"], 
+            model = RandomForestClassifier(n_estimators=model_params["n_estimators"], 
                                                 random_state=42,
-                                                max_features=self.model_params["max_features"])
+                                                max_features=model_params["max_features"])
 
         # Fit modelmax_features
-        self.model.fit(self.X, self.Y)
-        self.proba = pd.DataFrame(self.predict_proba(self.df[self.col_predictors]),
-                                 columns = self.model.classes_)
-        self.precision = self.compute_precision()
+        model.fit(X, Y)
+
+        return model, model_params
 
     def standardize(self,df):
         """
@@ -509,37 +443,291 @@ class SimpleModel():
         df_stand = scaler.fit_transform(df)
         return pd.DataFrame(df_stand,columns=df.columns,index=df.index)
 
-    def compute_precision(self):
+    def add_simplemodel(self, 
+                        user, 
+                        scheme,
+                        features,
+                        name, 
+                        df, 
+                        col_labels,
+                        col_features,
+                        standardize,
+                        model_params:dict|None = None):
+        """
+        A a new simplemodel for a user and a scheme
+        """
+        X, Y, labels = self.load_data(df, col_labels, col_features, standardize)
+        model, model_params = self.fit_model(name, X, Y, model_params)
+        sm = SimpleModel(name, X, Y, labels, model, features, standardize, model_params)
+        if not user in self.existing:
+            self.existing[user] = {}
+        self.existing[user][scheme] = sm
+
+class SimpleModel():
+    def __init__(self,
+                 name: str,
+                 X: DataFrame,
+                 Y: str,
+                 labels: list,
+                 model,
+                 features:list,
+                 standardize: bool,
+                 model_params: dict|None
+                 ) -> None:
+        self.name = name
+        self.features = features
+        self.X = X
+        self.Y = Y
+        self.labels = labels
+        self.model = model
+        self.model_params = model_params
+        self.proba = self.compute_proba(model, X)
+        self.precision = self.compute_precision(model, X, Y, labels)
+        self.standardize = standardize
+
+    def json(self):
+        """
+        Return json representation
+        """
+        return {
+            "name":str(self.name),
+            "features":list(self.features),
+            "labels":list(self.labels),
+            "params":dict(self.model_params)
+        }
+
+    def compute_proba(self, model, X):
+        """
+        Compute proba
+        """
+        proba = model.predict_proba(X)
+        return proba
+    
+    def compute_precision(self, model, X, Y, labels):
         """
         Compute precision score
         """
-        y_pred = self.model.predict(self.X)
-        precision = precision_score(list(self.Y), list(y_pred),pos_label=self.labels[0])
-        return 
-    
-    def predict_proba(self,X):
-        proba = self.model.predict_proba(X)
-        return proba
-    
-    def get_predict(self,rows:str="all"):
-        """
-        Return predicted proba
-        """
-        if rows == "tagged":
-            return self.proba[self.df[self.col_label].notnull()]
-        if rows == "untagged":
-            return self.proba[self.df[self.col_label].isnull()]
-        
-        return self.proba
-    
-    def get_params(self):
-        params = {
-            "available":self.available_models,
-            "current":self.name,
-            "features":self.col_predictors,
-            "parameters":self.model_params
-            # add params e.g. standardization
-        }
-        return params
+        y_pred = model.predict(X)
+        precision = precision_score(list(Y), 
+                                    list(y_pred),
+                                    pos_label=labels[0])
+        return precision
 
+# class SimpleModel_old():
+#     """
+#     Simple model
+#     ------------
+#     Comment : the simplemodel can be empty
+#     to still access to parameters
+#     """
+#     def __init__(self,
+#                  model: str|None=None,
+#                  data: DataFrame|None = None,
+#                  col_label: str|None = None,
+#                  col_predictors: list|None = None,
+#                  standardize: bool = False,
+#                  model_params: dict|None = None
+#                  ):
+#         """
+#         Initialize simpe model for data
+#         model (str): type of models
+#         data (DataFrame): dataset
+#         col_label (str): column of the tags
+#         predictor (list): columns of predictors
+#         standardize (bool): predictor standardisation
+#         model_params: parameters for models
+#         """
+#         self.df = None
+#         self.available_models = {
+#                 #"simplebayes": {
+#                 #        "distribution":"multinomial",
+#                 #        "smooth":1,
+#                 #        "prior":"uniform"
+#                 #    },
+#                 "liblinear": {
+#                         "cost":1
+#                     },
+#                 "knn" : {
+#                         "n_neighbors":3
+#                     },
+#                 "randomforest": {
+#                         "n_estimators":500,
+#                         "max_features":None
+#                         },
+#                 "lasso": {
+#                         "C":32
+#                         }
+#                     }
+#         self.name = model
+#         self.col_label = None
+#         self.col_predictors = None
+#         self.X = None
+#         self.Y = None
+#         self.labels = None
+#         self.model = None
+#         self.proba = None
+#         self.precision = None
+#         self.normalize = None
+#         self.model_params = None
+
+#         # Initialize data
+#         if data is not None and col_predictors is not None:
+#             self.load_data(data, col_label, col_predictors, standardize)
+
+#         # Initialize model
+#         if self.name in self.available_models:
+#             if model_params is None:
+#                 self.model_params = self.available_models[self.name]
+#             else:
+#                 self.model_params = model_params
         
+#         # Fit model if everything available
+#         if (not self.X is None) & (not self.Y is None) & (not self.name is None):
+#             self.fit_model()
+
+#     def __repr__(self) -> str:
+#         return str(self.name)
+
+#     def load_data(self, 
+#                   data, 
+#                   col_label, 
+#                   col_predictors,
+#                   standardize):
+#         # Build the data set & missing predictors
+#         # For the moment remove missing predictors
+#         self.col_label = col_label
+#         self.col_predictors = col_predictors
+#         self.normalize = standardize
+
+#         f_na = data[self.col_predictors].isna().sum(axis=1)>0      
+#         if f_na.sum()>0:
+#             print(f"There is {f_na.sum()} predictor rows with missing values")
+
+#         # normalize data
+#         if standardize:
+#             df_pred = self.standardize(data[~f_na][self.col_predictors])
+#         else:
+#             df_pred = data[~f_na][self.col_predictors]
+
+#         # create global dataframe
+#         self.df = pd.concat([data[~f_na][self.col_label],df_pred],axis=1)
+    
+#         # data for training
+#         f_label = self.df[self.col_label].notnull()
+#         self.Y = self.df[f_label][self.col_label]
+#         self.X = self.df[f_label][self.col_predictors]
+#         self.labels = self.Y.unique()
+
+#     def fit_model(self):
+#         """
+#         Fit model
+
+#         TODO: add naive bayes
+#         """
+
+#         # Select model
+#         if self.name == "knn":
+#             self.model = KNeighborsClassifier(n_neighbors=self.model_params["n_neighbors"])
+
+#         if self.name == "lasso":
+#             self.model = LogisticRegression(penalty="l1",
+#                                             solver="liblinear",
+#                                             C = self.model_params["C"])
+#         """
+#         if self.name == "naivebayes":
+#             if not "distribution" in self.model_params:
+#                 raise TypeError("Missing distribution parameter for naivebayes")
+            
+#         # only dfm as predictor
+#             alpha = 1
+#             if "smooth" in self.model_params:
+#                 alpha = self.model_params["smooth"]
+#             fit_prior = True
+#             class_prior = None
+#             if "prior" in self.model_params:
+#                 if self.model_params["prior"] == "uniform":
+#                     fit_prior = True
+#                     class_prior = None
+#                 if self.model_params["prior"] == "docfreq":
+#                     fit_prior = False
+#                     class_prior = None #TODO
+#                 if self.model_params["prior"] == "termfreq":
+#                     fit_prior = False
+#                     class_prior = None #TODO
+ 
+#             if self.model_params["distribution"] == "multinomial":
+#                 self.model = MultinomialNB(alpha=alpha,
+#                                            fit_prior=fit_prior,
+#                                            class_prior=class_prior)
+#             elif self.model_params["distribution"] == "bernouilli":
+#                 self.model = BernoulliNB(alpha=alpha,
+#                                            fit_prior=fit_prior,
+#                                            class_prior=class_prior)
+#             self.model_params = {
+#                                     "distribution":self.model_params["distribution"],
+#                                     "smooth":alpha,
+#                                     "prior":"uniform"
+#                                 }
+#         """
+
+#         if self.name == "liblinear":
+#             # Liblinear : method = 1 : multimodal logistic regression l2
+#             self.model = LogisticRegression(penalty='l2', 
+#                                             solver='lbfgs',
+#                                             C = self.model_params["cost"])
+
+#         if self.name == "randomforest":
+#             # params  Num. trees mtry  Sample fraction
+#             #Number of variables randomly sampled as candidates at each split: 
+#             # it is “mtry” in R and it is “max_features” Python
+#             #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
+#             self.model = RandomForestClassifier(n_estimators=self.model_params["n_estimators"], 
+#                                                 random_state=42,
+#                                                 max_features=self.model_params["max_features"])
+
+#         # Fit modelmax_features
+#         self.model.fit(self.X, self.Y)
+#         self.proba = pd.DataFrame(self.predict_proba(self.df[self.col_predictors]),
+#                                  columns = self.model.classes_)
+#         self.precision = self.compute_precision()
+
+#     def standardize(self,df):
+#         """
+#         Apply standardization
+#         """
+#         scaler = StandardScaler()
+#         df_stand = scaler.fit_transform(df)
+#         return pd.DataFrame(df_stand,columns=df.columns,index=df.index)
+
+#     def compute_precision(self):
+#         """
+#         Compute precision score
+#         """
+#         y_pred = self.model.predict(self.X)
+#         precision = precision_score(list(self.Y), list(y_pred),pos_label=self.labels[0])
+#         return 
+    
+#     def predict_proba(self,X):
+#         proba = self.model.predict_proba(X)
+#         return proba
+    
+#     def get_predict(self,rows:str="all"):
+#         """
+#         Return predicted proba
+#         """
+#         if rows == "tagged":
+#             return self.proba[self.df[self.col_label].notnull()]
+#         if rows == "untagged":
+#             return self.proba[self.df[self.col_label].isnull()]
+        
+#         return self.proba
+    
+#     def get_params(self):
+#         params = {
+#             "available":self.available_models,
+#             "current":self.name,
+#             "features":self.col_predictors,
+#             "parameters":self.model_params
+#             # add params e.g. standardization
+#         }
+#         return params
