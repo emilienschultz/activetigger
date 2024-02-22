@@ -43,7 +43,6 @@ class SchemesModel(BaseModel):
     Schemes model    
     """
     project_name:str
-    current:str
     availables:dict
 
 class UserModel(BaseModel):
@@ -68,7 +67,7 @@ class SchemeModel(BaseModel):
     """
     project_name:str
     name:str
-    tags:list
+    tags:list = []
 
 class RegexModel(BaseModel):
     """
@@ -83,6 +82,7 @@ class SimpleModelModel(BaseModel):
     model:str
     params:dict|None
     scheme:str
+    user:str
 
 class BertModelModel(BaseModel):
     name:str

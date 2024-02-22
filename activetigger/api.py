@@ -5,7 +5,7 @@ from datamodels import ProjectModel, ElementModel, SchemesModel, Action, Annotat
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
-import asyncio
+import json
 from multiprocessing import Process
 import time
 import pandas as pd
@@ -109,7 +109,9 @@ async def get_state(project: Annotated[Project, Depends(get_project)]):
     Get state of a project
     TODO: a datamodel
     """
-    return project.get_state()
+    r = project.get_state()
+    print(r)
+    return r
 
 @app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
 async def info_project(project_name:str = None):
@@ -190,20 +192,27 @@ async def delete_project(project_name:str):
 @app.get("/elements/next", dependencies=[Depends(verified_user)])
 async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
-                   mode:str = "deterministic",
-                   on:str = "untagged") -> ElementModel:
+                   selection:str = "deterministic",
+                   sample:str = "untagged",
+                   tag:str|None = None) -> ElementModel:
     """
     Get next element
     """
-    e = project.get_next(scheme = scheme,
-                         mode = mode,
-                         on = on)
+    e = project.get_next(
+                        scheme = scheme,
+                        selection = selection,
+                        sample = sample,
+                        tag = tag
+                        )
         
     return ElementModel(**e)
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
-                            scheme:str, min:int = 0, max:int = 0,mode:str = "all",
+                            scheme:str,
+                            min:int = 0,
+                            max:int = 0,
+                            mode:str = "all",
                         ):
     
     r = project.schemes.get_table_elements(scheme, min, max, mode)
@@ -370,7 +379,8 @@ async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
     """
     Simplemodel parameters
     """
-    return project.simplemodel.get_params()
+    r = project.simplemodels.available()
+    return r
 
 
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
