@@ -450,7 +450,10 @@ class Project(Session):
                     "features":{
                             "available":list(self.features.map.keys())
                             },
-                    "simplemodel":self.simplemodels.available()
+                    "simplemodel":{
+                                    "existing":self.simplemodels.available(),
+                                    "available":self.simplemodels.available_models
+                    }
                    }
         return  options
     

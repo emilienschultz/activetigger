@@ -477,11 +477,11 @@ class Widget():
                                                                features = select_features.value))
 
         # Populate
-        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: {self.state['simplemodel']['current']}"
+        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: TO IMPLEMENT"
         select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
         select_features.options = self.state["features"]["available"]
-        if not self.state['simplemodel']['parameters'] is None:
-            simplemodel_params.value = json.dumps(self.state['simplemodel']['parameters'])
+        #if not self.state['simplemodel']['parameters'] is None:
+        #    simplemodel_params.value = json.dumps(self.state['simplemodel']['parameters'])
 
         # Group in tab
         tab_simplemodel = widgets.VBox([
