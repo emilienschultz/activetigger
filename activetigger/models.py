@@ -57,6 +57,8 @@ class BertModel():
                 "adapt":True
             }
         self.available = ["microsoft/Multilingual-MiniLM-L12-H384",
+                          "almanach/camembert-base"] #to remove
+        self.available_models = ["microsoft/Multilingual-MiniLM-L12-H384",
                           "almanach/camembert-base"]
         # temporary (all available models)
         self.status:str|None = None
@@ -302,7 +304,7 @@ class BertModel():
         content = {}
         content["params"] = {"current":self.params,
                              "default":self.params_default}
-        content["models"] = {"available":self.available,
+        content["models"] = {"available":self.available_models,
                              "current":self.model_name,
                              "trained":self.trained}
         return content

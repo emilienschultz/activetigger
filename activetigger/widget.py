@@ -1,26 +1,16 @@
 import ipywidgets as widgets
-from IPython.display import display
+from IPython.display import display, clear_output
 import json
+import requests as rq
+from pathlib import Path
+import pandas as pd
+import io
 import re
 import time
 
-from project import Schemes
-from server import Server
+URL_SERVER = "http://127.0.0.1:8000"
+headers = {'x-token': 'your_token'}
 
-import logging
-logging.basicConfig(filename='log.log', 
-                    encoding='utf-8', 
-                    level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-
-# gérer la forme des requêtes
-# {"project_name","type","content" + "user"}
-
-# Unifier la gestion des informations de state ? 
-# intéger par exemple simplemodel
-# ajouter un décorateur
-
-# TODO : SELECTIONNER UN NOUVEAU SCHEME
 
 class ConnexionError(Exception):
     def __init__(self, message="Error during the connexion"):
@@ -31,550 +21,601 @@ class Widget():
     """
     Widget
     """
-    def __init__(self) -> None:        
-        self.server: None|Server = None # endpoint
+    def __init__(self) -> None:
+        self.user = "local"
         self.project_name: None|str = None
-        self.state = None # global parameters for this instance
-        self.current = None # current element to tag
-        self.schemes: None|Schemes= None # managing schemes
-        self.bert: None|dict = None # managing BERT params
-        self.simplemodel_params: dict = {} # managing models
-        self.history: list = []
-        self.components: dict = {}
-        logging.info("Start widget")
-    
-    def connect(self, 
-                server: Server,
-                project_name: str) -> None:
-        """
-        Initialize the frontend
-        """
-        self.server = server
-        self.project_name = project_name
-        self.schemes = self.get_schemes()
-        self.state = self.get_state()
-        self.current = self.get_next()
-        self.simplemodel_params = self.get_simplemodel_params() # TODO : vérifier l'actualisation 
-        self.bert = self.get_bert()          
-        self.create_widget()
-        logging.info("Connecting and launching widget")
-        
+        #self.scheme: dict = {
+        #                    "current":None,
+        #                    "mode":None,
+        #                    "on":None,
+        #                    "tag":None,
+        #                    }
+        self.current_element = None
+        self.screen = None
 
-    def get_schemes(self) -> Schemes:
-        """
-        Getting available schemes
-        """
-        s = Schemes(self.project_name)
-        req = {
-                "project_name":self.project_name,
-                "type":"schemes"
-            }
-        rep = self.server.get(req)
-        s.load(rep["content"])
-        return s
+    def _post(self,
+             route:str, 
+             params:dict|None = None, 
+             files:str|None = None,
+             data:dict|None = None):
+        url = URL_SERVER + route
+        r = rq.post(url, 
+                    params = params,
+                    json = data,
+                    files=files,
+                    headers=headers)
+        return json.loads(r.content)
     
-    def get_simplemodel_params(self):
+    def _get(self,
+             route:str, 
+             params:dict|None = None, 
+             data:dict|None = None):
+        url = URL_SERVER + route
+        r = rq.get(url, 
+                    params = params,
+                    data = data,
+                    headers=headers)
+        return json.loads(r.content)
+
+    def start(self):
         """
-        Getting available simplemodels
+        Menu to start the widget
+        - connect existing project
+        - start a new one
+        Add -> delete ?
         """
-        req = {
-                "project_name":self.project_name,
-                "type":"simplemodel"            
-            }
-        rep = self.server.get(req)
-        return rep["content"]
-    
-    def get_bert(self):
-        """
-        Getting bert params
-        """
-        req = {
-                "project_name":self.project_name,
-                "type":"bert"            
-        }
-        rep = self.server.get(req)
-        return rep["content"]
-    
+        # Get existing projects
+        existing = self._get("/projects")
+
+        # Existing projects
+        existing_projects = widgets.Dropdown(
+            options=existing["existing projects"],
+            description='Available :',
+            #value = "",
+            layout={'width': '300px'},
+            disabled=False)
+
+        # Start existing project
+        start = widgets.Button(description="Connecter")
+        def start_project(b):
+            self.project_name = existing_projects.value
+            self.state = self.get_state()
+            self.interface()
+        start.on_click(start_project)
+
+        # Create a new project
+        create = widgets.Button(description="Nouveau projet")
+        def create_project(b):
+            self._create_new_project()
+        create.on_click(create_project)
+
+        # Display
+        clear_output()
+        self.output = widgets.HBox([existing_projects, start, create])
+        display(self.output)
+
     def get_state(self):
-        """
-        Get state of the project in the server
-        """
-        req = {
-                "project_name":self.project_name,
-                "type":"state"
-                }
-        rep = self.server.get(req)
-        return rep["content"]
+        state = self._get(route = f"/state/{self.project_name}")
+        return state
 
-    def get_next(self) -> dict:
+    def _create_new_project(self):
         """
-        Get next element to annotate
+        Create a new project
         """
-        # update current scheme (to move somewhere else)
-        state = self.state
-        state["scheme"]["current"] = self.schemes.name
-        req = {
-                "project_name":self.project_name,
-                "type":"next",
-                "content":state
-              }
-        rep = self.server.get(req) 
-        if "error" in rep:
-            raise ConnexionError
-        return rep
-    
-    def get_element(self,element_id) -> dict:
-        """
-        Get element by id
-        """
-        req = {
-                "project_name":self.project_name,
-                "type":"element",
-                "content":{"element_id":element_id,
-                           "scheme":self.schemes.name}
-              }
-        rep = self.server.get(req)
-        return rep
-
-    def post_schemes(self) -> dict:
-        """
-        Update scheme
-        """
-        req = {
-                "project_name":self.project_name,
-                "type":"update_schemes",
-                "content":self.schemes.dump()
-            }
-        self.server.post(req)
-        return {"send":"ok"}
-
-    def post_tag(self, element_id:int|str, label:str) -> dict:
-        """
-        Push annotation
-        """
-        req = {
-                "project_name":self.project_name,
-                "type":"label",
-                "content":  {
-                            "scheme":self.schemes.name,
-                            "element_id":element_id,
-                            "label":label
-                            }
-            }
-        rep = self.server.post(req)
-        return rep
-
-    def delete_tag(self, element_id:int|str) -> dict:
-        """
-        Delete annotation
-        """
-        req = {
-                "project_name":self.project_name,
-                "type":"delete_label",
-                "content":{"element_id":element_id}
-
-        }
-        rep = self.server.post(req)
-        return rep
-
-    def __on_button_click(self,b) -> None:
-        """
-        Validation of a label
-        """
-        # push label, get next element, change text
-        self.post_tag(self.current["element_id"],b.description)
-        self.history.append(self.current)
-        self.current = self.get_next()
-        self.components["text"].value = self.current["content"]["text"]
-        return None
-
+        clear_output()
+        # project name
+        project_name = widgets.Text(disabled=False,
+                                    description="Name:",
+                                    layout={'width': '200px'})
         
-    def __back(self,b) -> None:
+        # select columns
+        column_text = widgets.Dropdown(
+            options=[],
+            description='Text:',
+            disabled=False)
+
+        column_id = widgets.Dropdown(
+            options=[],
+            description='Id:',
+            disabled=False)
+
+        # load file
+        file = widgets.Text(disabled=False,
+                            description="Path:",
+                            layout={'width': '200px'})
+        load = widgets.Button(description="Load",
+                              layout={'width': '100px'})
+        def load_file(b):
+            df = self._load_file(file.value)
+            column_text.options = df.columns
+            column_id.options = df.columns
+        load.on_click(load_file)
+        # WARNING : BUG dans VS Code sur l'upload donc utiliser un
+        # chemin
+        #file = widgets.FileUpload(
+        #    accept='.csv',
+        #    multiple=False
+        #)
+        #def on_upload_change(change):
+        #    print("chargé")
+        #    input_file = list(file.value.values())[0]
+        #    content = input_file['content']
+        #    content = io.StringIO(content.decode('utf-8'))
+        #    df = pd.read_csv(content)
+        #file.observe(on_upload_change, names='value')
+        # nom de la colonne texte
+        # nom de la colonne identifiant
+
+        validate = widgets.Button(description="Create",
+                              layout={'width': '100px'})
+        def create_project(b):
+            data = {
+                    "project_name": project_name.value,
+                    "col_text": column_text.value,
+                    "col_id":column_id.value,
+                    }
+            files = {'file': (file.value,
+                              open(file.value, 'rb'))}
+            self._post(route="/projects/new", 
+                       data=data,
+                       files=files)
+            self.start()
+        validate.on_click(create_project)
+
+        self.output = widgets.VBox([project_name, 
+                                    widgets.HBox([file, load]),
+                                    widgets.HBox([column_text, column_id]),
+                                    validate
+                                    ])
+        display(self.output)
+
+    def _load_file(self,path):
         """
-        Reverse operation
+        Load file
         """
-        self.delete_tag(self.current["element_id"])
-        self.current = self.history.pop()
-        self.components["text"].value = self.current["content"]["text"]
+        path = Path(path)
+        if not path.exists():
+            return "File doesn't exist"
+        if not path.suffix == '.csv':
+            return "File not csv"
+        df = pd.read_csv(path)
+        return df
+    
+    def _send_tag(self,tag):
+        # envoyer le tag
+        # récupérer un nouveau text à coder 
+        # actualiser
         return None
     
-    def __add_label_to_scheme(self,a) -> None:
-        """
-        Add a category, modify widget and save params
-        """
-        # test if not exist
-        if a.value in self.schemes.labels:
+    def _display_next(self):
+
+        params = {
+                          "project_name":self.project_name,
+                          "scheme":self._schemes.value,
+                          "selection":self._mode_selection.value,
+                          "sample":self._mode_sample.value,
+                          "user":self.user,
+                          "tag":None
+                      }
+        r = self._get(route = "/elements/next",
+                      params = params)
+        
+        # Managing errors
+        if "error" in r:
+            print(r)
             return None
-        # change schemes
-        self.schemes.labels.append(a.value)
-        self.post_schemes()
-        # change widget
-        self.components["current_scheme"].children += (self.__add_button_label(a.value),)
-        self.components["delete_labels"].children += (self.__add_button_remove_label(a.value),)
-        return None
 
-    def __add_button_label(self,c):
-        """
-        Add a button label
-        """
-        b = widgets.Button(description=c)
-        b.on_click(self.__on_button_click)
-        return b
+        self.current_element = r
+        self._textarea.value = r["text"]
 
-    def __display_info(self,info):
-        """
-        Display info in the widget
-        """
-        self.information.value = info
+        return True
 
-    def __add_button_remove_label(self, c):
-        """
-        Add a button remove label
-        """
-        b = widgets.Button(description=c)
-        b.on_click(self.__remove_label_from_scheme)
-        return b
-    
-    def __remove_label_from_scheme(self,b):
-        self.schemes.labels.remove(b.description) #remove the label
-        self.post_schemes() # update server
-        self.components["current_scheme"].children = [i for i in self.components["current_scheme"].children if i.description != b.description]
-        self.components["delete_labels"].children = [i for i in self.components["delete_labels"].children if i.description != b.description]
-        b.close() # destroy button
+    def _display_buttons_labels(self):
+        buttons = []
+        labels = self.state["schemes"]["available"][self._schemes.value]
+        def send_tag(v):
+            data = {
+                    "project_name":self.project_name,
+                    "scheme":self._schemes.value,
+                    "element_id":self.current_element["element_id"],
+                    "tag":v.description,
+                    }
+            self._post(route = "/tags/add",
+                       params = {"project_name":self.project_name},
+                       data = data)
+            # gérer les erreurs d'envoi ?
+            self._display_next()
+        for t in labels:
+            b = widgets.Button(description=t)
+            b.on_click(send_tag)
+            buttons.append(b)
+        self._labels.children = buttons
+        return True
 
-    def push_simplemodel(self):
-        req = {
-                "type":"simplemodel",
-                "project_name":self.project_name,
-                "content": {
-                        "current": self.components["models"].children[0].value,
-                        "features":self.components["models"].children[2].value,
-                        "parameters":json.loads(self.components["models"].children[2].value)}
-                }
-        # TODO: tester la formation de la chaine JSON
-        req = self.server.post(req)
-        if "error" in req:
-            self.__display_info(str(req))
+    def update_global(self):
+        self.state = self.get_state()
+        self._display_buttons_labels()
+        self.update_tab_annotations(False)
+        self.update_tab_schemes(False)
+        self.update_tab_simplemodel(False)
+        self.update_tab_description(False)
+        self.update_tab_bertmodels(False)
+        self.update_tab_features(False)
+
+
+    def update_tab_bertmodels(self, state = True):
+        if state:
+            self.state = self.get_state()
+        #TODO
+        return True
+        
+    def update_tab_features(self, state = True):
+        if state:
+            self.state = self.get_state()
+        #TODO
+        return True
+
+    def update_tab_description(self, state = True):
+        """
+        Update description tab
+        """
+        if state:
+            self.state = self.get_state()
+        params = {"project_name":self.project_name,
+                  "scheme":self._schemes.value}
+        r = self._get("/elements/stats",params = params)
+        self.data_description.value = str(r)
+
+    def update_tab_annotations(self, state = True):
+        if state:
+            self.state = self.get_state()
+        self._schemes.options = list(self.state["schemes"]["available"].keys())
+        self._mode_selection.options = ["deterministic","random"]
+        if (self.user in self.state["simplemodel"]["existing"]) and (self._schemes.value in self.state["simplemodel"]["existing"][self.user]):
+            self._mode_selection.options = ["deterministic","random","maxprob"]
+        self._mode_sample.options = self.state["next"]["sample"]
+
+    def update_tab_schemes(self, state = True): 
+        if state:
+            self.state = self.get_state()
+        self.select_scheme.options = list(self.state["schemes"]["available"].keys())
+        self.select_label.options = self.state["schemes"]["available"][self.select_scheme.value]
+        self._display_buttons_labels() # and tagging buttons
+
+    def update_tab_simplemodel(self, state = True):
+        """
+        Update tab simplemodel
+        - get state
+        - options possible
+        - if a model is available for the scheme display
+        - update text
+        """
+        if state:
+            self.state = self.get_state()
+        self.select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
+        self.select_features.options = self.state["features"]["available"]
+        if (self.user in self.state["simplemodel"]["existing"]) and (self._schemes.value in self.state["simplemodel"]["existing"][self.user]):
+            current_model = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
+            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self._schemes.value]["params"])
+            self.select_simplemodel.value = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
         else:
-            # update widget with new menu
-            self.components["header"].children[1].options += ("maxprob",)
+            current_model = "No model available"
+            #self.select_simplemodel.value = None
+            self.simplemodel_params.value = ""
+        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: {current_model}"
 
-    def is_valid_regex(self, pattern):
-        try:
-            re.compile(pattern)
-            return True
-        except re.error:
-            return False
+    def update_tab_data(self, state = True):
+        if state:
+            self.state = self.get_state()
+        params = {"project_name":self.project_name,
+                            "scheme":self._schemes.value,
+                            "min":self.sample_min.value,
+                            "max":self.sample_max.value,
+                            "mode":self.sample_type.value
+                            }
+        r = self._get("/elements/table", params = params)
+        df = pd.DataFrame(r)
+        buttons = []
+        for i,j in df.iterrows():
+            buttons.append(widgets.HBox([
+                #widgets.Checkbox(value=False, description=str(i), layout = {"width":"100px"}),
+                widgets.Dropdown(options = ["test","lol"], layout = {"width":"100px"}),
+                widgets.HTML(value=f"<small>{j['text']}</small>",layout = {"width":"500px"})
+                
+            ]))
+        self.display_table.children = buttons
 
-    def delete_feature(self):
-        """
-        Delete available feature
-        """
-        feature = self.components["features"].children[0].value
-        req = {
-            "project_name":self.project_name,
-            "type":"delete_feature",
-            "content":{"name":feature}
-        }
-        rep = self.server.post(req)
-
-        # update
-        self.components["features"].children[0].options = self.state["features"]["available_features"]
-        self.components["models"].children[2].options = self.state["features"]["available_features"]
-
-        return None
-
-    def post_regex(self):
-        """
-        Add new regex feature
-        """
-        regex = self.components["features"].children[2].value
-        if self.is_valid_regex(regex):
-            name = "regex_"+regex
-            req = {
+    def create_scheme(self, s):
+        if s == "":
+            return "Empty"
+        params = {"project_name":self.project_name}
+        data = {
                 "project_name":self.project_name,
-                "type":"regex",
-                "content":{"name":name,
-                           "value":regex}
-            }
-            rep = self.server.post(req)
-            # update widget : state, available features, simplemodel
-            # open question : why available_features update ?
-            self.components["features"].children[0].options = self.state["features"]["available_features"]
-            self.components["models"].children[2].options = self.state["features"]["available_features"]
+                "name":s,
+                "tags":[]
+                }
+        r = self._post("/schemes/add", params = params, data = data)
+        print(r)
+        self.update_tab_schemes()
+        return r
+    
+    def delete_scheme(self, s):
+        if s == "":
+            return "Empty"
+        params = {"project_name":self.project_name}
+        data = {
+                "project_name":self.project_name,
+                "name":s,
+                }
+        r = self._post("/schemes/delete", params = params, data = data)
+        print(r)
+        self.update_tab_schemes()
+        return r
+    
+    def delete_label(self, label):
+        if label == "":
+            return "Empty"
+        tags = self.state["schemes"]["available"][self.select_scheme.value].copy()
+        tags.remove(label)
+        params = {"project_name":self.project_name}
+        data = {
+                "project_name":self.project_name,
+                "name":self.select_scheme.value,
+                "tags":tags
+                }
+        r = self._post("/schemes/update", params = params, data = data)
+        print(r)
+        self.update_tab_schemes()
+        return r
 
-    def create_scheme(self, b, name:str):
-        # push the scheme to server
-        req = {
-            "project_name":self.project_name,
-            "type":"new_scheme",
-            "content":{"name":name}
-        }
-        rep = self.server.post(req)
-        # update the interface
-        #self.schemes.add(name, []) # TODO : POURQUOI IL Y A UNE SYNCRO SERVEUR/FRONT ACTUELLEMENT ??
-        self.components["modify_schemes"].children[0].options+=(name,)
-        return None
-
-    def train_bert(self):
-        """
-        Train Bert Model
-        """
-
-        req = {
-            "project_name":self.project_name,
-            "type":"train_bert",
-            "content":{
-                "name":self.components["bert"].children[1].value,
-                "type":self.components["bert"].children[2].value,
-                "params":json.loads(self.components["bert"].children[3].value)
-            }
-        }
-
-        rep = self.server.post(req)
-        return None
-
-    def create_widget(self):
-        """
-        Create the widget
-        """
+    def create_label(self, label):
+        if label == "":
+            return "Empty"
+        if label in self.state["schemes"]["available"][self.select_scheme.value]:
+            return "Label already exists"
+        tags = self.state["schemes"]["available"][self.select_scheme.value].copy()
+        tags.append(label)
+        params = {"project_name":self.project_name}
+        data = {
+                "project_name":self.project_name,
+                "name":self.select_scheme.value,
+                "tags":list(tags)
+                }
+        r = self._post("/schemes/update", params = params, data = data)
+        print(r)
+        self.update_tab_schemes()
+        return r
+    
+    def train_simplemodel(self, scheme, model, parameters, features):
+        if model is None:
+            return "Model missing"
+        if parameters is None:
+            return "Parameters missing"
+        if (features is None) or (len(features)==0):
+            return "Need at least one feature" 
+        # TODO : test if parameters is valid
+        params = {"project_name":self.project_name}
+        data = {
+                "model":model,
+                "features":features,
+                "params":json.loads(parameters),
+                "scheme":scheme,
+                "user":self.user
+                }
         
-        # Back button
-        retour = widgets.Button(description="Back",
-                                icon="backward")
-        retour.on_click(self.__back)
+        r = self._post("/models/simplemodel", 
+                       params = params, 
+                       data = data)
+        print(r)
+        self.update_tab_simplemodel()
+        return True
 
-        # Select mode
-
-        mode_label = widgets.Dropdown(
-            options=self.schemes.labels,
-            description='',
-            value = self.schemes.labels[0],
-            layout={'width': '100px'},
-            disabled=True)
-        def on_change_label(change):
+    def interface(self):
+        #-----------
+        # Tab codage
+        #-----------
+        self._textarea = widgets.Textarea(value="",
+                                   layout=widgets.Layout(width='600px',height='150px'), 
+                                   description='')
+        self._schemes = widgets.Dropdown()
+        def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.state["mode"]["label"] = change['new'].lower()
-        mode_label.observe(on_change_label)
+                self._display_buttons_labels()
+        self._schemes.observe(on_change_scheme)
+        self._back = widgets.Button(description = "back")
+        self._mode_selection = widgets.Dropdown()
+        self._mode_sample = widgets.Dropdown()
+        self._mode_label = widgets.Dropdown()
+        self._labels = widgets.HBox()
 
-        mode_menu = widgets.Dropdown(
-            options=self.state["mode"]["available_modes"],
-            value='deterministic',
-            description='Selection :',
-            layout={'width': '200px'},
-            disabled=False,
-        )
-        def on_change(change):
+        # Populate
+        self.update_tab_annotations()
+        self._schemes.value = self._schemes.options[0]
+        self._mode_selection.value = self._mode_selection.options[0]
+        self._mode_sample.value = self._mode_sample.options[0]
+
+        # group in tab
+        tab_annotate = widgets.VBox([
+                            self._schemes,
+                             widgets.HBox([self._back,
+                                    self._mode_selection,
+                                    self._mode_sample,
+                                    self._mode_label]),
+                              self._textarea,
+                              self._labels
+             ])
+
+        #---------
+        # Tab data
+        #---------
+        self.sample_type = widgets.Dropdown(description="On: ", value="all", options=["all","tagged","untagged"], layout={'width': '200px'})
+        self.sample_min = widgets.IntText(value=0, description='Min:', disabled=False, layout={'width': '200px'})
+        self.sample_max = widgets.IntText(value=0, description='Max:', disabled=False, layout={'width': '200px'})
+        self.display_table = widgets.VBox()
+        valid_sample = widgets.Button(description = "Get")
+        valid_sample.on_click(lambda b : self.update_tab_data())
+        modify_table = widgets.Button(description = "Modify (to implement)")
+        modify_table.on_click(lambda b : print("to implement"))
+
+        # Populate
+        self.sample_min.value = 0
+        self.sample_max.value = 10
+        self.sample_type.value = "all"
+        self.update_tab_data()
+
+        # Group in tab
+        tab_data = widgets.VBox([widgets.HBox([
+                                    self.sample_type, 
+                                    self.sample_min, 
+                                    self.sample_max, 
+                                    valid_sample
+                                    ]),
+                                 self.display_table,
+                                 modify_table
+                                  ])
+
+        #---------------
+        # Tab statistics
+        #---------------
+        self.data_description = widgets.Textarea(disabled=True, layout={'width': '400px', 'height':'200px'})
+
+        # Populate
+        self.update_tab_description()
+
+        # Group in tab
+        tab_description = widgets.VBox([self.data_description])
+
+        #------------
+        # Tab schemes
+        #------------
+        new_scheme = widgets.Text(description="New scheme: ")
+        valid_new_scheme = widgets.Button(description = "Create")
+        valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
+        self.select_scheme = widgets.Dropdown(description="Schemes: ", value="", options=[""])
+        valid_delete_scheme = widgets.Button(description = "Delete")
+        valid_delete_scheme.on_click(lambda b : self.delete_scheme(self.select_scheme.value))
+        self.select_label = widgets.Dropdown(description="Labels: ")
+        valid_delete_label = widgets.Button(description = "Delete")
+        valid_delete_label.on_click(lambda b : self.delete_label(self.select_label.value))
+        new_label = widgets.Text(description="New label: ")
+        valid_new_label = widgets.Button(description = "Create")
+        valid_new_label.on_click(lambda b : self.create_label(new_label.value))
+
+        # Populate
+        self.update_tab_schemes()
+        self.select_scheme.value = self._schemes.value
+        if len(self.select_label.options)>0:
+            self.select_label.value = self.select_label.options[0]
+        # change labels if scheme change
+        def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.state["mode"]["mode"] = change['new'].lower()
-            # Case of maxprob
-                if self.state["mode"]["mode"].lower() == "maxprob":
-                    mode_label.disabled = False
-                    self.state["mode"]["label"] = self.schemes.labels[0]
-                if self.state["mode"]["mode"].lower() != "maxprob":
-                    mode_label.disabled = True
-                    self.state["mode"]["label"] = None
-            
-        mode_menu.observe(on_change)
+                print("change to ",self.select_scheme.value)
+                self.update_tab_schemes()
+        self.select_scheme.observe(on_change_scheme)
+        self._display_next()
+        self._display_buttons_labels()
 
-        mode_rows = widgets.Dropdown(
-            options=["All","Tagged","Untagged"],
-            value='Untagged',
-            description='',
-            layout={'width': '100px'},
-            disabled=False,
-        )
-        def on_change_mode_rows(change):
+        # group in tab
+        tab_schemes = widgets.VBox([
+                            widgets.HBox([self.select_scheme, valid_delete_scheme]),
+                            widgets.HBox([new_scheme, valid_new_scheme]),
+                            widgets.HBox([self.select_label, valid_delete_label]),
+                            widgets.HBox([new_label, valid_new_label]),
+                        ])
+
+        #----------------
+        # Tab SimpleModel
+        #----------------
+        self.simplemodel_state = widgets.Text(disabled=True)
+        self.simplemodel_statistics= widgets.Text(disabled=True,
+                                                  value = "Here put statistics")
+
+        self.select_simplemodel =  widgets.Dropdown(description = "models")
+        def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.state["mode"]["on"] = change['new'].lower()
-        mode_rows.observe(on_change_mode_rows)
+                self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][self.select_simplemodel.value])
+        self.select_simplemodel.observe(on_change_scheme)
+        self.select_features = widgets.SelectMultiple()
+        self.simplemodel_params = widgets.Textarea(value="")
+        valid_model = widgets.Button(description = "⚙️Train")
+        valid_model.on_click(lambda b : self.train_simplemodel(scheme=self._schemes.value, #attention il faudra revoir le choix du scheme
+                                                               model = self.select_simplemodel.value,
+                                                               parameters = self.simplemodel_params.value,
+                                                               features = self.select_features.value))
 
-        # Information
-        self.information = widgets.Text(disabled=True,layout={'width': '200px'})
-        self.__display_info('Widget initialized')
+        # Populate
+        self.update_tab_simplemodel()
 
-        self.components["header"] = widgets.HBox([retour,
-                                                  mode_menu,
-                                                  mode_rows,
-                                                  mode_label,
-                                                  self.information])
-        
-        # Text area
-        self.components["text"] = widgets.Textarea(value=self.current["content"]["text"],
-                                        layout=widgets.Layout(width='700px',height='150px'), 
-                                        description='')
-        # Annotation
-        
-        # A button for each category
-        self.components["current_scheme"] = widgets.HBox([self.__add_button_label(i) for i in self.schemes.labels])
-
-        #----------
-        # Modify schemes
-        #----------
-
-        # Menu to select scheme
-        schemes = widgets.Select(
-                    options= self.schemes.available.keys(),
-                    description='',
-                    disabled=False,
-                    layout={'width': '200px',"height":"50px"}
-                    )
-        def on_change(change):
-            if change['type'] == 'change' and change['name'] == 'value':
-                # use the new scheme & display the buttons
-                self.schemes.select(change["new"])
-                self.components["current_scheme"].children = [self.__add_button_label(i) for i in self.schemes.labels]
-                self.components["delete_labels"].children = [self.__add_button_remove_label(i) for i in self.schemes.labels]
-                print("changement de schemes")
-        schemes.observe(on_change)
-
-        # Field to add a category
-        new_cat = widgets.Text(
-            value='Label',
-            placeholder='Type something',
-            disabled=False,
-            description="Add",
-            layout={'width': '200px'}   
-            )
-        new_cat.on_submit(self.__add_label_to_scheme)    
-        
-        self.components["delete_labels"] = widgets.VBox([self.__add_button_remove_label(i) for i in self.schemes.labels])
-
-        # new scheme
-        new_scheme_name = widgets.Text(
-            description="New scheme",
-            value="Name",
-            layout={'width': '200px'}
-        )
-        new_scheme_button = widgets.Button(description="Add scheme")
-        new_scheme_button.on_click(lambda b : self.create_scheme(b, new_scheme_name.value))
-
-        self.components["modify_schemes"] = widgets.HBox([
-                                    schemes,
-                                    widgets.VBox([new_cat,self.components["delete_labels"]]),
-                                    widgets.VBox([new_scheme_name,new_scheme_button])
-                                    ]
-                                    )
-        #----------
-        # SimpleModel tab
-        #----------
-        
-        # TODO : il manque la sélection des embeddings + du label d'intérêt
-
-        select_model =  widgets.Dropdown(
-                    options=self.simplemodel_params["available"].keys(),
-                    description='',
-                    value=None
-                )
-        def on_change_model(change):
-            if change['type'] == 'change' and change['name'] == 'value':
-                # display parameters of the selected model
-                model_params.value = json.dumps(self.simplemodel_params["available"][change['new']])
-        select_model.observe(on_change_model)
-        
-        select_features = widgets.SelectMultiple(
-            options=self.state["features"]["available_features"],
-            value=[], 
-            description='Features'
-        )
-
-        model_params = widgets.Textarea(
-            layout={'width': '200px'},
-            value=json.dumps(self.simplemodel_params["current"]))
-        
-        # TODO : afficher paramètre par défaut des modèles on-change "available"
-        # ou les paramètres du modèle actuel "current"
-        # et gérer l'envoi des bons paramètres pour l'entrainement du modèle
-        
-        model_valid = widgets.Button(description="⚙️ Compute")
-        def update_simplemodel(b):
-            self.push_simplemodel()
-        model_valid.on_click(update_simplemodel)
-        self.components["models"] = widgets.HBox([select_model,
-                                                  select_features,
-                                                  model_params,
-                                                  model_valid])
+        # Group in tab
+        tab_simplemodel = widgets.VBox([
+                            widgets.HBox([self.simplemodel_state,self.simplemodel_statistics]),
+                            self.select_simplemodel,
+                             widgets.HBox([self.select_features,
+                                    self.simplemodel_params]),
+                              valid_model
+             ])
         
         #-------------
-        # Features tab
+        # Tab Features
         #-------------
+        self.available_features =  widgets.Dropdown(description = "Available")
+        self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
+        valid_compute_features = widgets.Button(description = "Compute")
+        add_regex_formula = widgets.Text(description="Add regex:")
+        add_regex_name = widgets.Text(description="Name:")
+        valid_regex = widgets.Button(description = "Add")
 
-        available_features = widgets.Dropdown(
-                            options=self.state["features"]["available_features"],
-                            value=self.state["features"]["available_features"][0],
-                            layout={'width': '150px'}
-                        )
-        delete_feature = widgets.Button(description="Delete feature",
-                                        layout={'width': '150px'})
-        def func_delete_feature(b):
-            self.delete_feature()
-            b.disabled = True
-            time.sleep(1) 
-            b.disabled = False
-        delete_feature.on_click(func_delete_feature)
+        # Populate
+        self.update_tab_features()
 
-        enter_regex = widgets.Textarea(layout={'width': '200px'},
-            value="Regex predictors")
-        valid_regex = widgets.Button(description="Add regex")
-        def add_regex(b):
-            self.post_regex()
-            b.disabled = True
-            time.sleep(1) 
-            b.disabled = False
-        valid_regex.on_click(add_regex)
+        # Group in tab
+        tab_features = widgets.VBox([self.available_features,
+                            widgets.HBox([self.add_features,valid_compute_features]),
+                            widgets.HBox([add_regex_formula,add_regex_name,valid_regex]),
+             ])
 
-        self.components["features"] = widgets.HBox([available_features,delete_feature,
-                                                    enter_regex,valid_regex])
+        #--------------
+        # Tab BertModel
+        #--------------
+        self.bert_status = widgets.Text(disabled=True)
+        self.available_bert = widgets.Dropdown(description="Trained:")
+        self.new_bert_name = widgets.Text(description="New BERT:")
+        self.new_bert_base = widgets.Dropdown(description="Base:")
+        self.new_bert_params = widgets.Textarea()
+        compute_new_bert = widgets.Button(description = "Compute")
+
+        # Populate
+        self.update_tab_bertmodels()
+
+        # Group in tab
+        tab_bertmodel = widgets.VBox([
+                                widgets.HBox([self.available_bert, self.bert_status]),
+                                widgets.HBox([self.new_bert_name, self.new_bert_base, self.new_bert_params]),
+                                 compute_new_bert
+                             ])
 
 
-        #----------
-        # BERT tab
-        #----------
-        # bouton save ?
-
-        bert_available = widgets.Dropdown(
-            options=self.bert["models"]["trained"],
-            layout={'width': '200px'},
-            disabled=False)
-
-        bert_name = widgets.Text(value="Name",layout={'width': '150px'})
-
-        bert_choice = widgets.Dropdown(
-            options=self.bert["models"]["available"],
-            layout={'width': '200px'},
-            disabled=False)
-        #TODO : selection du modèle
+        # display global widget
+        self.output = widgets.Tab([tab_annotate,
+                                   tab_description,
+                                   tab_data,
+                                   tab_schemes,
+                                   tab_features,
+                                   tab_simplemodel,
+                                   tab_bertmodel],
+                                  titles = ["Annotate",
+                                            "Description",
+                                            "Data",
+                                            "Schemes",
+                                            "Features",
+                                            "SimpleModels",
+                                            "BertModels"])
         
-        bert_params = widgets.Textarea(
-            layout={'width': '150px',"height":"200px"},
-            value=json.dumps(self.bert["params"]["default"]))
-        
-        bert_train = widgets.Button(description="⚙️ Train")
-        model_valid.on_click(self.train_bert)
+        # update state on tab change
+        def on_tab_selected(change):
+            self.update_global()
+        self.output.observe(on_tab_selected, names='selected_index')
 
-        self.components["bert"] = widgets.HBox([bert_available,
-                                                bert_name, 
-                                                bert_choice,
-                                                bert_params, 
-                                                bert_train])
-
-        # ------------
-        # Tabs
-        # ------------
-        self.components["footer"] = widgets.Tab([
-                        self.components["current_scheme"],
-                        self.components["modify_schemes"],
-                        self.components["features"],
-                        self.components["models"],
-                        self.components["bert"],
-                        widgets.Textarea(value="Statistics",disabled=True)
-                        ], 
-                        titles = ['Annotations', 
-                          'Modifications', 'Features',
-                          'Simple Models','Bert Models',
-                           'Statistics'])
-        
-        # Display the widget
-        display(self.components["header"])
-        display(self.components["text"])
-        display(self.components["footer"])
+        # Afficher
+        clear_output()
+        display(self.output)

@@ -472,8 +472,13 @@ class Project(Session):
                     "simplemodel":{
                                     "existing":self.simplemodels.available(),
                                     "available":self.simplemodels.available_models
-                    }
+                                    },
+                    "bertmodel":{
+                                "available":self.bertmodel.available_models,
+                                "existing":self.bertmodel.trained
+                                }
                    }
+        # TODO : change available label to default ... 
         return  options
     
     def add_regex(self, name: str, value: str) -> dict:
