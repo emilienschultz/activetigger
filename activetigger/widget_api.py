@@ -195,11 +195,17 @@ class Widget():
                           "scheme":self._schemes.value,
                           "selection":self._mode_selection.value,
                           "sample":self._mode_sample.value,
+                          "user":self.user,
                           "tag":None
                       }
         r = self._get(route = "/elements/next",
                       params = params)
         
+        # Managing errors
+        if "error" in r:
+            print(r)
+            return None
+
         self.current_element = r
         self._textarea.value = r["text"]
 
@@ -231,11 +237,14 @@ class Widget():
         self._display_buttons_labels()
         self.update_tab_annotations()
         self.update_tab_schemes()
+        self.update_tab_simplemodel()
 
     def update_tab_annotations(self):
         self.state = self.get_state()
         self._schemes.options = list(self.state["schemes"]["available"].keys())
-        self._mode_selection.options = self.state["next"]["methods"]
+        self._mode_selection.options = ["deterministic","random"]
+        if (self.user in self.state["simplemodel"]["existing"]) and (self._schemes.value in self.state["simplemodel"]["existing"][self.user]):
+            self._mode_selection.options = ["deterministic","random","maxprob"]
         self._mode_sample.options = self.state["next"]["sample"]
 
     def update_tab_schemes(self): 
@@ -245,9 +254,25 @@ class Widget():
         self._display_buttons_labels() # and tagging buttons
 
     def update_tab_simplemodel(self):
+        """
+        Update tab simplemodel
+        - get state
+        - options possible
+        - if a model is available for the scheme display
+        - update text
+        """
         self.state = self.get_state()
-        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: {self.state['simplemodel']['current']}"
-
+        self.select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
+        self.select_features.options = self.state["features"]["available"]
+        if (self.user in self.state["simplemodel"]["existing"]) and (self._schemes.value in self.state["simplemodel"]["existing"][self.user]):
+            current_model = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
+            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self._schemes.value]["params"])
+            self.select_simplemodel.value = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
+        else:
+            current_model = "No model available"
+            #self.select_simplemodel.value = None
+            self.simplemodel_params.value = ""
+        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: {current_model}"
 
     def update_tab_data(self):
         params = {"project_name":self.project_name,
@@ -262,8 +287,9 @@ class Widget():
         for i,j in df.iterrows():
             buttons.append(widgets.HBox([
                 #widgets.Checkbox(value=False, description=str(i), layout = {"width":"100px"}),
-                widgets.HTML(value=f"<small>{j['text']}</small>"),
-                widgets.Dropdown(options = ["test","lol"], layout = {"width":"100px"})
+                widgets.Dropdown(options = ["test","lol"], layout = {"width":"100px"}),
+                widgets.HTML(value=f"<small>{j['text']}</small>",layout = {"width":"500px"})
+                
             ]))
         self.display_table.children = buttons
 
@@ -324,7 +350,6 @@ class Widget():
                 "tags":list(tags)
                 }
         r = self._post("/schemes/update", params = params, data = data)
-        print(tags)
         print(r)
         self.update_tab_schemes()
         return r
@@ -338,12 +363,12 @@ class Widget():
             return "Need at least one feature" 
         # TODO : test if parameters is valid
         params = {"project_name":self.project_name}
-        print(parameters)
         data = {
                 "model":model,
                 "features":features,
                 "params":json.loads(parameters),
-                "scheme":scheme
+                "scheme":scheme,
+                "user":self.user
                 }
         
         r = self._post("/models/simplemodel", 
@@ -461,34 +486,30 @@ class Widget():
         print(self.state)
         self.simplemodel_state = widgets.Text(disabled=True)
         self.simplemodel_statistics= widgets.Text(disabled=True,
-                                                  value = "to implement")
+                                                  value = "Here put statistics")
 
-        select_simplemodel =  widgets.Dropdown(description = "models")
+        self.select_simplemodel =  widgets.Dropdown(description = "models")
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][select_simplemodel.value])
-        select_simplemodel.observe(on_change_scheme)
-        select_features = widgets.SelectMultiple()
-        simplemodel_params = widgets.Textarea(value="")
+                self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][self.select_simplemodel.value])
+        self.select_simplemodel.observe(on_change_scheme)
+        self.select_features = widgets.SelectMultiple()
+        self.simplemodel_params = widgets.Textarea(value="")
         valid_model = widgets.Button(description = "⚙️Train")
         valid_model.on_click(lambda b : self.train_simplemodel(scheme=self._schemes.value, #attention il faudra revoir le choix du scheme
-                                                               model = select_simplemodel.value,
-                                                               parameters = simplemodel_params.value,
-                                                               features = select_features.value))
+                                                               model = self.select_simplemodel.value,
+                                                               parameters = self.simplemodel_params.value,
+                                                               features = self.select_features.value))
 
         # Populate
-        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: TO IMPLEMENT"
-        select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
-        select_features.options = self.state["features"]["available"]
-        #if not self.state['simplemodel']['parameters'] is None:
-        #    simplemodel_params.value = json.dumps(self.state['simplemodel']['parameters'])
+        self.update_tab_simplemodel()
 
         # Group in tab
         tab_simplemodel = widgets.VBox([
                             widgets.HBox([self.simplemodel_state,self.simplemodel_statistics]),
-                            select_simplemodel,
-                             widgets.HBox([select_features,
-                                    simplemodel_params]),
+                            self.select_simplemodel,
+                             widgets.HBox([self.select_features,
+                                    self.simplemodel_params]),
                               valid_model
              ])
 
@@ -505,9 +526,7 @@ class Widget():
         
         # update state on tab change
         def on_tab_selected(change):
-            self.state = self.get_state()
-            self.update_tab_annotations()
-            self.update_tab_schemes()
+            self.update_global()
         self.output.observe(on_tab_selected, names='selected_index')
 
         # Afficher

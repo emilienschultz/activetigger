@@ -443,14 +443,10 @@ class Project(Session):
         """
         Send state of the project
         """
-        selection_available = ["deterministic","random","maxprob"]
-        #if self.simplemodel.name is not None:
-        #    selection_available.append("maxprob")
-
         options = {
                     "params":self.params,
                     "next":{
-                        "methods":selection_available,
+                        "methods":["deterministic","random","maxprob"],
                         "sample":["untagged","all","tagged"],
                         },
                     "schemes":{

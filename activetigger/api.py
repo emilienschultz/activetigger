@@ -194,6 +194,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
                    selection:str = "deterministic",
                    sample:str = "untagged",
+                   user:str = "user",
                    tag:str|None = None) -> ElementModel|Error:
     """
     Get next element
@@ -202,8 +203,11 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         scheme = scheme,
                         selection = selection,
                         sample = sample,
+                        user = user,
                         tag = tag
                         )
+    print(scheme, selection, sample, user, tag)
+    print(e)
     if "error" in e:
         r = Error(**e)
     else:
