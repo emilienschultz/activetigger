@@ -439,6 +439,20 @@ class Project(Session):
         """
         return self.params
     
+    def get_stats_annotations(self, scheme:str):
+
+        df = self.schemes.get_scheme_data(scheme)
+        df["labels"].value_counts()
+
+        stats = {
+                    "dataset total":len(self.content),
+                    "annotated elements":len(df),
+                    "different users":list(self.schemes.get_distinct_users(scheme)),
+                    "annotations distribution":json.loads(df["labels"].value_counts().to_json()),
+                    "last annotation":"TO DO",
+                }
+        return stats
+
     def get_state(self):
         """
         Send state of the project
@@ -655,21 +669,7 @@ class Schemes(Session):
         Association name - column
         (for the moment 1 - 1)
         """
-        #if not s:
-        #    return self.name
         return s
-
-    #def select(self, name) -> None:
-    #    """
-    #    Select current scheme
-    #    """
-    #    available = self.available()
-    #    if name in available:
-    #        self.name = name
-    #        self.labels = available[name]
-    #        self.col = self.col_name()
-    #    else:
-    #        raise IndexError
 
     def add_scheme(self, scheme:SchemeModel):
         """
@@ -824,6 +824,23 @@ class Schemes(Session):
         conn.commit()
         conn.close()
         return [i[0] for i in results]
+    
+    def get_distinct_users(self, scheme:str):
+        """
+        Get users action for a scheme
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """
+                SELECT DISTINCT user 
+                FROM annotations
+                WHERE project = ? AND scheme = ? AND action = ?
+                """
+        cursor.execute(query, (self.project_name,scheme, "add"))
+        results = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return results
 
     def log_action(self, 
                    action:str, 

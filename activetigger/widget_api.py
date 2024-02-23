@@ -238,6 +238,17 @@ class Widget():
         self.update_tab_annotations()
         self.update_tab_schemes()
         self.update_tab_simplemodel()
+        self.update_tab_description()
+
+    def update_tab_description(self):
+        """
+        Update description tab
+        """
+        params = {"project_name":self.project_name,
+                  "scheme":self._schemes.value}
+        r = self._get("/elements/stats",params = params)
+        print(r)
+        self.data_description.value = str(r)
 
     def update_tab_annotations(self):
         self.state = self.get_state()
@@ -442,6 +453,17 @@ class Widget():
                                  modify_table
                                   ])
 
+        #---------------
+        # Tab statistics
+        #---------------
+        self.data_description = widgets.Textarea(disabled=True, layout={'width': '400px', 'height':'200px'})
+
+        # Populate
+        self.update_tab_description()
+
+        # Group in tab
+        tab_description = widgets.VBox([self.data_description])
+
         #------------
         # Tab schemes
         #------------
@@ -516,10 +538,12 @@ class Widget():
 
         # display global widget
         self.output = widgets.Tab([tab_annotate,
+                                   tab_description,
                                    tab_data,
                                    tab_schemes,
                                    tab_simplemodel],
                                   titles = ["Annotate",
+                                            "Description",
                                             "Data",
                                             "Schemes",
                                             "SimpleModel"])

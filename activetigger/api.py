@@ -127,7 +127,6 @@ async def info_all_projects():
     """
     return {"existing projects":server.existing_projects()}
 
-#async def new_project(project: Annotated[ProjectModel, Depends(get_params)],
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
                       file: Annotated[UploadFile, File()],
@@ -225,6 +224,12 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
     r = project.schemes.get_table_elements(scheme, min, max, mode)
     return r
     
+
+@app.get("/elements/stats", dependencies=[Depends(verified_user)])
+async def get_stats(project: Annotated[Project, Depends(get_project)],
+                    scheme:str):
+    r = project.get_stats_annotations(scheme)
+    return r
     
 
 @app.get("/elements/{id}", dependencies=[Depends(verified_user)])
