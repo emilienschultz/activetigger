@@ -110,7 +110,6 @@ async def get_state(project: Annotated[Project, Depends(get_project)]):
     TODO: a datamodel
     """
     r = project.get_state()
-    print(r)
     return r
 
 @app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
@@ -205,8 +204,6 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         user = user,
                         tag = tag
                         )
-    print(scheme, selection, sample, user, tag)
-    print(e)
     if "error" in e:
         r = Error(**e)
     else:
@@ -416,15 +413,18 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                      bert:BertModelModel):
     """ 
     Compute bertmodel
+    TODO : gestion du nom du projet/scheme à la base du modèle
     """
     df = project.schemes.get_scheme_data(bert.col_label) #move it elswhere ?
-    p = project.bertmodel.start_training_process(name = bert.name,
-                                 df=df,
-                                 col_text=df.columns[0],
-                                 col_label=df.columns[1],
-                                 model=bert.model,
-                                 params = bert.params,
-                                 test_size=bert.test_size)
+    p = project.bertmodels.start_training_process(
+                                name = bert.name,
+                                df=df,
+                                col_text=df.columns[0],
+                                col_label=df.columns[1],
+                                model_name=bert.model,
+                                params = bert.params,
+                                test_size=bert.test_size
+                                )
     server.processes.append(p)
     return {"success":"bert under training"}
 

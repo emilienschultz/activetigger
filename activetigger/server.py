@@ -8,7 +8,7 @@ import re
 import pyarrow.parquet as pq # type: ignore
 import json
 import functions
-from models import BertModel, SimpleModels
+from models import BertModels, SimpleModels
 from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
@@ -282,7 +282,7 @@ class Project(Session):
                                         self.params.dir / self.labels_file) #type: ignore
         self.features: Features = Features(project_name,
                                            self.params.dir / self.features_file) #type: ignore
-        self.bertmodel: BertModel = BertModel(self.params.dir)
+        self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels()
 
         # Compute features if requested
@@ -474,8 +474,9 @@ class Project(Session):
                                     "available":self.simplemodels.available_models
                                     },
                     "bertmodel":{
-                                "available":self.bertmodel.available_models,
-                                "existing":self.bertmodel.trained
+                                "available":self.bertmodels.available_models, #call options ?
+                                "existing":self.bertmodels.available(),
+                                "training":self.bertmodels.training()
                                 }
                    }
         # TODO : change available label to default ... 
