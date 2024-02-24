@@ -29,6 +29,7 @@ logging.basicConfig(filename = "log",
 class BertModels():
     """
     Managing bertmodel training
+    TODO : timestamp ?
     """
 
     def __init__(self, path:Path) -> None:
@@ -54,31 +55,42 @@ class BertModels():
         self.active:list = []
         self.processes:list = []
 
-    def available(self) -> list:
+    def available(self):
         """
         Trained bert
         """
         all_files = os.listdir(self.path)
-        return [i for i in all_files if os.path.isdir(i) and not (self.path / i / "status.log").exists()]
+        trained = [i for i in all_files if os.path.isdir(i) and not (self.path / i / "status.log").exists()]
+        trained = {i.split("_")[0]:i for i in trained}
+        return trained
     
     def training(self) -> list:
-        return []
+        """
+        Currently training bert
+        """
+        return [b.name for b in self.active if b.status == "training"]
 
     def start_training_process(self,
                name:str,
+               scheme:str,
                df:DataFrame,
                col_text:str,
                col_label:str,
                model_name:str,
-               params:dict,
-               test_size:float) -> bool:
+               params:dict|None = None,
+               test_size:float|None = None) -> bool:
         """
-        Manage the training of a model
+        Manage the training of a model from the API
         """
 
+        # name integrating the scheme
+        name = scheme + "_" + scheme
+
         # Set default parameters if needed
-        if len(params) == 0:
+        if params is None:
             params = self.params_default
+        if test_size is None:
+            test_size = 0.2
 
         # Launch as a independant process
         args = {
@@ -100,7 +112,6 @@ class BertModels():
         b.status = "training"
         self.active.append(b)
         self.processes.append(process)
-
         return True
 
     def train_bert(self,
@@ -233,7 +244,7 @@ class BertModels():
     
     def load(self, name:str) -> BertModel:
         """
-        Load already trained model
+        Load trained model
         """
         path = self.path / name
         if not (path / "config.json").exists():

@@ -415,18 +415,18 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     Compute bertmodel
     TODO : gestion du nom du projet/scheme à la base du modèle
     """
-    df = project.schemes.get_scheme_data(bert.col_label) #move it elswhere ?
-    p = project.bertmodels.start_training_process(
+    df = project.schemes.get_scheme_data(bert.scheme) #move it elswhere ?
+    project.bertmodels.start_training_process(
                                 name = bert.name,
+                                scheme = bert.scheme,
                                 df=df,
                                 col_text=df.columns[0],
                                 col_label=df.columns[1],
-                                model_name=bert.model,
+                                model_name=bert.base_model,
                                 params = bert.params,
                                 test_size=bert.test_size
                                 )
-    server.processes.append(p)
-    return {"success":"bert under training"}
+    return {"success":"Bert model under training"}
 
     
 # add route to test the status of the training
