@@ -457,6 +457,9 @@ class Project(Session):
         """
         Send state of the project
         """
+        # update if needed
+        self.bertmodels.update()
+
         options = {
                     "params":self.params,
                     "next":{
@@ -473,10 +476,11 @@ class Project(Session):
                                     "existing":self.simplemodels.available(),
                                     "available":self.simplemodels.available_models
                                     },
-                    "bertmodel":{
+                    "bertmodels":{
                                 "options":self.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
-                                "training":self.bertmodels.training()
+                                "training":self.bertmodels.training(),
+                                "base_parameters":self.bertmodels.params_default
                                 }
                    }
         # TODO : change available label to default ... 

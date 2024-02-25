@@ -246,7 +246,16 @@ class Widget():
     def update_tab_bertmodels(self, state = True):
         if state:
             self.state = self.get_state()
-        #TODO
+        self.new_bert_base.options = self.state["bertmodels"]["options"]
+        self.new_bert_base.value = self.new_bert_base.options[0]
+        # display bertmodels for the current scheme
+        if self._schemes.value in self.state["bertmodels"]["available"]:
+            self.available_bert.options = self.state["bertmodels"]["available"][self._schemes.value]
+        #if len(self.available_bert.options)>0:
+        #    self.available_bert.value = self.available_bert.options[0]
+        self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"])
+        n = len(self.state["bertmodels"]["training"])
+        self.bert_status.value = f"Currently {n} models in training"
         return True
         
     def update_tab_features(self, state = True):
@@ -409,7 +418,36 @@ class Widget():
         print(r)
         self.update_tab_simplemodel()
         return True
-
+    
+    def train_bertmodel(self, 
+                        name:str, 
+                        scheme:str, 
+                        base_model:str, 
+                        parameters:str,
+                        test_size:float|None = None):
+        if base_model is None:
+            return "Model missing"
+        if parameters is None:
+            return "Parameters missing"
+        if test_size is None:
+            test_size = 0.2
+        params = {"project_name":self.project_name}
+        data = {
+                "project_name":self.project_name,
+                "scheme":scheme,
+                "name":name,
+                "base_model":base_model,
+                "params":json.loads(parameters),
+                "test_size":0.2
+                }
+        
+        r = self._post("/models/bert", 
+                       params = params, 
+                       data = data)
+        print(r)
+        self.update_tab_bertmodels()
+        return True
+    
     def interface(self):
         #-----------
         # Tab codage
@@ -579,17 +617,27 @@ class Widget():
         #--------------
         self.bert_status = widgets.Text(disabled=True)
         self.available_bert = widgets.Dropdown(description="Trained:")
-        self.new_bert_name = widgets.Text(description="New BERT:")
+        def on_change_model(change): # if select one, display its options on_select
+            if change['type'] == 'change' and change['name'] == 'value':
+                self.new_bert_params.value = "TO IMPLEMENT"
+        self.available_bert.observe(on_change_model)
+
+        self.new_bert_name = widgets.Text(description="New BERT:", layout={'width': '150px'}, value="Name")
         self.new_bert_base = widgets.Dropdown(description="Base:")
-        self.new_bert_params = widgets.Textarea()
+        self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
         compute_new_bert = widgets.Button(description = "Compute")
+        compute_new_bert.on_click(lambda x: self.train_bertmodel(scheme=self._schemes.value,
+                                                                 name = self.new_bert_name.value,
+                                                                 base_model = self.new_bert_base.value,
+                                                                 parameters = self.new_bert_params.value))
 
         # Populate
         self.update_tab_bertmodels()
 
         # Group in tab
         tab_bertmodel = widgets.VBox([
-                                widgets.HBox([self.available_bert, self.bert_status]),
+                                self.bert_status,
+                                widgets.HBox([self.available_bert]),
                                 widgets.HBox([self.new_bert_name, self.new_bert_base, self.new_bert_params]),
                                  compute_new_bert
                              ])

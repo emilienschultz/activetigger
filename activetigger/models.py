@@ -131,9 +131,14 @@ class BertModels():
         """
         Trained bert
         """
+        r = {}
         all_files = os.listdir(self.path)
-        trained = [i for i in all_files if os.path.isdir(i) and not (self.path / i / "status.log").exists()]
-        return {i.split("_")[0]:i for i in trained}
+        trained = [i for i in all_files if os.path.isdir(self.path / i) and (self.path / i / "finished").exists()]
+        for i in trained:
+            if not i.split("_")[0] in r:
+                r[i.split("_")[0]] = []
+            r[i.split("_")[0]].append(i)
+        return r
     
     def training(self) -> list:
         """
