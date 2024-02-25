@@ -37,13 +37,16 @@ class Widget():
              route:str, 
              params:dict|None = None, 
              files:str|None = None,
+             json_data:dict|None = None,
              data:dict|None = None):
         url = URL_SERVER + route
         r = rq.post(url, 
                     params = params,
-                    json = data,
+                    json = json_data,
+                    data = data,
                     files=files,
                     headers=headers)
+        print(r)
         return json.loads(r.content)
     
     def _get(self,
@@ -76,7 +79,7 @@ class Widget():
             disabled=False)
 
         # Start existing project
-        start = widgets.Button(description="Connecter")
+        start = widgets.Button(description="Connect project")
         def start_project(b):
             self.project_name = existing_projects.value
             self.state = self.get_state()
@@ -84,19 +87,31 @@ class Widget():
         start.on_click(start_project)
 
         # Create a new project
-        create = widgets.Button(description="Nouveau projet")
-        def create_project(b):
-            self._create_new_project()
-        create.on_click(create_project)
+        create = widgets.Button(description="New project")
+        create.on_click(lambda x: self._create_new_project())
+
+        # Delete a project
+        delete = widgets.Button(description="Delete")
+        delete.on_click(lambda x: self._delete_project(existing_projects.value))
 
         # Display
         clear_output()
-        self.output = widgets.HBox([existing_projects, start, create])
+        self.output = widgets.HBox([existing_projects, start, delete, create])
         display(self.output)
 
     def get_state(self):
         state = self._get(route = f"/state/{self.project_name}")
         return state
+
+    def _delete_project(self, project_name:str):
+        """
+        Delete existing project
+        """
+        params = {"project_name": project_name}
+        r = self._post(route = "/projects/delete", 
+                       params = params)
+        self.start()
+        return r
 
     def _create_new_project(self):
         """
@@ -156,9 +171,10 @@ class Widget():
                     }
             files = {'file': (file.value,
                               open(file.value, 'rb'))}
-            self._post(route="/projects/new", 
-                       data=data,
-                       files=files)
+            r = self._post(route="/projects/new", 
+                       files=files,
+                       data=data
+                       )
             self.start()
         validate.on_click(create_project)
 
@@ -175,9 +191,11 @@ class Widget():
         """
         path = Path(path)
         if not path.exists():
-            return "File doesn't exist"
+            print("File doesn't exist")
+            return pd.DataFrame()
         if not path.suffix == '.csv':
-            return "File not csv"
+            print("File not csv")
+            return pd.DataFrame()
         df = pd.read_csv(path)
         return df
     
@@ -222,7 +240,7 @@ class Widget():
                     }
             self._post(route = "/tags/add",
                        params = {"project_name":self.project_name},
-                       data = data)
+                       json_data = data)
             # gérer les erreurs d'envoi ?
             self._display_next()
         for t in labels:
@@ -343,7 +361,9 @@ class Widget():
                 "name":s,
                 "tags":[]
                 }
-        r = self._post("/schemes/add", params = params, data = data)
+        r = self._post("/schemes/add", 
+                       params = params, 
+                       json_data = data)
         print(r)
         self.update_tab_schemes()
         return r
@@ -356,7 +376,9 @@ class Widget():
                 "project_name":self.project_name,
                 "name":s,
                 }
-        r = self._post("/schemes/delete", params = params, data = data)
+        r = self._post("/schemes/delete", 
+                       params = params, 
+                       json_data = data)
         print(r)
         self.update_tab_schemes()
         return r
@@ -372,7 +394,9 @@ class Widget():
                 "name":self.select_scheme.value,
                 "tags":tags
                 }
-        r = self._post("/schemes/update", params = params, data = data)
+        r = self._post("/schemes/update", 
+                       params = params, 
+                       json_data = data)
         print(r)
         self.update_tab_schemes()
         return r
@@ -390,7 +414,9 @@ class Widget():
                 "name":self.select_scheme.value,
                 "tags":list(tags)
                 }
-        r = self._post("/schemes/update", params = params, data = data)
+        r = self._post("/schemes/update", 
+                       params = params, 
+                       json_data = data)
         print(r)
         self.update_tab_schemes()
         return r
@@ -414,7 +440,7 @@ class Widget():
         
         r = self._post("/models/simplemodel", 
                        params = params, 
-                       data = data)
+                       json_data = data)
         print(r)
         self.update_tab_simplemodel()
         return True
@@ -443,7 +469,7 @@ class Widget():
         
         r = self._post("/models/bert", 
                        params = params, 
-                       data = data)
+                       json_data = data)
         print(r)
         self.update_tab_bertmodels()
         return True
