@@ -402,7 +402,8 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
     return r
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
-async def get_bert(project: Annotated[Project, Depends(get_project)]):
+async def get_bert(project: Annotated[Project, Depends(get_project)],
+                   scheme:str):
     """
     bert parameters
     """
@@ -422,7 +423,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 df=df,
                                 col_text=df.columns[0],
                                 col_label=df.columns[1],
-                                model_name=bert.base_model,
+                                base_model=bert.base_model,
                                 params = bert.params,
                                 test_size=bert.test_size
                                 )

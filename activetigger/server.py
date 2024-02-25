@@ -469,13 +469,13 @@ class Project(Session):
                     "features":{
                             "available":list(self.features.map.keys())
                             },
-                    "simplemodel":{
+                    "simplemodel":{ #change names existing/available to available/options
                                     "existing":self.simplemodels.available(),
                                     "available":self.simplemodels.available_models
                                     },
                     "bertmodel":{
-                                "available":self.bertmodels.available_models, #call options ?
-                                "existing":self.bertmodels.available(),
+                                "options":self.bertmodels.base_models,
+                                "available":self.bertmodels.trained(),
                                 "training":self.bertmodels.training()
                                 }
                    }
