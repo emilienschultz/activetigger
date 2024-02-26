@@ -138,7 +138,7 @@ async def new_project(
                       langage:str = Form(None),
                       col_tags:str = Form(None),
                       cols_context:list = Form(None)
-                      ) -> ProjectModel:
+                      ) -> ProjectModel|Error:
     """
     Load new project
         file (file)
@@ -162,18 +162,15 @@ async def new_project(
 
     # For the moment, only csv
     if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=422, 
-                detail="Only CSV file for the moment")
+        return Error(error = "Only CSV file for the moment")
         
     # Test if project exist
     if server.exists(project.project_name):
-        raise HTTPException(status_code=422, 
-                detail="Project already exist")
+        return Error(error = "Project already exist")
 
     project = server.create_project(project, file)
 
     return project
-    #return {"success":"project created"}
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
 async def delete_project(project_name:str):

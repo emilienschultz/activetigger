@@ -4,9 +4,7 @@ import json
 import requests as rq
 from pathlib import Path
 import pandas as pd
-import io
-import re
-import time
+import os
 
 URL_SERVER = "http://127.0.0.1:8000"
 headers = {'x-token': 'your_token'}
@@ -79,7 +77,8 @@ class Widget():
             disabled=False)
 
         # Start existing project
-        start = widgets.Button(description="Connect project")
+        start = widgets.Button(description="Connect")
+        start.style.button_color = 'lightgreen'
         def start_project(b):
             self.project_name = existing_projects.value
             self.state = self.get_state()
@@ -91,12 +90,21 @@ class Widget():
         create.on_click(lambda x: self._create_new_project())
 
         # Delete a project
-        delete = widgets.Button(description="Delete")
+        delete = widgets.Button(description="Delete project", button_style='danger')
         delete.on_click(lambda x: self._delete_project(existing_projects.value))
+
+        # Image
+        image_path = "../img/active_tigger.png"
+        img = open(image_path, 'rb').read()
+        img_at = widgets.Image(value=img, format='png', width=50, height=50)
 
         # Display
         clear_output()
-        self.output = widgets.HBox([existing_projects, start, delete, create])
+        self.output = widgets.HBox([img_at, 
+                                    existing_projects, 
+                                    start, 
+                                    delete, 
+                                    create])
         display(self.output)
 
     def get_state(self):
@@ -122,29 +130,17 @@ class Widget():
         project_name = widgets.Text(disabled=False,
                                     description="Name:",
                                     layout={'width': '200px'})
-        
-        # select columns
-        column_text = widgets.Dropdown(
-            options=[],
-            description='Text:',
-            disabled=False)
-
-        column_id = widgets.Dropdown(
-            options=[],
-            description='Id:',
-            disabled=False)
 
         # load file
         file = widgets.Text(disabled=False,
                             description="Path:",
-                            layout={'width': '200px'})
+                            layout={'width': '300px'},
+                            value = "path to a csv")
+        layout=widgets.Layout(width='100px', margin='0px 0px 0px 50px')
         load = widgets.Button(description="Load",
-                              layout={'width': '100px'})
-        def load_file(b):
-            df = self._load_file(file.value)
-            column_text.options = df.columns
-            column_id.options = df.columns
-        load.on_click(load_file)
+                              layout=layout)
+        load.style.button_color = 'lightgreen'
+
         # WARNING : BUG dans VS Code sur l'upload donc utiliser un
         # chemin
         #file = widgets.FileUpload(
@@ -161,8 +157,26 @@ class Widget():
         # nom de la colonne texte
         # nom de la colonne identifiant
 
+        # separator
+        separate = widgets.HTML(value = "<hr>")
+
+        # select columns
+        column_text = widgets.Dropdown(
+            options=[],
+            description='Text:',
+            layout={'width': '200px'},
+            disabled=False)
+
+        column_id = widgets.Dropdown(
+            options=[],
+            description='Id:',
+            layout={'width': '200px'},
+            disabled=False)
+
+        # create the project
+        layout=widgets.Layout(width='100px', margin='0px 0px 0px 50px')
         validate = widgets.Button(description="Create",
-                              layout={'width': '100px'})
+                              layout=layout)
         def create_project(b):
             data = {
                     "project_name": project_name.value,
@@ -175,14 +189,24 @@ class Widget():
                        files=files,
                        data=data
                        )
-            self.start()
+            # if project exit
+            if "error" in r:
+                print("Project name alreay exists")
+            else:
+                self.start()
         validate.on_click(create_project)
+        validate.style.button_color = 'lightgreen'
 
-        self.output = widgets.VBox([project_name, 
-                                    widgets.HBox([file, load]),
-                                    widgets.HBox([column_text, column_id]),
-                                    validate
-                                    ])
+        # manage 2-level menu display
+        self.output = widgets.VBox([widgets.HBox([project_name, file, load])])
+        
+        def load_file(b):
+            df = self._load_file(file.value)
+            column_text.options = df.columns
+            column_id.options = df.columns
+            self.output.children = list(self.output.children) + [separate, widgets.HBox([column_text, column_id, validate])]
+        load.on_click(load_file)
+
         display(self.output)
 
     def _load_file(self,path):
