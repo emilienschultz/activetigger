@@ -11,12 +11,16 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = [
 "argparse",
+"ipywidgets",
+"IPython",
+"requests",
+"sqlite3",
 "datasets",
 "fasttext",
 "numpy",
 "pandas",
 "pyarrow",
-"sklearn",
+"scikit-learn",
 "torch",
 "torchvision",
 "torchaudio",

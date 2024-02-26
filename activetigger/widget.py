@@ -4,7 +4,6 @@ import json
 import requests as rq
 from pathlib import Path
 import pandas as pd
-import os
 
 # Deal connexion
 URL_SERVER = "http://127.0.0.1:8000"
@@ -22,6 +21,7 @@ class Widget():
         self.project_name: None|str = None
         self.current_element:dict|None = None
         self.current_scheme:str|None = None
+        self.history:list = []
         self.start()
 
     def _post(self,
@@ -264,6 +264,8 @@ class Widget():
             r = self._post(route = "/tags/add",
                        params = {"project_name":self.project_name},
                        json_data = data)
+            # add in history
+            self.history.append(self.current_element["element_id"])
             if "error" in r:
                 print(r)
             self._display_next()
@@ -538,6 +540,29 @@ class Widget():
         self.update_tab_bertmodels()
         return True
     
+    def _get_previous_element(self) -> bool:
+        """
+        Load previous element in history
+        """
+        if len(self.history) < 1:
+            print("No element in history")
+            return False
+        
+        element_id = self.history.pop()
+        r = self._get(route = f"/elements/{element_id}",
+                      params = {"project_name":self.project_name})
+        
+        # Managing errors
+        if "error" in r:
+            print(r)
+            return False
+
+        # Update interface
+        self.current_element = r
+        self._textarea.value = r["text"]   
+
+        return True     
+    
     def interface(self):
         """
         General interface
@@ -559,6 +584,7 @@ class Widget():
                 self._display_buttons_labels()
         self._schemes.observe(on_change_scheme)
         self._back = widgets.Button(description = "back")
+        self._back.on_click(lambda x : self._get_previous_element())
         self._mode_selection = widgets.Dropdown()
         self._mode_sample = widgets.Dropdown()
         self._mode_label = widgets.Dropdown(disabled=True)

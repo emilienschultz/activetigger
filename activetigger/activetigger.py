@@ -1,8 +1,5 @@
 # PyActiveTigger
 import uvicorn
-from fastapi import FastAPI
-import server
-import widget
 
 __version__ = "0.0.1"
 

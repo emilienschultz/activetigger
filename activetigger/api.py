@@ -5,7 +5,6 @@ from datamodels import ProjectModel, ElementModel, SchemesModel, Action, Annotat
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
-import json
 from multiprocessing import Process
 import time
 import pandas as pd
@@ -253,6 +252,8 @@ async def post_tag(action:Action,
                           annotation:AnnotationModel):
     """
     Add, Update, Delete annotations
+    Comment : 
+    - For the moment add == update
     """
     if action in ["add","update"]:
         if annotation.tag is None:
