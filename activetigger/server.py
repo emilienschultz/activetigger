@@ -644,7 +644,7 @@ class Schemes(Session):
         if not scheme in self.available():
             return {"error":"scheme not available"}
 
-        df = self.content.loc[:,[self.content.columns[0],scheme]]
+        df = self.content.loc[:,[self.params.col_id,self.params.col_text,scheme]]
         df.columns = ["text","labels"]
 
         if max == 0:

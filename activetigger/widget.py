@@ -397,8 +397,11 @@ class Widget():
         buttons = []
         for i,j in df.iterrows():
             buttons.append(widgets.HBox([
-                widgets.Dropdown(options = ["test","lol"], layout = {"width":"100px"}),
-                widgets.HTML(value=f"<small>{j['text']}</small>",layout = {"width":"500px"})
+                
+                widgets.HTML(value=f"<hr>{i} - <small>{j['text']}</small>",
+                             layout = {"width":"500px"}),
+                widgets.Dropdown(options = self.state["schemes"]["available"][self._schemes.value], 
+                                 layout = {"width":"100px"}),
                 
             ]))
         self.display_table.children = buttons
