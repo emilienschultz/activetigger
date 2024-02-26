@@ -275,6 +275,7 @@ class Widget():
         for t in labels:
             b = widgets.Button(description=t)
             b.on_click(send_tag)
+            b.style.button_color = 'lightblue'
             buttons.append(b)
         
         # add buttons
@@ -307,7 +308,8 @@ class Widget():
             self.available_bert.options = self.state["bertmodels"]["available"][self._schemes.value]
         #if len(self.available_bert.options)>0:
         #    self.available_bert.value = self.available_bert.options[0]
-        self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"])
+        self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"],
+                                                indent=2)
         n = len(self.state["bertmodels"]["training"])
         self.bert_status.value = f"Currently {n} models in training"
         return True
@@ -330,7 +332,7 @@ class Widget():
         params = {"project_name":self.project_name,
                   "scheme":self._schemes.value}
         r = self._get("/elements/stats",params = params)
-        self.data_description.value = str(r)
+        self.data_description.value = json.dumps(r,indent=2)
         return True
 
     def update_tab_annotations(self, state = True):
@@ -369,7 +371,8 @@ class Widget():
         self.select_features.options = self.state["features"]["available"]
         if (self.user in self.state["simplemodel"]["existing"]) and (self._schemes.value in self.state["simplemodel"]["existing"][self.user]):
             current_model = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
-            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self._schemes.value]["params"])
+            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self._schemes.value]["params"], 
+                                                       indent=2)
             self.select_simplemodel.value = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
         else:
             current_model = "No model available"
@@ -576,18 +579,20 @@ class Widget():
         self._textarea = widgets.Textarea(value="",
                                    layout=widgets.Layout(width='600px',height='150px'), 
                                    description='')
-        self._schemes = widgets.Dropdown()
+        self._schemes = widgets.Dropdown(description = "Scheme:",
+                                         layout=widgets.Layout(width='250px'))
         def on_change_scheme(change): #if change, update
             if change['type'] == 'change' and change['name'] == 'value':
                 self.update_tab_annotations()
                 self._display_next()
                 self._display_buttons_labels()
         self._schemes.observe(on_change_scheme)
-        self._back = widgets.Button(description = "back")
+        self._back = widgets.Button(description = "back",layout=widgets.Layout(width='100px'))
         self._back.on_click(lambda x : self._get_previous_element())
-        self._mode_selection = widgets.Dropdown()
-        self._mode_sample = widgets.Dropdown()
-        self._mode_label = widgets.Dropdown(disabled=True)
+        self._mode_selection = widgets.Dropdown(layout=widgets.Layout(width='120px'))
+        self._mode_sample = widgets.Dropdown(layout=widgets.Layout(width='120px'))
+        self._mode_label = widgets.Dropdown(layout=widgets.Layout(width='120px'),
+                                            disabled=True)
         self._labels = widgets.HBox()
 
         # Populate
@@ -610,7 +615,9 @@ class Widget():
         #---------
         # Tab data
         #---------
-        self.sample_type = widgets.Dropdown(description="On: ", value="all", options=["all","tagged","untagged"], layout={'width': '200px'})
+        self.sample_type = widgets.Dropdown(description="On: ", value="recent", 
+                                            options=["all","tagged","untagged","recent"],
+                                            layout={'width': '200px'})
         self.sample_min = widgets.IntText(value=0, description='Min:', disabled=False, layout={'width': '200px'})
         self.sample_max = widgets.IntText(value=0, description='Max:', disabled=False, layout={'width': '200px'})
         self.display_table = widgets.VBox()
@@ -639,7 +646,8 @@ class Widget():
         #---------------
         # Tab statistics
         #---------------
-        self.data_description = widgets.Textarea(disabled=True, layout={'width': '400px', 'height':'200px'})
+        self.data_description = widgets.Textarea(disabled=True, 
+                                                 layout={'width': '400px', 'height':'300px'})
 
         # Populate
         self.update_tab_description()
@@ -695,10 +703,12 @@ class Widget():
         self.select_simplemodel =  widgets.Dropdown(description = "models")
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][self.select_simplemodel.value])
+                self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][self.select_simplemodel.value],
+                                                           indent=2)
         self.select_simplemodel.observe(on_change_scheme)
         self.select_features = widgets.SelectMultiple()
-        self.simplemodel_params = widgets.Textarea(value="")
+        self.simplemodel_params = widgets.Textarea(value="",
+                                                   layout=widgets.Layout(width='300px',height='200px'))
         valid_model = widgets.Button(description = "⚙️Train")
         valid_model.on_click(lambda b : self.create_simplemodel(scheme=self._schemes.value, #attention il faudra revoir le choix du scheme
                                                                model = self.select_simplemodel.value,
@@ -722,7 +732,8 @@ class Widget():
         #-------------
         self.available_features =  widgets.Dropdown(description = "Available")
         self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
-        valid_compute_features = widgets.Button(description = "Compute")
+        valid_compute_features = widgets.Button(description = "⚙️Compute")
+        valid_compute_features.style.button_color = 'lightgreen'
         add_regex_formula = widgets.Text(description="Add regex:")
         add_regex_name = widgets.Text(description="Name:")
         valid_regex = widgets.Button(description = "Add")
@@ -749,7 +760,8 @@ class Widget():
         self.new_bert_name = widgets.Text(description="New BERT:", layout={'width': '150px'}, value="Name")
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
-        compute_new_bert = widgets.Button(description = "Compute")
+        compute_new_bert = widgets.Button(description = "⚙️Train")
+        compute_new_bert.style.button_color = 'lightgreen'
         compute_new_bert.on_click(lambda x: self.create_bertmodel(scheme=self._schemes.value,
                                                                  name = self.new_bert_name.value,
                                                                  base_model = self.new_bert_base.value,

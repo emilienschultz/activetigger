@@ -658,6 +658,7 @@ class Schemes(Session):
         if mode == "recent": # get recent annotations
             print(user,scheme, max-min)
             list_ids = self.get_recent_tags(user,scheme, max-min)
+            print(list_ids)
             return df.loc[list_ids]
 
         # TODO : user ?
@@ -823,7 +824,7 @@ class Schemes(Session):
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = """
-                SELECT element_id, time 
+                SELECT DISTINCT element_id 
                 FROM annotations
                 WHERE project = ? AND user = ? AND scheme = ? AND action = ?
                 ORDER BY time DESC
