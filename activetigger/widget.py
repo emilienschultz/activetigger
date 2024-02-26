@@ -22,6 +22,7 @@ class Widget():
         self.project_name: None|str = None
         self.current_element:dict|None = None
         self.current_scheme:str|None = None
+        self.start()
 
     def _post(self,
              route:str, 
