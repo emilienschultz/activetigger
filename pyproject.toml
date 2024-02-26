@@ -9,3 +9,22 @@ readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
+dependencies = [
+"argparse",
+"datasets",
+"fasttext",
+"numpy",
+"pandas",
+"pyarrow",
+"sklearn",
+"torch",
+"torchvision",
+"torchaudio",
+"transformers[torch]",
+"sentence_transformers",
+"typing-inspect",
+"typing_extensions",
+"spacy",
+"pyyaml",
+"protobuf",
+"fastapi[all]"]
