@@ -1,9 +1,12 @@
 # PyActiveTigger
 
-from server import Server
-from widget import Widget
+import server
+import widget
 
 __version__ = "0.0.1"
+
+if __name__ == "__main__":
+    #launch stuff
 
 class ActiveTigger():
     def __init__(self,
