@@ -94,3 +94,8 @@ class BertModelModel(BaseModel):
     base_model:str
     params:dict
     test_size:float
+
+class TableElementsModel(BaseModel):
+    list_ids:list
+    list_labels:list
+    scheme:str

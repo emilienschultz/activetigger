@@ -201,7 +201,8 @@ class Widget():
             df = self._load_file(file.value)
             column_text.options = df.columns
             column_id.options = df.columns
-            self.output.children = list(self.output.children) + [separate, widgets.HBox([column_text, column_id, validate])]
+            if len(self.output.children) == 1:
+                self.output.children = list(self.output.children) + [separate, widgets.HBox([column_text, column_id, validate])]
         load.on_click(load_file)
         display(self.output)
 
@@ -386,23 +387,30 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
-        params = {"project_name":self.project_name,
-                            "scheme":self._schemes.value,
-                            "min":self.sample_min.value,
-                            "max":self.sample_max.value,
-                            "mode":self.sample_type.value
-                            }
+        params = {
+                   "project_name":self.project_name,
+                   "scheme":self._schemes.value,
+                   "min":self.sample_min.value,
+                   "max":self.sample_max.value,
+                   "mode":self.sample_type.value
+                  }
         r = self._get("/elements/table", params = params)
+        print(r)
         df = pd.DataFrame(r)
         buttons = []
         for i,j in df.iterrows():
+            options = self.state["schemes"]["available"][self._schemes.value]
+            if not j["labels"] in options:
+                options.append(j["labels"]) # case of a old label
+            menu = widgets.Dropdown(options = options, 
+                                 value = j["labels"],
+                                 layout = {"width":"100px"})
+            menu.layout.id = i
             buttons.append(widgets.HBox([
                 
                 widgets.HTML(value=f"<hr>{i} - <small>{j['text']}</small>",
                              layout = {"width":"500px"}),
-                widgets.Dropdown(options = self.state["schemes"]["available"][self._schemes.value], 
-                                 layout = {"width":"100px"}),
-                
+                menu, # important to keep at the end, used for sending the table
             ]))
         self.display_table.children = buttons
 
@@ -626,8 +634,22 @@ class Widget():
         self.display_table = widgets.VBox()
         valid_sample = widgets.Button(description = "Get")
         valid_sample.on_click(lambda b : self.update_tab_data())
-        modify_table = widgets.Button(description = "Modify (to implement)")
-        modify_table.on_click(lambda b : print("to implement"))
+        valid_sample.style.button_color = 'lightblue'
+        modify_table = widgets.Button(description = "Valid changes")
+        modify_table.style.button_color = 'orange'
+
+        def send_table():
+            data = {
+                "scheme":self._schemes.value,
+                "list_ids":[i.children[-1].layout.id for i in self.display_table.children],
+                "list_labels":[i.children[-1].value for i in self.display_table.children]
+            }
+            r = self._post("/elements/table", 
+                       json_data = data, 
+                       params = {"project_name":self.project_name,
+                                 "user":self.user
+                                 })
+        modify_table.on_click(lambda b : send_table())
 
         # Populate
         self.sample_min.value = 0

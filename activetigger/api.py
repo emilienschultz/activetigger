@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form, Request
 import logging
 from typing import Annotated
-from datamodels import ProjectModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel, Error
+from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,SchemeModel, Error
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
@@ -214,9 +214,19 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                             mode:str = "all",
                         ):
     
-    r = project.schemes.get_table_elements(scheme, min, max, mode)
+    r = project.schemes.get_table(scheme, min, max, mode)
     return r
     
+@app.post("/elements/table", dependencies=[Depends(verified_user)])
+async def post_list_elements(project: Annotated[Project, Depends(get_project)],
+                            user:str,
+                            table:TableElementsModel
+                            ):
+    r = project.schemes.push_table(table = table, 
+                                   user = user)
+    print(r)
+    return r
+
 
 @app.get("/elements/stats", dependencies=[Depends(verified_user)])
 async def get_stats(project: Annotated[Project, Depends(get_project)],
@@ -237,14 +247,6 @@ async def get_element(id:str,
     except: # gérer la bonne erreur
         raise HTTPException(status_code=404, detail="Element not found")
     
-
-@app.post("/tags/table", dependencies=[Depends(verified_user)])
-async def post_table_tags(project: Annotated[Project, Depends(get_project)],
-                          annotation:list[AnnotationModel]):
-    """
-    Deal with list of tags especially for batch update
-    """
-    return {"error":"not implemented"}
 
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,

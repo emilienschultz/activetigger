@@ -50,7 +50,6 @@ class Server(Session):
         self.projects: dict = {}
         self.time_start:datetime = datetime.now()
         self.processes:list = []
-        # to deal multiprocessing TODO: move to Processes ?
         self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
 
         if not self.db.exists():
@@ -231,13 +230,15 @@ class Server(Session):
 
         # load only the number of rows for the project
         content = pd.read_csv(params.dir / "data_raw.csv", 
-                                index_col=0, 
+                                #index_col=0, 
                                 nrows=params.n_rows)
         
+        content = content.set_index(params.col_id)
+        print(content.columns, params.col_id)
         content.index = [str(i) for i in list(content.index)] #type: ignore
-        print(content.index)
     
         # create the empty annotated file / features file
+        # Put the id column as index for the rest of the treatment
         content.to_parquet(params.dir / self.data_file, index=True)
         content[[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
         content[[]].to_parquet(params.dir / self.features_file, index=True)
@@ -629,7 +630,7 @@ class Schemes(Session):
         df.columns = ["text","labels"]
         return df
     
-    def get_table_elements(self, 
+    def get_table(self, 
                            scheme:str,
                            min:int,
                            max:int, 
@@ -643,8 +644,8 @@ class Schemes(Session):
 
         if not scheme in self.available():
             return {"error":"scheme not available"}
-
-        df = self.content.loc[:,[self.params.col_id,self.params.col_text,scheme]]
+        col_text = self.content.columns[0]
+        df = self.content.loc[:,[col_text, scheme]]
         df.columns = ["text","labels"]
 
         if max == 0:
@@ -656,9 +657,7 @@ class Schemes(Session):
             return {"error":"min value too high"}
 
         if mode == "recent": # get recent annotations
-            print(user,scheme, max-min)
             list_ids = self.get_recent_tags(user,scheme, max-min)
-            print(list_ids)
             return df.loc[list_ids]
 
         # TODO : user ?
@@ -812,6 +811,26 @@ class Schemes(Session):
         self.log_action("add", user, element_id, scheme, tag)
         self.save_data()
         return r
+    
+    def push_table(self, table, user:str):
+        """
+        Push table index/tags to update
+        Comments:
+        - only update modified labels
+        """        
+        data = {i:j for i,j in zip(table.list_ids,table.list_labels)}
+        col_scheme = self.col_name(table.scheme)
+        ids = table.list_ids
+        current = self.content.loc[ids,[col_scheme]]
+        modified = []
+        for i,j in current.iterrows():
+            if j[col_scheme]!=data[i]:
+                modified.append(i)
+                r = self.push_tag(i, 
+                              data[i],
+                              table.scheme,
+                              user)
+        return {"labels modified":modified}
 
     def get_recent_tags(self,
                     user:str,
