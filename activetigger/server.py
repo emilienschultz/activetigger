@@ -471,7 +471,8 @@ class Project(Session):
                                 "available":self.schemes.available()
                                 },
                     "features":{
-                            "available":list(self.features.map.keys())
+                            "available":list(self.features.map.keys()),
+                            "options":["sbert","fasttext"]
                             },
                     "simplemodel":{ #change names existing/available to available/options
                                     "existing":self.simplemodels.available(),

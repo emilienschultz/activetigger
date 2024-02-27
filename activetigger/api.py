@@ -361,16 +361,6 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process.start()
         return {"success":"computing fasttext, it could take a few minutes"}
 
-
-    #    log.info("start sbert computing")
-    #    future = server.pool.submit(functions.to_sbert,df)
-    #    def callback(x):
-    #        r = x.result()
-    #        project.features.add("sbert",r)
-    #        log.info("computing finished - adding the feature")
-    #        return True
-    #    future.add_done_callback(callback)
-    #    return {"success":"computing sbert, it could take a few minutes"}
     return {"error":"not implemented"}
 
 @app.post("/features/delete", dependencies=[Depends(verified_user)])

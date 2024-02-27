@@ -321,7 +321,12 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
-        #TODO
+        self.available_features.options = self.state["features"]["available"]
+        if len(self.state["features"]["available"])>0:
+            self.available_features.value = self.state["features"]["available"][0]
+
+        self.add_features.options = self.state["features"]["options"]
+
         return True
 
     def update_tab_description(self, state = True):
@@ -758,6 +763,13 @@ class Widget():
         self.available_features =  widgets.Dropdown(description = "Available")
         self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
         valid_compute_features = widgets.Button(description = "⚙️Compute")
+        def compute_feature():
+            r = self._post(f"/features/add/{self.add_features.value}", 
+                       params = {"project_name":self.project_name})
+            print(r)
+            # TODO : indicate that the computing is launched
+        valid_compute_features.on_click(lambda x : compute_feature())
+            
         valid_compute_features.style.button_color = 'lightgreen'
         add_regex_formula = widgets.Text(description="Add regex:")
         add_regex_name = widgets.Text(description="Name:")
