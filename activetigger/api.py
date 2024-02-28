@@ -1,11 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form, Request
 import logging
 from typing import Annotated
-from datamodels import ProjectModel, ElementModel, SchemesModel, Action, AnnotationModel,SchemeModel
+from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,SchemeModel, Error
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
-import json
 from multiprocessing import Process
 import time
 import pandas as pd
@@ -42,17 +41,21 @@ async def update():
         project = server.projects[p]
         # merge results of subprocesses
         if (project.params.dir / "sbert.parquet").exists():
-            log = functions.log_process("sbert", project.params.dir / "log_process.log") 
-            log.info("Completing sbert computation")
-            df = pd.read_parquet(project.params.dir / "sbert.parquet")
-            project.features.add("sbert",df)
-            os.remove(project.params.dir / "sbert.parquet")
-            logging.info("SBERT embeddings added to project")
+            log = functions.log_process("sbert", project.params.dir / "log_process.log") # log
+            log.info("Completing sbert computation") # log
+            df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data
+            project.features.add("sbert",df) # add to the feature manager
+            if "sbert" in project.features.training:
+                project.features.training.remove("sbert") # remove from pending processes
+            os.remove(project.params.dir / "sbert.parquet") # clean the files
+            logging.info("SBERT embeddings added to project") # log
         if (project.params.dir / "fasttext.parquet").exists():
             log = functions.log_process("fasttext", project.params.dir / "log_process.log") 
             log.info("Completing fasttext computation")
             df = pd.read_parquet(project.params.dir / "fasttext.parquet")
-            project.features.add("fasttext",df)
+            project.features.add("fasttext",df) 
+            if "fasttext" in project.features.training:
+                project.features.training.remove("fasttext") 
             os.remove(project.params.dir / "fasttext.parquet")
             print("Adding fasttext embeddings")
             logging.info("FASTTEXT embeddings added to project")
@@ -110,7 +113,6 @@ async def get_state(project: Annotated[Project, Depends(get_project)]):
     TODO: a datamodel
     """
     r = project.get_state()
-    print(r)
     return r
 
 @app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
@@ -127,7 +129,6 @@ async def info_all_projects():
     """
     return {"existing projects":server.existing_projects()}
 
-#async def new_project(project: Annotated[ProjectModel, Depends(get_params)],
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
                       file: Annotated[UploadFile, File()],
@@ -140,7 +141,7 @@ async def new_project(
                       langage:str = Form(None),
                       col_tags:str = Form(None),
                       cols_context:list = Form(None)
-                      ) -> ProjectModel:
+                      ) -> ProjectModel|Error:
     """
     Load new project
         file (file)
@@ -164,18 +165,15 @@ async def new_project(
 
     # For the moment, only csv
     if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=422, 
-                detail="Only CSV file for the moment")
+        return Error(error = "Only CSV file for the moment")
         
     # Test if project exist
     if server.exists(project.project_name):
-        raise HTTPException(status_code=422, 
-                detail="Project already exist")
+        return Error(error = "Project already exist")
 
     project = server.create_project(project, file)
 
     return project
-    #return {"success":"project created"}
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
 async def delete_project(project_name:str):
@@ -194,7 +192,8 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
                    selection:str = "deterministic",
                    sample:str = "untagged",
-                   tag:str|None = None) -> ElementModel:
+                   user:str = "user",
+                   tag:str|None = None) -> ElementModel|Error:
     """
     Get next element
     """
@@ -202,10 +201,14 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         scheme = scheme,
                         selection = selection,
                         sample = sample,
+                        user = user,
                         tag = tag
                         )
-        
-    return ElementModel(**e)
+    if "error" in e:
+        r = Error(**e)
+    else:
+        r = ElementModel(**e)
+    return r
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -215,9 +218,25 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                             mode:str = "all",
                         ):
     
-    r = project.schemes.get_table_elements(scheme, min, max, mode)
+    r = project.schemes.get_table(scheme, min, max, mode)
     return r
     
+@app.post("/elements/table", dependencies=[Depends(verified_user)])
+async def post_list_elements(project: Annotated[Project, Depends(get_project)],
+                            user:str,
+                            table:TableElementsModel
+                            ):
+    r = project.schemes.push_table(table = table, 
+                                   user = user)
+    print(r)
+    return r
+
+
+@app.get("/elements/stats", dependencies=[Depends(verified_user)])
+async def get_stats(project: Annotated[Project, Depends(get_project)],
+                    scheme:str):
+    r = project.get_stats_annotations(scheme)
+    return r
     
 
 @app.get("/elements/{id}", dependencies=[Depends(verified_user)])
@@ -233,20 +252,14 @@ async def get_element(id:str,
         raise HTTPException(status_code=404, detail="Element not found")
     
 
-@app.post("/tags/table", dependencies=[Depends(verified_user)])
-async def post_table_tags(project: Annotated[Project, Depends(get_project)],
-                          annotation:list[AnnotationModel]):
-    """
-    Deal with list of tags especially for batch update
-    """
-    return {"error":"not implemented"}
-
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
                           project: Annotated[Project, Depends(get_project)],
                           annotation:AnnotationModel):
     """
     Add, Update, Delete annotations
+    Comment : 
+    - For the moment add == update
     """
     if action in ["add","update"]:
         if annotation.tag is None:
@@ -339,6 +352,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process = Process(target=functions.process_sbert, 
                           kwargs = args)
         process.start()
+        project.features.training.append(name)
         return {"success":"computing sbert, it could take a few minutes"}
     if name == "fasttext":
         log.info("Start computing fasttext")
@@ -350,18 +364,9 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process = Process(target=functions.process_fasttext, 
                           kwargs = args)
         process.start()
+        project.features.training.append(name)
         return {"success":"computing fasttext, it could take a few minutes"}
 
-
-    #    log.info("start sbert computing")
-    #    future = server.pool.submit(functions.to_sbert,df)
-    #    def callback(x):
-    #        r = x.result()
-    #        project.features.add("sbert",r)
-    #        log.info("computing finished - adding the feature")
-    #        return True
-    #    future.add_done_callback(callback)
-    #    return {"success":"computing sbert, it could take a few minutes"}
     return {"error":"not implemented"}
 
 @app.post("/features/delete", dependencies=[Depends(verified_user)])
@@ -393,7 +398,8 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
     return r
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
-async def get_bert(project: Annotated[Project, Depends(get_project)]):
+async def get_bert(project: Annotated[Project, Depends(get_project)],
+                   scheme:str):
     """
     bert parameters
     """
@@ -404,17 +410,20 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                      bert:BertModelModel):
     """ 
     Compute bertmodel
+    TODO : gestion du nom du projet/scheme à la base du modèle
     """
-    df = project.schemes.get_scheme_data(bert.col_label) #move it elswhere ?
-    p = project.bertmodel.start_training_process(name = bert.name,
-                                 df=df,
-                                 col_text=df.columns[0],
-                                 col_label=df.columns[1],
-                                 model=bert.model,
-                                 params = bert.params,
-                                 test_size=bert.test_size)
-    server.processes.append(p)
-    return {"success":"bert under training"}
+    df = project.schemes.get_scheme_data(bert.scheme) #move it elswhere ?
+    project.bertmodels.start_training_process(
+                                name = bert.name,
+                                scheme = bert.scheme,
+                                df=df,
+                                col_text=df.columns[0],
+                                col_label=df.columns[1],
+                                base_model=bert.base_model,
+                                params = bert.params,
+                                test_size=bert.test_size
+                                )
+    return {"success":"Bert model under training"}
 
     
 # add route to test the status of the training

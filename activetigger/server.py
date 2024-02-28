@@ -8,7 +8,7 @@ import re
 import pyarrow.parquet as pq # type: ignore
 import json
 import functions
-from models import BertModel, SimpleModels
+from models import BertModels, SimpleModels
 from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
@@ -50,7 +50,6 @@ class Server(Session):
         self.projects: dict = {}
         self.time_start:datetime = datetime.now()
         self.processes:list = []
-        # to deal multiprocessing TODO: move to Processes ?
         self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
 
         if not self.db.exists():
@@ -231,13 +230,15 @@ class Server(Session):
 
         # load only the number of rows for the project
         content = pd.read_csv(params.dir / "data_raw.csv", 
-                                index_col=0, 
+                                #index_col=0, 
                                 nrows=params.n_rows)
         
+        content = content.set_index(params.col_id)
+        print(content.columns, params.col_id)
         content.index = [str(i) for i in list(content.index)] #type: ignore
-        print(content.index)
     
         # create the empty annotated file / features file
+        # Put the id column as index for the rest of the treatment
         content.to_parquet(params.dir / self.data_file, index=True)
         content[[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
         content[[]].to_parquet(params.dir / self.features_file, index=True)
@@ -282,7 +283,7 @@ class Project(Session):
                                         self.params.dir / self.labels_file) #type: ignore
         self.features: Features = Features(project_name,
                                            self.params.dir / self.features_file) #type: ignore
-        self.bertmodel: BertModel = BertModel(self.params.dir)
+        self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels()
 
         # Compute features if requested
@@ -347,18 +348,22 @@ class Project(Session):
         """
 
         # build the dataset with label + predictors
-        print("start fit model")
         df_features = self.features.get(features)
         col_labels = self.schemes.col_name(scheme)
         col_features = list(df_features.columns)
-        print(col_labels,col_features)
         data = pd.concat([self.schemes.content[col_labels],
                           df_features],
                           axis=1)
-        print(data.shape)
-        self.simplemodels.add_simplemodel(user = user, scheme = scheme, features=features, name = model, df = data, 
-                             col_labels = col_labels, col_features = col_features,
-                             standardize = True, model_params = model_params) 
+        self.simplemodels.add_simplemodel(user = user, 
+                                          scheme = scheme, 
+                                          features=features, 
+                                          name = model, 
+                                          df = data, 
+                                          col_labels = col_labels, 
+                                          col_features = col_features,
+                                          model_params = model_params,
+                                          standardize = True
+                                          ) 
         
         #s = SimpleModel(model=model,
         #                data = data,
@@ -388,30 +393,35 @@ class Project(Session):
                  scheme:str,
                  selection:str = "deterministic",
                  sample:str = "untagged",
+                 user:str = "user",
                  tag:None|str = None) -> dict:
         """
         Get next item
         Related to a specific scheme
-
-        TODO : gérer les cases tagguées/non tagguées etc.
         """
 
-        # Pour le moment uniquement les cases non nulles
-        f = self.schemes.content[scheme].isnull()
+        # Select the sample
+        f = self.schemes.content[scheme].apply(lambda x : True)
+        if sample == "untagged":
+            f = self.schemes.content[scheme].isnull()
+        if sample == "tagged":
+            f = self.schemes.content[scheme].notnull()
 
+        # Type of selection
         if selection == "deterministic": # next row
             element_id = self.schemes.content[f].index[0]
         if selection == "random": # random row
             element_id = self.schemes.content[f].sample(random_state=42).index[0]
-        if selection == "maxprob": # higher prob row
+        if selection == "maxprob": # higher prob 
+            # only possible if the model has been trained
+            if not self.simplemodels.exists(user,scheme):
+                return {"error":"Simplemodel doesn't exist"}
             if tag is None: # default label to first
-                tag = self.schemes.availables()[scheme][0] #type: ignore
-            # TODO : CHANGE HERE
-            # higher predict value
-            element_id = self.simplemodels.proba[f][tag].sort_values(ascending=False).index[0] #type: ignore
+                tag = self.schemes.available()[scheme][0]
+            sm = self.simplemodels.get_model(user, scheme) # get model
+            element_id = sm.proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
         
         # TODO : put a lock on the element when sent ?
-
         # Pour le moment uniquement l'id et le texte (dans le futur ajouter tous les éléments)
         return  self.get_element(element_id)
     
@@ -430,31 +440,53 @@ class Project(Session):
         """
         return self.params
     
+    def get_stats_annotations(self, scheme:str):
+
+        df = self.schemes.get_scheme_data(scheme)
+        df["labels"].value_counts()
+
+        stats = {
+                    "dataset total":len(self.content),
+                    "annotated elements":len(df),
+                    "different users":list(self.schemes.get_distinct_users(scheme)),
+                    "annotations distribution":json.loads(df["labels"].value_counts().to_json()),
+                    "last annotation":"TO DO",
+                }
+        return stats
+
     def get_state(self):
         """
         Send state of the project
         """
-        selection_available = ["deterministic","random","maxprob"]
-        #if self.simplemodel.name is not None:
-        #    selection_available.append("maxprob")
+        # update if needed
+        self.bertmodels.update()
 
         options = {
                     "params":self.params,
                     "next":{
-                        "methods":selection_available,
+                        "methods":["deterministic","random","maxprob"],
                         "sample":["untagged","all","tagged"],
                         },
                     "schemes":{
                                 "available":self.schemes.available()
                                 },
                     "features":{
-                            "available":list(self.features.map.keys())
+                            "available":list(self.features.map.keys()),
+                            "training":self.features.training,
+                            "options":["sbert","fasttext"]
                             },
-                    "simplemodel":{
+                    "simplemodel":{ #change names existing/available to available/options
                                     "existing":self.simplemodels.available(),
                                     "available":self.simplemodels.available_models
-                    }
+                                    },
+                    "bertmodels":{
+                                "options":self.bertmodels.base_models,
+                                "available":self.bertmodels.trained(),
+                                "training":self.bertmodels.training(),
+                                "base_parameters":self.bertmodels.params_default
+                                }
                    }
+        # TODO : change available label to default ... 
         return  options
     
     def add_regex(self, name: str, value: str) -> dict:
@@ -487,6 +519,7 @@ class Features(Session):
         content, map = self.load()
         self.content: DataFrame = content
         self.map:dict = map
+        self.training:list = []
 
     def __repr__(self) -> str:
         return f"Available features : {self.map}"
@@ -600,7 +633,7 @@ class Schemes(Session):
         df.columns = ["text","labels"]
         return df
     
-    def get_table_elements(self, 
+    def get_table(self, 
                            scheme:str,
                            min:int,
                            max:int, 
@@ -614,8 +647,8 @@ class Schemes(Session):
 
         if not scheme in self.available():
             return {"error":"scheme not available"}
-
-        df = self.content.loc[:,[self.content.columns[0],scheme]]
+        col_text = self.content.columns[0]
+        df = self.content.loc[:,[col_text, scheme]]
         df.columns = ["text","labels"]
 
         if max == 0:
@@ -627,7 +660,6 @@ class Schemes(Session):
             return {"error":"min value too high"}
 
         if mode == "recent": # get recent annotations
-            print(user,scheme, max-min)
             list_ids = self.get_recent_tags(user,scheme, max-min)
             return df.loc[list_ids]
 
@@ -650,21 +682,7 @@ class Schemes(Session):
         Association name - column
         (for the moment 1 - 1)
         """
-        #if not s:
-        #    return self.name
         return s
-
-    #def select(self, name) -> None:
-    #    """
-    #    Select current scheme
-    #    """
-    #    available = self.available()
-    #    if name in available:
-    #        self.name = name
-    #        self.labels = available[name]
-    #        self.col = self.col_name()
-    #    else:
-    #        raise IndexError
 
     def add_scheme(self, scheme:SchemeModel):
         """
@@ -796,6 +814,26 @@ class Schemes(Session):
         self.log_action("add", user, element_id, scheme, tag)
         self.save_data()
         return r
+    
+    def push_table(self, table, user:str):
+        """
+        Push table index/tags to update
+        Comments:
+        - only update modified labels
+        """        
+        data = {i:j for i,j in zip(table.list_ids,table.list_labels)}
+        col_scheme = self.col_name(table.scheme)
+        ids = table.list_ids
+        current = self.content.loc[ids,[col_scheme]]
+        modified = []
+        for i,j in current.iterrows():
+            if j[col_scheme]!=data[i]:
+                modified.append(i)
+                r = self.push_tag(i, 
+                              data[i],
+                              table.scheme,
+                              user)
+        return {"labels modified":modified}
 
     def get_recent_tags(self,
                     user:str,
@@ -808,7 +846,7 @@ class Schemes(Session):
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = """
-                SELECT element_id, time 
+                SELECT DISTINCT element_id 
                 FROM annotations
                 WHERE project = ? AND user = ? AND scheme = ? AND action = ?
                 ORDER BY time DESC
@@ -819,6 +857,23 @@ class Schemes(Session):
         conn.commit()
         conn.close()
         return [i[0] for i in results]
+    
+    def get_distinct_users(self, scheme:str):
+        """
+        Get users action for a scheme
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """
+                SELECT DISTINCT user 
+                FROM annotations
+                WHERE project = ? AND scheme = ? AND action = ?
+                """
+        cursor.execute(query, (self.project_name,scheme, "add"))
+        results = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return results
 
     def log_action(self, 
                    action:str, 

@@ -6,23 +6,18 @@ Work in progress ...
 
 # Current roadmap
 
-- fastapi structure
-- database/storage
-- finish bertmodel implementation
-- queue management (rq)
-- multiuser
-- test units
-- clean ipywidget
+- To add : history of actions
+- To add : multiuser
+- To add : queue management (rq)
+- To add : test units
 
 # Technical specifications
 
 - REST-like client/server architecture
-    - JSON for data interchange format
-    - State-ful serversite
-- mixed data storage : sqlite + files
-- backend Python
+- Mixed data storage : sqlite + files
+- Backend Python
     - FastAPI
-    - Job management with RQ
-- frontend
-    - Jupyter widget (simplified)
-    - Javascript (React ? Vue ?)
+    - independant Processes to CPU-bound tasts (embeddings/bertmodels)
+- Frontend
+    - IPython widget
+    - To do : Javascript (React ? Vue ?)
