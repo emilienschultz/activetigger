@@ -719,12 +719,12 @@ class Widget():
         #------------
         # Tab schemes
         #------------
-        new_scheme = widgets.Text(description="New scheme: ")
-        valid_new_scheme = widgets.Button(description = "Create")
-        valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
         self.select_scheme = widgets.Dropdown(description="Schemes: ", value="", options=[""])
         valid_delete_scheme = widgets.Button(description = "Delete")
         valid_delete_scheme.on_click(lambda b : self.delete_scheme(self.select_scheme.value))
+        new_scheme = widgets.Text(description="New scheme: ")
+        valid_new_scheme = widgets.Button(description = "Create")
+        valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
         self.select_label = widgets.Dropdown(description="Labels: ")
         valid_delete_label = widgets.Button(description = "Delete")
         valid_delete_label.on_click(lambda b : self.delete_label(self.select_label.value))
