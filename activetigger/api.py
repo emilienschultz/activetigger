@@ -45,7 +45,8 @@ async def update():
             log.info("Completing sbert computation") # log
             df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data
             project.features.add("sbert",df) # add to the feature manager
-            project.features.training.remove("sbert") # remove from pending processes
+            if "sbert" in project.features.training:
+                project.features.training.remove("sbert") # remove from pending processes
             os.remove(project.params.dir / "sbert.parquet") # clean the files
             logging.info("SBERT embeddings added to project") # log
         if (project.params.dir / "fasttext.parquet").exists():
@@ -53,7 +54,8 @@ async def update():
             log.info("Completing fasttext computation")
             df = pd.read_parquet(project.params.dir / "fasttext.parquet")
             project.features.add("fasttext",df) 
-            project.features.training.remove("fasttext") 
+            if "fasttext" in project.features.training:
+                project.features.training.remove("fasttext") 
             os.remove(project.params.dir / "fasttext.parquet")
             print("Adding fasttext embeddings")
             logging.info("FASTTEXT embeddings added to project")
