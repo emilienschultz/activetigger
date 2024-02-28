@@ -472,6 +472,7 @@ class Project(Session):
                                 },
                     "features":{
                             "available":list(self.features.map.keys()),
+                            "training":self.features.training,
                             "options":["sbert","fasttext"]
                             },
                     "simplemodel":{ #change names existing/available to available/options
@@ -518,6 +519,7 @@ class Features(Session):
         content, map = self.load()
         self.content: DataFrame = content
         self.map:dict = map
+        self.training:list = []
 
     def __repr__(self) -> str:
         return f"Available features : {self.map}"

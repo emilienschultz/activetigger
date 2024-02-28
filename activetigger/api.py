@@ -41,17 +41,19 @@ async def update():
         project = server.projects[p]
         # merge results of subprocesses
         if (project.params.dir / "sbert.parquet").exists():
-            log = functions.log_process("sbert", project.params.dir / "log_process.log") 
-            log.info("Completing sbert computation")
-            df = pd.read_parquet(project.params.dir / "sbert.parquet")
-            project.features.add("sbert",df)
-            os.remove(project.params.dir / "sbert.parquet")
-            logging.info("SBERT embeddings added to project")
+            log = functions.log_process("sbert", project.params.dir / "log_process.log") # log
+            log.info("Completing sbert computation") # log
+            df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data
+            project.features.add("sbert",df) # add to the feature manager
+            project.features.training.remove("sbert") # remove from pending processes
+            os.remove(project.params.dir / "sbert.parquet") # clean the files
+            logging.info("SBERT embeddings added to project") # log
         if (project.params.dir / "fasttext.parquet").exists():
             log = functions.log_process("fasttext", project.params.dir / "log_process.log") 
             log.info("Completing fasttext computation")
             df = pd.read_parquet(project.params.dir / "fasttext.parquet")
-            project.features.add("fasttext",df)
+            project.features.add("fasttext",df) 
+            project.features.training.remove("fasttext") 
             os.remove(project.params.dir / "fasttext.parquet")
             print("Adding fasttext embeddings")
             logging.info("FASTTEXT embeddings added to project")
@@ -348,6 +350,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process = Process(target=functions.process_sbert, 
                           kwargs = args)
         process.start()
+        project.features.training.append(name)
         return {"success":"computing sbert, it could take a few minutes"}
     if name == "fasttext":
         log.info("Start computing fasttext")
@@ -359,6 +362,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process = Process(target=functions.process_fasttext, 
                           kwargs = args)
         process.start()
+        project.features.training.append(name)
         return {"success":"computing fasttext, it could take a few minutes"}
 
     return {"error":"not implemented"}

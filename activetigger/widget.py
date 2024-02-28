@@ -327,6 +327,9 @@ class Widget():
 
         self.add_features.options = self.state["features"]["options"]
 
+        c = self.state["features"]["training"]
+        self.info_features.value = f"Processes currently running: {c}"
+
         return True
 
     def update_tab_description(self, state = True):
@@ -582,6 +585,18 @@ class Widget():
 
         return True     
     
+    def compute_feature(self, feature_name) -> bool:
+        """
+        Compute feature
+        """
+        if not feature_name in self.state["features"]["options"]:
+            return "This feature doesn't exist"
+        r = self._post(f"/features/add/{feature_name}", 
+                    params = {"project_name":self.project_name})
+        print(r)
+        self.update_tab_features()
+        return True
+    
     def interface(self):
         """
         General interface
@@ -760,16 +775,11 @@ class Widget():
         #-------------
         # Tab Features
         #-------------
+        self.info_features  = widgets.HTML(value = "No process currently running")
         self.available_features =  widgets.Dropdown(description = "Available")
         self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
         valid_compute_features = widgets.Button(description = "⚙️Compute")
-        def compute_feature():
-            r = self._post(f"/features/add/{self.add_features.value}", 
-                       params = {"project_name":self.project_name})
-            print(r)
-            # TODO : indicate that the computing is launched
-        valid_compute_features.on_click(lambda x : compute_feature())
-            
+        valid_compute_features.on_click(lambda x : self.compute_feature(self.add_features.value))
         valid_compute_features.style.button_color = 'lightgreen'
         add_regex_formula = widgets.Text(description="Add regex:")
         add_regex_name = widgets.Text(description="Name:")
@@ -779,9 +789,11 @@ class Widget():
         self.update_tab_features()
 
         # Group in tab
-        tab_features = widgets.VBox([self.available_features,
-                            widgets.HBox([self.add_features,valid_compute_features]),
-                            widgets.HBox([add_regex_formula,add_regex_name,valid_regex]),
+        tab_features = widgets.VBox([
+            self.info_features,
+            self.available_features,
+            widgets.HBox([self.add_features,valid_compute_features]),
+            widgets.HBox([add_regex_formula,add_regex_name,valid_regex]),
              ])
 
         #--------------
