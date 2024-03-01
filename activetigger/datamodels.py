@@ -9,8 +9,10 @@ class ProjectModel(BaseModel):
     """
     project_name:str
     col_text:str
-    col_id:str = "index" # by default, the index
+    col_id:str
     n_rows:int = 2000
+    n_train:int
+    n_test:int
     dir:Path|None = None
     embeddings:list = []
     n_skip:int = 0
@@ -89,6 +91,7 @@ class SimpleModelModel(BaseModel):
 
 class BertModelModel(BaseModel):
     project_name:str
+    user:str
     scheme:str
     name:str
     base_model:str

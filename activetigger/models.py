@@ -122,7 +122,8 @@ class BertModels():
         if not self.path.exists():
             os.mkdir(self.path)
 
-        self.processes:list = []
+        # keep current processes (on by user max)
+        self.processes:dict = {}
 
     def __repr__(self) -> str:
         return f"Trained models : {self.trained()}"
@@ -141,24 +142,31 @@ class BertModels():
                 r[i.split("_")[0]].append(i)
         return r
     
-    def training(self) -> list:
+    def training(self) -> dict:
         """
         Currently under training
         """
-        return [b[0].name for b in self.processes if b[0].status == "training"]
+        #return {u:self.processes[u][0].status for u in self.processes}
+        return {u:self.processes[u][0].name for u in self.processes if self.processes[u][0].status == "training"}
 
     def start_training_process(self,
                name:str,
+               user:str,
                scheme:str,
                df:DataFrame,
                col_text:str,
                col_label:str,
                base_model:str|None = None,
                params:dict|None = None,
-               test_size:float|None = None) -> bool:
+               test_size:float|None = None) -> dict:
         """
         Manage the training of a model from the API
         """
+
+        # Check if there is no other competing processes
+        # For the moment : 1 active process by user
+        if user in self.processes:
+            return {"error":"processes already launched, cancel it before"}
 
         # Set default parameters if needed
         if base_model is None:
@@ -189,8 +197,9 @@ class BertModels():
         # Update the queue
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
-        self.processes.append((b,process))
-        return True
+        self.processes[user] = [b,process]
+        print("current trainings:",self.processes.keys())
+        return {"success":"bert model on training"}
 
     def train_bert(self,
                path:Path,
@@ -320,6 +329,17 @@ class BertModels():
 
         return True
     
+    def stop_user_training(self,user:str):
+        """
+        Stop the process of an user
+        """
+        if not user in self.processes:
+            return {"error":"no current processes"}
+        self.processes[user][1].terminate() # end process
+        shutil.rmtree(self.processes[user][0].path) #delete files
+        del self.processes[user] # delete process
+        return {"success":"process terminated"}
+    
     def load(self, name:str) -> BertModel:
         """
         Load trained model from files
@@ -352,15 +372,18 @@ class BertModels():
         # TODO : manage failed processes
         """
         to_del = []
-        for c in self.processes:
-            b = c[0]
+        for u in self.processes:
+            b = self.processes[u][0]
+            p = self.processes[u][1]
             # test if process completed (e.g. status.log deleted for the model)
-            if (b.status == "training") and not (b.path / b.name / "status.log").exists():
+            if (b.status == "training") and (not p.is_alive()):
                 to_del.append(b.name)
-        self.processes = [b for b in self.processes if b[0].name not in to_del]
+            print(to_del)
+        # Update the current active processes
+        self.processes = {u:self.processes[u] for u in self.processes if self.processes[u][0].name not in to_del}
+        #self.processes = [b for b in self.processes if b[0].name not in to_del]
         return True
-
-
+ 
 class SimpleModels():
     """
     Managing simplemodels
