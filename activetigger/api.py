@@ -226,7 +226,7 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                         ):
     
     r = project.schemes.get_table(scheme, min, max, mode)
-    return r
+    return r.fillna("NA")
     
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -235,14 +235,14 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
                             ):
     r = project.schemes.push_table(table = table, 
                                    user = user)
-    print(r)
     return r
 
 
 @app.get("/elements/stats", dependencies=[Depends(verified_user)])
 async def get_stats(project: Annotated[Project, Depends(get_project)],
-                    scheme:str):
-    r = project.get_stats_annotations(scheme)
+                    scheme:str,
+                    user:str):
+    r = project.get_stats_annotations(scheme, user)
     return r
     
 
@@ -300,6 +300,30 @@ async def get_schemes(project: Annotated[Project, Depends(get_project)],
         return {"error":"scheme not available"}
 
 
+@app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
+async def add_label(project: Annotated[Project, Depends(get_project)],
+                    scheme:str,
+                    label:str,
+                    user:str):
+    """
+    Add a label to a scheme
+    """
+    print(scheme, label, user)
+    r = project.schemes.add_label(label, scheme, user)
+    print(r)
+    return r
+
+@app.post("/schemes/label/delete", dependencies=[Depends(verified_user)])
+async def delete_label(project: Annotated[Project, Depends(get_project)],
+                    scheme:str,
+                    label:str,
+                    user:str):
+    """
+    Remove a label from a scheme
+    """
+    r = project.schemes.delete_label(label, scheme, user)
+    return r
+
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
 async def post_schemes(
@@ -317,7 +341,7 @@ async def post_schemes(
         r = project.schemes.delete_scheme(scheme)
         return r
     if action == "update":
-        r = project.schemes.update_scheme(scheme)
+        r = project.schemes.update_scheme(scheme.name, scheme.tags, scheme.user)
         return r
     
     return {"error":"wrong route"}

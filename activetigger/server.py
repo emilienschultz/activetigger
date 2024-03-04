@@ -51,7 +51,6 @@ class Server(Session):
         self.projects: dict = {}
         self.time_start:datetime = datetime.now()
         self.processes:list = []
-        self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
 
         if not self.db.exists():
             logging.info("Creating database")
@@ -103,7 +102,7 @@ class Server(Session):
                 action TEXT,
                 user TEXT,
                 project TEXT,
-                element_id,
+                element_id TEXT,
                 scheme TEXT,
                 tag TEXT
             )
@@ -307,6 +306,7 @@ class Project(Session):
                                            self.params.dir / self.features_file) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels()
+        self.lock:list = [] # prevent competition
 
         # Compute features if requested
         if ("sbert" in self.params.embeddings) & (not "sbert" in self.features.map):
@@ -335,28 +335,15 @@ class Project(Session):
                            emb:str) -> dict:
         """
         Compute embeddings
-        TODO : AS A SUBPROCESS
         """
         print("start compute embeddings ",emb, self.content.shape)
         if emb == "fasttext":
             f = functions.to_fasttext
-            #emb_fasttext = functions.to_fasttext(self.content[self.params.col_text])
-            #self.features.add("fasttext", emb_fasttext)
-            #return {"success":"fasttext embeddings computed"}
         if emb == "sbert":
             f = functions.to_sbert
-            #emb_sbert = functions.to_sbert(self.content[self.params.col_text])
-            #self.features.add("sbert", emb_sbert)
-            #return {"success":"sbert embeddings computed"}
-        #future = self.pool.submit(f, self.content[self.params.col_text])
-        #def call_back(future):
-        #    df = future.results()
-        #future.add_done_callback(call_back)
         calc_emb = f(self.content[self.params.col_text])
         self.features.add(emb, calc_emb)
         return {"success":f"{emb} embeddings computed"}
-
-        raise NameError(f"{emb} does not exist.")
     
     def fit_simplemodel(self,
                         model:str,
@@ -371,9 +358,9 @@ class Project(Session):
 
         # build the dataset with label + predictors
         df_features = self.features.get(features)
-        col_labels = self.schemes.col_name(scheme)
+        df_scheme = self.schemes.get_scheme_data(scheme)
         col_features = list(df_features.columns)
-        data = pd.concat([self.schemes.content[col_labels],
+        data = pd.concat([df_scheme,
                           df_features],
                           axis=1)
         self.simplemodels.add_simplemodel(user = user, 
@@ -381,18 +368,11 @@ class Project(Session):
                                           features=features, 
                                           name = model, 
                                           df = data, 
-                                          col_labels = col_labels, 
+                                          col_labels = "labels", 
                                           col_features = col_features,
                                           model_params = model_params,
                                           standardize = True
                                           ) 
-        
-        #s = SimpleModel(model=model,
-        #                data = data,
-        #                col_label = col_label,
-        #                col_predictors = col_predictors,
-        #                model_params=model_params
-        #                )
         return True
     
     def update_simplemodel(self, simplemodel: SimpleModelModel) -> dict:
@@ -420,20 +400,23 @@ class Project(Session):
         """
         Get next item
         Related to a specific scheme
+        TODO : add lock feature
         """
 
         # Select the sample
-        f = self.schemes.content[scheme].apply(lambda x : True)
+        df = self.schemes.get_scheme_data(scheme, complete=True)
+
+        f = df["labels"].apply(lambda x : True)
         if sample == "untagged":
-            f = self.schemes.content[scheme].isnull()
+            f = df["labels"].isnull()
         if sample == "tagged":
-            f = self.schemes.content[scheme].notnull()
+            f = df["labels"].notnull()
 
         # Type of selection
         if selection == "deterministic": # next row
-            element_id = self.schemes.content[f].index[0]
+            element_id = df[f].index[0]
         if selection == "random": # random row
-            element_id = self.schemes.content[f].sample(random_state=42).index[0]
+            element_id = df[f].sample(random_state=42).index[0]
         if selection == "maxprob": # higher prob 
             # only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
@@ -442,9 +425,7 @@ class Project(Session):
                 tag = self.schemes.available()[scheme][0]
             sm = self.simplemodels.get_model(user, scheme) # get model
             element_id = sm.proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
-        
-        # TODO : put a lock on the element when sent ?
-        # Pour le moment uniquement l'id et le texte (dans le futur ajouter tous les éléments)
+                
         return  self.get_element(element_id)
     
     def get_element(self,element_id):
@@ -462,7 +443,7 @@ class Project(Session):
         """
         return self.params
     
-    def get_stats_annotations(self, scheme:str):
+    def get_stats_annotations(self, scheme:str, user:str):
 
         df = self.schemes.get_scheme_data(scheme)
         df["labels"].value_counts()
@@ -619,6 +600,10 @@ class Features(Session):
 class Schemes(Session):
     """
     Manage project schemes & tags
+
+    Tables :
+    - schemes
+    - annotations
     """
     def __init__(self,
                  project_name: str,
@@ -628,52 +613,71 @@ class Schemes(Session):
         """
         self.project_name = project_name
         self.path = path
-        self.col = None
-        self.content = pd.read_parquet(self.path)
-
-        # Initialize the current scheme
+        self.content = pd.read_parquet(self.path) #raw data
         available = self.available()
-        if len(available) == 0: #if no scheme available -> default
-            self.add_scheme(SchemeModel(project_name=project_name, 
+
+        # create a default scheme
+        if len(available) == 0:
+            self.add_scheme(SchemeModel(project_name = project_name, 
                                  name = "default",
                                  tags= []))
-            #self.select("default")
-        #else: #else, select the first
-        #    self.select(list(available.keys())[0])
 
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
 
-    def get_scheme_data(self, s:str) -> DataFrame:
+    def get_scheme_data(self, scheme:str, complete = False) -> DataFrame:
         """
-        Get dataframe of a scheme
-
-        Comment : first column is the text
+        Get data from a scheme
         """
-        if not s in self.available():
+        if not scheme in self.available():
             raise ValueError("Scheme doesn't exist")
         
-        df = self.content.loc[:,[self.content.columns[0],s]].dropna()
-        df.columns = ["text","labels"]
+        # get all elements from the db
+        # - last element for each id
+        # - for a specific scheme
+
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = '''
+            SELECT element_id, tag, MAX(time) AS last_timestamp
+            FROM annotations
+            WHERE scheme = ? AND project = ? AND action = ?
+            GROUP BY element_id;
+        '''
+        cursor.execute(query, (scheme, self.project_name, "add"))
+        results = cursor.fetchall()
+        conn.close()
+        df = pd.DataFrame(results, columns =["id","labels","timestamp"]).set_index("id")
+        if complete: # all the elements
+            return self.content.join(df)
         return df
     
-    def get_table(self, 
-                           scheme:str,
-                           min:int,
-                           max:int, 
-                           mode:str,
-                           user:str = "user"):
+    def get_table(self, scheme:str,
+                        min:int,
+                        max:int, 
+                        mode:str,
+                        user:str = "user"):
         """
-        Get json data table for an interval
+        Get data table
         """
         if not mode in ["tagged","untagged","all","recent"]:
             mode = "all"
-
         if not scheme in self.available():
             return {"error":"scheme not available"}
-        col_text = self.content.columns[0]
-        df = self.content.loc[:,[col_text, scheme]]
-        df.columns = ["text","labels"]
+
+        # data of the scheme
+        df = self.get_scheme_data(scheme, complete = True)
+
+        # case of recent annotations
+        if mode == "recent": 
+            list_ids = self.get_recent_tags(user, scheme, max-min)
+            return df.loc[list_ids]
+
+        # build dataset
+        if mode == "tagged": 
+            df = df[df["labels"].notnull()]
+        if mode == "untagged":
+            df = df[df["labels"].isnull()]
 
         if max == 0:
             max = len(df)
@@ -682,31 +686,8 @@ class Schemes(Session):
 
         if (min > len(df)):
             return {"error":"min value too high"}
-
-        if mode == "recent": # get recent annotations
-            list_ids = self.get_recent_tags(user,scheme, max-min)
-            return df.loc[list_ids]
-
-        # TODO : user ?
-        if mode == "tagged": 
-            df = df[df["labels"].notnull()]
-        if mode == "untagged":
-            df = df[df["labels"].isnull()]
-
-        return df.iloc[min:max]
-
-    def save_data(self) -> None:
-        """
-        Save the element to file
-        """
-        self.content.to_parquet(self.path)
-
-    def col_name(self, s:str):
-        """
-        Association name - column
-        (for the moment 1 - 1)
-        """
-        return s
+        
+        return df.iloc[min:max].drop(columns="timestamp")
 
     def add_scheme(self, scheme:SchemeModel):
         """
@@ -718,31 +699,62 @@ class Schemes(Session):
         # add it if in database
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        query = "INSERT INTO schemes (project, name, params) VALUES (?, ?, ?)"
-        cursor.execute(query, (self.project_name, scheme.name, json.dumps(scheme.tags)))
+        query = '''
+                INSERT INTO schemes (project, name, params) 
+                VALUES (?, ?, ?)
+                '''
+        cursor.execute(query, 
+                       (self.project_name, scheme.name, json.dumps(scheme.tags)))
         conn.commit()
         conn.close()
-
-        # add it in the file
-        self.content[scheme.name] = None
-        self.save_data()
-
         return {"success":"scheme created"}
 
-    def update_scheme(self, scheme:SchemeModel):
+    def add_label(self, label:str, scheme:str, user:str):
+        """
+        Add label in a scheme
+        """
+        available = self.available()
+        if not scheme in available:
+            return {"error":"scheme doesn't exist"}
+        if label in available[scheme]:
+            return {"error":"label already exist"}
+        labels = available[scheme]
+        labels.append(label)
+        print(labels)
+        self.update_scheme(scheme, labels, user)
+        return {"success":"scheme updated with a new label"}
+    
+    def delete_label(self, label:str, scheme:str, user:str):
+        """
+        Delete a label in a scheme
+        """
+        available = self.available()
+        if not scheme in available:
+            return {"error":"scheme doesn't exist"}
+        if not label in available[scheme]:
+            return {"error":"label does not exist"}
+        labels = available[scheme]
+        labels.remove(label)
+        # push empty entry for tagged elements
+        df = self.get_scheme_data(scheme)
+        elements = list(df[df["labels"] == label].index)
+        for i in elements:
+            print(i)
+            self.push_tag(i, None, scheme, user)
+        self.update_scheme(scheme, labels, user)
+        return {"success":"scheme updated removing a label"}
+
+    def update_scheme(self, scheme:str, labels:list, user:str):
         """
         Update existing schemes from database
         """
-        if not self.exists(scheme.name):
-            return {"error":"scheme doesn't exist in db"}
-        
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = "UPDATE schemes SET params = ?, time_modified = ? WHERE project = ? AND name = ?"
-        cursor.execute(query, (json.dumps(scheme.tags),
+        cursor.execute(query, (json.dumps(labels),
                                datetime.now(), 
                                self.project_name, 
-                               scheme.name))
+                               scheme))
         conn.commit()
         conn.close()
         return {"success":"scheme updated"}
@@ -757,16 +769,11 @@ class Schemes(Session):
         cursor.execute(query, (self.project_name,scheme.name))
         conn.commit()
         conn.close()
-
-        self.content.drop(columns=scheme.name)
-        self.save_data()
-
         return {"success":"scheme deleted"}
     
     def exists(self, name:str) -> bool:
         """
         Test if scheme exist
-        TODO : harmoniser avec le fichier
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
@@ -800,19 +807,31 @@ class Schemes(Session):
                             availables=self.available()
                             )
 
-
     def delete_tag(self, 
                    element_id:str,
-                   scheme:str) -> bool:
+                   scheme:str,
+                   user:str = "user") -> bool:
         """
         Delete a recorded tag
+        i.e. : add empty label
         """
-        self.content.loc[element_id,scheme] = None
+
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = '''
+            INSERT INTO annotations (action, user, project, element_id, scheme, tag)
+            VALUES (?,?,?,?,?,?);
+        '''
+        # add delete action and then add void action
+        cursor.execute(query, ("delete",user, self.project_name, element_id, scheme, None))
+        cursor.execute(query, ("add",user, self.project_name, element_id, scheme, None))
+        conn.commit()
+        conn.close()
         return True
 
     def push_tag(self,
                  element_id:str, 
-                 tag:str,
+                 tag:str|None,
                  scheme:str,
                  user:str = "user"):
         """
@@ -822,22 +841,21 @@ class Schemes(Session):
         a = self.available()
         if not scheme in a:
             return {"error":"scheme unavailable"}
-        if not tag in a[scheme]:
+        if (not tag is None) and (not tag in a[scheme]):
             return {"error":"this tag doesn't belong to this scheme"}
         if not element_id in self.content.index:
             return {"error":"element doesn't exist"}
     
-        # return message
-        if not self.content.loc[element_id, scheme] is None:
-            r = {"success":"tag updated"}
-        else:
-            r = {"success":"tag added"}
-
-        # make action
-        self.content.loc[element_id, scheme] = tag
-        self.log_action("add", user, element_id, scheme, tag)
-        self.save_data()
-        return r
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = '''
+            INSERT INTO annotations (action, user, project, element_id, scheme, tag)
+            VALUES (?,?,?,?,?,?);
+        '''
+        cursor.execute(query, ("add", user, self.project_name, element_id, scheme, tag))
+        conn.commit()
+        conn.close()
+        return {"success":"tag added"}
     
     def push_table(self, table, user:str):
         """
@@ -846,18 +864,12 @@ class Schemes(Session):
         - only update modified labels
         """        
         data = {i:j for i,j in zip(table.list_ids,table.list_labels)}
-        col_scheme = self.col_name(table.scheme)
-        ids = table.list_ids
-        current = self.content.loc[ids,[col_scheme]]
-        modified = []
-        for i,j in current.iterrows():
-            if j[col_scheme]!=data[i]:
-                modified.append(i)
-                r = self.push_tag(i, 
-                              data[i],
-                              table.scheme,
-                              user)
-        return {"labels modified":modified}
+        for i in data:
+            r = self.push_tag(i, 
+                            data[i],
+                            table.scheme,
+                            user)
+        return {"success":"labels modified"}
 
     def get_recent_tags(self,
                     user:str,
@@ -867,6 +879,9 @@ class Schemes(Session):
         Get the id of the n last tags added/updated
         by a user for a scheme of a project
         """
+
+        # add case for all users
+
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = """
@@ -898,20 +913,3 @@ class Schemes(Session):
         conn.commit()
         conn.close()
         return results
-
-    def log_action(self, 
-                   action:str, 
-                   user:str, 
-                   element_id:str,
-                   scheme:str, 
-                   tag:str) -> bool:
-        """
-        Add annotation log
-        """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "INSERT INTO annotations (action, user, project, element_id, scheme, tag) VALUES (?, ?, ?, ?, ?, ?)"
-        cursor.execute(query, (action, user, self.project_name, element_id, scheme, tag))
-        conn.commit()
-        conn.close()
-        return True

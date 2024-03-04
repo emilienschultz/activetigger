@@ -394,7 +394,8 @@ class Widget():
         if state:
             self.state = self.get_state()
         params = {"project_name":self.project_name,
-                  "scheme":self.select_scheme.value}
+                  "scheme":self.select_scheme.value,
+                  "user":self.user}
         r = self._get("/elements/stats",params = params)
         self.data_description.value = json.dumps(r,indent=2)
         return True
@@ -514,21 +515,15 @@ class Widget():
     def delete_label(self, label:str):
         """
         Delete label in a scheme
-        (update scheme)
         """
         if label == "":
             return "Empty"
-        tags = self.state["schemes"]["available"][self.select_scheme.value].copy()
-        tags.remove(label)
-        params = {"project_name":self.project_name}
-        data = {
-                "project_name":self.project_name,
-                "name":self.select_scheme.value,
-                "tags":tags
-                }
-        r = self._post("/schemes/update", 
-                       params = params, 
-                       json_data = data)
+        params = {"project_name":self.project_name,
+                  "scheme":self.select_scheme.value,
+                  "label":label,
+                  "user":self.user}
+        r = self._post("/schemes/label/delete", 
+                       params = params)
         self.update_tab_schemes()
         return r
 
@@ -539,19 +534,12 @@ class Widget():
         label = text_field.value
         if label == "":
             return "Empty"
-        if label in self.state["schemes"]["available"][self.select_scheme.value]:
-            return "Label already exists"
-        tags = self.state["schemes"]["available"][self.select_scheme.value].copy()
-        tags.append(label)
-        params = {"project_name":self.project_name}
-        data = {
-                "project_name":self.project_name,
-                "name":self.select_scheme.value,
-                "tags":list(tags)
-                }
-        r = self._post("/schemes/update", 
-                       params = params, 
-                       json_data = data)
+        params = {"project_name":self.project_name,
+                  "scheme":self.select_scheme.value,
+                  "label":label,
+                  "user":self.user}
+        r = self._post("/schemes/label/add", 
+                       params = params)
         self.update_tab_schemes()
         text_field.value = ""
         return r
