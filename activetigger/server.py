@@ -418,12 +418,14 @@ class Project(Session):
         if selection == "random": # random row
             element_id = df[f].sample(random_state=42).index[0]
         if selection == "maxprob": # higher prob 
+            print("maxprob")
             # only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
                 return {"error":"Simplemodel doesn't exist"}
             if tag is None: # default label to first
                 tag = self.schemes.available()[scheme][0]
             sm = self.simplemodels.get_model(user, scheme) # get model
+            print("proba",sm.proba.shape)
             element_id = sm.proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
                 
         return  self.get_element(element_id)
@@ -620,7 +622,9 @@ class Schemes(Session):
         if len(available) == 0:
             self.add_scheme(SchemeModel(project_name = project_name, 
                                  name = "default",
-                                 tags= []))
+                                 tags = [],
+                                 user = "server")
+                                 )
 
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"

@@ -9,6 +9,7 @@ from multiprocessing import Process
 import time
 import pandas as pd
 import os
+import json
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -416,6 +417,7 @@ async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
     Simplemodel parameters
     """
     r = project.simplemodels.available()
+    print(type(r))
     return r
 
 

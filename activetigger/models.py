@@ -414,12 +414,14 @@ class SimpleModels():
         """
         Available simplemodels
         """
-        users = list(self.existing)
         r = {}
         for u in self.existing:
             r[u] = {}
             for s in self.existing[u]:
-                r[u][s] = self.existing[u][s].json()
+                sm = self.existing[u][s]
+                r[u][s] = {"name":sm.name, 
+                           "params":sm.model_params,
+                           "features":sm.features}
         return r
         
     def exists(self, user:str, scheme:str):

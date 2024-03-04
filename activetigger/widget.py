@@ -7,15 +7,6 @@ import pandas as pd
 import time
 import asyncio
 
-"""
-Problèmes à régler : 
-
-comment gérer la synchronisation entre l'envoi d'une requête qui prend du temps à traiter au serveur (entrainement BERT)
-Et le bouton
-
-"""
-
-# Deal connexion
 URL_SERVER = "http://127.0.0.1:8000"
 headers = {'x-token': 'your_token'}
 
@@ -27,15 +18,13 @@ class Widget():
         """
         Define general variables
         """
-        self.update_time = 2
+        self.update_time:int = 2
         self.user:str = "local"
         self.project_name: None|str = None
         self.current_element:dict|None = None
-        self.current_scheme:str|None = None
-        self.bert_training = False
+        self.bert_training:bool = False
         self.history:list = []
-
-        # start widget
+        self.state:dict = {}
         self.start()
 
     def _post(self,
@@ -486,7 +475,8 @@ class Widget():
         data = {
                 "project_name":self.project_name,
                 "name":s,
-                "tags":[]
+                "tags":[],
+                "user":self.user
                 }
         r = self._post("/schemes/add", 
                        params = params, 
@@ -715,14 +705,9 @@ class Widget():
         """
         General interface
         - divided by tab
-
-        TODO : start with scheme tab ?
         """
 
         # updating thread
-        #update_thread = threading.Thread(target=self.periodic_update)
-        #update_thread.daemon = True
-        #update_thread.start()
         asyncio.create_task(self.update_state())
 
         #------------
