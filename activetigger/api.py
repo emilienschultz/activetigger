@@ -376,7 +376,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
 
     return {"error":"not implemented"}
 
-@app.post("/features/delete", dependencies=[Depends(verified_user)])
+@app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
                      name:str):
     r = project.features.delete(name)

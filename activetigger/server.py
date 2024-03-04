@@ -262,7 +262,7 @@ class Server(Session):
         content[0:params.n_train].to_parquet(params.dir / self.data_file, index=True)
         content[params.n_train:].to_parquet(params.dir / self.test_file, index=True)
         content[[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
-        content[[]].to_parquet(params.dir / self.features_file, index=True)
+        content[0:params.n_train][[]].to_parquet(params.dir / self.features_file, index=True)
 
         """
         TODO : deal if already tagged column
@@ -519,9 +519,9 @@ class Project(Session):
 
         pattern = re.compile(value)
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
+        print("compile feature", f.shape)
         self.features.add(name,f)
-        return {"success":"regex added"}
-    
+        return {"success":"regex added"}    
 
 class Features(Session):
     """

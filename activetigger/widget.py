@@ -381,6 +381,8 @@ class Widget():
         self.add_features.options = self.state["features"]["options"]
 
         c = self.state["features"]["training"]
+        if len(c) == 0:
+            c = "None"
         self.info_features.value = f"Processes currently running: {c}"
 
         return True
@@ -530,10 +532,11 @@ class Widget():
         self.update_tab_schemes()
         return r
 
-    def create_label(self, label:str):
+    def create_label(self, text_field):
         """
         Create label in a scheme
         """
+        label = text_field.value
         if label == "":
             return "Empty"
         if label in self.state["schemes"]["available"][self.select_scheme.value]:
@@ -550,6 +553,7 @@ class Widget():
                        params = params, 
                        json_data = data)
         self.update_tab_schemes()
+        text_field.value = ""
         return r
     
     def create_simplemodel(self, 
@@ -664,12 +668,31 @@ class Widget():
         self.update_tab_features()
         return True
     
-    def add_regex(self, name:str, value:str) -> bool:
+    def delete_feature(self, feature_name) -> bool:
+        """
+        Delete existing feature
+        """
+        r = self._post(f"/features/delete/{feature_name}", 
+                    params = {"project_name":self.project_name})
+        print(r)
+        self.update_tab_features()
+        return True
+    
+    def add_regex(self, value:str, name:str|None = None) -> bool:
+        """
+        Add regex as feature
+        """
+        if name is None:
+            name = value
+        
+        name = f"regex_{self.user}_{name}"
+
         data = {
             "project_name":self.project_name,
-            "name":"regex_"+name,
+            "name":name,
             "value":value
             }
+        
         r = self._post("/features/add/regex",
             params = {"project_name":self.project_name},
             json_data=data)
@@ -728,7 +751,7 @@ class Widget():
         valid_delete_label.on_click(lambda b : self.delete_label(self.select_label.value))
         new_label = widgets.Text(description="New label: ")
         valid_new_label = widgets.Button(description = "Create")
-        valid_new_label.on_click(lambda b : self.create_label(new_label.value))
+        valid_new_label.on_click(lambda b : self.create_label(new_label))
 
         # Populate
         self.update_tab_schemes()
@@ -879,15 +902,17 @@ class Widget():
         #-------------
         self.info_features  = widgets.HTML(value = "No process currently running")
         self.available_features =  widgets.Dropdown(description = "Available")
+        delete_feature = widgets.Button(description = "Delete", button_style="danger")
+        delete_feature.on_click(lambda x: self.delete_feature(self.available_features.value))
         self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
         valid_compute_features = widgets.Button(description = "⚙️Compute")
         valid_compute_features.on_click(lambda x : self.compute_feature(self.add_features.value))
         valid_compute_features.style.button_color = 'lightgreen'
         add_regex_value = widgets.Text(description="Add regex:")
-        add_regex_name = widgets.Text(description="Name:")
+        #add_regex_name = widgets.Text(description="Name:")
         valid_regex = widgets.Button(description = "Add")
         valid_regex.style.button_color = 'lightgreen'
-        valid_regex.on_click(lambda x: self.add_regex(add_regex_name.value, add_regex_value.value))
+        valid_regex.on_click(lambda x: self.add_regex(add_regex_value.value))
 
         # Populate
         self.update_tab_features()
@@ -895,9 +920,9 @@ class Widget():
         # Group in tab
         tab_features = widgets.VBox([
             self.info_features,
-            self.available_features,
+            widgets.HBox([self.available_features,delete_feature]),
             widgets.HBox([self.add_features,valid_compute_features]),
-            widgets.HBox([add_regex_value,add_regex_name,valid_regex]),
+            widgets.HBox([add_regex_value,valid_regex]),
              ])
 
         #--------------
