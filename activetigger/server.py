@@ -261,7 +261,8 @@ class Server(Session):
         # Put the id column as index for the rest of the treatment
         content[0:params.n_train].to_parquet(params.dir / self.data_file, index=True)
         content[params.n_train:].to_parquet(params.dir / self.test_file, index=True)
-        content[[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
+        # only for the training set for the moment
+        content[0:params.n_train][[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
         content[0:params.n_train][[]].to_parquet(params.dir / self.features_file, index=True)
 
         """
@@ -526,7 +527,9 @@ class Project(Session):
 class Features(Session):
     """
     Manage project features
-    Comment : as a file
+    Comment : 
+    - as a file
+    - use "__" as separator
     """
 
     def __init__(self, 
@@ -553,7 +556,7 @@ class Features(Session):
             matching_strings = [s for s in strings if re.match(pattern, s)]
             return matching_strings
         data = pd.read_parquet(self.path)
-        var = set([i.split("_")[0] for i in data.columns])
+        var = set([i.split("__")[0] for i in data.columns])
         dic = {i:find_strings_with_pattern(data.columns,i) for i in var}
         return data, dic
     
@@ -576,7 +579,7 @@ class Features(Session):
             content = pd.DataFrame(content)
 
         # add to the table & dictionnary
-        content.columns = [f"{name}_{i}" for i in content.columns]
+        content.columns = [f"{name}__{i}" for i in content.columns]
         self.map[name] = list(content.columns)
         self.content = pd.concat([self.content,content],
                                      axis=1)

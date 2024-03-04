@@ -947,9 +947,10 @@ class Widget():
         # Group in tab
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
-                                widgets.HBox([self.available_bert]),
-                                widgets.HBox([self.new_bert_name, self.new_bert_base, self.new_bert_params]),
-                                 self.compute_new_bert
+                                self.available_bert,
+                                widgets.HBox([self.new_bert_name, self.new_bert_base]),
+                                self.new_bert_params,
+                                self.compute_new_bert
                              ])
 
 
