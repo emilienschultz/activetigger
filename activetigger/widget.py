@@ -4,6 +4,16 @@ import json
 import requests as rq
 from pathlib import Path
 import pandas as pd
+import time
+import asyncio
+
+"""
+Problèmes à régler : 
+
+comment gérer la synchronisation entre l'envoi d'une requête qui prend du temps à traiter au serveur (entrainement BERT)
+Et le bouton
+
+"""
 
 # Deal connexion
 URL_SERVER = "http://127.0.0.1:8000"
@@ -17,11 +27,15 @@ class Widget():
         """
         Define general variables
         """
+        self.update_time = 2
         self.user:str = "local"
         self.project_name: None|str = None
         self.current_element:dict|None = None
         self.current_scheme:str|None = None
+        self.bert_training = False
         self.history:list = []
+
+        # start widget
         self.start()
 
     def _post(self,
@@ -169,9 +183,14 @@ class Widget():
             description='Id:',
             layout={'width': '200px'},
             disabled=False)
+        
+        n_train = widgets.IntText(description = "nrows train", layout={'width': '200px'})
+        n_test = widgets.IntText(description = "nrow test", layout={'width': '200px'})
+
+        info = widgets.HTML()
 
         # create the project
-        layout=widgets.Layout(width='100px', margin='0px 0px 0px 50px')
+        layout=widgets.Layout(width='100px', margin='30px 30px 30px 30px')
         validate = widgets.Button(description="Create",
                               layout=layout)
         def create_project(b):
@@ -179,6 +198,8 @@ class Widget():
                     "project_name": project_name.value,
                     "col_text": column_text.value,
                     "col_id":column_id.value,
+                    "n_train":n_train.value,
+                    "n_test":n_test.value
                     }
             files = {'file': (file.value,
                               open(file.value, 'rb'))}
@@ -201,8 +222,18 @@ class Widget():
             df = self._load_file(file.value)
             column_text.options = df.columns
             column_id.options = df.columns
+            info.value = f"Size of the dataset: {len(df)}"
+            if len(df.columns)>1:
+                column_text.value = column_text.options[1]
+                column_id.value = column_id.options[0]
             if len(self.output.children) == 1:
-                self.output.children = list(self.output.children) + [separate, widgets.HBox([column_text, column_id, validate])]
+                self.output.children = list(self.output.children) + [separate,
+                                                                     info, 
+                                                                     column_id,
+                                                                     column_text,
+                                                                     n_train,
+                                                                     n_test,
+                                                                     validate]
         load.on_click(load_file)
         display(self.output)
 
@@ -226,7 +257,7 @@ class Widget():
         """
         params = {
                           "project_name":self.project_name,
-                          "scheme":self._schemes.value,
+                          "scheme":self.select_scheme.value,
                           "selection":self._mode_selection.value,
                           "sample":self._mode_sample.value,
                           "user":self.user,
@@ -252,13 +283,13 @@ class Widget():
         Managing tag posting
         """
         
-        labels = self.state["schemes"]["available"][self._schemes.value]
+        labels = self.state["schemes"]["available"][self.select_scheme.value]
 
         # function to post
         def send_tag(v):
             data = {
                     "project_name":self.project_name,
-                    "scheme":self._schemes.value,
+                    "scheme":self.select_scheme.value,
                     "element_id":self.current_element["element_id"],
                     "tag":v.description,
                     }
@@ -302,19 +333,41 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
+
+        # possible bertmodels
         self.new_bert_base.options = self.state["bertmodels"]["options"]
         self.new_bert_base.value = self.new_bert_base.options[0]
+
         # display bertmodels for the current scheme
-        if self._schemes.value in self.state["bertmodels"]["available"]:
-            self.available_bert.options = self.state["bertmodels"]["available"][self._schemes.value]
-        #if len(self.available_bert.options)>0:
-        #    self.available_bert.value = self.available_bert.options[0]
-        self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"],
-                                                indent=2)
-        n = len(self.state["bertmodels"]["training"])
-        self.bert_status.value = f"Currently {n} models in training"
+        if self.select_scheme.value in self.state["bertmodels"]["available"]:
+            self.available_bert.options = self.state["bertmodels"]["available"][self.select_scheme.value]
+        self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"], indent=2)
+
+        # display status
+        self.bert_status.value = f"Currently no model in training"
+        if self.bert_training:
+            self.bert_status.value = f"Model under training"
+
+        # display start/stop buttons
+        if not self.bert_training:
+            compute = widgets.Button(description="⚙️Train")
+            compute.style.button_color = 'lightgreen'
+            compute.on_click(lambda x: self.create_bertmodel())
+            self.compute_new_bert.children = [compute]
+            #self.compute_new_bert.description = "⚙️Train"
+            #self.compute_new_bert.style.button_color = 'lightgreen'
+            #self.compute_new_bert.on_click(lambda x: self.create_bertmodel())
+        else:
+            stop = widgets.Button(description="⚙️Stop")
+            stop.style.button_color = 'red'
+            stop.on_click(lambda x: self.stop_bertmodel())
+            self.compute_new_bert.children = [stop]
+            #self.compute_new_bert.description = "Stop training"
+            #self.compute_new_bert.style.button_color = 'red'
+            #self.compute_new_bert.on_click(lambda x: self.stop_bertmodel())
         return True
         
+
     def update_tab_features(self, state = True):
         """
         Update Features Tab
@@ -328,6 +381,8 @@ class Widget():
         self.add_features.options = self.state["features"]["options"]
 
         c = self.state["features"]["training"]
+        if len(c) == 0:
+            c = "None"
         self.info_features.value = f"Processes currently running: {c}"
 
         return True
@@ -339,7 +394,7 @@ class Widget():
         if state:
             self.state = self.get_state()
         params = {"project_name":self.project_name,
-                  "scheme":self._schemes.value}
+                  "scheme":self.select_scheme.value}
         r = self._get("/elements/stats",params = params)
         self.data_description.value = json.dumps(r,indent=2)
         return True
@@ -350,15 +405,14 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
-        self._schemes.options = list(self.state["schemes"]["available"].keys())
         self._mode_selection.options = ["deterministic","random"]
         self._mode_sample.options = self.state["next"]["sample"]
         self._mode_label.disabled = True
         # case of a simplemodel is available for the user and the scheme
-        if (self.user in self.state["simplemodel"]["existing"]) and (self._schemes.value in self.state["simplemodel"]["existing"][self.user]):
+        if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
             self._mode_selection.options = ["deterministic","random","maxprob"]
             self._mode_label.disabled = False
-            self._mode_label.options = self.state["schemes"]["available"][self._schemes.value]
+            self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
 
     def update_tab_schemes(self, state = True): 
         """
@@ -368,7 +422,6 @@ class Widget():
             self.state = self.get_state()
         self.select_scheme.options = list(self.state["schemes"]["available"].keys())
         self.select_label.options = self.state["schemes"]["available"][self.select_scheme.value]
-        self._display_buttons_labels() # and tagging buttons
 
     def update_tab_simplemodel(self, state = True):
         """
@@ -378,16 +431,16 @@ class Widget():
             self.state = self.get_state()
         self.select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
         self.select_features.options = self.state["features"]["available"]
-        if (self.user in self.state["simplemodel"]["existing"]) and (self._schemes.value in self.state["simplemodel"]["existing"][self.user]):
-            current_model = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
-            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self._schemes.value]["params"], 
+        if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
+            current_model = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["name"]
+            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["params"], 
                                                        indent=2)
-            self.select_simplemodel.value = self.state["simplemodel"]["existing"][self.user][self._schemes.value]["name"]
+            self.select_simplemodel.value = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["name"]
         else:
             current_model = "No model available"
             #self.select_simplemodel.value = None
             self.simplemodel_params.value = ""
-        self.simplemodel_state.value = f"Scheme : {self._schemes.value} - Current model: {current_model}"
+        self.simplemodel_state.value = f"Scheme : {self.select_scheme.value} - Current model: {current_model}"
 
     def update_tab_data(self, state = True):
         """
@@ -397,7 +450,7 @@ class Widget():
             self.state = self.get_state()
         params = {
                    "project_name":self.project_name,
-                   "scheme":self._schemes.value,
+                   "scheme":self.select_scheme.value,
                    "min":self.sample_min.value,
                    "max":self.sample_max.value,
                    "mode":self.sample_type.value
@@ -407,7 +460,7 @@ class Widget():
         df = pd.DataFrame(r)
         buttons = []
         for i,j in df.iterrows():
-            options = self.state["schemes"]["available"][self._schemes.value]
+            options = self.state["schemes"]["available"][self.select_scheme.value]
             if not j["labels"] in options:
                 options.append(j["labels"]) # case of a old label
             menu = widgets.Dropdown(options = options, 
@@ -479,10 +532,11 @@ class Widget():
         self.update_tab_schemes()
         return r
 
-    def create_label(self, label:str):
+    def create_label(self, text_field):
         """
         Create label in a scheme
         """
+        label = text_field.value
         if label == "":
             return "Empty"
         if label in self.state["schemes"]["available"][self.select_scheme.value]:
@@ -499,6 +553,7 @@ class Widget():
                        params = params, 
                        json_data = data)
         self.update_tab_schemes()
+        text_field.value = ""
         return r
     
     def create_simplemodel(self, 
@@ -531,37 +586,53 @@ class Widget():
         self.update_tab_simplemodel()
         return True
     
-    def create_bertmodel(self, 
-                        name:str, 
-                        scheme:str, 
-                        base_model:str, 
-                        parameters:str,
-                        test_size:float|None = None):
+    def create_bertmodel(self):
         """
         Create a bertmodel
         """
-        if base_model is None:
+        self.compute_new_bert.disabled = True
+        if self.new_bert_base.value is None:
             return "Model missing"
-        if parameters is None:
+        if self.new_bert_params.value is None:
             return "Parameters missing"
-        if test_size is None:
-            test_size = 0.2
+        
         params = {"project_name":self.project_name}
         data = {
                 "project_name":self.project_name,
-                "scheme":scheme,
-                "name":name,
-                "base_model":base_model,
-                "params":json.loads(parameters),
+                "scheme":self.select_scheme.value,
+                "user":self.user,
+                "name":self.new_bert_name.value,
+                "base_model":self.new_bert_base.value,
+                "params":json.loads(self.new_bert_params.value),
                 "test_size":0.2
                 }
         
-        r = self._post("/models/bert", 
+        r = self._post("/models/bert/train", 
                        params = params, 
                        json_data = data)
+        print(r)
+        time.sleep(2)
+        self.bert_training = True
         self.update_tab_bertmodels()
+        self.compute_new_bert.disabled = False
         return True
     
+    def stop_bertmodel(self):
+        """
+        Stop bertmodel training
+        """
+        self.compute_new_bert.disabled = True
+        params = {"project_name":self.project_name,
+                  "user":self.user}
+        r = self._post("/models/bert/stop", 
+                params = params)
+        print(r)
+        time.sleep(2)
+        self.bert_training = False
+        self.compute_new_bert.disabled = False
+        self.update_tab_bertmodels()
+        return True
+
     def _get_previous_element(self) -> bool:
         """
         Load previous element in history
@@ -597,22 +668,61 @@ class Widget():
         self.update_tab_features()
         return True
     
-    def add_regex(self, name:str, value:str) -> bool:
+    def delete_feature(self, feature_name) -> bool:
+        """
+        Delete existing feature
+        """
+        r = self._post(f"/features/delete/{feature_name}", 
+                    params = {"project_name":self.project_name})
+        print(r)
+        self.update_tab_features()
+        return True
+    
+    def add_regex(self, value:str, name:str|None = None) -> bool:
+        """
+        Add regex as feature
+        """
+        if name is None:
+            name = value
+        
+        name = f"regex_{self.user}_{name}"
+
         data = {
             "project_name":self.project_name,
-            "name":"regex_"+name,
+            "name":name,
             "value":value
             }
+        
         r = self._post("/features/add/regex",
             params = {"project_name":self.project_name},
             json_data=data)
         print(r)
         self.update_tab_features()
         return True
-
-        
-
     
+    def periodic_update(self):
+
+        while True:
+            time.sleep(self.update_time)
+            self.state = self.get_state()
+            print(self.state["bertmodels"])
+            # case of training finished
+            if self.user in self.state["bertmodels"]["training"]:
+                self.bert_training = True
+            else:
+                self.bert_training = False
+
+                # return to normal state
+                print("training finished")
+                #self.bert_training = False
+            self.update_tab_bertmodels(state=False)
+    
+    
+    async def update_state(self):
+        while True:
+            self.state = self.get_state()
+            await asyncio.sleep(self.update_time)
+
     def interface(self):
         """
         General interface
@@ -620,20 +730,56 @@ class Widget():
 
         TODO : start with scheme tab ?
         """
+
+        # updating thread
+        #update_thread = threading.Thread(target=self.periodic_update)
+        #update_thread.daemon = True
+        #update_thread.start()
+        asyncio.create_task(self.update_state())
+
+        #------------
+        # Tab schemes
+        #------------
+        self.select_scheme = widgets.Dropdown(description="Select: ", value="", options=[""])
+        valid_delete_scheme = widgets.Button(description = "Delete", button_style = "danger")
+        valid_delete_scheme.on_click(lambda b : self.delete_scheme(self.select_scheme.value))
+        new_scheme = widgets.Text(description="New: ")
+        valid_new_scheme = widgets.Button(description = "Create")
+        valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
+        self.select_label = widgets.Dropdown(description="Labels: ")
+        valid_delete_label = widgets.Button(description = "Delete", button_style = "danger")
+        valid_delete_label.on_click(lambda b : self.delete_label(self.select_label.value))
+        new_label = widgets.Text(description="New label: ")
+        valid_new_label = widgets.Button(description = "Create")
+        valid_new_label.on_click(lambda b : self.create_label(new_label))
+
+        # Populate
+        self.update_tab_schemes()
+        if len(self.select_scheme.options)>0:
+            self.select_scheme.value = self.select_scheme.options[0]
+        if len(self.select_label.options)>0:
+            self.select_label.value = self.select_label.options[0]
+        # change labels if scheme change
+        def on_change_scheme(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                print("change to ",self.select_scheme.value)
+                self.update_tab_schemes()
+        self.select_scheme.observe(on_change_scheme)
+
+        # Group in tab
+        tab_schemes = widgets.VBox([
+                            widgets.HBox([self.select_scheme, valid_delete_scheme]),
+                            widgets.HBox([new_scheme, valid_new_scheme]),
+                            widgets.HBox([self.select_label, valid_delete_label]),
+                            widgets.HBox([new_label, valid_new_label]),
+                        ])
+
         #-----------
         # Tab codage
         #-----------
         self._textarea = widgets.Textarea(value="",
                                    layout=widgets.Layout(width='600px',height='150px'), 
                                    description='')
-        self._schemes = widgets.Dropdown(description = "Scheme:",
-                                         layout=widgets.Layout(width='250px'))
-        def on_change_scheme(change): #if change, update
-            if change['type'] == 'change' and change['name'] == 'value':
-                self.update_tab_annotations()
-                self._display_next()
-                self._display_buttons_labels()
-        self._schemes.observe(on_change_scheme)
         self._back = widgets.Button(description = "back",layout=widgets.Layout(width='100px'))
         self._back.on_click(lambda x : self._get_previous_element())
         self._mode_selection = widgets.Dropdown(layout=widgets.Layout(width='120px'))
@@ -644,13 +790,14 @@ class Widget():
 
         # Populate
         self.update_tab_annotations()
-        self._schemes.value = self._schemes.options[0]
         self._mode_selection.value = self._mode_selection.options[0]
         self._mode_sample.value = self._mode_sample.options[0]
+        self._display_next()
+        self._display_buttons_labels()
 
         # Group in tab
         tab_annotate = widgets.VBox([
-                            self._schemes,
+                            #self._schemes,
                              widgets.HBox([self._back,
                                     self._mode_selection,
                                     self._mode_sample,
@@ -676,7 +823,7 @@ class Widget():
 
         def send_table():
             data = {
-                "scheme":self._schemes.value,
+                "scheme":self.select_scheme.value,
                 "list_ids":[i.children[-1].layout.id for i in self.display_table.children],
                 "list_labels":[i.children[-1].value for i in self.display_table.children]
             }
@@ -716,44 +863,6 @@ class Widget():
         # Group in tab
         tab_description = widgets.VBox([self.data_description])
 
-        #------------
-        # Tab schemes
-        #------------
-        new_scheme = widgets.Text(description="New scheme: ")
-        valid_new_scheme = widgets.Button(description = "Create")
-        valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
-        self.select_scheme = widgets.Dropdown(description="Schemes: ", value="", options=[""])
-        valid_delete_scheme = widgets.Button(description = "Delete")
-        valid_delete_scheme.on_click(lambda b : self.delete_scheme(self.select_scheme.value))
-        self.select_label = widgets.Dropdown(description="Labels: ")
-        valid_delete_label = widgets.Button(description = "Delete")
-        valid_delete_label.on_click(lambda b : self.delete_label(self.select_label.value))
-        new_label = widgets.Text(description="New label: ")
-        valid_new_label = widgets.Button(description = "Create")
-        valid_new_label.on_click(lambda b : self.create_label(new_label.value))
-
-        # Populate
-        self.update_tab_schemes()
-        self.select_scheme.value = self._schemes.value
-        if len(self.select_label.options)>0:
-            self.select_label.value = self.select_label.options[0]
-        # change labels if scheme change
-        def on_change_scheme(change):
-            if change['type'] == 'change' and change['name'] == 'value':
-                print("change to ",self.select_scheme.value)
-                self.update_tab_schemes()
-        self.select_scheme.observe(on_change_scheme)
-        self._display_next()
-        self._display_buttons_labels()
-
-        # Group in tab
-        tab_schemes = widgets.VBox([
-                            widgets.HBox([self.select_scheme, valid_delete_scheme]),
-                            widgets.HBox([new_scheme, valid_new_scheme]),
-                            widgets.HBox([self.select_label, valid_delete_label]),
-                            widgets.HBox([new_label, valid_new_label]),
-                        ])
-
         #----------------
         # Tab SimpleModel
         #----------------
@@ -771,7 +880,7 @@ class Widget():
         self.simplemodel_params = widgets.Textarea(value="",
                                                    layout=widgets.Layout(width='300px',height='200px'))
         valid_model = widgets.Button(description = "⚙️Train")
-        valid_model.on_click(lambda b : self.create_simplemodel(scheme=self._schemes.value, #attention il faudra revoir le choix du scheme
+        valid_model.on_click(lambda b : self.create_simplemodel(scheme=self.select_scheme.value, #attention il faudra revoir le choix du scheme
                                                                model = self.select_simplemodel.value,
                                                                parameters = self.simplemodel_params.value,
                                                                features = self.select_features.value))
@@ -793,15 +902,17 @@ class Widget():
         #-------------
         self.info_features  = widgets.HTML(value = "No process currently running")
         self.available_features =  widgets.Dropdown(description = "Available")
+        delete_feature = widgets.Button(description = "Delete", button_style="danger")
+        delete_feature.on_click(lambda x: self.delete_feature(self.available_features.value))
         self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
         valid_compute_features = widgets.Button(description = "⚙️Compute")
         valid_compute_features.on_click(lambda x : self.compute_feature(self.add_features.value))
         valid_compute_features.style.button_color = 'lightgreen'
         add_regex_value = widgets.Text(description="Add regex:")
-        add_regex_name = widgets.Text(description="Name:")
+        #add_regex_name = widgets.Text(description="Name:")
         valid_regex = widgets.Button(description = "Add")
         valid_regex.style.button_color = 'lightgreen'
-        valid_regex.on_click(lambda x: self.add_regex(add_regex_name.value, add_regex_value.value))
+        valid_regex.on_click(lambda x: self.add_regex(add_regex_value.value))
 
         # Populate
         self.update_tab_features()
@@ -809,9 +920,9 @@ class Widget():
         # Group in tab
         tab_features = widgets.VBox([
             self.info_features,
-            self.available_features,
+            widgets.HBox([self.available_features,delete_feature]),
             widgets.HBox([self.add_features,valid_compute_features]),
-            widgets.HBox([add_regex_value,add_regex_name,valid_regex]),
+            widgets.HBox([add_regex_value,valid_regex]),
              ])
 
         #--------------
@@ -827,12 +938,8 @@ class Widget():
         self.new_bert_name = widgets.Text(description="New BERT:", layout={'width': '150px'}, value="Name")
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
-        compute_new_bert = widgets.Button(description = "⚙️Train")
-        compute_new_bert.style.button_color = 'lightgreen'
-        compute_new_bert.on_click(lambda x: self.create_bertmodel(scheme=self._schemes.value,
-                                                                 name = self.new_bert_name.value,
-                                                                 base_model = self.new_bert_base.value,
-                                                                 parameters = self.new_bert_params.value))
+        #self.compute_new_bert = widgets.Button(description = "⚙️Train")
+        self.compute_new_bert = widgets.VBox()
 
         # Populate
         self.update_tab_bertmodels()
@@ -840,24 +947,25 @@ class Widget():
         # Group in tab
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
-                                widgets.HBox([self.available_bert]),
-                                widgets.HBox([self.new_bert_name, self.new_bert_base, self.new_bert_params]),
-                                 compute_new_bert
+                                self.available_bert,
+                                widgets.HBox([self.new_bert_name, self.new_bert_base]),
+                                self.new_bert_params,
+                                self.compute_new_bert
                              ])
 
 
         # display global widget
-        self.output = widgets.Tab([tab_annotate,
+        self.output = widgets.Tab([tab_schemes,
+                                   tab_annotate,
                                    tab_description,
                                    tab_data,
-                                   tab_schemes,
                                    tab_features,
                                    tab_simplemodel,
                                    tab_bertmodel],
-                                  titles = ["Annotate",
+                                  titles = ["Schemes",
+                                            "Annotate",
                                             "Description",
                                             "Data",
-                                            "Schemes",
                                             "Features",
                                             "SimpleModels",
                                             "BertModels"])

@@ -33,6 +33,7 @@ class Session():
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
     data_file:str = "data.parquet"
+    test_file:str = "test.parquet"
     default_user:str = "user"
     n_workers = 4 #os.cpu_count()
 
@@ -116,6 +117,28 @@ class Server(Session):
                 time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 user TEXT,
                 key TEXT,
+                projects TEXT
+                  )
+        '''
+        cursor.execute(create_table_sql)
+
+
+        # Authorizations
+        create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS auth (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user TEXT,
+                project TEXT
+                  )
+        '''
+        cursor.execute(create_table_sql)
+
+        # Log connexion
+        create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS connections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user TEXT,
                 projects TEXT
                   )
         '''
@@ -217,31 +240,30 @@ class Server(Session):
         - initialize parameters
         - initialize files
         """
-        # create directory
+        # create directory for the project
         params.dir = self.path / params.project_name
         os.makedirs(params.dir)
 
-        # write data
+        # write total dataset
         with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
         # save parameters 
         self.set_project_parameters(params)
 
-        # load only the number of rows for the project
-        content = pd.read_csv(params.dir / "data_raw.csv", 
-                                #index_col=0, 
-                                nrows=params.n_rows)
-        
+        # random sample of the needed data, index as str
+        n_rows = params.n_train + params.n_test
+        content = pd.read_csv(params.dir / "data_raw.csv").sample(n_rows)
         content = content.set_index(params.col_id)
-        print(content.columns, params.col_id)
         content.index = [str(i) for i in list(content.index)] #type: ignore
     
         # create the empty annotated file / features file
         # Put the id column as index for the rest of the treatment
-        content.to_parquet(params.dir / self.data_file, index=True)
-        content[[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
-        content[[]].to_parquet(params.dir / self.features_file, index=True)
+        content[0:params.n_train].to_parquet(params.dir / self.data_file, index=True)
+        content[params.n_train:].to_parquet(params.dir / self.test_file, index=True)
+        # only for the training set for the moment
+        content[0:params.n_train][[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
+        content[0:params.n_train][[]].to_parquet(params.dir / self.features_file, index=True)
 
         """
         TODO : deal if already tagged column
@@ -498,14 +520,16 @@ class Project(Session):
 
         pattern = re.compile(value)
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
+        print("compile feature", f.shape)
         self.features.add(name,f)
-        return {"success":"regex added"}
-    
+        return {"success":"regex added"}    
 
 class Features(Session):
     """
     Manage project features
-    Comment : as a file
+    Comment : 
+    - as a file
+    - use "__" as separator
     """
 
     def __init__(self, 
@@ -532,7 +556,7 @@ class Features(Session):
             matching_strings = [s for s in strings if re.match(pattern, s)]
             return matching_strings
         data = pd.read_parquet(self.path)
-        var = set([i.split("_")[0] for i in data.columns])
+        var = set([i.split("__")[0] for i in data.columns])
         dic = {i:find_strings_with_pattern(data.columns,i) for i in var}
         return data, dic
     
@@ -555,7 +579,7 @@ class Features(Session):
             content = pd.DataFrame(content)
 
         # add to the table & dictionnary
-        content.columns = [f"{name}_{i}" for i in content.columns]
+        content.columns = [f"{name}__{i}" for i in content.columns]
         self.map[name] = list(content.columns)
         self.content = pd.concat([self.content,content],
                                      axis=1)

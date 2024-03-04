@@ -134,8 +134,9 @@ async def new_project(
                       file: Annotated[UploadFile, File()],
                       project_name:str = Form(),
                       col_text:str = Form(),
-                      col_id:str = Form(None),
-                      n_rows:int = Form(None),
+                      col_id:str = Form(),
+                      n_train:int = Form(),
+                      n_test:int = Form(),
                       embeddings:list = Form(None),
                       n_skip:int = Form(None),
                       langage:str = Form(None),
@@ -152,9 +153,15 @@ async def new_project(
     """
 
     # removing None parameters
-    params_in = {"project_name":project_name,"col_text":col_text,
-              "col_id":col_id,"n_rows":n_rows,"embeddings":embeddings,
-              "n_skip":n_skip,"langage":langage,"col_tags":col_tags,
+    params_in = {"project_name":project_name,
+                 "col_text":col_text,
+              "col_id":col_id,
+              "n_train":n_train,
+              "n_test":n_test,
+              "embeddings":embeddings,
+              "n_skip":n_skip,
+              "langage":langage,
+              "col_tags":col_tags,
               "cols_context":cols_context}
     params_out = params_in.copy()
     for i in params_in:
@@ -369,7 +376,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
 
     return {"error":"not implemented"}
 
-@app.post("/features/delete", dependencies=[Depends(verified_user)])
+@app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
                      name:str):
     r = project.features.delete(name)
@@ -405,7 +412,7 @@ async def get_bert(project: Annotated[Project, Depends(get_project)],
     """
     return {"error":"Pas implémenté"}#project.bertmodel.get_params()
 
-@app.post("/models/bert", dependencies=[Depends(verified_user)])
+@app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
                      bert:BertModelModel):
     """ 
@@ -413,8 +420,9 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     TODO : gestion du nom du projet/scheme à la base du modèle
     """
     df = project.schemes.get_scheme_data(bert.scheme) #move it elswhere ?
-    project.bertmodels.start_training_process(
+    r = project.bertmodels.start_training_process(
                                 name = bert.name,
+                                user = bert.user,
                                 scheme = bert.scheme,
                                 df=df,
                                 col_text=df.columns[0],
@@ -423,7 +431,12 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 params = bert.params,
                                 test_size=bert.test_size
                                 )
-    return {"success":"Bert model under training"}
+    return r
 
-    
+@app.post("/models/bert/stop", dependencies=[Depends(verified_user)])
+async def stop_bert(project: Annotated[Project, Depends(get_project)],
+                     user:str):
+    r = project.bertmodels.stop_user_training(user)
+    return r
+
 # add route to test the status of the training
