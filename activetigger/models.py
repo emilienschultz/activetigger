@@ -136,6 +136,7 @@ class BertModels():
         if self.path.exists(): #if bert models have been trained
             all_files = os.listdir(self.path)
             trained = [i for i in all_files if os.path.isdir(self.path / i) and (self.path / i / "finished").exists()]
+            trained = [i for i in trained if i[0]!="_"] #skip temporary training
             for i in trained:
                 if not i.split("_")[0] in r:
                     r[i.split("_")[0]] = []
@@ -356,6 +357,17 @@ class BertModels():
         b.status = "loaded"
         return b
     
+    def save(self, user:str, name:str):
+        """
+        Save a user train model (under _user)
+        """
+        if not (self.path / f"_{user}").exists():
+            return {"error":"no model currently trained"}
+        if (self.path / f"_{user}" / "status.log").exists():
+            return {"error":"model not trained completly"}
+        shutil.copytree(self.path / f"_{user}", self.path / name)
+        return {"success":"model saved"}
+            
     def get(self, name:str)-> BertModel|None:
         """
         Get a model (load it if available)

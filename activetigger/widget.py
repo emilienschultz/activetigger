@@ -126,7 +126,10 @@ class Widget():
         Create a new project
         """
         clear_output()
-        # project name
+
+        # first step of the panel
+        #------------------------
+
         project_name = widgets.Text(disabled=False,
                                     description="Name:",
                                     layout={'width': '200px'})
@@ -157,6 +160,9 @@ class Widget():
         # nom de la colonne texte
         # nom de la colonne identifiant
 
+        # second step of the panel
+        #-------------------------
+
         # separator
         separate = widgets.HTML(value = "<hr>")
 
@@ -173,10 +179,25 @@ class Widget():
             layout={'width': '200px'},
             disabled=False)
         
+        column_label = widgets.Dropdown(
+            options=[],
+            description='Labels*:',
+            layout={'width': '200px'},
+            disabled=False)
+        
+        columns_context = widgets.SelectMultiple(
+            options=[],
+            description='Context*:',
+            layout={'width': '200px'},
+            disabled=False)
+        
         n_train = widgets.IntText(description = "nrows train", layout={'width': '200px'})
         n_test = widgets.IntText(description = "nrow test", layout={'width': '200px'})
 
         info = widgets.HTML()
+
+        # Populate
+        #---------
 
         # create the project
         layout=widgets.Layout(width='100px', margin='30px 30px 30px 30px')
@@ -185,8 +206,11 @@ class Widget():
         def create_project(b):
             data = {
                     "project_name": project_name.value,
+                    "user":self.user,
                     "col_text": column_text.value,
                     "col_id":column_id.value,
+                    "col_label":column_label.value,
+                    "cols_context":columns_context.value,
                     "n_train":n_train.value,
                     "n_test":n_test.value
                     }
@@ -211,6 +235,8 @@ class Widget():
             df = self._load_file(file.value)
             column_text.options = df.columns
             column_id.options = df.columns
+            column_label.options = df.columns
+            columns_context.options = df.columns
             info.value = f"Size of the dataset: {len(df)}"
             if len(df.columns)>1:
                 column_text.value = column_text.options[1]
@@ -220,6 +246,8 @@ class Widget():
                                                                      info, 
                                                                      column_id,
                                                                      column_text,
+                                                                     column_label,
+                                                                     columns_context,
                                                                      n_train,
                                                                      n_test,
                                                                      validate]
@@ -343,17 +371,11 @@ class Widget():
             compute.style.button_color = 'lightgreen'
             compute.on_click(lambda x: self.create_bertmodel())
             self.compute_new_bert.children = [compute]
-            #self.compute_new_bert.description = "⚙️Train"
-            #self.compute_new_bert.style.button_color = 'lightgreen'
-            #self.compute_new_bert.on_click(lambda x: self.create_bertmodel())
         else:
             stop = widgets.Button(description="⚙️Stop")
             stop.style.button_color = 'red'
             stop.on_click(lambda x: self.stop_bertmodel())
             self.compute_new_bert.children = [stop]
-            #self.compute_new_bert.description = "Stop training"
-            #self.compute_new_bert.style.button_color = 'red'
-            #self.compute_new_bert.on_click(lambda x: self.stop_bertmodel())
         return True
         
 
@@ -579,7 +601,7 @@ class Widget():
                 "project_name":self.project_name,
                 "scheme":self.select_scheme.value,
                 "user":self.user,
-                "name":self.new_bert_name.value,
+                "name":f"_{self.user}", # générique
                 "base_model":self.new_bert_base.value,
                 "params":json.loads(self.new_bert_params.value),
                 "test_size":0.2
@@ -678,6 +700,17 @@ class Widget():
         self.update_tab_features()
         return True
     
+    def save_bert(self, name):
+        params = {"project_name":self.project_name,
+                  "user":self.user,
+                  "name":name
+                  }
+        r = self._post("/models/bert/save",
+            params = params)
+        print(r)
+        return r
+        
+    
     def periodic_update(self):
 
         while True:
@@ -735,7 +768,6 @@ class Widget():
         # change labels if scheme change
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                print("change to ",self.select_scheme.value)
                 self.update_tab_schemes()
         self.select_scheme.observe(on_change_scheme)
 
@@ -908,11 +940,13 @@ class Widget():
                 self.new_bert_params.value = "TO IMPLEMENT"
         self.available_bert.observe(on_change_model)
 
-        self.new_bert_name = widgets.Text(description="New BERT:", layout={'width': '150px'}, value="Name")
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
-        #self.compute_new_bert = widgets.Button(description = "⚙️Train")
         self.compute_new_bert = widgets.VBox()
+
+        self.bert_name = widgets.Text(description="Name:", layout={'width': '150px'}, value="Name")
+        self.record_bert = widgets.Button(description = "Save Bert")
+        self.record_bert.on_click(lambda x : self.save_bert(self.bert_name.value))
 
         # Populate
         self.update_tab_bertmodels()
@@ -921,9 +955,11 @@ class Widget():
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
                                 self.available_bert,
-                                widgets.HBox([self.new_bert_name, self.new_bert_base]),
+                                self.new_bert_base,
                                 self.new_bert_params,
-                                self.compute_new_bert
+                                self.compute_new_bert,
+                                widgets.HTML(value="<hr>"),
+                                widgets.HBox([self.bert_name, self.record_bert])
                              ])
 
 

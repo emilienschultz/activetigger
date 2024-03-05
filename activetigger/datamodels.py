@@ -8,6 +8,7 @@ class ProjectModel(BaseModel):
     Parameters of a project
     """
     project_name:str
+    user:str
     col_text:str
     col_id:str
     n_rows:int = 2000
@@ -16,9 +17,9 @@ class ProjectModel(BaseModel):
     dir:Path|None = None
     embeddings:list = []
     n_skip:int = 0
-    schemes: list = []
+    default_scheme: list = []
     langage:str = "fr"
-    col_tags:str|None = None # TODO: load existing tags
+    col_label:str|None = None # TODO: load existing tags
     cols_context:list = [] # TODO: select variable to keep
 
 class Action(str, Enum):

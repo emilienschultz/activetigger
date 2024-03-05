@@ -134,15 +134,16 @@ async def info_all_projects():
 async def new_project(
                       file: Annotated[UploadFile, File()],
                       project_name:str = Form(),
+                      user:str = Form(),
                       col_text:str = Form(),
                       col_id:str = Form(),
+                      col_label:str = Form(None),
+                      cols_context:list = Form(None),
                       n_train:int = Form(),
                       n_test:int = Form(),
                       embeddings:list = Form(None),
                       n_skip:int = Form(None),
                       langage:str = Form(None),
-                      col_tags:str = Form(None),
-                      cols_context:list = Form(None)
                       ) -> ProjectModel|Error:
     """
     Load new project
@@ -154,16 +155,19 @@ async def new_project(
     """
 
     # removing None parameters
-    params_in = {"project_name":project_name,
-                 "col_text":col_text,
-              "col_id":col_id,
-              "n_train":n_train,
-              "n_test":n_test,
-              "embeddings":embeddings,
-              "n_skip":n_skip,
-              "langage":langage,
-              "col_tags":col_tags,
-              "cols_context":cols_context}
+    params_in = {
+        "project_name":project_name,
+        "user":user,         
+        "col_text":col_text,
+        "col_id":col_id,
+        "n_train":n_train,
+        "n_test":n_test,
+        "embeddings":embeddings,
+        "n_skip":n_skip,
+        "langage":langage,
+        "col_label":col_label,
+        "cols_context":cols_context
+        }
     params_out = params_in.copy()
     for i in params_in:
         if params_in[i] is None:
@@ -463,6 +467,13 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
 async def stop_bert(project: Annotated[Project, Depends(get_project)],
                      user:str):
     r = project.bertmodels.stop_user_training(user)
+    return r
+
+@app.post("/models/bert/save", dependencies=[Depends(verified_user)])
+async def save_bert(project: Annotated[Project, Depends(get_project)],
+                     user:str,
+                     name:str):
+    r = project.bertmodels.save(user, name)
     return r
 
 # add route to test the status of the training

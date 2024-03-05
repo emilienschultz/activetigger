@@ -236,8 +236,9 @@ class Server(Session):
         """
         Set up a new project
         - load data and save
-        - initialize parameters
+        - initialize parameters in the db
         - initialize files
+        - add preliminary tags
         """
         # create directory for the project
         params.dir = self.path / params.project_name
@@ -247,8 +248,6 @@ class Server(Session):
         with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
-        # save parameters 
-        self.set_project_parameters(params)
 
         # random sample of the needed data, index as str
         n_rows = params.n_train + params.n_test
@@ -261,18 +260,46 @@ class Server(Session):
         content[0:params.n_train].to_parquet(params.dir / self.data_file, index=True)
         content[params.n_train:].to_parquet(params.dir / self.test_file, index=True)
         # only for the training set for the moment
-        content[0:params.n_train][[params.col_text]].to_parquet(params.dir / self.labels_file, index=True)
+        # keep the text and the context available
+        content[0:params.n_train][[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
         content[0:params.n_train][[]].to_parquet(params.dir / self.features_file, index=True)
 
-        """
-        TODO : deal if already tagged column
-        if "col_tags" in kwargs: # if existing tag column
-            self.content[self.schemes.col] = self.content[kwargs["col_tags"]]
-        else:
-            self.content[self.schemes.col] = None
-        """
+        # if the case, add labels in the database
+        if (not params.col_label is None) and (params.col_label in content.columns):
+            df = content[params.col_label].dropna()
+            params.default_scheme = list(df.unique())
+            # add the scheme in the database
+            conn = sqlite3.connect(self.db)
+            cursor = conn.cursor()
+            query = '''
+                    INSERT INTO schemes (project, name, params) 
+                    VALUES (?, ?, ?)
+                    '''
+            cursor.execute(query, 
+                        (params.project_name, 
+                         "default", 
+                         json.dumps(params.default_scheme)))
+            conn.commit()
+            # add the labels in the database
+            query = '''
+            INSERT INTO annotations (action, user, project, element_id, scheme, tag)
+            VALUES (?,?,?,?,?,?);
+            '''
+            for element_id, label in df.iteritems():
+                cursor.execute(query, ("add", 
+                                       params.user, 
+                                       params.project_name, 
+                                       element_id, 
+                                       "default", 
+                                       label))
+            conn.commit()
+            conn.close()
+
+        # save parameters 
+        self.set_project_parameters(params)
 
         return params
+    
 
     def delete_project(self, project_name:str) -> dict:
         """
@@ -418,14 +445,12 @@ class Project(Session):
         if selection == "random": # random row
             element_id = df[f].sample(random_state=42).index[0]
         if selection == "maxprob": # higher prob 
-            print("maxprob")
             # only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
                 return {"error":"Simplemodel doesn't exist"}
             if tag is None: # default label to first
                 tag = self.schemes.available()[scheme][0]
             sm = self.simplemodels.get_model(user, scheme) # get model
-            print("proba",sm.proba.shape)
             element_id = sm.proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
                 
         return  self.get_element(element_id)
@@ -485,7 +510,7 @@ class Project(Session):
                                     "available":self.simplemodels.available_models
                                     },
                     "bertmodels":{
-                                "options":self.bertmodels.base_models,
+                                "options":stop_bertself.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
                                 "training":self.bertmodels.training(),
                                 "base_parameters":self.bertmodels.params_default
