@@ -728,26 +728,11 @@ class Widget():
             f.write(r)
         print(f"data exported in './data_export.{format}'")
         return True
-        
-    def periodic_update(self):
-# NOT USED
-        while True:
-            time.sleep(self.update_time)
-            self.state = self.get_state()
-            print(self.state["bertmodels"])
-            # case of training finished
-            if self.user in self.state["bertmodels"]["training"]:
-                self.bert_training = True
-            else:
-                self.bert_training = False
-
-                # return to normal state
-                print("training finished")
-                #self.bert_training = False
-            self.update_tab_bertmodels(state=False)
-    
-    
+            
     async def update_state(self):
+        """
+        Async function to update state
+        """
         while True:
             self.state = self.get_state()
             await asyncio.sleep(self.update_time)
@@ -954,6 +939,13 @@ class Widget():
         #--------------
         # Tab BertModel
         #--------------
+
+        """
+        Logic : train a bertmodel by user
+        which can be saved in a specific name
+        TODO : upgrade management of models
+        """
+
         self.bert_status = widgets.Text(disabled=True)
         self.available_bert = widgets.Dropdown(description="Select:")
         def on_change_model(change): # if select one, display its options on_select

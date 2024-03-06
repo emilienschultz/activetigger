@@ -25,15 +25,18 @@ logging.basicConfig(filename = "log",
 
 
 class BertModel():
+    """
+    Manage one bertmodel
+    """
 
     def __init__(self, 
                  name:str, 
                  path:Path, 
-                 base_model:str, 
+                 base_model:str|None = None, 
                  params:dict = {}) -> None:
         self.name:str = name
         self.path:Path = path
-        self.base_model:str = base_model
+        self.base_model:str = None
         self.tokenizer = None
         self.model = None
         self.params:dict = params
@@ -43,24 +46,36 @@ class BertModel():
     def __repr__(self) -> str:
         return f"{self.name} - {self.base_model}"
 
-    def predict(self, df, col_text = "text", gpu=False, batch = 128):
+    def load(self):
         """
-        Predictor from a model
-        Parameters
-        ----------
-        df (DataFrame): data
-        col_text (str): column of the textual data
-        gpu (bool): optional, enable GPU
+        Load trained model from files
+        """
+        if not (self.path / "config.json").exists():
+            raise FileNotFoundError("model not defined")
+
+        with open(self.path / "config.json", "r") as jsonfile:
+            modeltype = json.load(jsonfile)["_name_or_path"]
+
+        self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
+        self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
+        self.status = "loaded"
+
+    def predict(self, 
+                df:DataFrame, 
+                col_text:str, 
+                gpu:bool = False, 
+                batch:int = 128):
+        """
+        Predict from a model
+        + probabilities
+        + entropy
         """
 
-        logging.basicConfig(filename='predict.log',
-                            format='%(asctime)s %(message)s',
-                            encoding='utf-8', level=logging.DEBUG)
-        
-        logging.info("Load model")
-
-        if self.model is None : 
+        if (self.model is None) or (self.tokenizer is None):
             self.load()
+
+        if (self.model is None) or (self.tokenizer is None):
+            return {"error":"Model not loaded"}
 
         if gpu:
             self.model.cuda()
@@ -69,7 +84,7 @@ class BertModel():
         predictions = []
         logging.info(f"Start prediction with {len(df)} entries")
         for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
-            chunk = self.tokenizer(list(chunk), 
+            inputs = self.tokenizer(list(chunk), 
                             padding=True, 
                             truncation=True, 
                             max_length=512, 
@@ -85,12 +100,17 @@ class BertModel():
             predictions.append(res)
             logging.info(f"{round(100*len(res)/len(df))}% predicted")
 
-        # Tidy data
+        # To DataFrame
         pred = pd.DataFrame(np.concatenate(predictions), 
-                            columns=self.model.config.labels.keys())
-        
+                            columns=sorted(list(self.model.config.label2id.keys())))
+
+        # Calculate entropy
+        entropy = -1 * (pred * np.log(pred)).sum(axis=1)
+
+        pred["entropy"] = entropy
+
         return pred
-    
+
 class BertModels():
     """
     Managing bertmodel training
@@ -200,7 +220,6 @@ class BertModels():
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
         self.processes[user] = [b,process]
-        print("current trainings:",self.processes.keys())
         return {"success":"bert model on training"}
 
     def train_bert(self,
@@ -342,22 +361,6 @@ class BertModels():
         del self.processes[user] # delete process
         return {"success":"process terminated"}
     
-    def load(self, name:str) -> BertModel:
-        """
-        Load trained model from files
-        """
-        if not (self.path / name / "config.json").exists():
-            raise FileNotFoundError("model not defined")
-
-        with open(self.path / name / "config.json", "r") as jsonfile:
-            modeltype = json.load(jsonfile)["_name_or_path"]
-
-        b = BertModel(name, self.path, modeltype)
-        b.tokenizer = AutoTokenizer.from_pretrained(modeltype)
-        b.model =  AutoModelForSequenceClassification.from_pretrained(self.path / name)
-        b.status = "loaded"
-        return b
-    
     def rename(self, former_name:str, new_name:str):
         """
         Rename a model (copy it)
@@ -385,12 +388,15 @@ class BertModels():
         if not (self.path / name).exists():
             return None
         if (self.path / name / "status.log").exists():
-            return None
-        return self.load(name)
+            return None    
+        b = BertModel(name, self.path / name)
+        b.load()
+        return b
     
     def update(self) -> bool:
         """
         Update training queue
+        (used in the API)
         # TODO : manage failed processes
         """
         to_del = []
