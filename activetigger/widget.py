@@ -358,9 +358,9 @@ class Widget():
         self.new_bert_base.options = self.state["bertmodels"]["options"]
         self.new_bert_base.value = self.new_bert_base.options[0]
 
-        # display bertmodels for the current scheme
+        # display saved bertmodels for the current scheme (temporary start with _)
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            self.available_bert.options = self.state["bertmodels"]["available"][self.select_scheme.value]
+            self.available_bert.options = [i for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
         self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"], indent=2)
 
         # display status
@@ -703,12 +703,12 @@ class Widget():
         self.update_tab_features()
         return True
     
-    def save_bert(self, name):
+    def save_bert(self, former_name, new_name):
         params = {"project_name":self.project_name,
-                  "user":self.user,
-                  "name":name
+                  "former_name":former_name,
+                  "new_name":new_name,
                   }
-        r = self._post("/models/bert/save",
+        r = self._post("/models/bert/rename",
             params = params)
         print(r)
         return r
@@ -730,7 +730,7 @@ class Widget():
         return True
         
     def periodic_update(self):
-
+# NOT USED
         while True:
             time.sleep(self.update_time)
             self.state = self.get_state()
@@ -751,6 +751,9 @@ class Widget():
         while True:
             self.state = self.get_state()
             await asyncio.sleep(self.update_time)
+            if self.bert_training and (not self.user in self.state["bertmodels"]["training"]):
+                self.bert_training = False
+                self.update_tab_bertmodels(state=False)
 
     def interface(self):
         """
@@ -952,7 +955,7 @@ class Widget():
         # Tab BertModel
         #--------------
         self.bert_status = widgets.Text(disabled=True)
-        self.available_bert = widgets.Dropdown(description="Trained:")
+        self.available_bert = widgets.Dropdown(description="Select:")
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value':
                 self.new_bert_params.value = "TO IMPLEMENT"
@@ -964,7 +967,8 @@ class Widget():
 
         self.bert_name = widgets.Text(description="Name:", layout={'width': '150px'}, value="Name")
         self.record_bert = widgets.Button(description = "Save Bert")
-        self.record_bert.on_click(lambda x : self.save_bert(self.bert_name.value))
+        self.record_bert.on_click(lambda x : self.save_bert(self.available_bert.value, 
+                                                            self.bert_name.value))
 
         # Populate
         self.update_tab_bertmodels()
@@ -976,7 +980,7 @@ class Widget():
                                 self.new_bert_base,
                                 self.new_bert_params,
                                 self.compute_new_bert,
-                                widgets.HTML(value="<hr>"),
+                                widgets.HTML(value="<hr>Save current model<br>"),
                                 widgets.HBox([self.bert_name, self.record_bert])
                              ])
 

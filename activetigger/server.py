@@ -538,9 +538,9 @@ class Project(Session):
         if format is None:
             format is "csv"
 
-        path = self.path / "_data"
+        path = self.path / self.name # path of the data
         if not path.exists():
-            os.mkdir(path)
+            raise ValueError("Problem of filesystem for project")
 
         data = self.schemes.get_scheme_data(scheme=scheme,
                                      complete=True)

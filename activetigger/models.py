@@ -132,15 +132,16 @@ class BertModels():
         """
         Trained bert
         """
-        r = {}
+        r:dict = {}
         if self.path.exists(): #if bert models have been trained
             all_files = os.listdir(self.path)
             trained = [i for i in all_files if os.path.isdir(self.path / i) and (self.path / i / "finished").exists()]
-            trained = [i for i in trained if i[0]!="_"] #skip temporary training
+            #trained = [i for i in trained if i[0]!="_"] #skip temporary training
             for i in trained:
-                if not i.split("_")[0] in r:
-                    r[i.split("_")[0]] = []
-                r[i.split("_")[0]].append(i)
+                scheme = i.split("__")[-1] #scheme after __
+                if not scheme in r: 
+                    r[scheme] = []
+                r[scheme].append(i)
         return r
     
     def training(self) -> dict:
@@ -178,7 +179,7 @@ class BertModels():
             test_size = 0.2
 
         # name integrating the scheme
-        name = scheme + "_" + name
+        name = f"{name}__{scheme}"
 
         # Launch as a independant process
         args = {
@@ -194,7 +195,7 @@ class BertModels():
         process = Process(target=self.train_bert, 
                           kwargs = args)
         process.start()
-        
+
         # Update the queue
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
@@ -357,16 +358,25 @@ class BertModels():
         b.status = "loaded"
         return b
     
-    def save(self, user:str, name:str):
+    def rename(self, former_name:str, new_name:str):
         """
-        Save a user train model (under _user)
+        Rename a model (copy it)
         """
-        if not (self.path / f"_{user}").exists():
+        if not (self.path / former_name).exists():
             return {"error":"no model currently trained"}
-        if (self.path / f"_{user}" / "status.log").exists():
+        if (self.path / new_name).exists():
+            return {"error":"this name already exists"}
+        if (self.path / former_name / "status.log").exists():
             return {"error":"model not trained completly"}
-        shutil.copytree(self.path / f"_{user}", self.path / name)
-        return {"success":"model saved"}
+
+        # keep the scheme information
+        if not "__" in new_name:
+            new_name = new_name + "__" + former_name.split("__")[-1]
+
+        os.rename(self.path / former_name, self.path / new_name)
+
+        #shutil.copytree(self.path / former_name, self.path / new_name)
+        return {"success":"model renamed"}
             
     def get(self, name:str)-> BertModel|None:
         """

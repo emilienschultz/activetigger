@@ -449,7 +449,9 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     Compute bertmodel
     TODO : gestion du nom du projet/scheme à la base du modèle
     """
-    df = project.schemes.get_scheme_data(bert.scheme) #move it elswhere ?
+    print("start bert training")
+    df = project.schemes.get_scheme_data(bert.scheme, complete = True) #move it elswhere ?
+    df = df.dropna() #remove non tag data
     r = project.bertmodels.start_training_process(
                                 name = bert.name,
                                 user = bert.user,
@@ -469,11 +471,11 @@ async def stop_bert(project: Annotated[Project, Depends(get_project)],
     r = project.bertmodels.stop_user_training(user)
     return r
 
-@app.post("/models/bert/save", dependencies=[Depends(verified_user)])
+@app.post("/models/bert/rename", dependencies=[Depends(verified_user)])
 async def save_bert(project: Annotated[Project, Depends(get_project)],
-                     user:str,
-                     name:str):
-    r = project.bertmodels.save(user, name)
+                     former_name:str,
+                     new_name:str):
+    r = project.bertmodels.rename(former_name, new_name)
     return r
 
 # Export elements
