@@ -48,7 +48,8 @@ class Widget():
     def _get(self,
              route:str, 
              params:dict|None = None, 
-             data:dict|None = None) -> dict:
+             data:dict|None = None,
+             is_json = True) -> dict:
         """
         Get from API
         """
@@ -57,7 +58,9 @@ class Widget():
                     params = params,
                     data = data,
                     headers=headers)
-        return json.loads(r.content)
+        if is_json:
+            return json.loads(r.content)
+        return r.content
 
     def start(self) -> None:
         """
@@ -710,7 +713,22 @@ class Widget():
         print(r)
         return r
         
-    
+    def export_data(self, format):
+        """
+        Get exported data
+        """
+        params = {"project_name":self.project_name,
+                  "scheme":self.select_scheme.value, #current scheme
+                  "format":format
+                  }
+        r = self._get("/export/data",
+            params = params,
+            is_json= False)
+        with open(f"./data_export.{format}","wb") as f:
+            f.write(r)
+        print(f"data exported in './data_export.{format}'")
+        return True
+        
     def periodic_update(self):
 
         while True:
@@ -962,6 +980,63 @@ class Widget():
                                 widgets.HBox([self.bert_name, self.record_bert])
                              ])
 
+        #--------------
+        # Tab BertModel
+        #--------------
+
+        layout_button=widgets.Layout(width='80px')
+        layout_menu=widgets.Layout(width='150px')
+
+
+        # data
+        export_tagged_data_presentation = widgets.HTML(value="<hr>Export tagged data<br>")
+        #export_tagged_data_columns = widgets.SelectMultiple(layout = layout_menu)
+        export_tagged_data_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
+        valid_export_tagged_data = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_tagged_data.on_click(lambda x: self.export_data(format = export_tagged_data_format.value))
+
+        # embeddings
+        export_embeddings_presentation = widgets.HTML(value="<hr>(Not implemented) Export embeddings<br>")
+        export_embeddings_columns = widgets.SelectMultiple(layout = layout_menu)
+        export_embeddings_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
+        valid_export_embeddings = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_embeddings.on_click(lambda x: print("to implement"))
+
+        # bert predictions
+        export_predictions_presentation = widgets.HTML(value="<hr>(Not implemented) Export BERT predictions<br>")
+        select_bert_model_predict = widgets.Dropdown(layout = layout_menu)
+        export_bert_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
+        valid_export_predict = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_predict.on_click(lambda x: print("to implement"))
+
+        # bert models
+        export_bert_presentation =  widgets.HTML(value="<hr>(Not implemented) Export BERT models<br>")
+        select_bert_model = widgets.Dropdown(layout = layout_menu)
+        valid_export_bertmodel = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_bertmodel.on_click(lambda x: print("to implement"))
+
+
+        tab_export = widgets.VBox([
+            export_tagged_data_presentation, widgets.HBox([
+                          #export_tagged_data_columns,
+                          export_tagged_data_format,
+                          valid_export_tagged_data]),
+            export_embeddings_presentation, widgets.HBox([
+                          export_embeddings_columns,
+                          export_embeddings_format,
+                          valid_export_embeddings
+                          ]),
+            export_predictions_presentation, widgets.HBox([
+                          select_bert_model_predict,
+                          export_bert_format,
+                          valid_export_predict
+                        ]),
+            export_bert_presentation, widgets.HBox([
+                          select_bert_model,
+                          valid_export_bertmodel
+                        ]),
+        ])
+
 
         # display global widget
         self.output = widgets.Tab([tab_schemes,
@@ -970,14 +1045,16 @@ class Widget():
                                    tab_data,
                                    tab_features,
                                    tab_simplemodel,
-                                   tab_bertmodel],
+                                   tab_bertmodel,
+                                   tab_export],
                                   titles = ["Schemes",
                                             "Annotate",
                                             "Description",
                                             "Data",
                                             "Features",
                                             "SimpleModels",
-                                            "BertModels"])
+                                            "BertModels",
+                                            "Export"])
         
         # Update everything on tab change
         def on_tab_selected(change):

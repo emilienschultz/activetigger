@@ -248,7 +248,6 @@ class Server(Session):
         with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
-
         # random sample of the needed data, index as str
         n_rows = params.n_train + params.n_test
         content = pd.read_csv(params.dir / "data_raw.csv").sample(n_rows)
@@ -285,19 +284,19 @@ class Server(Session):
             INSERT INTO annotations (action, user, project, element_id, scheme, tag)
             VALUES (?,?,?,?,?,?);
             '''
-            for element_id, label in df.iteritems():
+            for element_id, label in df.items():
+                print(label)
                 cursor.execute(query, ("add", 
                                        params.user, 
                                        params.project_name, 
                                        element_id, 
                                        "default", 
                                        label))
-            conn.commit()
+                conn.commit()
             conn.close()
 
         # save parameters 
         self.set_project_parameters(params)
-
         return params
     
 
@@ -510,7 +509,7 @@ class Project(Session):
                                     "available":self.simplemodels.available_models
                                     },
                     "bertmodels":{
-                                "options":stop_bertself.bertmodels.base_models,
+                                "options":self.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
                                 "training":self.bertmodels.training(),
                                 "base_parameters":self.bertmodels.params_default
@@ -530,7 +529,31 @@ class Project(Session):
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
         print("compile feature", f.shape)
         self.features.add(name,f)
-        return {"success":"regex added"}    
+        return {"success":"regex added"}
+    
+    def export_data(self, scheme:str, format:str|None = None):
+        """
+        Export annotation data in different format
+        """
+        if format is None:
+            format is "csv"
+
+        path = self.path / "_data"
+        if not path.exists():
+            os.mkdir(path)
+
+        data = self.schemes.get_scheme_data(scheme=scheme,
+                                     complete=True)
+        
+        file_name = f"data_{self.name}_{scheme}.{format}"
+
+        if format == "csv":
+            data.to_csv(path / file_name)
+
+        if format == "parquet":
+            data.to_parquet(path / file_name)
+
+        return file_name, path / file_name
 
 class Features(Session):
     """

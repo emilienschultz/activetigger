@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form, Request
+from fastapi.responses import FileResponse
 import logging
 from typing import Annotated
 from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,SchemeModel, Error
@@ -153,7 +154,6 @@ async def new_project(
     https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
 
     """
-
     # removing None parameters
     params_in = {
         "project_name":project_name,
@@ -172,7 +172,7 @@ async def new_project(
     for i in params_in:
         if params_in[i] is None:
             del params_out[i]
-
+    print(params_out)
     project = ProjectModel(**params_out)
 
     # For the moment, only csv
@@ -475,5 +475,18 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
                      name:str):
     r = project.bertmodels.save(user, name)
     return r
+
+# Export elements
+#----------------
+
+@app.get("/export/data", dependencies=[Depends(verified_user)])
+async def export_data(project: Annotated[Project, Depends(get_project)],
+                      scheme:str,
+                      format:str):
+    
+    print("export data",scheme, format)
+    name, path = project.export_data(format=format, scheme=scheme)
+    print(path, name)
+    return FileResponse(path, filename=name)
 
 # add route to test the status of the training
