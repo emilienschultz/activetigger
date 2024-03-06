@@ -442,6 +442,21 @@ async def get_bert(project: Annotated[Project, Depends(get_project)],
     """
     return {"error":"Pas implémenté"}#project.bertmodel.get_params()
 
+@app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
+async def predict(project: Annotated[Project, Depends(get_project)],
+                     name_model:str,
+                     user:str,
+                     data:str = "all"):
+    """
+    Start prediction with a model
+    """
+    df = project.content[["text"]]
+    r = project.bertmodels.start_predicting_process(name = name_model,
+                                                    df = df,
+                                                    col_text = "text",
+                                                    user = user)
+    return r
+
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
                      bert:BertModelModel):
@@ -477,6 +492,8 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
                      new_name:str):
     r = project.bertmodels.rename(former_name, new_name)
     return r
+
+
 
 # Export elements
 #----------------

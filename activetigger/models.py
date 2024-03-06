@@ -36,7 +36,7 @@ class BertModel():
                  params:dict = {}) -> None:
         self.name:str = name
         self.path:Path = path
-        self.base_model:str = None
+        self.base_model:str|None = base_model
         self.tokenizer = None
         self.model = None
         self.params:dict = params
@@ -221,6 +221,31 @@ class BertModels():
         b.status = "training"
         self.processes[user] = [b,process]
         return {"success":"bert model on training"}
+
+    def start_predicting_process(self, 
+                                 name:str,
+                                 user:str, 
+                                 df:DataFrame,
+                                 col_text:str):
+        """
+        Start predicting process
+        """
+        if user in self.processes:
+            return {"error":"Processes already launched, cancel it before"}
+
+        if not (self.path / name).exists():
+            return {"error":"This model does not exist"}
+
+        b = BertModel(name, self.path / name)
+
+        args = {"df":df, "col_text":col_text}
+        process = Process(target=b.predict, 
+                          kwargs = args)
+        process.start()
+
+        b.status = "predicting"
+        self.processes[user] = [b,process]
+        return {"success":"bert model predicting"}
 
     def train_bert(self,
                path:Path,
