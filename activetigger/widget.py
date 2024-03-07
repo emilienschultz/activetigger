@@ -294,6 +294,7 @@ class Widget():
         # Update interface
         self.current_element = r
         self._textarea.value = r["text"]
+        self.info_element.value = r["info"]
 
         return True
 
@@ -312,6 +313,7 @@ class Widget():
                     "scheme":self.select_scheme.value,
                     "element_id":self.current_element["element_id"],
                     "tag":v.description,
+                    "user":self.user
                     }
             r = self._post(route = "/tags/add",
                        params = {"project_name":self.project_name},
@@ -360,7 +362,7 @@ class Widget():
 
         # display saved bertmodels for the current scheme (temporary start with _)
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            self.available_bert.options = [i for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
+            self.available_bert.options = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
         self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"], indent=2)
 
         # display status
@@ -425,7 +427,7 @@ class Widget():
         self._mode_label.disabled = True
         # case of a simplemodel is available for the user and the scheme
         if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
-            self._mode_selection.options = ["deterministic","random","maxprob"]
+            self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
             self._mode_label.disabled = False
             self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
 
@@ -447,15 +449,17 @@ class Widget():
         self.select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
         self.select_features.options = self.state["features"]["available"]
         if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
-            current_model = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["name"]
-            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["params"], 
-                                                       indent=2)
-            self.select_simplemodel.value = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["name"]
+            current_model = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
+            name = current_model['name']
+            self.simplemodel_params.value = json.dumps(current_model["params"], indent=2)
+            self.select_simplemodel.value = name
+            statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
         else:
-            current_model = "No model available"
-            #self.select_simplemodel.value = None
+            name = "No model"
             self.simplemodel_params.value = ""
-        self.simplemodel_state.value = f"Scheme : {self.select_scheme.value} - Current model: {current_model}"
+            statistics = ""
+        self.simplemodel_state.value = f"Current model: {name}"
+        self.simplemodel_statistics.value = statistics
 
     def update_tab_data(self, state = True):
         """
@@ -798,6 +802,7 @@ class Widget():
         self._mode_label = widgets.Dropdown(layout=widgets.Layout(width='120px'),
                                             disabled=True)
         self._labels = widgets.HBox()
+        self.info_element = widgets.HTML()
 
         # Populate
         self.update_tab_annotations()
@@ -812,7 +817,8 @@ class Widget():
                              widgets.HBox([self._back,
                                     self._mode_selection,
                                     self._mode_sample,
-                                    self._mode_label]),
+                                    self._mode_label,
+                                    self.info_element]),
                               self._textarea,
                               self._labels
                             ])
@@ -877,11 +883,10 @@ class Widget():
         #----------------
         # Tab SimpleModel
         #----------------
-        self.simplemodel_state = widgets.Text(disabled=True)
-        self.simplemodel_statistics= widgets.Text(disabled=True,
-                                                  value = "Here put statistics")
+        self.simplemodel_state = widgets.HTML(value = "State")
+        self.simplemodel_statistics= widgets.HTML(value = "Statistics")
 
-        self.select_simplemodel =  widgets.Dropdown(description = "models")
+        self.select_simplemodel =  widgets.Dropdown(description = "Models")
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
                 self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][self.select_simplemodel.value],
@@ -951,7 +956,15 @@ class Widget():
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value':
                 self.new_bert_params.value = "TO IMPLEMENT"
+                # ensable the possiblity of predict (TODO : ameliorate data model)
+                predict = [i for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[0] == self.available_bert.value][0][1]
+                self.compute_prediction.disabled = True
+                if not predict:
+                    print("prediction does not exist")
+                    self.compute_prediction.disabled = False
+
         self.available_bert.observe(on_change_model)
+        self.compute_prediction = widgets.Button(description = "Compute prediction", disabled = True)
 
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
@@ -969,6 +982,8 @@ class Widget():
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
                                 self.available_bert,
+                                self.compute_prediction,
+                                widgets.HTML(value="<hr>Train new bert<br>"),
                                 self.new_bert_base,
                                 self.new_bert_params,
                                 self.compute_new_bert,

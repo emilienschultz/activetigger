@@ -45,7 +45,7 @@ async def update():
         if (project.params.dir / "sbert.parquet").exists():
             log = functions.log_process("sbert", project.params.dir / "log_process.log") # log
             log.info("Completing sbert computation") # log
-            df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data
+            df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data TODO : bug potentiel lié à la temporalité
             project.features.add("sbert",df) # add to the feature manager
             if "sbert" in project.features.training:
                 project.features.training.remove("sbert") # remove from pending processes
@@ -266,8 +266,8 @@ async def get_element(id:str,
 
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
-                          project: Annotated[Project, Depends(get_project)],
-                          annotation:AnnotationModel):
+                   project: Annotated[Project, Depends(get_project)],
+                   annotation:AnnotationModel):
     """
     Add, Update, Delete annotations
     Comment : 
@@ -279,12 +279,14 @@ async def post_tag(action:Action,
                 detail="Missing a tag")
         return project.schemes.push_tag(annotation.element_id, 
                                         annotation.tag, 
-                                        annotation.scheme
+                                        annotation.scheme,
+                                        annotation.user
                                         )
     if action == "delete":
         project.schemes.delete_tag(annotation.element_id, 
-                                   annotation.scheme
-                                   )
+                                   annotation.scheme,
+                                   annotation.user
+                                   ) # add user deletion
         return {"success":"label deleted"}
 
 # Schemes management
@@ -444,17 +446,20 @@ async def get_bert(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(project: Annotated[Project, Depends(get_project)],
-                     name_model:str,
+                     model_name:str,
                      user:str,
                      data:str = "all"):
     """
     Start prediction with a model
     """
+    print("start predicting")
     df = project.content[["text"]]
-    r = project.bertmodels.start_predicting_process(name = name_model,
+    print(df[0:10])
+    r = project.bertmodels.start_predicting_process(name = model_name,
                                                     df = df,
                                                     col_text = "text",
                                                     user = user)
+    print("prediction launched")
     return r
 
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])

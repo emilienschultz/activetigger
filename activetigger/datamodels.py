@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
-from pandas import DataFrame
+from typing import Optional
 
 class ProjectModel(BaseModel):
     """
@@ -53,7 +53,10 @@ class UserModel(BaseModel):
     
 class ElementModel(BaseModel):
     element_id:str
-    text:str|None = None
+    text:Optional[str] = None
+    selection: Optional[str] = None
+    info: Optional[str] = None
+    context: Optional[str] = None
 
 class AnnotationModel(BaseModel):
     """
@@ -62,6 +65,7 @@ class AnnotationModel(BaseModel):
     project_name:str
     element_id:str
     tag:str
+    user:str
     scheme:str = "current"
 
 class SchemeModel(BaseModel):

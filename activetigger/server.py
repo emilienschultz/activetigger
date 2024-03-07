@@ -285,7 +285,12 @@ class Server(Session):
             VALUES (?,?,?,?,?,?);
             '''
             for element_id, label in df.items():
-                print(label)
+                print(("add", 
+                                       params.user, 
+                                       params.project_name, 
+                                       element_id, 
+                                       "default", 
+                                       label))
                 cursor.execute(query, ("add", 
                                        params.user, 
                                        params.project_name, 
@@ -438,6 +443,8 @@ class Project(Session):
         if sample == "tagged":
             f = df["labels"].notnull()
 
+        val = ""
+
         # Type of selection
         if selection == "deterministic": # next row
             element_id = df[f].index[0]
@@ -451,12 +458,30 @@ class Project(Session):
                 tag = self.schemes.available()[scheme][0]
             sm = self.simplemodels.get_model(user, scheme) # get model
             element_id = sm.proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
+            val = f"probability: {round(sm.proba[f][tag].sort_values(ascending=False)[0],2)}"
+        if selection == "active": #higher entropy
+            # only possible if the model has been trained
+            if not self.simplemodels.exists(user,scheme):
+                return {"error":"Simplemodel doesn't exist"}
+            sm = self.simplemodels.get_model(user, scheme) # get model
+            element_id = sm.proba[f]["entropy"].sort_values(ascending=False).index[0] # get max entropy id
+            val = round(sm.proba[f]['entropy'].sort_values(ascending=False)[0],2)
+            val = f"entropy: {val}"
+
                 
-        return  self.get_element(element_id)
+        element =  {
+            "element_id":element_id,
+            "text":self.content.loc[element_id,"text"],
+            "selection":selection,
+            "info":str(val)
+                }
+
+        return element
     
     def get_element(self,element_id):
         """
         Get an element of the database
+        TO REMOVE
         """
         columns = ["text"]
         return {"element_id":element_id,
@@ -493,7 +518,7 @@ class Project(Session):
         options = {
                     "params":self.params,
                     "next":{
-                        "methods":["deterministic","random","maxprob"],
+                        "methods":["deterministic","random","maxprob","active"],
                         "sample":["untagged","all","tagged"],
                         },
                     "schemes":{
@@ -512,6 +537,8 @@ class Project(Session):
                                 "options":self.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
                                 "training":self.bertmodels.training(),
+#                                "predicting":self.bertmodels.predicting(),
+#        
                                 "base_parameters":self.bertmodels.params_default
                                 }
                    }
@@ -862,7 +889,7 @@ class Schemes(Session):
     def delete_tag(self, 
                    element_id:str,
                    scheme:str,
-                   user:str = "user") -> bool:
+                   user:str = "server") -> bool:
         """
         Delete a recorded tag
         i.e. : add empty label
@@ -885,7 +912,7 @@ class Schemes(Session):
                  element_id:str, 
                  tag:str|None,
                  scheme:str,
-                 user:str = "user"):
+                 user:str = "server"):
         """
         Record a tag
         """

@@ -15,7 +15,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import precision_score
+from sklearn.metrics import precision_score, f1_score, accuracy_score
 from multiprocessing import Process
 from datetime import datetime
 
@@ -41,6 +41,7 @@ class BertModel():
         self.model = None
         self.params:dict = params
         self.status:str = "initializing"
+        self.pred:DataFrame|None = None
         self.timestamp:datetime = datetime.now()
 
     def __repr__(self) -> str:
@@ -59,6 +60,10 @@ class BertModel():
         self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
         self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
         self.status = "loaded"
+
+        # Load prediction if available
+        if (self.path / "predict.csv").exists():
+            self.pred = pd.read_csv(self.path / "predict.csv")
 
     def predict(self, 
                 df:DataFrame, 
@@ -84,13 +89,13 @@ class BertModel():
         predictions = []
         logging.info(f"Start prediction with {len(df)} entries")
         for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
-            inputs = self.tokenizer(list(chunk), 
+            chunk = self.tokenizer(list(chunk), 
                             padding=True, 
                             truncation=True, 
                             max_length=512, 
                             return_tensors="pt")
             if gpu:
-                inputs = inputs.to("cuda")
+                chunk = chunk.to("cuda")
             with torch.no_grad():
                 outputs = self.model(**chunk)
             res = outputs[0]
@@ -108,6 +113,9 @@ class BertModel():
         entropy = -1 * (pred * np.log(pred)).sum(axis=1)
 
         pred["entropy"] = entropy
+
+        # write the file
+        pred.to_csv(self.path / "predict.csv")
 
         return pred
 
@@ -151,6 +159,7 @@ class BertModels():
     def trained(self) -> dict:
         """
         Trained bert
+        + if prediction available
         """
         r:dict = {}
         if self.path.exists(): #if bert models have been trained
@@ -158,10 +167,13 @@ class BertModels():
             trained = [i for i in all_files if os.path.isdir(self.path / i) and (self.path / i / "finished").exists()]
             #trained = [i for i in trained if i[0]!="_"] #skip temporary training
             for i in trained:
+                predict = False
+                if (self.path / i / "predict.csv").exists():
+                    predict = True
                 scheme = i.split("__")[-1] #scheme after __
                 if not scheme in r: 
                     r[scheme] = []
-                r[scheme].append(i)
+                r[scheme].append((i,predict))
         return r
     
     def training(self) -> dict:
@@ -428,8 +440,11 @@ class BertModels():
         for u in self.processes:
             b = self.processes[u][0]
             p = self.processes[u][1]
-            # test if process completed (e.g. status.log deleted for the model)
+            # test if process completed (training)
             if (b.status == "training") and (not p.is_alive()):
+                to_del.append(b.name)
+            # test if process completed (predicting)
+            if (b.status == "predicting") and (not p.is_alive()):
                 to_del.append(b.name)
             print(to_del)
         # Update the current active processes
@@ -474,7 +489,9 @@ class SimpleModels():
                 sm = self.existing[u][s]
                 r[u][s] = {"name":sm.name, 
                            "params":sm.model_params,
-                           "features":sm.features}
+                           "features":sm.features,
+                           "statistics":sm.statistics
+                           }
         return r
         
     def exists(self, user:str, scheme:str):
@@ -598,7 +615,7 @@ class SimpleModel():
     def __init__(self,
                  name: str,
                  X: DataFrame,
-                 Y: str,
+                 Y: DataFrame,
                  labels: list,
                  model,
                  features:list,
@@ -613,8 +630,9 @@ class SimpleModel():
         self.model = model
         self.model_params = model_params
         self.proba = self.compute_proba(model, X)
-        self.precision = self.compute_precision(model, X, Y, labels)
         self.standardize = standardize
+        self.statistics = self.compute_statistics(model, X, Y, labels)
+        print(self.statistics)
 
     def json(self):
         """
@@ -629,12 +647,14 @@ class SimpleModel():
 
     def compute_proba(self, model, X):
         """
-        Compute proba
+        Compute proba + entropy
         """
         proba = model.predict_proba(X)
         proba = pd.DataFrame(proba, 
                              columns = model.classes_,
                              index=X.index)
+        proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
+
         return proba
     
     def compute_precision(self, model, X, Y, labels):
@@ -648,6 +668,27 @@ class SimpleModel():
                                     pos_label=labels[0])
         return precision
 
+    def compute_statistics(self, model, X, Y, labels):
+        """
+        Compute statistics simplemodel
+        """
+        f = Y.notna()
+        X = X[f]
+        Y = Y[f]
+        Y_pred = model.predict(X)
+        f1 = f1_score(Y, Y_pred, average=None)
+        weighted_f1 = f1_score(Y, Y_pred, average='weighted')
+        accuracy = accuracy_score(Y, Y_pred)
+        precision = precision_score(list(Y[f]), 
+                                    list(Y_pred),
+                                    pos_label=labels[0])
+        statistics = {
+                    "f1":list(f1),
+                    "weighted_f1":weighted_f1,
+                    "accuracy":accuracy,
+                    "precision":precision
+                    }
+        return statistics
 
 #         self.available_models = {
 #                 #"simplebayes": {
