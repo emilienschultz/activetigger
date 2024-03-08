@@ -21,10 +21,11 @@ class Widget():
         self.update_time:int = 2
         self.user:str = "local"
         self.project_name: None|str = None
-        self.current_element:dict|None = None
-        self.bert_training:bool = False
-        self.history:list = []
-        self.state:dict = {}
+        self.state:dict = {} # global state of the server
+        self.current_element:dict|None = None # element to annotate
+        self.bert_training:bool = False # if bert is undertraining
+        self.is_simplemodel:bool = False # if simplemodel exist
+        self.history:list = [] # elements annotated during this session
         self.start()
 
     def _post(self,
@@ -319,12 +320,23 @@ class Widget():
             r = self._post(route = "/tags/add",
                        params = {"project_name":self.project_name},
                        json_data = data)
+            
             # add in history
-            self.history.append(self.current_element["element_id"])
             if "error" in r:
                 print(r)
+            else:
+                self.history.append(self.current_element["element_id"])
             self._display_next()
 
+            # check if simplemodel need to be retrained
+            if self.is_simplemodel and (len(self.history) % self.simplemodel_autotrain.value == 0):
+                # retrain with the parameters of the state
+                sm = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
+                self.create_simplemodel(self.select_scheme.value,
+                           model = sm["name"], 
+                           parameters = sm["params"], 
+                           features = sm["features"])
+                
         # create buttons
         buttons = []
         for t in labels:
@@ -427,7 +439,7 @@ class Widget():
         self._mode_sample.options = self.state["next"]["sample"]
         self._mode_label.disabled = True
         # case of a simplemodel is available for the user and the scheme
-        if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
+        if self.is_simplemodel:
             self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
             self._mode_label.disabled = False
             self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
@@ -588,7 +600,7 @@ class Widget():
         data = {
                 "model":model,
                 "features":features,
-                "params":json.loads(parameters),
+                "params":parameters,
                 "scheme":scheme,
                 "user":self.user
                 }
@@ -746,9 +758,13 @@ class Widget():
         while True:
             self.state = self.get_state()
             await asyncio.sleep(self.update_time)
+            # check bertmodel status
             if self.bert_training and (not self.user in self.state["bertmodels"]["training"]):
                 self.bert_training = False
                 self.update_tab_bertmodels(state=False)
+            # check simplemodel status
+            if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
+                self.is_simplemodel = True
 
     def interface(self):
         """
@@ -767,12 +783,14 @@ class Widget():
         valid_delete_scheme.on_click(lambda b : self.delete_scheme(self.select_scheme.value))
         new_scheme = widgets.Text(description="New: ")
         valid_new_scheme = widgets.Button(description = "Create")
+        valid_new_scheme.style.button_color = 'lightgreen'
         valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
         self.select_label = widgets.Dropdown(description="Labels: ")
         valid_delete_label = widgets.Button(description = "Delete", button_style = "danger")
         valid_delete_label.on_click(lambda b : self.delete_label(self.select_label.value))
         new_label = widgets.Text(description="New label: ")
         valid_new_label = widgets.Button(description = "Create")
+        valid_new_label.style.button_color = 'lightgreen'
         valid_new_label.on_click(lambda b : self.create_label(new_label))
 
         # Populate
@@ -791,6 +809,7 @@ class Widget():
         tab_schemes = widgets.VBox([
                             widgets.HBox([self.select_scheme, valid_delete_scheme]),
                             widgets.HBox([new_scheme, valid_new_scheme]),
+                            widgets.HTML(value="<hr>"),
                             widgets.HBox([self.select_label, valid_delete_label]),
                             widgets.HBox([new_label, valid_new_label]),
                         ])
@@ -906,9 +925,10 @@ class Widget():
         valid_model = widgets.Button(description = "⚙️Train")
         valid_model.on_click(lambda b : self.create_simplemodel(scheme=self.select_scheme.value, #attention il faudra revoir le choix du scheme
                                                                model = self.select_simplemodel.value,
-                                                               parameters = self.simplemodel_params.value,
+                                                               parameters = json.loads(self.simplemodel_params.value),
                                                                features = self.select_features.value))
-
+        self.simplemodel_autotrain = widgets.IntSlider(min=1, max=50, 
+                                      description="")
         # Populate
         self.update_tab_simplemodel()
 
@@ -916,11 +936,14 @@ class Widget():
         tab_simplemodel = widgets.VBox([
                             widgets.HBox([self.simplemodel_state,self.simplemodel_statistics]),
                             self.select_simplemodel,
-                             widgets.HBox([self.select_features,
-                                    self.simplemodel_params]),
-                              valid_model
+                            widgets.HBox([
+                                          self.select_features,
+                                          self.simplemodel_params
+                                          ]),
+                            valid_model,
+                            widgets.HTML(value="Autotrain every:"),
+                            self.simplemodel_autotrain
              ])
-        
         #-------------
         # Tab Features
         #-------------
