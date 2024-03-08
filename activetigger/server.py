@@ -468,12 +468,22 @@ class Project(Session):
             val = round(sm.proba[f]['entropy'].sort_values(ascending=False)[0],2)
             val = f"entropy: {val}"
 
-                
+        # get prediction if it exists
+        predict = {"label":None,
+                   "proba":None}
+        if self.simplemodels.exists(user,scheme):
+            sm = self.simplemodels.get_model(user, scheme)
+            predicted_label = sm.proba.loc[element_id,"prediction"]
+            predicted_proba = round(sm.proba.loc[element_id,predicted_label],2)
+            predict = {"label":predicted_label, 
+                       "proba":predicted_proba}
+
         element =  {
             "element_id":element_id,
             "text":self.content.loc[element_id,"text"],
             "selection":selection,
-            "info":str(val)
+            "info":str(val),
+            "predict":predict
                 }
 
         return element

@@ -111,8 +111,10 @@ class BertModel():
 
         # Calculate entropy
         entropy = -1 * (pred * np.log(pred)).sum(axis=1)
-
         pred["entropy"] = entropy
+
+        # Calculate label
+        pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
 
         # write the file
         pred.to_csv(self.path / "predict.csv")
@@ -655,6 +657,9 @@ class SimpleModel():
                              index=X.index)
         proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
 
+        # Calculate label
+        proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
+
         return proba
     
     def compute_precision(self, model, X, Y, labels):
@@ -682,9 +687,11 @@ class SimpleModel():
         precision = precision_score(list(Y[f]), 
                                     list(Y_pred),
                                     pos_label=labels[0])
+        macro_f1 = f1_score(Y, Y_pred, average='macro')
         statistics = {
                     "f1":list(f1),
                     "weighted_f1":weighted_f1,
+                    "macro_f1":macro_f1,
                     "accuracy":accuracy,
                     "precision":precision
                     }

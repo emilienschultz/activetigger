@@ -295,6 +295,7 @@ class Widget():
         self.current_element = r
         self._textarea.value = r["text"]
         self.info_element.value = r["info"]
+        self.info_predict.value = f"Predict SimpleModel: <b>{r['predict']['label']}</b> (p = {r['predict']['proba']})"
 
         return True
 
@@ -446,18 +447,23 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
+
         self.select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
         self.select_features.options = self.state["features"]["available"]
+
+        # if a model has already be trained for the user and the scheme
         if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
             current_model = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
             name = current_model['name']
+            statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
             self.simplemodel_params.value = json.dumps(current_model["params"], indent=2)
             self.select_simplemodel.value = name
-            statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
         else:
             name = "No model"
-            self.simplemodel_params.value = ""
             statistics = ""
+            self.simplemodel_params.value = ""
+
+        # display information
         self.simplemodel_state.value = f"Current model: {name}"
         self.simplemodel_statistics.value = statistics
 
@@ -803,6 +809,7 @@ class Widget():
                                             disabled=True)
         self._labels = widgets.HBox()
         self.info_element = widgets.HTML()
+        self.info_predict = widgets.HTML()
 
         # Populate
         self.update_tab_annotations()
@@ -820,6 +827,7 @@ class Widget():
                                     self._mode_label,
                                     self.info_element]),
                               self._textarea,
+                              self.info_predict,
                               self._labels
                             ])
 
