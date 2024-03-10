@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, B
 from fastapi.responses import FileResponse
 import logging
 from typing import Annotated
-from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,SchemeModel, Error
+from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
@@ -41,7 +41,8 @@ async def update():
     print(f"Updated Value at {time.strftime('%H:%M:%S')}")
     for p in server.projects:
         project = server.projects[p]
-        # merge results of subprocesses
+
+        # computing embeddings
         if (project.params.dir / "sbert.parquet").exists():
             log = functions.log_process("sbert", project.params.dir / "log_process.log") # log
             log.info("Completing sbert computation") # log
@@ -61,7 +62,14 @@ async def update():
             os.remove(project.params.dir / "fasttext.parquet")
             print("Adding fasttext embeddings")
             logging.info("FASTTEXT embeddings added to project")
-
+        
+        # computing projection
+        for u in project.features.available_projections:
+            if (project.params.dir / f"projection__{u}.parquet").exists():
+                df = pd.read_parquet(project.params.dir / f"projection__{u}.parquet")
+                project.features.available_projections[u]["data"] = df
+                os.remove(project.params.dir / f"projection__{u}.parquet")
+                print("Adding projection data")
 
 @app.middleware("http")
 async def middleware(request: Request, call_next):
@@ -117,8 +125,17 @@ async def get_state(project: Annotated[Project, Depends(get_project)]):
     r = project.get_state()
     return r
 
+@app.get("/description", dependencies=[Depends(verified_user)])
+async def get_description(project: Annotated[Project, Depends(get_project)],
+                          scheme: str|None = None):
+    """
+    Get description of a project / a specific scheme
+    """
+    r = project.get_description(scheme = scheme)
+    return r
+
 @app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
-async def info_project(project_name:str = None):
+async def info_project(project_name:str|None = None):
     """
     Get info on project
     """
@@ -205,7 +222,8 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                    selection:str = "deterministic",
                    sample:str = "untagged",
                    user:str = "user",
-                   tag:str|None = None) -> ElementModel|Error:
+                   tag:str|None = None,
+                   frame:list|None = None) -> ElementModel|Error:
     """
     Get next element
     """
@@ -214,13 +232,62 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         selection = selection,
                         sample = sample,
                         user = user,
-                        tag = tag
+                        tag = tag,
+                        frame = frame
                         )
     if "error" in e:
         r = Error(**e)
     else:
         r = ElementModel(**e)
     return r
+
+
+@app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
+async def get_projection(project: Annotated[Project, Depends(get_project)],
+                         user:str):
+    """
+    Get projection data if computed
+    """
+    if user in project.features.available_projections:
+        if not "data" in project.features.available_projections[user]:
+            return {"status":"Still computing"}
+        return {"data":project.features.available_projections[user]["data"].to_dict()}
+    return {"error":"There is no projection available"}
+
+
+@app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
+async def compute_projection(project: Annotated[Project, Depends(get_project)],
+                         user:str,
+                         projection:ProjectionModel):
+    """
+    Start projection computation
+    Dedicated process, end with a file on the project
+    projection__user.parquet
+    TODO : très moche comme manière de faire, à reprendre
+    """
+    if len(projection.features) == 0:
+        return {"error":"No feature"}
+    
+    name = f"projection__{user}"
+    features = project.features.get(projection.features)
+    args = {
+            "features":features,
+            "path":project.params.dir,
+            "params":projection.params,
+            "name": name
+            }
+
+    if projection.method == "umap":
+        process = Process(target=functions.compute_umap, 
+                          kwargs = args)
+        process.start()
+        # keep information serverside
+        project.features.available_projections[user] = {
+                                                        "params":projection
+                                                        }
+        return {"success":"Projection under computation"}
+
+    return {"error":"This projection is not available"}
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -251,17 +318,18 @@ async def get_stats(project: Annotated[Project, Depends(get_project)],
     return r
     
 
-@app.get("/elements/{id}", dependencies=[Depends(verified_user)])
-async def get_element(id:str, 
+@app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
+async def get_element(element_id:str, 
                       project: Annotated[Project, Depends(get_project)]) -> ElementModel:
     """
     Get specific element
     """
+    print(element_id)
     try:
-        e = ElementModel(**project.get_element(id))
+        e = ElementModel(**project.get_element(element_id))
         return e
     except: # gérer la bonne erreur
-        raise HTTPException(status_code=404, detail="Element not found")
+        raise HTTPException(status_code=404, detail=f"Element {element_id} not found")
     
 
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])

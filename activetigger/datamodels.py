@@ -109,3 +109,8 @@ class TableElementsModel(BaseModel):
     list_ids:list
     list_labels:list
     scheme:str
+
+class ProjectionModel(BaseModel):
+    method:str
+    features:list
+    params:dict

@@ -15,6 +15,8 @@ from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
 import shutil
 import logging
+import umap
+from sklearn.preprocessing import StandardScaler
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
                     level=logging.INFO,
@@ -242,6 +244,8 @@ class Server(Session):
         """
         # create directory for the project
         params.dir = self.path / params.project_name
+        if params.dir.exists():
+            return {"error":"This name is already used as a file"}
         os.makedirs(params.dir)
 
         # write total dataset
@@ -427,11 +431,13 @@ class Project(Session):
                  selection:str = "deterministic",
                  sample:str = "untagged",
                  user:str = "user",
-                 tag:None|str = None) -> dict:
+                 tag:None|str = None,
+                 frame:None|list = None) -> dict:
         """
         Get next item
         Related to a specific scheme
         TODO : add lock feature
+        TODO : add frame
         """
 
         # Select the sample
@@ -517,6 +523,24 @@ class Project(Session):
                     "last annotation":"TO DO",
                 }
         return stats
+    
+    def get_description(self, scheme:str|None):
+        """
+        Generate a description of a project/scheme
+        """
+        r = {
+            "N dataset":len(self.content)
+            }
+        
+        if scheme is None:
+            return None
+        
+        df = self.schemes.get_scheme_data(scheme)
+        r["N annotated"] = len(df)
+        r["Users"] = list(self.schemes.get_distinct_users(scheme))
+        r["Annotations"] = json.loads(df["labels"].value_counts().to_json())
+
+        return r
 
     def get_state(self):
         """
@@ -550,6 +574,9 @@ class Project(Session):
 #                                "predicting":self.bertmodels.predicting(),
 #        
                                 "base_parameters":self.bertmodels.params_default
+                                },
+                    "projections":{
+                                "available":self.features.possible_projections
                                 }
                    }
         # TODO : change available label to default ... 
@@ -573,7 +600,7 @@ class Project(Session):
         Export annotation data in different format
         """
         if format is None:
-            format is "csv"
+            format = "csv"
 
         path = self.path / self.name # path of the data
         if not path.exists():
@@ -612,6 +639,13 @@ class Features(Session):
         self.content: DataFrame = content
         self.map:dict = map
         self.training:list = []
+
+        # managing projections
+        self.possible_projections:dict = {
+                            "umap":{"n_neighbors":15, "min_dist":0.1, "n_components":2, "metric":'euclidean'},
+                            #"tsne":{}
+                            }
+        self.available_projections:dict = {}
 
     def __repr__(self) -> str:
         return f"Available features : {self.map}"
@@ -671,6 +705,7 @@ class Features(Session):
     def get(self, features:list|str = "all"):
         """
         Get content for specific features
+        TODO : test if the feature exists
         """
         if features == "all":
             features = list(self.map.keys())
@@ -683,6 +718,7 @@ class Features(Session):
                 cols += self.map[i]
 
         return self.content[cols]
+        
 
 class Schemes(Session):
     """

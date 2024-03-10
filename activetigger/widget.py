@@ -1,5 +1,6 @@
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+import plotly.graph_objects as go
 import json
 import requests as rq
 from pathlib import Path
@@ -26,6 +27,7 @@ class Widget():
         self.bert_training:bool = False # if bert is undertraining
         self.is_simplemodel:bool = False # if simplemodel exist
         self.history:list = [] # elements annotated during this session
+        self.projection_data: pd.DataFrame|str|None = None # get projection data
         self.start()
 
     def _post(self,
@@ -276,13 +278,24 @@ class Widget():
         """
         Get next element from the current widget options
         """
+
+        # frame of the visualisation
+        try:
+            f = self.visualization.children[0]
+            x1y1x2y2 = [f['layout']['xaxis']['range'][0], 
+                        f['layout']['yaxis']['range'][0],
+                        f['layout']['xaxis']['range'][1], 
+                        f['layout']['yaxis']['range'][1]]
+        except:
+            x1y1x2y2 = []
         params = {
                           "project_name":self.project_name,
                           "scheme":self.select_scheme.value,
                           "selection":self._mode_selection.value,
                           "sample":self._mode_sample.value,
                           "user":self.user,
-                          "tag":None
+                          "tag":None,
+                          "frame":x1y1x2y2
                       }
         r = self._get(route = "/elements/next",
                       params = params)
@@ -425,8 +438,11 @@ class Widget():
         params = {"project_name":self.project_name,
                   "scheme":self.select_scheme.value,
                   "user":self.user}
-        r = self._get("/elements/stats",params = params)
-        self.data_description.value = json.dumps(r,indent=2)
+        r = self._get("/description",params = params)
+        text = ""
+        for k,v in r.items():
+            text += f"<br>- <b>{k}</b>: {v}"
+        self.data_description.value = text
         return True
 
     def update_tab_annotations(self, state = True):
@@ -443,6 +459,10 @@ class Widget():
             self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
             self._mode_label.disabled = False
             self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
+        # projection
+        self.projection_method.options = list(self.state["projections"]["available"].keys())
+        self.projection_params.value = json.dumps(self.state["projections"]["available"]["umap"], indent=2)
+        self.projection_features.options = self.state["features"]["available"]
 
     def update_tab_schemes(self, state = True): 
         """
@@ -493,7 +513,6 @@ class Widget():
                    "mode":self.sample_type.value
                   }
         r = self._get("/elements/table", params = params)
-        print(r)
         df = pd.DataFrame(r)
         buttons = []
         for i,j in df.iterrows():
@@ -528,7 +547,6 @@ class Widget():
         r = self._post("/schemes/add", 
                        params = params, 
                        json_data = data)
-        print(r)
         self.update_tab_schemes()
         return r
     
@@ -635,7 +653,6 @@ class Widget():
         r = self._post("/models/bert/train", 
                        params = params, 
                        json_data = data)
-        print(r)
         time.sleep(2)
         self.bert_training = True
         self.update_tab_bertmodels()
@@ -651,11 +668,27 @@ class Widget():
                   "user":self.user}
         r = self._post("/models/bert/stop", 
                 params = params)
-        print(r)
         time.sleep(2)
         self.bert_training = False
         self.compute_new_bert.disabled = False
         self.update_tab_bertmodels()
+        return True
+
+    def _display_element(self, element_id):
+        """
+        Display specific element
+        """
+        r = self._get(route = f"/elements/{element_id}",
+                      params = {"project_name":self.project_name})
+        print(r)
+        # Managing errors
+        if "error" in r:
+            print(r)
+            return False
+
+        # Update interface
+        self.current_element = r
+        self._textarea.value = r["text"]
         return True
 
     def _get_previous_element(self) -> bool:
@@ -667,19 +700,8 @@ class Widget():
             return False
         
         element_id = self.history.pop()
-        r = self._get(route = f"/elements/{element_id}",
-                      params = {"project_name":self.project_name})
-        
-        # Managing errors
-        if "error" in r:
-            print(r)
-            return False
-
-        # Update interface
-        self.current_element = r
-        self._textarea.value = r["text"]   
-
-        return True     
+        r = self._display_element(element_id) 
+        return r
     
     def compute_feature(self, feature_name) -> bool:
         """
@@ -689,7 +711,6 @@ class Widget():
             return "This feature doesn't exist"
         r = self._post(f"/features/add/{feature_name}", 
                     params = {"project_name":self.project_name})
-        print(r)
         self.update_tab_features()
         return True
     
@@ -699,7 +720,6 @@ class Widget():
         """
         r = self._post(f"/features/delete/{feature_name}", 
                     params = {"project_name":self.project_name})
-        print(r)
         self.update_tab_features()
         return True
     
@@ -721,7 +741,6 @@ class Widget():
         r = self._post("/features/add/regex",
             params = {"project_name":self.project_name},
             json_data=data)
-        print(r)
         self.update_tab_features()
         return True
     
@@ -729,10 +748,10 @@ class Widget():
         params = {"project_name":self.project_name,
                   "former_name":former_name,
                   "new_name":new_name,
+                  "user":self.user
                   }
         r = self._post("/models/bert/rename",
             params = params)
-        print(r)
         return r
         
     def export_data(self, format):
@@ -751,9 +770,69 @@ class Widget():
         print(f"data exported in './data_export.{format}'")
         return True
             
+    def compute_projection(self):
+        """
+        Start computing projection
+        """
+        params = {
+                "project_name":self.project_name,
+                "user":self.user
+                }
+        data = {
+            "method":self.projection_method.value, 
+            "features":self.projection_features.value,
+            "params":json.loads(self.projection_params.value),
+            }
+        r = self._post("/elements/projection/compute",
+            params = params,
+            json_data = data)
+        if "success" in r:
+            self.projection_data = "computing"
+            self.visualization.children = [widgets.HTML(value = self.projection_data)]
+        else:
+            print(r)
+
+    def plot_visualisation(self):
+        """
+        Produce the visualisation for the projection
+        """
+        df = self.projection_data
+        f = go.FigureWidget([go.Scatter(x=df["0"], y=df["1"], mode='markers', 
+                                    customdata = df.index)])
+        scatter = f.data[0]
+        colors = ['#a3a7e4'] * len(df) # take into account if already annotated
+        scatter.marker.color = colors
+        scatter.marker.size = [5] * 100
+        f.layout.hovermode = 'closest'
+        def update_point(trace, points, selector):
+            #print(points.xs, points.ys)
+            # SELECT SPECIFIC TEXT
+            element_id = trace.customdata[points.point_inds][0]
+            print(element_id)
+            self._display_element(element_id)
+            #print(element_id)
+        scatter.on_click(update_point)
+        self.visualization.children = [f]
+        #return f
+    
+    def get_projection_data(self):
+        """
+        Get projection data
+        """
+        params = {
+                "project_name":self.project_name, 
+                "user":self.user
+                }
+        r = self._get("/elements/projection/current",
+            params = params)
+        return r
+
     async def update_state(self):
         """
         Async function to update state
+        - check bertmodels
+        - check simplemodels
+        - check visualisation
         """
         while True:
             self.state = self.get_state()
@@ -765,6 +844,12 @@ class Widget():
             # check simplemodel status
             if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
                 self.is_simplemodel = True
+            # test if projection data available
+            if (type(self.projection_data) is str) and (self.projection_data == "computing"):
+                r = self.get_projection_data()
+                if "data" in r:
+                    self.projection_data = pd.DataFrame(r["data"])
+                    self.plot_visualisation()
 
     def interface(self):
         """
@@ -830,6 +915,24 @@ class Widget():
         self.info_element = widgets.HTML()
         self.info_predict = widgets.HTML()
 
+        # Part projection visualisation
+        self.projection_method = widgets.Dropdown(description = "Method")
+        # add on change ...
+        self.projection_params = widgets.Textarea(layout = widgets.Layout(width='200px',height='100px'))
+        self.projection_features = widgets.SelectMultiple(description = "Features")
+        self.projection_compute = widgets.Button(description = "Visualize")
+        self.projection_compute.on_click(lambda x: self.compute_projection())
+        self.visualization = widgets.HBox([])
+        self.projection = widgets.Accordion(children=[widgets.VBox([
+                                    widgets.HBox([self.projection_method, self.projection_compute]),
+                                    widgets.HBox([self.projection_features,self.projection_params]),
+                                                  self.visualization
+                                                                    ]
+                                                     )], 
+                                            titles=('Projection',))
+        
+        
+
         # Populate
         self.update_tab_annotations()
         self._mode_selection.value = self._mode_selection.options[0]
@@ -847,7 +950,9 @@ class Widget():
                                     self.info_element]),
                               self._textarea,
                               self.info_predict,
-                              self._labels
+                              self._labels,
+                              widgets.HTML("<hr>"),
+                              self.projection
                             ])
 
         #---------
@@ -898,8 +1003,7 @@ class Widget():
         #---------------
         # Tab statistics
         #---------------
-        self.data_description = widgets.Textarea(disabled=True, 
-                                                 layout={'width': '400px', 'height':'300px'})
+        self.data_description = widgets.HTML(layout={'width': '300px', 'height':'200px'})
 
         # Populate
         self.update_tab_description()
