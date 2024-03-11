@@ -216,7 +216,7 @@ class Widget():
                     "col_text": column_text.value,
                     "col_id":column_id.value,
                     "col_label":column_label.value,
-                    "cols_context":columns_context.value,
+                    "cols_context": list(columns_context.value),
                     "n_train":n_train.value,
                     "n_test":n_test.value
                     }

@@ -16,6 +16,7 @@ from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score, f1_score, accuracy_score
+from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
 from multiprocessing import Process
 from datetime import datetime
 
@@ -634,6 +635,7 @@ class SimpleModel():
         self.proba = self.compute_proba(model, X)
         self.standardize = standardize
         self.statistics = self.compute_statistics(model, X, Y, labels)
+        self.cv10 = self.compute_10cv(model, X, Y)
         print(self.statistics)
 
     def json(self):
@@ -696,6 +698,26 @@ class SimpleModel():
                     "precision":precision
                     }
         return statistics
+    
+    def compute_10cv(self, model, X, Y):
+        """
+        Compute 10-CV for simplemodel
+        TODO : check if ok
+        """
+        f = Y.notna()
+        X = X[f]
+        Y = Y[f]
+        num_folds = 10
+        kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+        predicted_labels = cross_val_predict(model, X, Y, cv=kf)
+        Y_pred = cross_val_predict(model, X, Y, cv=kf)
+        weighted_f1 = f1_score(Y, Y_pred,average = "weighted")
+        accuracy = accuracy_score(Y, Y_pred)
+        macro_f1 = f1_score(Y, Y_pred,average = "macro")
+        r = {"weighted_f1":round(weighted_f1,3), 
+             "macro_f1":round(macro_f1,3),
+             "accuracy":round(accuracy,3)}
+        return r
 
 #         self.available_models = {
 #                 #"simplebayes": {

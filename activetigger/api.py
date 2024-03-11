@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form, Request
 from fastapi.responses import FileResponse
 import logging
-from typing import Annotated
+from typing import Annotated, List
 from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
@@ -135,11 +135,12 @@ async def get_state(project: Annotated[Project, Depends(get_project)]):
 
 @app.get("/description", dependencies=[Depends(verified_user)])
 async def get_description(project: Annotated[Project, Depends(get_project)],
-                          scheme: str|None = None):
+                          scheme: str|None = None,
+                          user:str|None = None):
     """
     Get description of a project / a specific scheme
     """
-    r = project.get_description(scheme = scheme)
+    r = project.get_description(scheme = scheme, user = user)
     return r
 
 @app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
@@ -164,7 +165,7 @@ async def new_project(
                       col_text:str = Form(),
                       col_id:str = Form(),
                       col_label:str = Form(None),
-                      cols_context:list = Form(None),
+                      cols_context:List[str] = Form(None),
                       n_train:int = Form(),
                       n_test:int = Form(),
                       embeddings:list = Form(None),
@@ -179,6 +180,7 @@ async def new_project(
     https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
 
     """
+
     # removing None parameters
     params_in = {
         "project_name":project_name,
@@ -197,6 +199,7 @@ async def new_project(
     for i in params_in:
         if params_in[i] is None:
             del params_out[i]
+
     print(params_out)
     project = ProjectModel(**params_out)
 

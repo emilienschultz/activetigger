@@ -529,7 +529,7 @@ class Project(Session):
                 }
         return stats
     
-    def get_description(self, scheme:str|None):
+    def get_description(self, scheme:str|None, user:str|None):
         """
         Generate a description of a project/scheme
         """
@@ -544,6 +544,10 @@ class Project(Session):
         r["N annotated"] = len(df)
         r["Users"] = list(self.schemes.get_distinct_users(scheme))
         r["Annotations"] = json.loads(df["labels"].value_counts().to_json())
+
+        if self.simplemodels.exists(user, scheme):
+            sm = self.simplemodels.get_model(user, scheme) # get model
+            r["Simplemodel 10-CV"] = sm.cv10
 
         return r
 
