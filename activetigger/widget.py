@@ -917,7 +917,10 @@ class Widget():
 
         # Part projection visualisation
         self.projection_method = widgets.Dropdown(description = "Method")
-        # add on change ...
+        def on_change_method(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                self.projection_params.value = json.dumps(self.state["projections"]["available"][self.projection_method.value], indent=2)
+        self.projection_method.observe(on_change_method)
         self.projection_params = widgets.Textarea(layout = widgets.Layout(width='200px',height='100px'))
         self.projection_features = widgets.SelectMultiple(description = "Features")
         self.projection_compute = widgets.Button(description = "Visualize")

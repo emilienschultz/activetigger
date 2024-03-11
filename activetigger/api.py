@@ -10,6 +10,7 @@ from multiprocessing import Process
 import time
 import pandas as pd
 import os
+import concurrent.futures
 import json
 
 logging.basicConfig(filename='log.log', 
@@ -65,11 +66,18 @@ async def update():
         
         # computing projection
         for u in project.features.available_projections:
-            if (project.params.dir / f"projection__{u}.parquet").exists():
-                df = pd.read_parquet(project.params.dir / f"projection__{u}.parquet")
-                project.features.available_projections[u]["data"] = df
-                os.remove(project.params.dir / f"projection__{u}.parquet")
-                print("Adding projection data")
+            if ("future" in project.features.available_projections[u]):
+                if project.features.available_projections[u]["future"].done():
+                    df = project.features.available_projections[u]["future"].result()
+                    project.features.available_projections[u]["data"] = df
+                    del project.features.available_projections[u]["future"]
+                    print("Adding projection data")
+
+        #    if (project.params.dir / f"projection__{u}.parquet").exists():
+        #        df = pd.read_parquet(project.params.dir / f"projection__{u}.parquet")
+        #        project.features.available_projections[u]["data"] = df
+        #        os.remove(project.params.dir / f"projection__{u}.parquet")
+        #        print("Adding projection data")
 
 @app.middleware("http")
 async def middleware(request: Request, call_next):
@@ -272,20 +280,26 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
     features = project.features.get(projection.features)
     args = {
             "features":features,
-            "path":project.params.dir,
-            "params":projection.params,
-            "name": name
+            "params":projection.params
             }
 
     if projection.method == "umap":
-        process = Process(target=functions.compute_umap, 
-                          kwargs = args)
-        process.start()
-        # keep information serverside
+        future_result = server.executor.submit(functions.compute_umap, **args)
         project.features.available_projections[user] = {
-                                                        "params":projection
+                                                        "params":projection,
+                                                        "method":"umap",
+                                                        "future":future_result
                                                         }
-        return {"success":"Projection under computation"}
+        return {"success":"Projection umap under computation"}
+    if projection.method == "tsne":
+        future_result = server.executor.submit(functions.compute_tsne, **args)
+        project.features.available_projections[user] = {
+                                                        "params":projection,
+                                                        "method":"tsne",
+                                                        "future":future_result
+                                                        }
+        return {"success":"Projection tsne under computation"}
+
 
     return {"error":"This projection is not available"}
 

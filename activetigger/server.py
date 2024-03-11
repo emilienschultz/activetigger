@@ -53,10 +53,15 @@ class Server(Session):
         self.projects: dict = {}
         self.time_start:datetime = datetime.now()
         self.processes:list = []
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=2)
 
         if not self.db.exists():
             logging.info("Creating database")
             self.create_db()
+
+    def __del__(self): 
+        print("Closing the server")
+        self.executor.shutdown()
 
     def create_db(self) -> None:
         """
@@ -643,7 +648,7 @@ class Features(Session):
         # managing projections
         self.possible_projections:dict = {
                             "umap":{"n_neighbors":15, "min_dist":0.1, "n_components":2, "metric":'euclidean'},
-                            #"tsne":{}
+                            "tsne":{"n_components":2,  "learning_rate":'auto', "init":'random', "perplexity":3}
                             }
         self.available_projections:dict = {}
 
