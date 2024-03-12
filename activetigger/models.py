@@ -19,6 +19,7 @@ from sklearn.metrics import precision_score, f1_score, accuracy_score
 from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
 from multiprocessing import Process
 from datetime import datetime
+import pickle
 
 logging.basicConfig(filename = "log",
                             format='%(asctime)s %(message)s',
@@ -498,6 +499,9 @@ class BertModels():
 class SimpleModels():
     """
     Managing simplemodels
+    - define available models
+    - save a simplemodel/user
+    - train simplemodels
     """
     available_models = {
         "liblinear": {
@@ -515,8 +519,11 @@ class SimpleModels():
                 }
             }
     
-    def __init__(self):
-        self.existing = {}
+    def __init__(self, path:Path):
+        self.existing:dict = {}
+        self.save_file:str = "simplemodels.pickle"
+        self.path:Path = path
+        self.loads()
 
     def __repr__(self) -> str:
         return str(self.available())
@@ -578,9 +585,6 @@ class SimpleModels():
         df = pd.concat([data[~f_na][col_label],df_pred],axis=1)
     
         # data for training
-        #f_label = df[self.col_label].notnull()
-        #Y = df[f_label][self.col_label]
-        #X = df[f_label][self.col_predictors]
         Y = df[col_label]
         X = df[col_predictors]
         labels = Y.unique()
@@ -655,7 +659,24 @@ class SimpleModels():
         if not user in self.existing:
             self.existing[user] = {}
         self.existing[user][scheme] = sm
-        print("model added")
+        self.dumps() #save pickle
+
+    def dumps(self):
+        """
+        Dumps all simplemodels to a pickle
+        """
+        with open(self.path / self.save_file, 'wb') as file:
+            pickle.dump(self.existing, file)
+
+    def loads(self) -> bool:
+        """
+        Load all simplemodels from a pickle
+        """
+        if not (self.path / self.save_file).exists():
+            return False
+        with open(self.path / self.save_file, 'rb') as file:
+            self.existing = pickle.load(file)
+        return True
 
 class SimpleModel():
     def __init__(self,

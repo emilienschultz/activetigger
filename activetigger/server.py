@@ -348,7 +348,7 @@ class Project(Session):
         self.features: Features = Features(project_name,
                                            self.params.dir / self.features_file) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
-        self.simplemodels: SimpleModels = SimpleModels()
+        self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
         self.lock:list = [] # prevent competition
 
         # Compute features if requested
