@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Body, Form, Request
+from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse
 import logging
 from typing import Annotated, List
@@ -45,8 +45,6 @@ async def update():
 
         # computing embeddings
         if (project.params.dir / "sbert.parquet").exists():
-            log = functions.log_process("sbert", project.params.dir / "log_process.log") # log
-            log.info("Completing sbert computation") # log
             df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data TODO : bug potentiel lié à la temporalité
             project.features.add("sbert",df) # add to the feature manager
             if "sbert" in project.features.training:
@@ -54,8 +52,6 @@ async def update():
             os.remove(project.params.dir / "sbert.parquet") # clean the files
             logging.info("SBERT embeddings added to project") # log
         if (project.params.dir / "fasttext.parquet").exists():
-            log = functions.log_process("fasttext", project.params.dir / "log_process.log") 
-            log.info("Completing fasttext computation")
             df = pd.read_parquet(project.params.dir / "fasttext.parquet")
             project.features.add("fasttext",df) 
             if "fasttext" in project.features.training:
@@ -72,12 +68,6 @@ async def update():
                     project.features.available_projections[u]["data"] = df
                     del project.features.available_projections[u]["future"]
                     print("Adding projection data")
-
-        #    if (project.params.dir / f"projection__{u}.parquet").exists():
-        #        df = pd.read_parquet(project.params.dir / f"projection__{u}.parquet")
-        #        project.features.available_projections[u]["data"] = df
-        #        os.remove(project.params.dir / f"projection__{u}.parquet")
-        #        print("Adding projection data")
 
 @app.middleware("http")
 async def middleware(request: Request, call_next):
@@ -463,10 +453,8 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     # [ ] use multiprocessing with future to deal with cpu-bound tasks
     # [X] launch independant process with actualisation
 
-    log = functions.log_process(name, project.params.dir / "log_process.log") 
     df = project.content[project.params.col_text]
     if name == "sbert":
-        log.info("Start computing sbert")
         args = {
                 "path":project.params.dir,
                 "texts":df,
@@ -478,7 +466,6 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         project.features.training.append(name)
         return {"success":"computing sbert, it could take a few minutes"}
     if name == "fasttext":
-        log.info("Start computing fasttext")
         args = {
                 "path":project.params.dir,
                 "texts":df,
@@ -556,7 +543,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     """
     print("start bert training")
     df = project.schemes.get_scheme_data(bert.scheme, complete = True) #move it elswhere ?
-    df = df.dropna() #remove non tag data
+    df = df[[project.params.col_text, "labels"]].dropna() #remove non tag data
     r = project.bertmodels.start_training_process(
                                 name = bert.name,
                                 user = bert.user,
@@ -592,10 +579,27 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
 async def export_data(project: Annotated[Project, Depends(get_project)],
                       scheme:str,
                       format:str):
-    
-    print("export data",scheme, format)
     name, path = project.export_data(format=format, scheme=scheme)
-    print(path, name)
     return FileResponse(path, filename=name)
 
-# add route to test the status of the training
+@app.get("/export/features", dependencies=[Depends(verified_user)])
+async def export_features(project: Annotated[Project, Depends(get_project)],
+                          features:list = Query(),
+                          format:str = Query()):
+    name, path = project.export_features(features = features, format=format)
+    return FileResponse(path, filename=name)
+
+@app.get("/export/prediction", dependencies=[Depends(verified_user)])
+async def export_prediction(project: Annotated[Project, Depends(get_project)],
+                          format:str = Query(),
+                          name:str = Query()):
+    name, path = project.bertmodels.export_prediction(name = name, format=format)
+    return FileResponse(path, filename=name)
+
+@app.get("/export/bert", dependencies=[Depends(verified_user)])
+async def export_bert(project: Annotated[Project, Depends(get_project)],
+                          name:str = Query()):
+    name, path = project.bertmodels.export_bert(name = name)
+    return FileResponse(path, filename=name)
+
+

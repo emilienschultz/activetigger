@@ -374,6 +374,7 @@ class Widget():
         self.update_tab_description(False)
         self.update_tab_bertmodels(False)
         self.update_tab_features(False)
+        self.update_tab_exports(False)
 
     def update_tab_bertmodels(self, state = True):
         """
@@ -535,6 +536,21 @@ class Widget():
                 menu, # important to keep at the end, used for sending the table
             ]))
         self.display_table.children = buttons
+
+    def update_tab_exports(self, state = True):
+        if state:
+            self.state = self.get_state()
+        self.export_features_columns.options = self.state["features"]["available"]
+
+        prediction = []
+        if self.select_scheme.value in self.state["bertmodels"]["available"]:
+            prediction = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[1]] #if predict
+        self.select_bert_model_predict.options = prediction
+
+        bert = []
+        if self.select_scheme.value in self.state["bertmodels"]["available"]:
+            bert = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[2]] #if compressed
+        self.select_bert_model.options  = bert
 
     def create_scheme(self, s):
         """
@@ -774,7 +790,57 @@ class Widget():
             f.write(r)
         print(f"data exported in './data_export.{format}'")
         return True
-            
+    
+    def export_features(self, features:list, format:str):
+        """
+        Get exported features
+        """
+        params = {"project_name":self.project_name,
+                  "features":features,
+                  "format":format
+                  }
+        r = self._get("/export/features",
+            params = params,
+            is_json= False)
+        with open(f"./features_export.{format}","wb") as f:
+            f.write(r)
+        print(f"Features exported in './features_export.{format}'")
+        return True
+    
+    def export_prediction(self, name:str, format:str):
+        """
+        Get exported prediction for a BERT model
+        """
+        params = {"project_name":self.project_name,
+                  "name":name,
+                  "format":format
+                  }
+        r = self._get("/export/prediction",
+            params = params,
+            is_json= False)
+        with open(f"./prediction_export.{format}","wb") as f:
+            f.write(r)
+        print(f"Prediction exported in './prediction_{name}_export.{format}'")
+
+    def export_bert(self, name:str):
+        """
+        Get BERT Model
+        """
+        if name is None:
+            return None
+        params = {"project_name":self.project_name,
+                  "name":name
+                  }
+        r = self._get("/export/bert",
+            params = params,
+            is_json= False)
+        if "error" in r:
+            print(r)
+            return None
+        with open(f"./{name}.tar.gz","wb") as f:
+            f.write(r)
+        print(f"Bert exported in './{name}.tar.gz'")
+
     def compute_projection(self):
         """
         Start computing projection
@@ -842,6 +908,8 @@ class Widget():
         while True:
             self.state = self.get_state()
             await asyncio.sleep(self.update_time)
+            if len(self.state) == 0:
+                continue
             # check bertmodel status
             if self.bert_training and (not self.user in self.state["bertmodels"]["training"]):
                 self.bert_training = False
@@ -1115,7 +1183,7 @@ class Widget():
 
         self.available_bert.observe(on_change_model)
         self.compute_prediction = widgets.Button(description = "Compute prediction", disabled = True)
-
+        self.compute_prediction.on_click(lambda x : print("Compute prediction to implement"))
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
         self.compute_new_bert = widgets.VBox()
@@ -1157,47 +1225,51 @@ class Widget():
         valid_export_tagged_data.on_click(lambda x: self.export_data(format = export_tagged_data_format.value))
 
         # embeddings
-        export_embeddings_presentation = widgets.HTML(value="<hr>(Not implemented) Export embeddings<br>")
-        export_embeddings_columns = widgets.SelectMultiple(layout = layout_menu)
-        export_embeddings_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
-        valid_export_embeddings = widgets.Button(description = "⬇", layout = layout_button)
-        valid_export_embeddings.on_click(lambda x: print("to implement"))
+        export_features_presentation = widgets.HTML(value="<hr>Export embeddings<br>")
+        self.export_features_columns = widgets.SelectMultiple(layout = layout_menu)
+        export_features_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
+        valid_export_features = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_features.on_click(lambda x: self.export_features(features = self.export_features_columns.value,
+                                                                  format = export_features_format.value))
 
         # bert predictions
-        export_predictions_presentation = widgets.HTML(value="<hr>(Not implemented) Export BERT predictions<br>")
-        select_bert_model_predict = widgets.Dropdown(layout = layout_menu)
+        export_predictions_presentation = widgets.HTML(value="<hr>Export BERT predictions<br>")
+        self.select_bert_model_predict = widgets.Dropdown(layout = layout_menu)
         export_bert_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
         valid_export_predict = widgets.Button(description = "⬇", layout = layout_button)
-        valid_export_predict.on_click(lambda x: print("to implement"))
+        valid_export_predict.on_click(lambda x: self.export_prediction(name = self.select_bert_model_predict.value,
+                                                                  format = export_features_format.value))
 
         # bert models
-        export_bert_presentation =  widgets.HTML(value="<hr>(Not implemented) Export BERT models<br>")
-        select_bert_model = widgets.Dropdown(layout = layout_menu)
+        export_bert_presentation =  widgets.HTML(value="<hr>Export BERT models<br>")
+        self.select_bert_model = widgets.Dropdown(layout = layout_menu)
         valid_export_bertmodel = widgets.Button(description = "⬇", layout = layout_button)
-        valid_export_bertmodel.on_click(lambda x: print("to implement"))
-
+        valid_export_bertmodel.on_click(lambda x: self.export_bert(name = self.select_bert_model.value))
 
         tab_export = widgets.VBox([
             export_tagged_data_presentation, widgets.HBox([
                           #export_tagged_data_columns,
                           export_tagged_data_format,
                           valid_export_tagged_data]),
-            export_embeddings_presentation, widgets.HBox([
-                          export_embeddings_columns,
-                          export_embeddings_format,
-                          valid_export_embeddings
+            export_features_presentation, widgets.HBox([
+                          self.export_features_columns,
+                          export_features_format,
+                          valid_export_features
                           ]),
             export_predictions_presentation, widgets.HBox([
-                          select_bert_model_predict,
+                          self.select_bert_model_predict,
                           export_bert_format,
                           valid_export_predict
                         ]),
             export_bert_presentation, widgets.HBox([
-                          select_bert_model,
+                          self.select_bert_model,
                           valid_export_bertmodel
                         ]),
         ])
 
+
+        # Populate
+        self.update_tab_exports()
 
         # display global widget
         self.output = widgets.Tab([tab_schemes,

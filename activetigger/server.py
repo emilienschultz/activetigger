@@ -224,18 +224,6 @@ class Server(Session):
         conn.commit()
         conn.close()
         return {"success":"project updated"}
-    
-    def remove_project_parameters(self, project_name:str) -> bool:
-        """
-        Delete database entry
-        """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM projects WHERE project_name = ?", (project_name,))
-        cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_name,))
-        conn.commit()
-        conn.close()
-        return True
 
     def create_project(self, 
                        params:ProjectModel, 
@@ -326,6 +314,21 @@ class Server(Session):
             return {"success":"project deleted"}
         else:
             return {"error":"project doesn't exist"}
+
+    def remove_project_parameters(self, project_name:str) -> bool:
+        """
+        Delete database entry
+        To add: save dump of a project when deleted ?
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        cursor.execute(f"DELETE FROM projects WHERE project_name = ?", (project_name,))
+        cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_name,))
+        cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_name,))
+        conn.commit()
+        conn.close()
+        return True
+    
 
 class Project(Session):
     """
@@ -489,10 +492,12 @@ class Project(Session):
             predict = {"label":predicted_label, 
                        "proba":predicted_proba}
 
+        # TODO : AVOID NONE VALUE IN THE OUTPUT
+
         element =  {
             "element_id":element_id,
-            "text":self.content.loc[element_id,self.params.col_text],
-            "context":dict(self.content.loc[element_id, self.params.cols_context]),
+            "text":self.content.fillna("NA").loc[element_id,self.params.col_text],
+            "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":selection,
             "info":str(val),
             "predict":predict
@@ -583,7 +588,7 @@ class Project(Session):
                                 "options":self.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
                                 "training":self.bertmodels.training(),
-#                                "predicting":self.bertmodels.predicting(),
+#                                "predictions":self.bertmodels.predictions(),
 #        
                                 "base_parameters":self.bertmodels.params_default
                                 },
@@ -607,9 +612,33 @@ class Project(Session):
         self.features.add(name,f)
         return {"success":"regex added"}
     
+    def export_features(self, features:list, format:str|None = None):
+        """
+        Export features data in different formats
+        """
+        if format is None:
+            format = "csv"
+
+        path = self.path / self.name # path of the data
+        if not path.exists():
+            raise ValueError("Problem of filesystem for project")
+
+        data = self.features.get(features)
+
+        file_name = f"extract_schemes_{self.name}.{format}"
+
+        if format == "csv":
+            data.to_csv(path / file_name)
+
+        if format == "parquet":
+            data.to_parquet(path / file_name)
+
+        return file_name, path / file_name
+
+
     def export_data(self, scheme:str, format:str|None = None):
         """
-        Export annotation data in different format
+        Export annotation data in different formats
         """
         if format is None:
             format = "csv"

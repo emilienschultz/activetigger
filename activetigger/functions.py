@@ -2,12 +2,12 @@ import pandas as pd
 from pandas import DataFrame, Series
 import fasttext
 import spacy
+import gzip
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.manifold import TSNE
-import umap
 
 
 def to_dfm(texts: Series,

@@ -153,7 +153,7 @@ class BertModels():
         if not self.path.exists():
             os.mkdir(self.path)
 
-        # keep current processes (on by user max)
+        # keep current processes (one by user max)
         self.processes:dict = {}
 
     def __repr__(self) -> str:
@@ -163,6 +163,7 @@ class BertModels():
         """
         Trained bert
         + if prediction available
+        + compression if available / launch it
         """
         r:dict = {}
         if self.path.exists(): #if bert models have been trained
@@ -171,12 +172,19 @@ class BertModels():
             #trained = [i for i in trained if i[0]!="_"] #skip temporary training
             for i in trained:
                 predict = False
-                if (self.path / i / "predict.csv").exists():
+                compressed = False
+                # test if prediction available
+                if (self.path / i / "predict.csv").exists(): 
                     predict = True
+                # test if compression available
+                if (self.path / f"{i}.tar.gz").exists():
+                    compressed = True
+                else :
+                    self.start_compression(i)
                 scheme = i.split("__")[-1] #scheme after __
                 if not scheme in r: 
                     r[scheme] = []
-                r[scheme].append((i,predict))
+                r[scheme].append((i,predict, compressed))
         return r
     
     def training(self) -> dict:
@@ -262,6 +270,15 @@ class BertModels():
         self.processes[user] = [b,process]
         return {"success":"bert model predicting"}
 
+    def start_compression(self, name):
+        """
+        Compress bertmodel as a separate process
+        """
+        process = Process(target=shutil.make_archive, 
+                          args = (self.path / name, 'gztar', self.path))
+        process.start()
+        print("starting compression")
+
     def train_bert(self,
                path:Path,
                name:str,
@@ -312,6 +329,8 @@ class BertModels():
             df = df[df[col_text].notnull()]
             logger.info(f"Missing texts - reducing training data to {len(df)}")
 
+        print(df)
+
         # formatting data
         labels = sorted(list(df[col_label].dropna().unique())) # alphabetical order
         label2id = {j:i for i,j in enumerate(labels)}
@@ -321,6 +340,8 @@ class BertModels():
         df = datasets.Dataset.from_pandas(df[["text", "labels"]])
 
         tokenizer = AutoTokenizer.from_pretrained(base_model)
+
+        print("tokenize")
 
         # Tokenize
         if params["adapt"]:
@@ -454,6 +475,25 @@ class BertModels():
         self.processes = {u:self.processes[u] for u in self.processes if self.processes[u][0].name not in to_del}
         #self.processes = [b for b in self.processes if b[0].name not in to_del]
         return True
+    
+    def export_prediction(self, name:str, format:str|None = None):
+        """
+        Export predict file if exists
+        """
+        file_name = f"predict.csv"
+        if not (self.path / name / file_name).exists():
+            return {"error":"file does not exist"}
+        return file_name, self.path / name / file_name
+
+    def export_bert(self, name:str):
+        """
+        Export bert archive if exists
+        """
+        file_name = f"{name}.tar.gz"
+        if not (self.path / file_name).exists():
+            return {"error":"file does not exist"}
+        return file_name, self.path / file_name
+        
  
 class SimpleModels():
     """
