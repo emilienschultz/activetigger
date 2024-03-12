@@ -538,6 +538,9 @@ class SimpleModels():
         return r
         
     def exists(self, user:str, scheme:str):
+        """
+        Test if a simplemodel exists for a user/scheme
+        """
         if user in self.existing:
             if scheme in self.existing[user]:
                 return True

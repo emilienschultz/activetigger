@@ -447,12 +447,11 @@ async def post_regex(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
-                          name:str):
+                          name:str,
+                          user:str):
+    if name in project.features.training:
+        return {"error":"This feature is already in training"}
     
-    # multiple choice:
-    # [ ] use multiprocessing with future to deal with cpu-bound tasks
-    # [X] launch independant process with actualisation
-
     df = project.content[project.params.col_text]
     if name == "sbert":
         args = {
@@ -476,6 +475,8 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process.start()
         project.features.training.append(name)
         return {"success":"computing fasttext, it could take a few minutes"}
+
+    # Log
 
     return {"error":"not implemented"}
 

@@ -728,7 +728,10 @@ class Widget():
         if not feature_name in self.state["features"]["options"]:
             return "This feature doesn't exist"
         r = self._post(f"/features/add/{feature_name}", 
-                    params = {"project_name":self.project_name})
+                    params ={
+                            "project_name":self.project_name,
+                            "user":self.user
+                            })
         self.update_tab_features()
         return True
     
@@ -1150,10 +1153,10 @@ class Widget():
 
         # Group in tab
         tab_features = widgets.VBox([
-            self.info_features,
             widgets.HBox([self.available_features,delete_feature]),
             widgets.HBox([self.add_features,valid_compute_features]),
             widgets.HBox([add_regex_value,valid_regex]),
+            self.info_features,
              ])
 
         #--------------
