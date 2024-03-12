@@ -10,6 +10,7 @@ import asyncio
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import random
+from IPython.display import display, clear_output
 
 URL_SERVER = "http://127.0.0.1:8000"
 headers = {'x-token': 'your_token'}
@@ -904,6 +905,7 @@ class Widget():
         print(r)
         loss = pd.DataFrame(r["loss"])
         with self.bert_statistics:
+            clear_output(wait=True)
             fig, ax = plt.subplots(figsize=(3,2))
             fig = loss.plot(ax = ax)
             plt.show(fig)
@@ -1197,16 +1199,16 @@ class Widget():
         self.bert_statistics = widgets.Output()
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value':
-                self.new_bert_params.value = "TO IMPLEMENT"
+#                self.new_bert_params.value = "TO IMPLEMENT" #self.state["bertmodels"]["available"][self.available_bert.value][-1]
                 self.compute_prediction.disabled = True
-                if not self.state["bertmodels"]["available"][self.available_bert][1]:
-                    print("prediction does not exist")
-                    self.compute_prediction.disabled = False
+# CHANGE STRUCTURE
+#                if not self.state["bertmodels"]["available"][self.available_bert.value][1]:
+#                    print("prediction does not exist")
+#                    self.compute_prediction.disabled = False
                 self.display_bert_statistics(self.available_bert.value) # display summary
         self.available_bert.observe(on_change_model)
         self.bert_summary = widgets.Accordion(children=[self.bert_statistics], 
                                             titles=('Description',))
-
 
         self.compute_prediction = widgets.Button(description = "Compute prediction", disabled = True)
         self.compute_prediction.on_click(lambda x : print("Compute prediction to implement"))

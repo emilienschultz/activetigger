@@ -184,6 +184,7 @@ class BertModels():
         Trained bert
         + if prediction available
         + compression if available / launch it
+        TODO : better data structure
         """
         r:dict = {}
         if self.path.exists(): #if bert models have been trained
@@ -204,7 +205,7 @@ class BertModels():
                 scheme = i.split("__")[-1] #scheme after __
                 if not scheme in r: 
                     r[scheme] = []
-                r[scheme].append((i,predict, compressed))
+                r[scheme].append((i,predict, compressed, "parameters to add"))
         return r
     
     def training(self) -> dict:
