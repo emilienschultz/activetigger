@@ -445,7 +445,7 @@ class Project(Session):
         TODO : add frame
         """
 
-        # Select the sample
+        # Select the sample 
         df = self.schemes.get_scheme_data(scheme, complete=True)
 
         f = df["labels"].apply(lambda x : True)
@@ -491,11 +491,14 @@ class Project(Session):
 
         element =  {
             "element_id":element_id,
-            "text":self.content.loc[element_id,"text"],
+            "text":self.content.loc[element_id,self.params.col_text],
+            "context":dict(self.content.loc[element_id, self.params.cols_context]),
             "selection":selection,
             "info":str(val),
             "predict":predict
                 }
+        
+        print(self.content.loc[element_id])
 
         return element
     
@@ -745,7 +748,7 @@ class Schemes(Session):
         """
         self.project_name = project_name
         self.path = path
-        self.content = pd.read_parquet(self.path) #raw data
+        self.content = pd.read_parquet(self.path) #text + context
         available = self.available()
 
         # create a default scheme
@@ -761,7 +764,7 @@ class Schemes(Session):
 
     def get_scheme_data(self, scheme:str, complete = False) -> DataFrame:
         """
-        Get data from a scheme
+        Get data from a scheme : id, text, context, labels
         """
         if not scheme in self.available():
             raise ValueError("Scheme doesn't exist")

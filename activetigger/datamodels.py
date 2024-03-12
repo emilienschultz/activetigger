@@ -56,7 +56,7 @@ class ElementModel(BaseModel):
     text:Optional[str] = None
     selection: Optional[str] = None
     info: Optional[str] = None
-    context: Optional[str] = None
+    context: Optional[dict] = None
     predict: Optional[dict] = None
 
 class AnnotationModel(BaseModel):

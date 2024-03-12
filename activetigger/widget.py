@@ -454,6 +454,11 @@ class Widget():
         self._mode_selection.options = ["deterministic","random"]
         self._mode_sample.options = self.state["next"]["sample"]
         self._mode_label.disabled = True
+        # to displau context
+        if self.add_context.value:
+            self.display_context.value = json.dumps(self.current_element["context"])
+        else:
+            self.display_context.value = ""
         # case of a simplemodel is available for the user and the scheme
         if self.is_simplemodel:
             self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
@@ -914,6 +919,11 @@ class Widget():
         self._labels = widgets.HBox()
         self.info_element = widgets.HTML()
         self.info_predict = widgets.HTML()
+        self.add_context = widgets.ToggleButton(description='Context', value=False, icon='valid')
+        def update_context(x):
+            self.update_tab_annotations()
+        self.add_context.observe(update_context, "value")
+        self.display_context = widgets.HTML()
 
         # Part projection visualisation
         self.projection_method = widgets.Dropdown(description = "Method")
@@ -950,9 +960,11 @@ class Widget():
                                     self._mode_selection,
                                     self._mode_sample,
                                     self._mode_label,
-                                    self.info_element]),
+                                    self.info_element,
+                                    self.add_context]),
                               self._textarea,
                               self.info_predict,
+                              self.display_context,
                               self._labels,
                               widgets.HTML("<hr>"),
                               self.projection
