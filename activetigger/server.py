@@ -822,7 +822,7 @@ class Schemes(Session):
                         min:int,
                         max:int, 
                         mode:str,
-                        user:str = "user"):
+                        user:str = "all"):
         """
         Get data table
         """
@@ -1045,19 +1045,29 @@ class Schemes(Session):
         Get the id of the n last tags added/updated
         by a user for a scheme of a project
         """
-
+        print("get recent tags for ",user)
         # add case for all users
 
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        query = """
-                SELECT DISTINCT element_id 
-                FROM annotations
-                WHERE project = ? AND user = ? AND scheme = ? AND action = ?
-                ORDER BY time DESC
-                LIMIT ?
-                """
-        cursor.execute(query, (self.project_name,user,scheme, "add", n))
+        if user == "all": # all users
+            query = """
+                    SELECT DISTINCT element_id 
+                    FROM annotations
+                    WHERE project = ? AND scheme = ? AND action = ?
+                    ORDER BY time DESC
+                    LIMIT ?
+                    """
+            cursor.execute(query, (self.project_name,scheme, "add", n))
+        else: # only one user
+            query = """
+                    SELECT DISTINCT element_id 
+                    FROM annotations
+                    WHERE project = ? AND user = ? AND scheme = ? AND action = ?
+                    ORDER BY time DESC
+                    LIMIT ?
+                    """
+            cursor.execute(query, (self.project_name,user,scheme, "add", n))
         results = cursor.fetchall()
         conn.commit()
         conn.close()

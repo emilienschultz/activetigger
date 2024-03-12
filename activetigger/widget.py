@@ -288,15 +288,16 @@ class Widget():
                         f['layout']['yaxis']['range'][1]]
         except:
             x1y1x2y2 = []
+
         params = {
-                          "project_name":self.project_name,
-                          "scheme":self.select_scheme.value,
-                          "selection":self._mode_selection.value,
-                          "sample":self._mode_sample.value,
-                          "user":self.user,
-                          "tag":None,
-                          "frame":x1y1x2y2
-                      }
+                "project_name":self.project_name,
+                "scheme":self.select_scheme.value,
+                "selection":self._mode_selection.value,
+                "sample":self._mode_sample.value,
+                "user":self.user,
+                "tag":None,
+                "frame":x1y1x2y2
+                }
         r = self._get(route = "/elements/next",
                       params = params)
         
@@ -310,7 +311,6 @@ class Widget():
         self._textarea.value = r["text"]
         self.info_element.value = r["info"]
         self.info_predict.value = f"Predict SimpleModel: <b>{r['predict']['label']}</b> (p = {r['predict']['proba']})"
-
         return True
 
     def _display_buttons_labels(self) -> bool:
@@ -701,12 +701,10 @@ class Widget():
         """
         r = self._get(route = f"/elements/{element_id}",
                       params = {"project_name":self.project_name})
-        print(r)
         # Managing errors
         if "error" in r:
             print(r)
             return False
-
         # Update interface
         self.current_element = r
         self._textarea.value = r["text"]
@@ -716,10 +714,9 @@ class Widget():
         """
         Load previous element in history
         """
-        if len(self.history) < 1:
+        if len(self.history) == 0:
             print("No element in history")
             return False
-        
         element_id = self.history.pop()
         r = self._display_element(element_id) 
         return r
@@ -978,7 +975,7 @@ class Widget():
         self._textarea = widgets.Textarea(value="",
                                    layout=widgets.Layout(width='600px',height='150px'), 
                                    description='')
-        self._back = widgets.Button(description = "back",layout=widgets.Layout(width='100px'))
+        self._back = widgets.Button(description = "◄ back",layout=widgets.Layout(width='100px'))
         self._back.on_click(lambda x : self._get_previous_element())
         self._mode_selection = widgets.Dropdown(layout=widgets.Layout(width='120px'))
         self._mode_sample = widgets.Dropdown(layout=widgets.Layout(width='120px'))
