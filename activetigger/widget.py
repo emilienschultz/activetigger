@@ -1,21 +1,17 @@
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+import plotly.graph_objects as go
 import json
 import requests as rq
 from pathlib import Path
 import pandas as pd
 import time
 import asyncio
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import random
+from IPython.display import display, clear_output
 
-"""
-Problèmes à régler : 
-
-comment gérer la synchronisation entre l'envoi d'une requête qui prend du temps à traiter au serveur (entrainement BERT)
-Et le bouton
-
-"""
-
-# Deal connexion
 URL_SERVER = "http://127.0.0.1:8000"
 headers = {'x-token': 'your_token'}
 
@@ -27,15 +23,15 @@ class Widget():
         """
         Define general variables
         """
-        self.update_time = 2
+        self.update_time:int = 2
         self.user:str = "local"
         self.project_name: None|str = None
-        self.current_element:dict|None = None
-        self.current_scheme:str|None = None
-        self.bert_training = False
-        self.history:list = []
-
-        # start widget
+        self.state:dict = {} # global state of the server
+        self.current_element:dict|None = None # element to annotate
+        self.bert_training:bool = False # if bert is undertraining
+        self.is_simplemodel:bool = False # if simplemodel exist
+        self.history:list = [] # elements annotated during this session
+        self.projection_data: pd.DataFrame|str|None = None # get projection data
         self.start()
 
     def _post(self,
@@ -59,7 +55,8 @@ class Widget():
     def _get(self,
              route:str, 
              params:dict|None = None, 
-             data:dict|None = None) -> dict:
+             data:dict|None = None,
+             is_json = True) -> dict:
         """
         Get from API
         """
@@ -68,7 +65,9 @@ class Widget():
                     params = params,
                     data = data,
                     headers=headers)
-        return json.loads(r.content)
+        if is_json:
+            return json.loads(r.content)
+        return r.content
 
     def start(self) -> None:
         """
@@ -137,7 +136,10 @@ class Widget():
         Create a new project
         """
         clear_output()
-        # project name
+
+        # first step of the panel
+        #------------------------
+
         project_name = widgets.Text(disabled=False,
                                     description="Name:",
                                     layout={'width': '200px'})
@@ -168,6 +170,9 @@ class Widget():
         # nom de la colonne texte
         # nom de la colonne identifiant
 
+        # second step of the panel
+        #-------------------------
+
         # separator
         separate = widgets.HTML(value = "<hr>")
 
@@ -184,10 +189,25 @@ class Widget():
             layout={'width': '200px'},
             disabled=False)
         
+        column_label = widgets.Dropdown(
+            options=[],
+            description='Labels*:',
+            layout={'width': '200px'},
+            disabled=False)
+        
+        columns_context = widgets.SelectMultiple(
+            options=[],
+            description='Context*:',
+            layout={'width': '200px'},
+            disabled=False)
+        
         n_train = widgets.IntText(description = "nrows train", layout={'width': '200px'})
         n_test = widgets.IntText(description = "nrow test", layout={'width': '200px'})
 
         info = widgets.HTML()
+
+        # Populate
+        #---------
 
         # create the project
         layout=widgets.Layout(width='100px', margin='30px 30px 30px 30px')
@@ -196,8 +216,11 @@ class Widget():
         def create_project(b):
             data = {
                     "project_name": project_name.value,
+                    "user":self.user,
                     "col_text": column_text.value,
                     "col_id":column_id.value,
+                    "col_label":column_label.value,
+                    "cols_context": list(columns_context.value),
                     "n_train":n_train.value,
                     "n_test":n_test.value
                     }
@@ -222,6 +245,8 @@ class Widget():
             df = self._load_file(file.value)
             column_text.options = df.columns
             column_id.options = df.columns
+            column_label.options = df.columns
+            columns_context.options = df.columns
             info.value = f"Size of the dataset: {len(df)}"
             if len(df.columns)>1:
                 column_text.value = column_text.options[1]
@@ -231,6 +256,8 @@ class Widget():
                                                                      info, 
                                                                      column_id,
                                                                      column_text,
+                                                                     column_label,
+                                                                     columns_context,
                                                                      n_train,
                                                                      n_test,
                                                                      validate]
@@ -255,14 +282,26 @@ class Widget():
         """
         Get next element from the current widget options
         """
+
+        # frame of the visualisation
+        try:
+            f = self.visualization.children[0]
+            x1y1x2y2 = [f['layout']['xaxis']['range'][0], 
+                        f['layout']['yaxis']['range'][0],
+                        f['layout']['xaxis']['range'][1], 
+                        f['layout']['yaxis']['range'][1]]
+        except:
+            x1y1x2y2 = []
+
         params = {
-                          "project_name":self.project_name,
-                          "scheme":self.select_scheme.value,
-                          "selection":self._mode_selection.value,
-                          "sample":self._mode_sample.value,
-                          "user":self.user,
-                          "tag":None
-                      }
+                "project_name":self.project_name,
+                "scheme":self.select_scheme.value,
+                "selection":self._mode_selection.value,
+                "sample":self._mode_sample.value,
+                "user":self.user,
+                "tag":None,
+                "frame":x1y1x2y2
+                }
         r = self._get(route = "/elements/next",
                       params = params)
         
@@ -274,7 +313,8 @@ class Widget():
         # Update interface
         self.current_element = r
         self._textarea.value = r["text"]
-
+        self.info_element.value = r["info"]
+        self.info_predict.value = f"Predict SimpleModel: <b>{r['predict']['label']}</b> (p = {r['predict']['proba']})"
         return True
 
     def _display_buttons_labels(self) -> bool:
@@ -292,16 +332,28 @@ class Widget():
                     "scheme":self.select_scheme.value,
                     "element_id":self.current_element["element_id"],
                     "tag":v.description,
+                    "user":self.user
                     }
             r = self._post(route = "/tags/add",
                        params = {"project_name":self.project_name},
                        json_data = data)
+            
             # add in history
-            self.history.append(self.current_element["element_id"])
             if "error" in r:
                 print(r)
+            else:
+                self.history.append(self.current_element["element_id"])
             self._display_next()
 
+            # check if simplemodel need to be retrained
+            if self.is_simplemodel and (len(self.history) % self.simplemodel_autotrain.value == 0):
+                # retrain with the parameters of the state
+                sm = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
+                self.create_simplemodel(self.select_scheme.value,
+                           model = sm["name"], 
+                           parameters = sm["params"], 
+                           features = sm["features"])
+                
         # create buttons
         buttons = []
         for t in labels:
@@ -326,6 +378,7 @@ class Widget():
         self.update_tab_description(False)
         self.update_tab_bertmodels(False)
         self.update_tab_features(False)
+        self.update_tab_exports(False)
 
     def update_tab_bertmodels(self, state = True):
         """
@@ -338,9 +391,9 @@ class Widget():
         self.new_bert_base.options = self.state["bertmodels"]["options"]
         self.new_bert_base.value = self.new_bert_base.options[0]
 
-        # display bertmodels for the current scheme
+        # display saved bertmodels for the current scheme (temporary start with _)
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            self.available_bert.options = self.state["bertmodels"]["available"][self.select_scheme.value]
+            self.available_bert.options = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
         self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"], indent=2)
 
         # display status
@@ -354,17 +407,11 @@ class Widget():
             compute.style.button_color = 'lightgreen'
             compute.on_click(lambda x: self.create_bertmodel())
             self.compute_new_bert.children = [compute]
-            #self.compute_new_bert.description = "⚙️Train"
-            #self.compute_new_bert.style.button_color = 'lightgreen'
-            #self.compute_new_bert.on_click(lambda x: self.create_bertmodel())
         else:
             stop = widgets.Button(description="⚙️Stop")
             stop.style.button_color = 'red'
             stop.on_click(lambda x: self.stop_bertmodel())
             self.compute_new_bert.children = [stop]
-            #self.compute_new_bert.description = "Stop training"
-            #self.compute_new_bert.style.button_color = 'red'
-            #self.compute_new_bert.on_click(lambda x: self.stop_bertmodel())
         return True
         
 
@@ -394,9 +441,13 @@ class Widget():
         if state:
             self.state = self.get_state()
         params = {"project_name":self.project_name,
-                  "scheme":self.select_scheme.value}
-        r = self._get("/elements/stats",params = params)
-        self.data_description.value = json.dumps(r,indent=2)
+                  "scheme":self.select_scheme.value,
+                  "user":self.user}
+        r = self._get("/description",params = params)
+        text = ""
+        for k,v in r.items():
+            text += f"<br>- <b>{k}</b>: {v}"
+        self.data_description.value = text
         return True
 
     def update_tab_annotations(self, state = True):
@@ -408,11 +459,20 @@ class Widget():
         self._mode_selection.options = ["deterministic","random"]
         self._mode_sample.options = self.state["next"]["sample"]
         self._mode_label.disabled = True
+        # to displau context
+        if self.add_context.value:
+            self.display_context.value = json.dumps(self.current_element["context"])
+        else:
+            self.display_context.value = ""
         # case of a simplemodel is available for the user and the scheme
-        if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
-            self._mode_selection.options = ["deterministic","random","maxprob"]
+        if self.is_simplemodel:
+            self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
             self._mode_label.disabled = False
             self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
+        # projection
+        self.projection_method.options = list(self.state["projections"]["available"].keys())
+        self.projection_params.value = json.dumps(self.state["projections"]["available"]["umap"], indent=2)
+        self.projection_features.options = self.state["features"]["available"]
 
     def update_tab_schemes(self, state = True): 
         """
@@ -429,18 +489,25 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
+
         self.select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
         self.select_features.options = self.state["features"]["available"]
+
+        # if a model has already be trained for the user and the scheme
         if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
-            current_model = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["name"]
-            self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["params"], 
-                                                       indent=2)
-            self.select_simplemodel.value = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]["name"]
+            current_model = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
+            name = current_model['name']
+            statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
+            self.simplemodel_params.value = json.dumps(current_model["params"], indent=2)
+            self.select_simplemodel.value = name
         else:
-            current_model = "No model available"
-            #self.select_simplemodel.value = None
+            name = "No model"
+            statistics = ""
             self.simplemodel_params.value = ""
-        self.simplemodel_state.value = f"Scheme : {self.select_scheme.value} - Current model: {current_model}"
+
+        # display information
+        self.simplemodel_state.value = f"Current model: {name}"
+        self.simplemodel_statistics.value = statistics
 
     def update_tab_data(self, state = True):
         """
@@ -456,7 +523,6 @@ class Widget():
                    "mode":self.sample_type.value
                   }
         r = self._get("/elements/table", params = params)
-        print(r)
         df = pd.DataFrame(r)
         buttons = []
         for i,j in df.iterrows():
@@ -475,6 +541,21 @@ class Widget():
             ]))
         self.display_table.children = buttons
 
+    def update_tab_exports(self, state = True):
+        if state:
+            self.state = self.get_state()
+        self.export_features_columns.options = self.state["features"]["available"]
+
+        prediction = []
+        if self.select_scheme.value in self.state["bertmodels"]["available"]:
+            prediction = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[1]] #if predict
+        self.select_bert_model_predict.options = prediction
+
+        bert = []
+        if self.select_scheme.value in self.state["bertmodels"]["available"]:
+            bert = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[2]] #if compressed
+        self.select_bert_model.options  = bert
+
     def create_scheme(self, s):
         """
         Create new scheme
@@ -485,12 +566,12 @@ class Widget():
         data = {
                 "project_name":self.project_name,
                 "name":s,
-                "tags":[]
+                "tags":[],
+                "user":self.user
                 }
         r = self._post("/schemes/add", 
                        params = params, 
                        json_data = data)
-        print(r)
         self.update_tab_schemes()
         return r
     
@@ -514,21 +595,15 @@ class Widget():
     def delete_label(self, label:str):
         """
         Delete label in a scheme
-        (update scheme)
         """
         if label == "":
             return "Empty"
-        tags = self.state["schemes"]["available"][self.select_scheme.value].copy()
-        tags.remove(label)
-        params = {"project_name":self.project_name}
-        data = {
-                "project_name":self.project_name,
-                "name":self.select_scheme.value,
-                "tags":tags
-                }
-        r = self._post("/schemes/update", 
-                       params = params, 
-                       json_data = data)
+        params = {"project_name":self.project_name,
+                  "scheme":self.select_scheme.value,
+                  "label":label,
+                  "user":self.user}
+        r = self._post("/schemes/label/delete", 
+                       params = params)
         self.update_tab_schemes()
         return r
 
@@ -539,19 +614,12 @@ class Widget():
         label = text_field.value
         if label == "":
             return "Empty"
-        if label in self.state["schemes"]["available"][self.select_scheme.value]:
-            return "Label already exists"
-        tags = self.state["schemes"]["available"][self.select_scheme.value].copy()
-        tags.append(label)
-        params = {"project_name":self.project_name}
-        data = {
-                "project_name":self.project_name,
-                "name":self.select_scheme.value,
-                "tags":list(tags)
-                }
-        r = self._post("/schemes/update", 
-                       params = params, 
-                       json_data = data)
+        params = {"project_name":self.project_name,
+                  "scheme":self.select_scheme.value,
+                  "label":label,
+                  "user":self.user}
+        r = self._post("/schemes/label/add", 
+                       params = params)
         self.update_tab_schemes()
         text_field.value = ""
         return r
@@ -575,7 +643,7 @@ class Widget():
         data = {
                 "model":model,
                 "features":features,
-                "params":json.loads(parameters),
+                "params":parameters,
                 "scheme":scheme,
                 "user":self.user
                 }
@@ -601,7 +669,7 @@ class Widget():
                 "project_name":self.project_name,
                 "scheme":self.select_scheme.value,
                 "user":self.user,
-                "name":self.new_bert_name.value,
+                "name":f"_{self.user}", # générique
                 "base_model":self.new_bert_base.value,
                 "params":json.loads(self.new_bert_params.value),
                 "test_size":0.2
@@ -610,7 +678,6 @@ class Widget():
         r = self._post("/models/bert/train", 
                        params = params, 
                        json_data = data)
-        print(r)
         time.sleep(2)
         self.bert_training = True
         self.update_tab_bertmodels()
@@ -626,35 +693,37 @@ class Widget():
                   "user":self.user}
         r = self._post("/models/bert/stop", 
                 params = params)
-        print(r)
         time.sleep(2)
         self.bert_training = False
         self.compute_new_bert.disabled = False
         self.update_tab_bertmodels()
         return True
 
-    def _get_previous_element(self) -> bool:
+    def _display_element(self, element_id):
         """
-        Load previous element in history
+        Display specific element
         """
-        if len(self.history) < 1:
-            print("No element in history")
-            return False
-        
-        element_id = self.history.pop()
         r = self._get(route = f"/elements/{element_id}",
                       params = {"project_name":self.project_name})
-        
         # Managing errors
         if "error" in r:
             print(r)
             return False
-
         # Update interface
         self.current_element = r
-        self._textarea.value = r["text"]   
+        self._textarea.value = r["text"]
+        return True
 
-        return True     
+    def _get_previous_element(self) -> bool:
+        """
+        Load previous element in history
+        """
+        if len(self.history) == 0:
+            print("No element in history")
+            return False
+        element_id = self.history.pop()
+        r = self._display_element(element_id) 
+        return r
     
     def compute_feature(self, feature_name) -> bool:
         """
@@ -663,8 +732,10 @@ class Widget():
         if not feature_name in self.state["features"]["options"]:
             return "This feature doesn't exist"
         r = self._post(f"/features/add/{feature_name}", 
-                    params = {"project_name":self.project_name})
-        print(r)
+                    params ={
+                            "project_name":self.project_name,
+                            "user":self.user
+                            })
         self.update_tab_features()
         return True
     
@@ -674,7 +745,6 @@ class Widget():
         """
         r = self._post(f"/features/delete/{feature_name}", 
                     params = {"project_name":self.project_name})
-        print(r)
         self.update_tab_features()
         return True
     
@@ -696,45 +766,196 @@ class Widget():
         r = self._post("/features/add/regex",
             params = {"project_name":self.project_name},
             json_data=data)
-        print(r)
         self.update_tab_features()
         return True
     
-    def periodic_update(self):
-
-        while True:
-            time.sleep(self.update_time)
-            self.state = self.get_state()
-            print(self.state["bertmodels"])
-            # case of training finished
-            if self.user in self.state["bertmodels"]["training"]:
-                self.bert_training = True
-            else:
-                self.bert_training = False
-
-                # return to normal state
-                print("training finished")
-                #self.bert_training = False
-            self.update_tab_bertmodels(state=False)
+    def save_bert(self, former_name, new_name):
+        params = {"project_name":self.project_name,
+                  "former_name":former_name,
+                  "new_name":new_name,
+                  "user":self.user
+                  }
+        r = self._post("/models/bert/rename",
+            params = params)
+        return r
+        
+    def export_data(self, format):
+        """
+        Get exported data
+        """
+        params = {"project_name":self.project_name,
+                  "scheme":self.select_scheme.value, #current scheme
+                  "format":format
+                  }
+        r = self._get("/export/data",
+            params = params,
+            is_json= False)
+        with open(f"./data_export.{format}","wb") as f:
+            f.write(r)
+        print(f"data exported in './data_export.{format}'")
+        return True
     
+    def export_features(self, features:list, format:str):
+        """
+        Get exported features
+        """
+        params = {"project_name":self.project_name,
+                  "features":features,
+                  "format":format
+                  }
+        r = self._get("/export/features",
+            params = params,
+            is_json= False)
+        with open(f"./features_export.{format}","wb") as f:
+            f.write(r)
+        print(f"Features exported in './features_export.{format}'")
+        return True
     
+    def export_prediction(self, name:str, format:str):
+        """
+        Get exported prediction for a BERT model
+        """
+        params = {"project_name":self.project_name,
+                  "name":name,
+                  "format":format
+                  }
+        r = self._get("/export/prediction",
+            params = params,
+            is_json= False)
+        with open(f"./prediction_export.{format}","wb") as f:
+            f.write(r)
+        print(f"Prediction exported in './prediction_{name}_export.{format}'")
+
+    def export_bert(self, name:str):
+        """
+        Get BERT Model
+        """
+        if name is None:
+            return None
+        params = {"project_name":self.project_name,
+                  "name":name
+                  }
+        r = self._get("/export/bert",
+            params = params,
+            is_json= False)
+        if "error" in r:
+            print(r)
+            return None
+        with open(f"./{name}.tar.gz","wb") as f:
+            f.write(r)
+        print(f"Bert exported in './{name}.tar.gz'")
+
+    def compute_projection(self):
+        """
+        Start computing projection
+        """
+        params = {
+                "project_name":self.project_name,
+                "user":self.user
+                }
+        data = {
+            "method":self.projection_method.value, 
+            "features":self.projection_features.value,
+            "params":json.loads(self.projection_params.value),
+            }
+        r = self._post("/elements/projection/compute",
+            params = params,
+            json_data = data)
+        if "success" in r:
+            self.projection_data = "computing"
+            self.visualization.children = [widgets.HTML(value = self.projection_data)]
+        else:
+            print(r)
+
+    def plot_visualisation(self):
+        """
+        Produce the visualisation for the projection
+        TODO : choice of colors + legend
+        """
+        df = self.projection_data
+        f = go.FigureWidget([go.Scatter(x=df["0"], y=df["1"], mode='markers', 
+                                    customdata = df.index)])
+        scatter = f.data[0]
+ 
+        def random_color_generator():
+            color = random.choice(list(mcolors.CSS4_COLORS.keys()))
+            return color
+        colors_map = {i:random_color_generator() for i in df["labels"].unique()}
+        scatter.marker.color = list(df["labels"].replace(colors_map))
+        scatter.marker.size = [5] * 100
+        f.layout.hovermode = 'closest'
+        def update_point(trace, points, selector):
+            #print(points.xs, points.ys)
+            # SELECT SPECIFIC TEXT
+            element_id = trace.customdata[points.point_inds][0]
+            print(element_id)
+            self._display_element(element_id)
+            #print(element_id)
+        scatter.on_click(update_point)
+        self.visualization.children = [f]
+        #return f
+
+    def display_bert_statistics(self, name):
+        params = {"project_name":self.project_name,
+                            "name":name}
+        r = self._get("/models/bert", params = params)
+        if "error" in r:
+            print(r)
+            return 
+        print(r)
+        loss = pd.DataFrame(r["loss"])
+        with self.bert_statistics:
+            clear_output(wait=True)
+            fig, ax = plt.subplots(figsize=(3,2))
+            fig = loss.plot(ax = ax)
+            plt.show(fig)
+    
+    def get_projection_data(self):
+        """
+        Get projection data
+        """
+        params = {
+                "project_name":self.project_name, 
+                "user":self.user,
+                "scheme":self.select_scheme.value
+                }
+        r = self._get("/elements/projection/current",
+            params = params)
+        return r
+
     async def update_state(self):
+        """
+        Async function to update state
+        - check bertmodels
+        - check simplemodels
+        - check visualisation
+        """
         while True:
             self.state = self.get_state()
             await asyncio.sleep(self.update_time)
+            if len(self.state) == 0:
+                continue
+            # check bertmodel status
+            if self.bert_training and (not self.user in self.state["bertmodels"]["training"]):
+                self.bert_training = False
+                self.update_tab_bertmodels(state=False)
+            # check simplemodel status
+            if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
+                self.is_simplemodel = True
+            # test if projection data available
+            if (type(self.projection_data) is str) and (self.projection_data == "computing"):
+                r = self.get_projection_data()
+                if "data" in r:
+                    self.projection_data = pd.DataFrame(r["data"])
+                    self.plot_visualisation()
 
     def interface(self):
         """
         General interface
         - divided by tab
-
-        TODO : start with scheme tab ?
         """
 
         # updating thread
-        #update_thread = threading.Thread(target=self.periodic_update)
-        #update_thread.daemon = True
-        #update_thread.start()
         asyncio.create_task(self.update_state())
 
         #------------
@@ -745,12 +966,14 @@ class Widget():
         valid_delete_scheme.on_click(lambda b : self.delete_scheme(self.select_scheme.value))
         new_scheme = widgets.Text(description="New: ")
         valid_new_scheme = widgets.Button(description = "Create")
+        valid_new_scheme.style.button_color = 'lightgreen'
         valid_new_scheme.on_click(lambda b : self.create_scheme(new_scheme.value))
         self.select_label = widgets.Dropdown(description="Labels: ")
         valid_delete_label = widgets.Button(description = "Delete", button_style = "danger")
         valid_delete_label.on_click(lambda b : self.delete_label(self.select_label.value))
         new_label = widgets.Text(description="New label: ")
         valid_new_label = widgets.Button(description = "Create")
+        valid_new_label.style.button_color = 'lightgreen'
         valid_new_label.on_click(lambda b : self.create_label(new_label))
 
         # Populate
@@ -762,7 +985,6 @@ class Widget():
         # change labels if scheme change
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                print("change to ",self.select_scheme.value)
                 self.update_tab_schemes()
         self.select_scheme.observe(on_change_scheme)
 
@@ -770,6 +992,7 @@ class Widget():
         tab_schemes = widgets.VBox([
                             widgets.HBox([self.select_scheme, valid_delete_scheme]),
                             widgets.HBox([new_scheme, valid_new_scheme]),
+                            widgets.HTML(value="<hr>"),
                             widgets.HBox([self.select_label, valid_delete_label]),
                             widgets.HBox([new_label, valid_new_label]),
                         ])
@@ -780,13 +1003,41 @@ class Widget():
         self._textarea = widgets.Textarea(value="",
                                    layout=widgets.Layout(width='600px',height='150px'), 
                                    description='')
-        self._back = widgets.Button(description = "back",layout=widgets.Layout(width='100px'))
+        self._back = widgets.Button(description = "◄ back",layout=widgets.Layout(width='100px'))
         self._back.on_click(lambda x : self._get_previous_element())
         self._mode_selection = widgets.Dropdown(layout=widgets.Layout(width='120px'))
         self._mode_sample = widgets.Dropdown(layout=widgets.Layout(width='120px'))
         self._mode_label = widgets.Dropdown(layout=widgets.Layout(width='120px'),
                                             disabled=True)
         self._labels = widgets.HBox()
+        self.info_element = widgets.HTML()
+        self.info_predict = widgets.HTML()
+        self.add_context = widgets.ToggleButton(description='Context', value=False, icon='valid')
+        def update_context(x):
+            self.update_tab_annotations()
+        self.add_context.observe(update_context, "value")
+        self.display_context = widgets.HTML()
+
+        # Part projection visualisation
+        self.projection_method = widgets.Dropdown(description = "Method")
+        def on_change_method(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                self.projection_params.value = json.dumps(self.state["projections"]["available"][self.projection_method.value], indent=2)
+        self.projection_method.observe(on_change_method)
+        self.projection_params = widgets.Textarea(layout = widgets.Layout(width='200px',height='100px'))
+        self.projection_features = widgets.SelectMultiple(description = "Features")
+        self.projection_compute = widgets.Button(description = "Visualize")
+        self.projection_compute.on_click(lambda x: self.compute_projection())
+        self.visualization = widgets.HBox([])
+        self.projection = widgets.Accordion(children=[widgets.VBox([
+                                    widgets.HBox([self.projection_method, self.projection_compute]),
+                                    widgets.HBox([self.projection_features,self.projection_params]),
+                                                  self.visualization
+                                                                    ]
+                                                     )], 
+                                            titles=('Projection',))
+        
+        
 
         # Populate
         self.update_tab_annotations()
@@ -801,9 +1052,15 @@ class Widget():
                              widgets.HBox([self._back,
                                     self._mode_selection,
                                     self._mode_sample,
-                                    self._mode_label]),
+                                    self._mode_label,
+                                    self.info_element,
+                                    self.add_context]),
                               self._textarea,
-                              self._labels
+                              self.info_predict,
+                              self.display_context,
+                              self._labels,
+                              widgets.HTML("<hr>"),
+                              self.projection
                             ])
 
         #---------
@@ -854,8 +1111,7 @@ class Widget():
         #---------------
         # Tab statistics
         #---------------
-        self.data_description = widgets.Textarea(disabled=True, 
-                                                 layout={'width': '400px', 'height':'300px'})
+        self.data_description = widgets.HTML(layout={'width': '300px', 'height':'200px'})
 
         # Populate
         self.update_tab_description()
@@ -866,11 +1122,10 @@ class Widget():
         #----------------
         # Tab SimpleModel
         #----------------
-        self.simplemodel_state = widgets.Text(disabled=True)
-        self.simplemodel_statistics= widgets.Text(disabled=True,
-                                                  value = "Here put statistics")
+        self.simplemodel_state = widgets.HTML(value = "State")
+        self.simplemodel_statistics= widgets.HTML(value = "Statistics")
 
-        self.select_simplemodel =  widgets.Dropdown(description = "models")
+        self.select_simplemodel =  widgets.Dropdown(description = "Models")
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
                 self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][self.select_simplemodel.value],
@@ -882,9 +1137,10 @@ class Widget():
         valid_model = widgets.Button(description = "⚙️Train")
         valid_model.on_click(lambda b : self.create_simplemodel(scheme=self.select_scheme.value, #attention il faudra revoir le choix du scheme
                                                                model = self.select_simplemodel.value,
-                                                               parameters = self.simplemodel_params.value,
+                                                               parameters = json.loads(self.simplemodel_params.value),
                                                                features = self.select_features.value))
-
+        self.simplemodel_autotrain = widgets.IntSlider(min=1, max=50, 
+                                      description="")
         # Populate
         self.update_tab_simplemodel()
 
@@ -892,11 +1148,14 @@ class Widget():
         tab_simplemodel = widgets.VBox([
                             widgets.HBox([self.simplemodel_state,self.simplemodel_statistics]),
                             self.select_simplemodel,
-                             widgets.HBox([self.select_features,
-                                    self.simplemodel_params]),
-                              valid_model
+                            widgets.HBox([
+                                          self.select_features,
+                                          self.simplemodel_params
+                                          ]),
+                            valid_model,
+                            widgets.HTML(value="Autotrain every:"),
+                            self.simplemodel_autotrain
              ])
-        
         #-------------
         # Tab Features
         #-------------
@@ -919,27 +1178,48 @@ class Widget():
 
         # Group in tab
         tab_features = widgets.VBox([
-            self.info_features,
             widgets.HBox([self.available_features,delete_feature]),
             widgets.HBox([self.add_features,valid_compute_features]),
             widgets.HBox([add_regex_value,valid_regex]),
+            self.info_features,
              ])
 
         #--------------
         # Tab BertModel
         #--------------
+
+        """
+        Logic : train a bertmodel by user
+        which can be saved in a specific name
+        TODO : upgrade management of models
+        """
+
         self.bert_status = widgets.Text(disabled=True)
-        self.available_bert = widgets.Dropdown(description="Trained:")
+        self.available_bert = widgets.Dropdown(description="Select:")
+        self.bert_statistics = widgets.Output()
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value':
-                self.new_bert_params.value = "TO IMPLEMENT"
+#                self.new_bert_params.value = "TO IMPLEMENT" #self.state["bertmodels"]["available"][self.available_bert.value][-1]
+                self.compute_prediction.disabled = True
+# CHANGE STRUCTURE
+#                if not self.state["bertmodels"]["available"][self.available_bert.value][1]:
+#                    print("prediction does not exist")
+#                    self.compute_prediction.disabled = False
+                self.display_bert_statistics(self.available_bert.value) # display summary
         self.available_bert.observe(on_change_model)
+        self.bert_summary = widgets.Accordion(children=[self.bert_statistics], 
+                                            titles=('Description',))
 
-        self.new_bert_name = widgets.Text(description="New BERT:", layout={'width': '150px'}, value="Name")
+        self.compute_prediction = widgets.Button(description = "Compute prediction", disabled = True)
+        self.compute_prediction.on_click(lambda x : print("Compute prediction to implement"))
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
-        #self.compute_new_bert = widgets.Button(description = "⚙️Train")
         self.compute_new_bert = widgets.VBox()
+
+        self.bert_name = widgets.Text(description="Name:", layout={'width': '150px'}, value="Name")
+        self.record_bert = widgets.Button(description = "Save Bert")
+        self.record_bert.on_click(lambda x : self.save_bert(self.available_bert.value, 
+                                                            self.bert_name.value))
 
         # Populate
         self.update_tab_bertmodels()
@@ -948,11 +1228,78 @@ class Widget():
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
                                 self.available_bert,
-                                widgets.HBox([self.new_bert_name, self.new_bert_base]),
+                                self.compute_prediction,
+                                self.bert_summary,
+                                widgets.HTML(value="<hr>Train new bert<br>"),
+                                self.new_bert_base,
                                 self.new_bert_params,
-                                self.compute_new_bert
+                                self.compute_new_bert,
+                                widgets.HTML(value="<hr>Save current model<br>"),
+                                widgets.HBox([self.bert_name, self.record_bert]),
+                        
                              ])
 
+        #--------------
+        # Tab BertModel
+        #--------------
+
+        layout_button=widgets.Layout(width='80px')
+        layout_menu=widgets.Layout(width='150px')
+
+
+        # data
+        export_tagged_data_presentation = widgets.HTML(value="<hr>Export tagged data<br>")
+        #export_tagged_data_columns = widgets.SelectMultiple(layout = layout_menu)
+        export_tagged_data_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
+        valid_export_tagged_data = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_tagged_data.on_click(lambda x: self.export_data(format = export_tagged_data_format.value))
+
+        # embeddings
+        export_features_presentation = widgets.HTML(value="<hr>Export embeddings<br>")
+        self.export_features_columns = widgets.SelectMultiple(layout = layout_menu)
+        export_features_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
+        valid_export_features = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_features.on_click(lambda x: self.export_features(features = self.export_features_columns.value,
+                                                                  format = export_features_format.value))
+
+        # bert predictions
+        export_predictions_presentation = widgets.HTML(value="<hr>Export BERT predictions<br>")
+        self.select_bert_model_predict = widgets.Dropdown(layout = layout_menu)
+        export_bert_format = widgets.Dropdown(options = ["csv","parquet"], layout = layout_button)
+        valid_export_predict = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_predict.on_click(lambda x: self.export_prediction(name = self.select_bert_model_predict.value,
+                                                                  format = export_features_format.value))
+
+        # bert models
+        export_bert_presentation =  widgets.HTML(value="<hr>Export BERT models<br>")
+        self.select_bert_model = widgets.Dropdown(layout = layout_menu)
+        valid_export_bertmodel = widgets.Button(description = "⬇", layout = layout_button)
+        valid_export_bertmodel.on_click(lambda x: self.export_bert(name = self.select_bert_model.value))
+
+        tab_export = widgets.VBox([
+            export_tagged_data_presentation, widgets.HBox([
+                          #export_tagged_data_columns,
+                          export_tagged_data_format,
+                          valid_export_tagged_data]),
+            export_features_presentation, widgets.HBox([
+                          self.export_features_columns,
+                          export_features_format,
+                          valid_export_features
+                          ]),
+            export_predictions_presentation, widgets.HBox([
+                          self.select_bert_model_predict,
+                          export_bert_format,
+                          valid_export_predict
+                        ]),
+            export_bert_presentation, widgets.HBox([
+                          self.select_bert_model,
+                          valid_export_bertmodel
+                        ]),
+        ])
+
+
+        # Populate
+        self.update_tab_exports()
 
         # display global widget
         self.output = widgets.Tab([tab_schemes,
@@ -961,14 +1308,16 @@ class Widget():
                                    tab_data,
                                    tab_features,
                                    tab_simplemodel,
-                                   tab_bertmodel],
+                                   tab_bertmodel,
+                                   tab_export],
                                   titles = ["Schemes",
                                             "Annotate",
                                             "Description",
                                             "Data",
                                             "Features",
                                             "SimpleModels",
-                                            "BertModels"])
+                                            "BertModels",
+                                            "Export"])
         
         # Update everything on tab change
         def on_tab_selected(change):

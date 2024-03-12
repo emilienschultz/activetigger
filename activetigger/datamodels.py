@@ -1,13 +1,14 @@
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
-from pandas import DataFrame
+from typing import Optional
 
 class ProjectModel(BaseModel):
     """
     Parameters of a project
     """
     project_name:str
+    user:str
     col_text:str
     col_id:str
     n_rows:int = 2000
@@ -16,9 +17,9 @@ class ProjectModel(BaseModel):
     dir:Path|None = None
     embeddings:list = []
     n_skip:int = 0
-    schemes: list = []
+    default_scheme: list = []
     langage:str = "fr"
-    col_tags:str|None = None # TODO: load existing tags
+    col_label:str|None = None # TODO: load existing tags
     cols_context:list = [] # TODO: select variable to keep
 
 class Action(str, Enum):
@@ -52,7 +53,11 @@ class UserModel(BaseModel):
     
 class ElementModel(BaseModel):
     element_id:str
-    text:str|None = None
+    text:Optional[str] = None
+    selection: Optional[str] = None
+    info: Optional[str] = None
+    context: Optional[dict] = None
+    predict: Optional[dict] = None
 
 class AnnotationModel(BaseModel):
     """
@@ -61,6 +66,7 @@ class AnnotationModel(BaseModel):
     project_name:str
     element_id:str
     tag:str
+    user:str
     scheme:str = "current"
 
 class SchemeModel(BaseModel):
@@ -69,6 +75,7 @@ class SchemeModel(BaseModel):
     """
     project_name:str
     name:str
+    user:str
     tags:list = []
 
 class RegexModel(BaseModel):
@@ -102,3 +109,8 @@ class TableElementsModel(BaseModel):
     list_ids:list
     list_labels:list
     scheme:str
+
+class ProjectionModel(BaseModel):
+    method:str
+    features:list
+    params:dict

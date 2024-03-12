@@ -15,9 +15,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import precision_score
+from sklearn.metrics import precision_score, f1_score, accuracy_score
+from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
 from multiprocessing import Process
 from datetime import datetime
+import pickle
 
 logging.basicConfig(filename = "log",
                             format='%(asctime)s %(message)s',
@@ -25,42 +27,81 @@ logging.basicConfig(filename = "log",
 
 
 class BertModel():
+    """
+    Manage one bertmodel
+    """
 
     def __init__(self, 
                  name:str, 
                  path:Path, 
-                 base_model:str, 
+                 base_model:str|None = None, 
                  params:dict = {}) -> None:
         self.name:str = name
         self.path:Path = path
-        self.base_model:str = base_model
+        self.base_model:str|None = base_model
         self.tokenizer = None
         self.model = None
+        self.log_history = None
         self.params:dict = params
         self.status:str = "initializing"
+        self.pred:DataFrame|None = None
         self.timestamp:datetime = datetime.now()
 
     def __repr__(self) -> str:
         return f"{self.name} - {self.base_model}"
 
-    def predict(self, df, col_text = "text", gpu=False, batch = 128):
+    def load(self, lazy = False):
         """
-        Predictor from a model
-        Parameters
-        ----------
-        df (DataFrame): data
-        col_text (str): column of the textual data
-        gpu (bool): optional, enable GPU
+        Load trained model from files
+        - either lazy (only parameters)
+        - or complete (the weights of the model)
+        """
+        if not (self.path / "config.json").exists():
+            raise FileNotFoundError("model not defined")
+
+        with open(self.path / "config.json", "r") as jsonfile:
+            modeltype = json.load(jsonfile)["_name_or_path"]
+
+        if lazy:
+            self.status = "lazy"
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
+            self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
+            self.status = "loaded"
+
+        with open(self.path / "log_history.txt", "r") as f:
+            self.log_history = json.load(f)
+
+        # Load prediction if available
+        if (self.path / "predict.csv").exists():
+            self.pred = pd.read_csv(self.path / "predict.csv")   
+
+    def statistics(self):
+        """
+        Compute statistics
+        """
+        log = self.log_history
+        loss = pd.DataFrame([[log[2*i]["epoch"],log[2*i]["loss"],log[2*i+1]["eval_loss"]] for i in range(0,int((len(log)-1)/2))],
+             columns = ["epoch", "loss", "eval_loss"]).set_index("epoch")
+        r = {"loss":loss.to_dict()}
+        return r
+
+    def predict(self, 
+                df:DataFrame, 
+                col_text:str, 
+                gpu:bool = False, 
+                batch:int = 128):
+        """
+        Predict from a model
+        + probabilities
+        + entropy
         """
 
-        logging.basicConfig(filename='predict.log',
-                            format='%(asctime)s %(message)s',
-                            encoding='utf-8', level=logging.DEBUG)
-        
-        logging.info("Load model")
-
-        if self.model is None : 
+        if (self.model is None) or (self.tokenizer is None):
             self.load()
+
+        if (self.model is None) or (self.tokenizer is None):
+            return {"error":"Model not loaded"}
 
         if gpu:
             self.model.cuda()
@@ -75,7 +116,7 @@ class BertModel():
                             max_length=512, 
                             return_tensors="pt")
             if gpu:
-                inputs = inputs.to("cuda")
+                chunk = chunk.to("cuda")
             with torch.no_grad():
                 outputs = self.model(**chunk)
             res = outputs[0]
@@ -85,12 +126,22 @@ class BertModel():
             predictions.append(res)
             logging.info(f"{round(100*len(res)/len(df))}% predicted")
 
-        # Tidy data
+        # To DataFrame
         pred = pd.DataFrame(np.concatenate(predictions), 
-                            columns=self.model.config.labels.keys())
-        
+                            columns=sorted(list(self.model.config.label2id.keys())))
+
+        # Calculate entropy
+        entropy = -1 * (pred * np.log(pred)).sum(axis=1)
+        pred["entropy"] = entropy
+
+        # Calculate label
+        pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
+
+        # write the file
+        pred.to_csv(self.path / "predict.csv")
+
         return pred
-    
+
 class BertModels():
     """
     Managing bertmodel training
@@ -122,7 +173,7 @@ class BertModels():
         if not self.path.exists():
             os.mkdir(self.path)
 
-        # keep current processes (on by user max)
+        # keep current processes (one by user max)
         self.processes:dict = {}
 
     def __repr__(self) -> str:
@@ -131,15 +182,30 @@ class BertModels():
     def trained(self) -> dict:
         """
         Trained bert
+        + if prediction available
+        + compression if available / launch it
+        TODO : better data structure
         """
-        r = {}
+        r:dict = {}
         if self.path.exists(): #if bert models have been trained
             all_files = os.listdir(self.path)
             trained = [i for i in all_files if os.path.isdir(self.path / i) and (self.path / i / "finished").exists()]
+            #trained = [i for i in trained if i[0]!="_"] #skip temporary training
             for i in trained:
-                if not i.split("_")[0] in r:
-                    r[i.split("_")[0]] = []
-                r[i.split("_")[0]].append(i)
+                predict = False
+                compressed = False
+                # test if prediction available
+                if (self.path / i / "predict.csv").exists(): 
+                    predict = True
+                # test if compression available
+                if (self.path / f"{i}.tar.gz").exists():
+                    compressed = True
+                else :
+                    self.start_compression(i)
+                scheme = i.split("__")[-1] #scheme after __
+                if not scheme in r: 
+                    r[scheme] = []
+                r[scheme].append((i,predict, compressed, "parameters to add"))
         return r
     
     def training(self) -> dict:
@@ -177,7 +243,7 @@ class BertModels():
             test_size = 0.2
 
         # name integrating the scheme
-        name = scheme + "_" + name
+        name = f"{name}__{scheme}"
 
         # Launch as a independant process
         args = {
@@ -193,13 +259,46 @@ class BertModels():
         process = Process(target=self.train_bert, 
                           kwargs = args)
         process.start()
-        
+
         # Update the queue
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
         self.processes[user] = [b,process]
-        print("current trainings:",self.processes.keys())
         return {"success":"bert model on training"}
+
+    def start_predicting_process(self, 
+                                 name:str,
+                                 user:str, 
+                                 df:DataFrame,
+                                 col_text:str):
+        """
+        Start predicting process
+        """
+        if user in self.processes:
+            return {"error":"Processes already launched, cancel it before"}
+
+        if not (self.path / name).exists():
+            return {"error":"This model does not exist"}
+
+        b = BertModel(name, self.path / name)
+
+        args = {"df":df, "col_text":col_text}
+        process = Process(target=b.predict, 
+                          kwargs = args)
+        process.start()
+
+        b.status = "predicting"
+        self.processes[user] = [b,process]
+        return {"success":"bert model predicting"}
+
+    def start_compression(self, name):
+        """
+        Compress bertmodel as a separate process
+        """
+        process = Process(target=shutil.make_archive, 
+                          args = (self.path / name, 'gztar', self.path))
+        process.start()
+        print("starting compression")
 
     def train_bert(self,
                path:Path,
@@ -251,6 +350,8 @@ class BertModels():
             df = df[df[col_text].notnull()]
             logger.info(f"Missing texts - reducing training data to {len(df)}")
 
+        print(df)
+
         # formatting data
         labels = sorted(list(df[col_label].dropna().unique())) # alphabetical order
         label2id = {j:i for i,j in enumerate(labels)}
@@ -260,6 +361,8 @@ class BertModels():
         df = datasets.Dataset.from_pandas(df[["text", "labels"]])
 
         tokenizer = AutoTokenizer.from_pretrained(base_model)
+
+        print("tokenize")
 
         # Tokenize
         if params["adapt"]:
@@ -288,6 +391,7 @@ class BertModels():
         
         training_args = TrainingArguments(
             output_dir = current_path / "train",
+            logging_dir = current_path / 'logs',
             learning_rate=params["lrate"],
             weight_decay=params["wdecay"],
             num_train_epochs=params["epochs"],
@@ -327,6 +431,9 @@ class BertModels():
         shutil.rmtree(current_path / "train")
         os.rename(log_path, current_path / "finished")
 
+        with open(current_path  / "log_history.txt", "w") as f:
+            json.dump(trainer.state.log_history, f)
+
         return True
     
     def stop_user_training(self,user:str):
@@ -340,53 +447,85 @@ class BertModels():
         del self.processes[user] # delete process
         return {"success":"process terminated"}
     
-    def load(self, name:str) -> BertModel:
+    def rename(self, former_name:str, new_name:str):
         """
-        Load trained model from files
+        Rename a model (copy it)
         """
-        if not (self.path / name / "config.json").exists():
-            raise FileNotFoundError("model not defined")
+        if not (self.path / former_name).exists():
+            return {"error":"no model currently trained"}
+        if (self.path / new_name).exists():
+            return {"error":"this name already exists"}
+        if (self.path / former_name / "status.log").exists():
+            return {"error":"model not trained completly"}
 
-        with open(self.path / name / "config.json", "r") as jsonfile:
-            modeltype = json.load(jsonfile)["_name_or_path"]
+        # keep the scheme information
+        if not "__" in new_name:
+            new_name = new_name + "__" + former_name.split("__")[-1]
 
-        b = BertModel(name, self.path, modeltype)
-        b.tokenizer = AutoTokenizer.from_pretrained(modeltype)
-        b.model =  AutoModelForSequenceClassification.from_pretrained(self.path / name)
-        b.status = "loaded"
-        return b
-    
-    def get(self, name:str)-> BertModel|None:
+        os.rename(self.path / former_name, self.path / new_name)
+
+        #shutil.copytree(self.path / former_name, self.path / new_name)
+        return {"success":"model renamed"}
+            
+    def get(self, name:str, lazy = False)-> BertModel|None:
         """
-        Get a model (load it if available)
+        Get a model
         """
         if not (self.path / name).exists():
             return None
         if (self.path / name / "status.log").exists():
-            return None
-        return self.load(name)
+            return None    
+        b = BertModel(name, self.path / name)
+        b.load(lazy=lazy)
+        return b
     
     def update(self) -> bool:
         """
         Update training queue
+        (used in the API)
         # TODO : manage failed processes
         """
         to_del = []
         for u in self.processes:
             b = self.processes[u][0]
             p = self.processes[u][1]
-            # test if process completed (e.g. status.log deleted for the model)
+            # test if process completed (training)
             if (b.status == "training") and (not p.is_alive()):
+                to_del.append(b.name)
+            # test if process completed (predicting)
+            if (b.status == "predicting") and (not p.is_alive()):
                 to_del.append(b.name)
             print(to_del)
         # Update the current active processes
         self.processes = {u:self.processes[u] for u in self.processes if self.processes[u][0].name not in to_del}
         #self.processes = [b for b in self.processes if b[0].name not in to_del]
         return True
+    
+    def export_prediction(self, name:str, format:str|None = None):
+        """
+        Export predict file if exists
+        """
+        file_name = f"predict.csv"
+        if not (self.path / name / file_name).exists():
+            return {"error":"file does not exist"}
+        return file_name, self.path / name / file_name
+
+    def export_bert(self, name:str):
+        """
+        Export bert archive if exists
+        """
+        file_name = f"{name}.tar.gz"
+        if not (self.path / file_name).exists():
+            return {"error":"file does not exist"}
+        return file_name, self.path / file_name
+        
  
 class SimpleModels():
     """
     Managing simplemodels
+    - define available models
+    - save a simplemodel/user
+    - train simplemodels
     """
     available_models = {
         "liblinear": {
@@ -404,8 +543,11 @@ class SimpleModels():
                 }
             }
     
-    def __init__(self):
-        self.existing = {}
+    def __init__(self, path:Path):
+        self.existing:dict = {}
+        self.save_file:str = "simplemodels.pickle"
+        self.path:Path = path
+        self.loads()
 
     def __repr__(self) -> str:
         return str(self.available())
@@ -414,15 +556,22 @@ class SimpleModels():
         """
         Available simplemodels
         """
-        users = list(self.existing)
         r = {}
         for u in self.existing:
             r[u] = {}
             for s in self.existing[u]:
-                r[u][s] = self.existing[u][s].json()
+                sm = self.existing[u][s]
+                r[u][s] = {"name":sm.name, 
+                           "params":sm.model_params,
+                           "features":sm.features,
+                           "statistics":sm.statistics
+                           }
         return r
         
     def exists(self, user:str, scheme:str):
+        """
+        Test if a simplemodel exists for a user/scheme
+        """
         if user in self.existing:
             if scheme in self.existing[user]:
                 return True
@@ -460,9 +609,6 @@ class SimpleModels():
         df = pd.concat([data[~f_na][col_label],df_pred],axis=1)
     
         # data for training
-        #f_label = df[self.col_label].notnull()
-        #Y = df[f_label][self.col_label]
-        #X = df[f_label][self.col_predictors]
         Y = df[col_label]
         X = df[col_predictors]
         labels = Y.unique()
@@ -537,13 +683,30 @@ class SimpleModels():
         if not user in self.existing:
             self.existing[user] = {}
         self.existing[user][scheme] = sm
-        print("model added")
+        self.dumps() #save pickle
+
+    def dumps(self):
+        """
+        Dumps all simplemodels to a pickle
+        """
+        with open(self.path / self.save_file, 'wb') as file:
+            pickle.dump(self.existing, file)
+
+    def loads(self) -> bool:
+        """
+        Load all simplemodels from a pickle
+        """
+        if not (self.path / self.save_file).exists():
+            return False
+        with open(self.path / self.save_file, 'rb') as file:
+            self.existing = pickle.load(file)
+        return True
 
 class SimpleModel():
     def __init__(self,
                  name: str,
                  X: DataFrame,
-                 Y: str,
+                 Y: DataFrame,
                  labels: list,
                  model,
                  features:list,
@@ -558,8 +721,10 @@ class SimpleModel():
         self.model = model
         self.model_params = model_params
         self.proba = self.compute_proba(model, X)
-        self.precision = self.compute_precision(model, X, Y, labels)
         self.standardize = standardize
+        self.statistics = self.compute_statistics(model, X, Y, labels)
+        self.cv10 = self.compute_10cv(model, X, Y)
+        print(self.statistics)
 
     def json(self):
         """
@@ -574,12 +739,17 @@ class SimpleModel():
 
     def compute_proba(self, model, X):
         """
-        Compute proba
+        Compute proba + entropy
         """
         proba = model.predict_proba(X)
         proba = pd.DataFrame(proba, 
                              columns = model.classes_,
                              index=X.index)
+        proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
+
+        # Calculate label
+        proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
+
         return proba
     
     def compute_precision(self, model, X, Y, labels):
@@ -593,6 +763,49 @@ class SimpleModel():
                                     pos_label=labels[0])
         return precision
 
+    def compute_statistics(self, model, X, Y, labels):
+        """
+        Compute statistics simplemodel
+        """
+        f = Y.notna()
+        X = X[f]
+        Y = Y[f]
+        Y_pred = model.predict(X)
+        f1 = f1_score(Y, Y_pred, average=None)
+        weighted_f1 = f1_score(Y, Y_pred, average='weighted')
+        accuracy = accuracy_score(Y, Y_pred)
+        precision = precision_score(list(Y[f]), 
+                                    list(Y_pred),
+                                    pos_label=labels[0])
+        macro_f1 = f1_score(Y, Y_pred, average='macro')
+        statistics = {
+                    "f1":list(f1),
+                    "weighted_f1":weighted_f1,
+                    "macro_f1":macro_f1,
+                    "accuracy":accuracy,
+                    "precision":precision
+                    }
+        return statistics
+    
+    def compute_10cv(self, model, X, Y):
+        """
+        Compute 10-CV for simplemodel
+        TODO : check if ok
+        """
+        f = Y.notna()
+        X = X[f]
+        Y = Y[f]
+        num_folds = 10
+        kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+        predicted_labels = cross_val_predict(model, X, Y, cv=kf)
+        Y_pred = cross_val_predict(model, X, Y, cv=kf)
+        weighted_f1 = f1_score(Y, Y_pred,average = "weighted")
+        accuracy = accuracy_score(Y, Y_pred)
+        macro_f1 = f1_score(Y, Y_pred,average = "macro")
+        r = {"weighted_f1":round(weighted_f1,3), 
+             "macro_f1":round(macro_f1,3),
+             "accuracy":round(accuracy,3)}
+        return r
 
 #         self.available_models = {
 #                 #"simplebayes": {
