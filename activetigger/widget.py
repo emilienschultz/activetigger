@@ -7,6 +7,9 @@ from pathlib import Path
 import pandas as pd
 import time
 import asyncio
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import random
 
 URL_SERVER = "http://127.0.0.1:8000"
 headers = {'x-token': 'your_token'}
@@ -866,13 +869,18 @@ class Widget():
     def plot_visualisation(self):
         """
         Produce the visualisation for the projection
+        TODO : choice of colors + legend
         """
         df = self.projection_data
         f = go.FigureWidget([go.Scatter(x=df["0"], y=df["1"], mode='markers', 
                                     customdata = df.index)])
         scatter = f.data[0]
-        colors = ['#a3a7e4'] * len(df) # take into account if already annotated
-        scatter.marker.color = colors
+ 
+        def random_color_generator():
+            color = random.choice(list(mcolors.CSS4_COLORS.keys()))
+            return color
+        colors_map = {i:random_color_generator() for i in df["labels"].unique()}
+        scatter.marker.color = list(df["labels"].replace(colors_map))
         scatter.marker.size = [5] * 100
         f.layout.hovermode = 'closest'
         def update_point(trace, points, selector):
@@ -885,6 +893,20 @@ class Widget():
         scatter.on_click(update_point)
         self.visualization.children = [f]
         #return f
+
+    def display_bert_statistics(self, name):
+        params = {"project_name":self.project_name,
+                            "name":name}
+        r = self._get("/models/bert", params = params)
+        if "error" in r:
+            print(r)
+            return 
+        print(r)
+        loss = pd.DataFrame(r["loss"])
+        with self.bert_statistics:
+            fig, ax = plt.subplots(figsize=(3,2))
+            fig = loss.plot(ax = ax)
+            plt.show(fig)
     
     def get_projection_data(self):
         """
@@ -892,7 +914,8 @@ class Widget():
         """
         params = {
                 "project_name":self.project_name, 
-                "user":self.user
+                "user":self.user,
+                "scheme":self.select_scheme.value
                 }
         r = self._get("/elements/projection/current",
             params = params)
@@ -1171,17 +1194,20 @@ class Widget():
 
         self.bert_status = widgets.Text(disabled=True)
         self.available_bert = widgets.Dropdown(description="Select:")
+        self.bert_statistics = widgets.Output()
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value':
                 self.new_bert_params.value = "TO IMPLEMENT"
-                # ensable the possiblity of predict (TODO : ameliorate data model)
-                predict = [i for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[0] == self.available_bert.value][0][1]
                 self.compute_prediction.disabled = True
-                if not predict:
+                if not self.state["bertmodels"]["available"][self.available_bert][1]:
                     print("prediction does not exist")
                     self.compute_prediction.disabled = False
-
+                self.display_bert_statistics(self.available_bert.value) # display summary
         self.available_bert.observe(on_change_model)
+        self.bert_summary = widgets.Accordion(children=[self.bert_statistics], 
+                                            titles=('Description',))
+
+
         self.compute_prediction = widgets.Button(description = "Compute prediction", disabled = True)
         self.compute_prediction.on_click(lambda x : print("Compute prediction to implement"))
         self.new_bert_base = widgets.Dropdown(description="Base:")
@@ -1201,12 +1227,14 @@ class Widget():
                                 self.bert_status,
                                 self.available_bert,
                                 self.compute_prediction,
+                                self.bert_summary,
                                 widgets.HTML(value="<hr>Train new bert<br>"),
                                 self.new_bert_base,
                                 self.new_bert_params,
                                 self.compute_new_bert,
                                 widgets.HTML(value="<hr>Save current model<br>"),
-                                widgets.HBox([self.bert_name, self.record_bert])
+                                widgets.HBox([self.bert_name, self.record_bert]),
+                        
                              ])
 
         #--------------

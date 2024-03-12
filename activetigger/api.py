@@ -60,7 +60,7 @@ async def update():
             print("Adding fasttext embeddings")
             logging.info("FASTTEXT embeddings added to project")
         
-        # computing projection
+        # joining projection process
         for u in project.features.available_projections:
             if ("future" in project.features.available_projections[u]):
                 if project.features.available_projections[u]["future"].done():
@@ -245,14 +245,22 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(project: Annotated[Project, Depends(get_project)],
-                         user:str):
+                         user:str, 
+                         scheme:str|None):
     """
     Get projection data if computed
     """
     if user in project.features.available_projections:
         if not "data" in project.features.available_projections[user]:
             return {"status":"Still computing"}
-        return {"data":project.features.available_projections[user]["data"].to_dict()}
+        if scheme is None:
+            return {"data":project.features.available_projections[user]["data"].fillna("NA").to_dict()}
+        else: # add the labels of the scheme
+            data = project.features.available_projections[user]["data"]
+            df = project.schemes.get_scheme_data(scheme)
+            data["labels"] = df["labels"]
+            return {"data":data.fillna("NA").to_dict()}
+
     return {"error":"There is no projection available"}
 
 
@@ -511,11 +519,12 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
 async def get_bert(project: Annotated[Project, Depends(get_project)],
-                   scheme:str):
+                   name:str):
     """
-    bert parameters
+    Bert parameters
     """
-    return {"error":"Pas implémenté"}#project.bertmodel.get_params()
+    b = project.bertmodels.get(name, lazy= True)
+    return b.statistics()
 
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(project: Annotated[Project, Depends(get_project)],

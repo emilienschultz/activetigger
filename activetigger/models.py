@@ -41,6 +41,7 @@ class BertModel():
         self.base_model:str|None = base_model
         self.tokenizer = None
         self.model = None
+        self.log_history = None
         self.params:dict = params
         self.status:str = "initializing"
         self.pred:DataFrame|None = None
@@ -49,9 +50,11 @@ class BertModel():
     def __repr__(self) -> str:
         return f"{self.name} - {self.base_model}"
 
-    def load(self):
+    def load(self, lazy = False):
         """
         Load trained model from files
+        - either lazy (only parameters)
+        - or complete (the weights of the model)
         """
         if not (self.path / "config.json").exists():
             raise FileNotFoundError("model not defined")
@@ -59,13 +62,29 @@ class BertModel():
         with open(self.path / "config.json", "r") as jsonfile:
             modeltype = json.load(jsonfile)["_name_or_path"]
 
-        self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
-        self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
-        self.status = "loaded"
+        if lazy:
+            self.status = "lazy"
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
+            self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
+            self.status = "loaded"
+
+        with open(self.path / "log_history.txt", "r") as f:
+            self.log_history = json.load(f)
 
         # Load prediction if available
         if (self.path / "predict.csv").exists():
-            self.pred = pd.read_csv(self.path / "predict.csv")
+            self.pred = pd.read_csv(self.path / "predict.csv")   
+
+    def statistics(self):
+        """
+        Compute statistics
+        """
+        log = self.log_history
+        loss = pd.DataFrame([[log[2*i]["epoch"],log[2*i]["loss"],log[2*i+1]["eval_loss"]] for i in range(0,int((len(log)-1)/2))],
+             columns = ["epoch", "loss", "eval_loss"]).set_index("epoch")
+        r = {"loss":loss.to_dict()}
+        return r
 
     def predict(self, 
                 df:DataFrame, 
@@ -371,6 +390,7 @@ class BertModels():
         
         training_args = TrainingArguments(
             output_dir = current_path / "train",
+            logging_dir = current_path / 'logs',
             learning_rate=params["lrate"],
             weight_decay=params["wdecay"],
             num_train_epochs=params["epochs"],
@@ -410,6 +430,9 @@ class BertModels():
         shutil.rmtree(current_path / "train")
         os.rename(log_path, current_path / "finished")
 
+        with open(current_path  / "log_history.txt", "w") as f:
+            json.dump(trainer.state.log_history, f)
+
         return True
     
     def stop_user_training(self,user:str):
@@ -443,16 +466,16 @@ class BertModels():
         #shutil.copytree(self.path / former_name, self.path / new_name)
         return {"success":"model renamed"}
             
-    def get(self, name:str)-> BertModel|None:
+    def get(self, name:str, lazy = False)-> BertModel|None:
         """
-        Get a model (load it if available)
+        Get a model
         """
         if not (self.path / name).exists():
             return None
         if (self.path / name / "status.log").exists():
             return None    
         b = BertModel(name, self.path / name)
-        b.load()
+        b.load(lazy=lazy)
         return b
     
     def update(self) -> bool:
