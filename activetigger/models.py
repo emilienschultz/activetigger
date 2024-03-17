@@ -15,7 +15,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import precision_score, f1_score, accuracy_score
+from sklearn.metrics import precision_score, f1_score, accuracy_score, recall_score
 from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
 from multiprocessing import Process
 from datetime import datetime
@@ -34,17 +34,18 @@ class BertModel():
     def __init__(self, 
                  name:str, 
                  path:Path, 
-                 base_model:str|None = None, 
-                 params:dict = {}) -> None:
+                 base_model:str|None = None,
+                 params:dict|None = None) -> None:
         self.name:str = name
         self.path:Path = path
+        self.params:dict|None = params
         self.base_model:str|None = base_model
         self.tokenizer = None
         self.model = None
         self.log_history = None
-        self.params:dict = params
         self.status:str = "initializing"
         self.pred:DataFrame|None = None
+        self.data:DataFrame|None = None
         self.timestamp:datetime = datetime.now()
 
     def __repr__(self) -> str:
@@ -58,37 +59,73 @@ class BertModel():
         """
         if not (self.path / "config.json").exists():
             raise FileNotFoundError("model not defined")
+        
+        # Load parameters
+        with open(self.path / "parameters.json", "r") as jsonfile:
+            self.params = json.load(jsonfile)
 
-        with open(self.path / "config.json", "r") as jsonfile:
-            modeltype = json.load(jsonfile)["_name_or_path"]
+        # Load training data
+        self.data = pd.read_parquet(self.path / "training_data.parquet")
 
-        if lazy:
-            self.status = "lazy"
-        else:
-            self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
-            self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
-            self.status = "loaded"
-
+        # Load train history
         with open(self.path / "log_history.txt", "r") as f:
             self.log_history = json.load(f)
 
         # Load prediction if available
-        if (self.path / "predict.csv").exists():
-            self.pred = pd.read_csv(self.path / "predict.csv")   
+        if (self.path / "predict.parquet").exists():
+            self.pred = pd.read_parquet(self.path / "predict.parquet")
 
-    def statistics(self):
+        # Only load the model if not lazy mode
+        if lazy:
+            self.status = "lazy"
+        else:
+            with open(self.path / "config.json", "r") as jsonfile:
+                modeltype = json.load(jsonfile)["_name_or_path"]
+            self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
+            self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
+            self.status = "loaded"
+
+    def informations(self):
         """
         Compute statistics
+        - load statistics if computed
+        - or compute them if possible (need prediction)
+        - or just give training informations
         """
+        if (self.path / "statistics.json").exists():
+            with open(self.path / "statistics.json","r") as f:
+                r = json.load(f)
+            return r
+
         log = self.log_history
         loss = pd.DataFrame([[log[2*i]["epoch"],log[2*i]["loss"],log[2*i+1]["eval_loss"]] for i in range(0,int((len(log)-1)/2))],
              columns = ["epoch", "loss", "eval_loss"]).set_index("epoch")
-        r = {"loss":loss.to_dict()}
+        r = {"loss":loss.to_dict(),
+             "parameters":self.params}
+        
+        if not self.pred is None:
+            df = self.data.copy()
+            df["prediction"] = self.pred["prediction"]
+            Y_pred = df["prediction"]
+            Y = df["labels"]
+            f = df.apply(lambda x : x["prediction"] != x["labels"], axis=1)
+            r["f1_micro"] = f1_score(Y, Y_pred, average = "micro"),
+            r["f1_macro"] = f1_score(Y, Y_pred, average = "macro"),
+            r["f1_weighted"] = f1_score(Y, Y_pred, average = "weighted"),
+            r["f1"] = list(f1_score(Y, Y_pred, average = None)),
+            r["precision"] = list(precision_score(list(Y), list(Y_pred), average=None)),
+            r["recall"] = list(recall_score(list(Y), list(Y_pred), average=None)),
+            r["accuracy"] = accuracy_score(Y, Y_pred),
+            r["false_prediction"] = df[f][["text","labels","prediction"]].to_dict()
+
+            with open(self.path / "statistics.json","w") as f:
+                json.dump(r,f)
+        
         return r
 
     def predict(self, 
-                df:DataFrame, 
-                col_text:str, 
+                df:DataFrame,
+                col_text:str,
                 gpu:bool = False, 
                 batch:int = 128):
         """
@@ -128,7 +165,8 @@ class BertModel():
 
         # To DataFrame
         pred = pd.DataFrame(np.concatenate(predictions), 
-                            columns=sorted(list(self.model.config.label2id.keys())))
+                            columns=sorted(list(self.model.config.label2id.keys())),
+                            index = df.index)
 
         # Calculate entropy
         entropy = -1 * (pred * np.log(pred)).sum(axis=1)
@@ -137,8 +175,8 @@ class BertModel():
         # Calculate label
         pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
 
-        # write the file
-        pred.to_csv(self.path / "predict.csv")
+        # Write the file
+        pred.to_parquet(self.path / "predict.parquet")
 
         return pred
 
@@ -165,8 +203,17 @@ class BertModels():
                         "adapt":True
                     }
         self.base_models = [
+                        "camembert/camembert-base",
+                        "camembert/camembert-large",
+                        "flaubert/flaubert_small_cased",
+                        "flaubert/flaubert_base_cased",
+                        "flaubert/flaubert_large_cased",
+                        "distilbert-base-cased",
+                        "roberta-base",
+                        "microsoft/deberta-base",
+                        "distilbert-base-multilingual-cased",
                         "microsoft/Multilingual-MiniLM-L12-H384",
-                        "almanach/camembert-base"
+                        "xlm-roberta-base",
                         ]
         
         self.path:Path = Path(path) / "bert"
@@ -181,10 +228,9 @@ class BertModels():
 
     def trained(self) -> dict:
         """
-        Trained bert
+        Trained bert by scheme in the project
         + if prediction available
         + compression if available / launch it
-        TODO : better data structure
         """
         r:dict = {}
         if self.path.exists(): #if bert models have been trained
@@ -195,7 +241,7 @@ class BertModels():
                 predict = False
                 compressed = False
                 # test if prediction available
-                if (self.path / i / "predict.csv").exists(): 
+                if (self.path / i / "predict.parquet").exists(): 
                     predict = True
                 # test if compression available
                 if (self.path / f"{i}.tar.gz").exists():
@@ -204,8 +250,8 @@ class BertModels():
                     self.start_compression(i)
                 scheme = i.split("__")[-1] #scheme after __
                 if not scheme in r: 
-                    r[scheme] = []
-                r[scheme].append((i,predict, compressed, "parameters to add"))
+                    r[scheme] = {}
+                r[scheme][i] = [predict, compressed]
         return r
     
     def training(self) -> dict:
@@ -309,20 +355,21 @@ class BertModels():
                base_model:str,
                params:dict,
                test_size:float) -> bool:
+        
         """
-    Train a bert model and write it
+        Train a bert model and write it
 
-    Parameters:
-    ----------
-    path (Path): path to save the files
-    name (str): name of the model
-    df (DataFrame): labelled data
-    col_text (str): text column
-    col_label (str): label column
-    model (str): model to use
-    params (dict) : training parameters
-    test_size (dict): train/test distribution
-    """
+        Parameters:
+        ----------
+        path (Path): path to save the files
+        name (str): name of the model
+        df (DataFrame): labelled data
+        col_text (str): text column
+        col_label (str): label column
+        model (str): model to use
+        params (dict) : training parameters
+        test_size (dict): train/test distribution
+        """
 
         # pour le moment fichier status.log existe tant que l'entrainement est en cours
 
@@ -350,12 +397,11 @@ class BertModels():
             df = df[df[col_text].notnull()]
             logger.info(f"Missing texts - reducing training data to {len(df)}")
 
-        print(df)
-
         # formatting data
         labels = sorted(list(df[col_label].dropna().unique())) # alphabetical order
         label2id = {j:i for i,j in enumerate(labels)}
         id2label = {i:j for i,j in enumerate(labels)}
+        training_data = df[[col_text,col_label]]
         df["labels"] = df[col_label].copy().replace(label2id)
         df["text"] = df[col_text]
         df = datasets.Dataset.from_pandas(df[["text", "labels"]])
@@ -427,10 +473,20 @@ class BertModels():
         bert.save_pretrained(current_path)
         logger.info(f"Model trained {current_path}")
 
+        # save training data
+        training_data.to_parquet(current_path / "training_data.parquet")
+
+        # save parameters
+        params["test_size"] = test_size
+        params["base_model"] = base_model
+        with open(current_path / "parameters.json","w") as f:
+            json.dump(params, f)
+
         # remove intermediate steps and logs if succeed
         shutil.rmtree(current_path / "train")
         os.rename(log_path, current_path / "finished")
 
+        # save log history of the training for statistics
         with open(current_path  / "log_history.txt", "w") as f:
             json.dump(trainer.state.log_history, f)
 

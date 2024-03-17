@@ -393,7 +393,8 @@ class Widget():
 
         # display saved bertmodels for the current scheme (temporary start with _)
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            self.available_bert.options = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
+            #self.available_bert.options = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
+            self.available_bert.options = self.state["bertmodels"]["available"][self.select_scheme.value].keys()
         self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"], indent=2)
 
         # display status
@@ -684,6 +685,22 @@ class Widget():
         self.compute_new_bert.disabled = False
         return True
     
+    def _start_bert_prediction(self, model_name:str):
+        """
+        Start prediction
+        """
+        params = {"project_name":self.project_name,
+                  "user":self.user,
+                  "model_name":model_name
+                  }
+        r = self._post("/models/bert/predict", 
+                params = params)
+        if "error" in r:
+            print(r)
+        print(r)
+        self.compute_prediction.disabled = True
+        return True
+
     def stop_bertmodel(self):
         """
         Stop bertmodel training
@@ -895,20 +912,29 @@ class Widget():
         self.visualization.children = [f]
         #return f
 
-    def display_bert_statistics(self, name):
+    def display_bert_informations(self, name):
+        """
+        Display statistics for a BERT Model
+        """
         params = {"project_name":self.project_name,
                             "name":name}
         r = self._get("/models/bert", params = params)
         if "error" in r:
             print(r)
             return 
-        print(r)
         loss = pd.DataFrame(r["loss"])
         with self.bert_statistics:
             clear_output(wait=True)
+            print(json.dumps(r["parameters"],indent=2))
             fig, ax = plt.subplots(figsize=(3,2))
             fig = loss.plot(ax = ax)
             plt.show(fig)
+            if "f1" in r:
+                print("f1:",r["f1"])
+                print("precision:",r["precision"])
+                print("recall:",r["recall"])
+            else:
+                print("Compute prediction for scores")
     
     def get_projection_data(self):
         """
@@ -1199,23 +1225,22 @@ class Widget():
         self.bert_statistics = widgets.Output()
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value':
-#                self.new_bert_params.value = "TO IMPLEMENT" #self.state["bertmodels"]["available"][self.available_bert.value][-1]
-                self.compute_prediction.disabled = True
-# CHANGE STRUCTURE
-#                if not self.state["bertmodels"]["available"][self.available_bert.value][1]:
-#                    print("prediction does not exist")
-#                    self.compute_prediction.disabled = False
-                self.display_bert_statistics(self.available_bert.value) # display summary
+                # available predict button
+                if self.state["bertmodels"]["available"][self.select_scheme.value][self.available_bert.value][0]:
+                    self.compute_prediction.disabled = True
+                else:
+                    self.compute_prediction.disabled = False
+                # get information about the model
+                self.display_bert_informations(self.available_bert.value)
         self.available_bert.observe(on_change_model)
         self.bert_summary = widgets.Accordion(children=[self.bert_statistics], 
                                             titles=('Description',))
 
         self.compute_prediction = widgets.Button(description = "Compute prediction", disabled = True)
-        self.compute_prediction.on_click(lambda x : print("Compute prediction to implement"))
+        self.compute_prediction.on_click(lambda x : self._start_bert_prediction(self.available_bert.value))
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
         self.compute_new_bert = widgets.VBox()
-
         self.bert_name = widgets.Text(description="Name:", layout={'width': '150px'}, value="Name")
         self.record_bert = widgets.Button(description = "Save Bert")
         self.record_bert.on_click(lambda x : self.save_bert(self.available_bert.value, 
@@ -1227,8 +1252,7 @@ class Widget():
         # Group in tab
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
-                                self.available_bert,
-                                self.compute_prediction,
+                                widgets.HBox([self.available_bert,self.compute_prediction]),
                                 self.bert_summary,
                                 widgets.HTML(value="<hr>Train new bert<br>"),
                                 self.new_bert_base,
@@ -1303,21 +1327,23 @@ class Widget():
 
         # display global widget
         self.output = widgets.Tab([tab_schemes,
+                                   tab_features,
                                    tab_annotate,
                                    tab_description,
                                    tab_data,
-                                   tab_features,
                                    tab_simplemodel,
                                    tab_bertmodel,
                                    tab_export],
-                                  titles = ["Schemes",
+                                  titles = [
+                                            "Schemes",
+                                            "Features",
                                             "Annotate",
                                             "Description",
                                             "Data",
-                                            "Features",
                                             "SimpleModels",
                                             "BertModels",
-                                            "Export"])
+                                            "Export"
+                                            ])
         
         # Update everything on tab change
         def on_tab_selected(change):

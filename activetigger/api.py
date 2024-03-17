@@ -521,10 +521,14 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
 async def get_bert(project: Annotated[Project, Depends(get_project)],
                    name:str):
     """
-    Bert parameters
+    Bert parameters and statistics
     """
     b = project.bertmodels.get(name, lazy= True)
-    return b.statistics()
+    if b is None:
+        return {"error":"Bert model does not exist"}
+    r =  b.informations()
+    print(r)
+    return r
 
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(project: Annotated[Project, Depends(get_project)],
@@ -536,7 +540,6 @@ async def predict(project: Annotated[Project, Depends(get_project)],
     """
     print("start predicting")
     df = project.content[["text"]]
-    print(df[0:10])
     r = project.bertmodels.start_predicting_process(name = model_name,
                                                     df = df,
                                                     col_text = "text",
@@ -558,7 +561,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 name = bert.name,
                                 user = bert.user,
                                 scheme = bert.scheme,
-                                df=df,
+                                df = df,
                                 col_text=df.columns[0],
                                 col_label=df.columns[1],
                                 base_model=bert.base_model,

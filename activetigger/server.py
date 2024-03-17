@@ -814,6 +814,7 @@ class Schemes(Session):
         results = cursor.fetchall()
         conn.close()
         df = pd.DataFrame(results, columns =["id","labels","timestamp"]).set_index("id")
+        df.index = [str(i) for i in df.index]
         if complete: # all the elements
             return self.content.join(df)
         return df
