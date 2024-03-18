@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.manifold import TSNE
 import umap
+import bcrypt
 
 
 def get_hash(text:str):

@@ -14,7 +14,6 @@ from IPython.display import display, clear_output
 import distinctipy
 
 URL_SERVER = "http://127.0.0.1:8000"
-headers = {'x-token': 'your_token'}
 
 class Widget():
     """
@@ -25,7 +24,8 @@ class Widget():
         Define general variables
         """
         self.update_time:int = 2
-        self.user:str = "local"
+        self.headers:dict|None = None # authentification with the server
+        self.user:str|None = None
         self.project_name: None|str = None
         self.state:dict = {} # global state of the server
         self.current_element:dict|None = None # element to annotate
@@ -50,7 +50,7 @@ class Widget():
                     json = json_data,
                     data = data,
                     files=files,
-                    headers=headers)
+                    headers=self.headers)
         return json.loads(r.content)
     
     def _get(self,
@@ -65,10 +65,32 @@ class Widget():
         r = rq.get(url, 
                     params = params,
                     data = data,
-                    headers=headers)
+                    headers=self.headers)
         if is_json:
             return json.loads(r.content)
         return r.content
+    
+    def _connect_user(self, user:str, password:str):
+        """
+        Connect account and get auth token
+        """
+        form = {"username":user,
+                "password":password}
+        r = self._post("/token", data = form)
+        if not "access_token" in r:
+            print(r)
+            return None
+
+        # Update widget configuration
+        self.headers = {"Authorization": f"Bearer {r['access_token']}",
+           "username":user}
+        self.user = user
+
+        # Disable connecting options
+        self.existing_users.disabled = True
+        self.password.disabled = True
+        self.connect_user.disabled = True
+        return None
 
     def start(self) -> None:
         """
@@ -83,10 +105,14 @@ class Widget():
         img_at = widgets.Image(value=img, format='png', width=50, height=50)
 
         # Users
-        existing_users = widgets.Dropdown(description = "User:", 
+        self.existing_users = widgets.Dropdown(description = "User:", 
                                           options = existing["users"],
                                           layout={'width': '200px'})
-        password = widgets.Text(description = "Password:", layout={'width': '200px'})
+        self.password = widgets.Text(description = "Password:", layout={'width': '200px'})
+        self.connect_user = widgets.Button(description="Connect")
+        self.connect_user.style.button_color = 'lightgreen'
+        self.connect_user.on_click(lambda x : self._connect_user(user = self.existing_users.value,
+                                                 password = self.password.value))
 
         # Existing projects
         existing_projects = widgets.Dropdown(
@@ -96,7 +122,7 @@ class Widget():
             disabled=False)
 
         # Start existing project
-        start = widgets.Button(description="Connect")
+        start = widgets.Button(description="Launch")
         start.style.button_color = 'lightgreen'
         def start_project(b):
             self.project_name = existing_projects.value
@@ -114,7 +140,7 @@ class Widget():
 
         # Display
         clear_output()
-        self.output = widgets.VBox([widgets.HBox([img_at, existing_users, password]),
+        self.output = widgets.VBox([widgets.HBox([img_at, self.existing_users, self.password, self.connect_user]),
                                     widgets.HBox([existing_projects, start, delete, create]) 
                                     ])
         display(self.output)

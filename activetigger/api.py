@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Query, Form, Request
+from fastapi import FastAPI, Depends, HTTPException,status, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
-from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User
+from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, TokenData, Token
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
@@ -12,6 +12,8 @@ from multiprocessing import Process
 import time
 import pandas as pd
 import os
+from jose import JWTError
+from datetime import datetime, timedelta, timezone
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -112,9 +114,13 @@ async def get_project(project_name: str) -> ProjectModel:
         server.start_project(project_name)            
         return server.projects[project_name]
 
-# TODO : gérer l'authentification de l'utilisateur
-async def verified_user(x_token: Annotated[str, Header()]):
-    # Cookie ou header ?
+async def verified_user(Authorization: Annotated[str, Header()],
+                        username: Annotated[str, Header()]):
+    """
+    Test if the user is a user authentified
+    TODO : a real test here
+    """
+    #print(f"{username} does an action")
     if False:
         raise HTTPException(status_code=400, detail="Invalid user")    
 
@@ -125,24 +131,48 @@ async def verified_user(x_token: Annotated[str, Header()]):
 # Users
 #------
 
-def decode_token(token):
-    return User(username = "test")
-
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    user = decode_token(token)
+    """
+    Get current user from the token in headers
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = server.decode_access_token(token)
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = server.get_user(name=username)
+    if user is None:
+        raise credentials_exception
     return user
 
-@app.get("/users/me")
+@app.post("/token")
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+    """
+    Route to create token for user from form data
+    """
+    user = server.authenticate_user(form_data.username, form_data.password)
+    if "error" in user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = server.create_access_token(
+        data={"sub": user.username}, 
+        expires_min=60)
+    return Token(access_token=access_token, token_type="bearer")
+
+@app.get("/users/me/", response_model=User)
 async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user
-
-@app.get("/users/auth")
-async def user_auth(user:str, password:str):
-    """
-    Auth user
-    """
-    r = server.user_auth(user, password)
-    return r
 
 # Projects management
 #--------------------
@@ -173,15 +203,14 @@ async def info_project(project_name:str|None = None):
     """
     return {project_name:server.db_get_project(project_name)}
 
-@app.get("/projects", dependencies=[Depends(verified_user)])
-async def info_all_projects():
-    """
-    Get all available projects DEPRECATED
-    """
-    r = {"existing projects":server.existing_projects()}
+@app.get("/projects")
+async def info_all_projects(current_user: Annotated[User, Depends(get_current_user)]):
+
+    r = {"existing projects":server.existing_projects(),
+         "user":current_user}
     return r
 
-@app.get("/server", dependencies=[Depends(verified_user)])
+@app.get("/server")
 async def info_server():
     """
     Get info server

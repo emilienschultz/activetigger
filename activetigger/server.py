@@ -9,19 +9,19 @@ import pyarrow.parquet as pq # type: ignore
 import json
 import functions
 from models import BertModels, SimpleModels
-from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel
+from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
 import shutil
 import logging
-import umap
+from datetime import datetime, timedelta, timezone
+from jose import JWTError, jwt
 from sklearn.preprocessing import StandardScaler
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
-bcrypt
 
 class Session():
     """
@@ -245,7 +245,7 @@ class Server(Session):
         conn.close()
         return {"success":"User added to the database"}
     
-    def user_auth(self, name, password):
+    def get_user(self, name):
         """
         Authentificate user
         """
@@ -257,10 +257,30 @@ class Server(Session):
         cursor.execute(query, (name,))
         user = cursor.fetchone()
         print(user)
-        if not user[3] == password:
-            return {"error":"Password doesn't match"}
+        u = UserInDB(username = name, hashed_password = user[3])
         conn.close()
-        return {"success":"User authentificated"}
+        return u
+
+    def authenticate_user(self, username: str, password: str):
+        user = self.get_user(username)
+        if "error" in user:
+            return user
+        if not functions.compare_to_hash(password, user.hashed_password):
+            return {"error":"Wrong password"}
+        return user
+    
+    def create_access_token(self, data: dict, expires_min: int  = 60):
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, 
+                                 self.SECRET_KEY, 
+                                 algorithm=self.ALGORITHM)
+        return encoded_jwt
+    
+    def decode_access_token(self, token:str):
+        payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+        return payload
 
     def start_project(self, project_name:str) -> bool:
         """
