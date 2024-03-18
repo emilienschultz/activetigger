@@ -11,6 +11,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import random
 from IPython.display import display, clear_output
+import distinctipy
 
 URL_SERVER = "http://127.0.0.1:8000"
 headers = {'x-token': 'your_token'}
@@ -125,7 +126,10 @@ class Widget():
         """
         Delete existing project
         """
-        params = {"project_name": project_name}
+        params = {
+                "project_name": project_name,
+                "user":self.user
+                }  
         r = self._post(route = "/projects/delete", 
                        params = params)
         self.start()
@@ -761,7 +765,8 @@ class Widget():
         Delete existing feature
         """
         r = self._post(f"/features/delete/{feature_name}", 
-                    params = {"project_name":self.project_name})
+                    params = {"project_name":self.project_name,
+                              "user":self.user})
         self.update_tab_features()
         return True
     
@@ -777,7 +782,8 @@ class Widget():
         data = {
             "project_name":self.project_name,
             "name":name,
-            "value":value
+            "value":value,
+            "user":self.user
             }
         
         r = self._post("/features/add/regex",
@@ -887,30 +893,28 @@ class Widget():
     def plot_visualisation(self):
         """
         Produce the visualisation for the projection
-        TODO : choice of colors + legend
+        TODO : legend ; display text
         """
         df = self.projection_data
-        f = go.FigureWidget([go.Scatter(x=df["0"], y=df["1"], mode='markers', 
-                                    customdata = df.index)])
+        f = go.FigureWidget([go.Scatter(x=df["0"], 
+                                        y=df["1"], 
+                                        mode='markers', 
+                                        customdata = df.index,
+                                        showlegend = False)])
         scatter = f.data[0]
- 
-        def random_color_generator():
-            color = random.choice(list(mcolors.CSS4_COLORS.keys()))
-            return color
-        colors_map = {i:random_color_generator() for i in df["labels"].unique()}
-        scatter.marker.color = list(df["labels"].replace(colors_map))
+        labels = list(df["labels"].unique())
+        colors = distinctipy.get_colors(len(labels)) 
+        colors_map = {labels[i]:colors[i] for i in range(0, len(labels))}
+        scatter.marker.color = [f"rgba({colors_map[i][0]}, {colors_map[i][1]}, {colors_map[i][2]}, 0.5)" for i in list(df["labels"])]
         scatter.marker.size = [5] * 100
         f.layout.hovermode = 'closest'
         def update_point(trace, points, selector):
-            #print(points.xs, points.ys)
-            # SELECT SPECIFIC TEXT
+            # select specific text
             element_id = trace.customdata[points.point_inds][0]
             print(element_id)
             self._display_element(element_id)
-            #print(element_id)
         scatter.on_click(update_point)
         self.visualization.children = [f]
-        #return f
 
     def display_bert_informations(self, name):
         """

@@ -59,10 +59,10 @@ class Server(Session):
             logging.info("Creating database")
             self.create_db()
 
+
     def __del__(self): 
         print("Closing the server")
-        self.executor.shutdown()
-
+            
     def create_db(self) -> None:
         """
         Initialize the database
@@ -124,10 +124,9 @@ class Server(Session):
                 user TEXT,
                 key TEXT,
                 projects TEXT
-                  )
+                )
         '''
         cursor.execute(create_table_sql)
-
 
         # Authorizations
         create_table_sql = '''
@@ -139,17 +138,34 @@ class Server(Session):
         '''
         cursor.execute(create_table_sql)
 
-        # Log connexion
+        # Logs
         create_table_sql = '''
-            CREATE TABLE IF NOT EXISTS connections (
+            CREATE TABLE IF NOT EXISTS logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 user TEXT,
-                projects TEXT
-                  )
+                project TEXT,
+                action TEXT,
+                connect TEXT
+                )
         '''
         cursor.execute(create_table_sql)
+        conn.commit()
+        conn.close()
+        return None
 
+    def log_action(self, 
+                   user:str, 
+                   action:str, 
+                   project:str = "general",
+                   connect = "not implemented"):
+        """
+        Log action in the database
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "INSERT INTO logs (user, project, action, connect) VALUES (?, ?, ?, ?)"
+        cursor.execute(query, (user, project, action, connect))
         conn.commit()
         conn.close()
         return None
@@ -433,7 +449,7 @@ class Project(Session):
                             model_params=simplemodel.params
                             )
         return {"success":"new simplemodel"}
-    
+     
     def get_next(self,
                  scheme:str,
                  selection:str = "deterministic",
@@ -445,21 +461,32 @@ class Project(Session):
         Get next item
         Related to a specific scheme
         TODO : add lock feature
-        TODO : add frame
         """
 
-        # Select the sample 
+        # select the current state of annotation
         df = self.schemes.get_scheme_data(scheme, complete=True)
 
+        # build filters regarding the selection mode
         f = df["labels"].apply(lambda x : True)
         if sample == "untagged":
             f = df["labels"].isnull()
         if sample == "tagged":
             f = df["labels"].notnull()
 
+        # manage frame selection (if projection, only in the box)
+        if user in self.features.available_projections:
+            if "data" in self.features.available_projections[user]:
+                projection = self.features.available_projections[user]["data"]
+                f_frame = (projection[0] > frame[0]) & (projection[0] < frame[2]) & (projection[1] > frame[1]) & (projection[1] < frame[3])
+                f = f & f_frame
+        
         val = ""
 
-        # Type of selection
+        # test if there is at least one element available
+        if sum(f) == 0:
+            return {"error":"No element available"}
+
+        # select type of selection
         if selection == "deterministic": # next row
             element_id = df[f].index[0]
         if selection == "random": # random row
@@ -492,19 +519,16 @@ class Project(Session):
             predict = {"label":predicted_label, 
                        "proba":predicted_proba}
 
-        # TODO : AVOID NONE VALUE IN THE OUTPUT
-
         element =  {
             "element_id":element_id,
             "text":self.content.fillna("NA").loc[element_id,self.params.col_text],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":selection,
             "info":str(val),
-            "predict":predict
+            "predict":predict,
+            "frame":frame
                 }
         
-        print(self.content.loc[element_id])
-
         return element
     
     def get_element(self,element_id):
@@ -687,6 +711,7 @@ class Features(Session):
                             "tsne":{"n_components":2,  "learning_rate":'auto', "init":'random', "perplexity":3}
                             }
         self.available_projections:dict = {}
+
 
     def __repr__(self) -> str:
         return f"Available features : {self.map}"

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
 from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel
@@ -10,29 +11,38 @@ from multiprocessing import Process
 import time
 import pandas as pd
 import os
-import concurrent.futures
-import json
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-# à terme toute demande de l'app aura les informations de la connexion
-# nom de l'utilisateur
-# accès autoris
-# projet connecté
+
+# General comments
+# - all post are logged
+
+# TODO
+# - user authentification
+# - user authorization
 # Passer l'utilisateur en cookie lors de la connexion ?  https://www.tutorialspoint.com/fastapi/fastapi_cookie_parameters.htm
 # unwrapping pydandic object  UserInDB(**user_dict)
-# untiliser l'héritage de class & le filtrage
 
 
 #######
 # API #
 #######
 
+# start the backend server
 server = Server()
-app = FastAPI()
+
+# start the app
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Active Tigger starting")
+    yield
+    print("Active Tigger closing")
+    server.executor.shutdown(cancel_futures=True, wait = False) #clean async multiprocess
+app = FastAPI(lifespan=lifespan)
 
 # middleware to update elements on events
 async def update():
@@ -42,7 +52,6 @@ async def update():
     print(f"Updated Value at {time.strftime('%H:%M:%S')}")
     for p in server.projects:
         project = server.projects[p]
-
         # computing embeddings
         if (project.params.dir / "sbert.parquet").exists():
             df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data TODO : bug potentiel lié à la temporalité
@@ -185,12 +194,12 @@ async def new_project(
         "col_label":col_label,
         "cols_context":cols_context
         }
+    
     params_out = params_in.copy()
     for i in params_in:
         if params_in[i] is None:
             del params_out[i]
 
-    print(params_out)
     project = ProjectModel(**params_out)
 
     # For the moment, only csv
@@ -203,16 +212,20 @@ async def new_project(
 
     project = server.create_project(project, file)
 
+    # log action
+    server.log_action(user, "create project", params_in["project_name"])
+
     return project
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
-async def delete_project(project_name:str):
+async def delete_project(project_name:str, user:str):
     """
     Delete a project
+    TODO : user authorization
     """
     r = server.delete_project(project_name)
+    server.log_action(user, "delete project", project_name)
     return r
-
 
 # Annotation management
 #--------------------
@@ -224,7 +237,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                    sample:str = "untagged",
                    user:str = "user",
                    tag:str|None = None,
-                   frame:list|None = None) -> ElementModel|Error:
+                   frame:list[float]|None = Query(None)) -> ElementModel|Error:
     """
     Get next element
     """
@@ -262,7 +275,6 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
             return {"data":data.fillna("NA").to_dict()}
 
     return {"error":"There is no projection available"}
-
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(project: Annotated[Project, Depends(get_project)],
@@ -322,6 +334,7 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
                             ):
     r = project.schemes.push_table(table = table, 
                                    user = user)
+    server.log_action(user, "update data table", project.name)
     return r
 
 
@@ -360,21 +373,24 @@ async def post_tag(action:Action,
         if annotation.tag is None:
             raise HTTPException(status_code=422, 
                 detail="Missing a tag")
-        return project.schemes.push_tag(annotation.element_id, 
-                                        annotation.tag, 
-                                        annotation.scheme,
-                                        annotation.user
-                                        )
+        r = project.schemes.push_tag(annotation.element_id, 
+                                    annotation.tag, 
+                                    annotation.scheme,
+                                    annotation.user
+                                    )
+        server.log_action(annotation.user, f"push annotation {annotation.element_id}", project.name)
+        return r
+
     if action == "delete":
         project.schemes.delete_tag(annotation.element_id, 
                                    annotation.scheme,
                                    annotation.user
                                    ) # add user deletion
+        server.log_action(annotation.user, f"delete annotation {annotation.element_id}", project.name)
         return {"success":"label deleted"}
 
 # Schemes management
 #-------------------
-
 
 @app.get("/schemes", dependencies=[Depends(verified_user)])
 async def get_schemes(project: Annotated[Project, Depends(get_project)],
@@ -398,9 +414,8 @@ async def add_label(project: Annotated[Project, Depends(get_project)],
     """
     Add a label to a scheme
     """
-    print(scheme, label, user)
     r = project.schemes.add_label(label, scheme, user)
-    print(r)
+    server.log_action(user, f"add label {label} to {scheme}", project.name)
     return r
 
 @app.post("/schemes/label/delete", dependencies=[Depends(verified_user)])
@@ -412,26 +427,32 @@ async def delete_label(project: Annotated[Project, Depends(get_project)],
     Remove a label from a scheme
     """
     r = project.schemes.delete_label(label, scheme, user)
+    server.log_action(user, f"delete label {label} to {scheme}", project.name)
     return r
 
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
 async def post_schemes(
                         action:Action,
+                        user:str,
                         project: Annotated[Project, Depends(get_project)],
                         scheme:SchemeModel
                         ):
     """
     Add, Update or Delete scheme
+    TODO : user dans schememodel, necessary ?
     """
     if action == "add":
         r = project.schemes.add_scheme(scheme)
+        server.log_action(scheme.user, f"add scheme {scheme.name}", project.name)
         return r
     if action == "delete":
         r = project.schemes.delete_scheme(scheme)
+        server.log_action(scheme.user, f"delete scheme {scheme.name}", project.name)
         return r
     if action == "update":
         r = project.schemes.update_scheme(scheme.name, scheme.tags, scheme.user)
+        server.log_action(scheme.user, f"update scheme {scheme.name}", project.name)
         return r
     
     return {"error":"wrong route"}
@@ -451,6 +472,7 @@ async def get_features(project: Annotated[Project, Depends(get_project)]):
 async def post_regex(project: Annotated[Project, Depends(get_project)],
                           regex:RegexModel):
     r = project.add_regex(regex.name,regex.value)
+    server.log_action(regex.user, f"add regex {regex.name}", project.name)
     return r
 
 @app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
@@ -471,6 +493,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           kwargs = args)
         process.start()
         project.features.training.append(name)
+        server.log_action(user, f"Compute feature sbert", project.name)
         return {"success":"computing sbert, it could take a few minutes"}
     if name == "fasttext":
         args = {
@@ -482,6 +505,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           kwargs = args)
         process.start()
         project.features.training.append(name)
+        server.log_action(user, f"Compute feature fasttext", project.name)
         return {"success":"computing fasttext, it could take a few minutes"}
 
     # Log
@@ -490,8 +514,10 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
+                     user:str,
                      name:str):
     r = project.features.delete(name)
+    server.log_action(user, f"delete feature {name}", project.name)
     return r
 
 
@@ -544,7 +570,7 @@ async def predict(project: Annotated[Project, Depends(get_project)],
                                                     df = df,
                                                     col_text = "text",
                                                     user = user)
-    print("prediction launched")
+    server.log_action(user, f"predict bert {model_name}", project.name)
     return r
 
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
@@ -568,21 +594,24 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 params = bert.params,
                                 test_size=bert.test_size
                                 )
+    server.log_action(bert.user, f"train bert {bert.name}", project.name)
     return r
 
 @app.post("/models/bert/stop", dependencies=[Depends(verified_user)])
 async def stop_bert(project: Annotated[Project, Depends(get_project)],
                      user:str):
     r = project.bertmodels.stop_user_training(user)
+    server.log_action(user, f"stop bert training", project.name)
     return r
 
 @app.post("/models/bert/rename", dependencies=[Depends(verified_user)])
 async def save_bert(project: Annotated[Project, Depends(get_project)],
                      former_name:str,
-                     new_name:str):
+                     new_name:str,
+                     user:str):
     r = project.bertmodels.rename(former_name, new_name)
+    server.log_action(user, f"rename bert model {former_name} - {new_name}", project.name)
     return r
-
 
 
 # Export elements

@@ -58,6 +58,7 @@ class ElementModel(BaseModel):
     info: Optional[str] = None
     context: Optional[dict] = None
     predict: Optional[dict] = None
+    frame: Optional[list] = None
 
 class AnnotationModel(BaseModel):
     """
@@ -85,6 +86,7 @@ class RegexModel(BaseModel):
     project_name:str
     name:str
     value:str
+    user:str
 
 class Error(BaseModel):
     error:str
