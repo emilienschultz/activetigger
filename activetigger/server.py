@@ -21,6 +21,8 @@ logging.basicConfig(filename='log.log',
                     encoding='utf-8', 
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+bcrypt
+
 class Session():
     """
     Global session parameters
@@ -38,6 +40,11 @@ class Session():
     test_file:str = "test.parquet"
     default_user:str = "user"
     n_workers = 4 #os.cpu_count()
+
+    # openssl rand -hex 32
+    SECRET_KEY = "f63aeb7426d2c8a3defc02a3e788c2f311482d6cff557c2c5bdebc71d67b507a"
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = 3600
 
 
 class Server(Session):
@@ -228,11 +235,12 @@ class Server(Session):
         # test if the user doesn't exist
         if name in self.existing_users():
             return {"error":"Username already exists"}
+        hash_pwd = functions.get_hash(password)
         # add user
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         insert_query = "INSERT INTO users (user, key, projects) VALUES (?, ?, ?)"
-        cursor.execute(insert_query, (name, password, projects))
+        cursor.execute(insert_query, (name, hash_pwd, projects))
         conn.commit()
         conn.close()
         return {"success":"User added to the database"}

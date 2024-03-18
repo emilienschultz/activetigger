@@ -51,6 +51,9 @@ class SchemesModel(BaseModel):
 class UserModel(BaseModel):
     name:str
     
+class User(BaseModel):
+    username: str
+
 class ElementModel(BaseModel):
     element_id:str
     text:Optional[str] = None

@@ -10,6 +10,25 @@ from sklearn.manifold import TSNE
 import umap
 
 
+def get_hash(text:str):
+    """
+    Hash string    
+    """
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(text.encode(), salt)
+    return hashed
+
+def compare_to_hash(text:str, hash:str|bytes):
+    """
+    Compare string to hash
+    """
+    if type(text) is str:
+        text = text.encode()
+    if type(hash) is str:
+        hash = hash.encode()
+    r = bcrypt.checkpw(text, hash)
+    return r
+
 def to_dfm(texts: Series,
            tfidf:bool=False,
            ngrams:int=1,

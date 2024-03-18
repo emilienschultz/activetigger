@@ -1,9 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
-from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel
+from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
@@ -42,7 +43,9 @@ async def lifespan(app: FastAPI):
     yield
     print("Active Tigger closing")
     server.executor.shutdown(cancel_futures=True, wait = False) #clean async multiprocess
+
 app = FastAPI(lifespan=lifespan)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # middleware to update elements on events
 async def update():
@@ -121,6 +124,17 @@ async def verified_user(x_token: Annotated[str, Header()]):
 
 # Users
 #------
+
+def decode_token(token):
+    return User(username = "test")
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    user = decode_token(token)
+    return user
+
+@app.get("/users/me")
+async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+    return current_user
 
 @app.get("/users/auth")
 async def user_auth(user:str, password:str):
