@@ -119,6 +119,16 @@ async def verified_user(x_token: Annotated[str, Header()]):
 # Routes
 # ------
 
+# Users
+#------
+
+@app.get("/users/auth")
+async def user_auth(user:str, password:str):
+    """
+    Auth user
+    """
+    r = server.user_auth(user, password)
+    return r
 
 # Projects management
 #--------------------
@@ -152,9 +162,21 @@ async def info_project(project_name:str|None = None):
 @app.get("/projects", dependencies=[Depends(verified_user)])
 async def info_all_projects():
     """
-    Get all available projects
+    Get all available projects DEPRECATED
     """
-    return {"existing projects":server.existing_projects()}
+    r = {"existing projects":server.existing_projects()}
+    return r
+
+@app.get("/server", dependencies=[Depends(verified_user)])
+async def info_server():
+    """
+    Get info server
+    """
+    r = {
+        "projects":server.existing_projects(),
+        "users":server.existing_users()
+        }
+    return r
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(

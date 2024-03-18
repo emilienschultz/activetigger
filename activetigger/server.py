@@ -59,6 +59,7 @@ class Server(Session):
             logging.info("Creating database")
             self.create_db()
 
+        self.add_user("root","root") #default user
 
     def __del__(self): 
         print("Closing the server")
@@ -208,6 +209,51 @@ class Server(Session):
         conn.close()
         return [i[0] for i in existing_project]
     
+    def existing_users(self) -> list:
+        """
+        Get existing users
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT user FROM users"
+        cursor.execute(query)
+        existing_users = cursor.fetchall()
+        conn.close()
+        return [i[0] for i in existing_users]
+    
+    def add_user(self, name:str, password:str, projects = "all"):
+        """
+        Add user to database
+        """
+        # test if the user doesn't exist
+        if name in self.existing_users():
+            return {"error":"Username already exists"}
+        # add user
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "INSERT INTO users (user, key, projects) VALUES (?, ?, ?)"
+        cursor.execute(insert_query, (name, password, projects))
+        conn.commit()
+        conn.close()
+        return {"success":"User added to the database"}
+    
+    def user_auth(self, name, password):
+        """
+        Authentificate user
+        """
+        if not name in self.existing_users():
+            return {"error":"Username doesn't exist"}
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT * FROM users WHERE user = ?"
+        cursor.execute(query, (name,))
+        user = cursor.fetchone()
+        print(user)
+        if not user[3] == password:
+            return {"error":"Password doesn't match"}
+        conn.close()
+        return {"success":"User authentificated"}
+
     def start_project(self, project_name:str) -> bool:
         """
         Load project in memory

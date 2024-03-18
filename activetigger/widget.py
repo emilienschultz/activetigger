@@ -75,16 +75,22 @@ class Widget():
         Start project
         """
         # Get existing projects
-        existing = self._get("/projects")
+        existing = self._get("/server")
 
         # Image
         image_path = "../img/active_tigger.png"
         img = open(image_path, 'rb').read()
         img_at = widgets.Image(value=img, format='png', width=50, height=50)
 
+        # Users
+        existing_users = widgets.Dropdown(description = "User:", 
+                                          options = existing["users"],
+                                          layout={'width': '200px'})
+        password = widgets.Text(description = "Password:", layout={'width': '200px'})
+
         # Existing projects
         existing_projects = widgets.Dropdown(
-            options=existing["existing projects"],
+            options=existing["projects"],
             description='Available :',
             layout={'width': '300px'},
             disabled=False)
@@ -108,11 +114,9 @@ class Widget():
 
         # Display
         clear_output()
-        self.output = widgets.HBox([img_at, 
-                                    existing_projects, 
-                                    start, 
-                                    delete, 
-                                    create])
+        self.output = widgets.VBox([widgets.HBox([img_at, existing_users, password]),
+                                    widgets.HBox([existing_projects, start, delete, create]) 
+                                    ])
         display(self.output)
 
     def get_state(self) -> dict:
