@@ -1,4 +1,5 @@
 import ipywidgets as widgets
+from ipywidgets import Layout
 from IPython.display import display, clear_output
 import plotly.graph_objects as go
 import json
@@ -36,6 +37,7 @@ class Widget():
         self.bert_training:bool = False # if bert is undertraining
         self.history:list = [] # elements annotated during this session
         self.projection_data: pd.DataFrame|str|None = None # get projection data
+        self.global_output = widgets.VBox([],layout=Layout(width='100%'))
         self.start()
 
     def __del__(self): 
@@ -117,7 +119,7 @@ class Widget():
         Widget.async_update = False
 
         # Image
-        image_path = "../img/active_tigger.png"
+        image_path = "img/active_tigger.png"
         img = open(image_path, 'rb').read()
         img_at = widgets.Image(value=img, format='png', width=50, height=50)
 
@@ -163,7 +165,9 @@ class Widget():
         self.output = widgets.VBox([widgets.HBox([img_at, self.existing_users, self.password, self.connect_user]),
                                     widgets.HBox([existing_projects, start, delete, create]) 
                                     ])
-        display(self.output)
+        #display(self.output)
+        self.global_output.children = [self.output]
+        display(self.global_output)
 
     def get_state(self) -> dict:
         """
@@ -316,7 +320,8 @@ class Widget():
                                                                      n_test,
                                                                      validate]
         load.on_click(load_file)
-        display(self.output)
+        self.global_output.children = [self.output]
+        display(self.global_output)
 
     def _load_file(self,path) -> pd.DataFrame:
         """
@@ -1439,5 +1444,7 @@ class Widget():
         self.output.observe(on_tab_selected, names='selected_index')
 
         # Display
-        clear_output()
-        display(self.output)
+        #clear_output()
+        #display(self.output)
+        self.global_output.children = [self.output]
+        
