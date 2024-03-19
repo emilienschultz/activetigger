@@ -669,6 +669,17 @@ async def stop_bert(project: Annotated[Project, Depends(get_project)],
     server.log_action(user, f"stop bert training", project.name)
     return r
 
+@app.post("/models/bert/delete", dependencies=[Depends(verified_user)])
+async def delete_bert(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
+                    bert_name:str):
+    """
+    Delete trained bert model
+    """
+    r = project.bertmodels.delete(bert_name)
+    server.log_action(username, f"delete bert model {bert_name}", project.name)
+    return r
+
 @app.post("/models/bert/rename", dependencies=[Depends(verified_user)])
 async def save_bert(project: Annotated[Project, Depends(get_project)],
                      former_name:str,

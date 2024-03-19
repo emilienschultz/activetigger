@@ -261,6 +261,20 @@ class BertModels():
         #return {u:self.processes[u][0].status for u in self.processes}
         return {u:self.processes[u][0].name for u in self.processes if self.processes[u][0].status == "training"}
 
+    def delete(self, bert_name:str) -> dict:
+        """
+        Delete bert model
+        """
+        if not (self.path / bert_name).exists():
+            return {"error":"Bert model does not exist"}
+        
+        try:
+            shutil.rmtree(self.path / bert_name)
+            os.remove(self.path / f"{bert_name}.tar.gz")
+            return {"success":"Bert model deleted"}
+        except :
+            return {"error":"An error occured in deleting bert model"}
+
     def start_training_process(self,
                name:str,
                user:str,
@@ -376,7 +390,7 @@ class BertModels():
         #  create repertory for the specific model
         current_path = path / name
         if not current_path.exists():
-            os.mkdir(current_path)
+            os.makedirs(current_path)
 
         # logging the process
         log_path = current_path / "status.log"

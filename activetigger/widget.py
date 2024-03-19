@@ -18,7 +18,9 @@ URL_SERVER = "http://127.0.0.1:8000"
 class Widget():
     """
     Widget
-    """
+    """ 
+    async_update = False
+
     def __init__(self) -> None:
         """
         Define general variables
@@ -34,6 +36,10 @@ class Widget():
         self.history:list = [] # elements annotated during this session
         self.projection_data: pd.DataFrame|str|None = None # get projection data
         self.start()
+
+    def __del__(self): 
+        Widget.async_update = False
+        print("Widget closed")
 
     def _post(self,
              route:str, 
@@ -51,6 +57,10 @@ class Widget():
                     data = data,
                     files=files,
                     headers=self.headers)
+        
+        if r.status_code == 422:
+            return {"error":"Not authorized"}
+
         return json.loads(r.content)
     
     def _get(self,
@@ -66,6 +76,9 @@ class Widget():
                     params = params,
                     data = data,
                     headers=self.headers)
+        if r.status_code == 422:
+            return {"error":"Not authorized"}
+
         if is_json:
             return json.loads(r.content)
         return r.content
@@ -99,6 +112,9 @@ class Widget():
         # Get existing projects
         existing = self._get("/server")
 
+        # Stop potential async
+        Widget.async_update = False
+
         # Image
         image_path = "../img/active_tigger.png"
         img = open(image_path, 'rb').read()
@@ -127,6 +143,9 @@ class Widget():
         def start_project(b):
             self.project_name = existing_projects.value
             self.state = self.get_state()
+            if "error" in self.state:
+                print("Not connected")
+                return None
             self.interface()
         start.on_click(start_project)
 
@@ -426,8 +445,8 @@ class Widget():
         self.new_bert_base.value = self.new_bert_base.options[0]
 
         # display saved bertmodels for the current scheme (temporary start with _)
+        self.available_bert.options = []
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            #self.available_bert.options = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
             self.available_bert.options = self.state["bertmodels"]["available"][self.select_scheme.value].keys()
         self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"], indent=2)
 
@@ -640,6 +659,19 @@ class Widget():
         r = self._post("/schemes/label/delete", 
                        params = params)
         self.update_tab_schemes()
+        return r
+    
+    def _delete_bert(self, bert_name):
+        """
+        Delete bert model
+        """
+        params = {"project_name":self.project_name,
+                  "bert_name":bert_name,
+                  "user":self.user
+                }
+        r = self._post("/models/bert/delete", 
+                       params = params)
+        self.update_tab_bertmodels()
         return r
 
     def create_label(self, text_field):
@@ -990,7 +1022,7 @@ class Widget():
         - check simplemodels
         - check visualisation
         """
-        while True:
+        while Widget.async_update:
             self.state = self.get_state()
             await asyncio.sleep(self.update_time)
             if len(self.state) == 0:
@@ -1008,6 +1040,8 @@ class Widget():
                 if "data" in r:
                     self.projection_data = pd.DataFrame(r["data"])
                     self.plot_visualisation()
+        print("End asyncio loop")
+
 
     def interface(self):
         """
@@ -1016,6 +1050,9 @@ class Widget():
         """
 
         # updating thread
+        #for task in asyncio.all_tasks():
+        #    task.cancel()
+        Widget.async_update = True
         asyncio.create_task(self.update_state())
 
         #------------
@@ -1275,6 +1312,8 @@ class Widget():
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
         self.compute_new_bert = widgets.VBox()
+        delete_bert = widgets.Button(description = "Delete Bert", button_style = "danger")
+        delete_bert.on_click(lambda x : self._delete_bert(self.available_bert.value))
         self.bert_name = widgets.Text(description="Name:", layout={'width': '150px'}, value="Name")
         self.record_bert = widgets.Button(description = "Save Bert")
         self.record_bert.on_click(lambda x : self.save_bert(self.available_bert.value, 
@@ -1286,7 +1325,7 @@ class Widget():
         # Group in tab
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
-                                widgets.HBox([self.available_bert,self.compute_prediction]),
+                                widgets.HBox([self.available_bert,delete_bert, self.compute_prediction]),
                                 self.bert_summary,
                                 widgets.HTML(value="<hr>Train new bert<br>"),
                                 self.new_bert_base,
