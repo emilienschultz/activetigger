@@ -9,22 +9,24 @@ import time
 import asyncio
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import random
 from IPython.display import display, clear_output
 import distinctipy
 
-URL_SERVER = "http://127.0.0.1:8000"
 
 class Widget():
     """
     Widget
-    """ 
-    async_update = False
 
-    def __init__(self) -> None:
+    Comment
+    - only 1 widget sync at the same time in a notebook
+    """ 
+    async_update = False #stop other sync for widget objects
+
+    def __init__(self, URL_SERVER:str = "http://127.0.0.1:8000") -> None:
         """
         Define general variables
         """
+        self.URL_SERVER = URL_SERVER
         self.update_time:int = 2
         self.headers:dict|None = None # authentification with the server
         self.user:str|None = None
@@ -50,7 +52,7 @@ class Widget():
         """
         Post to API
         """
-        url = URL_SERVER + route
+        url = self.URL_SERVER + route
         r = rq.post(url, 
                     params = params,
                     json = json_data,
@@ -71,7 +73,7 @@ class Widget():
         """
         Get from API
         """
-        url = URL_SERVER + route
+        url = self.URL_SERVER + route
         r = rq.get(url, 
                     params = params,
                     data = data,
@@ -1017,10 +1019,11 @@ class Widget():
 
     async def update_state(self):
         """
-        Async function to update state
+        Async function to update state for all long term processes
         - check bertmodels
         - check simplemodels
-        - check visualisation
+        - check features
+        - check projections
         """
         while Widget.async_update:
             self.state = self.get_state()
@@ -1034,7 +1037,10 @@ class Widget():
             # check simplemodel status
             if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
                 self.is_simplemodel = True
-            # test if projection data available
+            # check features status
+            if self.state["features"]["available"] != self.available_features.options:
+                self.available_features.options = self.state["features"]["available"]
+            # check projection status
             if (type(self.projection_data) is str) and (self.projection_data == "computing"):
                 r = self.get_projection_data()
                 if "data" in r:
