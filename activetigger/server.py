@@ -515,6 +515,8 @@ class Project(Session):
             return {"error":"Model doesn't exist"}
         if not simplemodel.scheme in self.schemes.available():
             return {"error":"Scheme doesn't exist"}
+        if len(self.schemes.available()[simplemodel.scheme]) < 2:
+            return {"error":"2 different labels needed"}
         self.fit_simplemodel(
                             model=simplemodel.model,
                             features=simplemodel.features,

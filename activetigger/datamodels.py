@@ -89,8 +89,7 @@ class SchemeModel(BaseModel):
     """
     project_name:str
     name:str
-    user:str
-    tags:list = []
+    tags: Optional[list] = []
 
 class RegexModel(BaseModel):
     """

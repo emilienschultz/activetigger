@@ -34,7 +34,6 @@ class Widget():
         self.state:dict = {} # global state of the server
         self.current_element:dict|None = None # element to annotate
         self.bert_training:bool = False # if bert is undertraining
-        self.is_simplemodel:bool = False # if simplemodel exist
         self.history:list = [] # elements annotated during this session
         self.projection_data: pd.DataFrame|str|None = None # get projection data
         self.start()
@@ -401,7 +400,7 @@ class Widget():
             self._display_next()
 
             # check if simplemodel need to be retrained
-            if self.is_simplemodel and (len(self.history) % self.simplemodel_autotrain.value == 0):
+            if self.is_simplemodel() and (len(self.history) % self.simplemodel_autotrain.value == 0):
                 # retrain with the parameters of the state
                 sm = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
                 self.create_simplemodel(self.select_scheme.value,
@@ -421,12 +420,19 @@ class Widget():
         self._labels.children = buttons
         return True
 
+    def is_simplemodel(self)->bool:
+        if self.user in self.state["simplemodel"]["existing"]:
+            if self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]:
+                return True
+        return False
+
+
+
     def update_global(self):
         """
         Global update of the widget
         """
         self.state = self.get_state()
-        self._display_buttons_labels()
         self.update_tab_annotations(False)
         self.update_tab_schemes(False)
         self.update_tab_simplemodel(False)
@@ -512,16 +518,20 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
+
+        self._display_next()
+        self._display_buttons_labels()
+
         self._mode_selection.options = ["deterministic","random"]
         self._mode_sample.options = self.state["next"]["sample"]
         self._mode_label.disabled = True
-        # to displau context
+        # to display context
         if self.add_context.value:
             self.display_context.value = json.dumps(self.current_element["context"])
         else:
             self.display_context.value = ""
         # case of a simplemodel is available for the user and the scheme
-        if self.is_simplemodel:
+        if self.is_simplemodel():
             self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
             self._mode_label.disabled = False
             self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
@@ -623,7 +633,7 @@ class Widget():
                 "project_name":self.project_name,
                 "name":s,
                 "tags":[],
-                "user":self.user
+                #"user":self.user
                 }
         r = self._post("/schemes/add", 
                        params = params, 
@@ -641,6 +651,8 @@ class Widget():
         data = {
                 "project_name":self.project_name,
                 "name":s,
+                #"tags":[],
+                #"user":self.user
                 }
         r = self._post("/schemes/delete", 
                        params = params, 
@@ -1034,9 +1046,6 @@ class Widget():
             if self.bert_training and (not self.user in self.state["bertmodels"]["training"]):
                 self.bert_training = False
                 self.update_tab_bertmodels(state=False)
-            # check simplemodel status
-            if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
-                self.is_simplemodel = True
             # check features status
             if self.state["features"]["available"] != self.available_features.options:
                 self.available_features.options = self.state["features"]["available"]
@@ -1146,8 +1155,8 @@ class Widget():
         self.update_tab_annotations()
         self._mode_selection.value = self._mode_selection.options[0]
         self._mode_sample.value = self._mode_sample.options[0]
-        self._display_next()
-        self._display_buttons_labels()
+        #self._display_next()
+        #self._display_buttons_labels()
 
         # Group in tab
         tab_annotate = widgets.VBox([

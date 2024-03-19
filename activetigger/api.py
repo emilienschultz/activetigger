@@ -504,9 +504,8 @@ async def delete_label(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
 async def post_schemes(username: Annotated[str, Header()],
-                        action:Action,
-                        #user:str,
                         project: Annotated[Project, Depends(get_project)],
+                        action:Action,
                         scheme:SchemeModel
                         ):
     """
@@ -514,6 +513,7 @@ async def post_schemes(username: Annotated[str, Header()],
     TODO : user dans schememodel, necessary ?
     """
     if action == "add":
+        print("add")
         r = project.schemes.add_scheme(scheme)
         server.log_action(username, f"add scheme {scheme.name}", project.name)
         return r
