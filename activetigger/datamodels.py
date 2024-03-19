@@ -51,6 +51,19 @@ class SchemesModel(BaseModel):
 class UserModel(BaseModel):
     name:str
     
+class User(BaseModel):
+    username: str
+
+class UserInDB(User):
+    hashed_password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str | None = None
+
 class ElementModel(BaseModel):
     element_id:str
     text:Optional[str] = None
@@ -58,6 +71,7 @@ class ElementModel(BaseModel):
     info: Optional[str] = None
     context: Optional[dict] = None
     predict: Optional[dict] = None
+    frame: Optional[list] = None
 
 class AnnotationModel(BaseModel):
     """
@@ -75,8 +89,7 @@ class SchemeModel(BaseModel):
     """
     project_name:str
     name:str
-    user:str
-    tags:list = []
+    tags: Optional[list] = []
 
 class RegexModel(BaseModel):
     """
@@ -85,6 +98,7 @@ class RegexModel(BaseModel):
     project_name:str
     name:str
     value:str
+    user:str
 
 class Error(BaseModel):
     error:str

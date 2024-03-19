@@ -9,18 +9,20 @@ import pyarrow.parquet as pq # type: ignore
 import json
 import functions
 from models import BertModels, SimpleModels
-from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel
+from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
 import shutil
 import logging
-import umap
+from datetime import datetime, timedelta, timezone
+from jose import JWTError, jwt
 from sklearn.preprocessing import StandardScaler
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+
 class Session():
     """
     Global session parameters
@@ -38,6 +40,11 @@ class Session():
     test_file:str = "test.parquet"
     default_user:str = "user"
     n_workers = 4 #os.cpu_count()
+
+    # openssl rand -hex 32
+    SECRET_KEY = "f63aeb7426d2c8a3defc02a3e788c2f311482d6cff557c2c5bdebc71d67b507a"
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = 3600
 
 
 class Server(Session):
@@ -59,10 +66,11 @@ class Server(Session):
             logging.info("Creating database")
             self.create_db()
 
+        self.add_user("root","root") #default user
+
     def __del__(self): 
         print("Closing the server")
-        self.executor.shutdown()
-
+            
     def create_db(self) -> None:
         """
         Initialize the database
@@ -124,10 +132,9 @@ class Server(Session):
                 user TEXT,
                 key TEXT,
                 projects TEXT
-                  )
+                )
         '''
         cursor.execute(create_table_sql)
-
 
         # Authorizations
         create_table_sql = '''
@@ -139,17 +146,34 @@ class Server(Session):
         '''
         cursor.execute(create_table_sql)
 
-        # Log connexion
+        # Logs
         create_table_sql = '''
-            CREATE TABLE IF NOT EXISTS connections (
+            CREATE TABLE IF NOT EXISTS logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 user TEXT,
-                projects TEXT
-                  )
+                project TEXT,
+                action TEXT,
+                connect TEXT
+                )
         '''
         cursor.execute(create_table_sql)
+        conn.commit()
+        conn.close()
+        return None
 
+    def log_action(self, 
+                   user:str, 
+                   action:str, 
+                   project:str = "general",
+                   connect = "not implemented"):
+        """
+        Log action in the database
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "INSERT INTO logs (user, project, action, connect) VALUES (?, ?, ?, ?)"
+        cursor.execute(query, (user, project, action, connect))
         conn.commit()
         conn.close()
         return None
@@ -192,6 +216,72 @@ class Server(Session):
         conn.close()
         return [i[0] for i in existing_project]
     
+    def existing_users(self) -> list:
+        """
+        Get existing users
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT user FROM users"
+        cursor.execute(query)
+        existing_users = cursor.fetchall()
+        conn.close()
+        return [i[0] for i in existing_users]
+    
+    def add_user(self, name:str, password:str, projects = "all"):
+        """
+        Add user to database
+        """
+        # test if the user doesn't exist
+        if name in self.existing_users():
+            return {"error":"Username already exists"}
+        hash_pwd = functions.get_hash(password)
+        # add user
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "INSERT INTO users (user, key, projects) VALUES (?, ?, ?)"
+        cursor.execute(insert_query, (name, hash_pwd, projects))
+        conn.commit()
+        conn.close()
+        return {"success":"User added to the database"}
+    
+    def get_user(self, name):
+        """
+        Authentificate user
+        """
+        if not name in self.existing_users():
+            return {"error":"Username doesn't exist"}
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT * FROM users WHERE user = ?"
+        cursor.execute(query, (name,))
+        user = cursor.fetchone()
+        print(user)
+        u = UserInDB(username = name, hashed_password = user[3])
+        conn.close()
+        return u
+
+    def authenticate_user(self, username: str, password: str):
+        user = self.get_user(username)
+        if "error" in user:
+            return user
+        if not functions.compare_to_hash(password, user.hashed_password):
+            return {"error":"Wrong password"}
+        return user
+    
+    def create_access_token(self, data: dict, expires_min: int  = 60):
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, 
+                                 self.SECRET_KEY, 
+                                 algorithm=self.ALGORITHM)
+        return encoded_jwt
+    
+    def decode_access_token(self, token:str):
+        payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+        return payload
+
     def start_project(self, project_name:str) -> bool:
         """
         Load project in memory
@@ -425,6 +515,8 @@ class Project(Session):
             return {"error":"Model doesn't exist"}
         if not simplemodel.scheme in self.schemes.available():
             return {"error":"Scheme doesn't exist"}
+        if len(self.schemes.available()[simplemodel.scheme]) < 2:
+            return {"error":"2 different labels needed"}
         self.fit_simplemodel(
                             model=simplemodel.model,
                             features=simplemodel.features,
@@ -433,7 +525,7 @@ class Project(Session):
                             model_params=simplemodel.params
                             )
         return {"success":"new simplemodel"}
-    
+     
     def get_next(self,
                  scheme:str,
                  selection:str = "deterministic",
@@ -445,21 +537,32 @@ class Project(Session):
         Get next item
         Related to a specific scheme
         TODO : add lock feature
-        TODO : add frame
         """
 
-        # Select the sample 
+        # select the current state of annotation
         df = self.schemes.get_scheme_data(scheme, complete=True)
 
+        # build filters regarding the selection mode
         f = df["labels"].apply(lambda x : True)
         if sample == "untagged":
             f = df["labels"].isnull()
         if sample == "tagged":
             f = df["labels"].notnull()
 
+        # manage frame selection (if projection, only in the box)
+        if user in self.features.available_projections:
+            if "data" in self.features.available_projections[user]:
+                projection = self.features.available_projections[user]["data"]
+                f_frame = (projection[0] > frame[0]) & (projection[0] < frame[2]) & (projection[1] > frame[1]) & (projection[1] < frame[3])
+                f = f & f_frame
+        
         val = ""
 
-        # Type of selection
+        # test if there is at least one element available
+        if sum(f) == 0:
+            return {"error":"No element available"}
+
+        # select type of selection
         if selection == "deterministic": # next row
             element_id = df[f].index[0]
         if selection == "random": # random row
@@ -492,19 +595,16 @@ class Project(Session):
             predict = {"label":predicted_label, 
                        "proba":predicted_proba}
 
-        # TODO : AVOID NONE VALUE IN THE OUTPUT
-
         element =  {
             "element_id":element_id,
             "text":self.content.fillna("NA").loc[element_id,self.params.col_text],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":selection,
             "info":str(val),
-            "predict":predict
+            "predict":predict,
+            "frame":frame
                 }
         
-        print(self.content.loc[element_id])
-
         return element
     
     def get_element(self,element_id):
@@ -583,7 +683,7 @@ class Project(Session):
                     "simplemodel":{ #change names existing/available to available/options
                                     "existing":self.simplemodels.available(),
                                     "available":self.simplemodels.available_models
-                                    },
+                                },
                     "bertmodels":{
                                 "options":self.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
@@ -687,6 +787,7 @@ class Features(Session):
                             "tsne":{"n_components":2,  "learning_rate":'auto', "init":'random', "perplexity":3}
                             }
         self.available_projections:dict = {}
+
 
     def __repr__(self) -> str:
         return f"Available features : {self.map}"
@@ -814,6 +915,7 @@ class Schemes(Session):
         results = cursor.fetchall()
         conn.close()
         df = pd.DataFrame(results, columns =["id","labels","timestamp"]).set_index("id")
+        df.index = [str(i) for i in df.index]
         if complete: # all the elements
             return self.content.join(df)
         return df

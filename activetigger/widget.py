@@ -9,30 +9,38 @@ import time
 import asyncio
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import random
 from IPython.display import display, clear_output
+import distinctipy
 
-URL_SERVER = "http://127.0.0.1:8000"
-headers = {'x-token': 'your_token'}
 
 class Widget():
     """
     Widget
-    """
-    def __init__(self) -> None:
+
+    Comment
+    - only 1 widget sync at the same time in a notebook
+    """ 
+    async_update = False #stop other sync for widget objects
+
+    def __init__(self, URL_SERVER:str = "http://127.0.0.1:8000") -> None:
         """
         Define general variables
         """
+        self.URL_SERVER = URL_SERVER
         self.update_time:int = 2
-        self.user:str = "local"
+        self.headers:dict|None = None # authentification with the server
+        self.user:str|None = None
         self.project_name: None|str = None
         self.state:dict = {} # global state of the server
         self.current_element:dict|None = None # element to annotate
         self.bert_training:bool = False # if bert is undertraining
-        self.is_simplemodel:bool = False # if simplemodel exist
         self.history:list = [] # elements annotated during this session
         self.projection_data: pd.DataFrame|str|None = None # get projection data
         self.start()
+
+    def __del__(self): 
+        Widget.async_update = False
+        print("Widget closed")
 
     def _post(self,
              route:str, 
@@ -43,13 +51,17 @@ class Widget():
         """
         Post to API
         """
-        url = URL_SERVER + route
+        url = self.URL_SERVER + route
         r = rq.post(url, 
                     params = params,
                     json = json_data,
                     data = data,
                     files=files,
-                    headers=headers)
+                    headers=self.headers)
+        
+        if r.status_code == 422:
+            return {"error":"Not authorized"}
+
         return json.loads(r.content)
     
     def _get(self,
@@ -60,40 +72,81 @@ class Widget():
         """
         Get from API
         """
-        url = URL_SERVER + route
+        url = self.URL_SERVER + route
         r = rq.get(url, 
                     params = params,
                     data = data,
-                    headers=headers)
+                    headers=self.headers)
+        if r.status_code == 422:
+            return {"error":"Not authorized"}
+
         if is_json:
             return json.loads(r.content)
         return r.content
+    
+    def _connect_user(self, user:str, password:str):
+        """
+        Connect account and get auth token
+        """
+        form = {"username":user,
+                "password":password}
+        r = self._post("/token", data = form)
+        if not "access_token" in r:
+            print(r)
+            return None
+
+        # Update widget configuration
+        self.headers = {"Authorization": f"Bearer {r['access_token']}",
+           "username":user}
+        self.user = user
+
+        # Disable connecting options
+        self.existing_users.disabled = True
+        self.password.disabled = True
+        self.connect_user.disabled = True
+        return None
 
     def start(self) -> None:
         """
         Start project
         """
         # Get existing projects
-        existing = self._get("/projects")
+        existing = self._get("/server")
+
+        # Stop potential async
+        Widget.async_update = False
 
         # Image
         image_path = "../img/active_tigger.png"
         img = open(image_path, 'rb').read()
         img_at = widgets.Image(value=img, format='png', width=50, height=50)
 
+        # Users
+        self.existing_users = widgets.Dropdown(description = "User:", 
+                                          options = existing["users"],
+                                          layout={'width': '200px'})
+        self.password = widgets.Text(description = "Password:", layout={'width': '200px'})
+        self.connect_user = widgets.Button(description="Connect")
+        self.connect_user.style.button_color = 'lightgreen'
+        self.connect_user.on_click(lambda x : self._connect_user(user = self.existing_users.value,
+                                                 password = self.password.value))
+
         # Existing projects
         existing_projects = widgets.Dropdown(
-            options=existing["existing projects"],
+            options=existing["projects"],
             description='Available :',
             layout={'width': '300px'},
             disabled=False)
 
         # Start existing project
-        start = widgets.Button(description="Connect")
+        start = widgets.Button(description="Launch")
         start.style.button_color = 'lightgreen'
         def start_project(b):
             self.project_name = existing_projects.value
             self.state = self.get_state()
+            if "error" in self.state:
+                print("Not connected")
+                return None
             self.interface()
         start.on_click(start_project)
 
@@ -107,11 +160,9 @@ class Widget():
 
         # Display
         clear_output()
-        self.output = widgets.HBox([img_at, 
-                                    existing_projects, 
-                                    start, 
-                                    delete, 
-                                    create])
+        self.output = widgets.VBox([widgets.HBox([img_at, self.existing_users, self.password, self.connect_user]),
+                                    widgets.HBox([existing_projects, start, delete, create]) 
+                                    ])
         display(self.output)
 
     def get_state(self) -> dict:
@@ -125,7 +176,10 @@ class Widget():
         """
         Delete existing project
         """
-        params = {"project_name": project_name}
+        params = {
+                "project_name": project_name,
+                "user":self.user
+                }  
         r = self._post(route = "/projects/delete", 
                        params = params)
         self.start()
@@ -346,7 +400,7 @@ class Widget():
             self._display_next()
 
             # check if simplemodel need to be retrained
-            if self.is_simplemodel and (len(self.history) % self.simplemodel_autotrain.value == 0):
+            if self.is_simplemodel() and (len(self.history) % self.simplemodel_autotrain.value == 0):
                 # retrain with the parameters of the state
                 sm = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
                 self.create_simplemodel(self.select_scheme.value,
@@ -366,12 +420,19 @@ class Widget():
         self._labels.children = buttons
         return True
 
+    def is_simplemodel(self)->bool:
+        if self.user in self.state["simplemodel"]["existing"]:
+            if self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]:
+                return True
+        return False
+
+
+
     def update_global(self):
         """
         Global update of the widget
         """
         self.state = self.get_state()
-        self._display_buttons_labels()
         self.update_tab_annotations(False)
         self.update_tab_schemes(False)
         self.update_tab_simplemodel(False)
@@ -392,8 +453,9 @@ class Widget():
         self.new_bert_base.value = self.new_bert_base.options[0]
 
         # display saved bertmodels for the current scheme (temporary start with _)
+        self.available_bert.options = []
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            self.available_bert.options = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value]]
+            self.available_bert.options = self.state["bertmodels"]["available"][self.select_scheme.value].keys()
         self.new_bert_params.value = json.dumps(self.state["bertmodels"]["base_parameters"], indent=2)
 
         # display status
@@ -456,16 +518,20 @@ class Widget():
         """
         if state:
             self.state = self.get_state()
+
+        self._display_next()
+        self._display_buttons_labels()
+
         self._mode_selection.options = ["deterministic","random"]
         self._mode_sample.options = self.state["next"]["sample"]
         self._mode_label.disabled = True
-        # to displau context
+        # to display context
         if self.add_context.value:
             self.display_context.value = json.dumps(self.current_element["context"])
         else:
             self.display_context.value = ""
         # case of a simplemodel is available for the user and the scheme
-        if self.is_simplemodel:
+        if self.is_simplemodel():
             self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
             self._mode_label.disabled = False
             self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
@@ -567,7 +633,7 @@ class Widget():
                 "project_name":self.project_name,
                 "name":s,
                 "tags":[],
-                "user":self.user
+                #"user":self.user
                 }
         r = self._post("/schemes/add", 
                        params = params, 
@@ -585,6 +651,8 @@ class Widget():
         data = {
                 "project_name":self.project_name,
                 "name":s,
+                #"tags":[],
+                #"user":self.user
                 }
         r = self._post("/schemes/delete", 
                        params = params, 
@@ -605,6 +673,19 @@ class Widget():
         r = self._post("/schemes/label/delete", 
                        params = params)
         self.update_tab_schemes()
+        return r
+    
+    def _delete_bert(self, bert_name):
+        """
+        Delete bert model
+        """
+        params = {"project_name":self.project_name,
+                  "bert_name":bert_name,
+                  "user":self.user
+                }
+        r = self._post("/models/bert/delete", 
+                       params = params)
+        self.update_tab_bertmodels()
         return r
 
     def create_label(self, text_field):
@@ -684,6 +765,22 @@ class Widget():
         self.compute_new_bert.disabled = False
         return True
     
+    def _start_bert_prediction(self, model_name:str):
+        """
+        Start prediction
+        """
+        params = {"project_name":self.project_name,
+                  "user":self.user,
+                  "model_name":model_name
+                  }
+        r = self._post("/models/bert/predict", 
+                params = params)
+        if "error" in r:
+            print(r)
+        print(r)
+        self.compute_prediction.disabled = True
+        return True
+
     def stop_bertmodel(self):
         """
         Stop bertmodel training
@@ -744,7 +841,8 @@ class Widget():
         Delete existing feature
         """
         r = self._post(f"/features/delete/{feature_name}", 
-                    params = {"project_name":self.project_name})
+                    params = {"project_name":self.project_name,
+                              "user":self.user})
         self.update_tab_features()
         return True
     
@@ -760,7 +858,8 @@ class Widget():
         data = {
             "project_name":self.project_name,
             "name":name,
-            "value":value
+            "value":value,
+            "user":self.user
             }
         
         r = self._post("/features/add/regex",
@@ -870,45 +969,52 @@ class Widget():
     def plot_visualisation(self):
         """
         Produce the visualisation for the projection
-        TODO : choice of colors + legend
+        TODO : legend ; display text
         """
         df = self.projection_data
-        f = go.FigureWidget([go.Scatter(x=df["0"], y=df["1"], mode='markers', 
-                                    customdata = df.index)])
+        f = go.FigureWidget([go.Scatter(x=df["0"], 
+                                        y=df["1"], 
+                                        mode='markers', 
+                                        customdata = df.index,
+                                        showlegend = False)])
         scatter = f.data[0]
- 
-        def random_color_generator():
-            color = random.choice(list(mcolors.CSS4_COLORS.keys()))
-            return color
-        colors_map = {i:random_color_generator() for i in df["labels"].unique()}
-        scatter.marker.color = list(df["labels"].replace(colors_map))
+        labels = list(df["labels"].unique())
+        colors = distinctipy.get_colors(len(labels)) 
+        colors_map = {labels[i]:colors[i] for i in range(0, len(labels))}
+        scatter.marker.color = [f"rgba({colors_map[i][0]}, {colors_map[i][1]}, {colors_map[i][2]}, 0.5)" for i in list(df["labels"])]
         scatter.marker.size = [5] * 100
         f.layout.hovermode = 'closest'
         def update_point(trace, points, selector):
-            #print(points.xs, points.ys)
-            # SELECT SPECIFIC TEXT
+            # select specific text
             element_id = trace.customdata[points.point_inds][0]
             print(element_id)
             self._display_element(element_id)
-            #print(element_id)
         scatter.on_click(update_point)
         self.visualization.children = [f]
-        #return f
 
-    def display_bert_statistics(self, name):
+    def display_bert_informations(self, name):
+        """
+        Display statistics for a BERT Model
+        """
         params = {"project_name":self.project_name,
                             "name":name}
         r = self._get("/models/bert", params = params)
         if "error" in r:
             print(r)
             return 
-        print(r)
         loss = pd.DataFrame(r["loss"])
         with self.bert_statistics:
             clear_output(wait=True)
+            print(json.dumps(r["parameters"],indent=2))
             fig, ax = plt.subplots(figsize=(3,2))
             fig = loss.plot(ax = ax)
             plt.show(fig)
+            if "f1" in r:
+                print("f1:",r["f1"])
+                print("precision:",r["precision"])
+                print("recall:",r["recall"])
+            else:
+                print("Compute prediction for scores")
     
     def get_projection_data(self):
         """
@@ -925,12 +1031,13 @@ class Widget():
 
     async def update_state(self):
         """
-        Async function to update state
+        Async function to update state for all long term processes
         - check bertmodels
         - check simplemodels
-        - check visualisation
+        - check features
+        - check projections
         """
-        while True:
+        while Widget.async_update:
             self.state = self.get_state()
             await asyncio.sleep(self.update_time)
             if len(self.state) == 0:
@@ -939,15 +1046,17 @@ class Widget():
             if self.bert_training and (not self.user in self.state["bertmodels"]["training"]):
                 self.bert_training = False
                 self.update_tab_bertmodels(state=False)
-            # check simplemodel status
-            if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
-                self.is_simplemodel = True
-            # test if projection data available
+            # check features status
+            if self.state["features"]["available"] != self.available_features.options:
+                self.available_features.options = self.state["features"]["available"]
+            # check projection status
             if (type(self.projection_data) is str) and (self.projection_data == "computing"):
                 r = self.get_projection_data()
                 if "data" in r:
                     self.projection_data = pd.DataFrame(r["data"])
                     self.plot_visualisation()
+        print("End asyncio loop")
+
 
     def interface(self):
         """
@@ -956,6 +1065,9 @@ class Widget():
         """
 
         # updating thread
+        #for task in asyncio.all_tasks():
+        #    task.cancel()
+        Widget.async_update = True
         asyncio.create_task(self.update_state())
 
         #------------
@@ -1043,8 +1155,8 @@ class Widget():
         self.update_tab_annotations()
         self._mode_selection.value = self._mode_selection.options[0]
         self._mode_sample.value = self._mode_sample.options[0]
-        self._display_next()
-        self._display_buttons_labels()
+        #self._display_next()
+        #self._display_buttons_labels()
 
         # Group in tab
         tab_annotate = widgets.VBox([
@@ -1199,23 +1311,24 @@ class Widget():
         self.bert_statistics = widgets.Output()
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value':
-#                self.new_bert_params.value = "TO IMPLEMENT" #self.state["bertmodels"]["available"][self.available_bert.value][-1]
-                self.compute_prediction.disabled = True
-# CHANGE STRUCTURE
-#                if not self.state["bertmodels"]["available"][self.available_bert.value][1]:
-#                    print("prediction does not exist")
-#                    self.compute_prediction.disabled = False
-                self.display_bert_statistics(self.available_bert.value) # display summary
+                # available predict button
+                if self.state["bertmodels"]["available"][self.select_scheme.value][self.available_bert.value][0]:
+                    self.compute_prediction.disabled = True
+                else:
+                    self.compute_prediction.disabled = False
+                # get information about the model
+                self.display_bert_informations(self.available_bert.value)
         self.available_bert.observe(on_change_model)
         self.bert_summary = widgets.Accordion(children=[self.bert_statistics], 
                                             titles=('Description',))
 
         self.compute_prediction = widgets.Button(description = "Compute prediction", disabled = True)
-        self.compute_prediction.on_click(lambda x : print("Compute prediction to implement"))
+        self.compute_prediction.on_click(lambda x : self._start_bert_prediction(self.available_bert.value))
         self.new_bert_base = widgets.Dropdown(description="Base:")
         self.new_bert_params = widgets.Textarea(layout={'width': '200px','height':"200px"})
         self.compute_new_bert = widgets.VBox()
-
+        delete_bert = widgets.Button(description = "Delete Bert", button_style = "danger")
+        delete_bert.on_click(lambda x : self._delete_bert(self.available_bert.value))
         self.bert_name = widgets.Text(description="Name:", layout={'width': '150px'}, value="Name")
         self.record_bert = widgets.Button(description = "Save Bert")
         self.record_bert.on_click(lambda x : self.save_bert(self.available_bert.value, 
@@ -1227,8 +1340,7 @@ class Widget():
         # Group in tab
         tab_bertmodel = widgets.VBox([
                                 self.bert_status,
-                                self.available_bert,
-                                self.compute_prediction,
+                                widgets.HBox([self.available_bert,delete_bert, self.compute_prediction]),
                                 self.bert_summary,
                                 widgets.HTML(value="<hr>Train new bert<br>"),
                                 self.new_bert_base,
@@ -1303,21 +1415,23 @@ class Widget():
 
         # display global widget
         self.output = widgets.Tab([tab_schemes,
+                                   tab_features,
                                    tab_annotate,
                                    tab_description,
                                    tab_data,
-                                   tab_features,
                                    tab_simplemodel,
                                    tab_bertmodel,
                                    tab_export],
-                                  titles = ["Schemes",
+                                  titles = [
+                                            "Schemes",
+                                            "Features",
                                             "Annotate",
                                             "Description",
                                             "Data",
-                                            "Features",
                                             "SimpleModels",
                                             "BertModels",
-                                            "Export"])
+                                            "Export"
+                                            ])
         
         # Update everything on tab change
         def on_tab_selected(change):
