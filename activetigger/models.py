@@ -113,7 +113,7 @@ class BertModel():
             r["f1_macro"] = f1_score(Y, Y_pred, average = "macro"),
             r["f1_weighted"] = f1_score(Y, Y_pred, average = "weighted"),
             r["f1"] = list(f1_score(Y, Y_pred, average = None)),
-            r["precision"] = list(precision_score(list(Y), list(Y_pred), average=None)),
+            r["precision"] = list(precision_score(list(Y), list(Y_pred), average="micro")),
             r["recall"] = list(recall_score(list(Y), list(Y_pred), average=None)),
             r["accuracy"] = accuracy_score(Y, Y_pred),
             r["false_prediction"] = df[f][["text","labels","prediction"]].to_dict()
@@ -830,7 +830,9 @@ class SimpleModel():
         y_pred = model.predict(X[f])
         precision = precision_score(list(Y[f]), 
                                     list(y_pred),
-                                    pos_label=labels[0])
+                                    average="micro"
+                                    #pos_label=labels[0]
+                                    )
         return precision
 
     def compute_statistics(self, model, X, Y, labels):
@@ -846,7 +848,9 @@ class SimpleModel():
         accuracy = accuracy_score(Y, Y_pred)
         precision = precision_score(list(Y[f]), 
                                     list(Y_pred),
-                                    pos_label=labels[0])
+                                    average="micro",
+                                    #pos_label=labels[0]
+                                    )
         macro_f1 = f1_score(Y, Y_pred, average='macro')
         statistics = {
                     "f1":list(f1),

@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
-from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, TokenData, Token
+from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token
 from datamodels import RegexModel, SimpleModelModel, BertModelModel
 from server import Server, Project
 import functions
@@ -13,7 +13,6 @@ import time
 import pandas as pd
 import os
 from jose import JWTError
-from datetime import datetime, timedelta, timezone
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -23,13 +22,7 @@ logging.basicConfig(filename='log.log',
 
 # General comments
 # - all post are logged
-
-# TODO
-# - user authentification
-# - user authorization
-# Passer l'utilisateur en cookie lors de la connexion ?  https://www.tutorialspoint.com/fastapi/fastapi_cookie_parameters.htm
-# unwrapping pydandic object  UserInDB(**user_dict)
-
+# - username is in the header
 
 #######
 # API #
@@ -118,18 +111,12 @@ async def verified_user(Authorization: Annotated[str, Header()],
                         username: Annotated[str, Header()]):
     """
     Test if the user is a user authentified
+    For the moment, only that there is a well formed user
     TODO : a real test here
     """
     #print(f"{username} does an action")
     if False:
         raise HTTPException(status_code=400, detail="Invalid user")    
-
-# ------
-# Routes
-# ------
-
-# Users
-#------
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     """
@@ -151,6 +138,14 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     if user is None:
         raise credentials_exception
     return user
+
+# ------
+# Routes
+# ------
+
+# Users
+#------
+
 
 @app.post("/token")
 async def login_for_access_token(
@@ -181,7 +176,6 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]
 async def get_state(project: Annotated[Project, Depends(get_project)]):
     """
     Get state of a project
-    TODO: a datamodel
     """
     r = project.get_state()
     return r
@@ -191,7 +185,7 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
                           user:str|None = None):
     """
-    Get description of a project / a specific scheme
+    Get state for a specific project/scheme/user
     """
     r = project.get_description(scheme = scheme, user = user)
     return r
@@ -203,17 +197,11 @@ async def info_project(project_name:str|None = None):
     """
     return {project_name:server.db_get_project(project_name)}
 
-@app.get("/projects")
-async def info_all_projects(current_user: Annotated[User, Depends(get_current_user)]):
-
-    r = {"existing projects":server.existing_projects(),
-         "user":current_user}
-    return r
 
 @app.get("/server")
 async def info_server():
     """
-    Get info server
+    Get info on the server (no validation needed)
     """
     r = {
         "projects":server.existing_projects(),
@@ -223,9 +211,10 @@ async def info_server():
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
+                      username: Annotated[str, Header()],
                       file: Annotated[UploadFile, File()],
                       project_name:str = Form(),
-                      user:str = Form(),
+#                      user:str = Form(),
                       col_text:str = Form(),
                       col_id:str = Form(),
                       col_label:str = Form(None),
@@ -248,7 +237,7 @@ async def new_project(
     # removing None parameters
     params_in = {
         "project_name":project_name,
-        "user":user,         
+        "user":username,         
         "col_text":col_text,
         "col_id":col_id,
         "n_train":n_train,
@@ -278,18 +267,19 @@ async def new_project(
     project = server.create_project(project, file)
 
     # log action
-    server.log_action(user, "create project", params_in["project_name"])
+    server.log_action(username, "create project", params_in["project_name"])
 
     return project
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
-async def delete_project(project_name:str, user:str):
+async def delete_project(username: Annotated[str, Header()],
+                         project_name:str):
     """
     Delete a project
     TODO : user authorization
     """
     r = server.delete_project(project_name)
-    server.log_action(user, "delete project", project_name)
+    server.log_action(username, "delete project", project_name)
     return r
 
 # Annotation management
@@ -297,10 +287,11 @@ async def delete_project(project_name:str, user:str):
 
 @app.get("/elements/next", dependencies=[Depends(verified_user)])
 async def get_next(project: Annotated[Project, Depends(get_project)],
+                   username: Annotated[str, Header()],
                    scheme:str,
                    selection:str = "deterministic",
                    sample:str = "untagged",
-                   user:str = "user",
+                   #user:str = "user",
                    tag:str|None = None,
                    frame:list[float]|None = Query(None)) -> ElementModel|Error:
     """
@@ -310,7 +301,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         scheme = scheme,
                         selection = selection,
                         sample = sample,
-                        user = user,
+                        user = username,
                         tag = tag,
                         frame = frame
                         )
@@ -323,18 +314,19 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(project: Annotated[Project, Depends(get_project)],
-                         user:str, 
+                         username: Annotated[str, Header()],
+                         #user:str, 
                          scheme:str|None):
     """
     Get projection data if computed
     """
-    if user in project.features.available_projections:
-        if not "data" in project.features.available_projections[user]:
+    if username in project.features.available_projections:
+        if not "data" in project.features.available_projections[username]:
             return {"status":"Still computing"}
         if scheme is None:
-            return {"data":project.features.available_projections[user]["data"].fillna("NA").to_dict()}
+            return {"data":project.features.available_projections[username]["data"].fillna("NA").to_dict()}
         else: # add the labels of the scheme
-            data = project.features.available_projections[user]["data"]
+            data = project.features.available_projections[username]["data"]
             df = project.schemes.get_scheme_data(scheme)
             data["labels"] = df["labels"]
             return {"data":data.fillna("NA").to_dict()}
@@ -343,7 +335,8 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(project: Annotated[Project, Depends(get_project)],
-                         user:str,
+                         username: Annotated[str, Header()],
+                         #user:str,
                          projection:ProjectionModel):
     """
     Start projection computation
@@ -354,7 +347,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
     if len(projection.features) == 0:
         return {"error":"No feature"}
     
-    name = f"projection__{user}"
+    name = f"projection__{username}"
     features = project.features.get(projection.features)
     args = {
             "features":features,
@@ -363,7 +356,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
 
     if projection.method == "umap":
         future_result = server.executor.submit(functions.compute_umap, **args)
-        project.features.available_projections[user] = {
+        project.features.available_projections[username] = {
                                                         "params":projection,
                                                         "method":"umap",
                                                         "future":future_result
@@ -371,14 +364,12 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
         return {"success":"Projection umap under computation"}
     if projection.method == "tsne":
         future_result = server.executor.submit(functions.compute_tsne, **args)
-        project.features.available_projections[user] = {
+        project.features.available_projections[username] = {
                                                         "params":projection,
                                                         "method":"tsne",
                                                         "future":future_result
                                                         }
         return {"success":"Projection tsne under computation"}
-
-
     return {"error":"This projection is not available"}
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
@@ -388,26 +379,34 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                             max:int = 0,
                             mode:str = "all",
                         ):
-    
+    """
+    Get table of elements
+    """
     r = project.schemes.get_table(scheme, min, max, mode)
     return r.fillna("NA")
     
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
-                            user:str,
+                            username: Annotated[str, Header()],
+                            #user:str,
                             table:TableElementsModel
                             ):
     r = project.schemes.push_table(table = table, 
-                                   user = user)
-    server.log_action(user, "update data table", project.name)
+                                   user = username)
+    server.log_action(username, "update data table", project.name)
     return r
 
 
 @app.get("/elements/stats", dependencies=[Depends(verified_user)])
 async def get_stats(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
                     scheme:str,
-                    user:str):
-    r = project.get_stats_annotations(scheme, user)
+                    #user:str
+                    ):
+    """
+    Get statistics for a specific scheme/user
+    """
+    r = project.get_stats_annotations(scheme, username)
     return r
     
 
@@ -427,6 +426,7 @@ async def get_element(element_id:str,
 
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
+                   username: Annotated[str, Header()],
                    project: Annotated[Project, Depends(get_project)],
                    annotation:AnnotationModel):
     """
@@ -441,17 +441,19 @@ async def post_tag(action:Action,
         r = project.schemes.push_tag(annotation.element_id, 
                                     annotation.tag, 
                                     annotation.scheme,
-                                    annotation.user
+                                    username
+                                    #annotation.user
                                     )
-        server.log_action(annotation.user, f"push annotation {annotation.element_id}", project.name)
+        server.log_action(username, f"push annotation {annotation.element_id}", project.name)
         return r
 
     if action == "delete":
         project.schemes.delete_tag(annotation.element_id, 
                                    annotation.scheme,
-                                   annotation.user
+                                   username
+                                   #annotation.user
                                    ) # add user deletion
-        server.log_action(annotation.user, f"delete annotation {annotation.element_id}", project.name)
+        server.log_action(username, f"delete annotation {annotation.element_id}", project.name)
         return {"success":"label deleted"}
 
 # Schemes management
@@ -473,33 +475,37 @@ async def get_schemes(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
 async def add_label(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
                     scheme:str,
                     label:str,
-                    user:str):
+                    #user:str
+                    ):
     """
     Add a label to a scheme
     """
-    r = project.schemes.add_label(label, scheme, user)
-    server.log_action(user, f"add label {label} to {scheme}", project.name)
+    r = project.schemes.add_label(label, scheme, username)
+    server.log_action(username, f"add label {label} to {scheme}", project.name)
     return r
 
 @app.post("/schemes/label/delete", dependencies=[Depends(verified_user)])
 async def delete_label(project: Annotated[Project, Depends(get_project)],
+                       username: Annotated[str, Header()],
                     scheme:str,
                     label:str,
-                    user:str):
+                    #user:str
+                    ):
     """
     Remove a label from a scheme
     """
-    r = project.schemes.delete_label(label, scheme, user)
-    server.log_action(user, f"delete label {label} to {scheme}", project.name)
+    r = project.schemes.delete_label(label, scheme, username)
+    server.log_action(username, f"delete label {label} to {scheme}", project.name)
     return r
 
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
-async def post_schemes(
+async def post_schemes(username: Annotated[str, Header()],
                         action:Action,
-                        user:str,
+                        #user:str,
                         project: Annotated[Project, Depends(get_project)],
                         scheme:SchemeModel
                         ):
@@ -509,15 +515,15 @@ async def post_schemes(
     """
     if action == "add":
         r = project.schemes.add_scheme(scheme)
-        server.log_action(scheme.user, f"add scheme {scheme.name}", project.name)
+        server.log_action(username, f"add scheme {scheme.name}", project.name)
         return r
     if action == "delete":
         r = project.schemes.delete_scheme(scheme)
-        server.log_action(scheme.user, f"delete scheme {scheme.name}", project.name)
+        server.log_action(username, f"delete scheme {scheme.name}", project.name)
         return r
     if action == "update":
-        r = project.schemes.update_scheme(scheme.name, scheme.tags, scheme.user)
-        server.log_action(scheme.user, f"update scheme {scheme.name}", project.name)
+        r = project.schemes.update_scheme(scheme.name, scheme.tags, username)
+        server.log_action(username, f"update scheme {scheme.name}", project.name)
         return r
     
     return {"error":"wrong route"}
@@ -528,22 +534,28 @@ async def post_schemes(
 
 @app.get("/features", dependencies=[Depends(verified_user)])
 async def get_features(project: Annotated[Project, Depends(get_project)]):
-        """
-        Available scheme of a project
-        """
-        return {"features":list(project.features.map.keys())}
+    """
+    Available scheme of a project
+    """
+    return {"features":list(project.features.map.keys())}
 
 @app.post("/features/add/regex", dependencies=[Depends(verified_user)])
 async def post_regex(project: Annotated[Project, Depends(get_project)],
+                     username: Annotated[str, Header()],
                           regex:RegexModel):
+    """
+    Add a regex
+    """
     r = project.add_regex(regex.name,regex.value)
-    server.log_action(regex.user, f"add regex {regex.name}", project.name)
+    server.log_action(username, f"add regex {regex.name}", project.name)
     return r
 
 @app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
+                          username: Annotated[str, Header()],
                           name:str,
-                          user:str):
+                          #user:str
+                          ):
     if name in project.features.training:
         return {"error":"This feature is already in training"}
     
@@ -558,7 +570,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           kwargs = args)
         process.start()
         project.features.training.append(name)
-        server.log_action(user, f"Compute feature sbert", project.name)
+        server.log_action(username, f"Compute feature sbert", project.name)
         return {"success":"computing sbert, it could take a few minutes"}
     if name == "fasttext":
         args = {
@@ -570,19 +582,21 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           kwargs = args)
         process.start()
         project.features.training.append(name)
-        server.log_action(user, f"Compute feature fasttext", project.name)
+        server.log_action(username, f"Compute feature fasttext", project.name)
         return {"success":"computing fasttext, it could take a few minutes"}
-
-    # Log
 
     return {"error":"not implemented"}
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
-                     user:str,
-                     name:str):
+                        username: Annotated[str, Header()],
+                        #user:str,
+                        name:str):
+    """
+    Delete a specific feature
+    """
     r = project.features.delete(name)
-    server.log_action(user, f"delete feature {name}", project.name)
+    server.log_action(username, f"delete feature {name}", project.name)
     return r
 
 
@@ -601,9 +615,11 @@ async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
 
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
+                           username: Annotated[str, Header()],
                            simplemodel:SimpleModelModel):
     """
     Compute simplemodel
+    TODO : user out of simplemodel
     """
     r = project.update_simplemodel(simplemodel)
     return r
@@ -623,23 +639,26 @@ async def get_bert(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(project: Annotated[Project, Depends(get_project)],
+                  username: Annotated[str, Header()],
                      model_name:str,
-                     user:str,
+                     #user:str,
                      data:str = "all"):
     """
     Start prediction with a model
+    TODO : scope data
     """
     print("start predicting")
     df = project.content[["text"]]
     r = project.bertmodels.start_predicting_process(name = model_name,
                                                     df = df,
                                                     col_text = "text",
-                                                    user = user)
-    server.log_action(user, f"predict bert {model_name}", project.name)
+                                                    user = username)
+    server.log_action(username, f"predict bert {model_name}", project.name)
     return r
 
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
                      bert:BertModelModel):
     """ 
     Compute bertmodel
@@ -650,7 +669,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     df = df[[project.params.col_text, "labels"]].dropna() #remove non tag data
     r = project.bertmodels.start_training_process(
                                 name = bert.name,
-                                user = bert.user,
+                                user = username,
                                 scheme = bert.scheme,
                                 df = df,
                                 col_text=df.columns[0],
@@ -659,14 +678,16 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 params = bert.params,
                                 test_size=bert.test_size
                                 )
-    server.log_action(bert.user, f"train bert {bert.name}", project.name)
+    server.log_action(username, f"train bert {bert.name}", project.name)
     return r
 
 @app.post("/models/bert/stop", dependencies=[Depends(verified_user)])
 async def stop_bert(project: Annotated[Project, Depends(get_project)],
-                     user:str):
-    r = project.bertmodels.stop_user_training(user)
-    server.log_action(user, f"stop bert training", project.name)
+                    username: Annotated[str, Header()],
+                    #user:str
+                     ):
+    r = project.bertmodels.stop_user_training(username)
+    server.log_action(username, f"stop bert training", project.name)
     return r
 
 @app.post("/models/bert/delete", dependencies=[Depends(verified_user)])
@@ -682,11 +703,13 @@ async def delete_bert(project: Annotated[Project, Depends(get_project)],
 
 @app.post("/models/bert/rename", dependencies=[Depends(verified_user)])
 async def save_bert(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
                      former_name:str,
                      new_name:str,
-                     user:str):
+                     #user:str
+                     ):
     r = project.bertmodels.rename(former_name, new_name)
-    server.log_action(user, f"rename bert model {former_name} - {new_name}", project.name)
+    server.log_action(username, f"rename bert model {former_name} - {new_name}", project.name)
     return r
 
 
@@ -719,5 +742,3 @@ async def export_bert(project: Annotated[Project, Depends(get_project)],
                           name:str = Query()):
     name, path = project.bertmodels.export_bert(name = name)
     return FileResponse(path, filename=name)
-
-

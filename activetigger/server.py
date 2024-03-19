@@ -681,7 +681,7 @@ class Project(Session):
                     "simplemodel":{ #change names existing/available to available/options
                                     "existing":self.simplemodels.available(),
                                     "available":self.simplemodels.available_models
-                                    },
+                                },
                     "bertmodels":{
                                 "options":self.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
