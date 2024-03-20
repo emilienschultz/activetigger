@@ -7,9 +7,8 @@ import pandas as pd # type: ignore
 import re
 import pyarrow.parquet as pq # type: ignore
 import json
-import functions
-from models import BertModels, SimpleModels
-from datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
+from activetigger.models import BertModels, SimpleModels
+from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
@@ -18,6 +17,9 @@ import logging
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from sklearn.preprocessing import StandardScaler
+
+import activetigger.functions as functions
+
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
                     level=logging.INFO,

@@ -4,15 +4,15 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
-from datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token
-from datamodels import RegexModel, SimpleModelModel, BertModelModel
-from server import Server, Project
-import functions
 from multiprocessing import Process
 import time
 import pandas as pd
 import os
 from jose import JWTError
+
+from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel
+from activetigger.server import Server, Project
+import activetigger.functions as functions
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
