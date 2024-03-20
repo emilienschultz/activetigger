@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='Activetigger',
-      version='0.0.4',
+      version='0.0.5',
       description='Active Tigger in Python',
       author='Émilien Schultz',
       author_email='emilien.schultz@gmail.com',
@@ -20,7 +20,6 @@ setup(name='Activetigger',
 		"numpy",
 		"pandas",
 		"pyarrow",
-		"scikit-learn",
 		"torch",
 		"transformers[torch]",
 		"sentence_transformers",
@@ -34,5 +33,6 @@ setup(name='Activetigger',
 		"python-jose[cryptography]",
 		"bcrypt",
 		"plotly",
-		"matplotlib"]
+		"matplotlib",
+		"scikit-learn"]
      )
