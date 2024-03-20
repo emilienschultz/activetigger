@@ -1,6 +1,7 @@
 fastapi[all]
 requests
 uvicorn
+pyyaml
 argparse
 datasets
 fasttext

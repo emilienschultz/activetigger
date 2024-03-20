@@ -1,74 +1,57 @@
 import os
+import yaml
 from datetime import datetime
 import concurrent.futures
 from pathlib import Path
 import sqlite3
-import pandas as pd # type: ignore
 import re
-import pyarrow.parquet as pq # type: ignore
 import json
-from activetigger.models import BertModels, SimpleModels
-from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
+import shutil
+import pandas as pd # type: ignore
+import pyarrow.parquet as pq # type: ignore
 from pandas import DataFrame, Series
 from fastapi import UploadFile # type: ignore
 from fastapi.encoders import jsonable_encoder # type: ignore
-import shutil
-import logging
 from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
-from sklearn.preprocessing import StandardScaler
-
+from jose import jwt # type: ignore
 import activetigger.functions as functions
+from activetigger.models import BertModels, SimpleModels
+from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
 
-logging.basicConfig(filename='log.log', 
-                    encoding='utf-8', 
-                    level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-
-class Session():
+class Server():
     """
-    Global session parameters
-    TODO : load from yaml file
+    Server to manage projects
     """
-    logging.info("Starting session")
-    logging.warning('Still under development')
-
-    max_file_size: int = 50 * 1024 * 1024
-    path: Path = Path("./projects")
-    db: Path = Path('./projects/activetigger.db')
+    db_name:str =  "activetigger.db"
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
     data_file:str = "data.parquet"
     test_file:str = "test.parquet"
-    default_user:str = "user"
-    n_workers = 4 #os.cpu_count()
-
-    # openssl rand -hex 32
-    SECRET_KEY = "f63aeb7426d2c8a3defc02a3e788c2f311482d6cff557c2c5bdebc71d67b507a"
+    default_user:str = "root"
     ALGORITHM = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES = 3600
 
-
-class Server(Session):
-    """
-    Server to manage projects
-    """
     def __init__(self) -> None:
         """
         Start the server
         """
-        logging.info("Starting server")
-
-        self.projects: dict = {}
         self.time_start:datetime = datetime.now()
+
+        # YAML configuration file
+        with open('config.yaml') as f:
+            config = yaml.safe_load(f)
+        self.path = Path(config["path"])
+        self.SECRET_KEY = config["secret_key"] #generate it automatically ?
+        
+        self.db = self.path / self.db_name
+
+        # Activity of the server
+        self.projects: dict = {}
         self.processes:list = []
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=2)
 
+        # Create the database in the first launch
         if not self.db.exists():
-            logging.info("Creating database")
             self.create_db()
-
-        self.add_user("root","root") #default user
 
     def __del__(self): 
         print("Closing the server")
@@ -162,6 +145,10 @@ class Server(Session):
         cursor.execute(create_table_sql)
         conn.commit()
         conn.close()
+
+        # create generic user
+        self.add_user(self.default_user,self.default_user)
+
         return None
 
     def log_action(self, 
@@ -291,8 +278,7 @@ class Server(Session):
         if not self.exists(project_name):
             raise ValueError("Project don't exist")
 
-        logging.info(f"Load project {project_name}")
-        self.projects[project_name] = Project(project_name)
+        self.projects[project_name] = Project(project_name, self.db)
         return True
 
     def set_project_parameters(self, project: ProjectModel) -> dict:
@@ -422,23 +408,27 @@ class Server(Session):
         return True
     
 
-class Project(Session):
+class Project(Server):
     """
     Project object
     """
 
     def __init__(self, 
-                 project_name: str) -> None:
+                 project_name:str,
+                 path_db:Path) -> None:
         """
         Load existing project
         """
         self.name: str = project_name
+        self.db = path_db
         self.params: ProjectModel = self.load_params(project_name)
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file) #type: ignore
         self.schemes: Schemes = Schemes(project_name, 
-                                        self.params.dir / self.labels_file) #type: ignore
+                                        self.params.dir / self.labels_file,
+                                        self.db) #type: ignore
         self.features: Features = Features(project_name,
-                                           self.params.dir / self.features_file) #type: ignore
+                                           self.params.dir / self.features_file,
+                                           self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
         self.lock:list = [] # prevent competition
@@ -762,7 +752,7 @@ class Project(Session):
 
         return file_name, path / file_name
 
-class Features(Session):
+class Features():
     """
     Manage project features
     Comment : 
@@ -772,12 +762,14 @@ class Features(Session):
 
     def __init__(self, 
                  project_name:str, 
-                 data_path:Path) -> None:
+                 data_path:Path,
+                 db_path:Path) -> None:
         """
         Initit features
         """
         self.project_name = project_name
         self.path = data_path
+        self.db = db_path
         content, map = self.load()
         self.content: DataFrame = content
         self.map:dict = map
@@ -864,7 +856,7 @@ class Features(Session):
         return self.content[cols]
         
 
-class Schemes(Session):
+class Schemes():
     """
     Manage project schemes & tags
 
@@ -874,12 +866,14 @@ class Schemes(Session):
     """
     def __init__(self,
                  project_name: str,
-                 path:Path) -> None:
+                 path:Path, 
+                 db_path:Path) -> None:
         """
         Init empty
         """
         self.project_name = project_name
         self.path = path
+        self.db = db_path
         self.content = pd.read_parquet(self.path) #text + context
         available = self.available()
 
