@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+from distutils.core import setup
+
+setup(name='Activetigger',
+      version='0.0.4',
+      description='Active Tigger in Python',
+      author='Émilien Schultz',
+      author_email='emilien.schultz@gmail.com',
+      url='https://github.com/emilienschultz/pyactivetigger',
+      packages=['activetigger'],
+      install_requires=["fastapi[all]",
+		"requests",
+		"uvicorn",
+		"argparse",
+		"datasets",
+		"fasttext",
+		"ipywidgets",
+		"IPython",
+		"numpy",
+		"pandas",
+		"pyarrow",
+		"scikit-learn",
+		"torch",
+		"transformers[torch]",
+		"sentence_transformers",
+		"typing-inspect",
+		"typing_extensions",
+		"spacy",
+		"pyyaml",
+		"protobuf",
+		"umap-learn",
+		"distinctipy",
+		"python-jose[cryptography]",
+		"bcrypt",
+		"plotly",
+		"matplotlib"]
+     )

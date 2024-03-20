@@ -1,3 +1,6 @@
+fastapi[all]
+requests
+uvicorn
 argparse
 datasets
 fasttext
@@ -8,8 +11,6 @@ pandas
 pyarrow
 scikit-learn
 torch
-torchvision
-torchaudio
 transformers[torch]
 sentence_transformers
 typing-inspect
@@ -17,9 +18,6 @@ typing_extensions
 spacy
 pyyaml
 protobuf
-fastapi[all]
-requests
-uvicorn
 umap-learn
 distinctipy
 python-jose[cryptography]
