@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='Activetigger',
-      version='0.0.8',
+      version='0.0.9',
       description='Active Tigger in Python',
       author='Émilien Schultz',
       author_email='emilien.schultz@gmail.com',
