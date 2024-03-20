@@ -1,4 +1,5 @@
 data/*
+docker
 models/*
 notebooks/*
 projects/*

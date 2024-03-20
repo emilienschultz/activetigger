@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException,status, Header, UploadFile, File, Query, Form, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 import logging
@@ -143,9 +143,16 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 # Routes
 # ------
 
+@app.get("/", response_class=HTMLResponse)
+async def welcome():
+    """
+    Welcome page
+    """
+    with open("html/welcome.html","r") as f:
+        return f.read()
+
 # Users
 #------
-
 
 @app.post("/token")
 async def login_for_access_token(
