@@ -34,8 +34,8 @@ class Session():
     logging.warning('Still under development')
 
     max_file_size: int = 50 * 1024 * 1024
-    path: Path = Path("../projects")
-    db: Path = Path('../projects/activetigger.db')
+    path: Path = Path("./projects")
+    db: Path = Path('./projects/activetigger.db')
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
     data_file:str = "data.parquet"

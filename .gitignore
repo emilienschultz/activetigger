@@ -1,8 +1,8 @@
-data/*
-docker
-models/*
-notebooks/*
-projects/*
+data/
+docker/
+models/
+notebooks/
+projects/
 activetigger/log
 log
 Réflexions.md
