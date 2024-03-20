@@ -3,12 +3,13 @@
 from distutils.core import setup
 
 setup(name='Activetigger',
-      version='0.0.9',
+      version='0.0.10',
       description='Active Tigger in Python',
       author='Émilien Schultz',
       author_email='emilien.schultz@gmail.com',
       url='https://github.com/emilienschultz/pyactivetigger',
       packages=['activetigger'],
+      include_package_data=True,
       py_modules = ['api', 'server','widget',"datamodels","functions","models"],
       install_requires=["fastapi[all]",
 		"requests",
