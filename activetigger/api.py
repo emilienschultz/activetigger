@@ -9,6 +9,7 @@ import time
 import pandas as pd
 import os
 from jose import JWTError
+import importlib
 
 from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel
 from activetigger.server import Server, Project
@@ -148,8 +149,8 @@ async def welcome():
     """
     Welcome page
     """
-    print(os.getcwd())
-    with open("html/welcome.html","r") as f:
+    data_path = importlib.resources.files("activetigger")
+    with open(data_path / "html/welcome.html","r") as f:
         return f.read()
 
 # Users
