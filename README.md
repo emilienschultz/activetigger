@@ -19,16 +19,14 @@ You can install `activetigger` via pip:
 pip install activetigger
 ```
 
-And install the requirements with 
-
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Use
 
-To launch the server
+Create a config file `config.yaml` in the directory where you want to launch the server :
+
+- `path` : path to store files (for instance `./data`)
+- `secret_key` : to secure tokens. To generate it `openssl rand -hex 32C`
+
+Then, to launch the server (on port 8000)
 
 ```python
 python -m activetigger
