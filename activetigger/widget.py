@@ -103,6 +103,9 @@ class Widget():
            "username":user}
         self.user = user
 
+        # Display
+        self.current_user.value = f"Connected as <b>{self.user}</b>"
+
         # Disable connecting options
         self.existing_users.disabled = True
         self.password.disabled = True
@@ -134,7 +137,7 @@ class Widget():
         self.connect_user.style.button_color = 'lightgreen'
         self.connect_user.on_click(lambda x : self._connect_user(user = self.existing_users.value,
                                                  password = self.password.value))
-
+        self.current_user = widgets.HTML(value="Not connected")
         # Existing projects
         existing_projects = widgets.Dropdown(
             options=existing["projects"],
@@ -165,6 +168,7 @@ class Widget():
         # Display
         clear_output()
         self.output = widgets.VBox([widgets.HBox([img_at, self.existing_users, self.password, self.connect_user]),
+                                    self.current_user,
                                     widgets.HBox([existing_projects, start, delete, create]) 
                                     ])
         #display(self.output)

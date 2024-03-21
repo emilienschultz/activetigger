@@ -23,6 +23,7 @@ logging.basicConfig(filename='log.log',
 
 # General comments
 # - all post are logged
+# - header identification with token
 # - username is in the header
 
 #######
@@ -176,7 +177,28 @@ async def login_for_access_token(
 
 @app.get("/users/me/", response_model=User)
 async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+    """
+    Information on current user
+    """
     return current_user
+
+@app.post("/users/create", dependencies=[Depends(verified_user)])
+async def create_user(username:str = Query(),
+                      password:str = Query(),
+                      projects:str = Query(None)):
+    """
+    Create user
+    """
+    r = server.add_user(username, password, projects)
+    return r
+
+@app.post("/users/delete", dependencies=[Depends(verified_user)])
+async def delete_user(username:str = Query()):
+    """
+    Delete user
+    """
+    r = server.delete_user(username)
+    return r
 
 # Projects management
 #--------------------
@@ -404,20 +426,6 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
                                    user = username)
     server.log_action(username, "update data table", project.name)
     return r
-
-
-@app.get("/elements/stats", dependencies=[Depends(verified_user)])
-async def get_stats(project: Annotated[Project, Depends(get_project)],
-                    username: Annotated[str, Header()],
-                    scheme:str,
-                    #user:str
-                    ):
-    """
-    Get statistics for a specific scheme/user
-    """
-    r = project.get_stats_annotations(scheme, username)
-    return r
-    
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
 async def get_element(element_id:str, 

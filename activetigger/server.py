@@ -1,5 +1,5 @@
 import os
-import yaml
+import yaml # type: ignore
 from datetime import datetime
 import concurrent.futures
 from pathlib import Path
@@ -20,8 +20,9 @@ from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, Sim
 
 class Server():
     """
-    Server to manage projects
+    Server to manage backend
     """
+    # files name
     db_name:str =  "activetigger.db"
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
@@ -41,20 +42,24 @@ class Server():
             config = yaml.safe_load(f)
         self.path = Path(config["path"])
         self.SECRET_KEY = config["secret_key"] #generate it automatically ?
-        
+
+        # Create the database
         self.db = self.path / self.db_name
+        if not self.db.exists():
+            self.create_db()
 
         # Activity of the server
         self.projects: dict = {}
         self.processes:list = []
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=2)
 
-        # Create the database in the first launch
-        if not self.db.exists():
-            self.create_db()
-
     def __del__(self): 
-        print("Closing the server")
+        """
+        Close the server
+        """
+        print("Ending the server")
+        self.executor.shutdown()
+        print("Server off")
             
     def create_db(self) -> None:
         """
@@ -146,16 +151,14 @@ class Server():
         conn.commit()
         conn.close()
 
-        # create generic user
+        # create root user
         self.add_user(self.default_user,self.default_user)
-
-        return None
 
     def log_action(self, 
                    user:str, 
                    action:str, 
                    project:str = "general",
-                   connect = "not implemented"):
+                   connect = "not implemented") -> None:
         """
         Log action in the database
         """
@@ -165,7 +168,6 @@ class Server():
         cursor.execute(query, (user, project, action, connect))
         conn.commit()
         conn.close()
-        return None
 
     def db_get_project(self, project_name:str) -> ProjectModel|None:
         """
@@ -187,7 +189,7 @@ class Server():
 
     def exists(self, project_name) -> bool:
         """
-        Test if a project exists
+        Test if a project exists in the database
         """
         existing = self.existing_projects()
         v = (project_name in existing)
@@ -217,7 +219,9 @@ class Server():
         conn.close()
         return [i[0] for i in existing_users]
     
-    def add_user(self, name:str, password:str, projects = "all"):
+    def add_user(self, name:str, 
+                 password:str, 
+                 projects = "all") -> dict:
         """
         Add user to database
         """
@@ -234,9 +238,23 @@ class Server():
         conn.close()
         return {"success":"User added to the database"}
     
-    def get_user(self, name):
+    def delete_user(self, 
+                    name:str) -> dict:
         """
-        Authentificate user
+        Deleting user
+        """
+        if not name in self.existing_users():
+            return {"error":"Username does not exist"}
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "DELETE FROM users WHERE user = ?"
+        cursor.execute(query, (name,))
+        conn.close()
+        return {"success":"User deleted"}    
+    
+    def get_user(self, name) -> UserInDB|dict:
+        """
+        Get user from database
         """
         if not name in self.existing_users():
             return {"error":"Username doesn't exist"}
@@ -245,12 +263,14 @@ class Server():
         query = "SELECT * FROM users WHERE user = ?"
         cursor.execute(query, (name,))
         user = cursor.fetchone()
-        print(user)
         u = UserInDB(username = name, hashed_password = user[3])
         conn.close()
         return u
 
     def authenticate_user(self, username: str, password: str):
+        """
+        User authentification
+        """
         user = self.get_user(username)
         if "error" in user:
             return user
@@ -259,6 +279,9 @@ class Server():
         return user
     
     def create_access_token(self, data: dict, expires_min: int  = 60):
+        """
+        Create access token
+        """
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
         to_encode.update({"exp": expire})
@@ -268,18 +291,21 @@ class Server():
         return encoded_jwt
     
     def decode_access_token(self, token:str):
+        """
+        Decode access token
+        """
         payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
         return payload
 
-    def start_project(self, project_name:str) -> bool:
+    def start_project(self, project_name:str) -> dict:
         """
-        Load project in memory
+        Load project in server
         """        
         if not self.exists(project_name):
-            raise ValueError("Project don't exist")
+            return {"error":"Project does not exist"}
 
         self.projects[project_name] = Project(project_name, self.db)
-        return True
+        return {"success":"Project loaded"}
 
     def set_project_parameters(self, project: ProjectModel) -> dict:
         """
@@ -305,7 +331,7 @@ class Server():
 
     def create_project(self, 
                        params:ProjectModel, 
-                       file:UploadFile) -> ProjectModel:
+                       file:UploadFile) -> ProjectModel|dict:
         """
         Set up a new project
         - load data and save
@@ -314,12 +340,14 @@ class Server():
         - add preliminary tags
         """
         # create directory for the project
+        if self.exists(params.project_name):
+            return {"error":"Project name already exist"}
         params.dir = self.path / params.project_name
         if params.dir.exists():
-            return {"error":"This name is already used as a file"}
+            return {"error":"This name is already used"}
         os.makedirs(params.dir)
 
-        # write total dataset
+        # copy total dataset
         with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
@@ -385,19 +413,14 @@ class Server():
         Delete a project
         """
 
-        if self.exists(project_name):
-            params = self.db_get_project(project_name)
-            self.remove_project_parameters(project_name)
-            shutil.rmtree(params.dir)
-            return {"success":"project deleted"}
-        else:
-            return {"error":"project doesn't exist"}
+        if not self.exists(project_name):
+            return {"error":"Project doesn't exist"}
 
-    def remove_project_parameters(self, project_name:str) -> bool:
-        """
-        Delete database entry
-        To add: save dump of a project when deleted ?
-        """
+        # remove files
+        params = self.db_get_project(project_name)
+        shutil.rmtree(params.dir)
+
+        # clean database
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         cursor.execute(f"DELETE FROM projects WHERE project_name = ?", (project_name,))
@@ -405,7 +428,8 @@ class Server():
         cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_name,))
         conn.commit()
         conn.close()
-        return True
+
+        return {"success":"Project deleted"}
     
 
 class Project(Server):
@@ -423,21 +447,11 @@ class Project(Server):
         self.db = path_db
         self.params: ProjectModel = self.load_params(project_name)
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file) #type: ignore
-        self.schemes: Schemes = Schemes(project_name, 
-                                        self.params.dir / self.labels_file,
-                                        self.db) #type: ignore
-        self.features: Features = Features(project_name,
-                                           self.params.dir / self.features_file,
-                                           self.db) #type: ignore
+        self.schemes: Schemes = Schemes(project_name,self.params.dir / self.labels_file, self.db) #type: ignore
+        self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
         self.lock:list = [] # prevent competition
-
-        # Compute features if requested
-        if ("sbert" in self.params.embeddings) & (not "sbert" in self.features.map):
-            self.compute_embeddings(emb="sbert")
-        if ("fasttext" in self.params.embeddings) & (not "fasttext" in self.features.map):
-            self.compute_embeddings(emb="fasttext")
 
     def load_params(self, project_name:str) -> ProjectModel:
         """
@@ -455,52 +469,12 @@ class Project(Server):
             return ProjectModel(**json.loads(existing_project[2]))
         else:
             raise NameError(f"{project_name} does not exist.")
-
-    async def compute_embeddings(self,
-                           emb:str) -> dict:
-        """
-        Compute embeddings
-        """
-        print("start compute embeddings ",emb, self.content.shape)
-        if emb == "fasttext":
-            f = functions.to_fasttext
-        if emb == "sbert":
-            f = functions.to_sbert
-        calc_emb = f(self.content[self.params.col_text])
-        self.features.add(emb, calc_emb)
-        return {"success":f"{emb} embeddings computed"}
-    
-    def fit_simplemodel(self,
-                        model:str,
-                        features:list|str,
-                        scheme:str,
-                        user:str = "user",
-                        model_params: None|dict = None
-                        ) -> bool:
-        """
-        Create and fit a simple model with project data
-        """
-
-        # build the dataset with label + predictors
-        df_features = self.features.get(features)
-        df_scheme = self.schemes.get_scheme_data(scheme)
-        col_features = list(df_features.columns)
-        data = pd.concat([df_scheme,
-                          df_features],
-                          axis=1)
-        self.simplemodels.add_simplemodel(user = user, 
-                                          scheme = scheme, 
-                                          features=features, 
-                                          name = model, 
-                                          df = data, 
-                                          col_labels = "labels", 
-                                          col_features = col_features,
-                                          model_params = model_params,
-                                          standardize = True
-                                          ) 
-        return True
     
     def update_simplemodel(self, simplemodel: SimpleModelModel) -> dict:
+        """
+        Update simplemodel on the base of an already existing
+        simplemodel object
+        """
         if simplemodel.features is None or len(simplemodel.features)==0:
             return {"error":"Empty features"}
         if not simplemodel.model in list(self.simplemodels.available_models.keys()):
@@ -509,15 +483,26 @@ class Project(Server):
             return {"error":"Scheme doesn't exist"}
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
             return {"error":"2 different labels needed"}
-        self.fit_simplemodel(
-                            model=simplemodel.model,
-                            features=simplemodel.features,
-                            scheme=simplemodel.scheme,
-                            user =simplemodel.user,
-                            model_params=simplemodel.params
-                            )
-        return {"success":"new simplemodel"}
-     
+        
+        df_features = self.features.get(simplemodel.features)
+        df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
+        col_features = list(df_features.columns)
+        data = pd.concat([df_scheme,
+                          df_features],
+                          axis=1)
+        self.simplemodels.add_simplemodel(user = simplemodel.user, 
+                                          scheme = simplemodel.scheme, 
+                                          features=simplemodel.features, 
+                                          name = simplemodel.model, 
+                                          df = data, 
+                                          col_labels = "labels", 
+                                          col_features = col_features,
+                                          model_params = simplemodel.params,
+                                          standardize = True
+                                          ) 
+        
+        return {"success":"Simplemodel updated"}
+
     def get_next(self,
                  scheme:str,
                  selection:str = "deterministic",
@@ -602,7 +587,7 @@ class Project(Server):
     def get_element(self,element_id):
         """
         Get an element of the database
-        TO REMOVE
+        TODO: clarify
         """
         columns = ["text"]
         return {"element_id":element_id,
@@ -614,20 +599,6 @@ class Project(Server):
         Send parameters
         """
         return self.params
-    
-    def get_stats_annotations(self, scheme:str, user:str):
-
-        df = self.schemes.get_scheme_data(scheme)
-        df["labels"].value_counts()
-
-        stats = {
-                    "dataset total":len(self.content),
-                    "annotated elements":len(df),
-                    "different users":list(self.schemes.get_distinct_users(scheme)),
-                    "annotations distribution":json.loads(df["labels"].value_counts().to_json()),
-                    "last annotation":"TO DO",
-                }
-        return stats
     
     def get_description(self, scheme:str|None, user:str|None):
         """
@@ -679,9 +650,7 @@ class Project(Server):
                     "bertmodels":{
                                 "options":self.bertmodels.base_models,
                                 "available":self.bertmodels.trained(),
-                                "training":self.bertmodels.training(),
-#                                "predictions":self.bertmodels.predictions(),
-#        
+                                "training":self.bertmodels.training(),#        
                                 "base_parameters":self.bertmodels.params_default
                                 },
                     "projections":{
@@ -881,8 +850,7 @@ class Schemes():
         if len(available) == 0:
             self.add_scheme(SchemeModel(project_name = project_name, 
                                  name = "default",
-                                 tags = [],
-                                 user = "server")
+                                 tags = [])
                                  )
 
     def __repr__(self) -> str:
