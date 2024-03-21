@@ -12,6 +12,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 import distinctipy
+import importlib
 
 
 class Widget():
@@ -119,8 +120,9 @@ class Widget():
         Widget.async_update = False
 
         # Image
+        data_path = importlib.resources.files("activetigger")
         image_path = "img/active_tigger.png"
-        img = open(image_path, 'rb').read()
+        img = open(data_path / image_path, 'rb').read()
         img_at = widgets.Image(value=img, format='png', width=50, height=50)
 
         # Users
