@@ -598,15 +598,31 @@ class Project(Server):
 
         return element
     
-    def get_element(self,element_id):
+    def get_element(self, 
+                    element_id:str,
+                    scheme:str|None = None,
+                    user:str|None = None):
         """
         Get an element of the database
-        TODO: clarify
+        TODO: better homogeneise with get_next ?
         """
-        columns = ["text"]
-        return {"element_id":element_id,
-                "text":self.content.loc[element_id,"text"]
-                }
+        # get prediction if it exists
+        predict = {"label":None, "proba":None}
+        if (user is not None) & (scheme is not None):
+            if self.simplemodels.exists(user,scheme):
+                sm = self.simplemodels.get_model(user, scheme)
+                predicted_label = sm.proba.loc[element_id,"prediction"]
+                predicted_proba = round(sm.proba.loc[element_id,predicted_label],2)
+                predict = {"label":predicted_label, 
+                        "proba":predicted_proba}
+        r = { 
+            "element_id":element_id,
+            "text":self.content.loc[element_id,self.params.col_text],
+            "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
+            "selection":"request",
+            "predict":predict
+            }
+        return r
 
     def get_params(self) -> ProjectModel:
         """
@@ -657,9 +673,9 @@ class Project(Server):
                             "training":self.features.training,
                             "options":["sbert","fasttext"]
                             },
-                    "simplemodel":{ #change names existing/available to available/options
-                                    "existing":self.simplemodels.available(),
-                                    "available":self.simplemodels.available_models
+                    "simplemodel":{
+                                    "available":self.simplemodels.available(),
+                                    "options":self.simplemodels.available_models
                                 },
                     "bertmodels":{
                                 "options":self.bertmodels.base_models,
@@ -671,7 +687,6 @@ class Project(Server):
                                 "available":self.features.possible_projections
                                 }
                    }
-        # TODO : change available label to default ... 
         return  options
     
     def add_regex(self, name: str, value: str) -> dict:
@@ -824,7 +839,6 @@ class Features():
     def get(self, features:list|str = "all"):
         """
         Get content for specific features
-        TODO : test if the feature exists
         """
         if features == "all":
             features = list(self.map.keys())
@@ -832,10 +846,15 @@ class Features():
             features = [features]
 
         cols = []
+        missing = []
         for i in features:
             if i in self.map:
                 cols += self.map[i]
+            else:
+                missing.append(i)
 
+        if len(i)>0:
+            print("Missing features:", missing)
         return self.content[cols]
         
 

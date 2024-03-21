@@ -413,7 +413,7 @@ class Widget():
             # check if simplemodel need to be retrained
             if self.is_simplemodel() and (len(self.history) % self.simplemodel_autotrain.value == 0):
                 # retrain with the parameters of the state
-                sm = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
+                sm = self.state["simplemodel"]["available"][self.user][self.select_scheme.value]
                 self.create_simplemodel(self.select_scheme.value,
                            model = sm["name"], 
                            parameters = sm["params"], 
@@ -432,8 +432,8 @@ class Widget():
         return True
 
     def is_simplemodel(self)->bool:
-        if self.user in self.state["simplemodel"]["existing"]:
-            if self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]:
+        if self.user in self.state["simplemodel"]["available"]:
+            if self.select_scheme.value in self.state["simplemodel"]["available"][self.user]:
                 return True
         return False
 
@@ -567,12 +567,12 @@ class Widget():
         if state:
             self.state = self.get_state()
 
-        self.select_simplemodel.options = list(self.state["simplemodel"]["available"].keys())
+        self.select_simplemodel.options = list(self.state["simplemodel"]["options"].keys())
         self.select_features.options = self.state["features"]["available"]
 
         # if a model has already be trained for the user and the scheme
-        if (self.user in self.state["simplemodel"]["existing"]) and (self.select_scheme.value in self.state["simplemodel"]["existing"][self.user]):
-            current_model = self.state["simplemodel"]["existing"][self.user][self.select_scheme.value]
+        if (self.user in self.state["simplemodel"]["available"]) and (self.select_scheme.value in self.state["simplemodel"]["available"][self.user]):
+            current_model = self.state["simplemodel"]["available"][self.user][self.select_scheme.value]
             name = current_model['name']
             statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
             self.simplemodel_params.value = json.dumps(current_model["params"], indent=2)
@@ -812,7 +812,8 @@ class Widget():
         Display specific element
         """
         r = self._get(route = f"/elements/{element_id}",
-                      params = {"project_name":self.project_name})
+                      params = {"project_name":self.project_name,
+                                "scheme":self.select_scheme.value})
         # Managing errors
         if "error" in r:
             print(r)
@@ -1249,7 +1250,7 @@ class Widget():
         self.select_simplemodel =  widgets.Dropdown(description = "Models")
         def on_change_scheme(change):
             if change['type'] == 'change' and change['name'] == 'value':
-                self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["available"][self.select_simplemodel.value],
+                self.simplemodel_params.value = json.dumps(self.state["simplemodel"]["options"][self.select_simplemodel.value],
                                                            indent=2)
         self.select_simplemodel.observe(on_change_scheme)
         self.select_features = widgets.SelectMultiple()

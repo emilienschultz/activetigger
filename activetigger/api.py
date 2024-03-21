@@ -428,14 +428,16 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
     return r
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
-async def get_element(element_id:str, 
-                      project: Annotated[Project, Depends(get_project)]) -> ElementModel:
+async def get_element(project: Annotated[Project, Depends(get_project)],
+                      username: Annotated[str, Header()],
+                      element_id:str,
+                      scheme:str) -> ElementModel:
     """
     Get specific element
     """
     print(element_id)
     try:
-        e = ElementModel(**project.get_element(element_id))
+        e = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
         return e
     except: # gérer la bonne erreur
         raise HTTPException(status_code=404, detail=f"Element {element_id} not found")
