@@ -149,7 +149,7 @@ async def welcome():
     Welcome page
     """
     print(os.getcwd())
-    with open("activetigger/html/welcome.html","r") as f:
+    with open("html/welcome.html","r") as f:
         return f.read()
 
 # Users
