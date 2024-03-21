@@ -1066,8 +1066,6 @@ class Widget():
                 if "data" in r:
                     self.projection_data = pd.DataFrame(r["data"])
                     self.plot_visualisation()
-        print("End asyncio loop")
-
 
     def interface(self):
         """

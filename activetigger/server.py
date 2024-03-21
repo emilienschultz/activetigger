@@ -451,7 +451,7 @@ class Project(Server):
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
-        self.lock:list = [] # prevent competition
+        self.lock:dict = {} # prevent competition, lock an element for max N seconds
 
     def load_params(self, project_name:str) -> ProjectModel:
         """
@@ -513,8 +513,15 @@ class Project(Server):
         """
         Get next item
         Related to a specific scheme
-        TODO : add lock feature
         """
+
+        # check for expired lock : more than 30 s
+        print("Current lock: ", self.lock)
+        keys = list(self.lock.keys())
+        for i in keys:
+            if (datetime.now() - self.lock[i]).seconds > 30:
+                if i in self.lock:
+                    del self.lock[i]
 
         # select the current state of annotation
         df = self.schemes.get_scheme_data(scheme, complete=True)
@@ -532,7 +539,11 @@ class Project(Server):
                 projection = self.features.available_projections[user]["data"]
                 f_frame = (projection[0] > frame[0]) & (projection[0] < frame[2]) & (projection[1] > frame[1]) & (projection[1] < frame[3])
                 f = f & f_frame
-        
+
+        # remove locked items
+        f_lock = ~ df.index.isin(list(self.lock.keys()))
+        f = f & f_lock
+
         val = ""
 
         # test if there is at least one element available
@@ -582,6 +593,9 @@ class Project(Server):
             "frame":frame
                 }
         
+        # add to lock
+        self.lock[element_id] = datetime.now()
+
         return element
     
     def get_element(self,element_id):
@@ -1087,6 +1101,7 @@ class Schemes():
         cursor.execute(query, ("add", user, self.project_name, element_id, scheme, tag))
         conn.commit()
         conn.close()
+
         return {"success":"tag added"}
     
     def push_table(self, table, user:str):
