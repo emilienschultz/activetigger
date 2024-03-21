@@ -12,5 +12,3 @@ activetigger/.ipynb_checkpoints/
 activetigger/__pycache__/
 dist/
 tests/__pycache__/
-config.yaml
-setup.py
