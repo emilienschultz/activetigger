@@ -498,7 +498,8 @@ class Widget():
         if len(self.state["features"]["available"])>0:
             self.available_features.value = self.state["features"]["available"][0]
 
-        self.add_features.options = self.state["features"]["options"]
+        self.add_features.options = self.state["features"]["options"].keys()
+        self.features_params.value = json.dumps(self.state["features"]["options"][self.add_features.value])
 
         c = self.state["features"]["training"]
         if len(c) == 0:
@@ -834,17 +835,20 @@ class Widget():
         r = self._display_element(element_id) 
         return r
     
-    def compute_feature(self, feature_name) -> bool:
+    def compute_feature(self, feature_name, feature_params) -> bool:
         """
         Compute feature
         """
-        if not feature_name in self.state["features"]["options"]:
+        if not feature_name in self.state["features"]["options"].keys():
             return "This feature doesn't exist"
+        feature_params = json.loads(feature_params) #test if ok
         r = self._post(f"/features/add/{feature_name}", 
                     params ={
                             "project_name":self.project_name,
                             "user":self.user
-                            })
+                            },
+                    json_data = {"params":feature_params}
+                    )
         self.update_tab_features()
         return True
     
@@ -1119,6 +1123,40 @@ class Widget():
                             widgets.HBox([new_label, valid_new_label]),
                         ])
 
+        #-------------
+        # Tab Features
+        #-------------
+        self.info_features  = widgets.HTML(value = "No process currently running")
+        self.available_features =  widgets.Dropdown(description = "Available")
+        delete_feature = widgets.Button(description = "Delete", button_style="danger")
+        delete_feature.on_click(lambda x: self.delete_feature(self.available_features.value))
+        self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
+        self.features_params = widgets.Textarea(layout=widgets.Layout(width='200px',height='100px'))
+        def if_change_feature(change):
+            if change['type'] == 'change' and change['name'] == 'value':
+                self.features_params.value = json.dumps(self.state["features"]["options"][self.add_features.value],
+                                                        indent = 2)
+        self.add_features.observe(if_change_feature)
+        valid_compute_features = widgets.Button(description = "⚙️Compute")
+        valid_compute_features.on_click(lambda x : self.compute_feature(self.add_features.value, 
+                                                                        self.features_params.value))
+        valid_compute_features.style.button_color = 'lightgreen'
+        add_regex_value = widgets.Text(description="Add regex:")
+        valid_regex = widgets.Button(description = "Add")
+        valid_regex.style.button_color = 'lightgreen'
+        valid_regex.on_click(lambda x: self.add_regex(add_regex_value.value))
+
+        # Populate
+        self.update_tab_features()
+
+        # Group in tab
+        tab_features = widgets.VBox([
+            widgets.HBox([self.available_features,delete_feature]),
+            widgets.HBox([self.add_features,self.features_params,valid_compute_features]),
+            widgets.HBox([add_regex_value,valid_regex]),
+            self.info_features,
+             ])
+
         #-----------
         # Tab codage
         #-----------
@@ -1277,33 +1315,6 @@ class Widget():
                             valid_model,
                             widgets.HTML(value="Autotrain every:"),
                             self.simplemodel_autotrain
-             ])
-        #-------------
-        # Tab Features
-        #-------------
-        self.info_features  = widgets.HTML(value = "No process currently running")
-        self.available_features =  widgets.Dropdown(description = "Available")
-        delete_feature = widgets.Button(description = "Delete", button_style="danger")
-        delete_feature.on_click(lambda x: self.delete_feature(self.available_features.value))
-        self.add_features = widgets.Dropdown(description="Add: ", value="", options=[""])
-        valid_compute_features = widgets.Button(description = "⚙️Compute")
-        valid_compute_features.on_click(lambda x : self.compute_feature(self.add_features.value))
-        valid_compute_features.style.button_color = 'lightgreen'
-        add_regex_value = widgets.Text(description="Add regex:")
-        #add_regex_name = widgets.Text(description="Name:")
-        valid_regex = widgets.Button(description = "Add")
-        valid_regex.style.button_color = 'lightgreen'
-        valid_regex.on_click(lambda x: self.add_regex(add_regex_value.value))
-
-        # Populate
-        self.update_tab_features()
-
-        # Group in tab
-        tab_features = widgets.VBox([
-            widgets.HBox([self.available_features,delete_feature]),
-            widgets.HBox([self.add_features,valid_compute_features]),
-            widgets.HBox([add_regex_value,valid_regex]),
-            self.info_features,
              ])
 
         #--------------

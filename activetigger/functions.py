@@ -30,28 +30,42 @@ def compare_to_hash(text:str, hash:str|bytes):
     r = bcrypt.checkpw(text, hash)
     return r
 
-def to_dfm(texts: Series,
+
+def process_dfm(texts: Series,
+           path:Path,
            tfidf:bool=False,
            ngrams:int=1,
-           min_term_freq:int=5) -> DataFrame:
+           min_term_freq:int=5,
+           max_term_freq:int|float = 1.0,
+           log:bool = False,
+           norm = None
+           ):
     """
     Compute DFM embedding
-
-    TODO : what is "max_doc_freq" + ADD options from quanteda
+    
+    Norm :  None, l1, l2
+    sublinear_tf : log
+    Pas pris en compte : DFM : Min Docfreq
     https://quanteda.io/reference/dfm_tfidf.html
+    + stop_words
     """
-
     if tfidf:
         vectorizer = TfidfVectorizer(ngram_range=(1, ngrams),
-                                      min_df=min_term_freq)
+                                      min_df=min_term_freq,
+                                      sublinear_tf = log,
+                                      norm = norm,
+                                      max_df = max_term_freq)
     else:
         vectorizer = CountVectorizer(ngram_range=(1, ngrams),
-                                      min_df=min_term_freq)
+                                      min_df=min_term_freq,
+                                      max_df = max_term_freq)
 
     dtm = vectorizer.fit_transform(texts)
+    names = vectorizer.get_feature_names_out()
     dtm = pd.DataFrame(dtm.toarray(), 
-                       columns=vectorizer.get_feature_names_out())
-    return dtm
+                       columns = names, 
+                       index = texts.index)
+    dtm.to_parquet(path / "dfm.parquet")
 
 def tokenize(texts: Series,
              model: str = "fr_core_news_sm")->Series:

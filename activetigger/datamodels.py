@@ -128,3 +128,6 @@ class ProjectionModel(BaseModel):
     method:str
     features:list
     params:dict
+
+class ParamsModel(BaseModel):
+    params:dict

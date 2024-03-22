@@ -453,6 +453,9 @@ class Project(Server):
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
         self.lock:dict = {} # prevent competition, lock an element for max N seconds
 
+    def __del__(self):
+        pass
+
     def load_params(self, project_name:str) -> ProjectModel:
         """
         Load params from database
@@ -671,7 +674,8 @@ class Project(Server):
                     "features":{
                             "available":list(self.features.map.keys()),
                             "training":self.features.training,
-                            "options":["sbert","fasttext"]
+                            "options":self.features.options
+
                             },
                     "simplemodel":{
                                     "available":self.simplemodels.available(),
@@ -780,6 +784,19 @@ class Features():
                             }
         self.available_projections:dict = {}
 
+        # options
+        self.options:dict = {"sbert":{},
+                        "fasttext":{},
+                        "dfm":{ 
+                                    "tfidf":False,
+                                    "ngrams":1,
+                                    "min_term_freq":5,
+                                    "max_term_freq":100,
+                                    "norm":None,
+                                    "log":None
+                                    }
+                        }
+
 
     def __repr__(self) -> str:
         return f"Available features : {self.map}"
@@ -817,9 +834,12 @@ class Features():
         # add to the table & dictionnary
         content.columns = [f"{name}__{i}" for i in content.columns]
         self.map[name] = list(content.columns)
-        self.content = pd.concat([self.content,content],
+
+        self.content = pd.concat([self.content,
+                                  content],
                                      axis=1)
         # save
+
         self.content.to_parquet(self.path)
         return {"success":"feature added"}
 

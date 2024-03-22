@@ -11,7 +11,7 @@ import os
 from jose import JWTError
 import importlib
 
-from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel
+from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel
 from activetigger.server import Server, Project
 import activetigger.functions as functions
 
@@ -68,6 +68,14 @@ async def update():
             os.remove(project.params.dir / "fasttext.parquet")
             print("Adding fasttext embeddings")
             logging.info("FASTTEXT embeddings added to project")
+        if (project.params.dir / "dfm.parquet").exists():
+            df = pd.read_parquet(project.params.dir / "dfm.parquet")
+            project.features.add("dfm",df) 
+            if "dfm" in project.features.training:
+                project.features.training.remove("dfm") 
+            os.remove(project.params.dir / "dfm.parquet")
+            print("Adding dfm embeddings")
+            logging.info("Dfm embeddings added to project")
         
         # joining projection process
         for u in project.features.available_projections:
@@ -573,8 +581,14 @@ async def post_regex(project: Annotated[Project, Depends(get_project)],
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           username: Annotated[str, Header()],
                           name:str,
-                          #user:str
+                          params:ParamsModel
                           ):
+    """
+    Compute features :
+    common logic : call a function in a specific process, 
+    create a file, and then updated
+    TODO : refactorize the function + merge with regex
+    """
     if name in project.features.training:
         return {"error":"This feature is already in training"}
     
@@ -603,6 +617,16 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         project.features.training.append(name)
         server.log_action(username, f"Compute feature fasttext", project.name)
         return {"success":"computing fasttext, it could take a few minutes"}
+    if name == "dfm":
+        args = params.params
+        args["texts"] = df
+        args["path"] = project.params.dir
+        process = Process(target=functions.process_dfm, 
+                          kwargs = args)
+        process.start()
+        project.features.training.append(name)
+        server.log_action(username, f"Compute feature dfm", project.name)
+        return {"success":"computing dfm, it could take a few seconds"}
 
     return {"error":"not implemented"}
 
