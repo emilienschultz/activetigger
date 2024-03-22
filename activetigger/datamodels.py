@@ -109,6 +109,7 @@ class SimpleModelModel(BaseModel):
     params:dict|None
     scheme:str
     user:str
+    standardize: Optional[bool] = True
 
 class BertModelModel(BaseModel):
     project_name:str

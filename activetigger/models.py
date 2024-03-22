@@ -734,6 +734,7 @@ class SimpleModels():
             model = MultinomialNB(alpha=model_params["alpha"],
                                     fit_prior=model_params["fit_prior"],
                                     class_prior=model_params["class_prior"])
+            print(X)
 
 
         # Fit modelmax_features
@@ -762,6 +763,7 @@ class SimpleModels():
         A a new simplemodel for a user and a scheme
         """
         X, Y, labels = self.load_data(df, col_labels, col_features, standardize)
+        print(X)
         model, model_params = self.fit_model(name, X, Y, model_params)
         sm = SimpleModel(name, X, Y, labels, model, features, standardize, model_params)
         if not user in self.existing:

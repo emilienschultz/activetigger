@@ -74,7 +74,6 @@ async def update():
             if "dfm" in project.features.training:
                 project.features.training.remove("dfm") 
             os.remove(project.params.dir / "dfm.parquet")
-            print("Adding dfm embeddings")
             logging.info("Dfm embeddings added to project")
         
         # joining projection process
@@ -634,7 +633,6 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
                         username: Annotated[str, Header()],
-                        #user:str,
                         name:str):
     """
     Delete a specific feature

@@ -489,6 +489,7 @@ class Project(Server):
         # force dfm for multi_naivebayes
         if simplemodel.model == "multi_naivebayes":
             simplemodel.features = ["dfm"]
+            simplemodel.standardize = False
         
         df_features = self.features.get(simplemodel.features)
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
@@ -504,7 +505,7 @@ class Project(Server):
                                           col_labels = "labels", 
                                           col_features = col_features,
                                           model_params = simplemodel.params,
-                                          standardize = True
+                                          standardize = simplemodel.standardize
                                           ) 
         
         return {"success":"Simplemodel updated"}
@@ -855,7 +856,7 @@ class Features():
 
         col = self.get([name])
         del self.map[name]
-        self.content.drop(columns=col)
+        self.content = self.content.drop(columns=col)
         self.content.to_parquet(self.path)
         return {"success":"feature deleted"}
             

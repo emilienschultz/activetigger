@@ -150,6 +150,9 @@ class Widget():
         start.style.button_color = 'lightgreen'
         def start_project(b):
             self.project_name = existing_projects.value
+            if existing_projects.value is None:
+                print("No project selected")
+                return None
             self.state = self.get_state()
             if "error" in self.state:
                 print("Not connected")
