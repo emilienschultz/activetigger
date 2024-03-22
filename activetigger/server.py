@@ -486,6 +486,9 @@ class Project(Server):
             return {"error":"Scheme doesn't exist"}
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
             return {"error":"2 different labels needed"}
+        # force dfm for multi_naivebayes
+        if simplemodel.model == "multi_naivebayes":
+            simplemodel.features = ["dfm"]
         
         df_features = self.features.get(simplemodel.features)
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)

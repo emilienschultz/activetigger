@@ -618,6 +618,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         server.log_action(username, f"Compute feature fasttext", project.name)
         return {"success":"computing fasttext, it could take a few minutes"}
     if name == "dfm":
+        # TODO save params with list to dict
         args = params.params
         args["texts"] = df
         args["path"] = project.params.dir

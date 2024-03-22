@@ -610,6 +610,12 @@ class SimpleModels():
                 },
         "lasso": {
                 "C":32
+                },
+        "multi_naivebayes":
+                {
+                    "alpha":1,
+                    "fit_prior":True,
+                    "class_prior":None
                 }
             }
     
@@ -721,6 +727,14 @@ class SimpleModels():
             model = RandomForestClassifier(n_estimators=model_params["n_estimators"], 
                                                 random_state=42,
                                                 max_features=model_params["max_features"])
+
+        if name == "multi_naivebayes":
+            # Only with dtf or tfidf for features
+            # TODO: calculate class prior for docfreq & termfreq
+            model = MultinomialNB(alpha=model_params["alpha"],
+                                    fit_prior=model_params["fit_prior"],
+                                    class_prior=model_params["class_prior"])
+
 
         # Fit modelmax_features
         model.fit(X, Y)
@@ -909,13 +923,11 @@ class SimpleModel():
 #                     class_prior = None #TODO
  
 #             if self.model_params["distribution"] == "multinomial":
+#                 # discrete features
 #                 self.model = MultinomialNB(alpha=alpha,
 #                                            fit_prior=fit_prior,
 #                                            class_prior=class_prior)
-#             elif self.model_params["distribution"] == "bernouilli":
-#                 self.model = BernoulliNB(alpha=alpha,
-#                                            fit_prior=fit_prior,
-#                                            class_prior=class_prior)
+
 #             self.model_params = {
 #                                     "distribution":self.model_params["distribution"],
 #                                     "smooth":alpha,
