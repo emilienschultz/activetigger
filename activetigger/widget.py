@@ -737,10 +737,12 @@ class Widget():
             return "Need at least one feature" 
         # TODO : test if parameters is valid
         params = {"project_name":self.project_name}
-        try:
-            parameters = json.loads(parameters)
-        except:
-            raise ValueError("Problem in the json parameters")
+        if type(parameters) is str:
+            try:
+                parameters = json.loads(parameters)
+            except:
+                print(parameters)
+                raise ValueError("Problem in the json parameters")
         data = {
                 "model":model,
                 "features":features,
@@ -1313,7 +1315,7 @@ class Widget():
                                                            indent=2)
         self.select_simplemodel.observe(on_change_scheme)
         self.select_features = widgets.SelectMultiple()
-        self.simplemodel_params = widgets.Textarea(value="",
+        self.simplemodel_params = widgets.Textarea(value=json.dumps({}),
                                                    layout=widgets.Layout(width='300px',height='200px'))
         valid_model = widgets.Button(description = "⚙️Train")
         valid_model.on_click(lambda b : self.create_simplemodel(scheme=self.select_scheme.value, #attention il faudra revoir le choix du scheme
