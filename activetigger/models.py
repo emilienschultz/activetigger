@@ -565,7 +565,6 @@ class BertModels():
             # test if process completed (predicting)
             if (b.status == "predicting") and (not p.is_alive()):
                 to_del.append(b.name)
-            print(to_del)
         # Update the current active processes
         self.processes = {u:self.processes[u] for u in self.processes if self.processes[u][0].name not in to_del}
         #self.processes = [b for b in self.processes if b[0].name not in to_del]
@@ -734,8 +733,6 @@ class SimpleModels():
             model = MultinomialNB(alpha=model_params["alpha"],
                                     fit_prior=model_params["fit_prior"],
                                     class_prior=model_params["class_prior"])
-            print(X)
-
 
         # Fit modelmax_features
         model.fit(X, Y)
@@ -763,7 +760,6 @@ class SimpleModels():
         A a new simplemodel for a user and a scheme
         """
         X, Y, labels = self.load_data(df, col_labels, col_features, standardize)
-        print(X)
         model, model_params = self.fit_model(name, X, Y, model_params)
         sm = SimpleModel(name, X, Y, labels, model, features, standardize, model_params)
         if not user in self.existing:
@@ -810,7 +806,6 @@ class SimpleModel():
         self.standardize = standardize
         self.statistics = self.compute_statistics(model, X, Y, labels)
         self.cv10 = self.compute_10cv(model, X, Y)
-        print(self.statistics)
 
     def json(self):
         """

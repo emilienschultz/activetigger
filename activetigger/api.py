@@ -363,19 +363,21 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
             return {"status":"Still computing"}
         if scheme is None:
             return {"data":project.features.available_projections[username]["data"].fillna("NA").to_dict()}
-        else: # add the labels of the scheme
+        else:
+            # TODO : add texts
             data = project.features.available_projections[username]["data"]
-            df = project.schemes.get_scheme_data(scheme)
+            df = project.schemes.get_scheme_data(scheme, complete = True)
+            print(df)
             data["labels"] = df["labels"]
+            data["texts"] = df["text"]
             return {"data":data.fillna("NA").to_dict()}
 
     return {"error":"There is no projection available"}
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(project: Annotated[Project, Depends(get_project)],
-                         username: Annotated[str, Header()],
-                         #user:str,
-                         projection:ProjectionModel):
+                            username: Annotated[str, Header()],
+                            projection:ProjectionModel):
     """
     Start projection computation
     Dedicated process, end with a file on the project
@@ -651,7 +653,6 @@ async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
     Simplemodel parameters
     """
     r = project.simplemodels.available()
-    print(type(r))
     return r
 
 
@@ -662,6 +663,7 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
     """
     Compute simplemodel
     TODO : user out of simplemodel
+    TODO : test if parameters in simplemodel are well formed
     """
     r = project.update_simplemodel(simplemodel)
     return r
@@ -701,10 +703,11 @@ async def predict(project: Annotated[Project, Depends(get_project)],
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                     bert:BertModelModel):
+                    bert:BertModelModel):
     """ 
     Compute bertmodel
     TODO : gestion du nom du projet/scheme à la base du modèle
+    TODO : test if bert.params is well formed, maybe with pydantic ?
     """
     print("start bert training")
     df = project.schemes.get_scheme_data(bert.scheme, complete = True) #move it elswhere ?

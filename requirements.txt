@@ -20,7 +20,6 @@ spacy
 pyyaml
 protobuf
 umap-learn
-distinctipy
 python-jose[cryptography]
 bcrypt
 plotly

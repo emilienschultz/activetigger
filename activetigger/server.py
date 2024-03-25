@@ -541,11 +541,14 @@ class Project(Server):
             f = df["labels"].notnull()
 
         # manage frame selection (if projection, only in the box)
-        if user in self.features.available_projections:
-            if "data" in self.features.available_projections[user]:
-                projection = self.features.available_projections[user]["data"]
-                f_frame = (projection[0] > frame[0]) & (projection[0] < frame[2]) & (projection[1] > frame[1]) & (projection[1] < frame[3])
-                f = f & f_frame
+        try:
+            if user in self.features.available_projections:
+                if "data" in self.features.available_projections[user]:
+                    projection = self.features.available_projections[user]["data"]
+                    f_frame = (projection[0] > frame[0]) & (projection[0] < frame[2]) & (projection[1] > frame[1]) & (projection[1] < frame[3])
+                    f = f & f_frame
+        except:
+            print("Problem on frame")
 
         # remove locked items
         f_lock = ~ df.index.isin(list(self.lock.keys()))

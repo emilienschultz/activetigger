@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 import distinctipy
 import importlib
+import numpy as np
 
 
 class Widget():
@@ -736,6 +737,10 @@ class Widget():
             return "Need at least one feature" 
         # TODO : test if parameters is valid
         params = {"project_name":self.project_name}
+        try:
+            parameters = json.loads(parameters)
+        except:
+            raise ValueError("Problem in the json parameters")
         data = {
                 "model":model,
                 "features":features,
@@ -759,6 +764,10 @@ class Widget():
             return "Model missing"
         if self.new_bert_params.value is None:
             return "Parameters missing"
+        try:
+            params = json.loads(self.new_bert_params.value)
+        except:
+            raise ValueError("Problem in the json parameters")
         
         params = {"project_name":self.project_name}
         data = {
@@ -767,7 +776,7 @@ class Widget():
                 "user":self.user,
                 "name":f"_{self.user}", # générique
                 "base_model":self.new_bert_base.value,
-                "params":json.loads(self.new_bert_params.value),
+                "params":params,
                 "test_size":0.2
                 }
         
@@ -844,7 +853,10 @@ class Widget():
         """
         if not feature_name in self.state["features"]["options"].keys():
             return "This feature doesn't exist"
-        feature_params = json.loads(feature_params) #test if ok
+        try:
+            feature_params = json.loads(feature_params) #test if ok
+        except:
+            raise ValueError("Problem in the json parameters")
         r = self._post(f"/features/add/{feature_name}", 
                     params ={
                             "project_name":self.project_name,
@@ -971,10 +983,16 @@ class Widget():
                 "project_name":self.project_name,
                 "user":self.user
                 }
+        
+        try:
+            proj_params = json.loads(self.projection_params.value)
+        except:
+            raise ValueError("Problem in the json parameters")
+
         data = {
             "method":self.projection_method.value, 
             "features":self.projection_features.value,
-            "params":json.loads(self.projection_params.value),
+            "params":proj_params,
             }
         r = self._post("/elements/projection/compute",
             params = params,
@@ -984,31 +1002,30 @@ class Widget():
             self.visualization.children = [widgets.HTML(value = self.projection_data)]
         else:
             print(r)
+    
 
     def plot_visualisation(self):
         """
         Produce the visualisation for the projection
-        TODO : legend ; display text
         """
         df = self.projection_data
-        f = go.FigureWidget([go.Scatter(x=df["0"], 
-                                        y=df["1"], 
+        df["to_show"] = df.apply(lambda x : f"{x.name}| {x['texts'][0:100]}...", axis=1)
+        f = go.FigureWidget([go.Scatter(x=df[df["labels"]==i]["0"], 
+                                        y=df[df["labels"]==i]["1"], 
                                         mode='markers', 
-                                        customdata = df.index,
-                                        showlegend = False)])
-        scatter = f.data[0]
-        labels = list(df["labels"].unique())
-        colors = distinctipy.get_colors(len(labels)) 
-        colors_map = {labels[i]:colors[i] for i in range(0, len(labels))}
-        scatter.marker.color = [f"rgba({colors_map[i][0]}, {colors_map[i][1]}, {colors_map[i][2]}, 0.5)" for i in list(df["labels"])]
-        scatter.marker.size = [5] * 100
+                                        name = i,
+                                        customdata = np.stack((df[df["labels"]==i]["to_show"],), axis=-1),
+                                        hovertemplate="%{customdata[0]}",
+                                        showlegend = True) for i in df["labels"].unique()])
         f.layout.hovermode = 'closest'
         def update_point(trace, points, selector):
             # select specific text
-            element_id = trace.customdata[points.point_inds][0]
-            print(element_id)
-            self._display_element(element_id)
-        scatter.on_click(update_point)
+            if len(points.point_inds)>0:
+                element_id = trace.customdata[points.point_inds][0][0].split("|")[0] #TODO améliorer
+                print(element_id)
+                self._display_element(element_id)
+        for i in range(0,len(f.data)):
+            f.data[i].on_click(update_point)
         self.visualization.children = [f]
 
     def display_bert_informations(self, name):
@@ -1072,6 +1089,7 @@ class Widget():
             if (type(self.projection_data) is str) and (self.projection_data == "computing"):
                 r = self.get_projection_data()
                 if "data" in r:
+                    print("get projection data")
                     self.projection_data = pd.DataFrame(r["data"])
                     self.plot_visualisation()
 
@@ -1300,7 +1318,7 @@ class Widget():
         valid_model = widgets.Button(description = "⚙️Train")
         valid_model.on_click(lambda b : self.create_simplemodel(scheme=self.select_scheme.value, #attention il faudra revoir le choix du scheme
                                                                model = self.select_simplemodel.value,
-                                                               parameters = json.loads(self.simplemodel_params.value),
+                                                               parameters = self.simplemodel_params.value,
                                                                features = self.select_features.value))
         self.simplemodel_autotrain = widgets.IntSlider(min=1, max=50, 
                                       description="")
