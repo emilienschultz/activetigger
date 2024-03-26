@@ -449,7 +449,10 @@ class Project(Server):
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file) #type: ignore
-        self.schemes: Schemes = Schemes(project_name,self.params.dir / self.labels_file, self.db) #type: ignore
+        self.schemes: Schemes = Schemes(project_name, 
+                                        self.params.dir / self.labels_file, 
+                                        self.params.dir / self.test_file, 
+                                        self.db) #type: ignore
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
@@ -898,18 +901,19 @@ class Schemes():
     """
     def __init__(self,
                  project_name: str,
-                 path:Path, 
+                 path_content:Path, # training data
+                 path_test:Path, # test data
                  db_path:Path) -> None:
         """
         Init empty
         """
         self.project_name = project_name
-        self.path = path
         self.db = db_path
-        self.content = pd.read_parquet(self.path) #text + context
+        self.content = pd.read_parquet(path_content) #text + context   
+        self.test = pd.read_parquet(path_test)
         available = self.available()
 
-        # create a default scheme
+        # create a default scheme if not available
         if len(available) == 0:
             self.add_scheme(SchemeModel(project_name = project_name, 
                                  name = "default",
@@ -944,8 +948,13 @@ class Schemes():
         conn.close()
         df = pd.DataFrame(results, columns =["id","labels","user","timestamp"]).set_index("id")
         df.index = [str(i) for i in df.index]
+
         if complete: # all the elements
-            return self.content.join(df)
+            if kind == "add":
+                return self.content.join(df)
+            if kind == "test":
+                return self.test.join(df)
+        
         return df
     
     def get_table(self, scheme:str,
