@@ -118,7 +118,11 @@ class Widget():
         Start project
         """
         # Get existing projects
-        existing = self._get("/server")
+        try:
+            existing = self._get("/server")
+        except:
+            print(f"Failed to connect to the server. Please check if the server is available at {self.URL_SERVER}")
+            return None
 
         # Stop potential async
         Widget.async_update = False
@@ -139,6 +143,8 @@ class Widget():
         self.connect_user.on_click(lambda x : self._connect_user(user = self.existing_users.value,
                                                  password = self.password.value))
         self.current_user = widgets.HTML(value="Not connected")
+        if self.user is not None:
+            self.current_user.value = f"Connected as <b>{self.user}</b>"
         # Existing projects
         existing_projects = widgets.Dropdown(
             options=existing["projects"],
@@ -635,7 +641,7 @@ class Widget():
 
         bert = []
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            bert = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[2]] #if compressed
+            bert = [i for i in self.state["bertmodels"]["available"][self.select_scheme.value].keys()] #if compressed
         self.select_bert_model.options  = bert
 
     def create_scheme(self, s):
@@ -767,7 +773,7 @@ class Widget():
         if self.new_bert_params.value is None:
             return "Parameters missing"
         try:
-            params = json.loads(self.new_bert_params.value)
+            bert_params = json.loads(self.new_bert_params.value)
         except:
             raise ValueError("Problem in the json parameters")
         
@@ -778,7 +784,7 @@ class Widget():
                 "user":self.user,
                 "name":f"_{self.user}", # générique
                 "base_model":self.new_bert_base.value,
-                "params":params,
+                "params":bert_params,
                 "test_size":0.2
                 }
         
@@ -970,7 +976,7 @@ class Widget():
         r = self._get("/export/bert",
             params = params,
             is_json= False)
-        if "error" in r:
+        if type(r) is dict:
             print(r)
             return None
         with open(f"./{name}.tar.gz","wb") as f:
@@ -1175,7 +1181,9 @@ class Widget():
         # Group in tab
         tab_features = widgets.VBox([
             widgets.HBox([self.available_features,delete_feature]),
+            widgets.HTML(value = "<hr>"),
             widgets.HBox([self.add_features,self.features_params,valid_compute_features]),
+            widgets.HTML(value = "<hr>"),
             widgets.HBox([add_regex_value,valid_regex]),
             self.info_features,
              ])
@@ -1395,9 +1403,9 @@ class Widget():
                         
                              ])
 
-        #--------------
-        # Tab BertModel
-        #--------------
+        #-----------
+        # Tab Export
+        #-----------
 
         layout_button=widgets.Layout(width='80px')
         layout_menu=widgets.Layout(width='150px')
@@ -1483,7 +1491,6 @@ class Widget():
         self.output.observe(on_tab_selected, names='selected_index')
 
         # Display
-        #clear_output()
-        #display(self.output)
-        self.global_output.children = [self.output]
+        general_info = widgets.HTML(value=f"<b>Current user: {self.user}</b>")
+        self.global_output.children = [general_info, self.output]
         

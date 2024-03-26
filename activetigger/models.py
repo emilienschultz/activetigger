@@ -425,6 +425,7 @@ class BertModels():
         print("tokenize")
 
         # Tokenize
+        print(params)
         if params["adapt"]:
             df = df.map(lambda e: tokenizer(e['text'], truncation=True, padding=True, max_length=512), batched=True)
         else:

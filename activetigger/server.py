@@ -446,6 +446,8 @@ class Project(Server):
         self.name: str = project_name
         self.db = path_db
         self.params: ProjectModel = self.load_params(project_name)
+        if self.params.dir is None:
+            raise ValueError("No directory exists for this project")
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file) #type: ignore
         self.schemes: Schemes = Schemes(project_name,self.params.dir / self.labels_file, self.db) #type: ignore
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
@@ -720,7 +722,7 @@ class Project(Server):
         if format is None:
             format = "csv"
 
-        path = self.path / self.name # path of the data
+        path = self.params.dir # path of the data
         if not path.exists():
             raise ValueError("Problem of filesystem for project")
 
@@ -744,12 +746,13 @@ class Project(Server):
         if format is None:
             format = "csv"
 
-        path = self.path / self.name # path of the data
+        print(self.params.dir)
+        path = self.params.dir# path of the data
         if not path.exists():
             raise ValueError("Problem of filesystem for project")
 
         data = self.schemes.get_scheme_data(scheme=scheme,
-                                     complete=True)
+                                            complete=True)
         
         file_name = f"data_{self.name}_{scheme}.{format}"
 
@@ -916,7 +919,7 @@ class Schemes():
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
 
-    def get_scheme_data(self, scheme:str, complete = False) -> DataFrame:
+    def get_scheme_data(self, scheme:str, complete = False, kind = "add") -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
         """
@@ -930,15 +933,16 @@ class Schemes():
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = '''
-            SELECT element_id, tag, MAX(time) AS last_timestamp
+            SELECT element_id, tag, user, MAX(time)
             FROM annotations
             WHERE scheme = ? AND project = ? AND action = ?
-            GROUP BY element_id;
+            GROUP BY element_id
+            ORDER BY time DESC;
         '''
-        cursor.execute(query, (scheme, self.project_name, "add"))
+        cursor.execute(query, (scheme, self.project_name, kind))
         results = cursor.fetchall()
         conn.close()
-        df = pd.DataFrame(results, columns =["id","labels","timestamp"]).set_index("id")
+        df = pd.DataFrame(results, columns =["id","labels","user","timestamp"]).set_index("id")
         df.index = [str(i) for i in df.index]
         if complete: # all the elements
             return self.content.join(df)
