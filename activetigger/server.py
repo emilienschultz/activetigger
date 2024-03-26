@@ -351,9 +351,14 @@ class Server():
         with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
-        # random sample of the needed data, index as str
+        # TODO : maximise the aleardy tagged in the annotate dataset, and None in the test
+        # if possible, annotated data in the annotation dataset
+        # if possible, test data without annotation
+
+        # random sample of the needed data
         n_rows = params.n_train + params.n_test
-        content = pd.read_csv(params.dir / "data_raw.csv").sample(n_rows)
+        content = pd.read_csv(params.dir / "data_raw.csv")
+        content = content.sample(n_rows)
         content = content.set_index(params.col_id)
         content.index = [str(i) for i in list(content.index)] #type: ignore
     
@@ -449,11 +454,14 @@ class Project(Server):
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file) #type: ignore
-        self.schemes: Schemes = Schemes(project_name,self.params.dir / self.labels_file, self.db) #type: ignore
+        self.schemes: Schemes = Schemes(project_name, 
+                                        self.params.dir / self.labels_file, 
+                                        self.params.dir / self.test_file, 
+                                        self.db) #type: ignore
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
-        self.lock:dict = {} # prevent competition, lock an element for max N seconds
+        #self.lock:dict = {} # prevent competition, lock an element for max N seconds
 
     def __del__(self):
         pass
@@ -525,12 +533,29 @@ class Project(Server):
         """
 
         # check for expired lock : more than 30 s
-        print("Current lock: ", self.lock)
-        keys = list(self.lock.keys())
-        for i in keys:
-            if (datetime.now() - self.lock[i]).seconds > 30:
-                if i in self.lock:
-                    del self.lock[i]
+        # print("Current lock: ", self.lock)
+        # keys = list(self.lock.keys())
+        # for i in keys:
+        #     if (datetime.now() - self.lock[i]).seconds > 30:
+        #        if i in self.lock:
+        #            del self.lock[i]
+
+        # specific case of test, random element
+        if selection == "test": 
+            df = self.schemes.get_scheme_data(scheme, complete=True, kind="test")
+            f = df["labels"].isnull()
+            element_id = df[f].sample(random_state=42).index[0]
+            element =  {
+            "element_id":element_id,
+            "text":df.loc[element_id, "text"],
+            "selection":"test",
+            "context":{},
+            "info":"",
+            "predict":{"label":None,
+                       "proba":None},
+            "frame":[]
+            }
+            return element
 
         # select the current state of annotation
         df = self.schemes.get_scheme_data(scheme, complete=True)
@@ -553,14 +578,14 @@ class Project(Server):
             print("Problem on frame")
 
         # remove locked items
-        f_lock = ~ df.index.isin(list(self.lock.keys()))
-        f = f & f_lock
-
-        val = ""
+        #f_lock = ~ df.index.isin(list(self.lock.keys()))
+        #f = f & f_lock
 
         # test if there is at least one element available
         if sum(f) == 0:
             return {"error":"No element available"}
+
+
 
         # select type of selection
         if selection == "deterministic": # next row
@@ -584,10 +609,11 @@ class Project(Server):
             element_id = sm.proba[f]["entropy"].sort_values(ascending=False).index[0] # get max entropy id
             val = round(sm.proba[f]['entropy'].sort_values(ascending=False)[0],2)
             val = f"entropy: {val}"
-
-        # get prediction if it exists
+        
+        # get prediction of the id if it exists
         predict = {"label":None,
                    "proba":None}
+
         if self.simplemodels.exists(user,scheme):
             sm = self.simplemodels.get_model(user, scheme)
             predicted_label = sm.proba.loc[element_id,"prediction"]
@@ -600,13 +626,13 @@ class Project(Server):
             "text":self.content.fillna("NA").loc[element_id,self.params.col_text],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":selection,
-            "info":str(val),
+            "info":"",
             "predict":predict,
             "frame":frame
                 }
         
         # add to lock
-        self.lock[element_id] = datetime.now()
+        # self.lock[element_id] = datetime.now()
 
         return element
     
@@ -653,10 +679,15 @@ class Project(Server):
         if scheme is None:
             return None
         
-        df = self.schemes.get_scheme_data(scheme)
+        # part train
+        df = self.schemes.get_scheme_data(scheme, kind="add")
         r["N annotated"] = len(df)
         r["Users"] = list(self.schemes.get_distinct_users(scheme))
         r["Annotations"] = json.loads(df["labels"].value_counts().to_json())
+
+        # part test
+        df = self.schemes.get_scheme_data(scheme, kind="test")
+        r["N test annotated"] = len(df)
 
         if self.simplemodels.exists(user, scheme):
             sm = self.simplemodels.get_model(user, scheme) # get model
@@ -674,7 +705,8 @@ class Project(Server):
         options = {
                     "params":self.params,
                     "next":{
-                        "methods":["deterministic","random","maxprob","active"],
+                        "methods_min":["deterministic","random","test"],
+                        "methods":["deterministic","random","maxprob","active","test"],
                         "sample":["untagged","all","tagged"],
                         },
                     "schemes":{
@@ -898,18 +930,19 @@ class Schemes():
     """
     def __init__(self,
                  project_name: str,
-                 path:Path, 
+                 path_content:Path, # training data
+                 path_test:Path, # test data
                  db_path:Path) -> None:
         """
         Init empty
         """
         self.project_name = project_name
-        self.path = path
         self.db = db_path
-        self.content = pd.read_parquet(self.path) #text + context
+        self.content = pd.read_parquet(path_content) #text + context   
+        self.test = pd.read_parquet(path_test)
         available = self.available()
 
-        # create a default scheme
+        # create a default scheme if not available
         if len(available) == 0:
             self.add_scheme(SchemeModel(project_name = project_name, 
                                  name = "default",
@@ -919,7 +952,9 @@ class Schemes():
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
 
-    def get_scheme_data(self, scheme:str, complete = False, kind = "add") -> DataFrame:
+    def get_scheme_data(self, scheme:str, 
+                        complete = False, 
+                        kind = "add") -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
         """
@@ -944,8 +979,13 @@ class Schemes():
         conn.close()
         df = pd.DataFrame(results, columns =["id","labels","user","timestamp"]).set_index("id")
         df.index = [str(i) for i in df.index]
+
         if complete: # all the elements
-            return self.content.join(df)
+            if kind == "add":
+                return self.content.join(df)
+            if kind == "test":
+                return self.test.join(df)
+        
         return df
     
     def get_table(self, scheme:str,
@@ -1129,29 +1169,37 @@ class Schemes():
                  element_id:str, 
                  tag:str|None,
                  scheme:str,
-                 user:str = "server"):
+                 user:str = "server",
+                 selection:str = "training"):
         """
         Record a tag
         """
+
         # test if the action is possible
         a = self.available()
         if not scheme in a:
             return {"error":"scheme unavailable"}
         if (not tag is None) and (not tag in a[scheme]):
             return {"error":"this tag doesn't belong to this scheme"}
-        if not element_id in self.content.index:
-            return {"error":"element doesn't exist"}
-    
+
+        # TODO : add a test also for testing
+        #if (not element_id in self.content.index):
+        #    return {"error":"element doesn't exist"}
+
+        # type of tag regarding the selection mode
+        action = "add"
+        if selection == "test":
+            action = "test"
+
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = '''
             INSERT INTO annotations (action, user, project, element_id, scheme, tag)
             VALUES (?,?,?,?,?,?);
         '''
-        cursor.execute(query, ("add", user, self.project_name, element_id, scheme, tag))
+        cursor.execute(query, (action, user, self.project_name, element_id, scheme, tag))
         conn.commit()
         conn.close()
-
         return {"success":"tag added"}
     
     def push_table(self, table, user:str):
