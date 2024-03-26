@@ -407,11 +407,13 @@ class Widget():
                     "scheme":self.select_scheme.value,
                     "element_id":self.current_element["element_id"],
                     "tag":v.description,
-                    "user":self.user
+                    "user":self.user,
+                    "selection":self.current_element["selection"] #mode of selection of the element
                     }
+            
             r = self._post(route = "/tags/add",
-                       params = {"project_name":self.project_name},
-                       json_data = data)
+                            params = {"project_name":self.project_name},
+                            json_data = data)
             
             # add in history
             if "error" in r:
@@ -422,7 +424,6 @@ class Widget():
 
             # check if simplemodel need to be retrained
             if self.is_simplemodel() and (len(self.history) % self.simplemodel_autotrain.value == 0):
-                # retrain with the parameters of the state
                 sm = self.state["simplemodel"]["available"][self.user][self.select_scheme.value]
                 self.create_simplemodel(self.select_scheme.value,
                            model = sm["name"], 
@@ -446,8 +447,6 @@ class Widget():
             if self.select_scheme.value in self.state["simplemodel"]["available"][self.user]:
                 return True
         return False
-
-
 
     def update_global(self):
         """
@@ -544,7 +543,7 @@ class Widget():
         self._display_next()
         self._display_buttons_labels()
 
-        self._mode_selection.options = ["deterministic","random"]
+        self._mode_selection.options = self.state["next"]["methods_min"]
         self._mode_sample.options = self.state["next"]["sample"]
         self._mode_label.disabled = True
         # to display context
@@ -554,7 +553,7 @@ class Widget():
             self.display_context.value = ""
         # case of a simplemodel is available for the user and the scheme
         if self.is_simplemodel():
-            self._mode_selection.options = self.state["next"]["methods"] #["deterministic","random","maxprob","active"]
+            self._mode_selection.options = self.state["next"]["methods"]
             self._mode_label.disabled = False
             self._mode_label.options = self.state["schemes"]["available"][self.select_scheme.value]
         # projection
@@ -1197,6 +1196,10 @@ class Widget():
         self._back = widgets.Button(description = "◄ back",layout=widgets.Layout(width='100px'))
         self._back.on_click(lambda x : self._get_previous_element())
         self._mode_selection = widgets.Dropdown(layout=widgets.Layout(width='120px'))
+        def on_change_method(change): # if method change, change the current element
+            if change['type'] == 'change' and change['name'] == 'value':
+                self._display_next()
+        self._mode_selection.observe(on_change_method)
         self._mode_sample = widgets.Dropdown(layout=widgets.Layout(width='120px'))
         self._mode_label = widgets.Dropdown(layout=widgets.Layout(width='120px'),
                                             disabled=True)
@@ -1234,8 +1237,6 @@ class Widget():
         self.update_tab_annotations()
         self._mode_selection.value = self._mode_selection.options[0]
         self._mode_sample.value = self._mode_sample.options[0]
-        #self._display_next()
-        #self._display_buttons_labels()
 
         # Group in tab
         tab_annotate = widgets.VBox([

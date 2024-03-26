@@ -81,7 +81,8 @@ class AnnotationModel(BaseModel):
     element_id:str
     tag:str
     user:str
-    scheme:str = "current"
+    scheme:str
+    selection: Optional[str] = None
 
 class SchemeModel(BaseModel):
     """

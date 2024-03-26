@@ -469,8 +469,8 @@ async def post_tag(action:Action,
         r = project.schemes.push_tag(annotation.element_id, 
                                     annotation.tag, 
                                     annotation.scheme,
-                                    username
-                                    #annotation.user
+                                    username,
+                                    annotation.selection
                                     )
         server.log_action(username, f"push annotation {annotation.element_id}", project.name)
         return r
@@ -479,7 +479,6 @@ async def post_tag(action:Action,
         project.schemes.delete_tag(annotation.element_id, 
                                    annotation.scheme,
                                    username
-                                   #annotation.user
                                    ) # add user deletion
         server.log_action(username, f"delete annotation {annotation.element_id}", project.name)
         return {"success":"label deleted"}
