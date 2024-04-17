@@ -104,6 +104,9 @@ class RegexModel(BaseModel):
 class Error(BaseModel):
     error:str
 
+class Data(BaseModel):
+    data:dict|str
+
 class SimpleModelModel(BaseModel):
     features:list
     model:str

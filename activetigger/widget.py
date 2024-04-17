@@ -1095,7 +1095,7 @@ class Widget():
             # check projection status
             if (type(self.projection_data) is str) and (self.projection_data == "computing"):
                 r = self.get_projection_data()
-                if "data" in r:
+                if ("data" in r) and (type(r["data"]) is dict):
                     print("get projection data")
                     self.projection_data = pd.DataFrame(r["data"])
                     self.plot_visualisation()

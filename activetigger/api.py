@@ -11,7 +11,9 @@ import os
 from jose import JWTError
 import importlib
 
-from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel
+from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,\
+      SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
+      Data
 from activetigger.server import Server, Project
 import activetigger.functions as functions
 
@@ -341,30 +343,35 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         )
     return r
 
-
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(project: Annotated[Project, Depends(get_project)],
                          username: Annotated[str, Header()],
-                         #user:str, 
                          scheme:str|None):
     """
     Get projection data if computed
     """
-    if username in project.features.available_projections:
-        if not "data" in project.features.available_projections[username]:
-            return {"status":"Still computing"}
-        if scheme is None:
-            return {"data":project.features.available_projections[username]["data"].fillna("NA").to_dict()}
-        else:
-            # TODO : add texts
-            data = project.features.available_projections[username]["data"]
-            df = project.schemes.get_scheme_data(scheme, complete = True)
-            print(df)
-            data["labels"] = df["labels"]
-            data["texts"] = df["text"]
-            return {"data":data.fillna("NA").to_dict()}
+    r = Error(error = "There is no projection available")
+    
+    if not username in project.features.available_projections:
+        return r
 
-    return Error(error = "There is no projection available")
+    if not "data" in project.features.available_projections[username]:
+        r = Data(data="Still computing")
+        #return {"status":"Still computing"}
+    if scheme is None:
+        r = Data(data=project.features.available_projections[username]["data"].fillna("NA").to_dict())
+        #return {"data":project.features.available_projections[username]["data"].fillna("NA").to_dict()}
+    else:
+        # TODO : add texts
+        data = project.features.available_projections[username]["data"]
+        df = project.schemes.get_scheme_data(scheme, complete = True)
+        print(df)
+        data["labels"] = df["labels"]
+        data["texts"] = df["text"]
+        r = Data(data = data.fillna("NA").to_dict())
+        #return {"data":data.fillna("NA").to_dict()}
+    return r
+
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(project: Annotated[Project, Depends(get_project)],
