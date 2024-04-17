@@ -265,10 +265,9 @@ async def new_project(
         multiple parameters
     PAS LA SOLUTION LA PLUS JOLIE
     https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
-
     """
 
-    # removing None parameters
+    # grouping informations
     params_in = {
         "project_name":project_name,
         "user":username,         
@@ -283,6 +282,7 @@ async def new_project(
         "cols_context":cols_context
         }
     
+    # removing None parameters
     params_out = params_in.copy()
     for i in params_in:
         if params_in[i] is None:
@@ -290,11 +290,11 @@ async def new_project(
 
     project = ProjectModel(**params_out)
 
-    # For the moment, only csv
+    # format of the files (only CSV for the moment)
     if not file.filename.endswith('.csv'):
         return Error(error = "Only CSV file for the moment")
         
-    # Test if project exist
+    # test if project exist
     if server.exists(project.project_name):
         return Error(error = "Project already exist")
 
@@ -368,7 +368,7 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
             data["texts"] = df["text"]
             return {"data":data.fillna("NA").to_dict()}
 
-    return {"error":"There is no projection available"}
+    return Error(error = "There is no projection available")
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(project: Annotated[Project, Depends(get_project)],
@@ -381,7 +381,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
     TODO : très moche comme manière de faire, à reprendre
     """
     if len(projection.features) == 0:
-        return {"error":"No feature"}
+        return Error(error="No feature")
     
     name = f"projection__{username}"
     features = project.features.get(projection.features)
@@ -406,7 +406,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         "future":future_result
                                                         }
         return {"success":"Projection tsne under computation"}
-    return {"error":"This projection is not available"}
+    return Error(error="This projection is not available")
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -494,7 +494,7 @@ async def get_schemes(project: Annotated[Project, Depends(get_project)],
         a = project.schemes.available()
         if scheme in a:
             return {"scheme":a[scheme]}
-        return {"error":"scheme not available"}
+        return Error(error="scheme not available")
 
 
 @app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
@@ -550,7 +550,7 @@ async def post_schemes(username: Annotated[str, Header()],
         server.log_action(username, f"update scheme {scheme.name}", project.name)
         return r
     
-    return {"error":"wrong route"}
+    return Error(error="wrong route")
 
 
 # Features management
@@ -587,7 +587,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     TODO : refactorize the function + merge with regex
     """
     if name in project.features.training:
-        return {"error":"This feature is already in training"}
+        return Error(error="This feature is already in training")
     
     df = project.content[project.params.col_text]
     if name == "sbert":
@@ -626,7 +626,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         server.log_action(username, f"Compute feature dfm", project.name)
         return {"success":"computing dfm, it could take a few seconds"}
 
-    return {"error":"not implemented"}
+    return Error(error="not implemented")
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
@@ -671,7 +671,7 @@ async def get_bert(project: Annotated[Project, Depends(get_project)],
     """
     b = project.bertmodels.get(name, lazy= True)
     if b is None:
-        return {"error":"Bert model does not exist"}
+        return Error(error="Bert model does not exist")
     r =  b.informations()
     return r
 
