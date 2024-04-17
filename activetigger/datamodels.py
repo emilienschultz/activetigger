@@ -101,8 +101,17 @@ class RegexModel(BaseModel):
     value:str
     user:str
 
+
+class ResponseModel(BaseModel):
+    status:str
+    message: Optional[str] = None
+    data: Optional[dict] = None
+
 class Error(BaseModel):
     error:str
+
+class Success(BaseModel):
+    success:str
 
 class Data(BaseModel):
     data:dict|str

@@ -12,8 +12,8 @@ from jose import JWTError
 import importlib
 
 from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,\
-      SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
-      Data
+      SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
+      Data, Success, Error
 from activetigger.server import Server, Project
 import activetigger.functions as functions
 
@@ -34,6 +34,8 @@ logging.basicConfig(filename='log.log',
 
 # start the backend server
 server = Server()
+
+
 
 # start the app
 @asynccontextmanager
@@ -153,6 +155,15 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 # ------
 # Routes
 # ------
+
+from pydantic import BaseModel
+from typing import Optional
+
+
+
+@app.get("/test")
+async def test():
+    return ResponseModel(status="error", message="problème")
 
 @app.get("/", response_class=HTMLResponse)
 async def welcome():
@@ -351,7 +362,7 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
     Get projection data if computed
     """
     r = Error(error = "There is no projection available")
-    
+
     if not username in project.features.available_projections:
         return r
 
@@ -359,7 +370,8 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
         r = Data(data="Still computing")
         #return {"status":"Still computing"}
     if scheme is None:
-        r = Data(data=project.features.available_projections[username]["data"].fillna("NA").to_dict())
+        data = project.features.available_projections[username]["data"].fillna("NA").to_dict()
+        r = Data(data=data)
         #return {"data":project.features.available_projections[username]["data"].fillna("NA").to_dict()}
     else:
         # TODO : add texts
@@ -378,7 +390,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                             username: Annotated[str, Header()],
                             projection:ProjectionModel):
     """
-    Start projection computation
+    Start projection computation using futures
     Dedicated process, end with a file on the project
     projection__user.parquet
     TODO : très moche comme manière de faire, à reprendre
@@ -400,7 +412,8 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         "method":"umap",
                                                         "future":future_result
                                                         }
-        return {"success":"Projection umap under computation"}
+        r = Success(success="Projection umap under computation")
+        return r
     if projection.method == "tsne":
         future_result = server.executor.submit(functions.compute_tsne, **args)
         project.features.available_projections[username] = {
@@ -408,8 +421,10 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         "method":"tsne",
                                                         "future":future_result
                                                         }
-        return {"success":"Projection tsne under computation"}
+        r = Success(success="Projection tsne under computation")
+        return r
     return Error(error="This projection is not available")
+
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
