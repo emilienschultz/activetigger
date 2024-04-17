@@ -331,7 +331,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
     """
     Get next element
     """
-    e = project.get_next(
+    r = project.get_next(
                         scheme = scheme,
                         selection = selection,
                         sample = sample,
@@ -339,10 +339,6 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         tag = tag,
                         frame = frame
                         )
-    if "error" in e:
-        r = Error(**e)
-    else:
-        r = ElementModel(**e)
     return r
 
 

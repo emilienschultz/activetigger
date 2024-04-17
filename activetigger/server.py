@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt # type: ignore
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
-from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
+from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB, Error, ElementModel
 
 class Server():
     """
@@ -461,7 +461,6 @@ class Project(Server):
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
-        #self.lock:dict = {} # prevent competition, lock an element for max N seconds
 
     def __del__(self):
         pass
@@ -532,14 +531,6 @@ class Project(Server):
         Related to a specific scheme
         """
 
-        # check for expired lock : more than 30 s
-        # print("Current lock: ", self.lock)
-        # keys = list(self.lock.keys())
-        # for i in keys:
-        #     if (datetime.now() - self.lock[i]).seconds > 30:
-        #        if i in self.lock:
-        #            del self.lock[i]
-
         # specific case of test, random element
         if selection == "test": 
             df = self.schemes.get_scheme_data(scheme, complete=True, kind="test")
@@ -577,13 +568,9 @@ class Project(Server):
         except:
             print("Problem on frame")
 
-        # remove locked items
-        #f_lock = ~ df.index.isin(list(self.lock.keys()))
-        #f = f & f_lock
-
         # test if there is at least one element available
         if sum(f) == 0:
-            return {"error":"No element available"}
+            return Error(error="No element available")
 
 
 
@@ -595,7 +582,7 @@ class Project(Server):
         if selection == "maxprob": # higher prob 
             # only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
-                return {"error":"Simplemodel doesn't exist"}
+                return Error(error="Simplemodel doesn't exist")
             if tag is None: # default label to first
                 tag = self.schemes.available()[scheme][0]
             sm = self.simplemodels.get_model(user, scheme) # get model
@@ -604,7 +591,7 @@ class Project(Server):
         if selection == "active": #higher entropy
             # only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
-                return {"error":"Simplemodel doesn't exist"}
+                return Error(error="Simplemodel doesn't exist")
             sm = self.simplemodels.get_model(user, scheme) # get model
             element_id = sm.proba[f]["entropy"].sort_values(ascending=False).index[0] # get max entropy id
             val = round(sm.proba[f]['entropy'].sort_values(ascending=False)[0],2)
@@ -631,10 +618,7 @@ class Project(Server):
             "frame":frame
                 }
         
-        # add to lock
-        # self.lock[element_id] = datetime.now()
-
-        return element
+        return ElementModel(**element)
     
     def get_element(self, 
                     element_id:str,
