@@ -10,6 +10,7 @@ license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = ["fastapi[all]",
+		"sentencepiece",
 		"requests",
 		"uvicorn",
 		"argparse",

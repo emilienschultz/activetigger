@@ -32,6 +32,12 @@ Then, to launch the server (on port 8000)
 python -m activetigger
 ```
 
+You can also directly launch the server with
+
+```
+uvicorn activetigger.api:app --host 0.0.0.0 --port 80
+```
+
 To use the widget in the `widget` module, you can do the following:
 
 ```python

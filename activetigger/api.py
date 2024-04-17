@@ -44,22 +44,21 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# middleware to update elements on events
+# middleware to update server state on events
 async def update():
     """
-    Function to be executed before each request
+    Clean temporary files and future promises for CPU-bound computation
     """
-    print(f"Updated Value at {time.strftime('%H:%M:%S')}")
+    # clean temporary files for CPU-bound computation
     for p in server.projects:
         project = server.projects[p]
-        # computing embeddings
         if (project.params.dir / "sbert.parquet").exists():
             df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data TODO : bug potentiel lié à la temporalité
             project.features.add("sbert",df) # add to the feature manager
             if "sbert" in project.features.training:
                 project.features.training.remove("sbert") # remove from pending processes
             os.remove(project.params.dir / "sbert.parquet") # clean the files
-            logging.info("SBERT embeddings added to project") # log
+            logging.info(f"Add sbert embeddings to project {p}")
         if (project.params.dir / "fasttext.parquet").exists():
             df = pd.read_parquet(project.params.dir / "fasttext.parquet")
             project.features.add("fasttext",df) 
@@ -67,23 +66,23 @@ async def update():
                 project.features.training.remove("fasttext") 
             os.remove(project.params.dir / "fasttext.parquet")
             print("Adding fasttext embeddings")
-            logging.info("FASTTEXT embeddings added to project")
+            logging.info(f"Add fasttext embeddings to project {p}")
         if (project.params.dir / "dfm.parquet").exists():
             df = pd.read_parquet(project.params.dir / "dfm.parquet")
             project.features.add("dfm",df) 
             if "dfm" in project.features.training:
                 project.features.training.remove("dfm") 
             os.remove(project.params.dir / "dfm.parquet")
-            logging.info("Dfm embeddings added to project")
+            logging.info(f"Add DFM embeddings to project {p}")
         
-        # joining projection process
+        # closing future processes
         for u in project.features.available_projections:
             if ("future" in project.features.available_projections[u]):
                 if project.features.available_projections[u]["future"].done():
                     df = project.features.available_projections[u]["future"].result()
                     project.features.available_projections[u]["data"] = df
                     del project.features.available_projections[u]["future"]
-                    print("Adding projection data")
+                    logging.info(f"Add projection data to project {p}")
 
 @app.middleware("http")
 async def middleware(request: Request, call_next):
