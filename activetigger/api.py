@@ -100,6 +100,7 @@ async def middleware(request: Request, call_next):
 async def get_project(project_name: str) -> ProjectModel:
     """
     Fetch existing project associated with the request
+    TODO : delete project in memory if not used for 1 day
     """
 
     # If project doesn't exist
@@ -108,7 +109,7 @@ async def get_project(project_name: str) -> ProjectModel:
 
     # If the project exist
     if project_name in server.projects:
-        # If already loaded
+        # Already loaded
         return server.projects[project_name]
     else:
         # To load
@@ -159,6 +160,7 @@ async def welcome():
     data_path = importlib.resources.files("activetigger")
     with open(data_path / "html/welcome.html","r") as f:
         return f.read()
+
 
 # Users
 #------
@@ -232,8 +234,10 @@ async def info_project(project_name:str|None = None):
     """
     Get info on project
     """
-    return {project_name:server.db_get_project(project_name)}
-
+    r = {
+            project_name:server.db_get_project(project_name)
+        }
+    return r
 
 @app.get("/server")
 async def info_server():
@@ -251,7 +255,6 @@ async def new_project(
                       username: Annotated[str, Header()],
                       file: Annotated[UploadFile, File()],
                       project_name:str = Form(),
-#                      user:str = Form(),
                       col_text:str = Form(),
                       col_id:str = Form(),
                       col_label:str = Form(None),
@@ -421,8 +424,8 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
     """
     Get table of elements
     """
-    r = project.schemes.get_table(scheme, min, max, mode)
-    return r.fillna("NA")
+    r = project.schemes.get_table(scheme, min, max, mode).fillna("NA")
+    return r
     
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -445,8 +448,8 @@ async def get_element(project: Annotated[Project, Depends(get_project)],
     """
     print(element_id)
     try:
-        e = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
-        return e
+        r = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
+        return r
     except: # gérer la bonne erreur
         raise HTTPException(status_code=404, detail=f"Element {element_id} not found")
     
@@ -480,7 +483,8 @@ async def post_tag(action:Action,
                                    username
                                    ) # add user deletion
         server.log_action(username, f"delete annotation {annotation.element_id}", project.name)
-        return {"success":"label deleted"}
+        r = {"success":"label deleted"}
+        return r
 
 # Schemes management
 #-------------------
@@ -641,7 +645,6 @@ async def delete_feature(project: Annotated[Project, Depends(get_project)],
     server.log_action(username, f"delete feature {name}", project.name)
     return r
 
-
 # Models management
 #------------------
 
@@ -676,7 +679,6 @@ async def get_bert(project: Annotated[Project, Depends(get_project)],
     if b is None:
         return {"error":"Bert model does not exist"}
     r =  b.informations()
-    print(r)
     return r
 
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
@@ -763,25 +765,41 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
 async def export_data(project: Annotated[Project, Depends(get_project)],
                       scheme:str,
                       format:str):
+    """
+    Export data
+    """
     name, path = project.export_data(format=format, scheme=scheme)
-    return FileResponse(path, filename=name)
+    r = FileResponse(path, filename=name)
+    return r
 
 @app.get("/export/features", dependencies=[Depends(verified_user)])
 async def export_features(project: Annotated[Project, Depends(get_project)],
                           features:list = Query(),
                           format:str = Query()):
+    """
+    Export features
+    """
     name, path = project.export_features(features = features, format=format)
-    return FileResponse(path, filename=name)
+    r = FileResponse(path, filename=name)
+    return r
 
 @app.get("/export/prediction", dependencies=[Depends(verified_user)])
 async def export_prediction(project: Annotated[Project, Depends(get_project)],
                           format:str = Query(),
                           name:str = Query()):
+    """
+    Export annotations
+    """
     name, path = project.bertmodels.export_prediction(name = name, format=format)
-    return FileResponse(path, filename=name)
+    r = FileResponse(path, filename=name)
+    return r
 
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
 async def export_bert(project: Annotated[Project, Depends(get_project)],
                           name:str = Query()):
+    """
+    Export fine-tuned BERT model
+    """
     name, path = project.bertmodels.export_bert(name = name)
-    return FileResponse(path, filename=name)
+    r = FileResponse(path, filename=name)
+    return r
