@@ -670,14 +670,16 @@ class Project(Server):
     
     def get_description(self, scheme:str|None, user:str|None):
         """
-        Generate a description of a project/scheme
+        Generate a description of a current project/scheme/user
+        Return:
+            JSON
         """
         r = {
             "N dataset":len(self.content)
             }
         
         if scheme is None:
-            return None
+            return {"error":"Scheme not defined"}
         
         # part train
         df = self.schemes.get_scheme_data(scheme, kind="add")
@@ -702,37 +704,36 @@ class Project(Server):
         # update if needed
         self.bertmodels.update()
 
-        options = {
-                    "params":self.params,
-                    "next":{
-                        "methods_min":["deterministic","random","test"],
-                        "methods":["deterministic","random","maxprob","active","test"],
-                        "sample":["untagged","all","tagged"],
-                        },
-                    "schemes":{
-                                "available":self.schemes.available()
-                                },
-                    "features":{
-                            "available":list(self.features.map.keys()),
-                            "training":self.features.training,
-                            "options":self.features.options
-
-                            },
-                    "simplemodel":{
-                                    "available":self.simplemodels.available(),
-                                    "options":self.simplemodels.available_models
-                                },
-                    "bertmodels":{
-                                "options":self.bertmodels.base_models,
-                                "available":self.bertmodels.trained(),
-                                "training":self.bertmodels.training(),#        
-                                "base_parameters":self.bertmodels.params_default
-                                },
-                    "projections":{
-                                "available":self.features.possible_projections
-                                }
-                   }
-        return  options
+        r = {
+            "params":self.params,
+            "next":{
+                    "methods_min":["deterministic","random","test"],
+                    "methods":["deterministic","random","maxprob","active","test"],
+                    "sample":["untagged","all","tagged"],
+                    },
+            "schemes":{
+                    "available":self.schemes.available()
+                    },
+            "features":{
+                    "options":self.features.options,
+                    "available":list(self.features.map.keys()),
+                    "training":self.features.training,
+                    },
+            "simplemodel":{
+                    "options":self.simplemodels.available_models,
+                    "available":self.simplemodels.available(),
+                    },
+            "bertmodels":{
+                    "options":self.bertmodels.base_models,
+                    "available":self.bertmodels.trained(),
+                    "training":self.bertmodels.training(),
+                    "base_parameters":self.bertmodels.params_default
+                    },
+            "projections":{
+                    "available":self.features.possible_projections
+                    }
+            }
+        return  r
     
     def add_regex(self, name: str, value: str) -> dict:
         """

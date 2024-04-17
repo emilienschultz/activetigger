@@ -159,8 +159,8 @@ async def welcome():
     """
     data_path = importlib.resources.files("activetigger")
     with open(data_path / "html/welcome.html","r") as f:
-        return f.read()
-
+        r = f.read()
+    return r
 
 # Users
 #------
@@ -169,7 +169,7 @@ async def welcome():
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     """
-    Route to create token for user from form data
+    Route to authentificate user and return token
     """
     user = server.authenticate_user(form_data.username, form_data.password)
     if "error" in user:
@@ -179,16 +179,18 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = server.create_access_token(
-        data={"sub": user.username}, 
-        expires_min=60)
-    return Token(access_token=access_token, token_type="bearer")
+            data={"sub": user.username}, 
+            expires_min=60)
+    r = Token(access_token=access_token, token_type="bearer")
+    return r
 
 @app.get("/users/me/", response_model=User)
 async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
     """
     Information on current user
     """
-    return current_user
+    r = current_user
+    return r
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(username:str = Query(),
@@ -222,27 +224,19 @@ async def get_state(project: Annotated[Project, Depends(get_project)]):
 @app.get("/description", dependencies=[Depends(verified_user)])
 async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
-                          user:str|None = None):
+                          user: str|None = None):
     """
     Get state for a specific project/scheme/user
     """
-    r = project.get_description(scheme = scheme, user = user)
-    return r
-
-@app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
-async def info_project(project_name:str|None = None):
-    """
-    Get info on project
-    """
-    r = {
-            project_name:server.db_get_project(project_name)
-        }
+    r = project.get_description(scheme = scheme, 
+                                user = user)
     return r
 
 @app.get("/server")
 async def info_server():
     """
-    Get info on the server (no validation needed)
+    Get general informations on the server 
+    (no validation needed)
     """
     r = {
         "projects":server.existing_projects(),
