@@ -335,14 +335,17 @@ async def new_project(
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
 async def delete_project(username: Annotated[str, Header()],
-                         project_name:str):
+                         project_name:str) -> ResponseModel:
     """
     Delete a project
     TODO : user authorization
     """
     r = server.delete_project(project_name)
     server.log_action(username, "delete project", project_name)
-    return r
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    else:
+        return ResponseModel(status="success",  message=r["success"])
 
 # Annotation management
 #--------------------
@@ -353,9 +356,8 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
                    selection:str = "deterministic",
                    sample:str = "untagged",
-                   #user:str = "user",
                    tag:str|None = None,
-                   frame:list[float]|None = Query(None)) -> ElementModel|Error:
+                   frame:list[float]|None = Query(None)) -> ResponseModel:
     """
     Get next element
     """
@@ -367,37 +369,32 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         tag = tag,
                         frame = frame
                         )
-    return r
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success", data = r)
 
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(project: Annotated[Project, Depends(get_project)],
                          username: Annotated[str, Header()],
-                         scheme:str|None):
+                         scheme:str|None) -> ResponseModel:
     """
     Get projection data if computed
     """
-    r = Error(error = "There is no projection available")
-
     if not username in project.features.available_projections:
-        return r
+        return ResponseModel(status="error", message="There is no projection available")
 
     if not "data" in project.features.available_projections[username]:
-        r = Data(data="Still computing")
-        #return {"status":"Still computing"}
+        return ResponseModel(status="waiting", message="Still computing")
     if scheme is None:
         data = project.features.available_projections[username]["data"].fillna("NA").to_dict()
-        r = Data(data=data)
-        #return {"data":project.features.available_projections[username]["data"].fillna("NA").to_dict()}
     else:
         # TODO : add texts
         data = project.features.available_projections[username]["data"]
         df = project.schemes.get_scheme_data(scheme, complete = True)
-        print(df)
         data["labels"] = df["labels"]
         data["texts"] = df["text"]
-        r = Data(data = data.fillna("NA").to_dict())
-        #return {"data":data.fillna("NA").to_dict()}
-    return r
+        data = data.fillna("NA").to_dict()
+    return ResponseModel(status="success", data = data) 
 
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])

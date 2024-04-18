@@ -383,15 +383,15 @@ class Widget():
                       params = params)
         
         # Managing errors
-        if "error" in r:
-            print(r)
+        if r["status"] == "error":
+            print(r["message"])
             return False
 
         # Update interface
-        self.current_element = r
-        self._textarea.value = r["text"]
-        self.info_element.value = r["info"]
-        self.info_predict.value = f"Predict SimpleModel: <b>{r['predict']['label']}</b> (p = {r['predict']['proba']})"
+        self.current_element = r["data"]
+        self._textarea.value = self.current_element["text"]
+        self.info_element.value = self.current_element["info"]
+        self.info_predict.value = f"Predict SimpleModel: <b>{self.current_element['predict']['label']}</b> (p = {self.current_element['predict']['proba']})"
         return True
 
     def _display_buttons_labels(self) -> bool:

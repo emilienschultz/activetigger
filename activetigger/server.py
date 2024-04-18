@@ -542,8 +542,10 @@ class Project(Server):
             "selection":"test",
             "context":{},
             "info":"",
-            "predict":{"label":None,
-                       "proba":None},
+            "predict":{
+                    "label":None,
+                    "proba":None
+                    },
             "frame":[]
             }
             return element
@@ -570,7 +572,7 @@ class Project(Server):
 
         # test if there is at least one element available
         if sum(f) == 0:
-            return Error(error="No element available")
+            return {"error":"No element available"}
 
 
 
@@ -618,7 +620,8 @@ class Project(Server):
             "frame":frame
                 }
         
-        return ElementModel(**element)
+        #return ElementModel(**element)
+        return element
     
     def get_element(self, 
                     element_id:str,
