@@ -630,6 +630,7 @@ class Project(Server):
         """
         Get an element of the database
         TODO: better homogeneise with get_next ?
+        TODO:; test if element exists
         """
         # get prediction if it exists
         predict = {"label":None, "proba":None}
@@ -1123,13 +1124,15 @@ class Schemes():
         conn.close()
         return {i[0]:json.loads(i[1]) for i in results}
    
-    def get(self) -> SchemesModel:
+    def get(self) -> dict:
         """
         state of the schemes
         """
-        return SchemesModel(project_name=self.project_name,
-                            availables=self.available()
-                            )
+        r = {
+            "project_name":self.project_name,
+            "availables":self.available()
+        }
+        return r #SchemesModel(project_name=self.project_name,availables=self.available())
 
     def delete_tag(self, 
                    element_id:str,
@@ -1190,7 +1193,7 @@ class Schemes():
         conn.close()
         return {"success":"tag added"}
     
-    def push_table(self, table, user:str):
+    def push_table(self, table, user:str) -> bool:
         """
         Push table index/tags to update
         Comments:
@@ -1202,7 +1205,7 @@ class Schemes():
                             data[i],
                             table.scheme,
                             user)
-        return {"success":"labels modified"}
+        return True
 
     def get_recent_tags(self,
                     user:str,

@@ -400,7 +400,7 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(project: Annotated[Project, Depends(get_project)],
                             username: Annotated[str, Header()],
-                            projection:ProjectionModel):
+                            projection:ProjectionModel) -> ResponseModel:
     """
     Start projection computation using futures
     Dedicated process, end with a file on the project
@@ -408,9 +408,8 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
     TODO : très moche comme manière de faire, à reprendre
     """
     if len(projection.features) == 0:
-        return Error(error="No feature")
+        return ResponseModel(status="error", message="No feature")
     
-    name = f"projection__{username}"
     features = project.features.get(projection.features)
     args = {
             "features":features,
@@ -424,8 +423,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         "method":"umap",
                                                         "future":future_result
                                                         }
-        r = Success(success="Projection umap under computation")
-        return r
+        return ResponseModel(status = "waiting", message="Projection umap under computation")
     if projection.method == "tsne":
         future_result = server.executor.submit(functions.compute_tsne, **args)
         project.features.available_projections[username] = {
@@ -433,9 +431,8 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         "method":"tsne",
                                                         "future":future_result
                                                         }
-        r = Success(success="Projection tsne under computation")
-        return r
-    return Error(error="This projection is not available")
+        return ResponseModel(status = "waiting", message="Projection tsne under computation")
+    return ResponseModel(status="error", message="This projection is not available")
 
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
@@ -444,12 +441,14 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                             min:int = 0,
                             max:int = 0,
                             mode:str = "all",
-                        ):
+                        ) -> ResponseModel:
     """
     Get table of elements
     """
     r = project.schemes.get_table(scheme, min, max, mode).fillna("NA")
-    return r
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success", data=r.to_dict())
     
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -460,29 +459,31 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
     r = project.schemes.push_table(table = table, 
                                    user = username)
     server.log_action(username, "update data table", project.name)
-    return r
+    return ResponseModel(status="success")
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
 async def get_element(project: Annotated[Project, Depends(get_project)],
                       username: Annotated[str, Header()],
                       element_id:str,
-                      scheme:str) -> ElementModel:
+                      scheme:str) -> ResponseModel:
     """
     Get specific element
     """
-    print(element_id)
     try:
-        r = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
-        return r
+        #r = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
+        #return r
+        data = project.get_element(element_id, scheme=scheme, user=username)
+        return ResponseModel(status="success", data=data)
+        
     except: # gérer la bonne erreur
-        raise HTTPException(status_code=404, detail=f"Element {element_id} not found")
+        return ResponseModel(status="error", message=f"Element {element_id} not found")
     
 
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
                    username: Annotated[str, Header()],
                    project: Annotated[Project, Depends(get_project)],
-                   annotation:AnnotationModel):
+                   annotation:AnnotationModel) -> ResponseModel:
     """
     Add, Update, Delete annotations
     Comment : 
@@ -498,33 +499,42 @@ async def post_tag(action:Action,
                                     username,
                                     annotation.selection
                                     )
+        if "error" in r:
+            return ResponseModel(status="error", message=r["error"])
+        
         server.log_action(username, f"push annotation {annotation.element_id}", project.name)
-        return r
+        return ResponseModel(status="success", message="Label created")
 
     if action == "delete":
-        project.schemes.delete_tag(annotation.element_id, 
+        r = project.schemes.delete_tag(annotation.element_id, 
                                    annotation.scheme,
                                    username
                                    ) # add user deletion
+        if "error" in r:
+            return ResponseModel(status="error", message=r["error"])
+        
         server.log_action(username, f"delete annotation {annotation.element_id}", project.name)
-        r = {"success":"label deleted"}
-        return r
+        return ResponseModel(status="success", message="Label deleted")
 
 # Schemes management
 #-------------------
 
 @app.get("/schemes", dependencies=[Depends(verified_user)])
 async def get_schemes(project: Annotated[Project, Depends(get_project)],
-                      scheme:str|None = None):
+                      scheme:str|None = None) -> ResponseModel:
         """
         Available scheme of a project
         """
         if scheme is None:
-            return project.schemes.get()
+            data = project.schemes.get()
+            return ResponseModel(status="success", data = data)
+        
         a = project.schemes.available()
         if scheme in a:
-            return {"scheme":a[scheme]}
-        return Error(error="scheme not available")
+            data = {"scheme":a[scheme]}
+            return ResponseModel(status="success", data = data)
+        
+        return ResponseModel(status="error", message="scheme not available")
 
 
 @app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
@@ -636,7 +646,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         args = {
                 "path":project.params.dir,
                 "texts":df,
-                "model":"/home/emilien/models/cc.fr.300.bin"
+                "model":"/Users/emilien/models/cc.fr.300.bin"
                 }
         process = Process(target=functions.process_fasttext, 
                           kwargs = args)

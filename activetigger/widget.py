@@ -612,7 +612,7 @@ class Widget():
                    "mode":self.sample_type.value
                   }
         r = self._get("/elements/table", params = params)
-        df = pd.DataFrame(r)
+        df = pd.DataFrame(r["data"])
         buttons = []
         for i,j in df.iterrows():
             options = self.state["schemes"]["available"][self.select_scheme.value]
@@ -837,12 +837,12 @@ class Widget():
                       params = {"project_name":self.project_name,
                                 "scheme":self.select_scheme.value})
         # Managing errors
-        if "error" in r:
+        if r["status"]=="error":
             print(r)
             return False
         # Update interface
-        self.current_element = r
-        self._textarea.value = r["text"]
+        self.current_element = r["data"]
+        self._textarea.value = self.current_element ["text"]
         return True
 
     def _get_previous_element(self) -> bool:
@@ -1006,7 +1006,7 @@ class Widget():
         r = self._post("/elements/projection/compute",
             params = params,
             json_data = data)
-        if "success" in r:
+        if r["status"] == "waiting":
             self.projection_data = "computing"
             self.visualization.children = [widgets.HTML(value = self.projection_data)]
         else:
