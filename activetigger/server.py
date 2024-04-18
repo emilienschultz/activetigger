@@ -41,6 +41,7 @@ class Server():
         with open('config.yaml') as f:
             config = yaml.safe_load(f)
         self.path = Path(config["path"])
+        self.path_fastext = Path(config["path_fasttext"])
         self.SECRET_KEY = config["secret_key"] #generate it automatically ?
 
         # Create the database
