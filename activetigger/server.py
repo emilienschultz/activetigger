@@ -732,7 +732,6 @@ class Project(Server):
 
         pattern = re.compile(value)
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
-        print("compile feature", f.shape)
         self.features.add(name,f)
         return {"success":"regex added"}
     

@@ -1044,20 +1044,20 @@ class Widget():
         params = {"project_name":self.project_name,
                             "name":name}
         r = self._get("/models/bert", params = params)
-        if "error" in r:
+        if r["status"] == "error":
             print(r)
             return 
-        loss = pd.DataFrame(r["loss"])
+        loss = pd.DataFrame(r["data"]["loss"])
         with self.bert_statistics:
             clear_output(wait=True)
-            print(json.dumps(r["parameters"],indent=2))
+            print(json.dumps(r["data"]["parameters"],indent=2))
             fig, ax = plt.subplots(figsize=(3,2))
             fig = loss.plot(ax = ax)
             plt.show(fig)
-            if "f1" in r:
-                print("f1:",r["f1"])
-                print("precision:",r["precision"])
-                print("recall:",r["recall"])
+            if "f1" in r["data"]:
+                print("f1:",r["data"]["f1"])
+                print("precision:",r["data"]["precision"])
+                print("recall:",r["data"]["recall"])
             else:
                 print("Compute prediction for scores")
     

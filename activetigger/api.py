@@ -542,28 +542,30 @@ async def add_label(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                     scheme:str,
                     label:str,
-                    #user:str
-                    ):
+                    ) -> ResponseModel:
     """
     Add a label to a scheme
     """
     r = project.schemes.add_label(label, scheme, username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"add label {label} to {scheme}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/schemes/label/delete", dependencies=[Depends(verified_user)])
 async def delete_label(project: Annotated[Project, Depends(get_project)],
                        username: Annotated[str, Header()],
                     scheme:str,
                     label:str,
-                    #user:str
-                    ):
+                    ) -> ResponseModel:
     """
     Remove a label from a scheme
     """
     r = project.schemes.delete_label(label, scheme, username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"delete label {label} to {scheme}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
@@ -571,55 +573,63 @@ async def post_schemes(username: Annotated[str, Header()],
                         project: Annotated[Project, Depends(get_project)],
                         action:Action,
                         scheme:SchemeModel
-                        ):
+                        ) -> ResponseModel:
     """
     Add, Update or Delete scheme
     TODO : user dans schememodel, necessary ?
     """
     if action == "add":
-        print("add")
         r = project.schemes.add_scheme(scheme)
+        if "error" in r:
+            return ResponseModel(status="error", message=r["errror"])
         server.log_action(username, f"add scheme {scheme.name}", project.name)
-        return r
+        return ResponseModel(status="success", message=r["success"])
     if action == "delete":
         r = project.schemes.delete_scheme(scheme)
+        if "error" in r:
+            return ResponseModel(status="error", message=r["errror"])
         server.log_action(username, f"delete scheme {scheme.name}", project.name)
-        return r
+        return ResponseModel(status="success", message=r["success"])
     if action == "update":
         r = project.schemes.update_scheme(scheme.name, scheme.tags, username)
+        if "error" in r:
+            return ResponseModel(status="error", message=r["errror"])
         server.log_action(username, f"update scheme {scheme.name}", project.name)
-        return r
+        return ResponseModel(status="success", message=r["success"])
     
-    return Error(error="wrong route")
+    return ResponseModel(status="error", message="Wrong route")
 
 
 # Features management
 #--------------------
 
 @app.get("/features", dependencies=[Depends(verified_user)])
-async def get_features(project: Annotated[Project, Depends(get_project)]):
+async def get_features(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Available scheme of a project
     """
-    return {"features":list(project.features.map.keys())}
+    data = {"features":list(project.features.map.keys())}
+    return ResponseModel(status="success", data=data)
 
 @app.post("/features/add/regex", dependencies=[Depends(verified_user)])
 async def post_regex(project: Annotated[Project, Depends(get_project)],
-                     username: Annotated[str, Header()],
-                          regex:RegexModel):
+                    username: Annotated[str, Header()],
+                    regex:RegexModel) -> ResponseModel:
     """
     Add a regex
     """
     r = project.add_regex(regex.name,regex.value)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"add regex {regex.name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           username: Annotated[str, Header()],
                           name:str,
                           params:ParamsModel
-                          ):
+                          ) -> ResponseModel:
     """
     Compute features :
     common logic : call a function in a specific process, 
@@ -627,7 +637,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     TODO : refactorize the function + merge with regex
     """
     if name in project.features.training:
-        return Error(error="This feature is already in training")
+        return ResponseModel(status="error", message = "This feature is already in training")
     
     df = project.content[project.params.col_text]
     if name == "sbert":
@@ -641,7 +651,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process.start()
         project.features.training.append(name)
         server.log_action(username, f"Compute feature sbert", project.name)
-        return {"success":"computing sbert, it could take a few minutes"}
+        return ResponseModel(status="success", message="computing sbert, it could take a few minutes")
     if name == "fasttext":
         args = {
                 "path":project.params.dir,
@@ -653,7 +663,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process.start()
         project.features.training.append(name)
         server.log_action(username, f"Compute feature fasttext", project.name)
-        return {"success":"computing fasttext, it could take a few minutes"}
+        return ResponseModel(status="success", message="computing fasttext, it could take a few minutes")
     if name == "dfm":
         # TODO save params with list to dict
         args = params.params
@@ -664,63 +674,66 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process.start()
         project.features.training.append(name)
         server.log_action(username, f"Compute feature dfm", project.name)
-        return {"success":"computing dfm, it could take a few seconds"}
+        return ResponseModel(status="success", message="computing dfm, it could take a few minutes")
 
-    return Error(error="not implemented")
+    return ResponseModel(status="error", message = "Not implemented")
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
                         username: Annotated[str, Header()],
-                        name:str):
+                        name:str) -> ResponseModel:
     """
     Delete a specific feature
     """
     r = project.features.delete(name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"delete feature {name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 # Models management
 #------------------
 
 @app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
+async def get_simplemodel(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Simplemodel parameters
     """
-    r = project.simplemodels.available()
-    return r
+    data = project.simplemodels.available()
+    return ResponseModel(status="success", data=data)
 
 
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
                            username: Annotated[str, Header()],
-                           simplemodel:SimpleModelModel):
+                           simplemodel:SimpleModelModel) -> ResponseModel:
     """
     Compute simplemodel
     TODO : user out of simplemodel
     TODO : test if parameters in simplemodel are well formed
     """
     r = project.update_simplemodel(simplemodel)
-    return r
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
+    return ResponseModel(status="success", message=r["success"])
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
 async def get_bert(project: Annotated[Project, Depends(get_project)],
-                   name:str):
+                   name:str)  -> ResponseModel: 
     """
     Bert parameters and statistics
     """
     b = project.bertmodels.get(name, lazy= True)
     if b is None:
-        return Error(error="Bert model does not exist")
-    r =  b.informations()
-    return r
+        return ResponseModel(status="error", message="Bert model does not exist")
+    data =  b.informations()
+    return ResponseModel(status="success", data = data)
 
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(project: Annotated[Project, Depends(get_project)],
                   username: Annotated[str, Header()],
                      model_name:str,
-                     #user:str,
-                     data:str = "all"):
+                     data:str = "all")  -> ResponseModel:
     """
     Start prediction with a model
     TODO : scope data
@@ -731,13 +744,15 @@ async def predict(project: Annotated[Project, Depends(get_project)],
                                                     df = df,
                                                     col_text = "text",
                                                     user = username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"predict bert {model_name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    bert:BertModelModel):
+                    bert:BertModelModel)   -> ResponseModel:
     """ 
     Compute bertmodel
     TODO : gestion du nom du projet/scheme à la base du modèle
@@ -757,39 +772,44 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 params = bert.params,
                                 test_size=bert.test_size
                                 )
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"train bert {bert.name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/stop", dependencies=[Depends(verified_user)])
 async def stop_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    #user:str
-                     ):
+                     ) -> ResponseModel:
     r = project.bertmodels.stop_user_training(username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"stop bert training", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/delete", dependencies=[Depends(verified_user)])
 async def delete_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    bert_name:str):
+                    bert_name:str) -> ResponseModel:
     """
     Delete trained bert model
     """
     r = project.bertmodels.delete(bert_name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"delete bert model {bert_name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/rename", dependencies=[Depends(verified_user)])
 async def save_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                      former_name:str,
-                     new_name:str,
-                     #user:str
-                     ):
+                     new_name:str) -> ResponseModel:
     r = project.bertmodels.rename(former_name, new_name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"rename bert model {former_name} - {new_name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 
 # Export elements
