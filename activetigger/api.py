@@ -5,15 +5,12 @@ from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
 from multiprocessing import Process
-import time
 import pandas as pd
 import os
 from jose import JWTError
 import importlib
-
 from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,\
-      SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
-      Data, Success, Error
+      SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel
 from activetigger.server import Server, Project
 import activetigger.functions as functions
 
@@ -34,7 +31,6 @@ logging.basicConfig(filename='log.log',
 
 # start the backend server
 server = Server()
-
 
 
 # start the app
@@ -156,17 +152,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 # Routes
 # ------
 
-from pydantic import BaseModel
-from typing import Optional
-
-
-
-@app.get("/test")
-async def test():
-    return ResponseModel(status="error", message="problème")
+#@app.get("/test")
+#async def test():
+#    return ResponseModel(status="error", message="problème")
 
 @app.get("/", response_class=HTMLResponse)
-async def welcome():
+async def welcome() -> str:
     """
     Welcome page
     """
@@ -818,7 +809,7 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
 @app.get("/export/data", dependencies=[Depends(verified_user)])
 async def export_data(project: Annotated[Project, Depends(get_project)],
                       scheme:str,
-                      format:str):
+                      format:str) -> FileResponse:
     """
     Export data
     """
@@ -829,7 +820,7 @@ async def export_data(project: Annotated[Project, Depends(get_project)],
 @app.get("/export/features", dependencies=[Depends(verified_user)])
 async def export_features(project: Annotated[Project, Depends(get_project)],
                           features:list = Query(),
-                          format:str = Query()):
+                          format:str = Query()) -> FileResponse:
     """
     Export features
     """
@@ -840,7 +831,7 @@ async def export_features(project: Annotated[Project, Depends(get_project)],
 @app.get("/export/prediction", dependencies=[Depends(verified_user)])
 async def export_prediction(project: Annotated[Project, Depends(get_project)],
                           format:str = Query(),
-                          name:str = Query()):
+                          name:str = Query()) -> FileResponse:
     """
     Export annotations
     """
@@ -850,7 +841,7 @@ async def export_prediction(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
 async def export_bert(project: Annotated[Project, Depends(get_project)],
-                          name:str = Query()):
+                          name:str = Query()) -> FileResponse:
     """
     Export fine-tuned BERT model
     """
