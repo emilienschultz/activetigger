@@ -221,7 +221,7 @@ class Server():
     
     def add_user(self, name:str, 
                  password:str, 
-                 projects = "all") -> dict:
+                 projects = "all") -> bool:
         """
         Add user to database
         """

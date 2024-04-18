@@ -11,7 +11,6 @@ import asyncio
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
-import distinctipy
 import importlib
 import numpy as np
 
@@ -64,7 +63,7 @@ class Widget():
                     headers=self.headers)
         
         if r.status_code == 422:
-            return {"error":"Not authorized"}
+            return {"status":"error", "message":"Not authorized"}
 
         return json.loads(r.content)
     
@@ -81,8 +80,9 @@ class Widget():
                     params = params,
                     data = data,
                     headers=self.headers)
+        
         if r.status_code == 422:
-            return {"error":"Not authorized"}
+            return {"status":"error", "message":"Not authorized"}
 
         if is_json:
             return json.loads(r.content)
@@ -119,7 +119,8 @@ class Widget():
         """
         # Get existing projects
         try:
-            existing = self._get("/server")
+            r = self._get("/server")
+            existing = r["data"]
         except:
             print(f"Failed to connect to the server. Please check if the server is available at {self.URL_SERVER}")
             return None
@@ -190,7 +191,7 @@ class Widget():
         Get state variable
         """
         state = self._get(route = f"/state/{self.project_name}")
-        return state
+        return state["data"]
 
     def _delete_project(self, project_name:str) -> dict:
         """
@@ -305,8 +306,9 @@ class Widget():
                        data=data
                        )
             # if project exit
-            if "error" in r:
-                print("Project name alreay exists")
+            print(r)
+            if r["status"] == "error":
+                print(r["message"])
             else:
                 self.start()
         validate.on_click(create_project)
@@ -528,7 +530,7 @@ class Widget():
                   "user":self.user}
         r = self._get("/description",params = params)
         text = ""
-        for k,v in r.items():
+        for k,v in r["data"].items():
             text += f"<br>- <b>{k}</b>: {v}"
         self.data_description.value = text
         return True

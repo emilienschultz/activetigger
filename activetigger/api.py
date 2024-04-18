@@ -198,63 +198,78 @@ async def login_for_access_token(
     return r
 
 @app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]) -> ResponseModel:
     """
     Information on current user
     """
-    r = current_user
+    r = ResponseModel(statut="success", data=current_user)
     return r
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(username:str = Query(),
                       password:str = Query(),
-                      projects:str = Query(None)):
+                      projects:str = Query(None)) -> ResponseModel:
     """
     Create user
     """
     r = server.add_user(username, password, projects)
+    if "success" in r:
+        r = ResponseModel(status="success", message=r["success"])
+    else:
+        r = ResponseModel(status="error", message=r["success"])
     return r
 
 @app.post("/users/delete", dependencies=[Depends(verified_user)])
-async def delete_user(username:str = Query()):
+async def delete_user(username:str = Query()) -> ResponseModel:
     """
     Delete user
     """
     r = server.delete_user(username)
+    if "success" in r:
+        r = ResponseModel(status="success", message=r["success"])
+    else:
+        r = ResponseModel(status="error", message=r["success"])
     return r
 
 # Projects management
 #--------------------
 
 @app.get("/state/{project_name}", dependencies=[Depends(verified_user)])
-async def get_state(project: Annotated[Project, Depends(get_project)]):
+async def get_state(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Get state of a project
     """
-    r = project.get_state()
+    data = project.get_state()
+    r = ResponseModel(status="success", data=data)
     return r
 
 @app.get("/description", dependencies=[Depends(verified_user)])
 async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
-                          user: str|None = None):
+                          user: str|None = None)  -> ResponseModel:
     """
     Get state for a specific project/scheme/user
     """
-    r = project.get_description(scheme = scheme, 
+    data = project.get_description(scheme = scheme, 
                                 user = user)
+    print(data)
+    if "error" in data:
+        r = ResponseModel(status="error", message=data["error"])
+    else:
+        r = ResponseModel(status="success", data=data)
     return r
 
 @app.get("/server")
-async def info_server():
+async def info_server() -> ResponseModel:
     """
     Get general informations on the server 
     (no validation needed)
     """
-    r = {
+    data = {
         "projects":server.existing_projects(),
         "users":server.existing_users()
         }
+    r = ResponseModel(status="success", data=data)
     return r
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
@@ -271,7 +286,7 @@ async def new_project(
                       embeddings:list = Form(None),
                       n_skip:int = Form(None),
                       langage:str = Form(None),
-                      ) -> ProjectModel|Error:
+                      ) -> ResponseModel:
     """
     Load new project
         file (file)
@@ -305,18 +320,18 @@ async def new_project(
 
     # format of the files (only CSV for the moment)
     if not file.filename.endswith('.csv'):
-        return Error(error = "Only CSV file for the moment")
+        return ResponseModel(status = "error", message = "Only CSV file for the moment")
         
     # test if project exist
     if server.exists(project.project_name):
-        return Error(error = "Project already exist")
+        return ResponseModel(status = "error", message = "Project already exist")
 
     project = server.create_project(project, file)
 
     # log action
     server.log_action(username, "create project", params_in["project_name"])
-
-    return project
+    r = ResponseModel(status = "success")
+    return r
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
 async def delete_project(username: Annotated[str, Header()],
