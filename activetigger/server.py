@@ -528,8 +528,12 @@ class Project(Server):
                  tag:None|str = None,
                  frame:None|list = None) -> dict:
         """
-        Get next item
-        Related to a specific scheme
+        Get next item for a specific scheme with a specific method
+        - deterministic
+        - random
+        - active
+        - maxprob
+        - test
         """
 
         # specific case of test, random element
@@ -547,7 +551,7 @@ class Project(Server):
                     "label":None,
                     "proba":None
                     },
-            "frame":[]
+            "frame":[],
             }
             return element
 
@@ -575,30 +579,30 @@ class Project(Server):
         if sum(f) == 0:
             return {"error":"No element available"}
 
-
-
         # select type of selection
         if selection == "deterministic": # next row
             element_id = df[f].index[0]
+            indicator = None
         if selection == "random": # random row
             element_id = df[f].sample(random_state=42).index[0]
-        if selection == "maxprob": # higher prob 
-            # only possible if the model has been trained
+            indicator = None
+        if selection == "maxprob": # higher prob, only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
-                return Error(error="Simplemodel doesn't exist")
+                return {"error":"Simplemodel doesn't exist"}
             if tag is None: # default label to first
-                tag = self.schemes.available()[scheme][0]
+                return {"error":"Select a tag"}
             sm = self.simplemodels.get_model(user, scheme) # get model
-            element_id = sm.proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
-            val = f"probability: {round(sm.proba[f][tag].sort_values(ascending=False)[0],2)}"
-        if selection == "active": #higher entropy
-            # only possible if the model has been trained
+            proba = sm.proba.reindex(f.index)
+            element_id = proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
+            indicator = f"probability: {round(proba.loc[element_id,tag],2)}"
+        if selection == "active": #higher entropy, only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
-                return Error(error="Simplemodel doesn't exist")
+                return  {"error":"Simplemodel doesn't exist"}
             sm = self.simplemodels.get_model(user, scheme) # get model
-            element_id = sm.proba[f]["entropy"].sort_values(ascending=False).index[0] # get max entropy id
-            val = round(sm.proba[f]['entropy'].sort_values(ascending=False)[0],2)
-            val = f"entropy: {val}"
+            proba = sm.proba.reindex(f.index)
+            element_id = proba[f]["entropy"].sort_values(ascending=False).index[0] # get max entropy id
+            indicator = round(proba.loc[element_id,'entropy'],2)
+            indicator = f"entropy: {indicator}"
         
         # get prediction of the id if it exists
         predict = {"label":None,
@@ -616,12 +620,12 @@ class Project(Server):
             "text":self.content.fillna("NA").loc[element_id,self.params.col_text],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":selection,
-            "info":"",
+            "info":indicator,
             "predict":predict,
-            "frame":frame
+            "frame":frame,
                 }
         
-        #return ElementModel(**element)
+        print(element)
         return element
     
     def get_element(self, 

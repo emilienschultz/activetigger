@@ -376,7 +376,7 @@ class Widget():
                 "selection":self._mode_selection.value,
                 "sample":self._mode_sample.value,
                 "user":self.user,
-                "tag":None,
+                "tag":self._mode_label.value,
                 "frame":x1y1x2y2
                 }
         r = self._get(route = "/elements/next",
@@ -390,7 +390,7 @@ class Widget():
         # Update interface
         self.current_element = r["data"]
         self._textarea.value = self.current_element["text"]
-        self.info_element.value = self.current_element["info"]
+        self.info_element.value = str(self.current_element["info"])
         self.info_predict.value = f"Predict SimpleModel: <b>{self.current_element['predict']['label']}</b> (p = {self.current_element['predict']['proba']})"
         return True
 
@@ -1247,10 +1247,10 @@ class Widget():
                                     self._mode_selection,
                                     self._mode_sample,
                                     self._mode_label,
-                                    self.info_element,
                                     self.add_context]),
                               self._textarea,
                               self.info_predict,
+                              self.info_element,
                               self.display_context,
                               self._labels,
                               widgets.HTML("<hr>"),
