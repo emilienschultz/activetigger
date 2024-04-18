@@ -80,7 +80,7 @@ def tokenize(texts: Series,
     return textes_tk
 
 def to_fasttext(texts: Series,
-                 model: str = "/Users/emilien/models/cc.fr.300.bin") -> DataFrame:
+                 model: str) -> DataFrame:
     """
     Compute fasttext embedding
     Args:
@@ -98,7 +98,7 @@ def to_fasttext(texts: Series,
 
 def process_fasttext(texts: Series,
                   path:Path,
-                  model:str = "/Users/emilien/models/cc.fr.300.bin"):
+                  model:str):
     texts_tk = tokenize(texts)
     ft = fasttext.load_model(model)
     emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]

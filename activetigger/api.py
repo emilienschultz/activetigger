@@ -647,7 +647,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         args = {
                 "path":project.params.dir,
                 "texts":df,
-                "model":"/Users/emilien/models/cc.fr.300.bin"
+                "model":server.path_fastext
                 }
         process = Process(target=functions.process_fasttext, 
                           kwargs = args)
