@@ -11,7 +11,6 @@ import asyncio
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
-import distinctipy
 import importlib
 import numpy as np
 
@@ -64,7 +63,7 @@ class Widget():
                     headers=self.headers)
         
         if r.status_code == 422:
-            return {"error":"Not authorized"}
+            return {"status":"error", "message":"Not authorized"}
 
         return json.loads(r.content)
     
@@ -81,8 +80,9 @@ class Widget():
                     params = params,
                     data = data,
                     headers=self.headers)
+        
         if r.status_code == 422:
-            return {"error":"Not authorized"}
+            return {"status":"error", "message":"Not authorized"}
 
         if is_json:
             return json.loads(r.content)
@@ -119,7 +119,8 @@ class Widget():
         """
         # Get existing projects
         try:
-            existing = self._get("/server")
+            r = self._get("/server")
+            existing = r["data"]
         except:
             print(f"Failed to connect to the server. Please check if the server is available at {self.URL_SERVER}")
             return None
@@ -190,7 +191,7 @@ class Widget():
         Get state variable
         """
         state = self._get(route = f"/state/{self.project_name}")
-        return state
+        return state["data"]
 
     def _delete_project(self, project_name:str) -> dict:
         """
@@ -305,8 +306,9 @@ class Widget():
                        data=data
                        )
             # if project exit
-            if "error" in r:
-                print("Project name alreay exists")
+            print(r)
+            if r["status"] == "error":
+                print(r["message"])
             else:
                 self.start()
         validate.on_click(create_project)
@@ -381,15 +383,15 @@ class Widget():
                       params = params)
         
         # Managing errors
-        if "error" in r:
-            print(r)
+        if r["status"] == "error":
+            print(r["message"])
             return False
 
         # Update interface
-        self.current_element = r
-        self._textarea.value = r["text"]
-        self.info_element.value = r["info"]
-        self.info_predict.value = f"Predict SimpleModel: <b>{r['predict']['label']}</b> (p = {r['predict']['proba']})"
+        self.current_element = r["data"]
+        self._textarea.value = self.current_element["text"]
+        self.info_element.value = self.current_element["info"]
+        self.info_predict.value = f"Predict SimpleModel: <b>{self.current_element['predict']['label']}</b> (p = {self.current_element['predict']['proba']})"
         return True
 
     def _display_buttons_labels(self) -> bool:
@@ -528,7 +530,7 @@ class Widget():
                   "user":self.user}
         r = self._get("/description",params = params)
         text = ""
-        for k,v in r.items():
+        for k,v in r["data"].items():
             text += f"<br>- <b>{k}</b>: {v}"
         self.data_description.value = text
         return True
@@ -610,7 +612,7 @@ class Widget():
                    "mode":self.sample_type.value
                   }
         r = self._get("/elements/table", params = params)
-        df = pd.DataFrame(r)
+        df = pd.DataFrame(r["data"])
         buttons = []
         for i,j in df.iterrows():
             options = self.state["schemes"]["available"][self.select_scheme.value]
@@ -835,12 +837,12 @@ class Widget():
                       params = {"project_name":self.project_name,
                                 "scheme":self.select_scheme.value})
         # Managing errors
-        if "error" in r:
+        if r["status"]=="error":
             print(r)
             return False
         # Update interface
-        self.current_element = r
-        self._textarea.value = r["text"]
+        self.current_element = r["data"]
+        self._textarea.value = self.current_element ["text"]
         return True
 
     def _get_previous_element(self) -> bool:
@@ -1004,7 +1006,7 @@ class Widget():
         r = self._post("/elements/projection/compute",
             params = params,
             json_data = data)
-        if "success" in r:
+        if r["status"] == "waiting":
             self.projection_data = "computing"
             self.visualization.children = [widgets.HTML(value = self.projection_data)]
         else:
@@ -1042,20 +1044,20 @@ class Widget():
         params = {"project_name":self.project_name,
                             "name":name}
         r = self._get("/models/bert", params = params)
-        if "error" in r:
+        if r["status"] == "error":
             print(r)
             return 
-        loss = pd.DataFrame(r["loss"])
+        loss = pd.DataFrame(r["data"]["loss"])
         with self.bert_statistics:
             clear_output(wait=True)
-            print(json.dumps(r["parameters"],indent=2))
+            print(json.dumps(r["data"]["parameters"],indent=2))
             fig, ax = plt.subplots(figsize=(3,2))
             fig = loss.plot(ax = ax)
             plt.show(fig)
-            if "f1" in r:
-                print("f1:",r["f1"])
-                print("precision:",r["precision"])
-                print("recall:",r["recall"])
+            if "f1" in r["data"]:
+                print("f1:",r["data"]["f1"])
+                print("precision:",r["data"]["precision"])
+                print("recall:",r["data"]["recall"])
             else:
                 print("Compute prediction for scores")
     
@@ -1095,7 +1097,7 @@ class Widget():
             # check projection status
             if (type(self.projection_data) is str) and (self.projection_data == "computing"):
                 r = self.get_projection_data()
-                if "data" in r:
+                if ("data" in r) and (type(r["data"]) is dict):
                     print("get projection data")
                     self.projection_data = pd.DataFrame(r["data"])
                     self.plot_visualisation()

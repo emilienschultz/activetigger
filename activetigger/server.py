@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt # type: ignore
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
-from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
+from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB, Error, ElementModel
 
 class Server():
     """
@@ -221,7 +221,7 @@ class Server():
     
     def add_user(self, name:str, 
                  password:str, 
-                 projects = "all") -> dict:
+                 projects = "all") -> bool:
         """
         Add user to database
         """
@@ -461,7 +461,6 @@ class Project(Server):
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
-        #self.lock:dict = {} # prevent competition, lock an element for max N seconds
 
     def __del__(self):
         pass
@@ -532,14 +531,6 @@ class Project(Server):
         Related to a specific scheme
         """
 
-        # check for expired lock : more than 30 s
-        # print("Current lock: ", self.lock)
-        # keys = list(self.lock.keys())
-        # for i in keys:
-        #     if (datetime.now() - self.lock[i]).seconds > 30:
-        #        if i in self.lock:
-        #            del self.lock[i]
-
         # specific case of test, random element
         if selection == "test": 
             df = self.schemes.get_scheme_data(scheme, complete=True, kind="test")
@@ -551,8 +542,10 @@ class Project(Server):
             "selection":"test",
             "context":{},
             "info":"",
-            "predict":{"label":None,
-                       "proba":None},
+            "predict":{
+                    "label":None,
+                    "proba":None
+                    },
             "frame":[]
             }
             return element
@@ -577,10 +570,6 @@ class Project(Server):
         except:
             print("Problem on frame")
 
-        # remove locked items
-        #f_lock = ~ df.index.isin(list(self.lock.keys()))
-        #f = f & f_lock
-
         # test if there is at least one element available
         if sum(f) == 0:
             return {"error":"No element available"}
@@ -595,7 +584,7 @@ class Project(Server):
         if selection == "maxprob": # higher prob 
             # only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
-                return {"error":"Simplemodel doesn't exist"}
+                return Error(error="Simplemodel doesn't exist")
             if tag is None: # default label to first
                 tag = self.schemes.available()[scheme][0]
             sm = self.simplemodels.get_model(user, scheme) # get model
@@ -604,7 +593,7 @@ class Project(Server):
         if selection == "active": #higher entropy
             # only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
-                return {"error":"Simplemodel doesn't exist"}
+                return Error(error="Simplemodel doesn't exist")
             sm = self.simplemodels.get_model(user, scheme) # get model
             element_id = sm.proba[f]["entropy"].sort_values(ascending=False).index[0] # get max entropy id
             val = round(sm.proba[f]['entropy'].sort_values(ascending=False)[0],2)
@@ -631,9 +620,7 @@ class Project(Server):
             "frame":frame
                 }
         
-        # add to lock
-        # self.lock[element_id] = datetime.now()
-
+        #return ElementModel(**element)
         return element
     
     def get_element(self, 
@@ -643,6 +630,7 @@ class Project(Server):
         """
         Get an element of the database
         TODO: better homogeneise with get_next ?
+        TODO:; test if element exists
         """
         # get prediction if it exists
         predict = {"label":None, "proba":None}
@@ -670,14 +658,16 @@ class Project(Server):
     
     def get_description(self, scheme:str|None, user:str|None):
         """
-        Generate a description of a project/scheme
+        Generate a description of a current project/scheme/user
+        Return:
+            JSON
         """
         r = {
             "N dataset":len(self.content)
             }
         
         if scheme is None:
-            return None
+            return {"error":"Scheme not defined"}
         
         # part train
         df = self.schemes.get_scheme_data(scheme, kind="add")
@@ -702,37 +692,36 @@ class Project(Server):
         # update if needed
         self.bertmodels.update()
 
-        options = {
-                    "params":self.params,
-                    "next":{
-                        "methods_min":["deterministic","random","test"],
-                        "methods":["deterministic","random","maxprob","active","test"],
-                        "sample":["untagged","all","tagged"],
-                        },
-                    "schemes":{
-                                "available":self.schemes.available()
-                                },
-                    "features":{
-                            "available":list(self.features.map.keys()),
-                            "training":self.features.training,
-                            "options":self.features.options
-
-                            },
-                    "simplemodel":{
-                                    "available":self.simplemodels.available(),
-                                    "options":self.simplemodels.available_models
-                                },
-                    "bertmodels":{
-                                "options":self.bertmodels.base_models,
-                                "available":self.bertmodels.trained(),
-                                "training":self.bertmodels.training(),#        
-                                "base_parameters":self.bertmodels.params_default
-                                },
-                    "projections":{
-                                "available":self.features.possible_projections
-                                }
-                   }
-        return  options
+        r = {
+            "params":self.params,
+            "next":{
+                    "methods_min":["deterministic","random","test"],
+                    "methods":["deterministic","random","maxprob","active","test"],
+                    "sample":["untagged","all","tagged"],
+                    },
+            "schemes":{
+                    "available":self.schemes.available()
+                    },
+            "features":{
+                    "options":self.features.options,
+                    "available":list(self.features.map.keys()),
+                    "training":self.features.training,
+                    },
+            "simplemodel":{
+                    "options":self.simplemodels.available_models,
+                    "available":self.simplemodels.available(),
+                    },
+            "bertmodels":{
+                    "options":self.bertmodels.base_models,
+                    "available":self.bertmodels.trained(),
+                    "training":self.bertmodels.training(),
+                    "base_parameters":self.bertmodels.params_default
+                    },
+            "projections":{
+                    "available":self.features.possible_projections
+                    }
+            }
+        return  r
     
     def add_regex(self, name: str, value: str) -> dict:
         """
@@ -743,7 +732,6 @@ class Project(Server):
 
         pattern = re.compile(value)
         f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
-        print("compile feature", f.shape)
         self.features.add(name,f)
         return {"success":"regex added"}
     
@@ -1135,13 +1123,15 @@ class Schemes():
         conn.close()
         return {i[0]:json.loads(i[1]) for i in results}
    
-    def get(self) -> SchemesModel:
+    def get(self) -> dict:
         """
         state of the schemes
         """
-        return SchemesModel(project_name=self.project_name,
-                            availables=self.available()
-                            )
+        r = {
+            "project_name":self.project_name,
+            "availables":self.available()
+        }
+        return r #SchemesModel(project_name=self.project_name,availables=self.available())
 
     def delete_tag(self, 
                    element_id:str,
@@ -1202,7 +1192,7 @@ class Schemes():
         conn.close()
         return {"success":"tag added"}
     
-    def push_table(self, table, user:str):
+    def push_table(self, table, user:str) -> bool:
         """
         Push table index/tags to update
         Comments:
@@ -1214,7 +1204,7 @@ class Schemes():
                             data[i],
                             table.scheme,
                             user)
-        return {"success":"labels modified"}
+        return True
 
     def get_recent_tags(self,
                     user:str,

@@ -5,13 +5,12 @@ from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
 from multiprocessing import Process
-import time
 import pandas as pd
 import os
 from jose import JWTError
 import importlib
-
-from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel, SchemeModel, Error, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel
+from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,\
+      SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel
 from activetigger.server import Server, Project
 import activetigger.functions as functions
 
@@ -32,6 +31,7 @@ logging.basicConfig(filename='log.log',
 
 # start the backend server
 server = Server()
+
 
 # start the app
 @asynccontextmanager
@@ -152,15 +152,19 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 # Routes
 # ------
 
+#@app.get("/test")
+#async def test():
+#    return ResponseModel(status="error", message="problème")
+
 @app.get("/", response_class=HTMLResponse)
-async def welcome():
+async def welcome() -> str:
     """
     Welcome page
     """
     data_path = importlib.resources.files("activetigger")
     with open(data_path / "html/welcome.html","r") as f:
-        return f.read()
-
+        r = f.read()
+    return r
 
 # Users
 #------
@@ -169,7 +173,7 @@ async def welcome():
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     """
-    Route to create token for user from form data
+    Route to authentificate user and return token
     """
     user = server.authenticate_user(form_data.username, form_data.password)
     if "error" in user:
@@ -179,75 +183,84 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = server.create_access_token(
-        data={"sub": user.username}, 
-        expires_min=60)
-    return Token(access_token=access_token, token_type="bearer")
+            data={"sub": user.username}, 
+            expires_min=60)
+    r = Token(access_token=access_token, token_type="bearer")
+    return r
 
 @app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]) -> ResponseModel:
     """
     Information on current user
     """
-    return current_user
+    r = ResponseModel(statut="success", data=current_user)
+    return r
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(username:str = Query(),
                       password:str = Query(),
-                      projects:str = Query(None)):
+                      projects:str = Query(None)) -> ResponseModel:
     """
     Create user
     """
     r = server.add_user(username, password, projects)
+    if "success" in r:
+        r = ResponseModel(status="success", message=r["success"])
+    else:
+        r = ResponseModel(status="error", message=r["success"])
     return r
 
 @app.post("/users/delete", dependencies=[Depends(verified_user)])
-async def delete_user(username:str = Query()):
+async def delete_user(username:str = Query()) -> ResponseModel:
     """
     Delete user
     """
     r = server.delete_user(username)
+    if "success" in r:
+        r = ResponseModel(status="success", message=r["success"])
+    else:
+        r = ResponseModel(status="error", message=r["success"])
     return r
 
 # Projects management
 #--------------------
 
 @app.get("/state/{project_name}", dependencies=[Depends(verified_user)])
-async def get_state(project: Annotated[Project, Depends(get_project)]):
+async def get_state(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Get state of a project
     """
-    r = project.get_state()
+    data = project.get_state()
+    r = ResponseModel(status="success", data=data)
     return r
 
 @app.get("/description", dependencies=[Depends(verified_user)])
 async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
-                          user:str|None = None):
+                          user: str|None = None)  -> ResponseModel:
     """
     Get state for a specific project/scheme/user
     """
-    r = project.get_description(scheme = scheme, user = user)
-    return r
-
-@app.get("/projects/{project_name}", dependencies=[Depends(verified_user)])
-async def info_project(project_name:str|None = None):
-    """
-    Get info on project
-    """
-    r = {
-            project_name:server.db_get_project(project_name)
-        }
+    data = project.get_description(scheme = scheme, 
+                                user = user)
+    print(data)
+    if "error" in data:
+        r = ResponseModel(status="error", message=data["error"])
+    else:
+        r = ResponseModel(status="success", data=data)
     return r
 
 @app.get("/server")
-async def info_server():
+async def info_server() -> ResponseModel:
     """
-    Get info on the server (no validation needed)
+    Get general informations on the server 
+    (no validation needed)
     """
-    r = {
+    data = {
         "projects":server.existing_projects(),
         "users":server.existing_users()
         }
+    r = ResponseModel(status="success", data=data)
     return r
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
@@ -264,17 +277,16 @@ async def new_project(
                       embeddings:list = Form(None),
                       n_skip:int = Form(None),
                       langage:str = Form(None),
-                      ) -> ProjectModel|Error:
+                      ) -> ResponseModel:
     """
     Load new project
         file (file)
         multiple parameters
     PAS LA SOLUTION LA PLUS JOLIE
     https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
-
     """
 
-    # removing None parameters
+    # grouping informations
     params_in = {
         "project_name":project_name,
         "user":username,         
@@ -289,6 +301,7 @@ async def new_project(
         "cols_context":cols_context
         }
     
+    # removing None parameters
     params_out = params_in.copy()
     for i in params_in:
         if params_in[i] is None:
@@ -296,31 +309,34 @@ async def new_project(
 
     project = ProjectModel(**params_out)
 
-    # For the moment, only csv
+    # format of the files (only CSV for the moment)
     if not file.filename.endswith('.csv'):
-        return Error(error = "Only CSV file for the moment")
+        return ResponseModel(status = "error", message = "Only CSV file for the moment")
         
-    # Test if project exist
+    # test if project exist
     if server.exists(project.project_name):
-        return Error(error = "Project already exist")
+        return ResponseModel(status = "error", message = "Project already exist")
 
     project = server.create_project(project, file)
 
     # log action
     server.log_action(username, "create project", params_in["project_name"])
-
-    return project
+    r = ResponseModel(status = "success")
+    return r
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
 async def delete_project(username: Annotated[str, Header()],
-                         project_name:str):
+                         project_name:str) -> ResponseModel:
     """
     Delete a project
     TODO : user authorization
     """
     r = server.delete_project(project_name)
     server.log_action(username, "delete project", project_name)
-    return r
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    else:
+        return ResponseModel(status="success",  message=r["success"])
 
 # Annotation management
 #--------------------
@@ -331,13 +347,12 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                    scheme:str,
                    selection:str = "deterministic",
                    sample:str = "untagged",
-                   #user:str = "user",
                    tag:str|None = None,
-                   frame:list[float]|None = Query(None)) -> ElementModel|Error:
+                   frame:list[float]|None = Query(None)) -> ResponseModel:
     """
     Get next element
     """
-    e = project.get_next(
+    r = project.get_next(
                         scheme = scheme,
                         selection = selection,
                         sample = sample,
@@ -345,51 +360,47 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         tag = tag,
                         frame = frame
                         )
-    if "error" in e:
-        r = Error(**e)
-    else:
-        r = ElementModel(**e)
-    return r
-
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success", data = r)
 
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(project: Annotated[Project, Depends(get_project)],
                          username: Annotated[str, Header()],
-                         #user:str, 
-                         scheme:str|None):
+                         scheme:str|None) -> ResponseModel:
     """
     Get projection data if computed
     """
-    if username in project.features.available_projections:
-        if not "data" in project.features.available_projections[username]:
-            return {"status":"Still computing"}
-        if scheme is None:
-            return {"data":project.features.available_projections[username]["data"].fillna("NA").to_dict()}
-        else:
-            # TODO : add texts
-            data = project.features.available_projections[username]["data"]
-            df = project.schemes.get_scheme_data(scheme, complete = True)
-            print(df)
-            data["labels"] = df["labels"]
-            data["texts"] = df["text"]
-            return {"data":data.fillna("NA").to_dict()}
+    if not username in project.features.available_projections:
+        return ResponseModel(status="error", message="There is no projection available")
 
-    return {"error":"There is no projection available"}
+    if not "data" in project.features.available_projections[username]:
+        return ResponseModel(status="waiting", message="Still computing")
+    if scheme is None:
+        data = project.features.available_projections[username]["data"].fillna("NA").to_dict()
+    else:
+        # TODO : add texts
+        data = project.features.available_projections[username]["data"]
+        df = project.schemes.get_scheme_data(scheme, complete = True)
+        data["labels"] = df["labels"]
+        data["texts"] = df["text"]
+        data = data.fillna("NA").to_dict()
+    return ResponseModel(status="success", data = data) 
+
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(project: Annotated[Project, Depends(get_project)],
                             username: Annotated[str, Header()],
-                            projection:ProjectionModel):
+                            projection:ProjectionModel) -> ResponseModel:
     """
-    Start projection computation
+    Start projection computation using futures
     Dedicated process, end with a file on the project
     projection__user.parquet
     TODO : très moche comme manière de faire, à reprendre
     """
     if len(projection.features) == 0:
-        return {"error":"No feature"}
+        return ResponseModel(status="error", message="No feature")
     
-    name = f"projection__{username}"
     features = project.features.get(projection.features)
     args = {
             "features":features,
@@ -403,7 +414,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         "method":"umap",
                                                         "future":future_result
                                                         }
-        return {"success":"Projection umap under computation"}
+        return ResponseModel(status = "waiting", message="Projection umap under computation")
     if projection.method == "tsne":
         future_result = server.executor.submit(functions.compute_tsne, **args)
         project.features.available_projections[username] = {
@@ -411,8 +422,9 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         "method":"tsne",
                                                         "future":future_result
                                                         }
-        return {"success":"Projection tsne under computation"}
-    return {"error":"This projection is not available"}
+        return ResponseModel(status = "waiting", message="Projection tsne under computation")
+    return ResponseModel(status="error", message="This projection is not available")
+
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -420,12 +432,14 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                             min:int = 0,
                             max:int = 0,
                             mode:str = "all",
-                        ):
+                        ) -> ResponseModel:
     """
     Get table of elements
     """
     r = project.schemes.get_table(scheme, min, max, mode).fillna("NA")
-    return r
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success", data=r.to_dict())
     
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
@@ -436,29 +450,31 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
     r = project.schemes.push_table(table = table, 
                                    user = username)
     server.log_action(username, "update data table", project.name)
-    return r
+    return ResponseModel(status="success")
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
 async def get_element(project: Annotated[Project, Depends(get_project)],
                       username: Annotated[str, Header()],
                       element_id:str,
-                      scheme:str) -> ElementModel:
+                      scheme:str) -> ResponseModel:
     """
     Get specific element
     """
-    print(element_id)
     try:
-        r = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
-        return r
+        #r = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
+        #return r
+        data = project.get_element(element_id, scheme=scheme, user=username)
+        return ResponseModel(status="success", data=data)
+        
     except: # gérer la bonne erreur
-        raise HTTPException(status_code=404, detail=f"Element {element_id} not found")
+        return ResponseModel(status="error", message=f"Element {element_id} not found")
     
 
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
                    username: Annotated[str, Header()],
                    project: Annotated[Project, Depends(get_project)],
-                   annotation:AnnotationModel):
+                   annotation:AnnotationModel) -> ResponseModel:
     """
     Add, Update, Delete annotations
     Comment : 
@@ -474,33 +490,42 @@ async def post_tag(action:Action,
                                     username,
                                     annotation.selection
                                     )
+        if "error" in r:
+            return ResponseModel(status="error", message=r["error"])
+        
         server.log_action(username, f"push annotation {annotation.element_id}", project.name)
-        return r
+        return ResponseModel(status="success", message="Label created")
 
     if action == "delete":
-        project.schemes.delete_tag(annotation.element_id, 
+        r = project.schemes.delete_tag(annotation.element_id, 
                                    annotation.scheme,
                                    username
                                    ) # add user deletion
+        if "error" in r:
+            return ResponseModel(status="error", message=r["error"])
+        
         server.log_action(username, f"delete annotation {annotation.element_id}", project.name)
-        r = {"success":"label deleted"}
-        return r
+        return ResponseModel(status="success", message="Label deleted")
 
 # Schemes management
 #-------------------
 
 @app.get("/schemes", dependencies=[Depends(verified_user)])
 async def get_schemes(project: Annotated[Project, Depends(get_project)],
-                      scheme:str|None = None):
+                      scheme:str|None = None) -> ResponseModel:
         """
         Available scheme of a project
         """
         if scheme is None:
-            return project.schemes.get()
+            data = project.schemes.get()
+            return ResponseModel(status="success", data = data)
+        
         a = project.schemes.available()
         if scheme in a:
-            return {"scheme":a[scheme]}
-        return {"error":"scheme not available"}
+            data = {"scheme":a[scheme]}
+            return ResponseModel(status="success", data = data)
+        
+        return ResponseModel(status="error", message="scheme not available")
 
 
 @app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
@@ -508,28 +533,30 @@ async def add_label(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                     scheme:str,
                     label:str,
-                    #user:str
-                    ):
+                    ) -> ResponseModel:
     """
     Add a label to a scheme
     """
     r = project.schemes.add_label(label, scheme, username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"add label {label} to {scheme}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/schemes/label/delete", dependencies=[Depends(verified_user)])
 async def delete_label(project: Annotated[Project, Depends(get_project)],
                        username: Annotated[str, Header()],
                     scheme:str,
                     label:str,
-                    #user:str
-                    ):
+                    ) -> ResponseModel:
     """
     Remove a label from a scheme
     """
     r = project.schemes.delete_label(label, scheme, username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"delete label {label} to {scheme}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
@@ -537,55 +564,63 @@ async def post_schemes(username: Annotated[str, Header()],
                         project: Annotated[Project, Depends(get_project)],
                         action:Action,
                         scheme:SchemeModel
-                        ):
+                        ) -> ResponseModel:
     """
     Add, Update or Delete scheme
     TODO : user dans schememodel, necessary ?
     """
     if action == "add":
-        print("add")
         r = project.schemes.add_scheme(scheme)
+        if "error" in r:
+            return ResponseModel(status="error", message=r["errror"])
         server.log_action(username, f"add scheme {scheme.name}", project.name)
-        return r
+        return ResponseModel(status="success", message=r["success"])
     if action == "delete":
         r = project.schemes.delete_scheme(scheme)
+        if "error" in r:
+            return ResponseModel(status="error", message=r["errror"])
         server.log_action(username, f"delete scheme {scheme.name}", project.name)
-        return r
+        return ResponseModel(status="success", message=r["success"])
     if action == "update":
         r = project.schemes.update_scheme(scheme.name, scheme.tags, username)
+        if "error" in r:
+            return ResponseModel(status="error", message=r["errror"])
         server.log_action(username, f"update scheme {scheme.name}", project.name)
-        return r
+        return ResponseModel(status="success", message=r["success"])
     
-    return {"error":"wrong route"}
+    return ResponseModel(status="error", message="Wrong route")
 
 
 # Features management
 #--------------------
 
 @app.get("/features", dependencies=[Depends(verified_user)])
-async def get_features(project: Annotated[Project, Depends(get_project)]):
+async def get_features(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Available scheme of a project
     """
-    return {"features":list(project.features.map.keys())}
+    data = {"features":list(project.features.map.keys())}
+    return ResponseModel(status="success", data=data)
 
 @app.post("/features/add/regex", dependencies=[Depends(verified_user)])
 async def post_regex(project: Annotated[Project, Depends(get_project)],
-                     username: Annotated[str, Header()],
-                          regex:RegexModel):
+                    username: Annotated[str, Header()],
+                    regex:RegexModel) -> ResponseModel:
     """
     Add a regex
     """
     r = project.add_regex(regex.name,regex.value)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"add regex {regex.name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           username: Annotated[str, Header()],
                           name:str,
                           params:ParamsModel
-                          ):
+                          ) -> ResponseModel:
     """
     Compute features :
     common logic : call a function in a specific process, 
@@ -593,7 +628,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     TODO : refactorize the function + merge with regex
     """
     if name in project.features.training:
-        return {"error":"This feature is already in training"}
+        return ResponseModel(status="error", message = "This feature is already in training")
     
     df = project.content[project.params.col_text]
     if name == "sbert":
@@ -607,19 +642,19 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process.start()
         project.features.training.append(name)
         server.log_action(username, f"Compute feature sbert", project.name)
-        return {"success":"computing sbert, it could take a few minutes"}
+        return ResponseModel(status="success", message="computing sbert, it could take a few minutes")
     if name == "fasttext":
         args = {
                 "path":project.params.dir,
                 "texts":df,
-                "model":"/home/emilien/models/cc.fr.300.bin"
+                "model":"/Users/emilien/models/cc.fr.300.bin"
                 }
         process = Process(target=functions.process_fasttext, 
                           kwargs = args)
         process.start()
         project.features.training.append(name)
         server.log_action(username, f"Compute feature fasttext", project.name)
-        return {"success":"computing fasttext, it could take a few minutes"}
+        return ResponseModel(status="success", message="computing fasttext, it could take a few minutes")
     if name == "dfm":
         # TODO save params with list to dict
         args = params.params
@@ -630,63 +665,66 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         process.start()
         project.features.training.append(name)
         server.log_action(username, f"Compute feature dfm", project.name)
-        return {"success":"computing dfm, it could take a few seconds"}
+        return ResponseModel(status="success", message="computing dfm, it could take a few minutes")
 
-    return {"error":"not implemented"}
+    return ResponseModel(status="error", message = "Not implemented")
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
                         username: Annotated[str, Header()],
-                        name:str):
+                        name:str) -> ResponseModel:
     """
     Delete a specific feature
     """
     r = project.features.delete(name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"delete feature {name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 # Models management
 #------------------
 
 @app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def get_simplemodel(project: Annotated[Project, Depends(get_project)]):
+async def get_simplemodel(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Simplemodel parameters
     """
-    r = project.simplemodels.available()
-    return r
+    data = project.simplemodels.available()
+    return ResponseModel(status="success", data=data)
 
 
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
                            username: Annotated[str, Header()],
-                           simplemodel:SimpleModelModel):
+                           simplemodel:SimpleModelModel) -> ResponseModel:
     """
     Compute simplemodel
     TODO : user out of simplemodel
     TODO : test if parameters in simplemodel are well formed
     """
     r = project.update_simplemodel(simplemodel)
-    return r
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
+    return ResponseModel(status="success", message=r["success"])
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
 async def get_bert(project: Annotated[Project, Depends(get_project)],
-                   name:str):
+                   name:str)  -> ResponseModel: 
     """
     Bert parameters and statistics
     """
     b = project.bertmodels.get(name, lazy= True)
     if b is None:
-        return {"error":"Bert model does not exist"}
-    r =  b.informations()
-    return r
+        return ResponseModel(status="error", message="Bert model does not exist")
+    data =  b.informations()
+    return ResponseModel(status="success", data = data)
 
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(project: Annotated[Project, Depends(get_project)],
                   username: Annotated[str, Header()],
                      model_name:str,
-                     #user:str,
-                     data:str = "all"):
+                     data:str = "all")  -> ResponseModel:
     """
     Start prediction with a model
     TODO : scope data
@@ -697,13 +735,15 @@ async def predict(project: Annotated[Project, Depends(get_project)],
                                                     df = df,
                                                     col_text = "text",
                                                     user = username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"predict bert {model_name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    bert:BertModelModel):
+                    bert:BertModelModel)   -> ResponseModel:
     """ 
     Compute bertmodel
     TODO : gestion du nom du projet/scheme à la base du modèle
@@ -723,39 +763,44 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 params = bert.params,
                                 test_size=bert.test_size
                                 )
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"train bert {bert.name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/stop", dependencies=[Depends(verified_user)])
 async def stop_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    #user:str
-                     ):
+                     ) -> ResponseModel:
     r = project.bertmodels.stop_user_training(username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"stop bert training", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/delete", dependencies=[Depends(verified_user)])
 async def delete_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    bert_name:str):
+                    bert_name:str) -> ResponseModel:
     """
     Delete trained bert model
     """
     r = project.bertmodels.delete(bert_name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"delete bert model {bert_name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/rename", dependencies=[Depends(verified_user)])
 async def save_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                      former_name:str,
-                     new_name:str,
-                     #user:str
-                     ):
+                     new_name:str) -> ResponseModel:
     r = project.bertmodels.rename(former_name, new_name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["errror"])
     server.log_action(username, f"rename bert model {former_name} - {new_name}", project.name)
-    return r
+    return ResponseModel(status="success", message=r["success"])
 
 
 # Export elements
@@ -764,7 +809,7 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
 @app.get("/export/data", dependencies=[Depends(verified_user)])
 async def export_data(project: Annotated[Project, Depends(get_project)],
                       scheme:str,
-                      format:str):
+                      format:str) -> FileResponse:
     """
     Export data
     """
@@ -775,7 +820,7 @@ async def export_data(project: Annotated[Project, Depends(get_project)],
 @app.get("/export/features", dependencies=[Depends(verified_user)])
 async def export_features(project: Annotated[Project, Depends(get_project)],
                           features:list = Query(),
-                          format:str = Query()):
+                          format:str = Query()) -> FileResponse:
     """
     Export features
     """
@@ -786,7 +831,7 @@ async def export_features(project: Annotated[Project, Depends(get_project)],
 @app.get("/export/prediction", dependencies=[Depends(verified_user)])
 async def export_prediction(project: Annotated[Project, Depends(get_project)],
                           format:str = Query(),
-                          name:str = Query()):
+                          name:str = Query()) -> FileResponse:
     """
     Export annotations
     """
@@ -796,7 +841,7 @@ async def export_prediction(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
 async def export_bert(project: Annotated[Project, Depends(get_project)],
-                          name:str = Query()):
+                          name:str = Query()) -> FileResponse:
     """
     Export fine-tuned BERT model
     """
