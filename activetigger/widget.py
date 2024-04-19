@@ -4,16 +4,15 @@ from IPython.display import display, clear_output
 import plotly.graph_objects as go
 import json
 import requests as rq
-from pathlib import Path
 import pandas as pd
 import time
 import asyncio
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 import importlib
 import numpy as np
 from io import BytesIO
+import textwrap
 
 
 
@@ -1036,14 +1035,13 @@ class Widget():
             self.visualization.children = [widgets.HTML(value = "<div  style='background-color: #ffcc00; padding: 10px;'>Computing</div>")]
         else:
             print(r)
-    
 
     def plot_visualisation(self):
         """
         Produce the visualisation for the projection
         """
         df = self.projection_data
-        df["to_show"] = df.apply(lambda x : f"{x.name}| {x['texts'][0:100]}...", axis=1)
+        df["to_show"] = df.apply(lambda x : f"{x.name}<br>{'<br>'.join(textwrap.wrap(x['texts'][0:300],width=30))}...", axis=1)
         f = go.FigureWidget([go.Scatter(x=df[df["labels"]==i]["0"], 
                                         y=df[df["labels"]==i]["1"], 
                                         mode='markers', 
@@ -1124,8 +1122,7 @@ class Widget():
             if (type(self.projection_data) is str) and (self.projection_data == "computing"):
                 r = self.get_projection_data()
                 if ("data" in r) and (type(r["data"]) is dict):
-                    print("get projection data")
-                    self.projection_data = pd.DataFrame(r["data"])
+                    self.projection_data = pd.DataFrame(r["data"],)
                     self.plot_visualisation()
 
     def interface(self):

@@ -80,9 +80,13 @@ async def update():
             if ("future" in project.features.available_projections[u]):
                 if project.features.available_projections[u]["future"].done():
                     df = project.features.available_projections[u]["future"].result()
-                    project.features.available_projections[u]["data"] = df
-                    del project.features.available_projections[u]["future"]
-                    logging.info(f"Add projection data to project {p}")
+                    if df == "error": #TODO check this error management
+                        print("error with future")
+                        del project.features.available_projections[u]
+                    else:
+                        project.features.available_projections[u]["data"] = df
+                        del project.features.available_projections[u]["future"]
+                        logging.info(f"Add projection data to project {p}")
 
 @app.middleware("http")
 async def middleware(request: Request, call_next):

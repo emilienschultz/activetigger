@@ -151,18 +151,24 @@ def compute_umap(features:DataFrame,
     """
     Compute UMAP
     """
-    scaled_features = StandardScaler().fit_transform(features)
-    reducer = umap.UMAP(**params)
-    reduced_features = reducer.fit_transform(scaled_features)
-    df = pd.DataFrame(reduced_features, index = features.index)
-    return df
+    try:
+        scaled_features = StandardScaler().fit_transform(features)
+        reducer = umap.UMAP(**params)
+        reduced_features = reducer.fit_transform(scaled_features)
+        df = pd.DataFrame(reduced_features, index = features.index)
+        return df
+    except:
+        return "error"
 
 def compute_tsne(features:DataFrame, 
                  params:dict):
     """
     Compute TSNE
     """
-    scaled_features = StandardScaler().fit_transform(features)
-    reduced_features = TSNE(**params).fit_transform(scaled_features)
-    df = pd.DataFrame(reduced_features,index = features.index)
-    return df
+    try:
+        scaled_features = StandardScaler().fit_transform(features)
+        reduced_features = TSNE(**params).fit_transform(scaled_features)
+        df = pd.DataFrame(reduced_features,index = features.index)
+        return df
+    except:
+        return "error"
