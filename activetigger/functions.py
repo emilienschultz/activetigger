@@ -71,6 +71,7 @@ def tokenize(texts: Series,
              model: str = "fr_core_news_sm")->Series:
     """
     Clean texts with tokenization to facilitate word count
+    TODO : faster tokenization ?
     """
 
     nlp = spacy.load(model)
@@ -90,7 +91,9 @@ def to_fasttext(texts: Series,
         pandas.DataFrame: embeddings
     """
     texts_tk = tokenize(texts)
+    print(model)
     ft = fasttext.load_model(model)
+    print("loaded")
     emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
     df = pd.DataFrame(emb,index=texts.index)
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
@@ -100,7 +103,7 @@ def process_fasttext(texts: Series,
                   path:Path,
                   model:str):
     texts_tk = tokenize(texts)
-    ft = fasttext.load_model(model)
+    ft = fasttext.load_model(str(model))
     emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
     df = pd.DataFrame(emb,index=texts.index)
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]

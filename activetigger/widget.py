@@ -134,7 +134,7 @@ class Widget():
         data_path = importlib.resources.files("activetigger")
         image_path = "img/active_tigger.png"
         img = open(data_path / image_path, 'rb').read()
-        img_at = widgets.Image(value=img, format='png', width=50, height=50)
+        img_at = widgets.Image(value=img, format='png', width=100, height=100)
 
         # Users
         self.existing_users = widgets.Dropdown(description = "User:", 
@@ -164,8 +164,8 @@ class Widget():
                 print("No project selected")
                 return None
             self.state = self.get_state()
-            if "error" in self.state:
-                print("Not connected")
+            if len(self.state) == 0:
+                self.current_user.value = "<div  style='background-color: #ffcc00;'>Please identify yourself. Not connected</div>"
                 return None
             self.interface()
         start.on_click(start_project)
@@ -193,6 +193,8 @@ class Widget():
         Get state variable
         """
         state = self._get(route = f"/state/{self.project_name}")
+        if state["status"]=="error":
+            return {}
         return state["data"]
 
     def _delete_project(self, project_name:str) -> dict:
@@ -538,7 +540,7 @@ class Widget():
         c = self.state["features"]["training"]
         if len(c) == 0:
             c = "None"
-        self.info_features.value = f"Processes currently running: {c}"
+        self.info_features.value = f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>"
 
         return True
 
@@ -1031,7 +1033,7 @@ class Widget():
             json_data = data)
         if r["status"] == "waiting":
             self.projection_data = "computing"
-            self.visualization.children = [widgets.HTML(value = self.projection_data)]
+            self.visualization.children = [widgets.HTML(value = "<div  style='background-color: #ffcc00; padding: 10px;'>Computing</div>")]
         else:
             print(r)
     
@@ -1116,7 +1118,8 @@ class Widget():
                 self.update_tab_bertmodels(state=False)
             # check features status
             if self.state["features"]["available"] != self.available_features.options:
-                self.available_features.options = self.state["features"]["available"]
+                self.update_tab_features(state=False)
+                #self.available_features.options = self.state["features"]["available"]
             # check projection status
             if (type(self.projection_data) is str) and (self.projection_data == "computing"):
                 r = self.get_projection_data()
