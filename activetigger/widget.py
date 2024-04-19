@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 import importlib
 import numpy as np
+from io import BytesIO
+
 
 
 class Widget():
@@ -220,10 +222,16 @@ class Widget():
                                     layout={'width': '200px'})
 
         # load file
-        file = widgets.Text(disabled=False,
-                            description="Path:",
-                            layout={'width': '300px'},
-                            value = "path to a csv")
+#        file = widgets.Text(disabled=False,
+#                            description="Path:",
+#                            layout={'width': '300px'},
+#                            value = "path to a csv")
+        file = widgets.FileUpload(
+            description= 'Select file',
+            accept='.csv',
+            multiple=False,
+        )
+        box_file = widgets.HBox([file])
         layout=widgets.Layout(width='100px', margin='0px 0px 0px 50px')
         load = widgets.Button(description="Load",
                               layout=layout)
@@ -299,8 +307,8 @@ class Widget():
                     "n_train":n_train.value,
                     "n_test":n_test.value
                     }
-            files = {'file': (file.value,
-                              open(file.value, 'rb'))}
+            files = {'file': (file.value[0]["name"],
+                              BytesIO(file.value[0]["content"]))}
             r = self._post(route="/projects/new", 
                        files=files,
                        data=data
@@ -315,10 +323,11 @@ class Widget():
         validate.style.button_color = 'lightgreen'
 
         # manage 2-level menu display
-        self.output = widgets.VBox([widgets.HBox([project_name, file, load])])
+        self.output = widgets.VBox([widgets.HBox([project_name, box_file, load])])
         
         def load_file(b):
-            df = self._load_file(file.value)
+            #df = self._load_file(file.value)
+            df = self._load_file(file)
             column_text.options = df.columns
             column_id.options = df.columns
             column_label.options = df.columns
@@ -341,19 +350,33 @@ class Widget():
         self.global_output.children = [self.output]
         display(self.global_output)
 
-    def _load_file(self,path) -> pd.DataFrame:
+    def _load_file(self, file):
         """
         Load file
         """
-        path = Path(path)
-        if not path.exists():
+        if len(file.value) == 0:
             print("File doesn't exist")
             return pd.DataFrame()
-        if not path.suffix == '.csv':
-            print("File not csv")
+        if file.value[0]["type"] != "text/csv":
+            print("Only CSV")
             return pd.DataFrame()
-        df = pd.read_csv(path)
+        content = file.value[0]["content"]
+        df = pd.read_csv(BytesIO(content))
         return df
+
+    # def _load_file(self,path) -> pd.DataFrame:
+    #     """
+    #     Load file
+    #     """
+    #     path = Path(path)
+    #     if not path.exists():
+    #         print("File doesn't exist")
+    #         return pd.DataFrame()
+    #     if not path.suffix == '.csv':
+    #         print("File not csv")
+    #         return pd.DataFrame()
+    #     df = pd.read_csv(path)
+    #     return df
     
     def _display_next(self) -> bool:
         """
