@@ -355,8 +355,9 @@ class BertModels():
         """
         Compress bertmodel as a separate process
         """
+        print(self.path / name, 'gztar', self.path)
         process = Process(target=shutil.make_archive, 
-                          args = (self.path / name, 'gztar', self.path))
+                          args = (self.path / name, 'gztar', self.path / name))
         process.start()
         print("starting compression")
 

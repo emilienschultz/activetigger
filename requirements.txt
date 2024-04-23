@@ -2,6 +2,7 @@ fastapi[all]
 requests
 uvicorn
 pyyaml
+Skips
 argparse
 datasets
 fasttext
@@ -19,12 +20,14 @@ typing_extensions
 spacy
 pyyaml
 protobuf
-umap-learn
 python-jose[cryptography]
 bcrypt
 plotly
 matplotlib
 sentencepiece
+umap-learn
+Jupyter
+sacremoses
 
 https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.7.0/fr_core_news_sm-3.7.0.tar.gz#egg=fr_core_news_sm
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz#egg=en_core_web_sm

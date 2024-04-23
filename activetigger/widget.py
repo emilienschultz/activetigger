@@ -1053,8 +1053,8 @@ class Widget():
         def update_point(trace, points, selector):
             # select specific text
             if len(points.point_inds)>0:
-                element_id = trace.customdata[points.point_inds][0][0].split("|")[0] #TODO améliorer
-                print(element_id)
+                element_id = trace.customdata[points.point_inds][0][0].split("<br>")[0] #TODO améliorer
+                #print(element_id)
                 self._display_element(element_id)
         for i in range(0,len(f.data)):
             f.data[i].on_click(update_point)
@@ -1388,7 +1388,7 @@ class Widget():
         self.available_bert = widgets.Dropdown(description="Select:")
         self.bert_statistics = widgets.Output()
         def on_change_model(change): # if select one, display its options on_select
-            if change['type'] == 'change' and change['name'] == 'value':
+            if change['type'] == 'change' and change['name'] == 'value' and self.available_bert.value is not None:
                 # available predict button
                 if self.state["bertmodels"]["available"][self.select_scheme.value][self.available_bert.value][0]:
                     self.compute_prediction.disabled = True

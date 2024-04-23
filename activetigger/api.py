@@ -76,17 +76,22 @@ async def update():
             logging.info(f"Add DFM embeddings to project {p}")
         
         # closing future processes
-        for u in project.features.available_projections:
+        to_del = []
+        for u in project.features.available_projections.copy():
             if ("future" in project.features.available_projections[u]):
-                if project.features.available_projections[u]["future"].done():
-                    df = project.features.available_projections[u]["future"].result()
-                    if df == "error": #TODO check this error management
-                        print("error with future")
-                        del project.features.available_projections[u]
-                    else:
+                try: #if something went wrong delete it ...
+                    if project.features.available_projections[u]["future"].done():
+                        # TODO add error management
+                        df = project.features.available_projections[u]["future"].result()
                         project.features.available_projections[u]["data"] = df
                         del project.features.available_projections[u]["future"]
                         logging.info(f"Add projection data to project {p}")
+                except:
+                    to_del.append(u)
+                    print("probleme about a future")
+        for u in to_del:
+            del project.features.available_projections[u]
+        to_del = []
 
 @app.middleware("http")
 async def middleware(request: Request, call_next):
@@ -465,11 +470,8 @@ async def get_element(project: Annotated[Project, Depends(get_project)],
     Get specific element
     """
     try:
-        #r = ElementModel(**project.get_element(element_id, scheme=scheme, user=username))
-        #return r
         data = project.get_element(element_id, scheme=scheme, user=username)
-        return ResponseModel(status="success", data=data)
-        
+        return ResponseModel(status="success", data=data)        
     except: # gérer la bonne erreur
         return ResponseModel(status="error", message=f"Element {element_id} not found")
     
@@ -543,7 +545,7 @@ async def add_label(project: Annotated[Project, Depends(get_project)],
     """
     r = project.schemes.add_label(label, scheme, username)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"add label {label} to {scheme}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -558,7 +560,7 @@ async def delete_label(project: Annotated[Project, Depends(get_project)],
     """
     r = project.schemes.delete_label(label, scheme, username)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"delete label {label} to {scheme}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -576,19 +578,19 @@ async def post_schemes(username: Annotated[str, Header()],
     if action == "add":
         r = project.schemes.add_scheme(scheme)
         if "error" in r:
-            return ResponseModel(status="error", message=r["errror"])
+            return ResponseModel(status="error", message=r["error"])
         server.log_action(username, f"add scheme {scheme.name}", project.name)
         return ResponseModel(status="success", message=r["success"])
     if action == "delete":
         r = project.schemes.delete_scheme(scheme)
         if "error" in r:
-            return ResponseModel(status="error", message=r["errror"])
+            return ResponseModel(status="error", message=r["error"])
         server.log_action(username, f"delete scheme {scheme.name}", project.name)
         return ResponseModel(status="success", message=r["success"])
     if action == "update":
         r = project.schemes.update_scheme(scheme.name, scheme.tags, username)
         if "error" in r:
-            return ResponseModel(status="error", message=r["errror"])
+            return ResponseModel(status="error", message=r["error"])
         server.log_action(username, f"update scheme {scheme.name}", project.name)
         return ResponseModel(status="success", message=r["success"])
     
@@ -615,7 +617,7 @@ async def post_regex(project: Annotated[Project, Depends(get_project)],
     """
     r = project.add_regex(regex.name,regex.value)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"add regex {regex.name}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -682,7 +684,7 @@ async def delete_feature(project: Annotated[Project, Depends(get_project)],
     """
     r = project.features.delete(name)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"delete feature {name}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -709,7 +711,7 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
     """
     r = project.update_simplemodel(simplemodel)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", message=r["success"])
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
@@ -740,7 +742,7 @@ async def predict(project: Annotated[Project, Depends(get_project)],
                                                     col_text = "text",
                                                     user = username)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"predict bert {model_name}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -768,7 +770,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                                 test_size=bert.test_size
                                 )
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"train bert {bert.name}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -778,7 +780,7 @@ async def stop_bert(project: Annotated[Project, Depends(get_project)],
                      ) -> ResponseModel:
     r = project.bertmodels.stop_user_training(username)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"stop bert training", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -791,7 +793,7 @@ async def delete_bert(project: Annotated[Project, Depends(get_project)],
     """
     r = project.bertmodels.delete(bert_name)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"delete bert model {bert_name}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
@@ -802,7 +804,7 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
                      new_name:str) -> ResponseModel:
     r = project.bertmodels.rename(former_name, new_name)
     if "error" in r:
-        return ResponseModel(status="error", message=r["errror"])
+        return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"rename bert model {former_name} - {new_name}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
