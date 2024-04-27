@@ -20,6 +20,7 @@ from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
 from multiprocessing import Process
 from datetime import datetime
 import pickle
+import activetigger.functions as functions
 
 logging.basicConfig(filename = "log",
                             format='%(asctime)s %(message)s',
@@ -638,10 +639,15 @@ class SimpleModels():
                 }
             }
     
-    def __init__(self, path:Path):
-        self.existing:dict = {}
+    def __init__(self, path:Path, executor):
+        """
+        Init Simplemodels class
+        """
+        self.existing:dict = {} # computed simplemodels
+        self.computing:dict = {} # curently under computation
         self.save_file:str = "simplemodels.pickle"
         self.path:Path = path
+        self.executor = executor
         self.loads()
 
     def __repr__(self) -> str:
@@ -662,7 +668,16 @@ class SimpleModels():
                            "statistics":sm.statistics
                            }
         return r
-        
+
+    def training(self):
+        """
+        Training simplemodels
+        """
+        r = {}
+        for u in self.computing:
+            r[u] = list(self.computing[u].keys())
+        return r   
+
     def exists(self, user:str, scheme:str):
         """
         Test if a simplemodel exists for a user/scheme
@@ -710,15 +725,77 @@ class SimpleModels():
         
         return X, Y, labels
     
-    def fit_model(self, name, X, Y, model_params = None):
+    # def fit_model(self, name, X, Y, model_params = None):
+    #     """
+    #     Fit model
+    #     TODO: add naive bayes
+    #     """
+    #     # only keep tagged Y
+    #     f = Y.notnull()
+    #     X = X[f]
+    #     Y = Y[f]
+    #     # default parameters
+    #     if model_params is None:
+    #         model_params = self.available_models[name]
+
+    #     # Select model
+    #     if name == "knn":
+    #         model = KNeighborsClassifier(n_neighbors=model_params["n_neighbors"])
+
+    #     if name == "lasso":
+    #         model = LogisticRegression(penalty="l1",
+    #                                         solver="liblinear",
+    #                                         C = model_params["C"])
+
+    #     if name == "liblinear":
+    #         # Liblinear : method = 1 : multimodal logistic regression l2
+    #         model = LogisticRegression(penalty='l2', 
+    #                                         solver='lbfgs',
+    #                                         C = model_params["cost"])
+
+    #     if name == "randomforest":
+    #         # params  Num. trees mtry  Sample fraction
+    #         #Number of variables randomly sampled as candidates at each split: 
+    #         # it is “mtry” in R and it is “max_features” Python
+    #         #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
+    #         model = RandomForestClassifier(n_estimators=model_params["n_estimators"], 
+    #                                             random_state=42,
+    #                                             max_features=model_params["max_features"])
+
+    #     if name == "multi_naivebayes":
+    #         # Only with dtf or tfidf for features
+    #         # TODO: calculate class prior for docfreq & termfreq
+    #         model = MultinomialNB(alpha=model_params["alpha"],
+    #                                 fit_prior=model_params["fit_prior"],
+    #                                 class_prior=model_params["class_prior"])
+
+    #     # Fit modelmax_features
+    #     model.fit(X, Y)
+    #     return model, model_params
+
+    def standardize(self,df):
         """
-        Fit model
-        TODO: add naive bayes
+        Apply standardization
         """
-        # only keep tagged Y
-        f = Y.notnull()
-        X = X[f]
-        Y = Y[f]
+        scaler = StandardScaler()
+        df_stand = scaler.fit_transform(df)
+        return pd.DataFrame(df_stand,columns=df.columns,index=df.index)
+
+    def add_simplemodel(self, 
+                        user, 
+                        scheme,
+                        features,
+                        name, 
+                        df, 
+                        col_labels,
+                        col_features,
+                        standardize,
+                        model_params:dict|None = None):
+        """
+        A a new simplemodel for a user and a scheme
+        """
+        X, Y, labels = self.load_data(df, col_labels, col_features, standardize)
+
         # default parameters
         if model_params is None:
             model_params = self.available_models[name]
@@ -754,38 +831,18 @@ class SimpleModels():
                                     fit_prior=model_params["fit_prior"],
                                     class_prior=model_params["class_prior"])
 
-        # Fit modelmax_features
-        model.fit(X, Y)
-        return model, model_params
-
-    def standardize(self,df):
-        """
-        Apply standardization
-        """
-        scaler = StandardScaler()
-        df_stand = scaler.fit_transform(df)
-        return pd.DataFrame(df_stand,columns=df.columns,index=df.index)
-
-    def add_simplemodel(self, 
-                        user, 
-                        scheme,
-                        features,
-                        name, 
-                        df, 
-                        col_labels,
-                        col_features,
-                        standardize,
-                        model_params:dict|None = None):
-        """
-        A a new simplemodel for a user and a scheme
-        """
-        X, Y, labels = self.load_data(df, col_labels, col_features, standardize)
-        model, model_params = self.fit_model(name, X, Y, model_params)
-        sm = SimpleModel(name, X, Y, labels, model, features, standardize, model_params)
-        if not user in self.existing:
-            self.existing[user] = {}
-        self.existing[user][scheme] = sm
-        self.dumps() #save pickle
+        # launch the compuation (model + statistics) as a future process
+        future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
+        #model.fit(X, Y)
+        #sm = SimpleModel(name, user, X, Y, labels, model, features, standardize, model_params)
+        sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
+        #if not user in self.existing:
+        #    self.existing[user] = {}
+        #self.existing[user][scheme] = sm
+        #self.dumps() #save to pickle
+        if not user in self.computing:
+            self.computing[user] = {}
+        self.computing[user][scheme] = {"future":future_result, "sm":sm}
 
     def dumps(self):
         """
@@ -807,6 +864,7 @@ class SimpleModels():
 class SimpleModel():
     def __init__(self,
                  name: str,
+                 user: str,
                  X: DataFrame,
                  Y: DataFrame,
                  labels: list,
@@ -816,16 +874,21 @@ class SimpleModel():
                  model_params: dict|None
                  ) -> None:
         self.name = name
+        self.user = user
         self.features = features
         self.X = X
         self.Y = Y
         self.labels = labels
-        self.model = model
         self.model_params = model_params
-        self.proba = self.compute_proba(model, X)
         self.standardize = standardize
-        self.statistics = self.compute_statistics(model, X, Y, labels)
-        self.cv10 = self.compute_10cv(model, X, Y)
+        self.model = model
+        self.proba = None
+        self.statistics = None
+        self.cv10 = None
+        if not type(model) is str: #TODO : tester si c'est un modèle
+            self.proba = self.compute_proba(model, X)
+            self.statistics = self.compute_statistics(model, X, Y, labels)
+            self.cv10 = self.compute_10cv(model, X, Y)
 
     def json(self):
         """
@@ -837,6 +900,11 @@ class SimpleModel():
             "labels":list(self.labels),
             "params":dict(self.model_params)
         }
+    
+    def compute_stats(self):
+        self.proba = self.compute_proba(self.model, self.X)
+        self.statistics = self.compute_statistics(self.model, self.X, self.Y, self.labels)
+        self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
 
     def compute_proba(self, model, X):
         """
@@ -911,42 +979,3 @@ class SimpleModel():
              "macro_f1":round(macro_f1,3),
              "accuracy":round(accuracy,3)}
         return r
-
-#         self.available_models = {
-#                 #"simplebayes": {
-#                 #        "distribution":"multinomial",
-#                 #        "smooth":1,
-#                 #        "prior":"uniform"
-#                 #    },            C = self.model_params["C"])
-#         if self.name == "naivebayes":
-#             if not "distribution" in self.model_params:
-#                 raise TypeError("Missing distribution parameter for naivebayes")
-            
-#         # only dfm as predictor
-#             alpha = 1
-#             if "smooth" in self.model_params:
-#                 alpha = self.model_params["smooth"]
-#             fit_prior = True
-#             class_prior = None
-#             if "prior" in self.model_params:
-#                 if self.model_params["prior"] == "uniform":
-#                     fit_prior = True
-#                     class_prior = None
-#                 if self.model_params["prior"] == "docfreq":
-#                     fit_prior = False
-#                     class_prior = None #TODO
-#                 if self.model_params["prior"] == "termfreq":
-#                     fit_prior = False
-#                     class_prior = None #TODO
- 
-#             if self.model_params["distribution"] == "multinomial":
-#                 # discrete features
-#                 self.model = MultinomialNB(alpha=alpha,
-#                                            fit_prior=fit_prior,
-#                                            class_prior=class_prior)
-
-#             self.model_params = {
-#                                     "distribution":self.model_params["distribution"],
-#                                     "smooth":alpha,
-#                                     "prior":"uniform"
-#                                 }

@@ -80,6 +80,7 @@ async def update():
             server.recreate_executor()
 
         # closing future processes
+        # 1/for features computation
         to_del = []
         for u in project.features.available_projections.copy():
             if ("future" in project.features.available_projections[u]):
@@ -95,7 +96,26 @@ async def update():
                     print("probleme about a future")
         for u in to_del:
             del project.features.available_projections[u]
+        # 2/ for simplemodels computation
         to_del = []
+        for u in project.simplemodels.computing:
+            for s in project.simplemodels.computing[u]:
+                if project.simplemodels.computing[u][s]["future"].done():
+                    # get the model and update parameters
+                    results = project.simplemodels.computing[u][s]["future"].result()
+                    sm = project.simplemodels.computing[u][s]["sm"]
+                    sm.model = results["model"]
+                    sm.proba = results["proba"]
+                    sm.cv10 = results["cv10"]
+                    sm.statistics = results["statistics"]
+                    if not u in project.simplemodels.existing:
+                        project.simplemodels.existing[u] = {}
+                    project.simplemodels.existing[u][s] = sm
+                    to_del.append([u,s])
+        for i in to_del:
+            del project.simplemodels.computing[u][s]
+            if len(project.simplemodels.computing[u]) == 0:
+                del project.simplemodels.computing[u]
 
 @app.middleware("http")
 async def middleware(request: Request, call_next):

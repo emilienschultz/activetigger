@@ -313,7 +313,7 @@ class Server():
         if not self.exists(project_name):
             return {"error":"Project does not exist"}
 
-        self.projects[project_name] = Project(project_name, self.db)
+        self.projects[project_name] = Project(project_name, self.db, self.executor)
         return {"success":"Project loaded"}
 
     def set_project_parameters(self, project: ProjectModel) -> dict:
@@ -453,12 +453,14 @@ class Project(Server):
 
     def __init__(self, 
                  project_name:str,
-                 path_db:Path) -> None:
+                 path_db:Path, 
+                 executor) -> None:
         """
         Load existing project
         """
         self.name: str = project_name
         self.db = path_db
+        self.executor = executor # where to send processes
         self.params: ProjectModel = self.load_params(project_name)
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
@@ -469,7 +471,7 @@ class Project(Server):
                                         self.db) #type: ignore
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
         self.bertmodels: BertModels = BertModels(self.params.dir)
-        self.simplemodels: SimpleModels = SimpleModels(self.params.dir)
+        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, executor)
 
     def __del__(self):
         pass
@@ -632,8 +634,7 @@ class Project(Server):
             "predict":predict,
             "frame":frame,
                 }
-        
-        print(element)
+        print(element)        
         return element
     
     def get_element(self, 
@@ -723,6 +724,7 @@ class Project(Server):
             "simplemodel":{
                     "options":self.simplemodels.available_models,
                     "available":self.simplemodels.available(),
+                    "training":self.simplemodels.training(),
                     },
             "bertmodels":{
                     "options":self.bertmodels.base_models,
