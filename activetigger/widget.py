@@ -606,6 +606,11 @@ class Widget():
         self.select_simplemodel.options = list(self.state["simplemodel"]["options"].keys())
         self.select_features.options = self.state["features"]["available"]
 
+        name = "No model"
+        statistics = ""
+        self.simplemodel_params.value = ""
+        status = ""
+
         # if a model has already be trained for the user and the scheme
         if (self.user in self.state["simplemodel"]["available"]) and (self.select_scheme.value in self.state["simplemodel"]["available"][self.user]):
             current_model = self.state["simplemodel"]["available"][self.user][self.select_scheme.value]
@@ -613,13 +618,14 @@ class Widget():
             statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
             self.simplemodel_params.value = json.dumps(current_model["params"], indent=2)
             self.select_simplemodel.value = name
-        else:
-            name = "No model"
-            statistics = ""
-            self.simplemodel_params.value = ""
+
+        # if there is a model under training
+        if (self.user in self.state["simplemodel"]["training"]) and (self.select_scheme.value in self.state["simplemodel"]["training"][self.user]):
+            status = "Computing"
+            self.computing_simplemodel = True
 
         # display information
-        self.simplemodel_state.value = f"Current model: {name}"
+        self.simplemodel_state.value = f"<b>{status}</b> - Current model: {name}"
         self.simplemodel_statistics.value = statistics
 
     def update_tab_data(self, state = True):
@@ -1127,6 +1133,10 @@ class Widget():
                 if ("data" in r) and (type(r["data"]) is dict):
                     self.projection_data = pd.DataFrame(r["data"],)
                     self.plot_visualisation()
+            # check simplemodel status
+            if self.computing_simplemodel and (not self.user in self.state["simplemodel"]["training"]):
+                self.computing_simplemodel = False
+                self.update_tab_simplemodel(state=False)
 
     def interface(self):
         """
@@ -1359,8 +1369,9 @@ class Widget():
                                                                model = self.select_simplemodel.value,
                                                                parameters = self.simplemodel_params.value,
                                                                features = self.select_features.value))
-        self.simplemodel_autotrain = widgets.IntSlider(min=1, max=50, 
+        self.simplemodel_autotrain = widgets.IntSlider(min=5, max=50, 
                                       description="")
+        self.computing_simplemodel = False
         # Populate
         self.update_tab_simplemodel()
 
