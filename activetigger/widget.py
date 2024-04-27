@@ -661,12 +661,14 @@ class Widget():
 
         prediction = []
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            prediction = [i[0] for i in self.state["bertmodels"]["available"][self.select_scheme.value] if i[1]] #if predict
+            temp = self.state["bertmodels"]["available"][self.select_scheme.value]
+            prediction = [i for i in temp if temp[i]["predicted"]]
         self.select_bert_model_predict.options = prediction
 
         bert = []
         if self.select_scheme.value in self.state["bertmodels"]["available"]:
-            bert = [i for i in self.state["bertmodels"]["available"][self.select_scheme.value].keys()] #if compressed
+            temp = self.state["bertmodels"]["available"][self.select_scheme.value]
+            bert = [i for i in temp if temp[i]["compressed"]]
         self.select_bert_model.options  = bert
 
     def create_scheme(self, s):
@@ -940,6 +942,7 @@ class Widget():
                   }
         r = self._post("/models/bert/rename",
             params = params)
+        self.update_tab_bertmodels()
         return r
         
     def export_data(self, format):
@@ -1390,7 +1393,7 @@ class Widget():
         def on_change_model(change): # if select one, display its options on_select
             if change['type'] == 'change' and change['name'] == 'value' and self.available_bert.value is not None:
                 # available predict button
-                if self.state["bertmodels"]["available"][self.select_scheme.value][self.available_bert.value][0]:
+                if self.state["bertmodels"]["available"][self.select_scheme.value][self.available_bert.value]["predicted"]:
                     self.compute_prediction.disabled = True
                 else:
                     self.compute_prediction.disabled = False

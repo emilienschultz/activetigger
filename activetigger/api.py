@@ -817,10 +817,12 @@ async def export_data(project: Annotated[Project, Depends(get_project)],
                       scheme:str,
                       format:str) -> FileResponse:
     """
-    Export data
+    Export labelled data
     """
-    name, path = project.export_data(format=format, scheme=scheme)
-    r = FileResponse(path, filename=name)
+    r = project.export_data(format=format, scheme=scheme)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    r = FileResponse(r["path"], filename=r["name"])
     return r
 
 @app.get("/export/features", dependencies=[Depends(verified_user)])
@@ -830,8 +832,10 @@ async def export_features(project: Annotated[Project, Depends(get_project)],
     """
     Export features
     """
-    name, path = project.export_features(features = features, format=format)
-    r = FileResponse(path, filename=name)
+    r = project.export_features(features = features, format=format)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    r = FileResponse(r["path"], filename=r["name"])
     return r
 
 @app.get("/export/prediction", dependencies=[Depends(verified_user)])
@@ -841,8 +845,10 @@ async def export_prediction(project: Annotated[Project, Depends(get_project)],
     """
     Export annotations
     """
-    name, path = project.bertmodels.export_prediction(name = name, format=format)
-    r = FileResponse(path, filename=name)
+    r = project.bertmodels.export_prediction(name = name, format=format)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    r = FileResponse(r["path"], filename=r["name"])
     return r
 
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
@@ -851,6 +857,8 @@ async def export_bert(project: Annotated[Project, Depends(get_project)],
     """
     Export fine-tuned BERT model
     """
-    name, path = project.bertmodels.export_bert(name = name)
-    r = FileResponse(path, filename=name)
+    r = project.bertmodels.export_bert(name = name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    r = FileResponse(r["path"], filename=r["name"])
     return r

@@ -175,7 +175,7 @@ class BertModel():
         # Calculate label
         pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
 
-        # Write the file
+        # Write the file in parquet
         pred.to_parquet(self.path / "predict.parquet")
 
         return pred
@@ -251,7 +251,9 @@ class BertModels():
                 scheme = i.split("__")[-1] #scheme after __
                 if not scheme in r: 
                     r[scheme] = {}
-                r[scheme][i] = [predict, compressed]
+                #r[scheme][i] = [predict, compressed]
+                r[scheme][i] = {"predicted":predict, 
+                                "compressed":compressed}
         return r
     
     def training(self) -> dict:
@@ -575,10 +577,24 @@ class BertModels():
         """
         Export predict file if exists
         """
-        file_name = f"predict.csv"
-        if not (self.path / name / file_name).exists():
+        file_name = f"predict.parquet"
+        path = self.path / name / file_name
+
+        # change format if needed
+        if format == "csv":
+            df = pd.read_parquet(path)
+            print(df)
+            file_name = f"predict.csv"
+            path = self.path / name / file_name
+            df.to_csv(path)
+
+        print(path)
+        if not path.exists():
             return {"error":"file does not exist"}
-        return file_name, self.path / name / file_name
+        
+        r =  {"name":file_name, 
+              "path":path}
+        return r
 
     def export_bert(self, name:str):
         """
@@ -587,7 +603,9 @@ class BertModels():
         file_name = f"{name}.tar.gz"
         if not (self.path / file_name).exists():
             return {"error":"file does not exist"}
-        return file_name, self.path / file_name
+        r =  {"name":file_name, 
+              "path":self.path / file_name}
+        return r
         
  
 class SimpleModels():

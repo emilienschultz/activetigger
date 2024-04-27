@@ -740,12 +740,12 @@ class Project(Server):
         self.features.add(name,f)
         return {"success":"regex added"}
     
-    def export_features(self, features:list, format:str|None = None):
+    def export_features(self, features:list, format:str = "parquet"):
         """
         Export features data in different formats
         """
-        if format is None:
-            format = "csv"
+        if len(features)==0:
+            return {"error":"No features selected"}
 
         path = self.params.dir # path of the data
         if not path.exists():
@@ -755,23 +755,22 @@ class Project(Server):
 
         file_name = f"extract_schemes_{self.name}.{format}"
 
+        # create files
         if format == "csv":
             data.to_csv(path / file_name)
-
         if format == "parquet":
             data.to_parquet(path / file_name)
 
-        return file_name, path / file_name
+        r = { "name":file_name,
+              "path":path / file_name}
+
+        return r
 
 
-    def export_data(self, scheme:str, format:str|None = None):
+    def export_data(self, scheme:str, format:str = "parquet"):
         """
         Export annotation data in different formats
         """
-        if format is None:
-            format = "csv"
-
-        print(self.params.dir)
         path = self.params.dir# path of the data
         if not path.exists():
             raise ValueError("Problem of filesystem for project")
@@ -781,13 +780,14 @@ class Project(Server):
         
         file_name = f"data_{self.name}_{scheme}.{format}"
 
+        # Create files
         if format == "csv":
             data.to_csv(path / file_name)
-
         if format == "parquet":
             data.to_parquet(path / file_name)
 
-        return file_name, path / file_name
+        r = {"name":file_name,"path":path / file_name}
+        return r
 
 class Features():
     """
