@@ -75,6 +75,10 @@ async def update():
             os.remove(project.params.dir / "dfm.parquet")
             logging.info(f"Add DFM embeddings to project {p}")
         
+        # restart future pool executor if needed
+        if server.executor._broken:
+            server.recreate_executor()
+
         # closing future processes
         to_del = []
         for u in project.features.available_projections.copy():

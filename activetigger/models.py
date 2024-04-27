@@ -147,6 +147,7 @@ class BertModel():
         predictions = []
         logging.info(f"Start prediction with {len(df)} entries")
         for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
+            print("Next chunck prediction")
             chunk = self.tokenizer(list(chunk), 
                             padding=True, 
                             truncation=True, 

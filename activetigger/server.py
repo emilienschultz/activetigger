@@ -30,6 +30,7 @@ class Server():
     test_file:str = "test.parquet"
     default_user:str = "root"
     ALGORITHM = "HS256"
+    n_workers = 2
 
     def __init__(self) -> None:
         """
@@ -52,7 +53,14 @@ class Server():
         # Activity of the server
         self.projects: dict = {}
         self.processes:list = []
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=2)
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
+
+    def recreate_executor(self):
+        """
+        Recreate future executor
+        """
+        del self.executor
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
 
     def __del__(self): 
         """
