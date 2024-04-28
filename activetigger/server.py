@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt # type: ignore
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
-from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB
+from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDB
 from pydantic import ValidationError
 
 class Server():

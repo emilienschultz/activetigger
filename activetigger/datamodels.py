@@ -149,20 +149,43 @@ class ParamsModel(BaseModel):
 # Validation JSON
 # Simplemodels
 
-class LiblinearModel(BaseModel):
+class LiblinearParams(BaseModel):
     cost:float
 
-class KnnModel(BaseModel):
+class KnnParams(BaseModel):
     n_neighbors:int
 
-class RandomforestModel(BaseModel):
+class RandomforestParams(BaseModel):
     n_estimators:int
     max_features:int|None
 
-class LassoModel(BaseModel):
+class LassoParams(BaseModel):
     C:int
 
-class Multi_naivebayesModel(BaseModel):
+class Multi_naivebayesParams(BaseModel):
     alpha:float
     fit_prior:bool
     class_prior:bool
+
+class BertParams(BaseModel):
+    batchsize: int
+    gradacc: float
+    epochs: int
+    lrate: float
+    wdecay: float
+    best: bool
+    eval: int
+    gpu: bool
+    adapt: bool
+
+class UmapParams(BaseModel):
+    n_neighbors: int
+    min_dist: float
+    n_components: int
+    metric: str
+
+class TsneParams(BaseModel):
+    n_components: int
+    learning_rate: str|float
+    init: str
+    perplexity: int
