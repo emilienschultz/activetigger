@@ -6,9 +6,12 @@ from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.metrics import precision_score, f1_score, accuracy_score
+from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
 from sklearn.manifold import TSNE
 import umap
 import bcrypt
+import numpy as np
 
 
 def get_hash(text:str):
@@ -169,3 +172,54 @@ def compute_tsne(features:DataFrame,
     reduced_features = TSNE(**params).fit_transform(scaled_features)
     df = pd.DataFrame(reduced_features,index = features.index)
     return df
+
+def fit_model(model, X, Y, labels):
+    """
+    Fit simplemodel
+    """
+    f = Y.notnull()
+    Xf = X[f]
+    Yf = Y[f]
+    model.fit(Xf, Yf)
+
+    # Proba
+    proba = model.predict_proba(X)
+    proba = pd.DataFrame(proba, 
+                            columns = model.classes_,
+                            index=X.index)
+    proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
+    proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
+
+
+    # Statistics
+    Y_pred = model.predict(Xf)
+    f1 = f1_score(Yf, Y_pred, average=None)
+    weighted_f1 = f1_score(Yf, Y_pred, average='weighted')
+    accuracy = accuracy_score(Yf, Y_pred)
+    precision = precision_score(list(Yf), 
+                                list(Y_pred),
+                                average="micro",
+                                #pos_label=labels[0]
+                                )
+    macro_f1 = f1_score(Yf, Y_pred, average='macro')
+    statistics = {
+                "f1":list(f1),
+                "weighted_f1":weighted_f1,
+                "macro_f1":macro_f1,
+                "accuracy":accuracy,
+                "precision":precision
+                }
+    
+    # CV10
+    num_folds = 10
+    kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+    Y_pred = cross_val_predict(model, Xf, Yf, cv=kf)
+    weighted_f1 = f1_score(Yf, Y_pred,average = "weighted")
+    accuracy = accuracy_score(Yf, Y_pred)
+    macro_f1 = f1_score(Yf, Y_pred,average = "macro")
+    cv10 = {"weighted_f1":round(weighted_f1,3), 
+            "macro_f1":round(macro_f1,3),
+            "accuracy":round(accuracy,3)}
+
+    r  = {"model":model, "proba":proba, "statistics":statistics, "cv10":cv10}
+    return r
