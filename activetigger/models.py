@@ -607,6 +607,25 @@ class BertModels():
         return r
         
  
+from pydantic import BaseModel
+class LiblinearModel(BaseModel):
+    cost:float
+
+class KnnModel(BaseModel):
+    n_neighbors:int
+
+class RandomforestModel(BaseModel):
+    n_estimators:int
+    max_features:int|None
+
+class LassoModel(BaseModel):
+    C:int
+
+class Multi_naivebayesModel(BaseModel):
+    alpha:float
+    fit_prior:bool
+    class_prior:bool
+
 class SimpleModels():
     """
     Managing simplemodels
@@ -635,6 +654,14 @@ class SimpleModels():
                     "class_prior":None
                 }
             }
+
+    validation = {
+        "liblinear": LiblinearModel,
+        "knn": KnnModel,
+        "randomforest": RandomforestModel,
+        "lasso": LassoModel,
+        "multi_naivebayes":Multi_naivebayesModel
+    }
     
     def __init__(self, path:Path, executor):
         """

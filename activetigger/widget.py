@@ -793,6 +793,10 @@ class Widget():
         r = self._post("/models/simplemodel", 
                        params = params, 
                        json_data = data)
+        if "error" in r:
+            # TODO : upgrade display on widget
+            print(r["message"])
+            return False
         self.update_tab_simplemodel()
         return True
     
