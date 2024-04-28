@@ -117,7 +117,7 @@ class BertModel():
             r["f1_macro"] = f1_score(Y, Y_pred, average = "macro"),
             r["f1_weighted"] = f1_score(Y, Y_pred, average = "weighted"),
             r["f1"] = list(f1_score(Y, Y_pred, average = None)),
-            r["precision"] = list(precision_score(list(Y), list(Y_pred), average="micro")),
+            r["precision"] = precision_score(list(Y), list(Y_pred), average="micro"),
             r["recall"] = list(recall_score(list(Y), list(Y_pred), average=None)),
             r["accuracy"] = accuracy_score(Y, Y_pred),
             r["false_prediction"] = df[f][["text","labels","prediction"]].to_dict()
@@ -519,14 +519,18 @@ class BertModels():
 
         return True
     
-    def stop_user_training(self,user:str):
+    def stop_user_process(self,user:str):
         """
         Stop the process of an user
         """
         if not user in self.processes:
             return {"error":"no current processes"}
         self.processes[user][1].terminate() # end process
-        shutil.rmtree(self.processes[user][0].path) #delete files
+
+        # delete files in case of training
+        b = self.processes[user][0]
+        if b.status == "training":
+            shutil.rmtree(self.processes[user][0].path)
         del self.processes[user] # delete process
         return {"success":"process terminated"}
     

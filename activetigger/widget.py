@@ -998,7 +998,7 @@ class Widget():
         r = self._get("/export/prediction",
             params = params,
             is_json= False)
-        with open(f"./prediction_export.{format}","wb") as f:
+        with open(f"./prediction_{name}_export.{format}","wb") as f:
             f.write(r)
         print(f"Prediction exported in './prediction_{name}_export.{format}'")
 
@@ -1080,6 +1080,7 @@ class Widget():
         params = {"project_name":self.project_name,
                             "name":name}
         r = self._get("/models/bert", params = params)
+        print(r)
         if r["status"] == "error":
             print(r)
             return 

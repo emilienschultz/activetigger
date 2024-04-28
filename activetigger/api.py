@@ -817,7 +817,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
 async def stop_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                      ) -> ResponseModel:
-    r = project.bertmodels.stop_user_training(username)
+    r = project.bertmodels.stop_user_process(username)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"stop bert training", project.name)

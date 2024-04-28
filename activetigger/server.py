@@ -1237,7 +1237,7 @@ class Schemes():
         Get the id of the n last tags added/updated
         by a user for a scheme of a project
         """
-        print("get recent tags for ",user)
+        print("get recent tags for ", user)
         # add case for all users
 
         conn = sqlite3.connect(self.db)
