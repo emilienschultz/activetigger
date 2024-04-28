@@ -145,3 +145,24 @@ class ProjectionModel(BaseModel):
 
 class ParamsModel(BaseModel):
     params:dict
+
+# Validation JSON
+# Simplemodels
+
+class LiblinearModel(BaseModel):
+    cost:float
+
+class KnnModel(BaseModel):
+    n_neighbors:int
+
+class RandomforestModel(BaseModel):
+    n_estimators:int
+    max_features:int|None
+
+class LassoModel(BaseModel):
+    C:int
+
+class Multi_naivebayesModel(BaseModel):
+    alpha:float
+    fit_prior:bool
+    class_prior:bool

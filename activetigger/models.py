@@ -21,6 +21,8 @@ from multiprocessing import Process
 from datetime import datetime
 import pickle
 import activetigger.functions as functions
+from datamodels import LiblinearModel, KnnModel, RandomforestModel, LassoModel, Multi_naivebayesModel
+
 
 logging.basicConfig(filename = "log",
                             format='%(asctime)s %(message)s',
@@ -606,26 +608,6 @@ class BertModels():
               "path":self.path / file_name}
         return r
         
- 
-from pydantic import BaseModel
-class LiblinearModel(BaseModel):
-    cost:float
-
-class KnnModel(BaseModel):
-    n_neighbors:int
-
-class RandomforestModel(BaseModel):
-    n_estimators:int
-    max_features:int|None
-
-class LassoModel(BaseModel):
-    C:int
-
-class Multi_naivebayesModel(BaseModel):
-    alpha:float
-    fit_prior:bool
-    class_prior:bool
-
 class SimpleModels():
     """
     Managing simplemodels
