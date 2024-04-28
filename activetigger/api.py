@@ -49,6 +49,11 @@ async def update():
     """
     Clean temporary files and future promises for CPU-bound computation
     """
+
+    # restart future pool executor if needed
+    if server.executor._broken:
+        server.recreate_executor()
+
     # clean temporary files for CPU-bound computation
     for p in server.projects:
         project = server.projects[p]
@@ -74,12 +79,9 @@ async def update():
                 project.features.training.remove("dfm") 
             os.remove(project.params.dir / "dfm.parquet")
             logging.info(f"Add DFM embeddings to project {p}")
-        
-        # restart future pool executor if needed
-        if server.executor._broken:
-            server.recreate_executor()
 
         # closing future processes
+        
         # 1/for features computation
         to_del = []
         for u in project.features.available_projections.copy():
@@ -96,6 +98,7 @@ async def update():
                     print("probleme about a future")
         for u in to_del:
             del project.features.available_projections[u]
+            
         # 2/ for simplemodels computation
         to_del = []
         for u in project.simplemodels.computing:

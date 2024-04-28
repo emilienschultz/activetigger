@@ -1,5 +1,5 @@
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import DataFrame
 import logging
 import json
 import os
@@ -12,7 +12,7 @@ from transformers import Trainer, TrainingArguments, TrainerCallback
 import datasets
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB, BernoulliNB
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score, f1_score, accuracy_score, recall_score
@@ -538,8 +538,6 @@ class BertModels():
             new_name = new_name + "__" + former_name.split("__")[-1]
 
         os.rename(self.path / former_name, self.path / new_name)
-
-        #shutil.copytree(self.path / former_name, self.path / new_name)
         return {"success":"model renamed"}
             
     def get(self, name:str, lazy = False)-> BertModel|None:
@@ -572,7 +570,6 @@ class BertModels():
                 to_del.append(b.name)
         # Update the current active processes
         self.processes = {u:self.processes[u] for u in self.processes if self.processes[u][0].name not in to_del}
-        #self.processes = [b for b in self.processes if b[0].name not in to_del]
         return True
     
     def export_prediction(self, name:str, format:str|None = None):
@@ -724,54 +721,6 @@ class SimpleModels():
         labels = Y.unique()
         
         return X, Y, labels
-    
-    # def fit_model(self, name, X, Y, model_params = None):
-    #     """
-    #     Fit model
-    #     TODO: add naive bayes
-    #     """
-    #     # only keep tagged Y
-    #     f = Y.notnull()
-    #     X = X[f]
-    #     Y = Y[f]
-    #     # default parameters
-    #     if model_params is None:
-    #         model_params = self.available_models[name]
-
-    #     # Select model
-    #     if name == "knn":
-    #         model = KNeighborsClassifier(n_neighbors=model_params["n_neighbors"])
-
-    #     if name == "lasso":
-    #         model = LogisticRegression(penalty="l1",
-    #                                         solver="liblinear",
-    #                                         C = model_params["C"])
-
-    #     if name == "liblinear":
-    #         # Liblinear : method = 1 : multimodal logistic regression l2
-    #         model = LogisticRegression(penalty='l2', 
-    #                                         solver='lbfgs',
-    #                                         C = model_params["cost"])
-
-    #     if name == "randomforest":
-    #         # params  Num. trees mtry  Sample fraction
-    #         #Number of variables randomly sampled as candidates at each split: 
-    #         # it is “mtry” in R and it is “max_features” Python
-    #         #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
-    #         model = RandomForestClassifier(n_estimators=model_params["n_estimators"], 
-    #                                             random_state=42,
-    #                                             max_features=model_params["max_features"])
-
-    #     if name == "multi_naivebayes":
-    #         # Only with dtf or tfidf for features
-    #         # TODO: calculate class prior for docfreq & termfreq
-    #         model = MultinomialNB(alpha=model_params["alpha"],
-    #                                 fit_prior=model_params["fit_prior"],
-    #                                 class_prior=model_params["class_prior"])
-
-    #     # Fit modelmax_features
-    #     model.fit(X, Y)
-    #     return model, model_params
 
     def standardize(self,df):
         """
@@ -832,14 +781,9 @@ class SimpleModels():
                                     class_prior=model_params["class_prior"])
 
         # launch the compuation (model + statistics) as a future process
+        # TODO: refactore the SimpleModel class
         future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
-        #model.fit(X, Y)
-        #sm = SimpleModel(name, user, X, Y, labels, model, features, standardize, model_params)
         sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
-        #if not user in self.existing:
-        #    self.existing[user] = {}
-        #self.existing[user][scheme] = sm
-        #self.dumps() #save to pickle
         if not user in self.computing:
             self.computing[user] = {}
         self.computing[user][scheme] = {"future":future_result, "sm":sm}
