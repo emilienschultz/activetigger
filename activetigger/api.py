@@ -101,7 +101,7 @@ async def update():
         for u in project.simplemodels.computing:
             for s in project.simplemodels.computing[u]:
                 if project.simplemodels.computing[u][s]["future"].done():
-                    # get the model and update parameters
+                    # get the model and update parameters TODO ameliorate this code
                     results = project.simplemodels.computing[u][s]["future"].result()
                     sm = project.simplemodels.computing[u][s]["sm"]
                     sm.model = results["model"]
@@ -112,6 +112,7 @@ async def update():
                         project.simplemodels.existing[u] = {}
                     project.simplemodels.existing[u][s] = sm
                     to_del.append([u,s])
+                    project.simplemodels.dumps()
         for i in to_del:
             del project.simplemodels.computing[u][s]
             if len(project.simplemodels.computing[u]) == 0:
