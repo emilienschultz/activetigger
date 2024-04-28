@@ -16,13 +16,13 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_score, f1_score, accuracy_score, recall_score
-from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
+from sklearn.model_selection import KFold, cross_val_predict
 from multiprocessing import Process
 from datetime import datetime
 import pickle
+from pydantic import ValidationError
 import activetigger.functions as functions
 from activetigger.datamodels import LiblinearParams, KnnParams, RandomforestParams, LassoParams, Multi_naivebayesParams, BertParams
-from pydantic import ValidationError
 
 
 logging.basicConfig(filename = "log",
@@ -241,7 +241,6 @@ class BertModels():
         if self.path.exists(): #if bert models have been trained
             all_files = os.listdir(self.path)
             trained = [i for i in all_files if os.path.isdir(self.path / i) and (self.path / i / "finished").exists()]
-            #trained = [i for i in trained if i[0]!="_"] #skip temporary training
             for i in trained:
                 predict = False
                 compressed = False
@@ -256,7 +255,6 @@ class BertModels():
                 scheme = i.split("__")[-1] #scheme after __
                 if not scheme in r: 
                     r[scheme] = {}
-                #r[scheme][i] = [predict, compressed]
                 r[scheme][i] = {"predicted":predict, 
                                 "compressed":compressed}
         return r
@@ -265,7 +263,6 @@ class BertModels():
         """
         Currently under training
         """
-        #return {u:self.processes[u][0].status for u in self.processes}
         return {u:self.processes[u][0].name for u in self.processes if self.processes[u][0].status == "training"}
 
     def delete(self, bert_name:str) -> dict:
@@ -802,7 +799,7 @@ class SimpleModels():
                                     class_prior=model_params["class_prior"])
 
         # launch the compuation (model + statistics) as a future process
-        # TODO: refactore the SimpleModel class
+        # TODO: refactore the SimpleModel class / move to API the executor call ?
         future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
         sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
         if not user in self.computing:
@@ -841,6 +838,7 @@ class SimpleModel():
         """
         Define a specific Simplemodel with parameters
         TODO : add timestamp ?
+        TODO : not sure that statistics function are still usefull since it is calculated during the fit
         """
         self.name = name
         self.user = user

@@ -101,7 +101,6 @@ class RegexModel(BaseModel):
     value:str
     user:str
 
-
 class ResponseModel(BaseModel):
     status:str
     message: Optional[str] = None
@@ -147,7 +146,7 @@ class ParamsModel(BaseModel):
     params:dict
 
 # Validation JSON
-# Simplemodels
+#----------------
 
 class LiblinearParams(BaseModel):
     cost:float

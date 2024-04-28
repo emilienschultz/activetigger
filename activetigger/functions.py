@@ -13,7 +13,6 @@ import umap
 import bcrypt
 import numpy as np
 
-
 def get_hash(text:str):
     """
     Hash string    
@@ -32,7 +31,6 @@ def compare_to_hash(text:str, hash:str|bytes):
         hash = hash.encode()
     r = bcrypt.checkpw(text, hash)
     return r
-
 
 def process_dfm(texts: Series,
            path:Path,
@@ -112,7 +110,6 @@ def process_fasttext(texts: Series,
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
     df.to_parquet(path / "fasttext.parquet")
 
-
 def to_sbert(texts: Series, 
              model:str = "distiluse-base-multilingual-cased-v1") -> DataFrame:
     """
@@ -175,14 +172,18 @@ def compute_tsne(features:DataFrame,
 
 def fit_model(model, X, Y, labels):
     """
-    Fit simplemodel
+    Fit simplemodel and calculate statistics
     """
+
+    # drop NA values
     f = Y.notnull()
     Xf = X[f]
     Yf = Y[f]
+
+    # fit model
     model.fit(Xf, Yf)
 
-    # Proba
+    # compute probabilities
     proba = model.predict_proba(X)
     proba = pd.DataFrame(proba, 
                             columns = model.classes_,
@@ -191,7 +192,7 @@ def fit_model(model, X, Y, labels):
     proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
 
 
-    # Statistics
+    # compute statistics
     Y_pred = model.predict(Xf)
     f1 = f1_score(Yf, Y_pred, average=None)
     weighted_f1 = f1_score(Yf, Y_pred, average='weighted')
@@ -199,7 +200,6 @@ def fit_model(model, X, Y, labels):
     precision = precision_score(list(Yf), 
                                 list(Y_pred),
                                 average="micro",
-                                #pos_label=labels[0]
                                 )
     macro_f1 = f1_score(Yf, Y_pred, average='macro')
     statistics = {
@@ -210,7 +210,7 @@ def fit_model(model, X, Y, labels):
                 "precision":precision
                 }
     
-    # CV10
+    # compute 10-crossvalidation
     num_folds = 10
     kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
     Y_pred = cross_val_predict(model, Xf, Yf, cv=kf)
@@ -221,5 +221,9 @@ def fit_model(model, X, Y, labels):
             "macro_f1":round(macro_f1,3),
             "accuracy":round(accuracy,3)}
 
-    r  = {"model":model, "proba":proba, "statistics":statistics, "cv10":cv10}
+    r  = {"model":model, 
+          "proba":proba, 
+          "statistics":statistics, 
+          "cv10":cv10
+        }
     return r
