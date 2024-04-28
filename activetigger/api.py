@@ -9,12 +9,12 @@ import pandas as pd
 import os
 from jose import JWTError
 import importlib
+from pydantic import ValidationError
+from activetigger.server import Server, Project
+import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
       SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
       UmapParams, TsneParams
-from activetigger.server import Server, Project
-import activetigger.functions as functions
-from pydantic import ValidationError
 
 
 logging.basicConfig(filename='log.log', 
@@ -35,24 +35,24 @@ logging.basicConfig(filename='log.log',
 # start the backend server
 server = Server()
 
-
-# start the app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Tale care of the executor at the end    
+    """
     print("Active Tigger starting")
     yield
     print("Active Tigger closing")
-    server.executor.shutdown(cancel_futures=True, wait = False) #clean async multiprocess
+    server.executor.shutdown(cancel_futures=True, wait = False)
 
 app = FastAPI(lifespan=lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# middleware to update server state on events
 async def update():
     """
-    Clean temporary files and future promises for CPU-bound computation
+    Update the state of the server
+    TODO: test execution time
     """
-
     # restart future pool executor if needed
     if server.executor._broken:
         server.recreate_executor()
@@ -127,7 +127,8 @@ async def update():
 @app.middleware("http")
 async def middleware(request: Request, call_next):
     """
-    Middleware
+    Middleware to take care of completed processes
+    Executed at each action on the server
     """
     await update()
     response = await call_next(request)
@@ -145,7 +146,7 @@ async def get_project(project_name: str) -> ProjectModel:
 
     # If project doesn't exist
     if not server.exists(project_name):
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise ResponseModel(statut="error", message="Project not found")
 
     # If the project exist
     if project_name in server.projects:
@@ -192,10 +193,6 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 # Routes
 # ------
 
-#@app.get("/test")
-#async def test():
-#    return ResponseModel(status="error", message="problème")
-
 @app.get("/", response_class=HTMLResponse)
 async def welcome() -> str:
     """
@@ -211,17 +208,14 @@ async def welcome() -> str:
 
 @app.post("/token")
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token|ResponseModel:
     """
     Route to authentificate user and return token
     """
     user = server.authenticate_user(form_data.username, form_data.password)
     if "error" in user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        r = ResponseModel(status="error", message=user["error"])
+        return r
     access_token = server.create_access_token(
             data={"sub": user.username}, 
             expires_min=60)
@@ -379,7 +373,7 @@ async def delete_project(username: Annotated[str, Header()],
         return ResponseModel(status="success",  message=r["success"])
 
 # Annotation management
-#--------------------
+#----------------------
 
 @app.get("/elements/next", dependencies=[Depends(verified_user)])
 async def get_next(project: Annotated[Project, Depends(get_project)],
