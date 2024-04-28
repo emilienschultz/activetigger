@@ -9,10 +9,13 @@ import pandas as pd
 import os
 from jose import JWTError
 import importlib
-from activetigger.datamodels import ProjectModel, ElementModel, TableElementsModel, Action, AnnotationModel,\
-      SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel
+from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
+      SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
+      UmapParams, TsneParams
 from activetigger.server import Server, Project
 import activetigger.functions as functions
+from pydantic import ValidationError
+
 
 logging.basicConfig(filename='log.log', 
                     encoding='utf-8', 
@@ -445,6 +448,10 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
             }
 
     if projection.method == "umap":
+        try:
+            e = UmapParams(**projection.params)
+        except ValidationError as e:
+            return ResponseModel(status="error", message=str(e))
         future_result = server.executor.submit(functions.compute_umap, **args)
         project.features.available_projections[username] = {
                                                         "params":projection,
@@ -453,6 +460,10 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
                                                         }
         return ResponseModel(status = "waiting", message="Projection umap under computation")
     if projection.method == "tsne":
+        try:
+            e = TsneParams(**projection.params)
+        except ValidationError as e:
+            return ResponseModel(status="error", message=str(e))
         future_result = server.executor.submit(functions.compute_tsne, **args)
         project.features.available_projections[username] = {
                                                         "params":projection,

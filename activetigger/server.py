@@ -16,7 +16,8 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt # type: ignore
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
-from activetigger.datamodels import ProjectModel, SchemesModel, SchemeModel, SimpleModelModel, UserInDB, Error, ElementModel
+from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDB
+from pydantic import ValidationError
 
 class Server():
     """
@@ -510,6 +511,13 @@ class Project(Server):
         if simplemodel.model == "multi_naivebayes":
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
+        
+        # test if the parameters have the correct format
+        try:
+            validation = self.simplemodels.validation[simplemodel.model]
+            r = validation(**simplemodel.params)
+        except ValidationError as e:
+            return {"error":e.json()}
         
         df_features = self.features.get(simplemodel.features)
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)

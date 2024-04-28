@@ -21,6 +21,9 @@ from multiprocessing import Process
 from datetime import datetime
 import pickle
 import activetigger.functions as functions
+from activetigger.datamodels import LiblinearParams, KnnParams, RandomforestParams, LassoParams, Multi_naivebayesParams, BertParams
+from pydantic import ValidationError
+
 
 logging.basicConfig(filename = "log",
                             format='%(asctime)s %(message)s',
@@ -298,18 +301,23 @@ class BertModels():
         if user in self.processes:
             return {"error":"processes already launched, cancel it before"}
 
-        # Set default parameters if needed
+        # set default parameters if needed
         if base_model is None:
             base_model = "almanach/camembert-base"
         if params is None:
             params = self.params_default
         if test_size is None:
             test_size = 0.2
+        # test json parameters
+        try:
+            e = BertParams(**params)
+        except ValidationError as e:
+            return {"error":e.json()}
 
         # name integrating the scheme
         name = f"{name}__{scheme}"
 
-        # Launch as a independant process
+        # launch as a independant process
         args = {
                 "path":self.path,
                 "name":name,
@@ -606,7 +614,6 @@ class BertModels():
               "path":self.path / file_name}
         return r
         
- 
 class SimpleModels():
     """
     Managing simplemodels
@@ -614,6 +621,7 @@ class SimpleModels():
     - save a simplemodel/user
     - train simplemodels
     """
+    # Models and default parameters
     available_models = {
         "liblinear": {
                 "cost":1
@@ -635,6 +643,15 @@ class SimpleModels():
                     "class_prior":None
                 }
             }
+
+    # To validate JSON
+    validation = {
+        "liblinear": LiblinearParams,
+        "knn": KnnParams,
+        "randomforest": RandomforestParams,
+        "lasso": LassoParams,
+        "multi_naivebayes":Multi_naivebayesParams
+    }
     
     def __init__(self, path:Path, executor):
         """
@@ -642,10 +659,10 @@ class SimpleModels():
         """
         self.existing:dict = {} # computed simplemodels
         self.computing:dict = {} # curently under computation
-        self.save_file:str = "simplemodels.pickle"
-        self.path:Path = path
-        self.executor = executor
-        self.loads()
+        self.path:Path = path # path to operate
+        self.executor = executor # access to executor for multiprocessing
+        self.save_file:str = "simplemodels.pickle" # file to save current state
+        self.loads() # load existing simplemodels
 
     def __repr__(self) -> str:
         return str(self.available())
@@ -817,6 +834,10 @@ class SimpleModel():
                  standardize: bool,
                  model_params: dict|None
                  ) -> None:
+        """
+        Define a specific Simplemodel with parameters
+        TODO : add timestamp ?
+        """
         self.name = name
         self.user = user
         self.features = features
