@@ -10,7 +10,6 @@ Server/client BERT fine tunning app using active learning
 
 [Python refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)]( https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
 
-
 ## Installation
 
 You can install `activetigger` via pip:
