@@ -46,16 +46,26 @@ class Server():
         self.path_fastext = Path(config["path_fasttext"])
         self.SECRET_KEY = config["secret_key"] #generate it automatically ?
 
-        # Create the database
+        # create the database
         self.db = self.path / self.db_name
         if not self.db.exists():
             self.create_db()
 
-        # Activity of the server
+        # activity of the server
         self.projects: dict = {}
         self.processes:list = []
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
 
+        # update users from YAML config file
+        existing = self.existing_users()
+        current = config["users"]
+        for u in current:
+            if not u in existing:
+                self.add_user(u, current[u])
+        for u in existing:
+            if (not u in current) and u != self.default_user:
+                self.delete_user(u)
+                
     def recreate_executor(self):
         """
         Recreate future executor

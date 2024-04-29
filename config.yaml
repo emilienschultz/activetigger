@@ -1,3 +1,6 @@
 path: ./projects
 secret_key: f63aeb7426d2c8a3defc02a3e788c2f311482d6cff557c2c5bdebc71d67b507a #HS256
 path_fasttext: /Users/emilien/models/cc.fr.300.bin
+users:
+  user1: password1
+  user2: password2
