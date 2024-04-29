@@ -25,6 +25,8 @@ Create a config file `config.yaml` in the directory where you want to launch the
 
 - `path` : path to store files (for instance `./data`)
 - `secret_key` : to secure tokens. To generate it `openssl rand -hex 32C`
+- `path_fasttext`:  absolute path to fasttext model
+- `users`: list of user:password
 
 Then, to launch the server (on port 8000)
 
@@ -32,17 +34,11 @@ Then, to launch the server (on port 8000)
 python -m activetigger
 ```
 
-You can also directly launch the server with
-
-```
-uvicorn activetigger.api:app --host 0.0.0.0 --port 80
-```
-
 To use the widget in the `widget` module, you can do the following:
 
 ```python
 from activetigger import widget
-at = widget.Widget()
+at = widget.Widget(URL_SERVER="http://0.0.0.0:8000")
 ```
 
 ## Technical specifications

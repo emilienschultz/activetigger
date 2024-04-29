@@ -2,7 +2,6 @@ fastapi[all]
 requests
 uvicorn
 pyyaml
-Skips
 argparse
 datasets
 fasttext
