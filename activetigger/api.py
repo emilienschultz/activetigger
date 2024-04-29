@@ -157,26 +157,31 @@ async def get_project(project_name: str) -> ProjectModel:
         server.start_project(project_name)            
         return server.projects[project_name]
 
-async def verified_user(Authorization: Annotated[str, Header()],
-                        username: Annotated[str, Header()]):
+credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+async def verified_user(token: Annotated[str, Depends(oauth2_scheme)]):
     """
     Test if the user is a user authentified
-    For the moment, only that there is a well formed user
-    TODO : a real test here
     """
-    #print(f"{username} does an action")
-    if False:
-        raise HTTPException(status_code=400, detail="Invalid user")    
+    try:
+        payload = server.decode_access_token(token)
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = server.get_user(name=username)
+    if user is None:
+        raise credentials_exception
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     """
     Get current user from the token in headers
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = server.decode_access_token(token)
         username: str = payload.get("sub")
