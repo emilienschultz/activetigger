@@ -363,6 +363,7 @@ class Widget():
             return pd.DataFrame()
         content = file.value[0]["content"]
         df = pd.read_csv(BytesIO(content))
+        
         return df
     
     def _display_next(self) -> bool:

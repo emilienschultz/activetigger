@@ -18,7 +18,9 @@ You can install `activetigger` via pip:
 pip install activetigger
 ```
 
-## Use
+You need also to download fasttext models https://fasttext.cc/docs/en/crawl-vectors.html and specify the folder in the install file in the `config.yaml`.
+
+## Start the server
 
 Create a config file `config.yaml` in the directory where you want to launch the server :
 
@@ -27,17 +29,23 @@ Create a config file `config.yaml` in the directory where you want to launch the
 - `path_fasttext`:  absolute path to fasttext model
 - `users`: list of user:password
 
-Then, to launch the server (on port 8000)
+Then, to launch the server (on 0.0.0.0 port 8000 by default)
 
 ```python
 python -m activetigger
 ```
 
-To use the widget in the `widget` module, you can do the following:
+Otherwise, you can launch with `uvicorn`:
+
+```
+uvicorn activetigger.api:app --host 0.0.0.0 --port 80 --reload
+```
+
+To use the widget in the `widget` module:
 
 ```python
-from activetigger import widget
-at = widget.Widget(URL_SERVER="http://0.0.0.0:8000")
+from activetigger.widget import Widget
+at = Widget(URL_SERVER="http://0.0.0.0:8000")
 ```
 
 ## Technical specifications
