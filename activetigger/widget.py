@@ -364,20 +364,6 @@ class Widget():
         content = file.value[0]["content"]
         df = pd.read_csv(BytesIO(content))
         return df
-
-    # def _load_file(self,path) -> pd.DataFrame:
-    #     """
-    #     Load file
-    #     """
-    #     path = Path(path)
-    #     if not path.exists():
-    #         print("File doesn't exist")
-    #         return pd.DataFrame()
-    #     if not path.suffix == '.csv':
-    #         print("File not csv")
-    #         return pd.DataFrame()
-    #     df = pd.read_csv(path)
-    #     return df
     
     def _display_next(self) -> bool:
         """
@@ -1067,7 +1053,6 @@ class Widget():
             # select specific text
             if len(points.point_inds)>0:
                 element_id = trace.customdata[points.point_inds][0][0].split("<br>")[0] #TODO améliorer
-                #print(element_id)
                 self._display_element(element_id)
         for i in range(0,len(f.data)):
             f.data[i].on_click(update_point)
@@ -1087,7 +1072,6 @@ class Widget():
         loss = pd.DataFrame(r["data"]["loss"])
         with self.bert_statistics:
             clear_output(wait=True)
-            print(json.dumps(r["data"]["parameters"],indent=2))
             fig, ax = plt.subplots(figsize=(3,2))
             fig = loss.plot(ax = ax)
             plt.show(fig)
