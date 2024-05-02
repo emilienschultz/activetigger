@@ -747,7 +747,7 @@ class Project(Server):
             "features":{
                     "options":self.features.options,
                     "available":list(self.features.map.keys()),
-                    "training":self.features.training,
+                    "training":list(self.features.training.keys()),
                     },
             "simplemodel":{
                     "options":self.simplemodels.available_models,
@@ -848,7 +848,7 @@ class Features():
         content, map = self.load()
         self.content: DataFrame = content
         self.map:dict = map
-        self.training:list = []
+        self.training:list = {}
 
         # managing projections
         self.possible_projections:dict = {

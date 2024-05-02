@@ -69,29 +69,6 @@ async def update(timer):
     # clean temporary files for CPU-bound computation
     for p in server.projects:
         project = server.projects[p]
-        if (project.params.dir / "sbert.parquet").exists():
-            df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data TODO : bug potentiel lié à la temporalité
-            project.features.add("sbert",df) # add to the feature manager
-            if "sbert" in project.features.training:
-                project.features.training.remove("sbert") # remove from pending processes
-            os.remove(project.params.dir / "sbert.parquet") # clean the files
-            logging.info(f"Add sbert embeddings to project {p}")
-        if (project.params.dir / "fasttext.parquet").exists():
-            df = pd.read_parquet(project.params.dir / "fasttext.parquet")
-            project.features.add("fasttext",df) 
-            if "fasttext" in project.features.training:
-                project.features.training.remove("fasttext") 
-            os.remove(project.params.dir / "fasttext.parquet")
-            print("Adding fasttext embeddings")
-            logging.info(f"Add fasttext embeddings to project {p}")
-        if (project.params.dir / "dfm.parquet").exists():
-            df = pd.read_parquet(project.params.dir / "dfm.parquet")
-            project.features.add("dfm",df) 
-            if "dfm" in project.features.training:
-                project.features.training.remove("dfm") 
-            os.remove(project.params.dir / "dfm.parquet")
-            logging.info(f"Add DFM embeddings to project {p}")
-
         # cas of BERT model prediction to add
         # for the moment, a file in the bert repertory to indicate that the process is finished
         # then add the prediction to the feature (question : prediction not num ?)
@@ -109,6 +86,17 @@ async def update(timer):
         
         # 1/for features computation
         to_del = []
+        for name in project.features.training:
+            if project.features.training[name].done():
+                df = project.features.training[name].result()
+                project.features.add(name,df)
+                to_del.append(name)
+                logging.info(f"Add {name} embeddings to project {p}")
+        for name in to_del:
+            del project.features.training[name]
+
+        # 2/for projections computation (TODO : homogeneize with features ?)
+        to_del = []
         for u in project.features.available_projections.copy():
             if ("future" in project.features.available_projections[u]):
                 try: #if something went wrong delete it ...
@@ -124,7 +112,7 @@ async def update(timer):
         for u in to_del:
             del project.features.available_projections[u]
             
-        # 2/ for simplemodels computation
+        # 3/ for simplemodels computation (TODO : homogenize the name)
         to_del = []
         for u in project.simplemodels.computing:
             for s in project.simplemodels.computing[u]:
@@ -695,45 +683,31 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     """
     if name in project.features.training:
         return ResponseModel(status="error", message = "This feature is already in training")
-    
+    if not name in {"sbert","fasttext","dfm"}:
+        return ResponseModel(status="error", message = "Not implemented")
+    print("compute", name)
     df = project.content[project.params.col_text]
     if name == "sbert":
         args = {
-                "path":project.params.dir,
                 "texts":df,
                 "model":"distiluse-base-multilingual-cased-v1"
                 }
-        process = Process(target=functions.process_sbert, 
-                          kwargs = args)
-        process.start()
-        project.features.training.append(name)
-        server.log_action(username, f"Compute feature sbert", project.name)
-        return ResponseModel(status="success", message="computing sbert, it could take a few minutes")
+        func = functions.to_sbert
     if name == "fasttext":
         args = {
-                "path":project.params.dir,
                 "texts":df,
                 "model":server.path_fastext
                 }
-        process = Process(target=functions.process_fasttext, 
-                          kwargs = args)
-        process.start()
-        project.features.training.append(name)
-        server.log_action(username, f"Compute feature fasttext", project.name)
-        return ResponseModel(status="success", message="computing fasttext, it could take a few minutes")
+        func = functions.to_fasttext    
     if name == "dfm":
         # TODO save params with list to dict
         args = params.params
         args["texts"] = df
-        args["path"] = project.params.dir
-        process = Process(target=functions.process_dfm, 
-                          kwargs = args)
-        process.start()
-        project.features.training.append(name)
-        server.log_action(username, f"Compute feature dfm", project.name)
-        return ResponseModel(status="success", message="computing dfm, it could take a few minutes")
-
-    return ResponseModel(status="error", message = "Not implemented")
+        func = functions.to_dfm
+    future_result = server.executor.submit(func, **args)
+    project.features.training[name] = future_result
+    server.log_action(username, f"Compute feature dfm", project.name)
+    return ResponseModel(status="success", message=f"computing {name}, it could take a few minutes")
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],

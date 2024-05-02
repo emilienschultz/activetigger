@@ -68,6 +68,41 @@ def process_dfm(texts: Series,
                        index = texts.index)
     dtm.to_parquet(path / "dfm.parquet")
 
+def to_dfm(texts: Series,
+           tfidf:bool=False,
+           ngrams:int=1,
+           min_term_freq:int=5,
+           max_term_freq:int|float = 1.0,
+           log:bool = False,
+           norm = None
+           ):
+    """
+    Compute DFM embedding
+    
+    Norm :  None, l1, l2
+    sublinear_tf : log
+    Pas pris en compte : DFM : Min Docfreq
+    https://quanteda.io/reference/dfm_tfidf.html
+    + stop_words
+    """
+    if tfidf:
+        vectorizer = TfidfVectorizer(ngram_range=(1, ngrams),
+                                      min_df=min_term_freq,
+                                      sublinear_tf = log,
+                                      norm = norm,
+                                      max_df = max_term_freq)
+    else:
+        vectorizer = CountVectorizer(ngram_range=(1, ngrams),
+                                      min_df=min_term_freq,
+                                      max_df = max_term_freq)
+
+    dtm = vectorizer.fit_transform(texts)
+    names = vectorizer.get_feature_names_out()
+    dtm = pd.DataFrame(dtm.toarray(), 
+                       columns = names, 
+                       index = texts.index)
+    return dtm
+
 def tokenize(texts: Series,
              model: str = "fr_core_news_sm")->Series:
     """
@@ -92,9 +127,7 @@ def to_fasttext(texts: Series,
         pandas.DataFrame: embeddings
     """
     texts_tk = tokenize(texts)
-    print(model)
-    ft = fasttext.load_model(model)
-    print("loaded")
+    ft = fasttext.load_model(str(model))
     emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
     df = pd.DataFrame(emb,index=texts.index)
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
@@ -111,7 +144,7 @@ def process_fasttext(texts: Series,
     df.to_parquet(path / "fasttext.parquet")
 
 def to_sbert(texts: Series, 
-             model:str = "distiluse-base-multilingual-cased-v1") -> DataFrame:
+            model:str = "distiluse-base-multilingual-cased-v1") -> DataFrame:
     """
     Compute sbert embedding
     Args:
