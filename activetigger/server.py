@@ -1,4 +1,5 @@
 import os
+import time
 import yaml # type: ignore
 from datetime import datetime
 import concurrent.futures
@@ -32,6 +33,7 @@ class Server():
     default_user:str = "root"
     ALGORITHM = "HS256"
     n_workers = 2
+    starting_time = None
 
     def __init__(self) -> None:
         """
@@ -70,6 +72,9 @@ class Server():
             for u in existing:
                 if (not u in current) and u != self.default_user:
                     self.delete_user(u)
+
+        # starting time
+        self.starting_time = time.time()
                 
     def recreate_executor(self):
         """

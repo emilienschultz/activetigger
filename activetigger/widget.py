@@ -14,6 +14,9 @@ import numpy as np
 from io import BytesIO
 import textwrap
 
+import urllib3
+from urllib3.exceptions import InsecureRequestWarning
+urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class Widget():
@@ -61,8 +64,8 @@ class Widget():
                     json = json_data,
                     data = data,
                     files=files,
-                    headers=self.headers)
-        
+                    headers=self.headers, 
+                    verify=False)
         if r.status_code == 422:
             return {"status":"error", "message":"Not authorized"}
 
@@ -80,7 +83,8 @@ class Widget():
         r = rq.get(url, 
                     params = params,
                     data = data,
-                    headers=self.headers)
+                    headers=self.headers,
+                    verify=False)
         
         if r.status_code == 422:
             return {"status":"error", "message":"Not authorized"}
@@ -185,7 +189,11 @@ class Widget():
                                     ])
         #display(self.output)
         self.global_output.children = [self.output]
+        #display(self.global_output)
+
+    def __repr__(self):
         display(self.global_output)
+        return ""
 
     def get_state(self) -> dict:
         """

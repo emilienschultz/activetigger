@@ -40,6 +40,9 @@ class BertModel():
                  path:Path, 
                  base_model:str|None = None,
                  params:dict|None = None) -> None:
+        """
+        Init a bert model
+        """
         self.name:str = name
         self.path:Path = path
         self.params:dict|None = params
@@ -566,6 +569,7 @@ class BertModels():
         Update training queue
         (used in the API)
         # TODO : manage failed processes
+        # TODO : QUEUE management
         """
         to_del = []
         for u in self.processes:
@@ -575,8 +579,12 @@ class BertModels():
             if (b.status == "training") and (not p.is_alive()):
                 to_del.append(b.name)
             # test if process completed (predicting)
+            # if so, add the task to add it as a feature
             if (b.status == "predicting") and (not p.is_alive()):
                 to_del.append(b.name)
+                with open(self.path / f"predict_{b.name}","w") as f:
+                    f.write("Move to a queue")
+
         # Update the current active processes
         self.processes = {u:self.processes[u] for u in self.processes if self.processes[u][0].name not in to_del}
         return True

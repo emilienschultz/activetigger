@@ -1,3 +1,4 @@
+import time
 from fastapi import FastAPI, Depends, HTTPException,status, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -34,6 +35,8 @@ logging.basicConfig(filename='log.log',
 
 # start the backend server
 server = Server()
+timer = time.time()
+print(timer)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -48,7 +51,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-async def update():
+async def update(timer):
     """
     Update the state of the server
     TODO: test execution time
@@ -56,6 +59,12 @@ async def update():
     # restart future pool executor if needed
     if server.executor._broken:
         server.recreate_executor()
+
+    # max one update per second to avoid excessive action
+    step = 1
+    if (time.time()-timer)<step:
+        return None
+    timer = time.time()
 
     # clean temporary files for CPU-bound computation
     for p in server.projects:
@@ -82,6 +91,19 @@ async def update():
                 project.features.training.remove("dfm") 
             os.remove(project.params.dir / "dfm.parquet")
             logging.info(f"Add DFM embeddings to project {p}")
+
+        # cas of BERT model prediction to add
+        # for the moment, a file in the bert repertory to indicate that the process is finished
+        # then add the prediction to the feature (question : prediction not num ?)
+        # TODO: Not finished
+        all_files = [i for i in os.listdir(project.bertmodels.path) if "predict_" in i]
+        if len(all_files)>0:
+            for i in all_files:
+                name = i.replace("predict_","")
+                df = pd.read_parquet(project.bertmodels.path / name / "predict.parquet")
+                project.features.add(i, df["prediction"])
+                os.remove(project.bertmodels.path / i)
+                print("add prediction to feature", name)
 
         # closing future processes
         
@@ -130,7 +152,7 @@ async def middleware(request: Request, call_next):
     Middleware to take care of completed processes
     Executed at each action on the server
     """
-    await update()
+    await update(timer)
     response = await call_next(request)
     return response
 
