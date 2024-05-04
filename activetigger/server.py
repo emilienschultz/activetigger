@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 import yaml # type: ignore
 from datetime import datetime
 import concurrent.futures
@@ -19,6 +20,83 @@ import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
 from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDB
 from pydantic import ValidationError
+import logging
+
+logger = logging.getLogger('queue')
+
+class Queue():
+    """
+    Managinng parallel processes
+    For the moment : jobs in  concurrent.futures.ProcessPoolExecutor
+    """
+    def __init__(self, nb_workers: int, path_log: Path):
+        """
+        Initiating the executor
+        """
+        self.path_log = path_log
+        self.nb_workers = nb_workers
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
+        self.current = {} # current elements
+        logger.info('Init Queue')
+
+    def close(self):
+        self.executor.shutdown(cancel_futures=True, wait = False)
+        logger.info('Close Queue')
+        print("Executor closed, current processes:", self.state())
+
+    def check(self):
+        """
+        Check if the exector still works
+        """
+        if self.executor._broken:
+            self.executor.recreate_executor()
+            logger.error('Restart executor')
+            print("Problem with executor ; restart")
+
+    def recreate_executor(self):
+        """
+        Recreate executor
+        """
+        del self.executor
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
+
+    def add(self, kind:str, func, args:list) -> str:
+        """
+        Add new element to process
+        """
+        unique_id = str(uuid.uuid4())
+        future = self.executor.submit(func, **args)
+        self.current[unique_id] = {
+                                   "kind":kind, 
+                                   "future":future
+                                   }
+        return unique_id
+
+    def delete(self, ids:str|list):
+        """
+        Delete completed element ou multiple elements from the queue
+        """
+        if type(ids) is str:
+            ids = [ids]
+        for i in ids:
+            if not self.current[i]["future"].done():
+                print("Deleting a unfinished process")
+            del self.current[i]
+    
+    def state(self) -> dict:
+        """
+        Return state of the queue
+        """
+        r = {}
+        for f in self.current:
+            if self.current[f]["future"].running():
+                info = "running"
+                exception = None
+            else:
+                info = "done"
+                exception = self.current[f]["future"].exception()
+            r[f] = {"state":info, exception:exception}
+        return r
 
 class Server():
     """
@@ -59,8 +137,7 @@ class Server():
 
         # activity of the server
         self.projects: dict = {}
-        self.processes:list = []
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
+        self.queue = Queue(self.n_workers, self.path)
 
         # update users from YAML config file
         existing = self.existing_users()
@@ -76,19 +153,12 @@ class Server():
         # starting time
         self.starting_time = time.time()
                 
-    def recreate_executor(self):
-        """
-        Recreate future executor
-        """
-        del self.executor
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers)
-
     def __del__(self): 
         """
         Close the server
         """
         print("Ending the server")
-        self.executor.shutdown()
+        self.queue.executor.shutdown()
         print("Server off")
             
     def create_db(self) -> None:
@@ -334,7 +404,7 @@ class Server():
         if not self.exists(project_name):
             return {"error":"Project does not exist"}
 
-        self.projects[project_name] = Project(project_name, self.db, self.executor)
+        self.projects[project_name] = Project(project_name, self.db, self.queue)
         return {"success":"Project loaded"}
 
     def set_project_parameters(self, project: ProjectModel) -> dict:
@@ -475,13 +545,13 @@ class Project(Server):
     def __init__(self, 
                  project_name:str,
                  path_db:Path, 
-                 executor) -> None:
+                 queue) -> None:
         """
         Load existing project
         """
         self.name: str = project_name
         self.db = path_db
-        self.executor = executor # where to send processes
+        self.queue = queue # where to send processes
         self.params: ProjectModel = self.load_params(project_name)
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
@@ -490,9 +560,9 @@ class Project(Server):
                                         self.params.dir / self.labels_file, 
                                         self.params.dir / self.test_file, 
                                         self.db) #type: ignore
-        self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db) #type: ignore
-        self.bertmodels: BertModels = BertModels(self.params.dir)
-        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, executor)
+        self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db, self.queue) #type: ignore
+        self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
+        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
 
     def __del__(self):
         pass
@@ -605,9 +675,9 @@ class Project(Server):
 
         # manage frame selection (if projection, only in the box)
         try:
-            if user in self.features.available_projections:
-                if "data" in self.features.available_projections[user]:
-                    projection = self.features.available_projections[user]["data"]
+            if user in self.features.projections:
+                if "data" in self.features.projections[user]:
+                    projection = self.features.projections[user]["data"]
                     f_frame = (projection[0] > frame[0]) & (projection[0] < frame[2]) & (projection[1] > frame[1]) & (projection[1] < frame[3])
                     f = f & f_frame
         except:
@@ -731,9 +801,6 @@ class Project(Server):
         """
         Send state of the project
         """
-        # update if needed
-        self.bertmodels.update()
-
         r = {
             "params":self.params,
             "next":{
@@ -838,24 +905,26 @@ class Features():
     def __init__(self, 
                  project_name:str, 
                  data_path:Path,
-                 db_path:Path) -> None:
+                 db_path:Path, 
+                 queue) -> None:
         """
         Initit features
         """
         self.project_name = project_name
         self.path = data_path
         self.db = db_path
+        self.queue = queue
         content, map = self.load()
         self.content: DataFrame = content
         self.map:dict = map
         self.training:list = {}
 
         # managing projections
+        self.projections:dict = {}
         self.possible_projections:dict = {
                             "umap":{"n_neighbors":15, "min_dist":0.1, "n_components":2, "metric":'euclidean'},
                             "tsne":{"n_components":2,  "learning_rate":'auto', "init":'random', "perplexity":3}
                             }
-        self.available_projections:dict = {}
 
         # options
         self.options:dict = {"sbert":{},
@@ -949,8 +1018,32 @@ class Features():
         if len(i)>0:
             print("Missing features:", missing)
         return self.content[cols]
-        
+    
+    def update_processes(self):
+        """
+        Check for computing processing completed
+        and clean them for the queue
+        """
+        # for features
+        for name in self.training.copy():
+            unique_id = self.training[name]
+            if self.queue.current[unique_id]["future"].done():
+                df = self.queue.current[unique_id]["future"].result()
+                self.add(name,df)
+                self.queue.delete(unique_id)
+                del self.training[name]
+                print("Add feature")
 
+        # for projections
+        training = [u for u in self.projections if "queue" in self.projections[u]]
+        for u in training:
+            unique_id = self.projections[u]["queue"]
+            if self.queue.current[unique_id]["future"].done():
+                df = self.queue.current[unique_id]["future"].result()
+                self.projections[u]["data"] = df
+                del self.projections[u]["queue"]
+                self.queue.delete(unique_id)
+        
 class Schemes():
     """
     Manage project schemes & tags
@@ -1034,7 +1127,6 @@ class Schemes():
 
         # data of the scheme
         df = self.get_scheme_data(scheme, complete = True)
-
         # case of recent annotations
         if mode == "recent": 
             list_ids = self.get_recent_tags(user, scheme, max-min)
@@ -1174,7 +1266,7 @@ class Schemes():
             "project_name":self.project_name,
             "availables":self.available()
         }
-        return r #SchemesModel(project_name=self.project_name,availables=self.available())
+        return r
 
     def delete_tag(self, 
                    element_id:str,

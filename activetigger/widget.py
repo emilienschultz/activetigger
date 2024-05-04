@@ -189,7 +189,7 @@ class Widget():
                                     ])
         #display(self.output)
         self.global_output.children = [self.output]
-        #display(self.global_output)
+        display(self.global_output)
 
     def __repr__(self):
         display(self.global_output)
