@@ -1,6 +1,7 @@
 import pandas as pd
 from pandas import DataFrame, Series
 import fasttext
+from fasttext.util import download_model
 import spacy
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
@@ -41,8 +42,43 @@ def compare_to_hash(text:str, hash:str|bytes):
     r = bcrypt.checkpw(text, hash)
     return r
 
-def process_dfm(texts: Series,
-           path:Path,
+# def process_dfm(texts: Series,
+#            path:Path,
+#            tfidf:bool=False,
+#            ngrams:int=1,
+#            min_term_freq:int=5,
+#            max_term_freq:int|float = 1.0,
+#            log:bool = False,
+#            norm = None
+#            ):
+#     """
+#     Compute DFM embedding
+    
+#     Norm :  None, l1, l2
+#     sublinear_tf : log
+#     Pas pris en compte : DFM : Min Docfreq
+#     https://quanteda.io/reference/dfm_tfidf.html
+#     + stop_words
+#     """
+#     if tfidf:
+#         vectorizer = TfidfVectorizer(ngram_range=(1, ngrams),
+#                                       min_df=min_term_freq,
+#                                       sublinear_tf = log,
+#                                       norm = norm,
+#                                       max_df = max_term_freq)
+#     else:
+#         vectorizer = CountVectorizer(ngram_range=(1, ngrams),
+#                                       min_df=min_term_freq,
+#                                       max_df = max_term_freq)
+
+#     dtm = vectorizer.fit_transform(texts)
+#     names = vectorizer.get_feature_names_out()
+#     dtm = pd.DataFrame(dtm.toarray(), 
+#                        columns = names, 
+#                        index = texts.index)
+#     dtm.to_parquet(path / "dfm.parquet")
+
+def to_dtm(texts: Series,
            tfidf:bool=False,
            ngrams:int=1,
            min_term_freq:int=5,
@@ -75,42 +111,7 @@ def process_dfm(texts: Series,
     dtm = pd.DataFrame(dtm.toarray(), 
                        columns = names, 
                        index = texts.index)
-    dtm.to_parquet(path / "dfm.parquet")
-
-def to_dfm(texts: Series,
-           tfidf:bool=False,
-           ngrams:int=1,
-           min_term_freq:int=5,
-           max_term_freq:int|float = 1.0,
-           log:bool = False,
-           norm = None
-           ):
-    """
-    Compute DFM embedding
-    
-    Norm :  None, l1, l2
-    sublinear_tf : log
-    Pas pris en compte : DFM : Min Docfreq
-    https://quanteda.io/reference/dfm_tfidf.html
-    + stop_words
-    """
-    if tfidf:
-        vectorizer = TfidfVectorizer(ngram_range=(1, ngrams),
-                                      min_df=min_term_freq,
-                                      sublinear_tf = log,
-                                      norm = norm,
-                                      max_df = max_term_freq)
-    else:
-        vectorizer = CountVectorizer(ngram_range=(1, ngrams),
-                                      min_df=min_term_freq,
-                                      max_df = max_term_freq)
-
-    dtm = vectorizer.fit_transform(texts)
-    names = vectorizer.get_feature_names_out()
-    dtm = pd.DataFrame(dtm.toarray(), 
-                       columns = names, 
-                       index = texts.index)
-    return dtm
+    return {"success":dtm}
 
 def tokenize(texts: Series,
              model: str = "fr_core_news_sm")->Series:
@@ -125,32 +126,53 @@ def tokenize(texts: Series,
     textes_tk = texts.apply(lambda x : tokenize(x,nlp))
     return textes_tk
 
+# def download_fasttext_model(language:str, path:Path):
+#     """
+#     Install fasttext model
+#     """
+#     if not path.exists():
+#         return {"error":f"path {str(path)} does not exist"}
+#     os.chdir(path)
+#     try:
+#         name = fasttext.util.download_model(language, if_exists='ignore')  # English
+#         return {"success":name}
+#     except:
+#         return {"error":f"model not download for language {language}"}
+
 def to_fasttext(texts: Series,
-                 model: str) -> DataFrame:
+                language: str,
+                path_models: Path) -> DataFrame:
     """
     Compute fasttext embedding
+    Download the model if needed
     Args:
         texts (pandas.Series): texts
         model (str): model to use
     Returns:
         pandas.DataFrame: embeddings
     """
+    if not path_models.exists():
+        return {"error":f"path {str(path_models)} does not exist"}
+    os.chdir(path_models)
+    print("If the model doesn't exist, it will be downloaded first. It could talke some time.")
+    model_name = download_model(language, if_exists='ignore') 
+    print("Model loaded")
     texts_tk = tokenize(texts)
-    ft = fasttext.load_model(str(model))
+    ft = fasttext.load_model(model_name)
     emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
     df = pd.DataFrame(emb,index=texts.index)
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
-    return df
+    return {"success":df}
 
-def process_fasttext(texts: Series,
-                  path:Path,
-                  model:str):
-    texts_tk = tokenize(texts)
-    ft = fasttext.load_model(str(model))
-    emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
-    df = pd.DataFrame(emb,index=texts.index)
-    df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
-    df.to_parquet(path / "fasttext.parquet")
+# def process_fasttext(texts: Series,
+#                   path:Path,
+#                   model:str):
+#     texts_tk = tokenize(texts)
+#     ft = fasttext.load_model(str(model))
+#     emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
+#     df = pd.DataFrame(emb,index=texts.index)
+#     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
+#     df.to_parquet(path / "fasttext.parquet")
 
 def to_sbert(texts: Series, 
             model:str = "distiluse-base-multilingual-cased-v1") -> DataFrame:
@@ -167,25 +189,25 @@ def to_sbert(texts: Series,
     emb = sbert.encode(list(texts))
     emb = pd.DataFrame(emb,index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
-    return emb
+    return {"success":emb}
 
-def process_sbert(texts: Series,
-                  path:Path,
-                  model:str = "distiluse-base-multilingual-cased-v1"):
-    """
-    Compute sbert embedding
-    Args:
-        texts (pandas.Series): texts
-        model (str): model to use
-    Returns:
-        pandas.DataFrame: embeddings
-    """
-    sbert = SentenceTransformer(model)
-    sbert.max_seq_length = 512
-    emb = sbert.encode(list(texts))
-    emb = pd.DataFrame(emb,index=texts.index)
-    emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
-    emb.to_parquet(path / "sbert.parquet")
+# def process_sbert(texts: Series,
+#                   path:Path,
+#                   model:str = "distiluse-base-multilingual-cased-v1"):
+#     """
+#     Compute sbert embedding
+#     Args:
+#         texts (pandas.Series): texts
+#         model (str): model to use
+#     Returns:
+#         pandas.DataFrame: embeddings
+#     """
+#     sbert = SentenceTransformer(model)
+#     sbert.max_seq_length = 512
+#     emb = sbert.encode(list(texts))
+#     emb = pd.DataFrame(emb,index=texts.index)
+#     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
+#     emb.to_parquet(path / "sbert.parquet")
 
 
 def compute_umap(features:DataFrame, 

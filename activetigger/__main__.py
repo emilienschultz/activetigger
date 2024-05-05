@@ -18,7 +18,7 @@ if __name__ == "__main__":
         print("Creating config.yaml file by default")
         content = """path: ./projects
 secret_key: f63aeb7426d2c8a3defc02a3e788c2f311482d6cff557c2c5bdebc71d67b507a
-path_fasttext:
+path_models: ./models
 users:
 """
         with open("./config.yaml","w") as f:

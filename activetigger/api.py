@@ -274,7 +274,7 @@ async def new_project(
                       n_test:int = Form(),
                       embeddings:list = Form(None),
                       n_skip:int = Form(None),
-                      langage:str = Form(None),
+                      language:str = Form(None),
                       ) -> ResponseModel:
     """
     Load new project
@@ -294,7 +294,7 @@ async def new_project(
         "n_test":n_test,
         "embeddings":embeddings,
         "n_skip":n_skip,
-        "langage":langage,
+        "language":language,
         "col_label":col_label,
         "cols_context":cols_context
         }
@@ -316,7 +316,7 @@ async def new_project(
         return ResponseModel(status = "error", message = "Project already exist")
 
     project = server.create_project(project, file)
-
+    print(project)
     # log action
     server.log_action(username, "create project", params_in["project_name"])
     r = ResponseModel(status = "success")
@@ -649,14 +649,15 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     if name == "fasttext":
         args = {
                 "texts":df,
-                "model":server.path_fastext
+                "language":project.params.language,
+                "path_models":server.path_models
                 }
         func = functions.to_fasttext    
     if name == "dfm":
         # TODO save params with list to dict
         args = params.params
         args["texts"] = df
-        func = functions.to_dfm
+        func = functions.to_dtm
     #future_result = server.executor.submit(func, **args)
     unique_id = server.queue.add("feature", func, args)
     #project.features.training[name] = future_result

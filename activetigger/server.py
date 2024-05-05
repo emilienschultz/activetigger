@@ -36,10 +36,13 @@ class Queue():
         self.path_log = path_log
         self.nb_workers = nb_workers
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
-        self.current = {} # current elements
+        self.current = {} # stack
         logger.info('Init Queue')
 
     def close(self):
+        """
+        Close the executor
+        """
         self.executor.shutdown(cancel_futures=True, wait = False)
         logger.info('Close Queue')
         print("Executor closed, current processes:", self.state())
@@ -62,7 +65,7 @@ class Queue():
 
     def add(self, kind:str, func, args:list) -> str:
         """
-        Add new element to process
+        Add new element to queue
         """
         unique_id = str(uuid.uuid4())
         future = self.executor.submit(func, **args)
@@ -102,7 +105,7 @@ class Server():
     """
     Server to manage backend
     """
-    # files name
+    # declare files name
     db_name:str =  "activetigger.db"
     features_file:str = "features.parquet"
     labels_file:str = "labels.parquet"
@@ -124,10 +127,10 @@ class Server():
             config = yaml.safe_load(f)
         self.path = Path(config["path"])
         self.SECRET_KEY = config["secret_key"] #generate it automatically ?
-        if config["path_fasttext"] is not None:
-            self.path_fastext = Path(config["path_fasttext"])
+        if config["path_models"] is not None:
+            self.path_models = Path(config["path_models"])
         else:
-            self.path_fastext = None
+            self.path_models = None
             print("Fasttext path model not specified")
 
         # create the database
@@ -551,16 +554,18 @@ class Project(Server):
         """
         self.name: str = project_name
         self.db = path_db
-        self.queue = queue # where to send processes
+        self.queue = queue
         self.params: ProjectModel = self.load_params(project_name)
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
-        self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file) #type: ignore
+        self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file)
+
+        # create specific management objets
         self.schemes: Schemes = Schemes(project_name, 
                                         self.params.dir / self.labels_file, 
                                         self.params.dir / self.test_file, 
-                                        self.db) #type: ignore
-        self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db, self.queue) #type: ignore
+                                        self.db)
+        self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db, self.queue)
         self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
 
@@ -871,7 +876,6 @@ class Project(Server):
 
         return r
 
-
     def export_data(self, scheme:str, format:str = "parquet"):
         """
         Export annotation data in different formats
@@ -893,6 +897,7 @@ class Project(Server):
 
         r = {"name":file_name,"path":path / file_name}
         return r
+    
 
 class Features():
     """
@@ -1028,11 +1033,15 @@ class Features():
         for name in self.training.copy():
             unique_id = self.training[name]
             if self.queue.current[unique_id]["future"].done():
-                df = self.queue.current[unique_id]["future"].result()
-                self.add(name,df)
-                self.queue.delete(unique_id)
-                del self.training[name]
-                print("Add feature")
+                r = self.queue.current[unique_id]["future"].result()
+                if "error" in r:
+                    print("Error in the feature processing", unique_id)
+                else:
+                    df = r["success"]
+                    self.add(name,df)
+                    self.queue.delete(unique_id)
+                    del self.training[name]
+                    print("Add feature")
 
         # for projections
         training = [u for u in self.projections if "queue" in self.projections[u]]
