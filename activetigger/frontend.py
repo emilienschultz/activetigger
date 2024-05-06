@@ -513,6 +513,19 @@ def _delete_bert():
                     params = params)
     return r
 
+def _save_bert():
+    """
+    Rename model
+    """
+    params = {"project_name":st.session_state.current_project,
+                "former_name":st.session_state.bm_trained,
+                "new_name":st.session_state.bm_new_name,
+                "user":st.session_state.user
+                }
+    r = _post("/models/bert/rename",
+        params = params)
+    return r
+
 # Interface organization
 #-----------------------
 
@@ -937,51 +950,37 @@ def bertmodels():
     Bertmodel page
     TODO : améliorer la présentation
     """
-
-    if not "bm_description" in st.session_state:
-        st.session_state.bm_description = False
-    if not "bm_rename" in st.session_state:
-        st.session_state.bm_rename = False
-
     st.title("Global model")
     st.write("Train, test and predict with final model") 
     st.subheader("Existing models")
 
     st.selectbox(label="", options = [], key = "bm_trained")
 
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:       
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
         if st.button("Compute prediction"):
             st.write("Compute prediction")
             _bert_prediction()
             # add variable "aleready computed"
     with col2:
-        if st.button("Description"):
-            if st.session_state.bm_description:
-                st.session_state.bm_description = False
-            else:
-                st.session_state.bm_description = True
-                st.session_state.bm_description_data = _bert_informations()
-    with col3:
-        if st.button("Rename"):
-            if st.session_state.bm_rename:
-                st.session_state.bm_rename = False
-            else:
-                st.session_state.bm_rename = True
-    with col4:
         if st.button("Delete"):
             st.write("Delete model")
             _delete_bert()
+    
+    with col3:
+        with st.expander("Rename"):
+            st.text_input(label = "", value="", placeholder="New name", key="bm_new_name")
+            if st.button("Validate"):
+                st.write("Rename", st.session_state.bm_new_name)
+                _save_bert()
 
-    if st.session_state.bm_description:
-        r = st.session_state.bm_description_data
-        st.pyplot(r[0])
-        st.write(r[1])
-
-    if st.session_state.bm_rename:
-        new_name = st.text_input(label = "", value="", placeholder="New name", key="new_name")
-        if st.button("Validate"):
-            st.write("Rename", new_name)  
+    with st.expander("Description"):
+        st.write("Elements")
+        data = _bert_informations()
+        if data:
+            st.pyplot(data[0])
+            st.write(data[1])
 
     st.markdown("<hr>", unsafe_allow_html=True)
     st.subheader("Training model")
@@ -990,6 +989,8 @@ def bertmodels():
                  value="")
     if st.button("Train"):
         st.write("Train")
+
+# TODO : training bert + export
 
 
 def export():
