@@ -1,6 +1,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 import json
+import time
 import requests as rq
 import pandas as pd
 import datetime
@@ -24,6 +25,542 @@ if not "header" in st.session_state:
     st.session_state.header = None
 if not "history" in st.session_state:
     st.session_state.history = []
+
+
+
+# Interface organization
+#-----------------------
+
+def main():
+    # initialize variables
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+    if 'page' not in st.session_state:
+            st.session_state['page'] = "Projects"
+    st.session_state.state = _get_state()   
+    st.sidebar.write(datetime.datetime.now())
+    # start the interface
+    if not st.session_state['logged_in']:
+        login_page()
+    if st.session_state['logged_in']:
+        st.sidebar.write(f"Current user: {st.session_state.user}")
+        app_navigation()
+
+def login_page():
+    """
+    Page to log in
+    """
+    st.title("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if _connect_user(username, password):
+            st.session_state['logged_in'] = True
+        else:
+            st.error("Incorrect username or password")
+
+def app_navigation():
+    """
+    Select page
+    """
+    # creating the menu
+    st.sidebar.title("Menu")
+    options = ["Projects",
+               "Schemes",
+               "Features",
+               "Annotate",
+               "Description",
+               "Active Model",
+               "Global Model",
+               "Export"]
+    st.session_state['page'] = st.sidebar.radio("Navigate", 
+                                                options, 
+                                                key="menu", 
+                                                index = options.index(st.session_state['page']))
+
+    # navigating
+    if st.session_state['page'] == "Projects":
+        projects()
+    elif st.session_state['page'] == "Schemes":
+        schemes()
+    elif st.session_state['page'] == "Features":
+        features()
+    elif st.session_state['page'] == "Annotate":
+        annotate()
+    elif st.session_state['page'] == "Description":
+        description()
+    elif st.session_state['page'] == "Active Model":
+        simplemodels()
+    elif st.session_state['page'] == "Global Model":
+        bertmodels()
+    elif st.session_state['page'] == "Export":
+        export()
+
+def projects():
+    """
+    Projects page
+    - select a project
+    - create one
+    """
+    if not "new_project" in st.session_state:
+        st.session_state.new_project = False
+    r = _get("/server")
+    existing = r["data"]["projects"]
+
+    # display menu
+    st.title("Projects")
+    st.write("Load or create project")
+    option = st.selectbox(
+        "Select existing projects:",
+        existing)
+    
+    col1, col2 = st.columns(2)
+
+    # load a project
+    with col1:
+        if st.button("Load"):
+            st.session_state.current_project = option
+            st.session_state.page = "Schemes"
+            return None
+    
+    # delete a project
+    with col2:
+        if st.button("Delete"):
+            st.write(f"Deleting{option}")
+            _delete_project(option)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    # create a project
+    if st.button("New project"):
+        st.session_state['new_project'] = True
+
+    # display the creation menu
+    if st.session_state.get('new_project', True):
+        project_name = st.text_input("Project name", value="")
+        dic_langage = {"French":"fr",
+                       "English":"en",
+                       "Spanish":"es"}
+        language = st.selectbox("Language:",list(dic_langage))
+        file = st.file_uploader("Load file (CSV or Parquet)", 
+                                type=['csv', 'parquet'], 
+                                accept_multiple_files=False)
+        if file:
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file)
+            elif file.name.endswith('.parquet'):
+                df = pd.read_parquet(file)
+            else:
+                st.error("Type not supported")
+            st.dataframe(df.head())
+            st.write("Select columns")
+            column_id = st.selectbox("Ids:",list(df.columns))
+            column_text = st.selectbox("Texts:",list(df.columns))
+            column_label = st.selectbox("Labels:",list(df.columns))
+            columns_context = st.multiselect("Context:",list(df.columns))
+            n_train = st.number_input("N train", min_value=100, max_value=len(df),key="n_train")
+            n_test = st.number_input("N test", min_value=100, max_value=len(df),key="n_test")
+
+            if st.button("Create"):
+                data = {
+                        "project_name": project_name,
+                        "user":st.session_state.user,
+                        "col_text": column_text,
+                        "col_id":column_id,
+                        "col_label":column_label,
+                        "cols_context": columns_context,
+                        "n_train":n_train,
+                        "n_test":n_test, 
+                        "language":dic_langage[language]
+                        }
+                print(data)
+                buffer = BytesIO()
+                df.to_csv(buffer)
+                buffer.seek(0)
+                files = {'file': (file.name, buffer)}
+                r = _post(route="/projects/new", 
+                         files=files,
+                         data=data
+                         )
+                print(r)
+                if r["status"] == "error":
+                    print(r["message"])
+                
+    return None
+
+
+def schemes():
+    """
+    Scheme page
+    """
+    st.title("Schemes")
+    st.write("Interface to manage schemes & label")
+    st.subheader("Schemes")
+    options_schemes = list(st.session_state.state["schemes"]["available"].keys())
+    scheme = st.selectbox(label="Current scheme:", options = options_schemes, index=0, placeholder="Select a scheme")
+    st.session_state.current_scheme = scheme # select scheme
+    if st.button("Delete scheme"):
+        if scheme is not None:
+            st.write(f"Deleting scheme {scheme}")
+            _delete_scheme(scheme)
+    new_scheme = st.text_input(label="", placeholder="New scheme name")
+    if st.button("Create scheme"):
+        if new_scheme is not None:
+            st.write(f"Creating scheme {new_scheme}")
+            _create_scheme(new_scheme)
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("Labels")
+    options_labels = []
+    if st.session_state.current_scheme is not None:
+        options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    label = st.selectbox(label="",options = options_labels, index=None, placeholder="Select a label")
+    if st.button("Delete label"):
+        if label is not None:
+            st.write(f"Deleting label {label}")
+            _delete_label(label)
+    new_label = st.text_input(label="", placeholder="New label name")
+    if st.button("Create label"):
+        if new_label is not None:
+            st.write(f"Creating label {new_label}")
+            _create_label(new_label)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    if st.button("Next step : compute features"):
+        if st.session_state.current_scheme is not None:
+            st.session_state.page = "Features"
+
+def features():
+    """
+    Feature page
+    """
+    st.title("Features")
+    st.write("Interface to manage features.")
+
+    c = st.session_state.state["features"]["training"]
+    if not len(c) == 0:
+        st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>")
+
+    feature = st.selectbox(label="Available",
+                           options = st.session_state.state["features"]["available"])
+    if st.button("Delete feature"):
+        if feature is not None:
+            st.write(f"Deleting feature {feature}")
+            _delete_feature(feature)
+    
+    add_feature = st.selectbox(label="Add",
+                           options = list(st.session_state.state["features"]["options"].keys()))
+    
+    params = ""
+    if add_feature in st.session_state.state["features"]["options"]:
+        params = st.session_state.state["features"]["options"][add_feature]
+        params = st.text_area(label="", value = params)
+
+    if st.button("Compute feature"):
+        if add_feature is not None:
+            st.write(f"Computing feature {add_feature}")
+            _add_feature(add_feature, params)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    st.subheader("Add regex")
+    regex = st.text_input(label="", placeholder="Write your regex")
+    if st.button("Create regex"):
+        if regex is not None:
+            st.write(f"Computing regex {regex}")
+            _add_regex(regex)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    if st.button("Next step : annotate"):
+        if st.session_state.current_scheme is not None:
+            st.session_state.page = "Annotate"
+
+def annotate():
+    """
+    Annotate page
+    """
+    # default options
+    mode_selection = st.session_state.state["next"]["methods_min"]
+    mode_sample = st.session_state.state["next"]["sample"]
+    if "selection" not in st.session_state:
+        st.session_state.selection = mode_selection[0]
+    if "sample" not in st.session_state:
+        st.session_state.sample = mode_sample[0]
+    if "tag" not in st.session_state:
+        st.session_state.tag = None
+        
+    # get next element with the current options
+    if "current_element" not in st.session_state:
+        _get_next_element()
+
+    # display page
+    st.title("Annotate")
+    st.write("Interface to annotate data.")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.selectbox(label="", options = mode_selection, key = "selection")
+    with col2:
+        st.selectbox(label="", options = mode_sample, key = "sample")
+    with col3:
+        st.selectbox(label="", options = [], key = "tag")
+    if st.button("Back"):
+                st.write("Back")
+                _get_previous_element()
+    st.markdown(f"""
+        <div>{st.session_state.current_element["predict"]}</div>
+        <div style="
+            border: 2px solid #4CAF50;
+            padding: 10px;
+            border-radius: 5px;
+            color: #4CAF50;
+            font-family: sans-serif;
+            text-align: justify;
+            margin: 10px;
+        ">
+            {st.session_state.current_element["text"]}
+        </div>
+
+    """, unsafe_allow_html=True)
+
+    labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    cols = st.columns(len(labels))
+    for col, label in zip(cols, labels):
+        with col:
+            if st.button(label):
+                _send_tag(label)
+                _get_next_element()
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    # managing projection display
+    if "projection" not in st.session_state:
+        st.session_state.projection = False
+    # switch button
+    if st.button("Projection"):
+        if not st.session_state.projection:
+            st.session_state.projection = True
+        else:
+            st.session_state.projection = False
+    # displaying menu
+    if st.session_state.projection:
+        st.selectbox(label="Method", 
+                     options = list(st.session_state.state["projections"]["available"].keys()), 
+                     key = "projection_method")
+        st.text_area(label="", 
+                     value=json.dumps(st.session_state.state["projections"]["available"]["umap"], indent=2),
+                     key = "projection_params")
+        st.multiselect(label="Features", options=st.session_state.state["features"]["available"],
+                       key = "projection_features")
+        if st.button("Compute"):
+            st.write("Computing")
+            _compute_projection()
+        
+        # if visualisation available, display it
+        if ("projection_data" in st.session_state) and (type(st.session_state.projection_data) == str):
+            r = _get_projection_data()
+            if ("data" in r) and (type(r["data"]) is dict):
+                st.session_state.projection_data = pd.DataFrame(r["data"],)
+                st.session_state.projection_visualization = _plot_visualisation()
+        if "projection_visualization" in st.session_state:
+            st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)
+
+def description():
+    """
+    Description page
+    """
+    st.title("Description")
+    st.subheader("Statistics")
+    st.write("Description of the current data")
+    statistics = _get_statistics()
+    st.markdown(statistics, unsafe_allow_html=True)
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("Display data")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.selectbox(label="Sample", options=["all","tagged","untagged","recent"], index=3, key="data_mode") 
+    with col2:
+        st.number_input(label="min", key="data_min", min_value=0, value=0, step=1)
+    with col3:
+        st.number_input(label="min", key="data_max", min_value=0, value=10, step=1)
+    if st.button(label="Send changes"):
+        st.write("Send changes")
+        _send_table()
+
+    st.session_state.data_df = df = _get_table()
+
+    # make the table editable
+    labels =  st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    st.session_state.data_df["labels"] = (
+        st.session_state.data_df["labels"].astype("category").cat.remove_categories(
+            st.session_state.data_df['labels']).cat.add_categories(labels)
+    )
+    st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
+
+def simplemodels():
+    """
+    Simplemodel page
+    """
+    if not "computing_simplemodel" in st.session_state:
+        st.session_state.computing_simplemodel = False
+
+    current_model = None
+    statistics = ""
+    params = None
+    status = ""
+
+    # if a model has already be trained for the user and the scheme
+    if (st.session_state.user in st.session_state.state["simplemodel"]["available"]) \
+        and (st.session_state.current_scheme in st.session_state.state["simplemodel"]["available"][st.session_state.user]):
+        status = "Trained"
+        current_model = st.session_state.state["simplemodel"]["available"][st.session_state.user][st.session_state.current_scheme]
+        statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
+        params = json.dumps(current_model["params"], indent=2)
+        current_model = current_model['name']
+
+    # if there is a model under training
+    if (st.session_state.user in st.session_state.state["simplemodel"]["training"]) \
+        and (st.session_state.current_scheme in st.session_state.state["simplemodel"]["training"][st.session_state.user]):
+        status = "Computing"
+        st.session_state.computing_simplemodel = True
+
+    st.title("Active learning")
+    st.write("Configure active learning model") 
+    st.markdown(f"<b>{status}</b> - Current model: {current_model} <br> {statistics}",
+                unsafe_allow_html=True)
+
+    available_models = list(st.session_state.state["simplemodel"]["options"].keys())
+    index = 0
+    if current_model:
+        index = available_models.index(current_model)
+    st.selectbox(label="Model", key = "sm_model", 
+                 options = available_models, 
+                 index = index)
+    if not params:
+        params = json.dumps(st.session_state.state["simplemodel"]["options"][st.session_state.sm_model],indent=2)
+    st.text_area(label="", key = "sm_params", 
+                 value=params)
+    st.multiselect(label = "Features", key = "sm_features", 
+                   options=list(st.session_state.state["features"]["available"]))
+    st.slider(label="Training frequency", min_value=5, max_value=100, step=1, key="sm_freq")
+    if st.button("Train"):
+        st.write("Train model")
+        _train_simplemodel()
+
+
+def bertmodels():
+    """
+    Bertmodel page
+    TODO : améliorer la présentation
+    """
+
+    st.title("Global model")
+    st.write("Train, test and predict with final model") 
+
+    if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
+        st.session_state.bert_training = True
+        st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Model under training</div>")
+    else:
+        st.session_state.bert_training = False
+
+    st.subheader("Existing models")
+
+    available_bert = []
+    if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
+        available_bert = list(st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme].keys())
+    st.selectbox(label="", options = available_bert, key = "bm_trained")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("Compute prediction"):
+            st.write("Compute prediction")
+            _bert_prediction()
+            # add variable "aleready computed"
+    with col2:
+        if st.button("Delete"):
+            st.write("Delete model")
+            _delete_bert()
+    
+    with col3:
+        with st.expander("Rename"):
+            st.text_input(label = "", value="", placeholder="New name", key="bm_new_name")
+            if st.button("Validate"):
+                st.write("Rename", st.session_state.bm_new_name)
+                _save_bert()
+
+    with st.expander("Description"):
+        st.write("Elements")
+        data = _bert_informations()
+        if data:
+            st.pyplot(data[0])
+            st.html(data[1])
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("Training model")
+    st.selectbox(label="Select model", 
+                 options = st.session_state.state["bertmodels"]["options"], 
+                 key = "bm_train")
+    st.text_area(label="Parameters", key = "bm_params", 
+                 value=json.dumps(st.session_state.state["bertmodels"]["base_parameters"], 
+                                  indent=2))
+    
+    if not st.session_state.bert_training:
+        if st.button("⚙️Train"):
+            st.write("⚙️Train")
+            _start_bertmodel()
+    else:
+        if st.button("⚙️Stop"):
+            st.write("⚙️Stop")
+            _stop_bertmodel()
+
+def export():
+    """
+    Export page
+    """
+    st.title("Export")
+    st.write("Export your data and models") 
+
+    col1, col2 = st.columns((2,10))
+    with col1:
+        st.selectbox(label="Format", options=["csv", "parquet"], key="export_format")
+
+    st.subheader("Annotated data")
+    st.download_button(label="Download", 
+                       data=_export_data(), 
+                       file_name=f"annotations.{st.session_state.export_format}")
+
+    st.subheader("Features")
+    col1, col2 = st.columns((5,5))
+    with col1:
+        st.multiselect(label="", options=st.session_state.state["features"]["available"], key="export_features")
+
+    if st.session_state.export_features:
+        st.download_button(label="Download", 
+                            data=_export_features(), 
+                            file_name=f"features.{st.session_state.export_format}")
+
+
+    st.subheader("Bert")
+
+    # list available models
+    available = []
+    if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
+        available = st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme]
+    
+    col1, col2 = st.columns((5,10))
+    with col1:
+        st.selectbox(label="", options=available, key="bert_model", index=None, placeholder="Choose a model")
+
+    if st.session_state.bert_model:
+        st.download_button(label="Download model", 
+                           data=_export_model(), 
+                           file_name=f"{st.session_state.bert_model}.tar.gz")
+        
+        # TODO : test if available ...
+        st.download_button(label="Download predictions", 
+                           data=_export_predictions(), 
+                           file_name=f"predictions.{st.session_state.export_format}")
+
 
 # Internal functions
 # ------------------
@@ -483,15 +1020,19 @@ def _bert_informations():
     """
     Return statistics for a BERT Model
     """
-    params = {"project_name":st.session_state.current_project,
-              "name":st.session_state.bm_trained}
+    if st.session_state.bm_trained is None:
+        return False
+    params = {
+            "project_name":st.session_state.current_project,
+            "name":st.session_state.bm_trained
+            }
     r = _get("/models/bert", params = params)
     if r["status"] == "error":
         print(r)
         return False
     loss = pd.DataFrame(r["data"]["loss"])
     fig, ax = plt.subplots(figsize=(3,2))
-    fig = loss.plot(ax = ax)
+    loss.plot(ax = ax)
     text = ""
     if "f1" in r["data"]:
         text+=f"f1: {r['data']['f1']}<br>"
@@ -526,476 +1067,109 @@ def _save_bert():
         params = params)
     return r
 
-# Interface organization
-#-----------------------
-
-def main():
-    # initialize variables
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
-    if 'page' not in st.session_state:
-            st.session_state['page'] = "Projects"
-    st.session_state.state = _get_state()   
-    st.sidebar.write(datetime.datetime.now())
-    # start the interface
-    if not st.session_state['logged_in']:
-        login_page()
-    if st.session_state['logged_in']:
-        app_navigation()
-
-def login_page():
+def _start_bertmodel():
     """
-    Page to log in
+    Start bertmodel training
     """
-    st.title("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-
-    if st.button("Login"):
-        if _connect_user(username, password):
-            st.session_state['logged_in'] = True
-        else:
-            st.error("Incorrect username or password")
-
-def app_navigation():
-    """
-    Select page
-    """
-    # creating the menu
-    st.sidebar.title("Menu")
-    options = ["Projects",
-               "Schemes",
-               "Features",
-               "Annotate",
-               "Description",
-               "Active Model",
-               "Global Model",
-               "Export"]
-    st.session_state['page'] = st.sidebar.radio("Navigate", 
-                                                options, 
-                                                key="menu", 
-                                                index = options.index(st.session_state['page']))
-
-    # navigating
-    if st.session_state['page'] == "Projects":
-        projects()
-    elif st.session_state['page'] == "Schemes":
-        schemes()
-    elif st.session_state['page'] == "Features":
-        features()
-    elif st.session_state['page'] == "Annotate":
-        annotate()
-    elif st.session_state['page'] == "Description":
-        description()
-    elif st.session_state['page'] == "Active Model":
-        simplemodels()
-    elif st.session_state['page'] == "Global Model":
-        bertmodels()
-    elif st.session_state['page'] == "Export":
-        export()
-
-def projects():
-    """
-    Projects page
-    - select a project
-    - create one
-    """
-    if not "new_project" in st.session_state:
-        st.session_state.new_project = False
-    r = _get("/server")
-    existing = r["data"]["projects"]
-
-    # display menu
-    st.title("Projects")
-    st.write("Load or create project")
-    option = st.selectbox(
-        "Select existing projects:",
-        existing)
+    try:
+        bert_params = json.loads(st.session_state.bm_params)
+    except:
+        raise ValueError("Problem in the json parameters")
     
-    col1, col2 = st.columns(2)
-
-    # load a project
-    with col1:
-        if st.button("Load"):
-            st.session_state.current_project = option
-            st.session_state.page = "Schemes"
-            return None
+    params = {"project_name":st.session_state.current_project}
+    data = {
+            "project_name":st.session_state.current_project,
+            "scheme":st.session_state.current_scheme,
+            "user":st.session_state.user,
+            "name":f"_{st.session_state.user}", # générique
+            "base_model":st.session_state.bm_train,
+            "params":bert_params,
+            "test_size":0.2
+            }
     
-    # delete a project
-    with col2:
-        if st.button("Delete"):
-            st.write(f"Deleting{option}")
-            _delete_project(option)
+    r = _post("/models/bert/train", 
+                    params = params, 
+                    json_data = data)
+    time.sleep(2)
+    st.session_state.bert_training = True
+    return True
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-
-    # create a project
-    if st.button("New project"):
-        st.session_state['new_project'] = True
-
-    # display the creation menu
-    if st.session_state.get('new_project', True):
-        project_name = st.text_input("Project name", value="")
-        dic_langage = {"French":"fr",
-                       "English":"en",
-                       "Spanish":"es"}
-        language = st.selectbox("Language:",list(dic_langage))
-        file = st.file_uploader("Load file (CSV or Parquet)", 
-                                type=['csv', 'parquet'], 
-                                accept_multiple_files=False)
-        if file:
-            if file.name.endswith('.csv'):
-                df = pd.read_csv(file)
-            elif file.name.endswith('.parquet'):
-                df = pd.read_parquet(file)
-            else:
-                st.error("Type not supported")
-            st.dataframe(df.head())
-            st.write("Select columns")
-            column_id = st.selectbox("Ids:",list(df.columns))
-            column_text = st.selectbox("Texts:",list(df.columns))
-            column_label = st.selectbox("Labels:",list(df.columns))
-            columns_context = st.multiselect("Context:",list(df.columns))
-            n_train = st.number_input("N train", min_value=100, max_value=len(df),key="n_train")
-            n_test = st.number_input("N test", min_value=100, max_value=len(df),key="n_test")
-
-            if st.button("Create"):
-                data = {
-                        "project_name": project_name,
-                        "user":st.session_state.user,
-                        "col_text": column_text,
-                        "col_id":column_id,
-                        "col_label":column_label,
-                        "cols_context": columns_context,
-                        "n_train":n_train,
-                        "n_test":n_test, 
-                        "language":dic_langage[language]
-                        }
-                print(data)
-                buffer = BytesIO()
-                df.to_csv(buffer)
-                buffer.seek(0)
-                files = {'file': (file.name, buffer)}
-                r = _post(route="/projects/new", 
-                         files=files,
-                         data=data
-                         )
-                print(r)
-                if r["status"] == "error":
-                    print(r["message"])
-                
-    return None
-
-
-def schemes():
+def _stop_bertmodel():
     """
-    Scheme page
+    Stop bertmodel training
     """
-    st.title("Schemes")
-    st.write("Interface to manage schemes & label")
-    st.subheader("Schemes")
-    options_schemes = list(st.session_state.state["schemes"]["available"].keys())
-    scheme = st.selectbox(label="Current scheme:", options = options_schemes, index=0, placeholder="Select a scheme")
-    st.session_state.current_scheme = scheme # select scheme
-    if st.button("Delete scheme"):
-        if scheme is not None:
-            st.write(f"Deleting scheme {scheme}")
-            _delete_scheme(scheme)
-    new_scheme = st.text_input(label="", placeholder="New scheme name")
-    if st.button("Create scheme"):
-        if new_scheme is not None:
-            st.write(f"Creating scheme {new_scheme}")
-            _create_scheme(new_scheme)
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.subheader("Labels")
-    options_labels = []
-    if st.session_state.current_scheme is not None:
-        options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    label = st.selectbox(label="",options = options_labels, index=None, placeholder="Select a label")
-    if st.button("Delete label"):
-        if label is not None:
-            st.write(f"Deleting label {label}")
-            _delete_label(label)
-    new_label = st.text_input(label="", placeholder="New label name")
-    if st.button("Create label"):
-        if new_label is not None:
-            st.write(f"Creating label {new_label}")
-            _create_label(new_label)
+    params = {"project_name":st.session_state.current_project,
+                "user":st.session_state.user}
+    r = _post("/models/bert/stop", 
+            params = params)
+    time.sleep(2)
+    st.session_state.bert_training = False
+    return True
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    if st.button("Next step : compute features"):
-        if st.session_state.current_scheme is not None:
-            st.session_state.page = "Features"
-
-def features():
+@st.cache_data
+def _export_data():
     """
-    Feature page
+    Get exported data
     """
-    st.title("Features")
-    st.write("Interface to manage features.")
+    params = {"project_name":st.session_state.current_project,
+                "scheme":st.session_state.current_scheme, #current scheme
+                "format":st.session_state.export_format
+                }
+    r = _get("/export/data",
+        params = params,
+        is_json= False)
+    return r
 
-    c = st.session_state.state["features"]["training"]
-    if len(c) == 0:
-        c = "None"
-    st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>")
-
-    feature = st.selectbox(label="Available",
-                           options = st.session_state.state["features"]["available"])
-    if st.button("Delete feature"):
-        if feature is not None:
-            st.write(f"Deleting feature {feature}")
-            _delete_feature(feature)
+@st.cache_data
+def _export_features():
+    """
+    Get exported features
+    """
+    if len(st.session_state.export_features)==0:
+        st.write("Error")
+        return None
     
-    add_feature = st.selectbox(label="Add",
-                           options = list(st.session_state.state["features"]["options"].keys()))
-    
-    params = ""
-    if add_feature in st.session_state.state["features"]["options"]:
-        params = st.session_state.state["features"]["options"][add_feature]
-        params = st.text_area(label="", value = params)
+    params = {"project_name":st.session_state.current_project,
+                "features":st.session_state.export_features,
+                "format":st.session_state.export_format
+                }
+    r = _get("/export/features",
+        params = params,
+        is_json= False)
+    return r
 
-    if st.button("Compute feature"):
-        if add_feature is not None:
-            st.write(f"Computing feature {add_feature}")
-            _add_feature(add_feature, params)
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-
-    st.subheader("Add regex")
-    regex = st.text_input(label="", placeholder="Write your regex")
-    if st.button("Create regex"):
-        if regex is not None:
-            st.write(f"Computing regex {regex}")
-            _add_regex(regex)
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-    if st.button("Next step : annotate"):
-        if st.session_state.current_scheme is not None:
-            st.session_state.page = "Annotate"
-
-def annotate():
+@st.cache_data
+def _export_predictions():
     """
-    Annotate page
+    Get exported prediction for a BERT model
     """
-    # default options
-    mode_selection = st.session_state.state["next"]["methods_min"]
-    mode_sample = st.session_state.state["next"]["sample"]
-    if "selection" not in st.session_state:
-        st.session_state.selection = mode_selection[0]
-    if "sample" not in st.session_state:
-        st.session_state.sample = mode_sample[0]
-    if "tag" not in st.session_state:
-        st.session_state.tag = None
-        
-    # get next element with the current options
-    if "current_element" not in st.session_state:
-        _get_next_element()
+    params = {"project_name":st.session_state.current_project,
+                "name":st.session_state.bert_model,
+                "format":st.session_state.export_format
+                }
+    r = _get("/export/prediction",
+        params = params,
+        is_json= False)
+    return r
 
-    # display page
-    st.title("Annotate")
-    st.write("Interface to annotate data.")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.selectbox(label="", options = mode_selection, key = "selection")
-    with col2:
-        st.selectbox(label="", options = mode_sample, key = "sample")
-    with col3:
-        st.selectbox(label="", options = [], key = "tag")
-    if st.button("Back"):
-                st.write("Back")
-                _get_previous_element()
-    st.markdown(f"""
-        <div>{st.session_state.current_element["predict"]}</div>
-        <div style="
-            border: 2px solid #4CAF50;
-            padding: 10px;
-            border-radius: 5px;
-            color: #4CAF50;
-            font-family: sans-serif;
-            text-align: justify;
-            margin: 10px;
-        ">
-            {st.session_state.current_element["text"]}
-        </div>
-
-    """, unsafe_allow_html=True)
-
-    labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    cols = st.columns(len(labels))
-    for col, label in zip(cols, labels):
-        with col:
-            if st.button(label):
-                _send_tag(label)
-                _get_next_element()
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-
-    # managing projection display
-    if "projection" not in st.session_state:
-        st.session_state.projection = False
-    # switch button
-    if st.button("Projection"):
-        if not st.session_state.projection:
-            st.session_state.projection = True
-        else:
-            st.session_state.projection = False
-    # displaying menu
-    if st.session_state.projection:
-        st.selectbox(label="Method", 
-                     options = list(st.session_state.state["projections"]["available"].keys()), 
-                     key = "projection_method")
-        st.text_area(label="", 
-                     value=json.dumps(st.session_state.state["projections"]["available"]["umap"], indent=2),
-                     key = "projection_params")
-        st.multiselect(label="Features", options=st.session_state.state["features"]["available"],
-                       key = "projection_features")
-        if st.button("Compute"):
-            st.write("Computing")
-            _compute_projection()
-        
-        # if visualisation available, display it
-        if ("projection_data" in st.session_state) and (type(st.session_state.projection_data) == str):
-            r = _get_projection_data()
-            if ("data" in r) and (type(r["data"]) is dict):
-                st.session_state.projection_data = pd.DataFrame(r["data"],)
-                st.session_state.projection_visualization = _plot_visualisation()
-        if "projection_visualization" in st.session_state:
-            st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)
-
-def description():
+@st.cache_data
+def _export_model():
     """
-    Description page
+    Get BERT Model
     """
-    st.title("Description")
-    st.subheader("Statistics")
-    st.write("Description of the current data")
-    statistics = _get_statistics()
-    st.markdown(statistics, unsafe_allow_html=True)
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.subheader("Display data")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.selectbox(label="Sample", options=["all","tagged","untagged","recent"], index=3, key="data_mode") 
-    with col2:
-        st.number_input(label="min", key="data_min", min_value=0, value=0, step=1)
-    with col3:
-        st.number_input(label="min", key="data_max", min_value=0, value=10, step=1)
-    if st.button(label="Send changes"):
-        st.write("Send changes")
-        _send_table()
-
-    st.session_state.data_df = df = _get_table()
-
-    # make the table editable
-    labels =  st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    st.session_state.data_df["labels"] = (
-        st.session_state.data_df["labels"].astype("category").cat.remove_categories(
-            st.session_state.data_df['labels']).cat.add_categories(labels)
-    )
-    st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
-
-def simplemodels():
-    """
-    Simplemodel page
-    """
-    if not "computing_simplemodel" in st.session_state:
-        st.session_state.computing_simplemodel = False
-
-    current_model = None
-    statistics = ""
-    params = None
-    status = ""
-
-    # if a model has already be trained for the user and the scheme
-    if (st.session_state.user in st.session_state.state["simplemodel"]["available"]) \
-        and (st.session_state.current_scheme in st.session_state.state["simplemodel"]["available"][st.session_state.user]):
-        status = "Trained"
-        current_model = st.session_state.state["simplemodel"]["available"][st.session_state.user][st.session_state.current_scheme]
-        statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
-        params = json.dumps(current_model["params"], indent=2)
-        current_model = current_model['name']
-
-    # if there is a model under training
-    if (st.session_state.user in st.session_state.state["simplemodel"]["training"]) \
-        and (st.session_state.current_scheme in st.session_state.state["simplemodel"]["training"][st.session_state.user]):
-        status = "Computing"
-        st.session_state.computing_simplemodel = True
-
-    st.title("Active learning")
-    st.write("Configure active learning model") 
-    st.markdown(f"<b>{status}</b> - Current model: {current_model} <br> {statistics}",
-                unsafe_allow_html=True)
-
-    available_models = list(st.session_state.state["simplemodel"]["options"].keys())
-    index = 0
-    if current_model:
-        index = available_models.index(current_model)
-    st.selectbox(label="Model", key = "sm_model", 
-                 options = available_models, 
-                 index = index)
-    if not params:
-        params = json.dumps(st.session_state.state["simplemodel"]["options"][st.session_state.sm_model],indent=2)
-    st.text_area(label="", key = "sm_params", 
-                 value=params)
-    st.multiselect(label = "Features", key = "sm_features", 
-                   options=list(st.session_state.state["features"]["available"]))
-    st.slider(label="Training frequency", min_value=5, max_value=100, step=1, key="sm_freq")
-    if st.button("Train"):
-        st.write("Train model")
-        _train_simplemodel()
+    params = {"project_name":st.session_state.current_project,
+               "name":st.session_state.bert_model,
+                }
+    r = _get("/export/bert",
+        params = params,
+        is_json= False)
+    if type(r) is dict:
+        print(r)
+        return None
+    return r
 
 
-def bertmodels():
-    """
-    Bertmodel page
-    TODO : améliorer la présentation
-    """
-    st.title("Global model")
-    st.write("Train, test and predict with final model") 
-    st.subheader("Existing models")
 
-    st.selectbox(label="", options = [], key = "bm_trained")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("Compute prediction"):
-            st.write("Compute prediction")
-            _bert_prediction()
-            # add variable "aleready computed"
-    with col2:
-        if st.button("Delete"):
-            st.write("Delete model")
-            _delete_bert()
-    
-    with col3:
-        with st.expander("Rename"):
-            st.text_input(label = "", value="", placeholder="New name", key="bm_new_name")
-            if st.button("Validate"):
-                st.write("Rename", st.session_state.bm_new_name)
-                _save_bert()
-
-    with st.expander("Description"):
-        st.write("Elements")
-        data = _bert_informations()
-        if data:
-            st.pyplot(data[0])
-            st.write(data[1])
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.subheader("Training model")
-    st.selectbox(label="Select model", options = [], key = "bm_train")
-    st.text_area(label="Parameters", key = "bm_params", 
-                 value="")
-    if st.button("Train"):
-        st.write("Train")
-
-# TODO : training bert + export
-
-
-def export():
-    st.title("Export")
-    st.write("Export your data and models") 
 
 
 if __name__ == "__main__":
