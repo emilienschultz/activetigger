@@ -415,10 +415,15 @@ def _send_table():
     """
     Send table modified
     """
+
+    def replace_na(i):
+        if pd.isna(i):
+            return None
+        return i
     data = {
         "scheme":st.session_state.current_scheme,
         "list_ids":list(st.session_state.data_df.index),
-        "list_labels":list(st.session_state.data_df["labels"])
+        "list_labels":[replace_na(i) for i in st.session_state.data_df["labels"]]
     }
     r = _post("/elements/table", 
                 json_data = data, 
@@ -428,6 +433,85 @@ def _send_table():
     if r["status"] == "error":
         st.write(r["message"])
     st.write("Data saved")
+
+def _train_simplemodel():
+    """
+    Create a simplemodel
+    """
+    if (st.session_state.sm_features is None) or (len(st.session_state.sm_features)==0):
+        return "Need at least one feature" 
+    params = {"project_name":st.session_state.current_project}
+    if type(st.session_state.sm_params) is str:
+        try:
+            parameters = json.loads(st.session_state.sm_params)
+        except:
+            print(st.session_state.sm_params)
+            raise ValueError("Problem in the json parameters")
+    data = {
+            "model":st.session_state.sm_model,
+            "features":st.session_state.sm_features,
+            "params":parameters,
+            "scheme":st.session_state.current_scheme,
+            "user":st.session_state.user
+            }
+    r = _post("/models/simplemodel", 
+                    params = params, 
+                    json_data = data)
+    if r["status"] == "error":
+        st.write(r["message"])
+        return False
+    st.write("Computing model")
+    return True
+
+def _bert_prediction():
+    """
+    Start prediction
+    """
+    if st.session_state.bm_trained is None:
+        return False
+    params = {"project_name":st.session_state.current_project,
+            "user":st.session_state.user,
+            "model_name":st.session_state.bm_trained
+            }
+    r = _post("/models/bert/predict", 
+            params = params)
+    if r["status"]=="error":
+        print(r["message"])
+    return True
+
+def _bert_informations():
+    """
+    Return statistics for a BERT Model
+    """
+    params = {"project_name":st.session_state.current_project,
+              "name":st.session_state.bm_trained}
+    r = _get("/models/bert", params = params)
+    if r["status"] == "error":
+        print(r)
+        return False
+    loss = pd.DataFrame(r["data"]["loss"])
+    fig, ax = plt.subplots(figsize=(3,2))
+    fig = loss.plot(ax = ax)
+    text = ""
+    if "f1" in r["data"]:
+        text+=f"f1: {r['data']['f1']}<br>"
+        text+=f"precision: {r['data']['precision']}<br>"
+        text+=f"recall: {r['data']['recall']}<br>"
+    else:
+        text += "Compute prediction for scores"
+    return fig, text
+
+def _delete_bert():
+    """
+    Delete bert model
+    """
+    params = {"project_name":st.session_state.current_project,
+              "bert_name":st.session_state.bm_trained,
+              "user":st.session_state.user
+            }
+    r = _post("/models/bert/delete", 
+                    params = params)
+    return r
 
 # Interface organization
 #-----------------------
@@ -797,15 +881,116 @@ def description():
     )
     st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
 
-    # https://discuss.streamlit.io/t/editable-dataframe-dropdown/38713/3
-
 def simplemodels():
+    """
+    Simplemodel page
+    """
+    if not "computing_simplemodel" in st.session_state:
+        st.session_state.computing_simplemodel = False
+
+    current_model = None
+    statistics = ""
+    params = None
+    status = ""
+
+    # if a model has already be trained for the user and the scheme
+    if (st.session_state.user in st.session_state.state["simplemodel"]["available"]) \
+        and (st.session_state.current_scheme in st.session_state.state["simplemodel"]["available"][st.session_state.user]):
+        status = "Trained"
+        current_model = st.session_state.state["simplemodel"]["available"][st.session_state.user][st.session_state.current_scheme]
+        statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
+        params = json.dumps(current_model["params"], indent=2)
+        current_model = current_model['name']
+
+    # if there is a model under training
+    if (st.session_state.user in st.session_state.state["simplemodel"]["training"]) \
+        and (st.session_state.current_scheme in st.session_state.state["simplemodel"]["training"][st.session_state.user]):
+        status = "Computing"
+        st.session_state.computing_simplemodel = True
+
     st.title("Active learning")
     st.write("Configure active learning model") 
+    st.markdown(f"<b>{status}</b> - Current model: {current_model} <br> {statistics}",
+                unsafe_allow_html=True)
+
+    available_models = list(st.session_state.state["simplemodel"]["options"].keys())
+    index = 0
+    if current_model:
+        index = available_models.index(current_model)
+    st.selectbox(label="Model", key = "sm_model", 
+                 options = available_models, 
+                 index = index)
+    if not params:
+        params = json.dumps(st.session_state.state["simplemodel"]["options"][st.session_state.sm_model],indent=2)
+    st.text_area(label="", key = "sm_params", 
+                 value=params)
+    st.multiselect(label = "Features", key = "sm_features", 
+                   options=list(st.session_state.state["features"]["available"]))
+    st.slider(label="Training frequency", min_value=5, max_value=100, step=1, key="sm_freq")
+    if st.button("Train"):
+        st.write("Train model")
+        _train_simplemodel()
+
 
 def bertmodels():
+    """
+    Bertmodel page
+    TODO : améliorer la présentation
+    """
+
+    if not "bm_description" in st.session_state:
+        st.session_state.bm_description = False
+    if not "bm_rename" in st.session_state:
+        st.session_state.bm_rename = False
+
     st.title("Global model")
     st.write("Train, test and predict with final model") 
+    st.subheader("Existing models")
+
+    st.selectbox(label="", options = [], key = "bm_trained")
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:       
+        if st.button("Compute prediction"):
+            st.write("Compute prediction")
+            _bert_prediction()
+            # add variable "aleready computed"
+    with col2:
+        if st.button("Description"):
+            if st.session_state.bm_description:
+                st.session_state.bm_description = False
+            else:
+                st.session_state.bm_description = True
+                st.session_state.bm_description_data = _bert_informations()
+    with col3:
+        if st.button("Rename"):
+            if st.session_state.bm_rename:
+                st.session_state.bm_rename = False
+            else:
+                st.session_state.bm_rename = True
+    with col4:
+        if st.button("Delete"):
+            st.write("Delete model")
+            _delete_bert()
+
+    if st.session_state.bm_description:
+        r = st.session_state.bm_description_data
+        st.pyplot(r[0])
+        st.write(r[1])
+
+    if st.session_state.bm_rename:
+        new_name = st.text_input(label = "", value="", placeholder="New name", key="new_name")
+        if st.button("Validate"):
+            st.write("Rename", new_name)  
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("Training model")
+    st.selectbox(label="Select model", options = [], key = "bm_train")
+    st.text_area(label="Parameters", key = "bm_params", 
+                 value="")
+    if st.button("Train"):
+        st.write("Train")
+
 
 def export():
     st.title("Export")
