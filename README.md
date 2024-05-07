@@ -12,7 +12,7 @@ Server/client BERT fine tunning app using active learning
 
 ## Installation
 
-You can install `activetigger` via pip:
+You can install `activetigger` via pip (be careful to use Python 3.11):
 
 ```bash
 pip install activetigger
