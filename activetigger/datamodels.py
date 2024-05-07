@@ -18,7 +18,7 @@ class ProjectModel(BaseModel):
     embeddings:list = []
     n_skip:int = 0
     default_scheme: list = []
-    langage:str = "fr"
+    language:str = "fr"
     col_label:str|None = None # TODO: load existing tags
     cols_context:list = [] # TODO: select variable to keep
 

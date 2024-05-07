@@ -5,7 +5,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
-from multiprocessing import Process
 import pandas as pd
 import os
 from jose import JWTError
@@ -18,10 +17,10 @@ from activetigger.datamodels import ProjectModel, TableElementsModel, Action, An
       UmapParams, TsneParams
 
 
-logging.basicConfig(filename='log.log', 
-                    encoding='utf-8', 
-                    level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger('api')
 
 
 # General comments
@@ -34,9 +33,9 @@ logging.basicConfig(filename='log.log',
 #######
 
 # start the backend server
+logger.info("Start API")
 server = Server()
 timer = time.time()
-print(timer)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,113 +45,43 @@ async def lifespan(app: FastAPI):
     print("Active Tigger starting")
     yield
     print("Active Tigger closing")
-    server.executor.shutdown(cancel_futures=True, wait = False)
+    server.queue.close()
 
 app = FastAPI(lifespan=lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-async def update(timer):
+async def check_queue(timer):
     """
-    Update the state of the server
-    TODO: test execution time
+    Update server for processes
+    - queue
+    - active projects (TODO)
     """
-    # restart future pool executor if needed
-    if server.executor._broken:
-        server.recreate_executor()
-
     # max one update per second to avoid excessive action
     step = 1
     if (time.time()-timer)<step:
         return None
     timer = time.time()
+    
+    server.queue.check()
 
-    # clean temporary files for CPU-bound computation
+    # update queue for different computations 
     for p in server.projects:
         project = server.projects[p]
-        if (project.params.dir / "sbert.parquet").exists():
-            df = pd.read_parquet(project.params.dir / "sbert.parquet") # load data TODO : bug potentiel lié à la temporalité
-            project.features.add("sbert",df) # add to the feature manager
-            if "sbert" in project.features.training:
-                project.features.training.remove("sbert") # remove from pending processes
-            os.remove(project.params.dir / "sbert.parquet") # clean the files
-            logging.info(f"Add sbert embeddings to project {p}")
-        if (project.params.dir / "fasttext.parquet").exists():
-            df = pd.read_parquet(project.params.dir / "fasttext.parquet")
-            project.features.add("fasttext",df) 
-            if "fasttext" in project.features.training:
-                project.features.training.remove("fasttext") 
-            os.remove(project.params.dir / "fasttext.parquet")
-            print("Adding fasttext embeddings")
-            logging.info(f"Add fasttext embeddings to project {p}")
-        if (project.params.dir / "dfm.parquet").exists():
-            df = pd.read_parquet(project.params.dir / "dfm.parquet")
-            project.features.add("dfm",df) 
-            if "dfm" in project.features.training:
-                project.features.training.remove("dfm") 
-            os.remove(project.params.dir / "dfm.parquet")
-            logging.info(f"Add DFM embeddings to project {p}")
-
-        # cas of BERT model prediction to add
-        # for the moment, a file in the bert repertory to indicate that the process is finished
-        # then add the prediction to the feature (question : prediction not num ?)
-        # TODO: Not finished
-        all_files = [i for i in os.listdir(project.bertmodels.path) if "predict_" in i]
-        if len(all_files)>0:
-            for i in all_files:
-                name = i.replace("predict_","")
-                df = pd.read_parquet(project.bertmodels.path / name / "predict.parquet")
-                project.features.add(i, df["prediction"])
-                os.remove(project.bertmodels.path / i)
-                print("add prediction to feature", name)
-
-        # closing future processes
-        
-        # 1/for features computation
-        to_del = []
-        for u in project.features.available_projections.copy():
-            if ("future" in project.features.available_projections[u]):
-                try: #if something went wrong delete it ...
-                    if project.features.available_projections[u]["future"].done():
-                        # TODO add error management
-                        df = project.features.available_projections[u]["future"].result()
-                        project.features.available_projections[u]["data"] = df
-                        del project.features.available_projections[u]["future"]
-                        logging.info(f"Add projection data to project {p}")
-                except:
-                    to_del.append(u)
-                    print("probleme about a future")
-        for u in to_del:
-            del project.features.available_projections[u]
-            
-        # 2/ for simplemodels computation
-        to_del = []
-        for u in project.simplemodels.computing:
-            for s in project.simplemodels.computing[u]:
-                if project.simplemodels.computing[u][s]["future"].done():
-                    # get the model and update parameters TODO ameliorate this code
-                    results = project.simplemodels.computing[u][s]["future"].result()
-                    sm = project.simplemodels.computing[u][s]["sm"]
-                    sm.model = results["model"]
-                    sm.proba = results["proba"]
-                    sm.cv10 = results["cv10"]
-                    sm.statistics = results["statistics"]
-                    if not u in project.simplemodels.existing:
-                        project.simplemodels.existing[u] = {}
-                    project.simplemodels.existing[u][s] = sm
-                    to_del.append([u,s])
-                    project.simplemodels.dumps()
-        for i in to_del:
-            del project.simplemodels.computing[u][s]
-            if len(project.simplemodels.computing[u]) == 0:
-                del project.simplemodels.computing[u]
-
+        project.features.update_processes()
+        project.simplemodels.update_processes()
+        predictions = project.bertmodels.update_processes()
+        # if predictions, add them as features
+        if len(predictions)>0:
+            for f in predictions:
+                project.features.add(f, predictions[f])
+    
 @app.middleware("http")
 async def middleware(request: Request, call_next):
     """
     Middleware to take care of completed processes
     Executed at each action on the server
     """
-    await update(timer)
+    await check_queue(timer)
     response = await call_next(request)
     return response
 
@@ -295,6 +224,14 @@ async def get_state(project: Annotated[Project, Depends(get_project)]) -> Respon
     r = ResponseModel(status="success", data=data)
     return r
 
+@app.get("/queue")
+async def get_queue() -> ResponseModel:
+    """
+    Get queue state
+    """
+    r = server.queue.state()
+    return ResponseModel(status="success", data=r)
+
 @app.get("/description", dependencies=[Depends(verified_user)])
 async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
@@ -337,7 +274,7 @@ async def new_project(
                       n_test:int = Form(),
                       embeddings:list = Form(None),
                       n_skip:int = Form(None),
-                      langage:str = Form(None),
+                      language:str = Form(None),
                       ) -> ResponseModel:
     """
     Load new project
@@ -357,7 +294,7 @@ async def new_project(
         "n_test":n_test,
         "embeddings":embeddings,
         "n_skip":n_skip,
-        "langage":langage,
+        "language":language,
         "col_label":col_label,
         "cols_context":cols_context
         }
@@ -379,7 +316,7 @@ async def new_project(
         return ResponseModel(status = "error", message = "Project already exist")
 
     project = server.create_project(project, file)
-
+    print(project)
     # log action
     server.log_action(username, "create project", params_in["project_name"])
     r = ResponseModel(status = "success")
@@ -432,16 +369,16 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
     """
     Get projection data if computed
     """
-    if not username in project.features.available_projections:
+    if not username in project.features.projections:
         return ResponseModel(status="error", message="There is no projection available")
 
-    if not "data" in project.features.available_projections[username]:
+    if not "data" in project.features.projections[username]:
         return ResponseModel(status="waiting", message="Still computing")
     if scheme is None:
-        data = project.features.available_projections[username]["data"].fillna("NA").to_dict()
+        data = project.features.projections[username]["data"].fillna("NA").to_dict()
     else:
         # TODO : add texts
-        data = project.features.available_projections[username]["data"]
+        data = project.features.projections[username]["data"]
         df = project.schemes.get_scheme_data(scheme, complete = True)
         data["labels"] = df["labels"]
         data["texts"] = df["text"]
@@ -473,11 +410,13 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
             e = UmapParams(**projection.params)
         except ValidationError as e:
             return ResponseModel(status="error", message=str(e))
-        future_result = server.executor.submit(functions.compute_umap, **args)
-        project.features.available_projections[username] = {
+        #future_result = server.executor.submit(functions.compute_umap, **args)
+        unique_id = server.queue.add("projection", functions.compute_umap, args)
+        project.features.projections[username] = {
                                                         "params":projection,
                                                         "method":"umap",
-                                                        "future":future_result
+                                                        "queue":unique_id
+                                                        #"future":future_result
                                                         }
         return ResponseModel(status = "waiting", message="Projection umap under computation")
     if projection.method == "tsne":
@@ -485,11 +424,13 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
             e = TsneParams(**projection.params)
         except ValidationError as e:
             return ResponseModel(status="error", message=str(e))
-        future_result = server.executor.submit(functions.compute_tsne, **args)
-        project.features.available_projections[username] = {
+        #future_result = server.executor.submit(functions.compute_tsne, **args)
+        unique_id = server.queue.add("projection", functions.compute_tsne, args)
+        project.features.projections[username] = {
                                                         "params":projection,
                                                         "method":"tsne",
-                                                        "future":future_result
+                                                        "queue":unique_id
+                                                        #"future":future_result
                                                         }
         return ResponseModel(status = "waiting", message="Projection tsne under computation")
     return ResponseModel(status="error", message="This projection is not available")
@@ -695,45 +636,34 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     """
     if name in project.features.training:
         return ResponseModel(status="error", message = "This feature is already in training")
-    
+    if not name in {"sbert","fasttext","dfm"}:
+        return ResponseModel(status="error", message = "Not implemented")
+    print("compute", name)
     df = project.content[project.params.col_text]
     if name == "sbert":
         args = {
-                "path":project.params.dir,
                 "texts":df,
                 "model":"distiluse-base-multilingual-cased-v1"
                 }
-        process = Process(target=functions.process_sbert, 
-                          kwargs = args)
-        process.start()
-        project.features.training.append(name)
-        server.log_action(username, f"Compute feature sbert", project.name)
-        return ResponseModel(status="success", message="computing sbert, it could take a few minutes")
+        func = functions.to_sbert
     if name == "fasttext":
         args = {
-                "path":project.params.dir,
                 "texts":df,
-                "model":server.path_fastext
+                "language":project.params.language,
+                "path_models":server.path_models
                 }
-        process = Process(target=functions.process_fasttext, 
-                          kwargs = args)
-        process.start()
-        project.features.training.append(name)
-        server.log_action(username, f"Compute feature fasttext", project.name)
-        return ResponseModel(status="success", message="computing fasttext, it could take a few minutes")
+        func = functions.to_fasttext    
     if name == "dfm":
         # TODO save params with list to dict
         args = params.params
         args["texts"] = df
-        args["path"] = project.params.dir
-        process = Process(target=functions.process_dfm, 
-                          kwargs = args)
-        process.start()
-        project.features.training.append(name)
-        server.log_action(username, f"Compute feature dfm", project.name)
-        return ResponseModel(status="success", message="computing dfm, it could take a few minutes")
-
-    return ResponseModel(status="error", message = "Not implemented")
+        func = functions.to_dtm
+    #future_result = server.executor.submit(func, **args)
+    unique_id = server.queue.add("feature", func, args)
+    #project.features.training[name] = future_result
+    project.features.training[name] = unique_id
+    server.log_action(username, f"Compute feature dfm", project.name)
+    return ResponseModel(status="success", message=f"computing {name}, it could take a few minutes")
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],
@@ -797,6 +727,7 @@ async def predict(project: Annotated[Project, Depends(get_project)],
     """
     print("start predicting")
     df = project.content[["text"]]
+
     r = project.bertmodels.start_predicting_process(name = model_name,
                                                     df = df,
                                                     col_text = "text",
@@ -815,7 +746,6 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     TODO : gestion du nom du projet/scheme à la base du modèle
     TODO : test if bert.params is well formed, maybe with pydantic ?
     """
-    print("start bert training")
     df = project.schemes.get_scheme_data(bert.scheme, complete = True) #move it elswhere ?
     df = df[[project.params.col_text, "labels"]].dropna() #remove non tag data
     r = project.bertmodels.start_training_process(

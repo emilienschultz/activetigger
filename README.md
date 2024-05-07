@@ -26,7 +26,7 @@ Create a config file `config.yaml` in the directory where you want to launch the
 
 - `path` : path to store files (for instance `./data`)
 - `secret_key` : to secure tokens. To generate it `openssl rand -hex 32C`
-- `path_fasttext`:  absolute path to fasttext model
+- `path_models`:  absolute path to fasttext models
 - `users`: list of user:password
 
 Then, to launch the server (on 0.0.0.0 port 8000 by default)

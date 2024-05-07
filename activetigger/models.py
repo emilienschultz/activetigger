@@ -4,7 +4,6 @@ import logging
 import json
 import os
 from pathlib import Path
-import torch
 import numpy as np
 import shutil
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -23,11 +22,6 @@ import pickle
 from pydantic import ValidationError
 import activetigger.functions as functions
 from activetigger.datamodels import LiblinearParams, KnnParams, RandomforestParams, LassoParams, Multi_naivebayesParams, BertParams
-
-
-logging.basicConfig(filename = "log",
-                            format='%(asctime)s %(message)s',
-                            encoding='utf-8', level=logging.DEBUG)
 
 
 class BertModel():
@@ -130,63 +124,63 @@ class BertModel():
         
         return r
 
-    def predict(self, 
-                df:DataFrame,
-                col_text:str,
-                gpu:bool = False, 
-                batch:int = 128):
-        """
-        Predict from a model
-        + probabilities
-        + entropy
-        """
+    # def predict(self, 
+    #             df:DataFrame,
+    #             col_text:str,
+    #             gpu:bool = False, 
+    #             batch:int = 128):
+    #     """
+    #     Predict from a model
+    #     + probabilities
+    #     + entropy
+    #     """
 
-        if (self.model is None) or (self.tokenizer is None):
-            self.load()
+    #     if (self.model is None) or (self.tokenizer is None):
+    #         self.load()
 
-        if (self.model is None) or (self.tokenizer is None):
-            return {"error":"Model not loaded"}
+    #     if (self.model is None) or (self.tokenizer is None):
+    #         return {"error":"Model not loaded"}
 
-        if gpu:
-            self.model.cuda()
+    #     if gpu:
+    #         self.model.cuda()
 
-        # Start prediction with batches
-        predictions = []
-        logging.info(f"Start prediction with {len(df)} entries")
-        for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
-            print("Next chunck prediction")
-            chunk = self.tokenizer(list(chunk), 
-                            padding=True, 
-                            truncation=True, 
-                            max_length=512, 
-                            return_tensors="pt")
-            if gpu:
-                chunk = chunk.to("cuda")
-            with torch.no_grad():
-                outputs = self.model(**chunk)
-            res = outputs[0]
-            if gpu:
-                res = res.cpu()
-            res = res.softmax(1).detach().numpy()
-            predictions.append(res)
-            logging.info(f"{round(100*len(res)/len(df))}% predicted")
+    #     # Start prediction with batches
+    #     predictions = []
+    #     logging.info(f"Start prediction with {len(df)} entries")
+    #     for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
+    #         print("Next chunck prediction")
+    #         chunk = self.tokenizer(list(chunk), 
+    #                         padding=True, 
+    #                         truncation=True, 
+    #                         max_length=512, 
+    #                         return_tensors="pt")
+    #         if gpu:
+    #             chunk = chunk.to("cuda")
+    #         with torch.no_grad():
+    #             outputs = self.model(**chunk)
+    #         res = outputs[0]
+    #         if gpu:
+    #             res = res.cpu()
+    #         res = res.softmax(1).detach().numpy()
+    #         predictions.append(res)
+    #         logging.info(f"{round(100*len(res)/len(df))}% predicted")
 
-        # To DataFrame
-        pred = pd.DataFrame(np.concatenate(predictions), 
-                            columns=sorted(list(self.model.config.label2id.keys())),
-                            index = df.index)
+    #     # To DataFrame
+    #     pred = pd.DataFrame(np.concatenate(predictions), 
+    #                         columns=sorted(list(self.model.config.label2id.keys())),
+    #                         index = df.index)
 
-        # Calculate entropy
-        entropy = -1 * (pred * np.log(pred)).sum(axis=1)
-        pred["entropy"] = entropy
+    #     # Calculate entropy
+    #     entropy = -1 * (pred * np.log(pred)).sum(axis=1)
+    #     pred["entropy"] = entropy
 
-        # Calculate label
-        pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
+    #     # Calculate label
+    #     pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
 
-        # Write the file in parquet
-        pred.to_parquet(self.path / "predict.parquet")
+    #     # Write the file in parquet
+    #     pred.to_parquet(self.path / "predict.parquet")
 
-        return pred
+    #     return pred
 
 class BertModels():
     """
@@ -198,7 +192,7 @@ class BertModels():
     TODO : std.err in the logs for processes
     """
 
-    def __init__(self, path:Path) -> None:
+    def __init__(self, path:Path, queue) -> None:
         self.params_default = {
                         "batchsize":4,
                         "gradacc":1,
@@ -223,13 +217,13 @@ class BertModels():
                         "microsoft/Multilingual-MiniLM-L12-H384",
                         "xlm-roberta-base",
                         ]
-        
+        self.queue = queue
         self.path:Path = Path(path) / "bert"
         if not self.path.exists():
             os.mkdir(self.path)
 
         # keep current processes (one by user max)
-        self.processes:dict = {}
+        self.computing:dict = {}
 
     def __repr__(self) -> str:
         return f"Trained models : {self.trained()}"
@@ -266,7 +260,7 @@ class BertModels():
         """
         Currently under training
         """
-        return {u:self.processes[u][0].name for u in self.processes if self.processes[u][0].status == "training"}
+        return {u:self.computing[u][0].name for u in self.computing if self.computing[u][0].status == "training"}
 
     def delete(self, bert_name:str) -> dict:
         """
@@ -298,7 +292,7 @@ class BertModels():
 
         # Check if there is no other competing processes
         # For the moment : 1 active process by user
-        if user in self.processes:
+        if user in self.computing:
             return {"error":"processes already launched, cancel it before"}
 
         # set default parameters if needed
@@ -328,14 +322,14 @@ class BertModels():
                 "params":params,
                 "test_size":test_size
                 }
-        process = Process(target=self.train_bert, 
-                          kwargs = args)
-        process.start()
+
+        unique_id = self.queue.add("training", functions.train_bert, args)
 
         # Update the queue
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
-        self.processes[user] = [b,process]
+        self.computing[user] = [b,unique_id]
+
         return {"success":"bert model on training"}
 
     def start_predicting_process(self, 
@@ -346,21 +340,22 @@ class BertModels():
         """
         Start predicting process
         """
-        if user in self.processes:
+        if user in self.computing:
             return {"error":"Processes already launched, cancel it before"}
 
         if not (self.path / name).exists():
             return {"error":"This model does not exist"}
-
         b = BertModel(name, self.path / name)
-
-        args = {"df":df, "col_text":col_text}
-        process = Process(target=b.predict, 
-                          kwargs = args)
-        process.start()
-
+        b.load()
+        args = {"df":df, 
+                "col_text":col_text,
+                "model":b.model,
+                "tokenizer":b.tokenizer,
+                "path":b.path
+                }
+        unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = "predicting"
-        self.processes[user] = [b,process]
+        self.computing[user] = [b,unique_id]
         return {"success":"bert model predicting"}
 
     def start_compression(self, name):
@@ -519,19 +514,19 @@ class BertModels():
 
         return True
     
-    def stop_user_process(self,user:str):
+    def stop_user_process(self,user:str):   
         """
         Stop the process of an user
         """
-        if not user in self.processes:
+        if not user in self.computing:
             return {"error":"no current processes"}
-        self.processes[user][1].terminate() # end process
+        self.computing[user][1].terminate() # end process
 
         # delete files in case of training
-        b = self.processes[user][0]
+        b = self.computing[user][0]
         if b.status == "training":
-            shutil.rmtree(self.processes[user][0].path)
-        del self.processes[user] # delete process
+            shutil.rmtree(self.computing[user][0].path)
+        del self.computing[user] # delete process
         return {"success":"process terminated"}
     
     def rename(self, former_name:str, new_name:str):
@@ -564,30 +559,24 @@ class BertModels():
         b.load(lazy=lazy)
         return b
     
-    def update(self) -> bool:
+    def update_processes(self) -> dict:
         """
-        Update training queue
-        (used in the API)
-        # TODO : manage failed processes
-        # TODO : QUEUE management
+        Update current computing
+        Return features to add
         """
-        to_del = []
-        for u in self.processes:
-            b = self.processes[u][0]
-            p = self.processes[u][1]
-            # test if process completed (training)
-            if (b.status == "training") and (not p.is_alive()):
-                to_del.append(b.name)
-            # test if process completed (predicting)
-            # if so, add the task to add it as a feature
-            if (b.status == "predicting") and (not p.is_alive()):
-                to_del.append(b.name)
-                with open(self.path / f"predict_{b.name}","w") as f:
-                    f.write("Move to a queue")
-
-        # Update the current active processes
-        self.processes = {u:self.processes[u] for u in self.processes if self.processes[u][0].name not in to_del}
-        return True
+        predictions = {}
+        for u in self.computing.copy():
+            unique_id =  self.computing[u][1]
+            if self.queue.current[unique_id]["future"].done():
+                b = self.computing[u][0]
+                if b.status == "prediction":
+                    df = self.queue.current[unique_id]["future"].result()
+                    predictions["predict_" + b.name] = df["prediction"]
+                if b.status == "training":
+                    print("Model trained")
+                del self.computing[u]
+                self.queue.delete(unique_id)
+        return predictions
     
     def export_prediction(self, name:str, format:str|None = None):
         """
@@ -622,6 +611,7 @@ class BertModels():
         r =  {"name":file_name, 
               "path":self.path / file_name}
         return r
+    
         
 class SimpleModels():
     """
@@ -662,14 +652,14 @@ class SimpleModels():
         "multi_naivebayes":Multi_naivebayesParams
     }
     
-    def __init__(self, path:Path, executor):
+    def __init__(self, path:Path, queue):
         """
         Init Simplemodels class
         """
         self.existing:dict = {} # computed simplemodels
         self.computing:dict = {} # curently under computation
         self.path:Path = path # path to operate
-        self.executor = executor # access to executor for multiprocessing
+        self.queue = queue # access to executor for multiprocessing
         self.save_file:str = "simplemodels.pickle" # file to save current state
         self.loads() # load existing simplemodels
 
@@ -808,11 +798,13 @@ class SimpleModels():
 
         # launch the compuation (model + statistics) as a future process
         # TODO: refactore the SimpleModel class / move to API the executor call ?
-        future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
+        args = {"model":model, "X":X, "Y":Y, "labels":labels}
+        unique_id = self.queue.add("simplemodel",functions.fit_model, args)
+        #future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
         sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
         if not user in self.computing:
             self.computing[user] = {}
-        self.computing[user][scheme] = {"future":future_result, "sm":sm}
+        self.computing[user][scheme] = {"queue":unique_id, "sm":sm}
 
     def dumps(self):
         """
@@ -830,6 +822,27 @@ class SimpleModels():
         with open(self.path / self.save_file, 'rb') as file:
             self.existing = pickle.load(file)
         return True
+    
+    def update_processes(self):
+        """
+        Update current computing simplemodels
+        """
+        for u in self.computing.copy():
+            s = list(self.computing[u].keys())[0]
+            unique_id = self.computing[u][s]["queue"]
+            if self.queue.current[unique_id]["future"].done():
+                results = self.queue.current[unique_id]["future"].result()
+                sm = self.computing[u][s]["sm"]
+                sm.model = results["model"]
+                sm.proba = results["proba"]
+                sm.cv10 = results["cv10"]
+                sm.statistics = results["statistics"]
+                if not u in self.existing:
+                    self.existing[u] = {}
+                self.existing[u][s] = sm
+                del self.computing[u]
+                self.queue.delete(unique_id)
+                self.dumps()
 
 class SimpleModel():
     def __init__(self,

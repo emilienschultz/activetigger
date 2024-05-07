@@ -189,7 +189,7 @@ class Widget():
                                     ])
         #display(self.output)
         self.global_output.children = [self.output]
-        #display(self.global_output)
+        display(self.global_output)
 
     def __repr__(self):
         display(self.global_output)
@@ -246,27 +246,20 @@ class Widget():
                               layout=layout)
         load.style.button_color = 'lightgreen'
 
-        # WARNING : BUG dans VS Code sur l'upload donc utiliser un
-        # chemin
-        #file = widgets.FileUpload(
-        #    accept='.csv',
-        #    multiple=False
-        #)
-        #def on_upload_change(change):
-        #    print("chargé")
-        #    input_file = list(file.value.values())[0]
-        #    content = input_file['content']
-        #    content = io.StringIO(content.decode('utf-8'))
-        #    df = pd.read_csv(content)
-        #file.observe(on_upload_change, names='value')
-        # nom de la colonne texte
-        # nom de la colonne identifiant
-
         # second step of the panel
         #-------------------------
 
         # separator
         separate = widgets.HTML(value = "<hr>")
+
+        language = widgets.Dropdown(
+            options=["French","English","Spanish"],
+            description='Language:',
+            layout={'width': '200px'},
+            disabled=False)
+        dic_langage = {"French":"fr",
+                       "English":"en",
+                       "Spanish":"es"}
 
         # select columns
         column_text = widgets.Dropdown(
@@ -314,7 +307,8 @@ class Widget():
                     "col_label":column_label.value,
                     "cols_context": list(columns_context.value),
                     "n_train":n_train.value,
-                    "n_test":n_test.value
+                    "n_test":n_test.value, 
+                    "language":dic_langage[language.value]
                     }
             files = {'file': (file.value[0]["name"],
                               BytesIO(file.value[0]["content"]))}
@@ -335,18 +329,20 @@ class Widget():
         self.output = widgets.VBox([widgets.HBox([project_name, box_file, load])])
         
         def load_file(b):
-            #df = self._load_file(file.value)
             df = self._load_file(file)
+            if len(df)==0:
+                return False
             column_text.options = df.columns
             column_id.options = df.columns
             column_label.options = df.columns
             columns_context.options = df.columns
-            info.value = f"Size of the dataset: {len(df)}"
+            info.value = f"Size of the dataset: {len(df)}<br>Example of data : {dict(df.iloc[1])}"
             if len(df.columns)>1:
                 column_text.value = column_text.options[1]
                 column_id.value = column_id.options[0]
             if len(self.output.children) == 1:
                 self.output.children = list(self.output.children) + [separate,
+                                                                     language,
                                                                      info, 
                                                                      column_id,
                                                                      column_text,
