@@ -15,6 +15,7 @@ from streamlit_autorefresh import st_autorefresh
 
 # A faire
 # - plotly rescale : mettre en paramètre les éléments pour ne pas les reseter à chaque fois
+# - tester les téléchargements / cache / etc.
 
 
 URL_SERVER = "http://127.0.0.1:5000"
@@ -36,13 +37,17 @@ def main():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
     if 'page' not in st.session_state:
-            st.session_state['page'] = "Projects"
+        st.session_state['page'] = "Projects"
     st.session_state.state = _get_state()   
-    st.sidebar.write(datetime.datetime.now())
+    data_path = importlib.resources.files("activetigger")
+    image_path = "img/active_tigger.png"
+    img = open(data_path / image_path, 'rb').read()
+    st.sidebar.image(img)
+    #st.sidebar.write(datetime.datetime.now())
     # start the interface
     if not st.session_state['logged_in']:
         login_page()
-    if st.session_state['logged_in']:
+    else:
         st.sidebar.write(f"Current user: {st.session_state.user}")
         app_navigation()
 
@@ -65,7 +70,20 @@ def app_navigation():
     Select page
     """
     # creating the menu
-    st.sidebar.title("Menu")
+    #st.sidebar.title("Menu")
+    st.markdown("""
+    <style>.element-container:has(#button-red) + div button {
+    background-color: #ff4848;
+    }</style>""", unsafe_allow_html=True)
+    st.markdown("""
+    <style>.element-container:has(#button-green) + div button {
+    background-color: #65ff00;
+    }</style>""", unsafe_allow_html=True)
+    st.markdown("""
+    <style>.element-container:has(#button-blue) + div button {
+    background-color: #58afff;
+    }</style>""", unsafe_allow_html=True)
+
     options = ["Projects",
                "Schemes",
                "Features",
@@ -103,6 +121,7 @@ def projects():
     - select a project
     - create one
     """
+
     if not "new_project" in st.session_state:
         st.session_state.new_project = False
     r = _get("/server")
@@ -115,26 +134,28 @@ def projects():
         "Select existing projects:",
         existing)
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     # load a project
     with col1:
+        st.markdown('<span id="button-green"></span>', unsafe_allow_html=True)
         if st.button("Load"):
             st.session_state.current_project = option
             st.session_state.page = "Schemes"
             return None
-    
+
     # delete a project
     with col2:
+        st.markdown('<span id="button-red"></span>', unsafe_allow_html=True)
         if st.button("Delete"):
-            st.write(f"Deleting{option}")
+            #st.write(f"Deleting {option}")
             _delete_project(option)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-
     # create a project
-    if st.button("New project"):
-        st.session_state['new_project'] = True
+    with col3:
+        st.markdown('<span id="button-blue"></span>', unsafe_allow_html=True)
+        if st.button("New project"):
+            st.session_state['new_project'] = True
 
     # display the creation menu
     if st.session_state.get('new_project', True):
@@ -161,32 +182,20 @@ def projects():
             columns_context = st.multiselect("Context:",list(df.columns))
             n_train = st.number_input("N train", min_value=100, max_value=len(df),key="n_train")
             n_test = st.number_input("N test", min_value=100, max_value=len(df),key="n_test")
-
+            data = {
+                    "project_name": project_name,
+                    "user":st.session_state.user,
+                    "col_text": column_text,
+                    "col_id":column_id,
+                    "col_label":column_label,
+                    "cols_context": columns_context,
+                    "n_train":n_train,
+                    "n_test":n_test, 
+                    "language":dic_langage[language]
+                    }
             if st.button("Create"):
-                data = {
-                        "project_name": project_name,
-                        "user":st.session_state.user,
-                        "col_text": column_text,
-                        "col_id":column_id,
-                        "col_label":column_label,
-                        "cols_context": columns_context,
-                        "n_train":n_train,
-                        "n_test":n_test, 
-                        "language":dic_langage[language]
-                        }
-                print(data)
-                buffer = BytesIO()
-                df.to_csv(buffer)
-                buffer.seek(0)
-                files = {'file': (file.name, buffer)}
-                r = _post(route="/projects/new", 
-                         files=files,
-                         data=data
-                         )
-                print(r)
-                if r["status"] == "error":
-                    print(r["message"])
-                
+                _create_project(data, df, file.name)
+                st.session_state.new_project = False
     return None
 
 
@@ -194,6 +203,10 @@ def schemes():
     """
     Scheme page
     """
+    if not "current_project" in st.session_state:
+        st.write("Select a project first")
+        return
+
     st.title("Schemes")
     st.write("Interface to manage schemes & label")
     st.subheader("Schemes")
@@ -226,14 +239,15 @@ def schemes():
             _create_label(new_label)
 
     st.markdown("<hr>", unsafe_allow_html=True)
-    if st.button("Next step : compute features"):
-        if st.session_state.current_scheme is not None:
-            st.session_state.page = "Features"
 
 def features():
     """
     Feature page
     """
+    if not "current_project" in st.session_state:
+        st.write("Select a project first")
+        return
+
     st.title("Features")
     st.write("Interface to manage features.")
 
@@ -279,6 +293,10 @@ def annotate():
     """
     Annotate page
     """
+    if not "current_project" in st.session_state:
+        st.write("Select a project first")
+        return
+
     # default options
     mode_selection = st.session_state.state["next"]["methods_min"]
     mode_sample = st.session_state.state["next"]["sample"]
@@ -368,6 +386,10 @@ def description():
     """
     Description page
     """
+    if not "current_project" in st.session_state:
+        st.write("Select a project first")
+        return
+
     st.title("Description")
     st.subheader("Statistics")
     st.write("Description of the current data")
@@ -400,6 +422,10 @@ def simplemodels():
     """
     Simplemodel page
     """
+    if not "current_project" in st.session_state:
+        st.write("Select a project first")
+        return
+
     if not "computing_simplemodel" in st.session_state:
         st.session_state.computing_simplemodel = False
 
@@ -452,6 +478,9 @@ def bertmodels():
     Bertmodel page
     TODO : améliorer la présentation
     """
+    if not "current_project" in st.session_state:
+        st.write("Select a project first")
+        return
 
     st.title("Global model")
     st.write("Train, test and predict with final model") 
@@ -517,6 +546,10 @@ def export():
     """
     Export page
     """
+    if not "current_project" in st.session_state:
+        st.write("Select a project first")
+        return
+
     st.title("Export")
     st.write("Export your data and models") 
 
@@ -637,6 +670,23 @@ def _get_state() -> dict:
             return {}
         return state["data"]
     return {}
+
+def _create_project(data, df, name):
+    """
+    Create project
+    """
+    buffer = BytesIO()
+    df.to_csv(buffer)
+    buffer.seek(0)
+    files = {'file': (name, buffer)}
+    r = _post(route="/projects/new", 
+                files=files,
+                data=data
+                )
+    print("Retour", r)
+    if r["status"] == "error":
+        print(r["message"])
+    return True
 
 def _delete_project(project_name:str) -> dict:
     """
