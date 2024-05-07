@@ -13,12 +13,7 @@ import textwrap
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# A faire
-# - plotly rescale : mettre en paramètre les éléments pour ne pas les reseter à chaque fois
-# - tester les téléchargements / cache / etc.
-
-
-URL_SERVER = "http://127.0.0.1:5000"
+URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000
 count = st_autorefresh(interval=update_time, limit=None, key="fizzbuzzcounter")
 
@@ -27,7 +22,7 @@ if not "header" in st.session_state:
 if not "history" in st.session_state:
     st.session_state.history = []
 
-
+# TODO : stop plolty actualization
 
 # Interface organization
 #-----------------------
@@ -267,7 +262,7 @@ def features():
     
     params = ""
     if add_feature in st.session_state.state["features"]["options"]:
-        params = st.session_state.state["features"]["options"][add_feature]
+        params = json.dumps(st.session_state.state["features"]["options"][add_feature], indent=2)
         params = st.text_area(label="", value = params)
 
     if st.button("Compute feature"):
@@ -296,10 +291,13 @@ def annotate():
     if not "current_project" in st.session_state:
         st.write("Select a project first")
         return
-
-    # default options
-    mode_selection = st.session_state.state["next"]["methods_min"]
+    
+    mode_selection = st.session_state.state["next"]["methods_min"] # default options
+    if _is_simplemodel():
+        mode_selection = st.session_state.state["next"]["methods"]
     mode_sample = st.session_state.state["next"]["sample"]
+
+    # default element if not defined
     if "selection" not in st.session_state:
         st.session_state.selection = mode_selection[0]
     if "sample" not in st.session_state:
@@ -320,7 +318,10 @@ def annotate():
     with col2:
         st.selectbox(label="", options = mode_sample, key = "sample")
     with col3:
-        st.selectbox(label="", options = [], key = "tag")
+        tag_options = []
+        if st.session_state.selection == "maxprob":
+            tag_options = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+        st.selectbox(label="", options = tag_options, key = "tag")
     if st.button("Back"):
                 st.write("Back")
                 _get_previous_element()
@@ -334,6 +335,7 @@ def annotate():
             font-family: sans-serif;
             text-align: justify;
             margin: 10px;
+            min-height: 300px;
         ">
             {st.session_state.current_element["text"]}
         </div>
@@ -341,8 +343,8 @@ def annotate():
     """, unsafe_allow_html=True)
 
     labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    cols = st.columns(len(labels))
-    for col, label in zip(cols, labels):
+    cols = st.columns(len(labels)+1)
+    for col, label in zip(cols[:-1], labels):
         with col:
             if st.button(label):
                 _send_tag(label)
@@ -378,7 +380,8 @@ def annotate():
             r = _get_projection_data()
             if ("data" in r) and (type(r["data"]) is dict):
                 st.session_state.projection_data = pd.DataFrame(r["data"],)
-                st.session_state.projection_visualization = _plot_visualisation()
+                if not "projection_visualization" in st.session_state:
+                    st.session_state.projection_visualization = _plot_visualisation()
         if "projection_visualization" in st.session_state:
             st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)
 
@@ -461,8 +464,11 @@ def simplemodels():
     st.selectbox(label="Model", key = "sm_model", 
                  options = available_models, 
                  index = index)
-    if not params:
-        params = json.dumps(st.session_state.state["simplemodel"]["options"][st.session_state.sm_model],indent=2)
+    # display current params if same model else default params
+    params = json.dumps(st.session_state.state["simplemodel"]["options"][st.session_state.sm_model],indent=2)
+    sm = _get_simplemodel()
+    if sm and sm["name"]==st.session_state.sm_model:
+        params = json.dumps(sm["params"]) # current params
     st.text_area(label="", key = "sm_params", 
                  value=params)
     st.multiselect(label = "Features", key = "sm_features", 
@@ -471,7 +477,6 @@ def simplemodels():
     if st.button("Train"):
         st.write("Train model")
         _train_simplemodel()
-
 
 def bertmodels():
     """
@@ -1218,7 +1223,19 @@ def _export_model():
         return None
     return r
 
+def _is_simplemodel():
+    """
+    simplemodel trained for scheme/user
+    """
+    if st.session_state.user in st.session_state.state["simplemodel"]["available"]:
+        if st.session_state.current_scheme in st.session_state.state["simplemodel"]["available"][st.session_state.user]:
+            return True
+    return False
 
+def _get_simplemodel():
+    if _is_simplemodel():
+        return st.session_state.state["simplemodel"]["available"][st.session_state.user][st.session_state.current_scheme]
+    return None
 
 
 

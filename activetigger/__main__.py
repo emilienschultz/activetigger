@@ -2,13 +2,20 @@
 import uvicorn
 import argparse
 from pathlib import Path
+import subprocess
 
 if __name__ == "__main__":
+    """
+    Launch the service
+    - configurable streamlit endpoint
+    """
     parser = argparse.ArgumentParser(description="Run the PyActiveTigger API server.")
     parser.add_argument('-a', '--adress', type=str, default='0.0.0.0',
                         help='IP address the application will listen on. Default is "0.0.0.0".')
-    parser.add_argument('-p', '--port', type=int, default=8000,
-                        help='Port number the application will listen on. Default is 8000.')
+    parser.add_argument('-p', '--portapi', type=int, default=5000,
+                        help='Port number for the API. Default is 5000.')
+    parser.add_argument('-q', '--portfront', type=int, default=8000,
+                        help='Port number for the API. Default is 8000.')
     parser.add_argument('-c', '--config', type=str, default="./config.yaml",
                         help='Config file. Default is local directory.')
     args = parser.parse_args()
@@ -24,4 +31,8 @@ users:
         with open("./config.yaml","w") as f:
             f.write(content)
 
-    uvicorn.run("activetigger.api:app", host=args.adress, port=args.port, reload=True)
+    print('Start streamlit app')
+    process = subprocess.Popen(["python", "-m" "streamlit", "run", "activetigger/frontend.py",
+                      "--server.address",args.adress,"--server.port", str(args.portfront)])
+    print("Streamlit app launched")
+    uvicorn.run("activetigger.api:app", host=args.adress, port=args.portapi, reload=True)

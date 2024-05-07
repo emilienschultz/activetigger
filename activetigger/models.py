@@ -260,7 +260,7 @@ class BertModels():
         """
         Currently under training
         """
-        return {u:self.computing[u][0].name for u in self.computing if self.computing[u][0].status == "training"}
+        return {u:self.computing[u][0].name for u in self.computing}
 
     def delete(self, bert_name:str) -> dict:
         """
@@ -345,6 +345,7 @@ class BertModels():
 
         if not (self.path / name).exists():
             return {"error":"This model does not exist"}
+        
         b = BertModel(name, self.path / name)
         b.load()
         args = {"df":df, 
