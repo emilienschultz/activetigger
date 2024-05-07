@@ -1,4 +1,5 @@
-fastapi[all]
+spacy=3.7.4
+fastapi
 requests
 uvicorn
 pyyaml
@@ -15,7 +16,6 @@ transformers[torch]
 sentence_transformers
 typing-inspect
 typing_extensions
-spacy=3.7.4
 pyyaml
 protobuf
 python-jose[cryptography]
