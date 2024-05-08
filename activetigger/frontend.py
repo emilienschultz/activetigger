@@ -23,6 +23,9 @@ if not "history" in st.session_state:
     st.session_state.history = []
 
 # TODO : stop plolty actualization
+# TODO : display entropy
+# TODO : bug if loading no model
+# TODO : see the computational use ...
 
 # Interface organization
 #-----------------------

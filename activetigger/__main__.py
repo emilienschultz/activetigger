@@ -3,13 +3,30 @@ import uvicorn
 import argparse
 from pathlib import Path
 import subprocess
+import importlib.util
+
+def get_streamlit_path():
+    """
+    Look for path
+    """
+    if Path("./activetigger/frontend.py").exists():
+        return "./activetigger/frontend.py"
+    lib = importlib.util.find_spec("activetigger")
+    if lib:
+        path = lib.origin.replace("/__init__.py","frontend.py")
+        if Path(path).exists():
+            return path
+    return None
 
 if __name__ == "__main__":
     """
     Launch the service
-    - configurable streamlit endpoint
+    - launch FASTAPI backend
+    - launch Streamlit app
     """
-    parser = argparse.ArgumentParser(description="Run the PyActiveTigger API server.")
+    parser = argparse.ArgumentParser(description="Run pyActiveTigger")
+    parser.add_argument('-s', '--server', type=bool, default=False,
+                        help='Server only (FASTAPI). Default is False.')
     parser.add_argument('-a', '--adress', type=str, default='0.0.0.0',
                         help='IP address the application will listen on. Default is "0.0.0.0".')
     parser.add_argument('-p', '--portapi', type=int, default=5000,
@@ -31,8 +48,16 @@ users:
         with open("./config.yaml","w") as f:
             f.write(content)
 
-    print('Start streamlit app')
-    process = subprocess.Popen(["python", "-m" "streamlit", "run", "activetigger/frontend.py",
-                      "--server.address",args.adress,"--server.port", str(args.portfront)])
+    # launch streamlit app
+    if not args.server:
+        print('Start streamlit app')
+        path = get_streamlit_path()
+        if path is None:
+            print("Error finding the streamlit app")
+        else:
+            process = subprocess.Popen(["python", "-m" "streamlit", "run", path,
+                        "--server.address",args.adress,"--server.port", str(args.portfront)])
+        
+    # launch fastapi app
     print("Streamlit app launched")
     uvicorn.run("activetigger.api:app", host=args.adress, port=args.portapi, reload=True)
