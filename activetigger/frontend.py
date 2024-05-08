@@ -22,10 +22,8 @@ if not "header" in st.session_state:
 if not "history" in st.session_state:
     st.session_state.history = []
 
-# TODO : stop plolty actualization
-# TODO : display entropy
-# TODO : bug if loading no model
 # TODO : see the computational use ...
+# TODO : windows of selection -> need to move to Dash ?
 
 # Interface organization
 #-----------------------
@@ -209,13 +207,13 @@ def schemes():
     st.write("Interface to manage schemes & label")
     st.subheader("Schemes")
     options_schemes = list(st.session_state.state["schemes"]["available"].keys())
-    scheme = st.selectbox(label="Current scheme:", options = options_schemes, index=0, placeholder="Select a scheme")
+    scheme = st.selectbox("Current scheme:", options = options_schemes, index=0, placeholder="Select a scheme")
     st.session_state.current_scheme = scheme # select scheme
     if st.button("Delete scheme"):
         if scheme is not None:
             st.write(f"Deleting scheme {scheme}")
             _delete_scheme(scheme)
-    new_scheme = st.text_input(label="", placeholder="New scheme name")
+    new_scheme = st.text_input(label="New scheme", placeholder="New scheme name", label_visibility="hidden")
     if st.button("Create scheme"):
         if new_scheme is not None:
             st.write(f"Creating scheme {new_scheme}")
@@ -225,12 +223,13 @@ def schemes():
     options_labels = []
     if st.session_state.current_scheme is not None:
         options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    label = st.selectbox(label="",options = options_labels, index=None, placeholder="Select a label")
+    label = st.selectbox(label="Label",options = options_labels, index=None, 
+                         placeholder="Select a label", label_visibility="hidden")
     if st.button("Delete label"):
         if label is not None:
             st.write(f"Deleting label {label}")
             _delete_label(label)
-    new_label = st.text_input(label="", placeholder="New label name")
+    new_label = st.text_input(label="New label", placeholder="New label name", label_visibility="hidden")
     if st.button("Create label"):
         if new_label is not None:
             st.write(f"Creating label {new_label}")
@@ -266,7 +265,7 @@ def features():
     params = ""
     if add_feature in st.session_state.state["features"]["options"]:
         params = json.dumps(st.session_state.state["features"]["options"][add_feature], indent=2)
-        params = st.text_area(label="", value = params)
+        params = st.text_area(label="Parameters", value = params, label_visibility="hidden")
 
     if st.button("Compute feature"):
         if add_feature is not None:
@@ -276,7 +275,7 @@ def features():
     st.markdown("<hr>", unsafe_allow_html=True)
 
     st.subheader("Add regex")
-    regex = st.text_input(label="", placeholder="Write your regex")
+    regex = st.text_input(label="Regex", placeholder="Write your regex", label_visibility="hidden")
     if st.button("Create regex"):
         if regex is not None:
             st.write(f"Computing regex {regex}")
@@ -317,19 +316,20 @@ def annotate():
     st.write("Interface to annotate data.")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.selectbox(label="", options = mode_selection, key = "selection")
+        st.selectbox(label="Selection", options = mode_selection, key = "selection", label_visibility="hidden")
     with col2:
-        st.selectbox(label="", options = mode_sample, key = "sample")
+        st.selectbox(label="Sample", options = mode_sample, key = "sample", label_visibility="hidden")
     with col3:
         tag_options = []
         if st.session_state.selection == "maxprob":
             tag_options = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-        st.selectbox(label="", options = tag_options, key = "tag")
+        st.selectbox(label="Tag", options = tag_options, key = "tag", label_visibility="hidden")
     if st.button("Back"):
                 st.write("Back")
                 _get_previous_element()
     st.markdown(f"""
         <div>{st.session_state.current_element["predict"]}</div>
+        <div>{st.session_state.current_element['info']}</div>
         <div style="
             border: 2px solid #4CAF50;
             padding: 10px;
@@ -369,9 +369,9 @@ def annotate():
         st.selectbox(label="Method", 
                      options = list(st.session_state.state["projections"]["available"].keys()), 
                      key = "projection_method")
-        st.text_area(label="", 
+        st.text_area(label="Parameters", 
                      value=json.dumps(st.session_state.state["projections"]["available"]["umap"], indent=2),
-                     key = "projection_params")
+                     key = "projection_params", label_visibility="hidden")
         st.multiselect(label="Features", options=st.session_state.state["features"]["available"],
                        key = "projection_features")
         if st.button("Compute"):
@@ -385,8 +385,10 @@ def annotate():
                 st.session_state.projection_data = pd.DataFrame(r["data"],)
                 if not "projection_visualization" in st.session_state:
                     st.session_state.projection_visualization = _plot_visualisation()
+                    st.session_state.projection_visualization.update_layout({"uirevision": "foo"}, overwrite=True)
+
         if "projection_visualization" in st.session_state:
-            st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)
+            st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
 
 def description():
     """
@@ -472,8 +474,8 @@ def simplemodels():
     sm = _get_simplemodel()
     if sm and sm["name"]==st.session_state.sm_model:
         params = json.dumps(sm["params"]) # current params
-    st.text_area(label="", key = "sm_params", 
-                 value=params)
+    st.text_area(label="Parameters", key = "sm_params", 
+                 value=params, label_visibility="hidden")
     st.multiselect(label = "Features", key = "sm_features", 
                    options=list(st.session_state.state["features"]["available"]))
     st.slider(label="Training frequency", min_value=5, max_value=100, step=1, key="sm_freq")
@@ -504,7 +506,7 @@ def bertmodels():
     available_bert = []
     if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
         available_bert = list(st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme].keys())
-    st.selectbox(label="", options = available_bert, key = "bm_trained")
+    st.selectbox(label="BertModels", options = available_bert, key = "bm_trained", label_visibility="hidden")
 
     col1, col2, col3 = st.columns(3)
 
@@ -573,7 +575,8 @@ def export():
     st.subheader("Features")
     col1, col2 = st.columns((5,5))
     with col1:
-        st.multiselect(label="", options=st.session_state.state["features"]["available"], key="export_features")
+        st.multiselect(label="Export features", options=st.session_state.state["features"]["available"],
+                        key="export_features", label_visibility="hidden")
 
     if st.session_state.export_features:
         st.download_button(label="Download", 
@@ -590,7 +593,8 @@ def export():
     
     col1, col2 = st.columns((5,10))
     with col1:
-        st.selectbox(label="", options=available, key="bert_model", index=None, placeholder="Choose a model")
+        st.selectbox(label="Bert Model", options=available, key="bert_model", 
+                     index=None, placeholder="Choose a model", label_visibility="hidden")
 
     if st.session_state.bert_model:
         st.download_button(label="Download model", 
