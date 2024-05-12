@@ -186,6 +186,18 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]
     r = ResponseModel(statut="success", data=current_user)
     return r
 
+@app.get("/users", dependencies=[Depends(verified_user)])
+async def existing_users() -> ResponseModel:
+    """
+    Get users information
+    TODO : users to specific projects ?
+    """
+    data = {
+        "users":server.existing_users()
+        }
+    r = ResponseModel(status="success", data=data)
+    return r
+
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(username:str = Query(),
                       password:str = Query(),
@@ -206,6 +218,7 @@ async def delete_user(username:str = Query()) -> ResponseModel:
     Delete user
     """
     r = server.delete_user(username)
+    print(r)
     if "success" in r:
         r = ResponseModel(status="success", message=r["success"])
     else:

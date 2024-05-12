@@ -23,7 +23,7 @@ if not "history" in st.session_state:
     st.session_state.history = []
 
 # TODO : see the computational use ...
-# TODO : windows of selection -> need to move to Dash ?
+# TODO : windows of selection -> need to move to Dash
 
 # Interface organization
 #-----------------------
@@ -88,6 +88,12 @@ def app_navigation():
                "Active Model",
                "Global Model",
                "Export"]
+    
+    # add user management
+    if st.session_state.user == "root":
+        options = ["Configuration"] + options
+
+
     st.session_state['page'] = st.sidebar.radio("Navigate", 
                                                 options, 
                                                 key="menu", 
@@ -110,6 +116,34 @@ def app_navigation():
         bertmodels()
     elif st.session_state['page'] == "Export":
         export()
+    elif st.session_state['page'] == "Configuration":
+        configuration()
+
+def configuration():
+    st.title("Configuration")
+    st.subheader("User management")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        existing_users = _get_users()
+        users = st.selectbox("Existing users:",existing_users)
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Delete"):
+            _delete_user(users)
+            st.write("Delete user")
+
+    st.write("Add user")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        new_user = st.text_input("New user")
+    with col2:
+        new_password = st.text_input("Password")
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Create"):
+            _create_user(new_user, new_password)
+            st.write("Create user")
 
 def projects():
     """
@@ -682,6 +716,44 @@ def _get_state() -> dict:
             return {}
         return state["data"]
     return {}
+
+
+def _get_users():
+    """
+    Get existing users
+    """
+    r = _get(route="/users")
+    return r["data"]["users"]
+
+def _create_user(username:str, password:str):
+    """
+    Create user
+    """
+    params = {"username":username,
+              "password":password, 
+              "projects":"all"}
+    r = _post(route="/users/create", 
+                params=params
+                )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return r
+
+def _delete_user(username:str):
+    """
+    Delete user
+    """
+    params = {"username":username}
+    r = _post(route="/users/delete", 
+                params=params
+                )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return r    
 
 def _create_project(data, df, name):
     """

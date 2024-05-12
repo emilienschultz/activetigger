@@ -142,16 +142,29 @@ class Server():
         self.projects: dict = {}
         self.queue = Queue(self.n_workers, self.path)
 
-        # update users from YAML config file
-        existing = self.existing_users()
-        current = config["users"]
-        if current is not None:
-            for u in current:
-                if not u in existing:
-                    self.add_user(u, current[u])
-            for u in existing:
-                if (not u in current) and u != self.default_user:
-                    self.delete_user(u)
+        # add users if add_users.yaml exists
+        if Path("add_users.yaml").exists():
+            existing = self.existing_users()
+            with open('add_users.yaml') as f:
+                add_users = yaml.safe_load(f)
+            for user,password in add_users.items():
+                if not user in existing:
+                    self.add_user(user, password)
+                else:
+                    print(f"Not possible to add {user}, already exists")
+            # rename the file
+            os.rename('add_users.yaml', 'add_users_processed.yaml')
+
+        #existing = self.existing_users()
+        #current = config["users"]
+        # only creating users in the config file
+        #if current is not None:
+        #    for u in current:
+        #        if not u in existing:
+        #            self.add_user(u, current[u])
+            #for u in existing:
+            #    if (not u in current) and u != self.default_user:
+            #        self.delete_user(u)
 
         # starting time
         self.starting_time = time.time()
@@ -352,6 +365,7 @@ class Server():
         cursor = conn.cursor()
         query = "DELETE FROM users WHERE user = ?"
         cursor.execute(query, (name,))
+        conn.commit()
         conn.close()
         return {"success":"User deleted"}    
     
