@@ -81,12 +81,11 @@ def app_navigation():
     }</style>""", unsafe_allow_html=True)
 
     options = ["Projects",
-               "Schemes",
-               "Features",
                "Annotate",
                "Description",
                "Active Model",
                "Global Model",
+               "Test Model",
                "Export"]
     
     # add user management
@@ -102,10 +101,6 @@ def app_navigation():
     # navigating
     if st.session_state['page'] == "Projects":
         projects()
-    elif st.session_state['page'] == "Schemes":
-        schemes()
-    elif st.session_state['page'] == "Features":
-        features()
     elif st.session_state['page'] == "Annotate":
         annotate()
     elif st.session_state['page'] == "Description":
@@ -114,36 +109,12 @@ def app_navigation():
         simplemodels()
     elif st.session_state['page'] == "Global Model":
         bertmodels()
+    elif st.session_state['page'] == "Test Model":
+        test_model()
     elif st.session_state['page'] == "Export":
         export()
     elif st.session_state['page'] == "Configuration":
         configuration()
-
-def configuration():
-    st.title("Configuration")
-    st.subheader("User management")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        existing_users = _get_users()
-        users = st.selectbox("Existing users:",existing_users)
-    with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Delete"):
-            _delete_user(users)
-            st.write("Delete user")
-
-    st.write("Add user")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        new_user = st.text_input("New user")
-    with col2:
-        new_password = st.text_input("Password")
-    with col3:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Create"):
-            _create_user(new_user, new_password)
-            st.write("Create user")
 
 def projects():
     """
@@ -171,7 +142,7 @@ def projects():
         st.markdown('<span id="button-green"></span>', unsafe_allow_html=True)
         if st.button("Load"):
             st.session_state.current_project = option
-            st.session_state.page = "Schemes"
+            #st.session_state.page = "Schemes"
             return None
 
     # delete a project
@@ -187,7 +158,7 @@ def projects():
         if st.button("New project"):
             st.session_state['new_project'] = True
 
-    # display the creation menu
+    # display the creation menu if create a project
     if st.session_state.get('new_project', True):
         project_name = st.text_input("Project name", value="")
         dic_langage = {"French":"fr",
@@ -211,7 +182,8 @@ def projects():
             column_label = st.selectbox("Labels:",list(df.columns))
             columns_context = st.multiselect("Context:",list(df.columns))
             n_train = st.number_input("N train", min_value=100, max_value=len(df),key="n_train")
-            n_test = st.number_input("N test", min_value=100, max_value=len(df),key="n_test")
+            n_test = st.number_input("N test (0 if no test set)", min_value=0, max_value=len(df),key="n_test")
+            cols_test = st.multiselect("Stratify by", list(df.columns))
             data = {
                     "project_name": project_name,
                     "user":st.session_state.user,
@@ -221,55 +193,45 @@ def projects():
                     "cols_context": columns_context,
                     "n_train":n_train,
                     "n_test":n_test, 
+                    "cols_test":cols_test,
                     "language":dic_langage[language]
                     }
             if st.button("Create"):
                 _create_project(data, df, file.name)
                 st.session_state.new_project = False
+
+    # display the scheme menu if project loaded
+    
+
+    if "current_project" in st.session_state:
+        with st.expander("Manage schemes"):
+            st.markdown("<hr>", unsafe_allow_html=True)
+            options_schemes = list(st.session_state.state["schemes"]["available"].keys())
+            col1, col2 = st.columns(2)
+            with col1:
+                scheme = st.selectbox("Select scheme to use:", options = options_schemes, index=0, placeholder="Select a scheme")
+                st.session_state.current_scheme = scheme
+            with col2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("Delete scheme"):
+                    if scheme is not None:
+                        st.write(f"Deleting scheme {scheme}")
+                        _delete_scheme(scheme)
+            col1, col2 = st.columns(2)
+            with col1:
+                new_scheme = st.text_input(label="New scheme", placeholder="New scheme name", label_visibility="hidden")
+            with col2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("Create scheme"):
+                    if new_scheme is not None:
+                        st.write(f"Creating scheme {new_scheme}")
+                        _create_scheme(new_scheme)
+
+    with st.expander("Manage features"):
+        features()
+    
     return None
 
-
-def schemes():
-    """
-    Scheme page
-    """
-    if not "current_project" in st.session_state:
-        st.write("Select a project first")
-        return
-
-    st.title("Schemes")
-    st.write("Interface to manage schemes & label")
-    st.subheader("Schemes")
-    options_schemes = list(st.session_state.state["schemes"]["available"].keys())
-    scheme = st.selectbox("Current scheme:", options = options_schemes, index=0, placeholder="Select a scheme")
-    st.session_state.current_scheme = scheme # select scheme
-    if st.button("Delete scheme"):
-        if scheme is not None:
-            st.write(f"Deleting scheme {scheme}")
-            _delete_scheme(scheme)
-    new_scheme = st.text_input(label="New scheme", placeholder="New scheme name", label_visibility="hidden")
-    if st.button("Create scheme"):
-        if new_scheme is not None:
-            st.write(f"Creating scheme {new_scheme}")
-            _create_scheme(new_scheme)
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.subheader("Labels")
-    options_labels = []
-    if st.session_state.current_scheme is not None:
-        options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    label = st.selectbox(label="Label",options = options_labels, index=None, 
-                         placeholder="Select a label", label_visibility="hidden")
-    if st.button("Delete label"):
-        if label is not None:
-            st.write(f"Deleting label {label}")
-            _delete_label(label)
-    new_label = st.text_input(label="New label", placeholder="New label name", label_visibility="hidden")
-    if st.button("Create label"):
-        if new_label is not None:
-            st.write(f"Creating label {new_label}")
-            _create_label(new_label)
-
-    st.markdown("<hr>", unsafe_allow_html=True)
 
 def features():
     """
@@ -279,8 +241,8 @@ def features():
         st.write("Select a project first")
         return
 
-    st.title("Features")
-    st.write("Interface to manage features.")
+    #st.title("Features")
+    st.write("Manage features")
 
     c = st.session_state.state["features"]["training"]
     if not len(c) == 0:
@@ -327,7 +289,8 @@ def annotate():
     if not "current_project" in st.session_state:
         st.write("Select a project first")
         return
-    
+
+
     mode_selection = st.session_state.state["next"]["methods_min"] # default options
     if _is_simplemodel():
         mode_selection = st.session_state.state["next"]["methods"]
@@ -387,6 +350,29 @@ def annotate():
                 _send_tag(label)
                 _get_next_element()
 
+    #st.subheader("Manage labels")
+    col1, col2 = st.columns(2)
+    options_labels = []
+    options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    with col1:
+        new_label = st.text_input(label="New label", placeholder="New label name", label_visibility="hidden")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Create label"):
+            if new_label is not None:
+                st.write(f"Creating label {new_label}")
+                _create_label(new_label)
+    with col1:
+        label = st.selectbox(label="Label",options = options_labels, index=None, 
+                            placeholder="Select a label", label_visibility="hidden")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Delete label"):
+            if label is not None:
+                st.write(f"Deleting label {label}")
+                _delete_label(label)
+    col1, col2 = st.columns(2)
+
     st.markdown("<hr>", unsafe_allow_html=True)
 
     # managing projection display
@@ -423,6 +409,9 @@ def annotate():
 
         if "projection_visualization" in st.session_state:
             st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
+
+
+
 
 def description():
     """
@@ -640,6 +629,44 @@ def export():
                            data=_export_predictions(), 
                            file_name=f"predictions.{st.session_state.export_format}")
 
+def configuration():
+    """
+    Configuration panel
+    - User creation
+    """
+    st.title("Configuration")
+    st.subheader("User management")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        existing_users = _get_users()
+        users = st.selectbox("Existing users:",existing_users)
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Delete"):
+            _delete_user()
+            st.write("Delete user")
+
+    st.write("Add user")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        new_user = st.text_input("New user")
+    with col2:
+        new_password = st.text_input("Password")
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Create"):
+            _create_user(new_user, new_password)
+            st.write("Create user")
+
+def test_model():
+    """
+    Test annotation interface
+    """
+    st.title("Test the model")
+
+    # si un fichier de test existe, l'utiliser
+    # sinon proposer de charger un fichier de test
 
 # Internal functions
 # ------------------

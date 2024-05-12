@@ -20,7 +20,9 @@ class ProjectModel(BaseModel):
     default_scheme: list = []
     language:str = "fr"
     col_label:str|None = None # TODO: load existing tags
-    cols_context:list = [] # TODO: select variable to keep
+    cols_context:list = []
+    cols_test:list = []
+
 
 class Action(str, Enum):
     delete = "delete"

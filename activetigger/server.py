@@ -471,26 +471,67 @@ class Server():
         # TODO : maximise the aleardy tagged in the annotate dataset, and None in the test
         # if possible, annotated data in the annotation dataset
         # if possible, test data without annotation
+        # if n_test = 0, no test set
+        # stratified if possible by cols_test
 
-        # random sample of the needed data
-        n_rows = params.n_train + params.n_test
+        # Step 1 : load all data and index to str
         content = pd.read_csv(params.dir / "data_raw.csv")
-        content = content.sample(n_rows)
         content = content.set_index(params.col_id)
         content.index = [str(i) for i in list(content.index)] #type: ignore
+        if len(content) < params.n_test + params.n_train:
+            return {"error":f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"}
+        # TODO : drop duplicates ?
+
+        # Step 2 : test dataset, no already labelled data, random + stratification
+        rows_test = []
+        if params.n_test != 0:
+            # only on non labelled data
+            f = content[params.col_label].isna()
+            if (f.sum()) < params.n_test:
+                return {"error":"Not enought data for creating the test dataset"}
+            if len(params.cols_test) == 0: # if no stratification
+                testset = content[f].sample(params.n_test)
+            else: #if stratification, total cat, number of element per cat, sample with a lim
+                df_grouped = content[f].groupby(params.col_label, group_keys=False)
+                nb_cat = len(df_grouped)
+                nb_elements_cat = round(params.n_test/nb_cat)
+                testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
+            testset.to_parquet(params.dir / self.test_file, index=True)
+            rows_test = list(testset.index)
+        
+        # Step 3 : train dataset, remove test rows, prioritize labelled data
+        content = content.drop(rows_test)
+        f_notna = content[params.col_label].notna()
+        f_na = content[params.col_label].isna()
+        if f_notna.sum()>params.n_train: # case where there is more labelled data than needed
+            trainset = content[f_notna].sample(params.n_train)
+        else:
+            n_train_random = params.n_train - f_notna.sum() # number of element to pick
+            trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
+
+        trainset.to_parquet(params.dir / self.data_file, index=True)
+        trainset[[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
+        trainset.to_parquet(params.dir / self.features_file, index=True)
+
+        # random sample of the needed data
+        # n_rows = params.n_train + params.n_test
+        # content = pd.read_csv(params.dir / "data_raw.csv")
+        # content = content.sample(n_rows)
+        # content = content.set_index(params.col_id)
+        # content.index = [str(i) for i in list(content.index)] #type: ignore
     
         # create the empty annotated file / features file
         # Put the id column as index for the rest of the treatment
-        content[0:params.n_train].to_parquet(params.dir / self.data_file, index=True)
-        content[params.n_train:].to_parquet(params.dir / self.test_file, index=True)
+        # content[0:params.n_train].to_parquet(params.dir / self.data_file, index=True)
+        # content[params.n_train:].to_parquet(params.dir / self.test_file, index=True)
         # only for the training set for the moment
         # keep the text and the context available
-        content[0:params.n_train][[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
-        content[0:params.n_train][[]].to_parquet(params.dir / self.features_file, index=True)
+        # content[0:params.n_train][[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
+        # content[0:params.n_train][[]].to_parquet(params.dir / self.features_file, index=True)
 
         # if the case, add labels in the database
-        if (not params.col_label is None) and (params.col_label in content.columns):
-            df = content[params.col_label].dropna()
+        if (not params.col_label is None) and (params.col_label in trainset.columns):
+            df = trainset[params.col_label].dropna()
             params.default_scheme = list(df.unique())
             # add the scheme in the database
             conn = sqlite3.connect(self.db)
