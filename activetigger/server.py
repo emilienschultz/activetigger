@@ -484,6 +484,7 @@ class Server():
 
         # Step 2 : test dataset, no already labelled data, random + stratification
         rows_test = []
+        params.test = False
         if params.n_test != 0:
             # only on non labelled data
             f = content[params.col_label].isna()
@@ -497,6 +498,7 @@ class Server():
                 nb_elements_cat = round(params.n_test/nb_cat)
                 testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
             testset.to_parquet(params.dir / self.test_file, index=True)
+            params.test = True
             rows_test = list(testset.index)
         
         # Step 3 : train dataset, remove test rows, prioritize labelled data
@@ -511,7 +513,7 @@ class Server():
 
         trainset.to_parquet(params.dir / self.data_file, index=True)
         trainset[[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
-        trainset.to_parquet(params.dir / self.features_file, index=True)
+        trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
         # random sample of the needed data
         # n_rows = params.n_train + params.n_test
@@ -694,6 +696,7 @@ class Project(Server):
                  sample:str = "untagged",
                  user:str = "user",
                  tag:None|str = None,
+                 history:list = [],
                  frame:None|list = None) -> dict:
         """
         Get next item for a specific scheme with a specific method
@@ -703,7 +706,7 @@ class Project(Server):
         - maxprob
         - test
         """
-
+        print("history",history)
         # specific case of test, random element
         if selection == "test": 
             df = self.schemes.get_scheme_data(scheme, complete=True, kind="test")
@@ -749,10 +752,10 @@ class Project(Server):
 
         # select type of selection
         if selection == "deterministic": # next row
-            element_id = df[f].index[0]
+            element_id = df[f].drop(history, errors="ignore").index[0]
             indicator = None
         if selection == "random": # random row
-            element_id = df[f].sample(random_state=42).index[0]
+            element_id = df[f].drop(history, errors="ignore").sample(random_state=42).index[0]
             indicator = None
         if selection == "maxprob": # higher prob, only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
@@ -761,14 +764,16 @@ class Project(Server):
                 return {"error":"Select a tag"}
             sm = self.simplemodels.get_model(user, scheme) # get model
             proba = sm.proba.reindex(f.index)
-            element_id = proba[f][tag].sort_values(ascending=False).index[0] # get max proba id
+            # use the history to not send already tagged data
+            element_id = proba[f][tag].drop(history, errors="ignore").sort_values(ascending=False).index[0] # get max proba id
             indicator = f"probability: {round(proba.loc[element_id,tag],2)}"
         if selection == "active": #higher entropy, only possible if the model has been trained
             if not self.simplemodels.exists(user,scheme):
                 return  {"error":"Simplemodel doesn't exist"}
             sm = self.simplemodels.get_model(user, scheme) # get model
             proba = sm.proba.reindex(f.index)
-            element_id = proba[f]["entropy"].sort_values(ascending=False).index[0] # get max entropy id
+            # use the history to not send already tagged data
+            element_id = proba[f]["entropy"].drop(history, errors="ignore").sort_values(ascending=False).index[0] # get max entropy id
             indicator = round(proba.loc[element_id,'entropy'],2)
             indicator = f"entropy: {indicator}"
         
@@ -818,8 +823,12 @@ class Project(Server):
             "text":self.content.loc[element_id,self.params.col_text],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":"request",
-            "predict":predict
+            "predict":predict,
+            "info":"get specific",
+            "frame":None
             }
+        
+
         return r
 
     def get_params(self) -> ProjectModel:
@@ -864,8 +873,8 @@ class Project(Server):
         r = {
             "params":self.params,
             "next":{
-                    "methods_min":["deterministic","random","test"],
-                    "methods":["deterministic","random","maxprob","active","test"],
+                    "methods_min":["deterministic","random"],
+                    "methods":["deterministic","random","maxprob","active"],
                     "sample":["untagged","all","tagged"],
                     },
             "schemes":{

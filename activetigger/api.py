@@ -14,7 +14,7 @@ from activetigger.server import Server, Project
 import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
       SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
-      UmapParams, TsneParams
+      UmapParams, TsneParams, NextModel
 
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
@@ -354,28 +354,51 @@ async def delete_project(username: Annotated[str, Header()],
 # Annotation management
 #----------------------
 
-@app.get("/elements/next", dependencies=[Depends(verified_user)])
+# @app.get("/elements/next", dependencies=[Depends(verified_user)])
+# async def get_next(project: Annotated[Project, Depends(get_project)],
+#                    username: Annotated[str, Header()],
+#                    scheme:str,
+#                    selection:str = "deterministic",
+#                    sample:str = "untagged",
+#                    tag:str|None = None,
+#                    history:list = [],
+#                    frame:list[float]|None = Query(None)) -> ResponseModel:
+#     """
+#     Get next element
+#     """
+#     r = project.get_next(
+#                         scheme = scheme,
+#                         selection = selection,
+#                         sample = sample,
+#                         user = username,
+#                         tag = tag,
+#                         history=history,
+#                         frame = frame
+#                         )
+#     if "error" in r:
+#         return ResponseModel(status="error", message=r["error"])
+#     return ResponseModel(status="success", data = r)
+
+@app.post("/elements/next", dependencies=[Depends(verified_user)])
 async def get_next(project: Annotated[Project, Depends(get_project)],
                    username: Annotated[str, Header()],
-                   scheme:str,
-                   selection:str = "deterministic",
-                   sample:str = "untagged",
-                   tag:str|None = None,
-                   frame:list[float]|None = Query(None)) -> ResponseModel:
+                   next:NextModel ) -> ResponseModel:
     """
     Get next element
     """
     r = project.get_next(
-                        scheme = scheme,
-                        selection = selection,
-                        sample = sample,
+                        scheme = next.scheme,
+                        selection = next.selection,
+                        sample = next.sample,
                         user = username,
-                        tag = tag,
-                        frame = frame
+                        tag = next.tag,
+                        history=next.history,
+                        frame = next.frame
                         )
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", data = r)
+
 
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(project: Annotated[Project, Depends(get_project)],

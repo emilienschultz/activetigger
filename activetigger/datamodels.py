@@ -22,6 +22,7 @@ class ProjectModel(BaseModel):
     col_label:str|None = None # TODO: load existing tags
     cols_context:list = []
     cols_test:list = []
+    test: bool = False
 
 
 class Action(str, Enum):
@@ -36,12 +37,12 @@ class Scheme(BaseModel):
     labels:list[str]
 
 class NextModel(BaseModel):
-    """
-    Request of an element
-    """
-    scheme:str = "default"
-    mode:str = "deterministic"
-    on:str|None = "untagged"
+    scheme:str
+    selection:str = "deterministic"
+    sample:str = "untagged"
+    tag:str|None = None
+    frame:list[float]|None = None
+    history: list = []
 
 class SchemesModel(BaseModel):
     """

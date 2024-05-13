@@ -392,6 +392,9 @@ class BertModels():
         model (str): model to use
         params (dict) : training parameters
         test_size (dict): train/test distribution
+
+        TODO : add possibility to check models from HF
+
         """
 
         # pour le moment fichier status.log existe tant que l'entrainement est en cours

@@ -49,6 +49,7 @@ class Widget():
         Widget.async_update = False
         print("Widget closed")
 
+
     def _post(self,
              route:str, 
              params:dict|None = None, 
@@ -687,6 +688,23 @@ class Widget():
         self.update_tab_schemes()
         return r
     
+    def create_label(self, text_field):
+        """
+        Create label in a scheme
+        """
+        label = text_field.value
+        if label == "":
+            return "Empty"
+        params = {"project_name":self.project_name,
+                  "scheme":self.select_scheme.value,
+                  "label":label,
+                  "user":self.user}
+        r = self._post("/schemes/label/add", 
+                       params = params)
+        self.update_tab_schemes()
+        text_field.value = ""
+        return r
+    
     def delete_scheme(self, s):
         """
         Delete scheme
@@ -734,22 +752,7 @@ class Widget():
         self.update_tab_bertmodels()
         return r
 
-    def create_label(self, text_field):
-        """
-        Create label in a scheme
-        """
-        label = text_field.value
-        if label == "":
-            return "Empty"
-        params = {"project_name":self.project_name,
-                  "scheme":self.select_scheme.value,
-                  "label":label,
-                  "user":self.user}
-        r = self._post("/schemes/label/add", 
-                       params = params)
-        self.update_tab_schemes()
-        text_field.value = ""
-        return r
+
     
     def create_simplemodel(self, 
                            scheme:str, 

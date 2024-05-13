@@ -97,6 +97,11 @@ def app_navigation():
                                                 options, 
                                                 key="menu", 
                                                 index = options.index(st.session_state['page']))
+    
+    with st.sidebar:
+        if st.button("Projects"):
+            st.session_state['page'] == "Projects"
+
 
     # navigating
     if st.session_state['page'] == "Projects":
@@ -141,7 +146,8 @@ def projects():
     with col1:
         st.markdown('<span id="button-green"></span>', unsafe_allow_html=True)
         if st.button("Load"):
-            st.session_state.current_project = option
+            if option:
+                st.session_state.current_project = option
             #st.session_state.page = "Schemes"
             return None
 
@@ -290,8 +296,8 @@ def annotate():
         st.write("Select a project first")
         return
 
-
-    mode_selection = st.session_state.state["next"]["methods_min"] # default options
+    # configure menu
+    mode_selection = st.session_state.state["next"]["methods_min"]
     if _is_simplemodel():
         mode_selection = st.session_state.state["next"]["methods"]
     mode_sample = st.session_state.state["next"]["sample"]
@@ -305,13 +311,14 @@ def annotate():
         st.session_state.tag = None
         
     # get next element with the current options
-    if "current_element" not in st.session_state:
+    if not "current_element" in st.session_state:
         _get_next_element()
+#        st.session_state.current_element = None
 
     # display page
-    st.title("Annotate")
-    st.write("Interface to annotate data.")
-    col1, col2, col3 = st.columns(3)
+    st.title("Annotate data")
+    st.write("Current history (reload to reset):", len(st.session_state.history))
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.selectbox(label="Selection", options = mode_selection, key = "selection", label_visibility="hidden")
     with col2:
@@ -321,71 +328,55 @@ def annotate():
         if st.session_state.selection == "maxprob":
             tag_options = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
         st.selectbox(label="Tag", options = tag_options, key = "tag", label_visibility="hidden")
-    if st.button("Back"):
-                st.write("Back")
-                _get_previous_element()
-    st.markdown(f"""
-        <div>{st.session_state.current_element["predict"]}</div>
-        <div>{st.session_state.current_element['info']}</div>
-        <div style="
-            border: 2px solid #4CAF50;
-            padding: 10px;
-            border-radius: 5px;
-            color: #4CAF50;
-            font-family: sans-serif;
-            text-align: justify;
-            margin: 10px;
-            min-height: 300px;
-        ">
-            {st.session_state.current_element["text"]}
-        </div>
-
-    """, unsafe_allow_html=True)
-
-    labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    cols = st.columns(len(labels)+1)
-    for col, label in zip(cols[:-1], labels):
-        with col:
-            if st.button(label):
-                _send_tag(label)
-                _get_next_element()
-
-    #st.subheader("Manage labels")
-    col1, col2 = st.columns(2)
-    options_labels = []
-    options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    with col1:
-        new_label = st.text_input(label="New label", placeholder="New label name", label_visibility="hidden")
-    with col2:
+    with col4:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Create label"):
-            if new_label is not None:
-                st.write(f"Creating label {new_label}")
-                _create_label(new_label)
-    with col1:
-        label = st.selectbox(label="Label",options = options_labels, index=None, 
-                            placeholder="Select a label", label_visibility="hidden")
-    with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Delete label"):
-            if label is not None:
-                st.write(f"Deleting label {label}")
-                _delete_label(label)
-    col1, col2 = st.columns(2)
+        if st.button("Back"):
+                    _get_previous_element()
+    if st.session_state.current_element:
+        st.markdown(f"""
+            <div>{st.session_state.current_element["predict"]}</div>
+            <div>{st.session_state.current_element['info']}</div>
+            <div style="
+                border: 2px solid #4CAF50;
+                padding: 10px;
+                border-radius: 5px;
+                color: #4CAF50;
+                font-family: sans-serif;
+                text-align: justify;
+                margin: 10px;
+                min-height: 300px;
+            ">
+                {st.session_state.current_element["text"]}
+            </div>
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    # managing projection display
-    if "projection" not in st.session_state:
-        st.session_state.projection = False
-    # switch button
-    if st.button("Projection"):
-        if not st.session_state.projection:
-            st.session_state.projection = True
-        else:
-            st.session_state.projection = False
-    # displaying menu
-    if st.session_state.projection:
+        _display_labels()
+
+    with st.expander("Manage schemes"):
+        col1, col2 = st.columns(2)
+        options_labels = []
+        options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+        with col1:
+            new_label = st.text_input(label="New label", placeholder="New label name", label_visibility="hidden")
+        with col2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Create label"):
+                if new_label is not None:
+                    st.write(f"Creating label {new_label}")
+                    _create_label(new_label)
+        with col1:
+            label = st.selectbox(label="Label",options = options_labels, index=None, 
+                                placeholder="Select a label", label_visibility="hidden")
+        with col2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Delete label"):
+                if label is not None:
+                    st.write(f"Deleting label {label}")
+                    _delete_label(label)
+        col1, col2 = st.columns(2)
+
+    with st.expander("Projection"):
         st.selectbox(label="Method", 
                      options = list(st.session_state.state["projections"]["available"].keys()), 
                      key = "projection_method")
@@ -411,7 +402,17 @@ def annotate():
             st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
 
 
-
+def _display_labels():
+    """
+    Display labels
+    """
+    labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    cols = st.columns(len(labels)+1)
+    for col, label in zip(cols[:-1], labels):
+        with col:
+            if st.button(label):
+                _send_tag(label)
+                _get_next_element()
 
 def description():
     """
@@ -559,9 +560,14 @@ def bertmodels():
 
     st.markdown("<hr>", unsafe_allow_html=True)
     st.subheader("Training model")
-    st.selectbox(label="Select model", 
-                 options = st.session_state.state["bertmodels"]["options"], 
-                 key = "bm_train")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.selectbox(label="Select model", 
+                    options = st.session_state.state["bertmodels"]["options"], 
+                    key = "bm_train")
+    with col2:
+        # TO IMPLEMENT BACKEND
+        st.text_input("HuggingFace model to use", key="bm_train_hf", disabled=True)
     st.text_area(label="Parameters", key = "bm_params", 
                  value=json.dumps(st.session_state.state["bertmodels"]["base_parameters"], 
                                   indent=2))
@@ -664,7 +670,46 @@ def test_model():
     Test annotation interface
     """
     st.title("Test the model")
+    st.write("TODO : display the number of elements ? How many to code ?")
 
+    # Case there is no test set
+    if not st.session_state.state["params"]["test"]:
+        file = st.file_uploader("Load file (CSV or Parquet)", 
+                        type=['csv', 'parquet'], 
+                        accept_multiple_files=False)
+        if file:
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file)
+            elif file.name.endswith('.parquet'):
+                df = pd.read_parquet(file)
+            else:
+                st.error("Type not supported")
+        # TODO : send the file to load 
+
+    else:
+        st.session_state.selection = "test"
+        st.session_state.tag = None
+        st.session_state.sample = None
+
+        _get_next_element()
+
+        st.markdown(f"""
+            <div style="
+                border: 2px solid #4CAF50;
+                padding: 10px;
+                border-radius: 5px;
+                color: #4CAF50;
+                font-family: sans-serif;
+                text-align: justify;
+                margin: 10px;
+                min-height: 300px;
+            ">
+                {st.session_state.current_element["text"]}
+            </div>
+
+        """, unsafe_allow_html=True)
+
+        _display_labels()
     # si un fichier de test existe, l'utiliser
     # sinon proposer de charger un fichier de test
 
@@ -937,19 +982,36 @@ def _get_next_element() -> bool:
     #     x1y1x2y2 = []
     x1y1x2y2 = []
 
+    # params = {
+    #         "project_name":st.session_state.current_project,
+    #         "user":st.session_state.user,
+    #         "scheme":st.session_state.current_scheme,
+    #         "selection":st.session_state.selection,
+    #         "sample":st.session_state.sample,
+    #         "tag":st.session_state.tag,
+    #         "history":st.session_state.history,
+    #         "frame":x1y1x2y2
+    #         }
     params = {
             "project_name":st.session_state.current_project,
+            "user":st.session_state.user
+    }
+    data = {
             "scheme":st.session_state.current_scheme,
             "selection":st.session_state.selection,
             "sample":st.session_state.sample,
-            "user":st.session_state.user,
             "tag":st.session_state.tag,
+            "history":st.session_state.history,
             "frame":x1y1x2y2
             }
     
-    r = _get(route = "/elements/next",
-                    params = params)
-    
+    # r = _get(route = "/elements/next",
+    #                 params = params)
+    r = _post(route = "/elements/next",
+              params = params,
+              json_data = data)
+
+    print(r)
     if r["status"] == "error":
         print(r["message"])
         st.write(r["message"])
@@ -1238,12 +1300,18 @@ def _start_bertmodel():
         raise ValueError("Problem in the json parameters")
     
     params = {"project_name":st.session_state.current_project}
+
+    # Specific or generic model
+    model_name = st.session_state.bm_train
+    if st.session_state.bm_train_hf:
+        model_name = st.session_state.bm_train_hf
+
     data = {
             "project_name":st.session_state.current_project,
             "scheme":st.session_state.current_scheme,
             "user":st.session_state.user,
             "name":f"_{st.session_state.user}", # générique
-            "base_model":st.session_state.bm_train,
+            "base_model":model_name,
             "params":bert_params,
             "test_size":0.2
             }
