@@ -25,7 +25,6 @@ Create a config file `config.yaml` in the directory where you want to launch the
 - `path` : path to store files (for instance `./data`)
 - `secret_key` : to secure tokens. To generate it `openssl rand -hex 32C`
 - `path_models`:  absolute path to fasttext models
-- `users`: list of user:password
 
 Then, to launch the server (on 0.0.0.0 port 8000 by default). You can configurate exposed port if needed.
 
@@ -39,12 +38,25 @@ Otherwise, you can launch only the API with `uvicorn`:
 uvicorn activetigger.api:app --host 0.0.0.0 --port 80 --reload
 ```
 
+## Users management
+
+You can create/delete users with the root account.
+
+You can also create a `add_users.yaml` file with the users to add when the server starts :
+
+```
+user1: password1
+user2: password2
+```
+
 ## Technical specifications
 
 - REST-like client/server architecture
+- Moslty stateless
 - Mixed data storage : sqlite + files
 - Backend Python
     - FastAPI
-    - independant Processes to CPU-bound tasts (embeddings/bertmodels)
+    - Multiprocessing for CPU-bound tasts (concurrent.futures.ProcessPoolExecutor)
 - Frontend
     - Streamlit (prototyping)
+    - React (in the future)
