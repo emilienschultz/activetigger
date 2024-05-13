@@ -12,6 +12,8 @@ from io import BytesIO
 import textwrap
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
+from streamlit_option_menu import option_menu
+
 
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000
@@ -39,13 +41,12 @@ def main():
     image_path = "img/active_tigger.png"
     img = open(data_path / image_path, 'rb').read()
     st.sidebar.image(img)
-    #st.sidebar.write(datetime.datetime.now())
     # start the interface
     if not st.session_state['logged_in']:
         login_page()
     else:
-        st.sidebar.write(f"Current user: {st.session_state.user}")
         app_navigation()
+        st.sidebar.write(f"Current user: {st.session_state.user}")
 
 def login_page():
     """
@@ -93,33 +94,37 @@ def app_navigation():
         options = ["Configuration"] + options
 
 
-    st.session_state['page'] = st.sidebar.radio("Navigate", 
-                                                options, 
-                                                key="menu", 
-                                                index = options.index(st.session_state['page']))
+    #st.session_state['page'] = st.sidebar.radio("Navigate", 
+    #                                            options, 
+    #                                            key="menu", 
+    #                                           index = options.index(st.session_state['page']))
     
+
     with st.sidebar:
-        if st.button("Projects"):
-            st.session_state['page'] == "Projects"
+        st.session_state['page'] = option_menu("Navigate", options, menu_icon="cast")
 
 
     # navigating
     if st.session_state['page'] == "Projects":
         projects()
-    elif st.session_state['page'] == "Annotate":
-        annotate()
-    elif st.session_state['page'] == "Description":
-        description()
-    elif st.session_state['page'] == "Active Model":
-        simplemodels()
-    elif st.session_state['page'] == "Global Model":
-        bertmodels()
-    elif st.session_state['page'] == "Test Model":
-        test_model()
-    elif st.session_state['page'] == "Export":
-        export()
-    elif st.session_state['page'] == "Configuration":
-        configuration()
+    else:
+        if not "current_project" in st.session_state:
+            st.write("Select a project first")
+            return
+        elif st.session_state['page'] == "Annotate":
+            annotate()
+        elif st.session_state['page'] == "Description":
+            description()
+        elif st.session_state['page'] == "Active Model":
+            simplemodels()
+        elif st.session_state['page'] == "Global Model":
+            bertmodels()
+        elif st.session_state['page'] == "Test Model":
+            test_model()
+        elif st.session_state['page'] == "Export":
+            export()
+        elif st.session_state['page'] == "Configuration":
+            configuration()
 
 def projects():
     """
@@ -243,11 +248,6 @@ def features():
     """
     Feature page
     """
-    if not "current_project" in st.session_state:
-        st.write("Select a project first")
-        return
-
-    #st.title("Features")
     st.write("Manage features")
 
     c = st.session_state.state["features"]["training"]
@@ -292,10 +292,6 @@ def annotate():
     """
     Annotate page
     """
-    if not "current_project" in st.session_state:
-        st.write("Select a project first")
-        return
-
     # configure menu
     mode_selection = st.session_state.state["next"]["methods_min"]
     if _is_simplemodel():
@@ -353,7 +349,7 @@ def annotate():
 
         _display_labels()
 
-    with st.expander("Manage schemes"):
+    with st.expander("Manage tags"):
         col1, col2 = st.columns(2)
         options_labels = []
         options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
@@ -418,15 +414,12 @@ def description():
     """
     Description page
     """
-    if not "current_project" in st.session_state:
-        st.write("Select a project first")
-        return
-
     st.title("Description")
     st.subheader("Statistics")
     st.write("Description of the current data")
     statistics = _get_statistics()
-    st.markdown(statistics, unsafe_allow_html=True)
+    #st.markdown(statistics, unsafe_allow_html=True)
+    st.dataframe(statistics, width=500)
     st.markdown("<hr>", unsafe_allow_html=True)
     st.subheader("Display data")
     col1, col2, col3 = st.columns(3)
@@ -440,24 +433,20 @@ def description():
         st.write("Send changes")
         _send_table()
 
-    st.session_state.data_df = df = _get_table()
+    st.session_state.data_df = _get_table()
+    
 
     # make the table editable
     labels =  st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
     st.session_state.data_df["labels"] = (
-        st.session_state.data_df["labels"].astype("category").cat.remove_categories(
-            st.session_state.data_df['labels']).cat.add_categories(labels)
-    )
+        (st.session_state.data_df["labels"].astype("category")).cat.add_categories([l for l in labels if not l in st.session_state.data_df["labels"].unique()])
+            )
     st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
 
 def simplemodels():
     """
     Simplemodel page
     """
-    if not "current_project" in st.session_state:
-        st.write("Select a project first")
-        return
-
     if not "computing_simplemodel" in st.session_state:
         st.session_state.computing_simplemodel = False
 
@@ -512,10 +501,6 @@ def bertmodels():
     Bertmodel page
     TODO : améliorer la présentation
     """
-    if not "current_project" in st.session_state:
-        st.write("Select a project first")
-        return
-
     st.title("Global model")
     st.write("Train, test and predict with final model") 
 
@@ -585,10 +570,6 @@ def export():
     """
     Export page
     """
-    if not "current_project" in st.session_state:
-        st.write("Select a project first")
-        return
-
     st.title("Export")
     st.write("Export your data and models") 
 
@@ -1151,10 +1132,12 @@ def _get_statistics():
     r = _get("/description",params = params)
     if r["status"]=="error":
         return r["message"]
-    text = ""
-    for k,v in r["data"].items():
-        text += f"<br>- <b>{k}</b>: {v}"
-    return text
+    #text = ""
+    tab = pd.DataFrame([[k,v] for k,v in r["data"].items()], columns=["information","values"]).set_index("information")
+    #for k,v in r["data"].items():
+    #    text += f"<br>- <b>{k}</b>: {v}"
+    #return text
+    return tab
 
 def _get_table():
     """
