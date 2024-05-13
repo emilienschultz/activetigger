@@ -85,9 +85,9 @@ def app_navigation():
 
     options = ["Projects",
                "Annotate",
-               "Description",
-               "Active Model",
-               "Global Model",
+               "Statistics",
+               #"Active Model",
+               "Train model",
                "Test Model",
                "Export"]
     
@@ -107,11 +107,11 @@ def app_navigation():
             return
         elif st.session_state['page'] == "Annotate":
             annotate()
-        elif st.session_state['page'] == "Description":
+        elif st.session_state['page'] == "Statistics":
             description()
-        elif st.session_state['page'] == "Active Model":
-            simplemodels()
-        elif st.session_state['page'] == "Global Model":
+        #elif st.session_state['page'] == "Active Model":
+        #    simplemodels()
+        elif st.session_state['page'] == "Train model":
             bertmodels()
         elif st.session_state['page'] == "Test Model":
             test_model()
@@ -368,6 +368,9 @@ def annotate():
                     _delete_label(label)
         col1, col2 = st.columns(2)
 
+    with st.expander("Active learning"):
+        simplemodels()
+
     with st.expander("Projection"):
         st.selectbox(label="Method", 
                      options = list(st.session_state.state["projections"]["available"].keys()), 
@@ -410,7 +413,7 @@ def description():
     """
     Description page
     """
-    st.title("Description")
+    st.title("Statistics")
     st.subheader("Statistics")
     st.write("Description of the current data")
     statistics = _get_statistics()
@@ -497,7 +500,7 @@ def bertmodels():
     Bertmodel page
     TODO : améliorer la présentation
     """
-    st.title("Global model")
+    st.title("Train model")
     st.write("Train, test and predict with final model") 
 
     if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
