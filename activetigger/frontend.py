@@ -17,6 +17,8 @@ from streamlit_option_menu import option_menu
 
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000
+st.set_page_config(page_title="pyActiveTigger v0.1")
+
 count = st_autorefresh(interval=update_time, limit=None, key="fizzbuzzcounter")
 
 if not "header" in st.session_state:
@@ -91,18 +93,10 @@ def app_navigation():
     
     # add user management
     if st.session_state.user == "root":
-        options = ["Configuration"] + options
-
-
-    #st.session_state['page'] = st.sidebar.radio("Navigate", 
-    #                                            options, 
-    #                                            key="menu", 
-    #                                           index = options.index(st.session_state['page']))
-    
+        options = options + ["Configuration"]    
 
     with st.sidebar:
         st.session_state['page'] = option_menu("Navigate", options, menu_icon="cast")
-
 
     # navigating
     if st.session_state['page'] == "Projects":
@@ -212,7 +206,9 @@ def projects():
                 st.session_state.new_project = False
 
     # display the scheme menu if project loaded
-    
+    if not "current_project" in st.session_state:
+                st.subheader("Select a project")
+                return
 
     if "current_project" in st.session_state:
         with st.expander("Manage schemes"):
@@ -239,7 +235,8 @@ def projects():
                         _create_scheme(new_scheme)
 
     with st.expander("Manage features"):
-        features()
+        if st.session_state.current_project:
+           features()
     
     return None
 
@@ -249,7 +246,6 @@ def features():
     Feature page
     """
     st.write("Manage features")
-
     c = st.session_state.state["features"]["training"]
     if not len(c) == 0:
         st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>")
@@ -552,7 +548,7 @@ def bertmodels():
                     key = "bm_train")
     with col2:
         # TO IMPLEMENT BACKEND
-        st.text_input("HuggingFace model to use", key="bm_train_hf", disabled=True)
+        st.text_input("HuggingFace model to use", key="bm_train_hf", disabled=True, placeholder="Not implemented yet")
     st.text_area(label="Parameters", key = "bm_params", 
                  value=json.dumps(st.session_state.state["bertmodels"]["base_parameters"], 
                                   indent=2))
@@ -652,6 +648,7 @@ def test_model():
     """
     st.title("Test the model")
     st.write("TODO : display the number of elements ? How many to code ?")
+    st.write("TODO : display only if bertmodel trained ?")
 
     # Case there is no test set
     if not st.session_state.state["params"]["test"]:
