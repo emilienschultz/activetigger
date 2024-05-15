@@ -14,7 +14,6 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 
-
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000
 st.set_page_config(page_title="pyActiveTigger v0.1")
@@ -86,6 +85,7 @@ def app_navigation():
     options = ["Projects",
                "Annotate",
                "Statistics",
+               "0-shot",
                #"Active Model",
                "Train model",
                "Test Model",
@@ -109,8 +109,8 @@ def app_navigation():
             annotate()
         elif st.session_state['page'] == "Statistics":
             description()
-        #elif st.session_state['page'] == "Active Model":
-        #    simplemodels()
+        elif st.session_state['page'] == "0-shot":
+            zeroshot()
         elif st.session_state['page'] == "Train model":
             bertmodels()
         elif st.session_state['page'] == "Test Model":
@@ -428,9 +428,6 @@ def description():
         st.number_input(label="min", key="data_min", min_value=0, value=0, step=1)
     with col3:
         st.number_input(label="min", key="data_max", min_value=0, value=10, step=1)
-    if st.button(label="Send changes"):
-        st.write("Send changes")
-        _send_table()
 
     st.session_state.data_df = _get_table()
     
@@ -440,7 +437,80 @@ def description():
     st.session_state.data_df["labels"] = (
         (st.session_state.data_df["labels"].astype("category")).cat.add_categories([l for l in labels if not l in st.session_state.data_df["labels"].unique()])
             )
-    st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
+    modified_table = st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
+
+    if st.button(label="Send changes"):
+        st.write("Send changes")
+        print(modified_table)
+        _send_table(modified_table)
+
+def zeroshot():
+    """
+    Zero-shot annotation panel
+    """
+    st.title("Use zero-shot annotation")
+    st.subheader("API connexion")
+
+    if not "api_token" in st.session_state:
+        st.session_state.api_token = "Enter a valid token"
+
+    col1, col2 = st.columns(2)
+    with col1:
+        api = st.selectbox("API", options=["OpenAI"], key="api")
+    with col2:
+        st.session_state.api_token = st.text_input("Token", value = st.session_state.api_token)
+
+    st.subheader("Codebook")
+    st.write("Describe for each label the rules to code them")
+
+    labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    codebook = st.text_area("Codebook", value=json.dumps({i:"Write the rule" for i in labels}, indent=2), key = "codebook")
+    prompt = None
+
+    if st.button("Predict annotation for 5 texts"):
+        prompt = "Annotate the following list of texts with the label the most appropriate based on the given descriptions. Keep the order. Return the result in JSON format.\n\n"
+        prompt += "Labels with their descriptions:\n"
+        for label, description in json.loads(codebook).items():
+            prompt += f"- {label}: {description}\n"
+        r = _start_zeroshot(api, st.session_state.api_token, prompt)
+        if r["status"]=="error":
+            st.write(r["message"])
+    
+    st.subheader("Results")
+
+    if pd.notna(st.session_state.state["zeroshot"]["data"]):
+        if st.session_state.state["zeroshot"]["data"] == "computing":
+            st.write("Computation launched")
+        else:
+            df = pd.read_json(st.session_state.state["zeroshot"]["data"], 
+                                    dtype={"index":str}).set_index("index")
+            df["zero_shot"] = (df["zero_shot"].astype("category")).cat.add_categories([l for l in labels if not l in df["zero_shot"].unique()])
+            st.session_state.df_zeroshot = st.data_editor(df[["zero_shot", "text"]], disabled=["text"])
+            if st.button("Save annotations"):
+                _send_table(st.session_state.df_zeroshot, labels="zero_shot")
+                st.write("Save annotations")
+    else:
+        st.write("No prediction available; wait results if you launched it.")
+
+def _start_zeroshot(api, token, prompt):
+    """
+    Launch 0-shot annotation for 10 elements
+    """
+    data = {
+            "prompt":prompt,
+            "api":api, 
+            "token":token,
+            "scheme":st.session_state.current_scheme
+            }
+    r = _post(route="/elements/zeroshot", 
+            params = {"project_name":st.session_state.current_project},
+            json_data=data
+            )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return r
 
 def simplemodels():
     """
@@ -1154,7 +1224,7 @@ def _get_table():
     df = pd.DataFrame(r["data"])
     return df
 
-def _send_table():
+def _send_table(df, labels="labels"):
     """
     Send table modified
     """
@@ -1165,8 +1235,8 @@ def _send_table():
         return i
     data = {
         "scheme":st.session_state.current_scheme,
-        "list_ids":list(st.session_state.data_df.index),
-        "list_labels":[replace_na(i) for i in st.session_state.data_df["labels"]]
+        "list_ids": list(df.index), #list(st.session_state.data_df.index),
+        "list_labels": [replace_na(i) for i in df[labels]], #[replace_na(i) for i in st.session_state.data_df["labels"]]
     }
     r = _post("/elements/table", 
                 json_data = data, 

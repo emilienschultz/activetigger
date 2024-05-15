@@ -254,7 +254,6 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
     """
     data = project.get_description(scheme = scheme, 
                                 user = user)
-    print(data)
     if "error" in data:
         r = ResponseModel(status="error", message=data["error"])
     else:
@@ -492,13 +491,38 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
                             username: Annotated[str, Header()],
-                            #user:str,
                             table:TableElementsModel
                             ):
+    print(table)
     r = project.schemes.push_table(table = table, 
                                    user = username)
     server.log_action(username, "update data table", project.name)
     return ResponseModel(status="success")
+
+from pydantic import BaseModel
+class ZeroShotModel(BaseModel):
+    scheme:str
+    prompt: str
+    api: str
+    token: str
+    number: int = 10
+
+@app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])
+async def zeroshot(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
+                    zshot:ZeroShotModel
+                            ):
+    """
+    Launch a call to an external API for 0-shot
+    """
+    # get subset of unlabelled elements
+    df = project.schemes.get_table(zshot.scheme, 0, 5, "untagged")
+    # make the call
+    r = await project.compute_zeroshot(df, zshot)
+    if "error" in r:
+        ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success")
+
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
 async def get_element(project: Annotated[Project, Depends(get_project)],
