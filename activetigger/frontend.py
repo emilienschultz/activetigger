@@ -24,6 +24,14 @@ if not "header" in st.session_state:
     st.session_state.header = None
 if not "history" in st.session_state:
     st.session_state.history = []
+if not "current_project" in st.session_state:
+    st.session_state.current_project = None
+if not "state" in st.session_state:
+    st.session_state.state = None
+if not 'logged_in'  in st.session_state:
+    st.session_state.logged_in = False
+if not 'page' in st.session_state:
+    st.session_state.page = "Projects"
 
 # TODO : see the computational use ...
 # TODO : windows of selection -> need to move to Dash
@@ -33,11 +41,8 @@ if not "history" in st.session_state:
 
 def main():
     # initialize variables
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
-    if 'page' not in st.session_state:
-        st.session_state['page'] = "Projects"
-    st.session_state.state = _get_state()   
+    if st.session_state.current_project:
+        st.session_state.state = _get_state()   
     data_path = importlib.resources.files("activetigger")
     image_path = "img/active_tigger.png"
     img = open(data_path / image_path, 'rb').read()
@@ -47,7 +52,6 @@ def main():
         login_page()
     else:
         app_navigation()
-        st.sidebar.write(f"Current user: {st.session_state.user}")
 
 def login_page():
     """
@@ -67,26 +71,14 @@ def app_navigation():
     """
     Select page
     """
-    # creating the menu
-    #st.sidebar.title("Menu")
-    st.markdown("""
-    <style>.element-container:has(#button-red) + div button {
-    background-color: #ff4848;
-    }</style>""", unsafe_allow_html=True)
-    st.markdown("""
-    <style>.element-container:has(#button-green) + div button {
-    background-color: #65ff00;
-    }</style>""", unsafe_allow_html=True)
-    st.markdown("""
-    <style>.element-container:has(#button-blue) + div button {
-    background-color: #58afff;
-    }</style>""", unsafe_allow_html=True)
+    # user logged
+    st.sidebar.write(f"Current user: {st.session_state.user}")
 
+    # creating the menu
     options = ["Projects",
                "Annotate",
                "Statistics",
                "0-shot",
-               #"Active Model",
                "Train model",
                "Test Model",
                "Export", 
@@ -105,7 +97,7 @@ def app_navigation():
     elif st.session_state['page'] == "Documentation":
         documentation()
     else:
-        if not "current_project" in st.session_state:
+        if not st.session_state.current_project:
             st.write("Select a project first")
             return
         elif st.session_state['page'] == "Annotate":
@@ -127,7 +119,6 @@ def documentation():
     """
     Documentation page
     """
-
     doc = _get_documentation()
     st.write(doc)
 
@@ -137,45 +128,30 @@ def projects():
     - select a project
     - create one
     """
-
-    if not "new_project" in st.session_state:
-        st.session_state.new_project = False
     r = _get("/server")
     existing = r["data"]["projects"]
 
     # display menu
     st.title("Projects")
-    st.write("Load or create project")
-    option = st.selectbox(
-        "Select existing projects:",
-        existing)
-    
+
     col1, col2, col3 = st.columns(3)
-
-    # load a project
     with col1:
-        st.markdown('<span id="button-green"></span>', unsafe_allow_html=True)
-        if st.button("Load"):
-            if option:
-                st.session_state.current_project = option
-            #st.session_state.page = "Schemes"
-            return None
-
-    # delete a project
+        select = st.selectbox("Select existing projects:",existing)
     with col2:
-        st.markdown('<span id="button-red"></span>', unsafe_allow_html=True)
-        if st.button("Delete"):
-            #st.write(f"Deleting {option}")
-            _delete_project(option)
-
-    # create a project
+        action = st.selectbox(label="Action", options=["Load", "Delete"])
     with col3:
-        st.markdown('<span id="button-blue"></span>', unsafe_allow_html=True)
-        if st.button("New project"):
-            st.session_state['new_project'] = True
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Validate"):
+            if action == "Delete":
+                _delete_project(select)
+            if action == "Load":
+                st.session_state.current_project = select
 
-    # display the creation menu if create a project
-    if st.session_state.get('new_project', True):
+    if st.button("New project"):
+        st.session_state.current_project = "create_new"
+
+    # case to create a new project
+    if st.session_state.current_project == "create_new":
         project_name = st.text_input("Project name", value="")
         dic_langage = {"French":"fr",
                        "English":"en",
@@ -216,14 +192,12 @@ def projects():
                 _create_project(data, df, file.name)
                 st.session_state.new_project = False
 
-    # display the scheme menu if project loaded
-    if not "current_project" in st.session_state:
-                st.subheader("Select a project")
-                return
-
-    if "current_project" in st.session_state:
+    # case a project is loaded
+    if st.session_state.current_project and (st.session_state.current_project != "create_new"):
+        if not st.session_state.state:
+            st.session_state.state = _get_state()
+        st.markdown(f"<hr>Current project loaded : {st.session_state.current_project} <br>", unsafe_allow_html=True)
         with st.expander("Manage schemes"):
-            st.markdown("<hr>", unsafe_allow_html=True)
             options_schemes = list(st.session_state.state["schemes"]["available"].keys())
             col1, col2 = st.columns(2)
             with col1:
@@ -245,10 +219,9 @@ def projects():
                         st.write(f"Creating scheme {new_scheme}")
                         _create_scheme(new_scheme)
 
-    with st.expander("Manage features"):
-        if st.session_state.current_project:
-           features()
-    
+        with st.expander("Manage features"):
+            features()
+
     return None
 
 
