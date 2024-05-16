@@ -89,7 +89,8 @@ def app_navigation():
                #"Active Model",
                "Train model",
                "Test Model",
-               "Export"]
+               "Export", 
+               "Documentation"]
     
     # add user management
     if st.session_state.user == "root":
@@ -101,6 +102,8 @@ def app_navigation():
     # navigating
     if st.session_state['page'] == "Projects":
         projects()
+    elif st.session_state['page'] == "Documentation":
+        documentation()
     else:
         if not "current_project" in st.session_state:
             st.write("Select a project first")
@@ -118,7 +121,15 @@ def app_navigation():
         elif st.session_state['page'] == "Export":
             export()
         elif st.session_state['page'] == "Configuration":
-            configuration()
+            configuration()   
+
+def documentation():
+    """
+    Documentation page
+    """
+
+    doc = _get_documentation()
+    st.write(doc)
 
 def projects():
     """
@@ -807,6 +818,17 @@ def _get(route:str,
     if is_json:
         return json.loads(r.content)
     return r.content
+
+def _get_documentation():
+    """
+    Get documentation
+    """
+    r = _get(route = f"/documentation")
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return r["message"]
+    return r["data"]
 
 def _connect_user(user:str, password:str) -> bool:
     """

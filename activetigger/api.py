@@ -97,7 +97,7 @@ async def get_project(project_name: str) -> ProjectModel:
 
     # If project doesn't exist
     if not server.exists(project_name):
-        raise ResponseModel(statut="error", message="Project not found")
+        raise ResponseModel(status="error", message="Project not found")
 
     # If the project exist
     if project_name in server.projects:
@@ -159,6 +159,19 @@ async def welcome() -> str:
         r = f.read()
     return r
 
+@app.get("/documentation")
+async def get_documentation()  -> ResponseModel:
+    data = {
+            "Credits":["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
+            "Contact":"emilien.schultz@ensae.fr",
+            "Page":"https://github.com/emilienschultz/pyactivetigger",
+            "Documentation":"To write ...."
+            }
+    print(data)
+    r = ResponseModel(status="success", data=data)
+    return r
+
+
 # Users
 #------
 
@@ -183,7 +196,7 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]
     """
     Information on current user
     """
-    r = ResponseModel(statut="success", data=current_user)
+    r = ResponseModel(status="success", data=current_user)
     return r
 
 @app.get("/users", dependencies=[Depends(verified_user)])
