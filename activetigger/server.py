@@ -21,6 +21,7 @@ from activetigger.models import BertModels, SimpleModels
 from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDB
 from pydantic import ValidationError
 import logging
+import openai
 
 logger = logging.getLogger('queue')
 
@@ -625,6 +626,7 @@ class Project(Server):
         self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db, self.queue)
         self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
+        self.zeroshot = None
 
     def __del__(self):
         pass
@@ -898,7 +900,10 @@ class Project(Server):
                     },
             "projections":{
                     "available":self.features.possible_projections
-                    }
+                    },
+            "zeroshot":{
+                        "data":self.zeroshot
+                        }
             }
         return  r
     
@@ -962,7 +967,57 @@ class Project(Server):
         r = {"name":file_name,"path":path / file_name}
         return r
     
+    async def compute_zeroshot(self, df, params):
+        """
+        Zero-shot beta version
+        """
+        r_error = ["error"] * len(df)
 
+        # create prompt
+        list_texts = "\nTexts to annotate:\n"
+        for i,t in enumerate(list(df["text"])):
+            list_texts += f"{i}. {t}\n"
+        prompt = params.prompt + list_texts + "\nResponse format:\n{\"annotations\": [{\"text\": \"Text 1\", \"label\": \"Label1\"}, {\"text\": \"Text 2\", \"label\": \"Label2\"}, ...]}"
+
+        # make request to client
+        #client = openai.OpenAI(api_key=params.token)
+        try:
+            self.zeroshot = "computing"
+            client = openai.AsyncOpenAI(api_key=params.token)
+            print("Make openai call")
+            chat_completion = await client.chat.completions.create(
+                messages=[
+                    {
+                    "role": "system",
+                    "content": """Your are a careful assistant who annotates texts for a research project. 
+                    You follow precisely the guidelines, which can be in different languages.
+                    """ 
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                model="gpt-3.5-turbo",
+                response_format={ "type": "json_object" }
+                )
+            print("OpenAI call done")
+        except:
+            self.zeroshot = None
+            return {"error":"API connexion failed. Check the token."}
+        # extracting results
+        try:
+            r = json.loads(chat_completion.choices[0].message.content)["annotations"]
+            r = [i["label"] for i in r]
+        except:
+            return {"error":"Format problem"}
+        if len(r) == len(df):
+            df["zero_shot"] = r
+            self.zeroshot = df[["text","zero_shot"]].reset_index().to_json()
+            return {"success":"data computed"}
+        else:
+            return {"error":"Problem with the number of element"}
+    
 class Features():
     """
     Manage project features
