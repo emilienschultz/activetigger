@@ -903,7 +903,8 @@ class Project(Server):
                     },
             "zeroshot":{
                         "data":self.zeroshot
-                        }
+                        },
+            "test_model":{}
             }
         return  r
     

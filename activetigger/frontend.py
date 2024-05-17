@@ -735,32 +735,40 @@ def test_model():
         # TODO : send the file to load 
 
     else:
+        # setting parameters to get test elements
         st.session_state.selection = "test"
         st.session_state.tag = None
         st.session_state.sample = "untagged"
         st.session_state.frame = None
 
-        _get_next_element()
+        # panel for annotation
+        with st.expander("Annotating the test sample"):
+            _get_next_element()
+            st.markdown(f"""
+                <div style="
+                    border: 2px solid #4CAF50;
+                    padding: 10px;
+                    border-radius: 5px;
+                    color: #4CAF50;
+                    font-family: sans-serif;
+                    text-align: justify;
+                    margin: 10px;
+                    min-height: 300px;
+                ">
+                    {st.session_state.current_element["text"]}
+                </div>
+            """, unsafe_allow_html=True)
+            _display_labels()
 
-        st.markdown(f"""
-            <div style="
-                border: 2px solid #4CAF50;
-                padding: 10px;
-                border-radius: 5px;
-                color: #4CAF50;
-                font-family: sans-serif;
-                text-align: justify;
-                margin: 10px;
-                min-height: 300px;
-            ">
-                {st.session_state.current_element["text"]}
-            </div>
+        # panel for computation and results
+        with st.expander("Compute metrics"):
+            # launch computation if needed
+            if st.button("Launch prediction & stats"):
+                _compute_test()
 
-        """, unsafe_allow_html=True)
+            # display specific test results
+            st.write(st.session_state.state["test"])
 
-        _display_labels()
-    # si un fichier de test existe, l'utiliser
-    # sinon proposer de charger un fichier de test
 
 # Internal functions
 # ------------------
@@ -1474,7 +1482,17 @@ def _get_simplemodel():
         return st.session_state.state["simplemodel"]["available"][st.session_state.user][st.session_state.current_scheme]
     return None
 
-
+def _compute_test(model_name):
+    params = {"project_name":st.session_state.current_project,
+              "scheme":st.session_state.current_scheme,
+              "model":model_name
+              }
+    r = _post("/models/bert/test", 
+            params = params)
+    if r["status"]=="error":
+        print(r["message"])
+        return False
+    return True    
 
 if __name__ == "__main__":
     main()

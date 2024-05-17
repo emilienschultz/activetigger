@@ -850,6 +850,22 @@ async def stop_bert(project: Annotated[Project, Depends(get_project)],
     server.log_action(username, f"stop bert training", project.name)
     return ResponseModel(status="success", message=r["success"])
 
+@app.post("/models/bert/test", dependencies=[Depends(verified_user)])
+async def stop_test(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
+                    scheme: str, 
+                    model:str
+                     ) -> ResponseModel:
+    """
+    Start testing the model on the test set
+    """
+    #r = project.bertmodels.test()
+    r = {"success":"computing"}
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    server.log_action(username, f"test bert", project.name, scheme, model)
+    return ResponseModel(status="success", message=r["success"])
+
 @app.post("/models/bert/delete", dependencies=[Depends(verified_user)])
 async def delete_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
