@@ -441,11 +441,13 @@ def train_bert(path:Path,
 def predict_bert(
             model, 
             tokenizer,
+            path:Path,
             df:DataFrame,
             col_text:str,
-            path:Path,
+            col_labels:str|None,
             gpu:bool = False, 
-            batch:int = 128):
+            batch:int = 128, 
+            file_name = "predict.parquet"):
     """
     Predict from a model
     + probabilities
@@ -476,18 +478,23 @@ def predict_bert(
         predictions.append(res)
         logging.info(f"{round(100*len(res)/len(df))}% predicted")
 
-    # To DataFrame
+    # to dataframe
     pred = pd.DataFrame(np.concatenate(predictions), 
                         columns=sorted(list(model.config.label2id.keys())),
                         index = df.index)
 
-    # Calculate entropy
+    # calculate entropy
     entropy = -1 * (pred * np.log(pred)).sum(axis=1)
     pred["entropy"] = entropy
 
-    # Calculate label
+    # calculate label
     pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
-    # Write the file in parquet
-    pred.to_parquet(path / "predict.parquet")
+    
+    # keep the label column
+    if col_labels:
+        pred[col_labels] = df[col_labels]
+
+    # write the file in parquet
+    pred.to_parquet(path / file_name)
     print("function prediction : finished")
     return pred

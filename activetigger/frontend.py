@@ -25,16 +25,22 @@ if not "header" in st.session_state:
     st.session_state.header = None
 if not "history" in st.session_state:
     st.session_state.history = []
-if not "current_project" in st.session_state:
-    st.session_state.current_project = None
 if not "state" in st.session_state:
     st.session_state.state = None
 if not 'logged_in'  in st.session_state:
     st.session_state.logged_in = False
 if not 'page' in st.session_state:
     st.session_state.page = "Projects"
+if not "current_project" in st.session_state:
+    st.session_state.current_project = None
 if not "current_element" in st.session_state:
     st.session_state.current_element = None
+if not "selection" in st.session_state:
+    st.session_state.selection = None
+if not "sample" in st.session_state:
+    st.session_state.sample = None
+if not "tag" in st.session_state:
+    st.session_state.tag = None
 
 # TODO : see the computational use ...
 # TODO : windows of selection -> need to move to Dash
@@ -294,12 +300,10 @@ def annotate():
     mode_sample = st.session_state.state["next"]["sample"]
 
     # default element if not defined
-    if "selection" not in st.session_state:
+    if not st.session_state.selection or (st.session_state.selection=="test"):
         st.session_state.selection = mode_selection[0]
-    if "sample" not in st.session_state:
+    if not st.session_state.sample:
         st.session_state.sample = mode_sample[0]
-    if "tag" not in st.session_state:
-        st.session_state.tag = None
         
     # get next element with the current options
     if not "current_element" in st.session_state:
@@ -308,25 +312,31 @@ def annotate():
 
     # display page
     st.title("Annotate data")
-    st.write("Current history (reload to reset):", len(st.session_state.history))
+    st.write("History (reload to reset):", len(st.session_state.history))
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.selectbox(label="Selection", 
+        st.session_state.selection = st.selectbox(label="Selection", 
                      options = mode_selection, 
-                     key = "selection", 
+                     #key = "selection", 
+                     index = mode_selection.index(st.session_state.selection), #keep the information
                      label_visibility="hidden",
                      on_change = _get_next_element)
     with col2:
-        st.selectbox(label="Sample", 
+        st.session_state.sample = st.selectbox(label="Sample", 
                      options = mode_sample, 
-                     key = "sample", 
+                     #key = "sample", 
+                     index = mode_sample.index(st.session_state.sample), #keep the information
                      label_visibility="hidden",
                      on_change = _get_next_element)
     with col3:
         tag_options = []
         if st.session_state.selection == "maxprob":
             tag_options = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-        st.selectbox(label="Tag", options = tag_options, key = "tag", label_visibility="hidden")
+        st.selectbox(label="Tag", 
+                    options = tag_options, 
+                    key = "tag", 
+                    label_visibility="hidden",
+                    on_change = _get_next_element)
     with col4:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Back"):
@@ -402,7 +412,6 @@ def annotate():
 
         if "projection_visualization" in st.session_state:
             st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
-
 
 def _display_labels():
     """
@@ -747,17 +756,15 @@ def test_model():
             else:
                 st.error("Type not supported")
         # TODO : send the file to load 
-
     else:
         # setting parameters to get test elements
-        st.session_state.selection = "test"
-        st.session_state.tag = None
-        st.session_state.sample = "untagged"
-        st.session_state.frame = None
-
-        # panel for annotation
         with st.expander("Annotating the test sample"):
-            _get_next_element()
+            if st.session_state.selection != "test":
+                st.session_state.selection = "test"
+                st.session_state.tag = None
+                st.session_state.sample = "untagged"
+                st.session_state.frame = None
+                _get_next_element()
             st.markdown(f"""
                 <div style="
                     border: 2px solid #4CAF50;
@@ -779,7 +786,7 @@ def test_model():
             # launch computation if needed
             st.write("To implement")
             if st.button("Launch prediction & stats"):
-                #_compute_test(model_to_test, st.session_state.current_scheme)
+                _compute_test(model_to_test, st.session_state.current_scheme)
                 st.write("To implement")
 
             # display specific test results
@@ -1498,9 +1505,9 @@ def _get_simplemodel():
         return st.session_state.state["simplemodel"]["available"][st.session_state.user][st.session_state.current_scheme]
     return None
 
-def _compute_test(model_name):
+def _compute_test(model_name, scheme):
     params = {"project_name":st.session_state.current_project,
-              "scheme":st.session_state.current_scheme,
+              "scheme":scheme,
               "model":model_name
               }
     r = _post("/models/bert/test", 

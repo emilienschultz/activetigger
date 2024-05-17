@@ -803,7 +803,6 @@ async def predict(project: Annotated[Project, Depends(get_project)],
     """
     print("start predicting")
     df = project.content[["text"]]
-
     r = project.bertmodels.start_predicting_process(name = model_name,
                                                     df = df,
                                                     col_text = "text",
@@ -816,7 +815,8 @@ async def predict(project: Annotated[Project, Depends(get_project)],
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    bert:BertModelModel)   -> ResponseModel:
+                    bert:BertModelModel
+                    )-> ResponseModel:
     """ 
     Compute bertmodel
     TODO : gestion du nom du projet/scheme à la base du modèle
@@ -859,12 +859,26 @@ async def stop_test(project: Annotated[Project, Depends(get_project)],
     """
     Start testing the model on the test set
     """
-    #r = project.bertmodels.test()
-    r = {"success":"computing"}
+    if project.test is None:
+        return ResponseModel(status="error", message="No test dataset for this project")
+
+    # get data labels + text
+    df = project.schemes.get_scheme_data(scheme, complete=True, kind="test")
+
+    if len(df["labels"].dropna())<10:
+        return ResponseModel(status="error", message="Less than 10 elements annotated")
+    
+    # launch testing process : prediction
+    r = project.bertmodels.start_testing_process(name = model,
+                                                df = df,
+                                                scheme = scheme,
+                                                col_text = "text",
+                                                col_labels="labels",
+                                                user = username)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
-    server.log_action(username, f"test bert", project.name, scheme, model)
-    return ResponseModel(status="success", message=r["success"])
+    server.log_action(username, f"predict bert for testing", project.name)
+    return ResponseModel(status="success", message="Bert prediction for final test launched")
 
 @app.post("/models/bert/delete", dependencies=[Depends(verified_user)])
 async def delete_bert(project: Annotated[Project, Depends(get_project)],

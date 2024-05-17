@@ -617,7 +617,10 @@ class Project(Server):
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file)
-
+        if (self.params.dir / self.test_file).exists():
+            self.test: DataFrame = pd.read_parquet(self.params.dir / self.test_file)
+        else:
+            self.test = None
         # create specific management objets
         self.schemes: Schemes = Schemes(project_name, 
                                         self.params.dir / self.labels_file, 
@@ -1205,9 +1208,11 @@ class Schemes():
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
 
+
     def get_scheme_data(self, scheme:str, 
                         complete = False, 
-                        kind = "add") -> DataFrame:
+                        kind = "add"
+                        ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
         """
@@ -1232,12 +1237,11 @@ class Schemes():
         conn.close()
         df = pd.DataFrame(results, columns =["id","labels","user","timestamp"]).set_index("id")
         df.index = [str(i) for i in df.index]
-
         if complete: # all the elements
             if kind == "add":
                 return self.content.join(df)
             if kind == "test":
-                return self.test.join(df)
+                return self.test[["text"]].join(df)
         
         return df
     
