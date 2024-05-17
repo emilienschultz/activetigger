@@ -490,11 +490,11 @@ def predict_bert(
     # calculate label
     pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
     
-    # keep the label column
+    # if asked, add the label column for latter statistics
     if col_labels:
         pred[col_labels] = df[col_labels]
 
-    # write the file in parquet
+    # write the content in a parquet file
     pred.to_parquet(path / file_name)
     print("function prediction : finished")
     return pred

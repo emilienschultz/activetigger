@@ -311,7 +311,6 @@ class BertModels():
 
     def start_testing_process(self, 
                             name:str,
-                            scheme:str,
                             user:str, 
                             df:DataFrame,
                             col_text:str,
@@ -327,7 +326,13 @@ class BertModels():
         if not (self.path / name).exists():
             return {"error":"This model does not exist"}
 
-        # start prediction on the 
+        # delete previous files
+        if (self.path / "predict_test.parquet").exists():
+            os.remove(self.path / "predict_test.parquet")
+        if (self.path / "statistics.json").exists():
+            os.remove(self.path / "statistics.json")
+
+        # start prediction on the test set
         b = BertModel(name, self.path / name)
         b.load()
         args = {
@@ -342,6 +347,7 @@ class BertModels():
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = "testing"
         self.computing[user] = [b,unique_id]
+
         return {"success":"bert testing predicting"}
 
     def start_predicting_process(self, 

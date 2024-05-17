@@ -851,13 +851,14 @@ async def stop_bert(project: Annotated[Project, Depends(get_project)],
     return ResponseModel(status="success", message=r["success"])
 
 @app.post("/models/bert/test", dependencies=[Depends(verified_user)])
-async def stop_test(project: Annotated[Project, Depends(get_project)],
+async def start_test(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                     scheme: str, 
                     model:str
                      ) -> ResponseModel:
     """
     Start testing the model on the test set
+    TODO : get scheme from bert model name
     """
     if project.test is None:
         return ResponseModel(status="error", message="No test dataset for this project")
@@ -867,7 +868,7 @@ async def stop_test(project: Annotated[Project, Depends(get_project)],
 
     if len(df["labels"].dropna())<10:
         return ResponseModel(status="error", message="Less than 10 elements annotated")
-    
+
     # launch testing process : prediction
     r = project.bertmodels.start_testing_process(name = model,
                                                 df = df,
