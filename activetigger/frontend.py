@@ -14,6 +14,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 
+__version__ = "0.2"
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000
 st.set_page_config(page_title="pyActiveTigger v0.1")
@@ -32,6 +33,8 @@ if not 'logged_in'  in st.session_state:
     st.session_state.logged_in = False
 if not 'page' in st.session_state:
     st.session_state.page = "Projects"
+if not "current_element" in st.session_state:
+    st.session_state.current_element = None
 
 # TODO : see the computational use ...
 # TODO : windows of selection -> need to move to Dash
@@ -41,12 +44,13 @@ if not 'page' in st.session_state:
 
 def main():
     # initialize variables
-    if st.session_state.current_project:
+    if (st.session_state.current_project) and (st.session_state.current_project != "create_new"):
         st.session_state.state = _get_state()   
     data_path = importlib.resources.files("activetigger")
     image_path = "img/active_tigger.png"
     img = open(data_path / image_path, 'rb').read()
     st.sidebar.image(img)
+    st.sidebar.write(__version__)
     # start the interface
     if not st.session_state['logged_in']:
         login_page()
@@ -134,18 +138,18 @@ def projects():
     # display menu
     st.title("Projects")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns([4, 1, 1])
     with col1:
         select = st.selectbox("Select existing projects:",existing)
     with col2:
-        action = st.selectbox(label="Action", options=["Load", "Delete"])
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Load"):
+            st.session_state.current_project = select
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Validate"):
-            if action == "Delete":
-                _delete_project(select)
-            if action == "Load":
-                st.session_state.current_project = select
+        if st.button("Delete"):
+            _delete_project(select)
+            st.session_state.current_project = None
 
     if st.button("New project"):
         st.session_state.current_project = "create_new"
@@ -190,10 +194,11 @@ def projects():
                     }
             if st.button("Create"):
                 _create_project(data, df, file.name)
-                st.session_state.new_project = False
+                st.session_state.current_project = project_name
 
     # case a project is loaded
     if st.session_state.current_project and (st.session_state.current_project != "create_new"):
+        print("project loaded")
         if not st.session_state.state:
             st.session_state.state = _get_state()
         st.markdown(f"<hr>Current project loaded : {st.session_state.current_project} <br>", unsafe_allow_html=True)
@@ -296,9 +301,17 @@ def annotate():
     st.write("Current history (reload to reset):", len(st.session_state.history))
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.selectbox(label="Selection", options = mode_selection, key = "selection", label_visibility="hidden")
+        st.selectbox(label="Selection", 
+                     options = mode_selection, 
+                     key = "selection", 
+                     label_visibility="hidden",
+                     on_change = _get_next_element)
     with col2:
-        st.selectbox(label="Sample", options = mode_sample, key = "sample", label_visibility="hidden")
+        st.selectbox(label="Sample", 
+                     options = mode_sample, 
+                     key = "sample", 
+                     label_visibility="hidden",
+                     on_change = _get_next_element)
     with col3:
         tag_options = []
         if st.session_state.selection == "maxprob":
@@ -452,7 +465,7 @@ def zeroshot():
     prompt = None
 
     if st.button("Predict annotation for 5 texts"):
-        prompt = "Annotate the following list of texts with the label the most appropriate based on the given descriptions. Keep the order. Return the result in JSON format.\n\n"
+        prompt = "Annotate the following list of texts with the label the most appropriate based on the given descriptions. Keep the order. Do not provide explanations. Return the result in JSON format.\n\n"
         prompt += "Labels with their descriptions:\n"
         for label, description in json.loads(codebook).items():
             prompt += f"- {label}: {description}\n"
@@ -724,7 +737,8 @@ def test_model():
     else:
         st.session_state.selection = "test"
         st.session_state.tag = None
-        st.session_state.sample = None
+        st.session_state.sample = "untagged"
+        st.session_state.frame = None
 
         _get_next_element()
 
@@ -1051,6 +1065,7 @@ def _get_next_element() -> bool:
             "frame":x1y1x2y2
             }
     
+    print(data)
     # r = _get(route = "/elements/next",
     #                 params = params)
     r = _post(route = "/elements/next",

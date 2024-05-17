@@ -398,6 +398,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
     """
     Get next element
     """
+    print(next)
     r = project.get_next(
                         scheme = next.scheme,
                         selection = next.selection,
