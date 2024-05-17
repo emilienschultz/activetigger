@@ -126,7 +126,7 @@ class BertModel():
                 "f1_micro":f1_score(Y, Y_pred, average = "micro"),
                 "f1_macro":f1_score(Y, Y_pred, average = "macro"),
                 "f1_weighted":f1_score(Y, Y_pred, average = "weighted"),
-                "f1":f1_score(Y, Y_pred, average = None),
+                "f1":list(f1_score(Y, Y_pred, average = None)),
                 "precision":precision_score(list(Y), list(Y_pred), average="micro"),
                 "recall":list(recall_score(list(Y), list(Y_pred), average=None)),
                 "accuracy":accuracy_score(Y, Y_pred),
@@ -136,74 +136,28 @@ class BertModel():
         
         # add test scores
         if (not "test_scores" in r) and (self.path / "predict_test.parquet").exists():
-            df = pd.read_parquet(self.path / "predict_test.parquet")
+            df = pd.read_parquet(self.path / "predict_test.parquet")[["prediction", "labels"]].dropna()
             Y_pred = df["prediction"]
             Y = df["labels"]
+            f = df.apply(lambda x : x["prediction"] != x["labels"], axis=1)
+            r["test_scores"] = {
+                "f1_micro":f1_score(Y, Y_pred, average = "micro"),
+                "f1_macro":f1_score(Y, Y_pred, average = "macro"),
+                "f1_weighted":f1_score(Y, Y_pred, average = "weighted"),
+                "f1":list(f1_score(Y, Y_pred, average = None)),
+                "precision":precision_score(list(Y), list(Y_pred), average="micro"),
+                "recall":list(recall_score(list(Y), list(Y_pred), average=None)),
+                "accuracy":accuracy_score(Y, Y_pred),
+            }
             flag_modification = True
+
+        print(r)
 
         # if modifications
         if flag_modification:
             with open(self.path / "statistics.json","w") as f:
                 json.dump(r,f)
         return r
-
-    # def predict(self, 
-    #             df:DataFrame,
-    #             col_text:str,
-    #             gpu:bool = False, 
-    #             batch:int = 128):
-    #     """
-    #     Predict from a model
-    #     + probabilities
-    #     + entropy
-    #     """
-
-    #     if (self.model is None) or (self.tokenizer is None):
-    #         self.load()
-
-    #     if (self.model is None) or (self.tokenizer is None):
-    #         return {"error":"Model not loaded"}
-
-    #     if gpu:
-    #         self.model.cuda()
-
-    #     # Start prediction with batches
-    #     predictions = []
-    #     logging.info(f"Start prediction with {len(df)} entries")
-    #     for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
-    #         print("Next chunck prediction")
-    #         chunk = self.tokenizer(list(chunk), 
-    #                         padding=True, 
-    #                         truncation=True, 
-    #                         max_length=512, 
-    #                         return_tensors="pt")
-    #         if gpu:
-    #             chunk = chunk.to("cuda")
-    #         with torch.no_grad():
-    #             outputs = self.model(**chunk)
-    #         res = outputs[0]
-    #         if gpu:
-    #             res = res.cpu()
-    #         res = res.softmax(1).detach().numpy()
-    #         predictions.append(res)
-    #         logging.info(f"{round(100*len(res)/len(df))}% predicted")
-
-    #     # To DataFrame
-    #     pred = pd.DataFrame(np.concatenate(predictions), 
-    #                         columns=sorted(list(self.model.config.label2id.keys())),
-    #                         index = df.index)
-
-    #     # Calculate entropy
-    #     entropy = -1 * (pred * np.log(pred)).sum(axis=1)
-    #     pred["entropy"] = entropy
-
-    #     # Calculate label
-    #     pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
-
-    #     # Write the file in parquet
-    #     pred.to_parquet(self.path / "predict.parquet")
-
-    #     return pred
 
 class BertModels():
     """

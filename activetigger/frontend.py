@@ -784,13 +784,13 @@ def test_model():
         # panel for computation and results
         with st.expander("Compute metrics"):
             # launch computation if needed
-            st.write("To implement")
             if st.button("Launch prediction & stats"):
                 _compute_test(model_to_test, st.session_state.current_scheme)
-                st.write("To implement")
 
-            # display specific test results
-            st.write(st.session_state.state["bertmodels"]["test"])
+            # display existing statistics
+            informations = _bert_test_informations(model_to_test)
+            if informations:
+                st.write(informations)
 
 
 # Internal functions
@@ -1333,6 +1333,19 @@ def _bert_prediction():
         print(r["message"])
     return True
 
+def _bert_test_informations(model):
+    params = {
+                "project_name":st.session_state.current_project,
+                "name":model
+                }
+    r = _get("/models/bert", params = params)
+    if r["status"] == "error":
+        print(r)
+        return None
+    if not 'test_scores' in r["data"]:
+        return None
+    return r["data"]['test_scores']
+
 def _bert_informations():
     """
     Return statistics for a BERT Model
@@ -1347,14 +1360,15 @@ def _bert_informations():
     if r["status"] == "error":
         print(r)
         return False
-    loss = pd.DataFrame(r["data"]["loss"])
+
+    loss = pd.DataFrame(r['data']["training"]["loss"])
     fig, ax = plt.subplots(figsize=(3,2))
     loss.plot(ax = ax)
     text = ""
-    if "f1" in r["data"]:
-        text+=f"f1: {r['data']['f1']}<br>"
-        text+=f"precision: {r['data']['precision']}<br>"
-        text+=f"recall: {r['data']['recall']}<br>"
+    if "f1" in r['data']["train_scores"]:
+        text+=f"f1: {r['data']['train_scores']['f1']}<br>"
+        text+=f"precision: {r['data']['train_scores']['precision']}<br>"
+        text+=f"recall: {r['data']['train_scores']['recall']}<br>"
     else:
         text += "Compute prediction for scores"
     return fig, text
