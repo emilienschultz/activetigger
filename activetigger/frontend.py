@@ -75,14 +75,22 @@ def app_navigation():
     """
     Select page
     """
+    # computation state
+    if st.session_state.state:
+        if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
+            st.session_state.bert_training = True
+            st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Computing (training / predicting). Wait the process to end before launching another one.</div>")
+        else:
+            st.session_state.bert_training = False
+
     # user logged
     st.sidebar.write(f"Current user: {st.session_state.user}")
 
     # creating the menu
     options = ["Projects",
                "Annotate",
-               "Statistics",
                "0-shot",
+               "Statistics",
                "Train model",
                "Test Model",
                "Export", 
@@ -118,6 +126,9 @@ def app_navigation():
             export()
         elif st.session_state['page'] == "Configuration":
             configuration()   
+
+        #if st.session_state.state:
+        #    st.write(st.session_state.state)
 
 def documentation():
     """
@@ -198,7 +209,6 @@ def projects():
 
     # case a project is loaded
     if st.session_state.current_project and (st.session_state.current_project != "create_new"):
-        print("project loaded")
         if not st.session_state.state:
             st.session_state.state = _get_state()
         st.markdown(f"<hr>Current project loaded : {st.session_state.current_project} <br>", unsafe_allow_html=True)
@@ -570,12 +580,6 @@ def bertmodels():
     st.title("Train model")
     st.write("Train, test and predict with final model") 
 
-    if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
-        st.session_state.bert_training = True
-        st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Model under training</div>")
-    else:
-        st.session_state.bert_training = False
-
     st.subheader("Existing models")
 
     available_bert = []
@@ -637,50 +641,50 @@ def export():
     Export page
     """
     st.title("Export")
+
     st.write("Export your data and models") 
 
     col1, col2 = st.columns((2,10))
     with col1:
         st.selectbox(label="Format", options=["csv", "parquet"], key="export_format")
 
-    st.subheader("Annotated data")
-    st.download_button(label="Download", 
-                       data=_export_data(), 
-                       file_name=f"annotations.{st.session_state.export_format}")
-
-    st.subheader("Features")
-    col1, col2 = st.columns((5,5))
-    with col1:
-        st.multiselect(label="Export features", options=st.session_state.state["features"]["available"],
-                        key="export_features", label_visibility="hidden")
-
-    if st.session_state.export_features:
+    with st.expander("Annotated data"):
         st.download_button(label="Download", 
-                            data=_export_features(), 
-                            file_name=f"features.{st.session_state.export_format}")
+                        data=_export_data(), 
+                        file_name=f"annotations.{st.session_state.export_format}")
+
+    with st.expander("Features"):
+        col1, col2 = st.columns((5,5))
+        with col1:
+            st.multiselect(label="Export features", options=st.session_state.state["features"]["available"],
+                            key="export_features", label_visibility="hidden")
+
+        if st.session_state.export_features:
+            st.download_button(label="Download", 
+                                data=_export_features(), 
+                                file_name=f"features.{st.session_state.export_format}")
 
 
-    st.subheader("Bert")
-
-    # list available models
-    available = []
-    if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
-        available = st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme]
-    
-    col1, col2 = st.columns((5,10))
-    with col1:
-        st.selectbox(label="Bert Model", options=available, key="bert_model", 
-                     index=None, placeholder="Choose a model", label_visibility="hidden")
-
-    if st.session_state.bert_model:
-        st.download_button(label="Download model", 
-                           data=_export_model(), 
-                           file_name=f"{st.session_state.bert_model}.tar.gz")
+    with st.expander("Bert"):
+        # list available models
+        available = []
+        if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
+            available = st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme]
         
-        # TODO : test if available ...
-        st.download_button(label="Download predictions", 
-                           data=_export_predictions(), 
-                           file_name=f"predictions.{st.session_state.export_format}")
+        col1, col2 = st.columns((5,10))
+        with col1:
+            st.selectbox(label="Bert Model", options=available, key="bert_model", 
+                        index=None, placeholder="Choose a model", label_visibility="hidden")
+
+        if st.session_state.bert_model:
+            st.download_button(label="Download model", 
+                            data=_export_model(), 
+                            file_name=f"{st.session_state.bert_model}.tar.gz")
+            
+            # TODO : test if available ...
+            st.download_button(label="Download predictions", 
+                            data=_export_predictions(), 
+                            file_name=f"predictions.{st.session_state.export_format}")
 
 def configuration():
     """
@@ -717,10 +721,20 @@ def test_model():
     Test annotation interface
     """
     st.title("Test the model")
-    st.write("TODO : display the number of elements ? How many to code ?")
-    st.write("TODO : display only if bertmodel trained ?")
+    st.write("Annotate an independant dataset for testing the model")
+    #"TODO : display the number of elements ? How many to code ?"
+    # TODO : display only if bertmodel trained ?
 
-    # Case there is no test set
+    available_bert = []
+    if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
+        available_bert = list(st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme].keys())
+    
+    # selection
+    model_to_test = st.selectbox(label="Trained models", 
+                 options = available_bert, 
+                 key = "bm_trained_test")
+
+    # case there is no test set
     if not st.session_state.state["params"]["test"]:
         file = st.file_uploader("Load file (CSV or Parquet)", 
                         type=['csv', 'parquet'], 
@@ -763,11 +777,13 @@ def test_model():
         # panel for computation and results
         with st.expander("Compute metrics"):
             # launch computation if needed
+            st.write("To implement")
             if st.button("Launch prediction & stats"):
-                _compute_test()
+                #_compute_test(model_to_test, st.session_state.current_scheme)
+                st.write("To implement")
 
             # display specific test results
-            st.write(st.session_state.state["test"])
+            st.write(st.session_state.state["bertmodels"]["test"])
 
 
 # Internal functions

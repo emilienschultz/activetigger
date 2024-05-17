@@ -896,6 +896,7 @@ class Project(Server):
                     "options":self.bertmodels.base_models,
                     "available":self.bertmodels.trained(),
                     "training":self.bertmodels.training(),
+                    "test":{},
                     "base_parameters":self.bertmodels.params_default
                     },
             "projections":{
@@ -903,8 +904,7 @@ class Project(Server):
                     },
             "zeroshot":{
                         "data":self.zeroshot
-                        },
-            "test_model":{}
+                        }
             }
         return  r
     
