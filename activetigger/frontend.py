@@ -376,6 +376,9 @@ def display_annotate():
     with st.expander("0-shot annotation with LLM"):
         display_zeroshot()
 
+    with st.expander("Data"):
+        display_data()
+
 def display_projection():
     """
     Projection menu
@@ -451,6 +454,8 @@ def display_description():
     statistics = _get_statistics()
     st.dataframe(statistics, width=500)
     st.markdown("<hr>", unsafe_allow_html=True)
+    
+def display_data():
     st.subheader("Display data")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -584,61 +589,57 @@ def display_bertmodels():
     st.title("Train model")
     st.write("Train, test and predict with final model") 
 
-    st.subheader("Existing models")
+    with st.expander("Existing models"):
+        available_bert = []
+        if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
+            available_bert = list(st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme].keys())
+        st.selectbox(label="BertModels", options = available_bert, key = "bm_trained", label_visibility="hidden")
 
-    available_bert = []
-    if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
-        available_bert = list(st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme].keys())
-    st.selectbox(label="BertModels", options = available_bert, key = "bm_trained", label_visibility="hidden")
+        col1, col2, col3 = st.columns(3)
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("Compute prediction"):
-            st.write("Compute prediction")
-            _bert_prediction()
-            # add variable "aleready computed"
-    with col2:
-        if st.button("Delete"):
-            st.write("Delete model")
-            _delete_bert()
-    
-    with col3:
-        with st.expander("Rename"):
+        with col1:
+            if st.button("Compute prediction"):
+                st.write("Compute prediction")
+                _bert_prediction()
+                # add variable "aleready computed"
+        with col2:
+            if st.button("Delete"):
+                st.write("Delete model")
+                _delete_bert()
+        
+        with col3:
             st.text_input(label = "", value="", placeholder="New name", key="bm_new_name")
             if st.button("Validate"):
                 st.write("Rename", st.session_state.bm_new_name)
                 _save_bert()
 
-    with st.expander("Description"):
         st.write("Elements")
         data = _bert_informations()
         if data:
             st.pyplot(data[0])
             st.html(data[1])
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.subheader("Training model")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.selectbox(label="Select model", 
-                    options = st.session_state.state["bertmodels"]["options"], 
-                    key = "bm_train")
-    with col2:
-        st.text_input("HuggingFace model to use", key="bm_train_hf", disabled=True, placeholder="Not implemented yet")
+    with st.expander("Training model"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.selectbox(label="Select model", 
+                        options = st.session_state.state["bertmodels"]["options"], 
+                        key = "bm_train")
+        with col2:
+            st.text_input("HuggingFace model to use", key="bm_train_hf", disabled=True, placeholder="Not implemented yet")
 
-    st.text_area(label="Parameters", key = "bm_params", 
-                 value=json.dumps(st.session_state.state["bertmodels"]["base_parameters"], 
-                                  indent=2))
-    
-    if not st.session_state.bert_training:
-        if st.button("⚙️Train"):
-            st.write("⚙️Train")
-            _start_bertmodel()
-    else:
-        if st.button("⚙️Stop"):
-            st.write("⚙️Stop")
-            _stop_bertmodel()
+        st.text_area(label="Parameters", key = "bm_params", 
+                    value=json.dumps(st.session_state.state["bertmodels"]["base_parameters"], 
+                                    indent=2))
+        
+        if not st.session_state.bert_training:
+            if st.button("⚙️Train"):
+                st.write("⚙️Train")
+                _start_bertmodel()
+        else:
+            if st.button("⚙️Stop"):
+                st.write("⚙️Stop")
+                _stop_bertmodel()
 
 def display_export():
     """
