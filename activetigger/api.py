@@ -5,8 +5,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List
-import pandas as pd
-import os
 from jose import JWTError
 import importlib
 from pydantic import ValidationError
@@ -15,6 +13,8 @@ import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
       SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
       UmapParams, TsneParams, NextModel, ZeroShotModel
+import pandas as pd
+import os
 
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,

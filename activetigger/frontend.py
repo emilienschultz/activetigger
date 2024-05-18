@@ -4,7 +4,6 @@ import json
 import time
 import requests as rq
 import pandas as pd
-import datetime
 import matplotlib.pyplot as plt
 import importlib
 import numpy as np
@@ -16,8 +15,8 @@ from streamlit_option_menu import option_menu
 
 __version__ = "0.2"
 URL_SERVER = "http://0.0.0.0:5000"
-update_time = 2000
-st.set_page_config(page_title="pyActiveTigger v0.1")
+update_time = 2000 #ms
+st.set_page_config(page_title=f"pyActiveTigger {__version__}")
 
 count = st_autorefresh(interval=update_time, limit=None, key="fizzbuzzcounter")
 
@@ -57,6 +56,7 @@ def main():
     img = open(data_path / image_path, 'rb').read()
     st.sidebar.image(img)
     st.sidebar.write(__version__)
+
     # start the interface
     if not st.session_state['logged_in']:
         login_page()
@@ -93,14 +93,15 @@ def app_navigation():
     st.sidebar.write(f"Current user: {st.session_state.user}")
 
     # creating the menu
-    options = ["Projects",
-               "Annotate",
-               "0-shot",
-               "Statistics",
-               "Train model",
-               "Test Model",
-               "Export", 
-               "Documentation"]
+    options = [
+            "Projects",
+            "Annotate",
+            "Statistics",
+            "Train model",
+            "Test Model",
+            "Export", 
+            "Documentation"
+            ]
     
     # add user management
     if st.session_state.user == "root":
@@ -111,39 +112,34 @@ def app_navigation():
 
     # navigating
     if st.session_state['page'] == "Projects":
-        projects()
+        display_projects()
     elif st.session_state['page'] == "Documentation":
-        documentation()
+        display_documentation()
     else:
         if not st.session_state.current_project:
             st.write("Select a project first")
             return
         elif st.session_state['page'] == "Annotate":
-            annotate()
+            display_annotate()
         elif st.session_state['page'] == "Statistics":
-            description()
-        elif st.session_state['page'] == "0-shot":
-            zeroshot()
+            display_description()
         elif st.session_state['page'] == "Train model":
-            bertmodels()
+            display_bertmodels()
         elif st.session_state['page'] == "Test Model":
-            test_model()
+            display_test()
         elif st.session_state['page'] == "Export":
-            export()
+            display_export()
         elif st.session_state['page'] == "Configuration":
-            configuration()   
+            display_configuration()   
 
-        #if st.session_state.state:
-        #    st.write(st.session_state.state)
-
-def documentation():
+def display_documentation():
     """
     Documentation page
     """
     doc = _get_documentation()
     st.write(doc)
 
-def projects():
+def display_projects():
     """
     Projects page
     - select a project
@@ -218,35 +214,41 @@ def projects():
         if not st.session_state.state:
             st.session_state.state = _get_state()
         st.markdown(f"<hr>Current project loaded : {st.session_state.current_project} <br>", unsafe_allow_html=True)
+
         with st.expander("Manage schemes"):
-            options_schemes = list(st.session_state.state["schemes"]["available"].keys())
-            col1, col2 = st.columns(2)
-            with col1:
-                scheme = st.selectbox("Select scheme to use:", options = options_schemes, index=0, placeholder="Select a scheme")
-                st.session_state.current_scheme = scheme
-            with col2:
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("Delete scheme"):
-                    if scheme is not None:
-                        st.write(f"Deleting scheme {scheme}")
-                        _delete_scheme(scheme)
-            col1, col2 = st.columns(2)
-            with col1:
-                new_scheme = st.text_input(label="New scheme", placeholder="New scheme name", label_visibility="hidden")
-            with col2:
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("Create scheme"):
-                    if new_scheme is not None:
-                        st.write(f"Creating scheme {new_scheme}")
-                        _create_scheme(new_scheme)
+            display_schemes()
 
         with st.expander("Manage features"):
-            features()
+            display_features()
 
     return None
 
+def display_schemes():
+    """
+    Scheme menu
+    """
+    options_schemes = list(st.session_state.state["schemes"]["available"].keys())
+    col1, col2 = st.columns(2)
+    with col1:
+        scheme = st.selectbox("Select scheme to use:", options = options_schemes, index=0, placeholder="Select a scheme")
+        st.session_state.current_scheme = scheme
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Delete scheme"):
+            if scheme is not None:
+                st.write(f"Deleting scheme {scheme}")
+                _delete_scheme(scheme)
+    col1, col2 = st.columns(2)
+    with col1:
+        new_scheme = st.text_input(label="New scheme", placeholder="New scheme name", label_visibility="hidden")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Create scheme"):
+            if new_scheme is not None:
+                st.write(f"Creating scheme {new_scheme}")
+                _create_scheme(new_scheme)
 
-def features():
+def display_features():
     """
     Feature page
     """
@@ -289,7 +291,7 @@ def features():
         if st.session_state.current_scheme is not None:
             st.session_state.page = "Annotate"
 
-def annotate():
+def display_annotate():
     """
     Annotate page
     """
@@ -308,11 +310,17 @@ def annotate():
     # get next element with the current options
     if not "current_element" in st.session_state:
         _get_next_element()
-#        st.session_state.current_element = None
 
     # display page
     st.title("Annotate data")
     st.write("History (reload to reset):", len(st.session_state.history))
+
+    with st.expander("Manage tags"):
+        display_manage_tags()
+
+    with st.expander("Active learning"):
+        display_simplemodels()
+
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.session_state.selection = st.selectbox(label="Selection", 
@@ -362,56 +370,64 @@ def annotate():
 
         _display_labels()
 
-    with st.expander("Manage tags"):
-        col1, col2 = st.columns(2)
-        options_labels = []
-        options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-        with col1:
-            new_label = st.text_input(label="New label", placeholder="New label name", label_visibility="hidden")
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Create label"):
-                if new_label is not None:
-                    st.write(f"Creating label {new_label}")
-                    _create_label(new_label)
-        with col1:
-            label = st.selectbox(label="Label",options = options_labels, index=None, 
-                                placeholder="Select a label", label_visibility="hidden")
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Delete label"):
-                if label is not None:
-                    st.write(f"Deleting label {label}")
-                    _delete_label(label)
-        col1, col2 = st.columns(2)
-
-    with st.expander("Active learning"):
-        simplemodels()
-
     with st.expander("Projection"):
-        st.selectbox(label="Method", 
-                     options = list(st.session_state.state["projections"]["available"].keys()), 
-                     key = "projection_method")
-        st.text_area(label="Parameters", 
-                     value=json.dumps(st.session_state.state["projections"]["available"]["umap"], indent=2),
-                     key = "projection_params", label_visibility="hidden")
-        st.multiselect(label="Features", options=st.session_state.state["features"]["available"],
-                       key = "projection_features")
-        if st.button("Compute"):
-            st.write("Computing")
-            _compute_projection()
-        
-        # if visualisation available, display it
-        if ("projection_data" in st.session_state) and (type(st.session_state.projection_data) == str):
-            r = _get_projection_data()
-            if ("data" in r) and (type(r["data"]) is dict):
-                st.session_state.projection_data = pd.DataFrame(r["data"],)
-                if not "projection_visualization" in st.session_state:
-                    st.session_state.projection_visualization = _plot_visualisation()
-                    st.session_state.projection_visualization.update_layout({"uirevision": "foo"}, overwrite=True)
+        display_projection()
 
-        if "projection_visualization" in st.session_state:
-            st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
+    with st.expander("0-shot annotation with LLM"):
+        display_zeroshot()
+
+def display_projection():
+    """
+    Projection menu
+    """
+    st.selectbox(label="Method", 
+                    options = list(st.session_state.state["projections"]["available"].keys()), 
+                    key = "projection_method")
+    st.text_area(label="Parameters", 
+                    value=json.dumps(st.session_state.state["projections"]["available"]["umap"], indent=2),
+                    key = "projection_params", label_visibility="hidden")
+    st.multiselect(label="Features", options=st.session_state.state["features"]["available"],
+                    key = "projection_features")
+    if st.button("Compute"):
+        st.write("Computing")
+        _compute_projection()
+    
+    # if visualisation available, display it
+    if ("projection_data" in st.session_state) and (type(st.session_state.projection_data) == str):
+        r = _get_projection_data()
+        if ("data" in r) and (type(r["data"]) is dict):
+            st.session_state.projection_data = pd.DataFrame(r["data"],)
+            if not "projection_visualization" in st.session_state:
+                st.session_state.projection_visualization = _plot_visualisation()
+                st.session_state.projection_visualization.update_layout({"uirevision": "foo"}, overwrite=True)
+
+    if "projection_visualization" in st.session_state:
+        st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
+
+def display_manage_tags():
+    """
+    Tags management menu
+    """
+    col1, col2 = st.columns(2)
+    options_labels = []
+    options_labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    with col1:
+        new_label = st.text_input(label="New label", placeholder="New label name", label_visibility="hidden")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Create label"):
+            if new_label is not None:
+                st.write(f"Creating label {new_label}")
+                _create_label(new_label)
+    with col1:
+        label = st.selectbox(label="Label",options = options_labels, index=None, 
+                            placeholder="Select a label", label_visibility="hidden")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Delete label"):
+            if label is not None:
+                st.write(f"Deleting label {label}")
+                _delete_label(label)
 
 def _display_labels():
     """
@@ -425,7 +441,7 @@ def _display_labels():
                 _send_tag(label)
                 _get_next_element()
 
-def description():
+def display_description():
     """
     Description page
     """
@@ -433,7 +449,6 @@ def description():
     st.subheader("Statistics")
     st.write("Description of the current data")
     statistics = _get_statistics()
-    #st.markdown(statistics, unsafe_allow_html=True)
     st.dataframe(statistics, width=500)
     st.markdown("<hr>", unsafe_allow_html=True)
     st.subheader("Display data")
@@ -460,7 +475,7 @@ def description():
         print(modified_table)
         _send_table(modified_table)
 
-def zeroshot():
+def display_zeroshot():
     """
     Zero-shot annotation panel
     """
@@ -508,27 +523,7 @@ def zeroshot():
     else:
         st.write("No prediction available; wait results if you launched it.")
 
-def _start_zeroshot(api, token, prompt):
-    """
-    Launch 0-shot annotation for 10 elements
-    """
-    data = {
-            "prompt":prompt,
-            "api":api, 
-            "token":token,
-            "scheme":st.session_state.current_scheme
-            }
-    r = _post(route="/elements/zeroshot", 
-            params = {"project_name":st.session_state.current_project},
-            json_data=data
-            )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
-        return False
-    return r
-
-def simplemodels():
+def display_simplemodels():
     """
     Simplemodel page
     """
@@ -581,7 +576,7 @@ def simplemodels():
         st.write("Train model")
         _train_simplemodel()
 
-def bertmodels():
+def display_bertmodels():
     """
     Bertmodel page
     TODO : améliorer la présentation
@@ -630,8 +625,8 @@ def bertmodels():
                     options = st.session_state.state["bertmodels"]["options"], 
                     key = "bm_train")
     with col2:
-        # TO IMPLEMENT BACKEND
         st.text_input("HuggingFace model to use", key="bm_train_hf", disabled=True, placeholder="Not implemented yet")
+
     st.text_area(label="Parameters", key = "bm_params", 
                  value=json.dumps(st.session_state.state["bertmodels"]["base_parameters"], 
                                   indent=2))
@@ -645,7 +640,7 @@ def bertmodels():
             st.write("⚙️Stop")
             _stop_bertmodel()
 
-def export():
+def display_export():
     """
     Export page
     """
@@ -695,7 +690,7 @@ def export():
                             data=_export_predictions(), 
                             file_name=f"predictions.{st.session_state.export_format}")
 
-def configuration():
+def display_configuration():
     """
     Configuration panel
     - User creation
@@ -725,7 +720,7 @@ def configuration():
             _create_user(new_user, new_password)
             st.write("Create user")
 
-def test_model():
+def display_test():
     """
     Test annotation interface
     """
@@ -812,7 +807,6 @@ def _post(route:str,
                 files = files,
                 headers = st.session_state.header, 
                 verify = False)
-    #print(url, r.content, st.session_state.header)
     if r.status_code == 422:
         return {"status":"error", "message":"Not authorized"}
     return json.loads(r.content)
@@ -830,7 +824,6 @@ def _get(route:str,
                 data = data,
                 headers = st.session_state.header,
                 verify=False)
-    #print(url, r.content, st.session_state.header)
     if r.status_code == 422:
         return {"status":"error", "message":"Not authorized"}
     if is_json:
@@ -879,7 +872,6 @@ def _get_state() -> dict:
             return {}
         return state["data"]
     return {}
-
 
 def _get_users():
     """
@@ -1062,6 +1054,7 @@ def _add_regex(value:str, name:str|None = None) -> bool:
 def _get_next_element() -> bool:
     """
     Get next element from the current widget options
+    TODO : manage frame
     """
     # try:
     #     f = visualization.children[0]
@@ -1073,16 +1066,6 @@ def _get_next_element() -> bool:
     #     x1y1x2y2 = []
     x1y1x2y2 = []
 
-    # params = {
-    #         "project_name":st.session_state.current_project,
-    #         "user":st.session_state.user,
-    #         "scheme":st.session_state.current_scheme,
-    #         "selection":st.session_state.selection,
-    #         "sample":st.session_state.sample,
-    #         "tag":st.session_state.tag,
-    #         "history":st.session_state.history,
-    #         "frame":x1y1x2y2
-    #         }
     params = {
             "project_name":st.session_state.current_project,
             "user":st.session_state.user
@@ -1096,9 +1079,6 @@ def _get_next_element() -> bool:
             "frame":x1y1x2y2
             }
     
-    print(data)
-    # r = _get(route = "/elements/next",
-    #                 params = params)
     r = _post(route = "/elements/next",
               params = params,
               json_data = data)
@@ -1110,9 +1090,6 @@ def _get_next_element() -> bool:
         return False
 
     st.session_state.current_element = r["data"]
-#    self._textarea.value = self.current_element["text"]
-#    self.info_element.value = str(self.current_element["info"])
-#    self.info_predict.value = f"Predict SimpleModel: <b>{self.current_element['predict']['label']}</b> (p = {self.current_element['predict']['proba']})"
     return True
 
 def _send_tag(label):
@@ -1243,11 +1220,7 @@ def _get_statistics():
     r = _get("/description",params = params)
     if r["status"]=="error":
         return r["message"]
-    #text = ""
     tab = pd.DataFrame([[k,v] for k,v in r["data"].items()], columns=["information","values"]).set_index("information")
-    #for k,v in r["data"].items():
-    #    text += f"<br>- <b>{k}</b>: {v}"
-    #return text
     return tab
 
 def _get_table():
@@ -1530,6 +1503,26 @@ def _compute_test(model_name, scheme):
         print(r["message"])
         return False
     return True    
+
+def _start_zeroshot(api, token, prompt):
+    """
+    Launch 0-shot annotation for 10 elements
+    """
+    data = {
+            "prompt":prompt,
+            "api":api, 
+            "token":token,
+            "scheme":st.session_state.current_scheme
+            }
+    r = _post(route="/elements/zeroshot", 
+            params = {"project_name":st.session_state.current_project},
+            json_data=data
+            )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return r
 
 if __name__ == "__main__":
     main()
