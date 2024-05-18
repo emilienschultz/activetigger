@@ -16,7 +16,6 @@ from activetigger.datamodels import ProjectModel, TableElementsModel, Action, An
 import pandas as pd
 import os
 
-
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -110,7 +109,7 @@ async def get_project(project_name: str) -> ProjectModel:
 
     # if project doesn't exist
     if not server.exists(project_name):
-        raise ResponseModel(status="error", message="Project not found")
+        return ResponseModel(status="error", message="Project not found")
 
     # if the project exist
     if project_name in server.projects:
@@ -136,10 +135,10 @@ async def verified_user(token: Annotated[str, Depends(oauth2_scheme)]):
         if username is None:
             return ResponseModel(status="error", message="Could not validate credential")
     except JWTError:
-        raise ResponseModel(status="error", message="Could not validate credential")
+        return ResponseModel(status="error", message="Could not validate credential")
     user = server.get_user(name=username)
     if user is None:
-        raise ResponseModel(status="error", message="Could not validate credential")
+        return ResponseModel(status="error", message="Could not validate credential")
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     """
@@ -294,6 +293,25 @@ async def info_server() -> ResponseModel:
         }
     r = ResponseModel(status="success", data=data)
     return r
+
+@app.post("/projects/testdata", dependencies=[Depends(verified_user)])
+async def add_testdata(project: Annotated[Project, Depends(get_project)],
+                      username: Annotated[str, Header()],
+                      file: Annotated[UploadFile, File()],
+                      col_text:str = Form(),
+                      col_id:str = Form(),
+                      #col_label:str = Form(None),
+                      n_test:int = Form())-> ResponseModel:
+    """
+    Add test dataset
+    """
+
+    r = project.add_testdata(file, col_text, col_id, n_test)
+    # log action
+    server.log_action(username, "add testdata project", project.name)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])    
+    return ResponseModel(status="success", message=r["success"])  
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
@@ -829,14 +847,14 @@ async def stop_bert(project: Annotated[Project, Depends(get_project)],
 @app.post("/models/bert/test", dependencies=[Depends(verified_user)])
 async def start_test(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
-                    scheme: str, 
+                    scheme: str,
                     model:str
                      ) -> ResponseModel:
     """
     Start testing the model on the test set
     TODO : get scheme from bert model name
     """
-    if project.test is None:
+    if project.schemes.test is None:
         return ResponseModel(status="error", message="No test dataset for this project")
 
     # get data labels + text

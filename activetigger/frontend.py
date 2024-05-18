@@ -751,7 +751,21 @@ def display_test():
                 df = pd.read_parquet(file)
             else:
                 st.error("Type not supported")
-        # TODO : send the file to load 
+            st.dataframe(df.head())
+            column_id = st.selectbox("Ids:",list(df.columns))
+            column_text = st.selectbox("Texts:",list(df.columns))
+            #column_label = st.selectbox("Labels:",list(df.columns))
+            n_test = st.number_input("Number of elements", value=len(df), min_value=0, max_value=len(df),key="n_test")
+            data = {
+                    "project_name": st.session_state.current_project,
+                    "user":st.session_state.user,
+                    "col_text": column_text,
+                    "col_id":column_id,
+                    #"col_label":column_label,
+                    "n_test":n_test, 
+                    }
+            if st.button("Create testset"):
+                _create_testset(data, df, file.name)
     else:
         # setting parameters to get test elements
         with st.expander("Annotating the test sample"):
@@ -1524,6 +1538,19 @@ def _start_zeroshot(api, token, prompt):
         st.write(r["message"])
         return False
     return r
+
+def _create_testset(data, df, filename):
+    buffer = BytesIO()
+    df.to_csv(buffer)
+    buffer.seek(0)
+    files = {'file': (filename, buffer)}
+    r = _post(route="/projects/testdata", 
+                files=files,
+                data=data
+                )
+    if r["status"] == "error":
+        print(r["message"])
+    return True
 
 if __name__ == "__main__":
     main()

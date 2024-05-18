@@ -516,22 +516,6 @@ class Server():
         trainset[[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
-        # random sample of the needed data
-        # n_rows = params.n_train + params.n_test
-        # content = pd.read_csv(params.dir / "data_raw.csv")
-        # content = content.sample(n_rows)
-        # content = content.set_index(params.col_id)
-        # content.index = [str(i) for i in list(content.index)] #type: ignore
-    
-        # create the empty annotated file / features file
-        # Put the id column as index for the rest of the treatment
-        # content[0:params.n_train].to_parquet(params.dir / self.data_file, index=True)
-        # content[params.n_train:].to_parquet(params.dir / self.test_file, index=True)
-        # only for the training set for the moment
-        # keep the text and the context available
-        # content[0:params.n_train][[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
-        # content[0:params.n_train][[]].to_parquet(params.dir / self.features_file, index=True)
-
         # if the case, add labels in the database
         if (not params.col_label is None) and (params.col_label in trainset.columns):
             df = trainset[params.col_label].dropna()
@@ -617,11 +601,14 @@ class Project(Server):
         self.params: ProjectModel = self.load_params(project_name)
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
+
+        # loading data
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file)
-        if (self.params.dir / self.test_file).exists():
-            self.test: DataFrame = pd.read_parquet(self.params.dir / self.test_file)
-        else:
-            self.test = None
+#        if (self.params.dir / self.test_file).exists():
+#            self.test: DataFrame = pd.read_parquet(self.params.dir / self.test_file)
+#        else:
+#            self.test = None
+
         # create specific management objets
         self.schemes: Schemes = Schemes(project_name, 
                                         self.params.dir / self.labels_file, 
@@ -652,6 +639,19 @@ class Project(Server):
         else:
             raise NameError(f"{project_name} does not exist.")
     
+    def add_testdata(self, file, col_text, col_id, n_test):
+        """
+        Add a test dataset
+        TODO: implement
+        """
+        if self.schemes.test:
+            return {"error":"Already a test dataset"}
+
+        if not file.filename.endswith('.csv'):
+            return {"error":"Only CSV file for the moment"}
+
+        return {"success":"test dataset added"}
+
     def update_simplemodel(self, simplemodel: SimpleModelModel) -> dict:
         """
         Update simplemodel on the base of an already existing
@@ -1195,8 +1195,11 @@ class Schemes():
         """
         self.project_name = project_name
         self.db = db_path
-        self.content = pd.read_parquet(path_content) #text + context   
-        self.test = pd.read_parquet(path_test)
+        self.content = pd.read_parquet(path_content) #text + context
+        self.test = None
+        if path_test.exists():   
+            self.test = pd.read_parquet(path_test)
+            
         available = self.available()
 
         # create a default scheme if not available
@@ -1216,6 +1219,7 @@ class Schemes():
                         ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
+        Join with databases : content (train) or test
         """
         if not scheme in self.available():
             raise ValueError("Scheme doesn't exist")
@@ -1243,7 +1247,6 @@ class Schemes():
                 return self.content.join(df)
             if kind == "test":
                 return self.test[["text"]].join(df)
-        
         return df
     
     def get_table(self, scheme:str,
