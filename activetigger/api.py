@@ -14,7 +14,7 @@ from activetigger.server import Server, Project
 import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
       SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
-      UmapParams, TsneParams, NextModel
+      UmapParams, TsneParams, NextModel, ZeroShotModel
 
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
@@ -40,7 +40,7 @@ timer = time.time()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Tale care of the executor at the end    
+    Frame the execution of the api
     """
     print("Active Tigger starting")
     yield
@@ -50,11 +50,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-async def check_queue(timer):
+async def check_queue(timer) -> None:
     """
-    Update server for processes
-    - queue
-    - active projects (TODO)
+    Call different functions to update the server
+    Max one time per second
     """
     # max one update per second to avoid excessive action
     step = 1
@@ -62,18 +61,31 @@ async def check_queue(timer):
         return None
     timer = time.time()
     
+    # check the queue
     server.queue.check()
 
-    # update queue for different computations 
+    # update processes for active projects
+    # and make actions 
+    to_del = []
     for p in server.projects:
         project = server.projects[p]
+
+        # if project existing since one day
+        if (timer - project.starting_time) > 86400:
+            to_del.append(p)
+
         project.features.update_processes()
         project.simplemodels.update_processes()
         predictions = project.bertmodels.update_processes()
-        # if predictions, add them as features
+
+        # action : if predictions, add them as features
         if len(predictions)>0:
             for f in predictions:
                 project.features.add(f, predictions[f])
+
+    # delete old project (they will be loaded if needed)
+    for p in to_del:
+        del server.projects[p]
     
 @app.middleware("http")
 async def middleware(request: Request, call_next):
@@ -91,23 +103,23 @@ async def middleware(request: Request, call_next):
 
 async def get_project(project_name: str) -> ProjectModel:
     """
-    Fetch existing project associated with the request
-    TODO : delete project in memory if not used for 1 day
+    Fetch existing project
+    - if already loaded, return it
+    - if not loaded, load it first
     """
 
-    # If project doesn't exist
+    # if project doesn't exist
     if not server.exists(project_name):
         raise ResponseModel(status="error", message="Project not found")
 
-    # If the project exist
+    # if the project exist
     if project_name in server.projects:
-        # Already loaded
         return server.projects[project_name]
     else:
-        # To load
         server.start_project(project_name)            
         return server.projects[project_name]
 
+# define credential exception
 credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -122,27 +134,27 @@ async def verified_user(token: Annotated[str, Depends(oauth2_scheme)]):
         payload = server.decode_access_token(token)
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            return ResponseModel(status="error", message="Could not validate credential")
     except JWTError:
-        raise credentials_exception
+        raise ResponseModel(status="error", message="Could not validate credential")
     user = server.get_user(name=username)
     if user is None:
-        raise credentials_exception
+        raise ResponseModel(status="error", message="Could not validate credential")
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     """
-    Get current user from the token in headers
+    Get current user from the headers
     """
     try:
         payload = server.decode_access_token(token)
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            return ResponseModel(status="error", message="Could not validate credential")
     except JWTError:
-        raise credentials_exception
+        return ResponseModel(status="error", message="Could not validate credential")
     user = server.get_user(name=username)
     if user is None:
-        raise credentials_exception
+        return ResponseModel(status="error", message="Could not validate credential")
     return user
 
 # ------
@@ -152,7 +164,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 @app.get("/", response_class=HTMLResponse)
 async def welcome() -> str:
     """
-    Welcome page
+    Welcome page at the root path for the API
     """
     data_path = importlib.resources.files("activetigger")
     with open(data_path / "html/welcome.html","r") as f:
@@ -161,16 +173,17 @@ async def welcome() -> str:
 
 @app.get("/documentation")
 async def get_documentation()  -> ResponseModel:
+    """
+    Path for documentation 
+    """
     data = {
             "Credits":["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
             "Contact":"emilien.schultz@ensae.fr",
             "Page":"https://github.com/emilienschultz/pyactivetigger",
             "Documentation":"To write ...."
             }
-    print(data)
     r = ResponseModel(status="success", data=data)
     return r
-
 
 # Users
 #------
@@ -203,7 +216,6 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]
 async def existing_users() -> ResponseModel:
     """
     Get users information
-    TODO : users to specific projects ?
     """
     data = {
         "users":server.existing_users()
@@ -220,10 +232,9 @@ async def create_user(username:str = Query(),
     """
     r = server.add_user(username, password, projects)
     if "success" in r:
-        r = ResponseModel(status="success", message=r["success"])
+        return ResponseModel(status="success", message=r["success"])
     else:
-        r = ResponseModel(status="error", message=r["success"])
-    return r
+        return ResponseModel(status="error", message=r["success"])
 
 @app.post("/users/delete", dependencies=[Depends(verified_user)])
 async def delete_user(username:str = Query()) -> ResponseModel:
@@ -231,12 +242,10 @@ async def delete_user(username:str = Query()) -> ResponseModel:
     Delete user
     """
     r = server.delete_user(username)
-    print(r)
     if "success" in r:
-        r = ResponseModel(status="success", message=r["success"])
+        return ResponseModel(status="success", message=r["success"])
     else:
-        r = ResponseModel(status="error", message=r["success"])
-    return r
+        return ResponseModel(status="error", message=r["success"])
 
 # Projects management
 #--------------------
@@ -244,7 +253,7 @@ async def delete_user(username:str = Query()) -> ResponseModel:
 @app.get("/state/{project_name}", dependencies=[Depends(verified_user)])
 async def get_state(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
-    Get state of a project
+    Get the state of a specific project
     """
     data = project.get_state()
     r = ResponseModel(status="success", data=data)
@@ -253,7 +262,7 @@ async def get_state(project: Annotated[Project, Depends(get_project)]) -> Respon
 @app.get("/queue")
 async def get_queue() -> ResponseModel:
     """
-    Get queue state
+    Get the state of the server queue
     """
     r = server.queue.state()
     return ResponseModel(status="success", data=r)
@@ -263,7 +272,7 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
                           user: str|None = None)  -> ResponseModel:
     """
-    Get state for a specific project/scheme/user
+    Get the state for a specific project/scheme/user
     """
     data = project.get_description(scheme = scheme, 
                                 user = user)
@@ -343,7 +352,7 @@ async def new_project(
         return ResponseModel(status = "error", message = "Project already exist")
 
     project = server.create_project(project, file)
-    print(project)
+
     # log action
     server.log_action(username, "create project", params_in["project_name"])
     r = ResponseModel(status = "success")
@@ -354,7 +363,6 @@ async def delete_project(username: Annotated[str, Header()],
                          project_name:str) -> ResponseModel:
     """
     Delete a project
-    TODO : user authorization
     """
     r = server.delete_project(project_name)
     server.log_action(username, "delete project", project_name)
@@ -363,34 +371,6 @@ async def delete_project(username: Annotated[str, Header()],
     else:
         return ResponseModel(status="success",  message=r["success"])
 
-# Annotation management
-#----------------------
-
-# @app.get("/elements/next", dependencies=[Depends(verified_user)])
-# async def get_next(project: Annotated[Project, Depends(get_project)],
-#                    username: Annotated[str, Header()],
-#                    scheme:str,
-#                    selection:str = "deterministic",
-#                    sample:str = "untagged",
-#                    tag:str|None = None,
-#                    history:list = [],
-#                    frame:list[float]|None = Query(None)) -> ResponseModel:
-#     """
-#     Get next element
-#     """
-#     r = project.get_next(
-#                         scheme = scheme,
-#                         selection = selection,
-#                         sample = sample,
-#                         user = username,
-#                         tag = tag,
-#                         history=history,
-#                         frame = frame
-#                         )
-#     if "error" in r:
-#         return ResponseModel(status="error", message=r["error"])
-#     return ResponseModel(status="success", data = r)
-
 @app.post("/elements/next", dependencies=[Depends(verified_user)])
 async def get_next(project: Annotated[Project, Depends(get_project)],
                    username: Annotated[str, Header()],
@@ -398,7 +378,6 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
     """
     Get next element
     """
-    print(next)
     r = project.get_next(
                         scheme = next.scheme,
                         selection = next.selection,
@@ -412,7 +391,6 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", data = r)
 
-
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(project: Annotated[Project, Depends(get_project)],
                          username: Annotated[str, Header()],
@@ -425,6 +403,7 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
 
     if not "data" in project.features.projections[username]:
         return ResponseModel(status="waiting", message="Still computing")
+    
     if scheme is None:
         data = project.features.projections[username]["data"].fillna("NA").to_dict()
     else:
@@ -434,6 +413,7 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
         data["labels"] = df["labels"]
         data["texts"] = df["text"]
         data = data.fillna("NA").to_dict()
+
     return ResponseModel(status="success", data = data) 
 
 
@@ -445,7 +425,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
     Start projection computation using futures
     Dedicated process, end with a file on the project
     projection__user.parquet
-    TODO : très moche comme manière de faire, à reprendre
+    TODO : intégrer directement dans la classe features ?
     """
     if len(projection.features) == 0:
         return ResponseModel(status="error", message="No feature")
@@ -506,26 +486,22 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
                             username: Annotated[str, Header()],
                             table:TableElementsModel
-                            ):
-    print(table)
+                            ) -> ResponseModel:
+    """
+    Post a table of annotations
+    """
     r = project.schemes.push_table(table = table, 
                                    user = username)
     server.log_action(username, "update data table", project.name)
-    return ResponseModel(status="success")
-
-from pydantic import BaseModel
-class ZeroShotModel(BaseModel):
-    scheme:str
-    prompt: str
-    api: str
-    token: str
-    number: int = 10
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success",  message=r["success"])
 
 @app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])
 async def zeroshot(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                     zshot:ZeroShotModel
-                            ):
+                            ) -> ResponseModel:
     """
     Launch a call to an external API for 0-shot
     """
@@ -535,8 +511,7 @@ async def zeroshot(project: Annotated[Project, Depends(get_project)],
     r = await project.compute_zeroshot(df, zshot)
     if "error" in r:
         ResponseModel(status="error", message=r["error"])
-    return ResponseModel(status="success")
-
+    return ResponseModel(status="success", message="Annotation in progress")
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
 async def get_element(project: Annotated[Project, Depends(get_project)],
@@ -545,6 +520,7 @@ async def get_element(project: Annotated[Project, Depends(get_project)],
                       scheme:str) -> ResponseModel:
     """
     Get specific element
+    TODO : remove exception
     """
     try:
         data = project.get_element(element_id, scheme=scheme, user=username)
@@ -552,7 +528,6 @@ async def get_element(project: Annotated[Project, Depends(get_project)],
     except: # gérer la bonne erreur
         return ResponseModel(status="error", message=f"Element {element_id} not found")
     
-
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
                    username: Annotated[str, Header()],
@@ -596,19 +571,19 @@ async def post_tag(action:Action,
 @app.get("/schemes", dependencies=[Depends(verified_user)])
 async def get_schemes(project: Annotated[Project, Depends(get_project)],
                       scheme:str|None = None) -> ResponseModel:
-        """
-        Available scheme of a project
-        """
-        if scheme is None:
-            data = project.schemes.get()
-            return ResponseModel(status="success", data = data)
-        
-        a = project.schemes.available()
-        if scheme in a:
-            data = {"scheme":a[scheme]}
-            return ResponseModel(status="success", data = data)
-        
-        return ResponseModel(status="error", message="scheme not available")
+    """
+    Available scheme of a project
+    """
+    if scheme is None:
+        data = project.schemes.get()
+        return ResponseModel(status="success", data = data)
+    
+    a = project.schemes.available()
+    if scheme in a:
+        data = {"scheme":a[scheme]}
+        return ResponseModel(status="success", data = data)
+    
+    return ResponseModel(status="error", message="scheme not available")
 
 
 @app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
@@ -765,7 +740,6 @@ async def get_simplemodel(project: Annotated[Project, Depends(get_project)]) -> 
     data = project.simplemodels.available()
     return ResponseModel(status="success", data=data)
 
-
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
                            username: Annotated[str, Header()],
@@ -773,7 +747,6 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
     """
     Compute simplemodel
     TODO : user out of simplemodel
-    TODO : test if parameters in simplemodel are well formed
     """
     r = project.update_simplemodel(simplemodel)
     if "error" in r:
@@ -844,6 +817,9 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
 async def stop_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                      ) -> ResponseModel:
+    """
+    Stop user process
+    """
     r = project.bertmodels.stop_user_process(username)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
@@ -899,6 +875,9 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
                      former_name:str,
                      new_name:str) -> ResponseModel:
+    """
+    Rename bertmodel
+    """
     r = project.bertmodels.rename(former_name, new_name)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])

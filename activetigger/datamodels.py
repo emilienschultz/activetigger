@@ -191,3 +191,10 @@ class TsneParams(BaseModel):
     learning_rate: str|float
     init: str
     perplexity: int
+
+class ZeroShotModel(BaseModel):
+    scheme:str
+    prompt: str
+    api: str
+    token: str
+    number: int = 10

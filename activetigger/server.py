@@ -610,6 +610,7 @@ class Project(Server):
         """
         Load existing project
         """
+        self.starting_time = time.time()
         self.name: str = project_name
         self.db = path_db
         self.queue = queue
