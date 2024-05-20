@@ -604,10 +604,6 @@ class Project(Server):
 
         # loading data
         self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file)
-#        if (self.params.dir / self.test_file).exists():
-#            self.test: DataFrame = pd.read_parquet(self.params.dir / self.test_file)
-#        else:
-#            self.test = None
 
         # create specific management objets
         self.schemes: Schemes = Schemes(project_name, 
@@ -644,11 +640,20 @@ class Project(Server):
         Add a test dataset
         TODO: implement
         """
-        if self.schemes.test:
+        if self.schemes.test is not None:
             return {"error":"Already a test dataset"}
 
         if not file.filename.endswith('.csv'):
             return {"error":"Only CSV file for the moment"}
+
+        df = pd.read_csv(file.file, nrows=n_test).set_index(col_id)
+
+        # write the dataset
+        df[[col_text]].to_parquet(self.params.dir / self.test_file)
+        # load the data
+        self.schemes.test = df[[col_text]]
+        # update parameters
+        self.params.test = True
 
         return {"success":"test dataset added"}
 

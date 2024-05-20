@@ -761,7 +761,6 @@ def display_test():
                     "user":st.session_state.user,
                     "col_text": column_text,
                     "col_id":column_id,
-                    #"col_label":column_label,
                     "n_test":n_test, 
                     }
             if st.button("Create testset"):
@@ -1545,6 +1544,7 @@ def _create_testset(data, df, filename):
     buffer.seek(0)
     files = {'file': (filename, buffer)}
     r = _post(route="/projects/testdata", 
+                params = {"project_name":st.session_state.current_project},
                 files=files,
                 data=data
                 )

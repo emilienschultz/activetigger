@@ -300,17 +300,21 @@ async def add_testdata(project: Annotated[Project, Depends(get_project)],
                       file: Annotated[UploadFile, File()],
                       col_text:str = Form(),
                       col_id:str = Form(),
-                      #col_label:str = Form(None),
                       n_test:int = Form())-> ResponseModel:
     """
     Add test dataset
+    TODO : operation at the server level
     """
 
     r = project.add_testdata(file, col_text, col_id, n_test)
     # log action
     server.log_action(username, "add testdata project", project.name)
     if "error" in r:
-        return ResponseModel(status="error", message=r["error"])    
+        return ResponseModel(status="error", message=r["error"])   
+
+    # if success, update also parameters of the project
+    server.set_project_parameters(project.params)
+
     return ResponseModel(status="success", message=r["success"])  
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
