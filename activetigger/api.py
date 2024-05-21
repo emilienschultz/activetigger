@@ -409,6 +409,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         history=next.history,
                         frame = next.frame
                         )
+    print(r)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", data = r)

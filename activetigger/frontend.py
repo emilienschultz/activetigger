@@ -302,13 +302,16 @@ def display_annotate():
     mode_sample = st.session_state.state["next"]["sample"]
 
     # default element if not defined
+    change = False
     if not st.session_state.selection or (st.session_state.selection=="test"):
         st.session_state.selection = mode_selection[0]
+        change = True
     if not st.session_state.sample:
         st.session_state.sample = mode_sample[0]
+        change = True
         
-    # get next element with the current options
-    if not "current_element" in st.session_state:
+    # get next element with the current options if there was a change
+    if change or (not "current_element" in st.session_state):
         _get_next_element()
 
     # display page
@@ -727,20 +730,23 @@ def display_test():
     """
     st.title("Test the model")
     st.write("Annotate an independant dataset for testing the model")
-    #"TODO : display the number of elements ? How many to code ?"
-    # TODO : display only if bertmodel trained ?
 
+    # existing models
     available_bert = []
     if st.session_state.current_scheme in st.session_state.state["bertmodels"]["available"]:
         available_bert = list(st.session_state.state["bertmodels"]["available"][st.session_state.current_scheme].keys())
     
-    # selection
+    # selection of a model
     model_to_test = st.selectbox(label="Trained models", 
                  options = available_bert, 
                  key = "bm_trained_test")
 
+    if not model_to_test:
+        return
+
     # case there is no test set
-    if not st.session_state.state["params"]["test"]:
+    if str(st.session_state.state["params"]["test"])=="False":
+        st.subheader("No test dataset. Load one first")
         file = st.file_uploader("Load file (CSV or Parquet)", 
                         type=['csv', 'parquet'], 
                         accept_multiple_files=False)
@@ -765,41 +771,42 @@ def display_test():
                     }
             if st.button("Create testset"):
                 _create_testset(data, df, file.name)
-    else:
-        # setting parameters to get test elements
-        with st.expander("Annotating the test sample"):
-            if st.session_state.selection != "test":
-                st.session_state.selection = "test"
-                st.session_state.tag = None
-                st.session_state.sample = "untagged"
-                st.session_state.frame = None
-                _get_next_element()
-            st.markdown(f"""
-                <div style="
-                    border: 2px solid #4CAF50;
-                    padding: 10px;
-                    border-radius: 5px;
-                    color: #4CAF50;
-                    font-family: sans-serif;
-                    text-align: justify;
-                    margin: 10px;
-                    min-height: 300px;
-                ">
-                    {st.session_state.current_element["text"]}
-                </div>
-            """, unsafe_allow_html=True)
-            _display_labels()
+        return
 
-        # panel for computation and results
-        with st.expander("Compute metrics"):
-            # launch computation if needed
-            if st.button("Launch prediction & stats"):
-                _compute_test(model_to_test, st.session_state.current_scheme)
+    # setting parameters to get test elements
+    with st.expander("Annotating the test sample"):
+        # test parameters
+        st.session_state.selection = "test"
+        st.session_state.tag = None
+        st.session_state.sample = "untagged"
+        st.session_state.frame = None
+        _get_next_element()
+        st.markdown(f"""
+            <div style="
+                border: 2px solid #4CAF50;
+                padding: 10px;
+                border-radius: 5px;
+                color: #4CAF50;
+                font-family: sans-serif;
+                text-align: justify;
+                margin: 10px;
+                min-height: 300px;
+            ">
+                {st.session_state.current_element["text"]}
+            </div>
+        """, unsafe_allow_html=True)
+        _display_labels()
 
-            # display existing statistics
-            informations = _bert_test_informations(model_to_test)
-            if informations:
-                st.write(informations)
+    # panel for computation and results
+    with st.expander("Compute metrics"):
+        # launch computation if needed
+        if st.button("Launch prediction & stats"):
+            _compute_test(model_to_test, st.session_state.current_scheme)
+
+        # display existing statistics
+        informations = _bert_test_informations(model_to_test)
+        if informations:
+            st.write(informations)
 
 
 # Internal functions
@@ -1093,11 +1100,14 @@ def _get_next_element() -> bool:
             "frame":x1y1x2y2
             }
     
+    print("call",data)
+
     r = _post(route = "/elements/next",
               params = params,
               json_data = data)
 
-    print(r)
+    print("return",r)
+
     if r["status"] == "error":
         print(r["message"])
         st.write(r["message"])
@@ -1352,7 +1362,7 @@ def _bert_informations():
     fig, ax = plt.subplots(figsize=(3,2))
     loss.plot(ax = ax)
     text = ""
-    if "f1" in r['data']["train_scores"]:
+    if "train_scores" in r['data']:
         text+=f"f1: {r['data']['train_scores']['f1']}<br>"
         text+=f"precision: {r['data']['train_scores']['precision']}<br>"
         text+=f"recall: {r['data']['train_scores']['recall']}<br>"

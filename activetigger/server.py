@@ -646,8 +646,8 @@ class Project(Server):
         if not file.filename.endswith('.csv'):
             return {"error":"Only CSV file for the moment"}
 
-        df = pd.read_csv(file.file, nrows=n_test).set_index(col_id)
-
+        df = pd.read_csv(file.file, dtype={col_id:str, col_text:str}, nrows=n_test)
+        
         # write the dataset
         df[[col_text]].to_parquet(self.params.dir / self.test_file)
         # load the data
@@ -724,7 +724,7 @@ class Project(Server):
             f = df["labels"].isnull()
             element_id = df[f].sample(random_state=42).index[0]
             element =  {
-            "element_id":element_id,
+            "element_id":str(element_id),
             "text":df.loc[element_id, "text"],
             "selection":"test",
             "context":{},
