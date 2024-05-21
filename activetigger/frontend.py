@@ -13,7 +13,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 
-__version__ = "0.2"
+__version__ = "0.3"
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000 #ms
 st.set_page_config(page_title=f"pyActiveTigger {__version__}")
@@ -108,7 +108,16 @@ def app_navigation():
         options = options + ["Configuration"]    
 
     with st.sidebar:
-        st.session_state['page'] = option_menu("Navigate", options, menu_icon="cast")
+        st.session_state['page'] = option_menu("Navigate", 
+                                               options, 
+                                               menu_icon="bi-bookmark-check",
+                                               icons=['house', 
+                                                      "bi-bookmark-plus",
+                                                      "percent", 
+                                                      'gear',
+                                                      "clipboard-check",
+                                                      "cloud-download",
+                                                      "book"])
 
     # navigating
     if st.session_state['page'] == "Projects":
@@ -158,6 +167,7 @@ def display_projects():
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Load"):
             st.session_state.current_project = select
+            st.session_state.history = []
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Delete"):

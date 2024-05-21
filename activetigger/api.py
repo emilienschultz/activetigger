@@ -870,11 +870,11 @@ async def start_test(project: Annotated[Project, Depends(get_project)],
 
     # launch testing process : prediction
     r = project.bertmodels.start_testing_process(name = model,
+                                                 user = username,
                                                 df = df,
-                                                scheme = scheme,
                                                 col_text = "text",
                                                 col_labels="labels",
-                                                user = username)
+                                                )
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"predict bert for testing", project.name)
