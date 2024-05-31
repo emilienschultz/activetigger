@@ -297,9 +297,6 @@ def display_features():
             _add_regex(regex)
 
     st.markdown("<hr>", unsafe_allow_html=True)
-    if st.button("Next step : annotate"):
-        if st.session_state.current_scheme is not None:
-            st.session_state.page = "Annotate"
 
 def display_annotate():
     """
