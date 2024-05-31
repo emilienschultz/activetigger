@@ -16,7 +16,7 @@ from streamlit_option_menu import option_menu
 __version__ = "0.3"
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000 #ms
-st.set_page_config(page_title=f"pyActiveTigger {__version__}")
+st.set_page_config(page_title=f"pyActiveTigger {__version__}", layout="wide")
 
 count = st_autorefresh(interval=update_time, limit=None, key="fizzbuzzcounter")
 
@@ -54,12 +54,17 @@ def main():
     data_path = importlib.resources.files("activetigger")
     image_path = "img/active_tigger.png"
     img = open(data_path / image_path, 'rb').read()
-    st.sidebar.image(img)
-    st.sidebar.write(__version__)
+    #st.sidebar.image(img)
+    #st.sidebar.write(__version__)
 
     # start the interface
     if not st.session_state['logged_in']:
-        login_page()
+        
+        col1,col2 = st.columns(2)
+        with col1:
+            login_page()
+        with col2:
+            st.image(img)
     else:
         app_navigation()
 
@@ -90,25 +95,25 @@ def app_navigation():
             st.session_state.bert_training = False
 
     # user logged
-    st.sidebar.write(f"Current user: {st.session_state.user}")
+    #st.sidebar.write(f"Current user: {st.session_state.user}")
 
     # creating the menu
     options = [
             "Projects",
             "Annotate",
             "Statistics",
-            "Train model",
-            "Test Model",
+            "Train",
+            "Test",
             "Export", 
-            "Documentation"
+            "Doc"
             ]
     
     # add user management
     if st.session_state.user == "root":
-        options = options + ["Configuration"]    
+        options = options + ["Conf"]    
 
-    with st.sidebar:
-        st.session_state['page'] = option_menu("Navigate", 
+    #with st.sidebar:
+    st.session_state['page'] = option_menu(f"pyActiveTigger {__version__} - Current user : {st.session_state.user}", 
                                                options, 
                                                menu_icon="bi-bookmark-check",
                                                icons=['house', 
@@ -117,12 +122,13 @@ def app_navigation():
                                                       'gear',
                                                       "clipboard-check",
                                                       "cloud-download",
-                                                      "book"])
+                                                      "book"], 
+                                                orientation = "horizontal")
 
     # navigating
     if st.session_state['page'] == "Projects":
         display_projects()
-    elif st.session_state['page'] == "Documentation":
+    elif st.session_state['page'] == "Doc":
         display_documentation()
     else:
         if not st.session_state.current_project:
@@ -132,13 +138,13 @@ def app_navigation():
             display_annotate()
         elif st.session_state['page'] == "Statistics":
             display_description()
-        elif st.session_state['page'] == "Train model":
+        elif st.session_state['page'] == "Train":
             display_bertmodels()
-        elif st.session_state['page'] == "Test Model":
+        elif st.session_state['page'] == "Test":
             display_test()
         elif st.session_state['page'] == "Export":
             display_export()
-        elif st.session_state['page'] == "Configuration":
+        elif st.session_state['page'] == "Conf":
             display_configuration()   
 
 def display_documentation():

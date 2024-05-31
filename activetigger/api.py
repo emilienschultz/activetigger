@@ -13,8 +13,6 @@ import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
       SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
       UmapParams, TsneParams, NextModel, ZeroShotModel
-import pandas as pd
-import os
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -530,7 +528,7 @@ async def zeroshot(project: Annotated[Project, Depends(get_project)],
     Launch a call to an external API for 0-shot
     """
     # get subset of unlabelled elements
-    df = project.schemes.get_table(zshot.scheme, 0, 5, "untagged")
+    df = project.schemes.get_table(zshot.scheme, 0, zshot.number, "untagged")
     # make the call
     r = await project.compute_zeroshot(df, zshot)
     if "error" in r:
