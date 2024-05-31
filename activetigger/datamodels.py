@@ -139,6 +139,7 @@ class TableElementsModel(BaseModel):
     list_ids:list
     list_labels:list
     scheme:str
+    action:str
 
 class ProjectionModel(BaseModel):
     method:str
