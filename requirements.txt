@@ -26,6 +26,7 @@ umap-learn
 sacremoses
 streamlit_autorefresh
 streamlit_option_menu
+streamlit-pydantic
 openai
 fasttext @ git+https://github.com/facebookresearch/fastText.git@main
 https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.7.0/fr_core_news_sm-3.7.0.tar.gz#egg=fr_core_news_sm
