@@ -86,13 +86,16 @@ def app_navigation():
     """
     Select page
     """
-    # computation state
+    # display computation state
     if st.session_state.state:
         if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
             st.session_state.bert_training = True
             st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Computing (training / predicting). Wait the process to end before launching another one.</div>")
         else:
             st.session_state.bert_training = False
+        c = st.session_state.state["features"]["training"]
+        if not len(c) == 0:
+            st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>")
 
     # user logged
     #st.sidebar.write(f"Current user: {st.session_state.user}")
@@ -270,9 +273,6 @@ def display_features():
     Feature page
     """
     st.write("Manage features")
-    c = st.session_state.state["features"]["training"]
-    if not len(c) == 0:
-        st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>")
 
     feature = st.selectbox(label="Available",
                            options = st.session_state.state["features"]["available"])
