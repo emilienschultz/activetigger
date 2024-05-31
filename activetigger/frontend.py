@@ -113,7 +113,7 @@ def app_navigation():
         options = options + ["Conf"]    
 
     #with st.sidebar:
-    st.session_state['page'] = option_menu(f"pyActiveTigger {__version__} - Current user : {st.session_state.user}", 
+    st.session_state['page'] = option_menu(f"pyActiveTigger {__version__} - Current user : {st.session_state.user} - Current project : {st.session_state.current_project}", 
                                                options, 
                                                menu_icon="bi-bookmark-check",
                                                icons=['house', 
@@ -157,8 +157,9 @@ def display_documentation():
 def display_projects():
     """
     Projects page
-    - select a project
-    - create one
+    - select roject
+    - delete project
+    - create project
     """
     r = _get("/server")
     existing = r["data"]["projects"]
@@ -954,21 +955,23 @@ def _delete_user(username:str):
         return False
     return r    
 
-def _create_project(data, df, name):
+def _create_project(data, df, name) -> bool:
     """
     Create project
     """
+    # manage file to send
     buffer = BytesIO()
     df.to_csv(buffer)
     buffer.seek(0)
     files = {'file': (name, buffer)}
+    # post files
     r = _post(route="/projects/new", 
                 files=files,
                 data=data
                 )
-    print("Retour", r)
     if r["status"] == "error":
-        print(r["message"])
+        st.write(r["message"])
+        return False
     return True
 
 def _delete_project(project_name:str) -> dict:

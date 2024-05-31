@@ -335,7 +335,8 @@ async def new_project(
     Load new project
         file (file)
         multiple parameters
-    PAS LA SOLUTION LA PLUS JOLIE
+    Actuellement, pas la solution la plus jolie
+    mais je n'arrive pas à mettre tous les éléments dans un objet (query + form + file)
     https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
     """
 
@@ -356,27 +357,24 @@ async def new_project(
         }
     
     # removing None parameters
-    params_out = params_in.copy()
-    for i in params_in:
-        if params_in[i] is None:
-            del params_out[i]
-
-    project = ProjectModel(**params_out)
+    params = {i:params_in[i] for i in params_in if params_in[i] is not None}
+    project = ProjectModel(**params)
 
     # format of the files (only CSV for the moment)
     if not file.filename.endswith('.csv'):
         return ResponseModel(status = "error", message = "Only CSV file for the moment")
         
-    # test if project exist
+    # test if project name already exists
     if server.exists(project.project_name):
         return ResponseModel(status = "error", message = "Project already exist")
 
+    # create the project
     project = server.create_project(project, file)
 
     # log action
     server.log_action(username, "create project", params_in["project_name"])
-    r = ResponseModel(status = "success")
-    return r
+
+    return ResponseModel(status = "success")
 
 @app.post("/projects/delete", dependencies=[Depends(verified_user)])
 async def delete_project(username: Annotated[str, Header()],
