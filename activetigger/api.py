@@ -514,7 +514,8 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
     Post a table of annotations
     """
     r = project.schemes.push_table(table = table, 
-                                   user = username)
+                                   user = username, 
+                                   action = table.action)
     server.log_action(username, "update data table", project.name)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
@@ -863,7 +864,7 @@ async def start_test(project: Annotated[Project, Depends(get_project)],
         return ResponseModel(status="error", message="No test dataset for this project")
 
     # get data labels + text
-    df = project.schemes.get_scheme_data(scheme, complete=True, kind="test")
+    df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
 
     if len(df["labels"].dropna())<10:
         return ResponseModel(status="error", message="Less than 10 elements annotated")

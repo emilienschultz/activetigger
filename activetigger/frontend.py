@@ -479,7 +479,7 @@ def display_data():
         st.number_input(label="min", key="data_max", min_value=0, value=10, step=1)
 
     st.session_state.data_df = _get_table()
-    
+#    st.write(st.session_state.data_df)
 
     # make the table editable
     labels =  st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
@@ -513,17 +513,26 @@ def display_zeroshot():
     st.write("Describe for each label the rules to code them")
 
     labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    codebook = st.text_area("Codebook", value=json.dumps({i:"Write the rule" for i in labels}, indent=2), key = "codebook")
+    if not "codebook" in st.session_state:
+        st.session_state.codebook = json.dumps({i:"Write the rule" for i in labels}, indent=2)
+    st.session_state.codebook = st.text_area("Codebook", value=st.session_state.codebook)
     prompt = None
 
-    if st.button("Predict annotation for 5 texts"):
-        prompt = "Annotate the following list of texts with the label the most appropriate based on the given descriptions. Keep the order. Do not provide explanations. Return the result in JSON format.\n\n"
-        prompt += "Labels with their descriptions:\n"
-        for label, description in json.loads(codebook).items():
-            prompt += f"- {label}: {description}\n"
-        r = _start_zeroshot(api, st.session_state.api_token, prompt)
-        if r["status"]=="error":
-            st.write(r["message"])
+    col1, col2 = st.columns(2)
+    with col1:
+        number = st.number_input("Number of element", step = 1, value=5)
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Predict annotation"):
+            prompt = "Annotate the following list of texts with the label the most appropriate based on the given descriptions. Keep the order. Do not provide explanations. Return the result in JSON format.\n\n"
+            prompt += "Labels with their descriptions:\n"
+            for label, description in json.loads(st.session_state.codebook).items():
+                prompt += f"- {label}: {description}\n"
+            r = _start_zeroshot(api, st.session_state.api_token, prompt, number)
+            if r["status"]=="error":
+                st.write(r["message"])
+    st.write("If you predict an important element of entries, they will be chuncked")
+    st.write("For the moment, only 10 elements possible")
     
     st.subheader("Results")
 
@@ -540,6 +549,7 @@ def display_zeroshot():
                 st.write("Save annotations")
     else:
         st.write("No prediction available; wait results if you launched it.")
+
 
 def display_simplemodels():
     """
@@ -1281,18 +1291,23 @@ def _send_table(df, labels="labels"):
         if pd.isna(i):
             return None
         return i
+
     data = {
         "scheme":st.session_state.current_scheme,
-        "list_ids": list(df.index), #list(st.session_state.data_df.index),
-        "list_labels": [replace_na(i) for i in df[labels]], #[replace_na(i) for i in st.session_state.data_df["labels"]]
+        "list_ids": list(df.index), 
+        "list_labels": [replace_na(i) for i in df[labels]],
+        "action":"predict"
     }
+
     r = _post("/elements/table", 
                 json_data = data, 
                 params = {"project_name":st.session_state.current_project,
                             "user":st.session_state.user
                             })
+
     if r["status"] == "error":
         st.write(r["message"])
+
     st.write("Data saved")
 
 def _train_simplemodel():
@@ -1538,7 +1553,7 @@ def _compute_test(model_name, scheme):
         return False
     return True    
 
-def _start_zeroshot(api, token, prompt):
+def _start_zeroshot(api, token, prompt, number=10):
     """
     Launch 0-shot annotation for 10 elements
     """
@@ -1546,7 +1561,8 @@ def _start_zeroshot(api, token, prompt):
             "prompt":prompt,
             "api":api, 
             "token":token,
-            "scheme":st.session_state.current_scheme
+            "scheme":st.session_state.current_scheme,
+            "n":number
             }
     r = _post(route="/elements/zeroshot", 
             params = {"project_name":st.session_state.current_project},

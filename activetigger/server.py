@@ -720,7 +720,7 @@ class Project(Server):
         print("history",history)
         # specific case of test, random element
         if selection == "test": 
-            df = self.schemes.get_scheme_data(scheme, complete=True, kind="test")
+            df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
             f = df["labels"].isnull()
             element_id = df[f].sample(random_state=42).index[0]
             element =  {
@@ -862,13 +862,13 @@ class Project(Server):
             return {"error":"Scheme not defined"}
         
         # part train
-        df = self.schemes.get_scheme_data(scheme, kind="add")
+        df = self.schemes.get_scheme_data(scheme, kind=["add","predict"])
         r["N annotated"] = len(df)
         r["Users"] = list(self.schemes.get_distinct_users(scheme))
         r["Annotations"] = json.loads(df["labels"].value_counts().to_json())
 
         # part test
-        df = self.schemes.get_scheme_data(scheme, kind="test")
+        df = self.schemes.get_scheme_data(scheme, kind=["test"])
         r["N test annotated"] = len(df)
 
         if self.simplemodels.exists(user, scheme):
@@ -980,8 +980,14 @@ class Project(Server):
     async def compute_zeroshot(self, df, params):
         """
         Zero-shot beta version
+        # TODO : chunk & control the context size
         """
         r_error = ["error"] * len(df)
+
+        # create the chunks
+        # FOR THE MOMENT, ONLY 10 elements for DEMO
+        if len(df)>10:
+            df = df[0:10]
 
         # create prompt
         list_texts = "\nTexts to annotate:\n"
@@ -1218,9 +1224,10 @@ class Schemes():
         return f"Coding schemes available {self.available()}"
 
 
-    def get_scheme_data(self, scheme:str, 
-                        complete = False, 
-                        kind = "add"
+    def get_scheme_data(self, 
+                        scheme:str, 
+                        complete:bool = False, 
+                        kind:list|str = ["add"]
                         ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -1229,29 +1236,35 @@ class Schemes():
         if not scheme in self.available():
             raise ValueError("Scheme doesn't exist")
         
+        if isinstance(kind, str):
+            kind = [kind]
+        
         # get all elements from the db
         # - last element for each id
         # - for a specific scheme
 
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        query = '''
+        action = "(" + " OR ".join([f"action = ?" for i in kind]) +")"
+
+        query = f"""
             SELECT element_id, tag, user, MAX(time)
             FROM annotations
-            WHERE scheme = ? AND project = ? AND action = ?
+            WHERE scheme = ? AND project = ? AND {action}
             GROUP BY element_id
             ORDER BY time DESC;
-        '''
-        cursor.execute(query, (scheme, self.project_name, kind))
+        """
+        cursor.execute(query, (scheme, self.project_name)+tuple(kind))
         results = cursor.fetchall()
         conn.close()
         df = pd.DataFrame(results, columns =["id","labels","user","timestamp"]).set_index("id")
         df.index = [str(i) for i in df.index]
         if complete: # all the elements
-            if kind == "add":
-                return self.content.join(df)
-            if kind == "test":
+            if kind == "test": 
+                # case if the test, join the text data
                 return self.test[["text"]].join(df)
+            else:
+                return self.content.join(df)
         return df
     
     def get_table(self, scheme:str,
@@ -1269,6 +1282,7 @@ class Schemes():
 
         # data of the scheme
         df = self.get_scheme_data(scheme, complete = True)
+
         # case of recent annotations
         if mode == "recent": 
             list_ids = self.get_recent_tags(user, scheme, max-min)
@@ -1341,7 +1355,7 @@ class Schemes():
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             print(i)
-            self.push_tag(i, None, scheme, user)
+            self.push_tag(i, None, scheme, user, "add")
         self.update_scheme(scheme, labels, user)
         return {"success":"scheme updated removing a label"}
 
@@ -1437,9 +1451,10 @@ class Schemes():
                  tag:str|None,
                  scheme:str,
                  user:str = "server",
-                 selection:str = "training"):
+                 action:str = "add"):
         """
-        Record a tag
+        Record a tag in the database
+        action : add, test, predict
         """
 
         # test if the action is possible
@@ -1453,11 +1468,6 @@ class Schemes():
         #if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 
-        # type of tag regarding the selection mode
-        action = "add"
-        if selection == "test":
-            action = "test"
-
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = '''
@@ -1469,7 +1479,7 @@ class Schemes():
         conn.close()
         return {"success":"tag added"}
     
-    def push_table(self, table, user:str) -> bool:
+    def push_table(self, table, user:str, action:str = "add") -> bool:
         """
         Push table index/tags to update
         Comments:
@@ -1480,8 +1490,11 @@ class Schemes():
             r = self.push_tag(i, 
                             data[i],
                             table.scheme,
-                            user)
-        return True
+                            user, 
+                            action)
+            if "error" in r:
+                return {"error":"Something happened when recording."}
+        return {"success":"table pushed"}
 
     def get_recent_tags(self,
                     user:str,
