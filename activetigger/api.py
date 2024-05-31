@@ -369,7 +369,7 @@ async def new_project(
         return ResponseModel(status = "error", message = "Project already exist")
 
     # create the project
-    project = server.create_project(project, file)
+    server.create_project(project, file)
 
     # log action
     server.log_action(username, "create project", params_in["project_name"])

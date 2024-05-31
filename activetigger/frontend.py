@@ -330,15 +330,8 @@ def display_annotate():
 
     # display page
     st.title("Annotate data")
-    st.write("History (reload to reset):", len(st.session_state.history))
 
-    with st.expander("Manage tags"):
-        display_manage_tags()
-
-    with st.expander("Active learning"):
-        display_simplemodels()
-
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.session_state.selection = st.selectbox(label="Selection", 
                      options = mode_selection, 
@@ -362,14 +355,8 @@ def display_annotate():
                     key = "tag", 
                     label_visibility="hidden",
                     on_change = _get_next_element)
-    with col4:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Back"):
-                    _get_previous_element()
     if st.session_state.current_element:
         st.markdown(f"""
-            <div>{st.session_state.current_element["predict"]}</div>
-            <div>{st.session_state.current_element['info']}</div>
             <div style="
                 border: 2px solid #4CAF50;
                 padding: 10px;
@@ -387,13 +374,29 @@ def display_annotate():
 
         _display_labels()
 
+    # back button
+    st.write("History (reload to reset):", len(st.session_state.history))
+    if st.button("Back"):
+        _get_previous_element()
+
+    with st.expander("Informations"):
+        st.write("Informations on the element")
+        st.write(f"Predict : {st.session_state.current_element['predict']}")
+        st.write(st.session_state.current_element['info'])
+
+    with st.expander("Manage tags"):
+        display_manage_tags()
+
+    with st.expander("Active learning"):
+        display_simplemodels()
+
     with st.expander("Projection"):
         display_projection()
 
     with st.expander("0-shot annotation with LLM"):
         display_zeroshot()
 
-    with st.expander("Data"):
+    with st.expander("Explore data"):
         display_data()
 
 def display_projection():
@@ -454,6 +457,8 @@ def _display_labels():
     Display labels
     """
     labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    if len(labels)==0:
+        st.write("Create labels first")
     cols = st.columns(len(labels)+1)
     for col, label in zip(cols[:-1], labels):
         with col:

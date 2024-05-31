@@ -457,15 +457,18 @@ class Server():
         - initialize files
         - add preliminary tags
         """
-        # create directory for the project
+        # test if possible to create the project
         if self.exists(params.project_name):
             return {"error":"Project name already exist"}
+        
         params.dir = self.path / params.project_name
+
         if params.dir.exists():
             return {"error":"This name is already used"}
+        
         os.makedirs(params.dir)
 
-        # copy total dataset
+        # copy total dataset as a copy
         with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
@@ -555,7 +558,7 @@ class Server():
 
         # save parameters 
         self.set_project_parameters(params)
-        return params
+        return {"success":"Project created"}
     
 
     def delete_project(self, project_name:str) -> dict:
