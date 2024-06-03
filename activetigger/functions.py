@@ -17,7 +17,7 @@ import torch
 import os
 import logging
 import datasets
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, BertTokenizer
 from transformers import Trainer, TrainingArguments, TrainerCallback
 import json
 import shutil
@@ -452,9 +452,6 @@ def predict_bert(
     + probabilities
     + entropy
     """
-    with open(path/"log_predict.log","a") as f:
-        f.write("start")
-
     print("function prediction : start")
     if gpu:
         model.cuda()
@@ -499,3 +496,18 @@ def predict_bert(
     pred.to_parquet(path / file_name)
     print("function prediction : finished")
     return pred
+
+def truncate_text(text:str, max_tokens:int = 512):
+    """
+    Limit a text to a specific number of tokens
+    """
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    tokens = tokenizer.tokenize(text)
+    num_tokens = len(tokens)
+    if num_tokens > max_tokens:
+        print(num_tokens)
+        truncated_tokens = tokens[:max_tokens]
+        text_t = tokenizer.convert_tokens_to_string(truncated_tokens)
+    else:
+        text_t = text
+    return text_t

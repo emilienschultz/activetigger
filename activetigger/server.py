@@ -484,7 +484,15 @@ class Server():
         content.index = [str(i) for i in list(content.index)] #type: ignore
         if len(content) < params.n_test + params.n_train:
             return {"error":f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"}
+        
         # TODO : drop duplicates ?
+
+        # Limit text to contextual windows #TODO check how to do it
+        def limit(text):
+            if len(text.split(" "))<200:
+                return text
+            return functions.truncate_text(text)
+        #content[params.col_text] = content[params.col_text].apply(limit)
 
         # Step 2 : test dataset, no already labelled data, random + stratification
         rows_test = []
@@ -898,7 +906,7 @@ class Project(Server):
                     "options":self.features.options,
                     "available":list(self.features.map.keys()),
                     "training":list(self.features.training.keys()),
-                    "infos":{}
+                    "infos":self.features.informations
                     },
             "simplemodel":{
                     "options":self.simplemodels.available_models,
@@ -1058,10 +1066,11 @@ class Features():
         self.path = data_path
         self.db = db_path
         self.queue = queue
+        self.informations = {}
         content, map = self.load()
         self.content: DataFrame = content
         self.map:dict = map
-        self.training:list = {}
+        self.training:dict = {}
 
         # managing projections
         self.projections:dict = {}
@@ -1125,8 +1134,8 @@ class Features():
                                   content],
                                      axis=1)
         # save
-
         self.content.to_parquet(self.path)
+
         return {"success":"feature added"}
 
     def delete(self, name:str):
