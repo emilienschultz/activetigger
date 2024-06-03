@@ -98,7 +98,7 @@ async def middleware(request: Request, call_next):
 # Dependencies
 # ------------
 
-async def get_project(project_name: str) -> ProjectModel:
+async def get_project(project_name: str) -> ProjectModel|None:
     """
     Fetch existing project
     - if already loaded, return it
@@ -107,7 +107,7 @@ async def get_project(project_name: str) -> ProjectModel:
 
     # if project doesn't exist
     if not server.exists(project_name):
-        return ResponseModel(status="error", message="Project not found")
+        return None
 
     # if the project exist
     if project_name in server.projects:
@@ -252,6 +252,8 @@ async def get_state(project: Annotated[Project, Depends(get_project)]) -> Respon
     """
     Get the state of a specific project
     """
+    if project is None:
+        return ResponseModel(status="error", message="Project not found")
     data = project.get_state()
     r = ResponseModel(status="success", data=data)
     return r

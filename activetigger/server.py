@@ -456,6 +456,9 @@ class Server():
         - initialize parameters in the db
         - initialize files
         - add preliminary tags
+
+        Comments:
+        - when saved, the files followed the nomenclature of the project : text, label, etc.
         """
         # test if possible to create the project
         if self.exists(params.project_name):
@@ -478,13 +481,20 @@ class Server():
         # if n_test = 0, no test set
         # stratified if possible by cols_test
 
-        # Step 1 : load all data and index to str
+        # Step 1 : load all data and index to str and rename
         content = pd.read_csv(params.dir / "data_raw.csv")
-        content = content.set_index(params.col_id)
-        content.index = [str(i) for i in list(content.index)] #type: ignore
         if len(content) < params.n_test + params.n_train:
             return {"error":f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"}
+        content = content.set_index(params.col_id)
+        content.index = [str(i) for i in list(content.index)] #type: ignore
         
+        # rename to nomalize
+        content.rename(columns={params.col_id:"id",
+                                params.col_text:"text"}, inplace=True)
+        if params.col_label:
+            content.rename(columns={params.col_label:"label"}, inplace=True)
+        # TODO : also rename context columns ?
+
         # TODO : drop duplicates ?
 
         # Limit text to contextual windows #TODO check how to do it
@@ -492,20 +502,25 @@ class Server():
             if len(text.split(" "))<200:
                 return text
             return functions.truncate_text(text)
-        #content[params.col_text] = content[params.col_text].apply(limit)
+        #content["text"] = content["text"].apply(limit)
+
+
+        # if no label column, add dummy to act as if a column without
+        if not params.col_label:
+            content["label"] = None
 
         # Step 2 : test dataset, no already labelled data, random + stratification
         rows_test = []
         params.test = False
         if params.n_test != 0:
             # only on non labelled data
-            f = content[params.col_label].isna()
+            f = content["label"].isna()
             if (f.sum()) < params.n_test:
                 return {"error":"Not enought data for creating the test dataset"}
             if len(params.cols_test) == 0: # if no stratification
                 testset = content[f].sample(params.n_test)
             else: #if stratification, total cat, number of element per cat, sample with a lim
-                df_grouped = content[f].groupby(params.col_label, group_keys=False)
+                df_grouped = content[f].groupby(params.cols_test, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(params.n_test/nb_cat)
                 testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
@@ -515,8 +530,8 @@ class Server():
         
         # Step 3 : train dataset, remove test rows, prioritize labelled data
         content = content.drop(rows_test)
-        f_notna = content[params.col_label].notna()
-        f_na = content[params.col_label].isna()
+        f_notna = content["label"].notna()
+        f_na = content["label"].isna()
         if f_notna.sum()>params.n_train: # case where there is more labelled data than needed
             trainset = content[f_notna].sample(params.n_train)
         else:
@@ -524,12 +539,13 @@ class Server():
             trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
 
         trainset.to_parquet(params.dir / self.data_file, index=True)
-        trainset[[params.col_text]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
+        trainset[["text"]+params.cols_context].to_parquet(params.dir / self.labels_file, index=True)
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
         # if the case, add labels in the database
-        if (not params.col_label is None) and (params.col_label in trainset.columns):
-            df = trainset[params.col_label].dropna()
+        if (not params.col_label is None) and ("label" in trainset.columns):
+            print("label case")
+            df = trainset["label"].dropna()
             params.default_scheme = list(df.unique())
             # add the scheme in the database
             conn = sqlite3.connect(self.db)
@@ -565,6 +581,7 @@ class Server():
             conn.close()
 
         # save parameters 
+        params.col_label = None #reverse dummy
         self.set_project_parameters(params)
         return {"success":"Project created"}
     
@@ -812,7 +829,7 @@ class Project(Server):
 
         element =  {
             "element_id":element_id,
-            "text":self.content.fillna("NA").loc[element_id,self.params.col_text],
+            "text":self.content.fillna("NA").loc[element_id,"text"],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":selection,
             "info":indicator,
@@ -842,7 +859,7 @@ class Project(Server):
                         "proba":predicted_proba}
         r = { 
             "element_id":element_id,
-            "text":self.content.loc[element_id,self.params.col_text],
+            "text":self.content.loc[element_id,"text"],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
             "selection":"request",
             "predict":predict,
@@ -937,7 +954,7 @@ class Project(Server):
             return {"error":"a feature already has this name"}
 
         pattern = re.compile(value)
-        f = self.content[self.params.col_text].apply(lambda x: bool(pattern.search(x)))
+        f = self.content["text"].apply(lambda x: bool(pattern.search(x)))
         self.features.add(name,f)
         return {"success":"regex added"}
     
@@ -1311,7 +1328,6 @@ class Schemes():
             f_contains = df["text"].str.contains(contains)
             df = df[f_contains]
         
-
         # build dataset
         if mode == "tagged": 
             df = df[df["labels"].notnull()]

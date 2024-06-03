@@ -13,11 +13,12 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 
-__version__ = "0.3"
+__version__ = "0.4"
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000 #ms
 st.set_page_config(page_title=f"pyActiveTigger {__version__}", layout="wide")
 
+# timer to autorefresh
 count = st_autorefresh(interval=update_time, limit=None, key="fizzbuzzcounter")
 
 if not "header" in st.session_state:
@@ -154,12 +155,15 @@ def display_documentation():
     """
     Documentation page
     """
+    st.subheader("Parameters of the project")
+    st.write(st.session_state.state)
+    st.write(st.session_state.data_df)
+
+#    st.write(st.session_state.state["params"])
+    st.subheader("Informations")
     doc = _get_documentation()
     st.write(doc)
 
-    st.write(st.session_state.state)
-
-    st.write(_get_queue()["data"])
 
 def display_projects():
     """
@@ -212,7 +216,7 @@ def display_projects():
             st.write("Select columns")
             column_id = st.selectbox("Ids:",list(df.columns))
             column_text = st.selectbox("Texts:",list(df.columns))
-            column_label = st.selectbox("Labels:",list(df.columns))
+            column_label = st.selectbox("Labels:",list(df.columns), index=None)
             columns_context = st.multiselect("Context:",list(df.columns))
             n_train = st.number_input("N train", min_value=100, max_value=len(df),key="n_train")
             n_test = st.number_input("N test (0 if no test set)", min_value=0, max_value=len(df),key="n_test")
@@ -385,8 +389,9 @@ def display_annotate():
 
     with st.expander("Informations"):
         st.write("Informations on the element")
-        st.write(f"Predict : {st.session_state.current_element['predict']}")
-        st.write(st.session_state.current_element['info'])
+        if st.session_state.current_element:
+            st.write(f"Predict : {st.session_state.current_element['predict']}")
+            st.write(st.session_state.current_element['info'])
 
     with st.expander("Manage tags"):
         display_manage_tags()
