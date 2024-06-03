@@ -16,7 +16,6 @@ import numpy as np
 import torch
 import os
 import logging
-from multiprocessing import Process
 import datasets
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from transformers import Trainer, TrainingArguments, TrainerCallback
@@ -444,7 +443,7 @@ def predict_bert(
             path:Path,
             df:DataFrame,
             col_text:str,
-            col_labels:str|None,
+            col_labels:str|None = None,
             gpu:bool = False, 
             batch:int = 128, 
             file_name = "predict.parquet"):
@@ -453,13 +452,16 @@ def predict_bert(
     + probabilities
     + entropy
     """
+    with open(path/"log_predict.log","a") as f:
+        f.write("start")
+
     print("function prediction : start")
     if gpu:
         model.cuda()
 
     # Start prediction with batches
     predictions = []
-    logging.info(f"Start prediction with {len(df)} entries")
+    # logging the process
     for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
         print("Next chunck prediction")
         chunk = tokenizer(list(chunk), 
@@ -476,7 +478,6 @@ def predict_bert(
             res = res.cpu()
         res = res.softmax(1).detach().numpy()
         predictions.append(res)
-        logging.info(f"{round(100*len(res)/len(df))}% predicted")
 
     # to dataframe
     pred = pd.DataFrame(np.concatenate(predictions), 

@@ -99,7 +99,7 @@ class Queue():
             else:
                 info = "done"
                 exception = self.current[f]["future"].exception()
-            r[f] = {"state":info, exception:exception}
+            r[f] = {"state":info, "exception":exception}
         return r
 
 class Server():
@@ -811,7 +811,7 @@ class Project(Server):
             "predict":predict,
             "frame":frame,
                 }
-        print(element)        
+ #       print(element)        
         return element
     
     def get_element(self, 
@@ -898,6 +898,7 @@ class Project(Server):
                     "options":self.features.options,
                     "available":list(self.features.map.keys()),
                     "training":list(self.features.training.keys()),
+                    "infos":{}
                     },
             "simplemodel":{
                     "options":self.simplemodels.available_models,
@@ -1274,22 +1275,33 @@ class Schemes():
                         min:int,
                         max:int, 
                         mode:str,
+                        contains:str|None = None,
                         user:str = "all"):
         """
         Get data table
+        - either recent
+        - or subsample of data with contains
+        
+        Choice to order by index.
         """
         if not mode in ["tagged","untagged","all","recent"]:
             mode = "all"
         if not scheme in self.available():
             return {"error":"scheme not available"}
-
+        
         # data of the scheme
         df = self.get_scheme_data(scheme, complete = True)
 
-        # case of recent annotations
+        # case of recent annotations (no filter possible)
         if mode == "recent": 
             list_ids = self.get_recent_tags(user, scheme, max-min)
             return df.loc[list_ids]
+        
+        # filter for contains
+        if contains:
+            f_contains = df["text"].str.contains(contains)
+            df = df[f_contains]
+        
 
         # build dataset
         if mode == "tagged": 
@@ -1297,6 +1309,7 @@ class Schemes():
         if mode == "untagged":
             df = df[df["labels"].isnull()]
 
+        # normalize size
         if max == 0:
             max = len(df)
         if  max > len(df):
@@ -1305,7 +1318,7 @@ class Schemes():
         if (min > len(df)):
             return {"error":"min value too high"}
         
-        return df.iloc[min:max].drop(columns="timestamp")
+        return df.sort_index().iloc[min:max].drop(columns="timestamp")
 
     def add_scheme(self, scheme:SchemeModel):
         """

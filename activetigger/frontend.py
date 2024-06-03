@@ -157,6 +157,10 @@ def display_documentation():
     doc = _get_documentation()
     st.write(doc)
 
+    st.write(st.session_state.state)
+
+    st.write(_get_queue()["data"])
+
 def display_projects():
     """
     Projects page
@@ -479,16 +483,18 @@ def display_description():
     
 def display_data():
     st.subheader("Display data")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.selectbox(label="Sample", options=["all","tagged","untagged","recent"], index=3, key="data_mode") 
     with col2:
         st.number_input(label="min", key="data_min", min_value=0, value=0, step=1)
     with col3:
         st.number_input(label="min", key="data_max", min_value=0, value=10, step=1)
+    with col4:
+        st.text_input(label="Contains", key="data_contains")
 
+    # modify only if one of the field change
     st.session_state.data_df = _get_table()
-#    st.write(st.session_state.data_df)
 
     # make the table editable
     labels =  st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
@@ -640,15 +646,14 @@ def display_bertmodels():
                 _delete_bert()
         
         with col3:
-            st.text_input(label = "", value="", placeholder="New name", key="bm_new_name")
+            st.text_input(label = "New name", value="", placeholder="New name", key="bm_new_name", label_visibility="hidden")
             if st.button("Validate"):
                 st.write("Rename", st.session_state.bm_new_name)
                 _save_bert()
 
-        st.write("Elements")
         data = _bert_informations()
         if data:
-            st.pyplot(data[0])
+            st.pyplot(data[0], use_container_width=False)
             st.html(data[1])
 
     with st.expander("Training model"):
@@ -1287,6 +1292,7 @@ def _get_table():
                 "scheme":st.session_state.current_scheme,
                 "min":st.session_state.data_min,
                 "max":st.session_state.data_max,
+                "contains":st.session_state.data_contains,
                 "mode":st.session_state.data_mode
                 }
     r = _get("/elements/table", params = params)
@@ -1395,8 +1401,11 @@ def _bert_informations():
         return False
 
     loss = pd.DataFrame(r['data']["training"]["loss"])
-    fig, ax = plt.subplots(figsize=(3,2))
-    loss.plot(ax = ax)
+    fig, ax = plt.subplots(figsize=(5,2))
+    loss.plot(ax = ax, rot=45)
+    plt.ylabel("Loss")
+    plt.xlabel("epoch")
+    plt.title("Training indicators")
     text = ""
     if "train_scores" in r['data']:
         text+=f"f1: {r['data']['train_scores']['f1']}<br>"
@@ -1404,6 +1413,8 @@ def _bert_informations():
         text+=f"recall: {r['data']['train_scores']['recall']}<br>"
     else:
         text += "Compute prediction for scores"
+
+    fig.set_size_inches(4, 1)
     return fig, text
 
 def _delete_bert():
@@ -1598,6 +1609,14 @@ def _create_testset(data, df, filename):
     if r["status"] == "error":
         print(r["message"])
     return True
+
+def _get_queue():
+    """
+    Get queue status
+    """
+    r = _get("/queue")
+    return r
+
 
 if __name__ == "__main__":
     main()

@@ -405,7 +405,7 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         history=next.history,
                         frame = next.frame
                         )
-    print(r)
+#    print(r)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", data = r)
@@ -491,12 +491,13 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                             scheme:str,
                             min:int = 0,
                             max:int = 0,
+                            contains:str|None = None,
                             mode:str = "all",
                         ) -> ResponseModel:
     """
     Get table of elements
     """
-    r = project.schemes.get_table(scheme, min, max, mode).fillna("NA")
+    r = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", data=r.to_dict())
@@ -789,14 +790,15 @@ async def get_bert(project: Annotated[Project, Depends(get_project)],
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(project: Annotated[Project, Depends(get_project)],
                   username: Annotated[str, Header()],
-                     model_name:str,
-                     data:str = "all")  -> ResponseModel:
+                  model_name:str,
+                  data:str = "all")  -> ResponseModel:
     """
     Start prediction with a model
     TODO : scope data
     """
     print("start predicting")
     df = project.content[["text"]]
+    print(df)
     r = project.bertmodels.start_predicting_process(name = model_name,
                                                     df = df,
                                                     col_text = "text",

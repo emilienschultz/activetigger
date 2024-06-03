@@ -127,7 +127,7 @@ class BertModel():
                 "f1_macro":f1_score(Y, Y_pred, average = "macro"),
                 "f1_weighted":f1_score(Y, Y_pred, average = "weighted"),
                 "f1":list(f1_score(Y, Y_pred, average = None)),
-                "precision":precision_score(list(Y), list(Y_pred), average="micro"),
+                "precision":list(precision_score(list(Y), list(Y_pred), average=None)),
                 "recall":list(recall_score(list(Y), list(Y_pred), average=None)),
                 "accuracy":accuracy_score(Y, Y_pred),
                 "false_prediction":df[f][["text","labels","prediction"]].to_dict()
@@ -150,8 +150,6 @@ class BertModel():
                 "accuracy":accuracy_score(Y, Y_pred),
             }
             flag_modification = True
-
-        print(r)
 
         # if modifications
         if flag_modification:
@@ -371,8 +369,9 @@ class BertModels():
                 "model":b.model,
                 "tokenizer":b.tokenizer,
                 "path":b.path,
-                "file_name":"prediction.parquet"
+                "file_name":"predict.parquet"
                 }
+        print(args)
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = "predicting"
         self.computing[user] = [b,unique_id]
