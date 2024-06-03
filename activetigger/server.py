@@ -468,7 +468,7 @@ class Server():
         
         os.makedirs(params.dir)
 
-        # copy total dataset as a copy
+        # copy total dataset as a copy (csv for the moment)
         with open(params.dir / "data_raw.csv","wb") as f:
             f.write(file.file.read())
 
@@ -1454,7 +1454,8 @@ class Schemes():
                  tag:str|None,
                  scheme:str,
                  user:str = "server",
-                 action:str = "add"):
+                 action:str = "add"
+                 ):
         """
         Record a tag in the database
         action : add, test, predict
@@ -1477,6 +1478,8 @@ class Schemes():
             INSERT INTO annotations (action, user, project, element_id, scheme, tag)
             VALUES (?,?,?,?,?,?);
         '''
+        print("push tag")
+        print((action, user, self.project_name, element_id, scheme, tag))
         cursor.execute(query, (action, user, self.project_name, element_id, scheme, tag))
         conn.commit()
         conn.close()

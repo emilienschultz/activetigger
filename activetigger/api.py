@@ -361,8 +361,8 @@ async def new_project(
     project = ProjectModel(**params)
 
     # format of the files (only CSV for the moment)
-    if not file.filename.endswith('.csv'):
-        return ResponseModel(status = "error", message = "Only CSV file for the moment")
+    if (not file.filename.endswith('.csv')) and (not file.filename.endswith('.parquet')):
+        return ResponseModel(status = "error", message = "Only CSV & Parquet file for the moment")
         
     # test if project name already exists
     if server.exists(project.project_name):
@@ -557,16 +557,17 @@ async def post_tag(action:Action,
     Add, Update, Delete annotations
     Comment : 
     - For the moment add == update
+    - No information kept of selection process
     """
     if action in ["add","update"]:
         if annotation.tag is None:
             raise HTTPException(status_code=422, 
                 detail="Missing a tag")
         r = project.schemes.push_tag(annotation.element_id, 
-                                    annotation.tag, 
-                                    annotation.scheme,
-                                    username,
-                                    annotation.selection
+                                     annotation.tag, 
+                                     annotation.scheme,
+                                     username,
+                                     "add"
                                     )
         if "error" in r:
             return ResponseModel(status="error", message=r["error"])

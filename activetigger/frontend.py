@@ -1162,8 +1162,8 @@ def _send_tag(label):
                     json_data = data)
     
     # add in history
-    if "error" in r:
-        st.write(r)
+    if r["status"] == "error":
+        print(r)
     else:
         st.session_state.history.append(st.session_state.current_element["element_id"])
 
