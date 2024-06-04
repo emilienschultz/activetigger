@@ -755,7 +755,7 @@ class Project(Server):
             "element_id":str(element_id),
             "text":df.loc[element_id, "text"],
             "selection":"test",
-            "context":{},
+            "context":dict(df.loc[element_id, self.params.cols_context]),
             "info":"",
             "predict":{
                     "label":None,
@@ -763,6 +763,7 @@ class Project(Server):
                     },
             "frame":[],
             }
+            print(element)
             return element
 
         # select the current state of annotation

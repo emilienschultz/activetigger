@@ -390,6 +390,7 @@ def display_annotate():
     with st.expander("Informations"):
         st.write("Informations on the element")
         if st.session_state.current_element:
+            st.write(f"Context : {st.session_state.current_element['context']}")
             st.write(f"Predict : {st.session_state.current_element['predict']}")
             st.write(st.session_state.current_element['info'])
 
