@@ -27,7 +27,7 @@ logger = logging.getLogger('queue')
 
 class Queue():
     """
-    Managinng parallel processes
+    Managining parallel processes
     For the moment : jobs in  concurrent.futures.ProcessPoolExecutor
     """
     def __init__(self, nb_workers: int, path_log: Path):
@@ -285,6 +285,7 @@ class Server():
         cursor.execute(query, (user, project, action, connect))
         conn.commit()
         conn.close()
+        logger.info(f"{action} from {user} in project {project}")
 
     def db_get_project(self, project_name:str) -> ProjectModel|None:
         """
@@ -849,6 +850,9 @@ class Project(Server):
         TODO: better homogeneise with get_next ?
         TODO:; test if element exists
         """
+        if not element_id in self.content.index:
+            return {"error":"Element does not exist"}
+        
         # get prediction if it exists
         predict = {"label":None, "proba":None}
         if (user is not None) & (scheme is not None):
@@ -858,7 +862,7 @@ class Project(Server):
                 predicted_proba = round(sm.proba.loc[element_id,predicted_label],2)
                 predict = {"label":predicted_label, 
                         "proba":predicted_proba}
-        r = { 
+        data = { 
             "element_id":element_id,
             "text":self.content.loc[element_id,"text"],
             "context":dict(self.content.fillna("NA").loc[element_id, self.params.cols_context]),
@@ -868,8 +872,7 @@ class Project(Server):
             "frame":None
             }
         
-
-        return r
+        return {'success':data}
 
     def get_params(self) -> ProjectModel:
         """

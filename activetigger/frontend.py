@@ -1103,11 +1103,13 @@ def _add_regex(value:str, name:str|None = None) -> bool:
     name = f"regex_{st.session_state.user}_{name}"
 
     data = {
-        "project_name":st.session_state.current_project,
-        "name":name,
-        "value":value,
-        "user":st.session_state.user
-        }
+            "params" : {
+                "project_name":st.session_state.current_project,
+                "name":name,
+                "value":value,
+                "user":st.session_state.user
+            }
+            }
     
     r = _post("/features/add/regex",
         params = {"project_name":st.session_state.current_project},

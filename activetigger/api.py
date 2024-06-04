@@ -17,6 +17,7 @@ from activetigger.datamodels import ProjectModel, TableElementsModel, Action, An
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+# to log specific events from api
 logger = logging.getLogger('api')
 
 
@@ -44,38 +45,35 @@ async def lifespan(app: FastAPI):
     print("Active Tigger closing")
     server.queue.close()
 
-app = FastAPI(lifespan=lifespan)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+app = FastAPI(lifespan=lifespan) # defining the fastapi app
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") #defining the authentification object
 
-async def check_queue(timer) -> None:
+async def check_processes(timer, step:int = 1) -> None:
     """
-    Call different functions to update the server
-    Max one time per second
+    Function called to update app state
+    Limited to once per time interval
     """
     # max one update per second to avoid excessive action
-    step = 1
     if (time.time()-timer)<step:
         return None
+    
     timer = time.time()
     
-    # check the queue
+    # check the queue to see if process are completed
     server.queue.check()
 
     # update processes for active projects
-    # and make actions 
     to_del = []
-    for p in server.projects:
-        project = server.projects[p]
-
-        # if project existing since one day
+    for p, project in server.projects.items():
+        # if project existing since one day, remove it from memory
         if (timer - project.starting_time) > 86400:
             to_del.append(p)
 
+        # update pending processes
         project.features.update_processes()
         project.simplemodels.update_processes()
         predictions = project.bertmodels.update_processes()
-
-        # action : if predictions, add them as features
+        # if predictions completed, add them as features
         if len(predictions)>0:
             for f in predictions:
                 project.features.add(f, predictions[f])
@@ -90,7 +88,7 @@ async def middleware(request: Request, call_next):
     Middleware to take care of completed processes
     Executed at each action on the server
     """
-    await check_queue(timer)
+    await check_processes(timer)
     response = await call_next(request)
     return response
 
@@ -100,7 +98,7 @@ async def middleware(request: Request, call_next):
 
 async def get_project(project_name: str) -> ProjectModel|None:
     """
-    Fetch existing project
+    Dependencie to check existing project
     - if already loaded, return it
     - if not loaded, load it first
     """
@@ -116,31 +114,9 @@ async def get_project(project_name: str) -> ProjectModel|None:
         server.start_project(project_name)            
         return server.projects[project_name]
 
-# define credential exception
-credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
 async def verified_user(token: Annotated[str, Depends(oauth2_scheme)]):
     """
-    Test if the user is a user authentified
-    """
-    try:
-        payload = server.decode_access_token(token)
-        username: str = payload.get("sub")
-        if username is None:
-            return ResponseModel(status="error", message="Could not validate credential")
-    except JWTError:
-        return ResponseModel(status="error", message="Could not validate credential")
-    user = server.get_user(name=username)
-    if user is None:
-        return ResponseModel(status="error", message="Could not validate credential")
-
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    """
-    Get current user from the headers
+    Dependency to test if the user is authentified with its token
     """
     try:
         payload = server.decode_access_token(token)
@@ -172,6 +148,8 @@ async def welcome() -> str:
 async def get_documentation()  -> ResponseModel:
     """
     Path for documentation 
+    Comments:
+        For the moment, a dictionnary
     """
     data = {
             "Credits":["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
@@ -189,20 +167,18 @@ async def get_documentation()  -> ResponseModel:
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token|ResponseModel:
     """
-    Route to authentificate user and return token
+    Authentificate user and return token
     """
     user = server.authenticate_user(form_data.username, form_data.password)
     if "error" in user:
-        r = ResponseModel(status="error", message=user["error"])
-        return r
+        return ResponseModel(status="error", message=user["error"])
     access_token = server.create_access_token(
             data={"sub": user.username}, 
             expires_min=60)
-    r = Token(access_token=access_token, token_type="bearer")
-    return r
+    return Token(access_token=access_token, token_type="bearer")
 
 @app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]) -> ResponseModel:
+async def read_users_me(current_user: Annotated[User, Depends(verified_user)]) -> ResponseModel:
     """
     Information on current user
     """
@@ -212,7 +188,7 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]
 @app.get("/users", dependencies=[Depends(verified_user)])
 async def existing_users() -> ResponseModel:
     """
-    Get users information
+    Get existing users
     """
     data = {
         "users":server.existing_users()
@@ -271,7 +247,7 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
                           user: str|None = None)  -> ResponseModel:
     """
-    Get the state for a specific project/scheme/user
+    Description of a specific element
     """
     data = project.get_description(scheme = scheme, 
                                 user = user)
@@ -302,7 +278,7 @@ async def add_testdata(project: Annotated[Project, Depends(get_project)],
                       col_id:str = Form(),
                       n_test:int = Form())-> ResponseModel:
     """
-    Add test dataset
+    Add a dataset for test 
     TODO : operation at the server level
     """
 
@@ -407,7 +383,6 @@ async def get_next(project: Annotated[Project, Depends(get_project)],
                         history=next.history,
                         frame = next.frame
                         )
-#    print(r)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", data = r)
@@ -543,13 +518,11 @@ async def get_element(project: Annotated[Project, Depends(get_project)],
                       scheme:str) -> ResponseModel:
     """
     Get specific element
-    TODO : remove exception
     """
-    try:
-        data = project.get_element(element_id, scheme=scheme, user=username)
-        return ResponseModel(status="success", data=data)        
-    except: # gérer la bonne erreur
-        return ResponseModel(status="error", message=f"Element {element_id} not found")
+    r = project.get_element(element_id, scheme=scheme, user=username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success", data=r["success"])
     
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(action:Action,
@@ -684,19 +657,6 @@ async def get_features(project: Annotated[Project, Depends(get_project)]) -> Res
     data = {"features":list(project.features.map.keys())}
     return ResponseModel(status="success", data=data)
 
-@app.post("/features/add/regex", dependencies=[Depends(verified_user)])
-async def post_regex(project: Annotated[Project, Depends(get_project)],
-                    username: Annotated[str, Header()],
-                    regex:RegexModel) -> ResponseModel:
-    """
-    Add a regex
-    """
-    r = project.add_regex(regex.name,regex.value)
-    if "error" in r:
-        return ResponseModel(status="error", message=r["error"])
-    server.log_action(username, f"add regex {regex.name}", project.name)
-    return ResponseModel(status="success", message=r["success"])
-
 @app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           username: Annotated[str, Header()],
@@ -705,15 +665,25 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           ) -> ResponseModel:
     """
     Compute features :
-    common logic : call a function in a specific process, 
-    create a file, and then updated
-    TODO : refactorize the function + merge with regex
+    - same prcess
+    - specific process : function + temporary file + update
     """
     if name in project.features.training:
         return ResponseModel(status="error", message = "This feature is already in training")
-    if not name in {"sbert","fasttext","dfm"}:
+    if not name in {"sbert","fasttext","dfm", "regex"}:
         return ResponseModel(status="error", message = "Not implemented")
-    print("compute", name)
+
+    # specific case of regex that is not parallelized yet
+    if name == "regex":
+        if (not "name" in params.params) or (not "value" in params.params):
+            return ResponseModel(status="error", message="Parameters missing for the regex")
+        r = project.add_regex(params.params['name'],params.params['value'])
+        if "error" in r:
+            return ResponseModel(status="error", message=r["error"])
+        server.log_action(username, f"add regex {params.params['name']}", project.name)
+        return ResponseModel(status="success", message=r["success"])
+
+    # case for computation on specific processes
     df = project.content[project.params.col_text]
     if name == "sbert":
         args = {
@@ -733,10 +703,11 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         args = params.params
         args["texts"] = df
         func = functions.to_dtm
-    #future_result = server.executor.submit(func, **args)
+
+    # add the computation to queue
     unique_id = server.queue.add("feature", func, args)
-    #project.features.training[name] = future_result
     project.features.training[name] = unique_id
+
     server.log_action(username, f"Compute feature dfm", project.name)
     return ResponseModel(status="success", message=f"computing {name}, it could take a few minutes")
 
