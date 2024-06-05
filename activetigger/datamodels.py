@@ -123,7 +123,7 @@ class SimpleModelModel(BaseModel):
     model:str
     params:dict|None
     scheme:str
-    user:str
+#    user:str
     standardize: Optional[bool] = True
 
 class BertModelModel(BaseModel):

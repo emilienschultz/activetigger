@@ -686,7 +686,8 @@ class Project(Server):
 
         return {"success":"test dataset added"}
 
-    def update_simplemodel(self, simplemodel: SimpleModelModel) -> dict:
+    def update_simplemodel(self, simplemodel: SimpleModelModel, 
+                           username:str) -> dict:
         """
         Update simplemodel on the base of an already existing
         simplemodel object
@@ -717,7 +718,7 @@ class Project(Server):
         data = pd.concat([df_scheme,
                           df_features],
                           axis=1)
-        self.simplemodels.add_simplemodel(user = simplemodel.user, 
+        self.simplemodels.add_simplemodel(user = username, 
                                           scheme = simplemodel.scheme, 
                                           features=simplemodel.features, 
                                           name = simplemodel.model, 

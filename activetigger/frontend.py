@@ -1353,7 +1353,7 @@ def _train_simplemodel():
             "features":st.session_state.sm_features,
             "params":parameters,
             "scheme":st.session_state.current_scheme,
-            "user":st.session_state.user
+            #"user":st.session_state.user
             }
     r = _post("/models/simplemodel", 
                     params = params, 

@@ -730,7 +730,9 @@ async def delete_feature(project: Annotated[Project, Depends(get_project)],
 @app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def get_simplemodel(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
-    Simplemodel parameters
+    Get Simplemodel parameters
+    Comments : 
+        Not used for the moment
     """
     data = project.simplemodels.available()
     return ResponseModel(status="success", data=data)
@@ -741,9 +743,8 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
                            simplemodel:SimpleModelModel) -> ResponseModel:
     """
     Compute simplemodel
-    TODO : user out of simplemodel
     """
-    r = project.update_simplemodel(simplemodel)
+    r = project.update_simplemodel(simplemodel, username)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success", message=r["success"])
@@ -752,7 +753,7 @@ async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
 async def get_bert(project: Annotated[Project, Depends(get_project)],
                    name:str)  -> ResponseModel: 
     """
-    Bert parameters and statistics
+    Get Bert parameters and statistics
     """
     b = project.bertmodels.get(name, lazy= True)
     if b is None:
@@ -769,9 +770,8 @@ async def predict(project: Annotated[Project, Depends(get_project)],
     Start prediction with a model
     TODO : scope data
     """
-    print("start predicting")
-    df = project.content[["text"]]
-    print(df)
+    df = project.content[["text"]] # get data
+    # start process
     r = project.bertmodels.start_predicting_process(name = model_name,
                                                     df = df,
                                                     col_text = "text",
@@ -788,8 +788,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
                     )-> ResponseModel:
     """ 
     Compute bertmodel
-    TODO : gestion du nom du projet/scheme à la base du modèle
-    TODO : test if bert.params is well formed, maybe with pydantic ?
+    TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
     """
     df = project.schemes.get_scheme_data(bert.scheme, complete = True) #move it elswhere ?
     df = df[[project.params.col_text, "labels"]].dropna() #remove non tag data
