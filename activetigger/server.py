@@ -1,7 +1,7 @@
 import os
 import time
 import uuid
-import yaml # type: ignore
+import yaml
 from datetime import datetime
 import concurrent.futures
 from pathlib import Path
@@ -9,32 +9,33 @@ import sqlite3
 import re
 import json
 import shutil
-import pandas as pd # type: ignore
-import pyarrow.parquet as pq # type: ignore
+import pandas as pd
 from pandas import DataFrame, Series
-from fastapi import UploadFile # type: ignore
-from fastapi.encoders import jsonable_encoder # type: ignore
+from fastapi import UploadFile
+from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
-from jose import jwt # type: ignore
+from jose import jwt
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
 from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDB
 from pydantic import ValidationError
 import logging
 import openai
+from typing import Callable
 
-logger = logging.getLogger('queue')
+logger = logging.getLogger('server')
 
 class Queue():
     """
     Managining parallel processes
     For the moment : jobs in  concurrent.futures.ProcessPoolExecutor
+    Comments:
+        In the future, other solution ?
     """
-    def __init__(self, nb_workers: int, path_log: Path):
+    def __init__(self, nb_workers: int = 2):
         """
         Initiating the executor
         """
-        self.path_log = path_log
         self.nb_workers = nb_workers
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
         self.current = {} # stack
@@ -50,7 +51,7 @@ class Queue():
 
     def check(self):
         """
-        Check if the exector still works
+        Check if the exector still works, if not recreate it
         """
         if self.executor._broken:
             self.executor.recreate_executor()
@@ -64,11 +65,11 @@ class Queue():
         del self.executor
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
 
-    def add(self, kind:str, func, args:list) -> str:
+    def add(self, kind:str, func: Callable, args:list|dict) -> str:
         """
         Add new element to queue
         """
-        unique_id = str(uuid.uuid4())
+        unique_id = str(uuid.uuid4()) # generate a unique id
         future = self.executor.submit(func, **args)
         self.current[unique_id] = {
                                    "kind":kind, 
@@ -90,6 +91,7 @@ class Queue():
     def state(self) -> dict:
         """
         Return state of the queue
+        List the stack and give the status/exception
         """
         r = {}
         for f in self.current:
@@ -141,7 +143,7 @@ class Server():
 
         # activity of the server
         self.projects: dict = {}
-        self.queue = Queue(self.n_workers, self.path)
+        self.queue = Queue(self.n_workers)
 
         # add users if add_users.yaml exists
         if Path("add_users.yaml").exists():
@@ -156,17 +158,6 @@ class Server():
             # rename the file
             os.rename('add_users.yaml', 'add_users_processed.yaml')
 
-        #existing = self.existing_users()
-        #current = config["users"]
-        # only creating users in the config file
-        #if current is not None:
-        #    for u in current:
-        #        if not u in existing:
-        #            self.add_user(u, current[u])
-            #for u in existing:
-            #    if (not u in current) and u != self.default_user:
-            #        self.delete_user(u)
-
         # starting time
         self.starting_time = time.time()
                 
@@ -175,6 +166,7 @@ class Server():
         Close the server
         """
         print("Ending the server")
+        logger.error('Disconnect server')
         self.queue.executor.shutdown()
         print("Server off")
             
@@ -270,6 +262,7 @@ class Server():
 
         # create root user
         self.add_user(self.default_user,self.default_user)
+        logger.error('Create database')
 
     def log_action(self, 
                    user:str, 
@@ -486,25 +479,19 @@ class Server():
         content = pd.read_csv(params.dir / "data_raw.csv")
         if len(content) < params.n_test + params.n_train:
             return {"error":f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"}
-        content = content.set_index(params.col_id)
-        content.index = [str(i) for i in list(content.index)] #type: ignore
-        
-        # rename to nomalize
-        content.rename(columns={params.col_id:"id",
-                                params.col_text:"text"}, inplace=True)
+        content = (content.rename(columns={params.col_id:"id",params.col_text:"text"}) # rename to normalize
+                           .set_index("id") # set id as index
+                           .dropna(subset=['text'])) # remove NA texts
+        content.index = [str(i) for i in list(content.index)] # sure to be str
+    
         if params.col_label:
             content.rename(columns={params.col_label:"label"}, inplace=True)
         # TODO : also rename context columns ?
 
-        # TODO : drop duplicates ?
-
-        # Limit text to contextual windows #TODO check how to do it
+        # Information of the limit of usable text
         def limit(text):
-            if len(text.split(" "))<200:
-                return text
-            return functions.truncate_text(text)
-        #content["text"] = content["text"].apply(limit)
-
+            return 1200
+        content["limit"] = content["text"].apply(limit)
 
         # if no label column, add dummy to act as if a column without
         if not params.col_label:
@@ -607,10 +594,8 @@ class Server():
         cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_name,))
         conn.commit()
         conn.close()
-
         return {"success":"Project deleted"}
     
-
 class Project(Server):
     """
     Project object
@@ -839,7 +824,7 @@ class Project(Server):
             "predict":predict,
             "frame":frame,
                 }
- #       print(element)        
+
         return element
     
     def get_element(self, 
@@ -849,7 +834,7 @@ class Project(Server):
         """
         Get an element of the database
         TODO: better homogeneise with get_next ?
-        TODO:; test if element exists
+        TODO: test if element exists
         """
         if not element_id in self.content.index:
             return {"error":"Element does not exist"}
