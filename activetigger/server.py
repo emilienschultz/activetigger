@@ -22,6 +22,7 @@ from pydantic import ValidationError
 import logging
 import openai
 from typing import Callable
+from multiprocessing import Manager
 
 logger = logging.getLogger('server')
 
@@ -38,6 +39,7 @@ class Queue():
         """
         self.nb_workers = nb_workers
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
+        self.manager = Manager()
         self.current = {} # stack
         logger.info('Init Queue')
 
@@ -46,6 +48,7 @@ class Queue():
         Close the executor
         """
         self.executor.shutdown(cancel_futures=True, wait = False)
+        self.manager.shutdown()
         logger.info('Close Queue')
         print("Executor closed, current processes:", self.state())
 
@@ -65,17 +68,34 @@ class Queue():
         del self.executor
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
 
-    def add(self, kind:str, func: Callable, args:list|dict) -> str:
+    def add(self, kind:str, func: Callable, args:dict) -> str:
         """
         Add new element to queue
         """
-        unique_id = str(uuid.uuid4()) # generate a unique id
+        # generate a unique id
+        unique_id = str(uuid.uuid4()) 
+        # create an event to control the function
+        event = self.manager.Event()
+        args["event"] = event
+        # send the process
         future = self.executor.submit(func, **args)
+        # save in the stack
         self.current[unique_id] = {
                                    "kind":kind, 
-                                   "future":future
+                                   "future":future,
+                                   "event":event
                                    }
         return unique_id
+    
+    def kill(self, unique_id:str):
+        """
+        Send a kill process
+        """
+        if not unique_id in self.current:
+            return {"error":"Id does not exist"}
+        self.current[unique_id]["event"].set()
+        self.delete(unique_id)
+        return {"success":"Process killed"}
 
     def delete(self, ids:str|list):
         """
@@ -1187,6 +1207,11 @@ class Features():
         # for features
         for name in self.training.copy():
             unique_id = self.training[name]
+            # case the process have been canceled, clean
+            if not unique_id in self.queue.current:
+                del self.training[name]
+                continue
+            # else check its state
             if self.queue.current[unique_id]["future"].done():
                 r = self.queue.current[unique_id]["future"].result()
                 if "error" in r:

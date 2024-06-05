@@ -589,6 +589,11 @@ class BertModels():
         predictions = {}
         for u in self.computing.copy():
             unique_id =  self.computing[u][1]
+            # case the process have been canceled, clean
+            if not unique_id in self.queue.current:
+                del self.computing[u]
+                continue
+            # else check its state
             if self.queue.current[unique_id]["future"].done():
                 b = self.computing[u][0]
                 if b.status == "prediction":

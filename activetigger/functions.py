@@ -41,42 +41,6 @@ def compare_to_hash(text:str, hash:str|bytes):
     r = bcrypt.checkpw(text, hash)
     return r
 
-# def process_dfm(texts: Series,
-#            path:Path,
-#            tfidf:bool=False,
-#            ngrams:int=1,
-#            min_term_freq:int=5,
-#            max_term_freq:int|float = 1.0,
-#            log:bool = False,
-#            norm = None
-#            ):
-#     """
-#     Compute DFM embedding
-    
-#     Norm :  None, l1, l2
-#     sublinear_tf : log
-#     Pas pris en compte : DFM : Min Docfreq
-#     https://quanteda.io/reference/dfm_tfidf.html
-#     + stop_words
-#     """
-#     if tfidf:
-#         vectorizer = TfidfVectorizer(ngram_range=(1, ngrams),
-#                                       min_df=min_term_freq,
-#                                       sublinear_tf = log,
-#                                       norm = norm,
-#                                       max_df = max_term_freq)
-#     else:
-#         vectorizer = CountVectorizer(ngram_range=(1, ngrams),
-#                                       min_df=min_term_freq,
-#                                       max_df = max_term_freq)
-
-#     dtm = vectorizer.fit_transform(texts)
-#     names = vectorizer.get_feature_names_out()
-#     dtm = pd.DataFrame(dtm.toarray(), 
-#                        columns = names, 
-#                        index = texts.index)
-#     dtm.to_parquet(path / "dfm.parquet")
-
 def to_dtm(texts: Series,
            tfidf:bool=False,
            ngrams:int=1,
@@ -125,19 +89,6 @@ def tokenize(texts: Series,
     textes_tk = texts.apply(lambda x : tokenize(x,nlp))
     return textes_tk
 
-# def download_fasttext_model(language:str, path:Path):
-#     """
-#     Install fasttext model
-#     """
-#     if not path.exists():
-#         return {"error":f"path {str(path)} does not exist"}
-#     os.chdir(path)
-#     try:
-#         name = fasttext.util.download_model(language, if_exists='ignore')  # English
-#         return {"success":name}
-#     except:
-#         return {"error":f"model not download for language {language}"}
-
 def to_fasttext(texts: Series,
                 language: str,
                 path_models: Path) -> DataFrame:
@@ -163,16 +114,6 @@ def to_fasttext(texts: Series,
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
     return {"success":df}
 
-# def process_fasttext(texts: Series,
-#                   path:Path,
-#                   model:str):
-#     texts_tk = tokenize(texts)
-#     ft = fasttext.load_model(str(model))
-#     emb = [ft.get_sentence_vector(t.replace("\n"," ")) for t in texts_tk]
-#     df = pd.DataFrame(emb,index=texts.index)
-#     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
-#     df.to_parquet(path / "fasttext.parquet")
-
 def to_sbert(texts: Series, 
             model:str = "distiluse-base-multilingual-cased-v1") -> DataFrame:
     """
@@ -189,25 +130,6 @@ def to_sbert(texts: Series,
     emb = pd.DataFrame(emb,index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
     return {"success":emb}
-
-# def process_sbert(texts: Series,
-#                   path:Path,
-#                   model:str = "distiluse-base-multilingual-cased-v1"):
-#     """
-#     Compute sbert embedding
-#     Args:
-#         texts (pandas.Series): texts
-#         model (str): model to use
-#     Returns:
-#         pandas.DataFrame: embeddings
-#     """
-#     sbert = SentenceTransformer(model)
-#     sbert.max_seq_length = 512
-#     emb = sbert.encode(list(texts))
-#     emb = pd.DataFrame(emb,index=texts.index)
-#     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
-#     emb.to_parquet(path / "sbert.parquet")
-
 
 def compute_umap(features:DataFrame, 
                  params:dict):
@@ -292,6 +214,8 @@ def fit_model(model, X, Y, labels):
     return r
 
 
+import multiprocessing
+
 def train_bert(path:Path,
             name:str,
             df:DataFrame,
@@ -299,7 +223,8 @@ def train_bert(path:Path,
             col_label:str,
             base_model:str,
             params:dict,
-            test_size:float) -> bool:
+            test_size:float, 
+            event: multiprocessing.Event) -> bool:
     
     """
     Train a bert model and write it
@@ -406,14 +331,23 @@ def train_bert(path:Path,
     class CustomLoggingCallback(TrainerCallback):
         def on_step_end(self, args, state, control, **kwargs):
             logger.info(f"Step {state.global_step}")
+            # end if event set
+            if event.is_set():
+                logger.info("Event set, stopping training.")
+                control.should_training_stop = True
 
     trainer = Trainer(model=bert, 
-                        args=training_args, 
-                        train_dataset=df["train"], 
-                        eval_dataset=df["test"],
-                        callbacks=[CustomLoggingCallback()])
-    trainer.train()
-
+                     args=training_args, 
+                     train_dataset=df["train"], 
+                     eval_dataset=df["test"],
+                     callbacks=[CustomLoggingCallback()])
+    try:
+        trainer.train()
+    except KeyboardInterrupt:
+        logger.info("Training interrupted by user.")
+        shutil.rmtree(current_path)
+        return False
+    
     # save model
     bert.save_pretrained(current_path)
     logger.info(f"Model trained {current_path}")
@@ -443,15 +377,24 @@ def predict_bert(
             path:Path,
             df:DataFrame,
             col_text:str,
+            event: multiprocessing.Event,
             col_labels:str|None = None,
             gpu:bool = False, 
-            batch:int = 128, 
-            file_name = "predict.parquet"):
+            batch:int = 128,
+            file_name:str = "predict.parquet") -> DataFrame|bool:
     """
     Predict from a model
     + probabilities
     + entropy
     """
+    # logging the process
+    log_path = path / "status.log"
+    logger = logging.getLogger('predict_bert_model')
+    file_handler = logging.FileHandler(log_path)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
     print("function prediction : start")
     if gpu:
         model.cuda()
@@ -460,6 +403,11 @@ def predict_bert(
     predictions = []
     # logging the process
     for chunk in [df[col_text][i:i+batch] for i in range(0,df.shape[0],batch)]:
+        # user interrupt
+        if event.is_set():
+            logger.info("Event set, stopping training.")
+            return False
+        
         print("Next chunck prediction")
         chunk = tokenizer(list(chunk), 
                         padding=True, 
