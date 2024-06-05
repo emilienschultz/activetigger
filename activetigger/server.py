@@ -913,7 +913,7 @@ class Project(Server):
                     "options":self.features.options,
                     "available":list(self.features.map.keys()),
                     "training":list(self.features.training.keys()),
-                    "infos":self.features.informations
+                    "infos":self.features.get_info()
                     },
             "simplemodel":{
                     "options":self.simplemodels.available_models,
@@ -1208,6 +1208,21 @@ class Features():
                 del self.projections[u]["queue"]
                 self.queue.delete(unique_id)
         
+    def get_info(self):
+        """
+        Informations on features + update
+        Comments:
+            Maybe not the best solution
+            Database ? How to avoid a loop ...
+        """
+        # update if new elements added in features
+        for f in self.map:
+            if ("regex_" in f) and (not f in self.informations):
+                df = self.get(f)
+                self.informations[f] = int(df[df.columns[0]].sum())
+        return dict(self.informations)
+
+
 class Schemes():
     """
     Manage project schemes & tags
