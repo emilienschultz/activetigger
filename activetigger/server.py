@@ -2,7 +2,6 @@ import os
 import time
 import uuid
 import yaml
-from datetime import datetime
 import concurrent.futures
 from pathlib import Path
 import sqlite3
@@ -299,6 +298,25 @@ class Server():
         conn.commit()
         conn.close()
         logger.info(f"{action} from {user} in project {project}")
+
+    def get_logs(self, username:str, project_name:str, limit:int):
+        """
+        Get logs for a user/project
+
+        TODO : timezone for the timestamp
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        if project_name == "all":
+            query = """SELECT * FROM logs WHERE user = ? ORDER BY time DESC"""
+        else:
+            query = """SELECT * FROM logs WHERE user = ? AND project = ? ORDER BY time DESC LIMIT ?"""
+        cursor.execute(query, (username, project_name,limit))
+        logs = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        df = pd.DataFrame(logs, columns = ["id", "time", "user", "project", "action", "NA"])
+        return df.to_json()
 
     def db_get_project(self, project_name:str) -> ProjectModel|None:
         """

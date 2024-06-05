@@ -160,6 +160,7 @@ async def get_documentation()  -> ResponseModel:
     r = ResponseModel(status="success", data=data)
     return r
 
+
 # Users
 #------
 
@@ -219,6 +220,16 @@ async def delete_user(username:str = Query()) -> ResponseModel:
         return ResponseModel(status="success", message=r["success"])
     else:
         return ResponseModel(status="error", message=r["success"])
+
+
+@app.get("/logs", dependencies=[Depends(verified_user)])
+async def get_logs(username:str, project_name:str = "all", limit = 100):
+    """
+    Get all logs for a username/project
+    """
+    r = server.get_logs(username, project_name, limit)
+    return ResponseModel(status="success", data={"logs":r})
+
 
 # Projects management
 #--------------------

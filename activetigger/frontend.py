@@ -160,15 +160,17 @@ def display_documentation():
     """
     Documentation page
     """
-    st.subheader("Parameters of the project")
-    st.write(st.session_state.state)
-    #st.write(st.session_state.data_df)
+    with st.expander("Parameters of the project"):
+        st.write(st.session_state.state)
 
-#    st.write(st.session_state.state["params"])
-    st.subheader("Informations")
-    doc = _get_documentation()
-    st.write(doc)
+    with st.expander("Documentation"):
+        doc = _get_documentation()
+        st.write(doc)
 
+    with st.expander("Logs"):
+        docs = _get_logs()
+        df = pd.read_json(docs)
+        st.dataframe(df)
 
 def display_projects():
     """
@@ -1630,6 +1632,16 @@ def _get_queue():
     r = _get("/queue")
     return r
 
+def _get_logs():
+    """
+    Get logs for the current user/project
+    """
+    params = {"project_name":st.session_state.current_project,
+               "username":st.session_state.user,
+                }
+    r = _get("/logs",
+        params = params)
+    return r["data"]["logs"]
 
 if __name__ == "__main__":
     main()
