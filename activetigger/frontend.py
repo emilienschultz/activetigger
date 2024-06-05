@@ -157,7 +157,7 @@ def display_documentation():
     """
     st.subheader("Parameters of the project")
     st.write(st.session_state.state)
-    st.write(st.session_state.data_df)
+    #st.write(st.session_state.data_df)
 
 #    st.write(st.session_state.state["params"])
     st.subheader("Informations")
@@ -280,7 +280,7 @@ def display_features():
     """
     Feature page
     """
-    st.write("Manage features")
+    st.subheader("Manage features")
 
     feature = st.selectbox(label="Available",
                            options = st.session_state.state["features"]["available"])
@@ -304,7 +304,8 @@ def display_features():
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    st.subheader("Add regex")
+    st.subheader("Regex")
+    st.dataframe(pd.Series(st.session_state.state["features"]["infos"], name="Matched"))
     regex = st.text_input(label="Regex", placeholder="Write your regex", label_visibility="hidden")
     if st.button("Create regex"):
         if regex is not None:
