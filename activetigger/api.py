@@ -562,6 +562,24 @@ async def post_tag(action:Action,
         server.log_action(username, f"delete annotation {annotation.element_id}", project.name)
         return ResponseModel(status="success", message="Label deleted")
 
+
+@app.post("/stop", dependencies=[Depends(verified_user)])
+async def stop_process(project: Annotated[Project, Depends(get_project)],
+                        username: Annotated[str, Header()],
+                     ) -> ResponseModel:
+    """
+    Stop user process
+    """
+    if not username in project.bertmodels.computing:
+        return ResponseModel(status="error", message="No process")
+    unique_id = project.bertmodels.computing[username][1]
+    r = server.queue.kill(unique_id)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    server.log_action(username, f"stop process", project.name)
+    return ResponseModel(status="success", message=r["success"])
+
+
 # Schemes management
 #-------------------
 
@@ -815,7 +833,10 @@ async def stop_bert(project: Annotated[Project, Depends(get_project)],
     """
     Stop user process
     """
-    r = project.bertmodels.stop_user_process(username)
+    if not username in project.bertmodels.computing:
+        return ResponseModel(status="error", message="No process")
+    unique_id = project.bertmodels.computing[username][1]
+    r = server.queue.kill(unique_id)
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
     server.log_action(username, f"stop bert training", project.name)

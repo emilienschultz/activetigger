@@ -91,7 +91,12 @@ def app_navigation():
     if st.session_state.state:
         if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
             st.session_state.bert_training = True
-            st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Computing (training / predicting). Wait the process to end before launching another one.</div>")
+            col1, col2 = st.columns((3,1))
+            with col1:
+                st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Computing (training / predicting). Wait the process to end before launching another one or stop it.</div>")
+            with col2:
+                if st.button("Stop process"):
+                    _stop_user_process()
         else:
             st.session_state.bert_training = False
         c = st.session_state.state["features"]["training"]
@@ -678,12 +683,12 @@ def display_bertmodels():
         
         if not st.session_state.bert_training:
             if st.button("⚙️Train"):
-                st.write("⚙️Train")
+                #st.write("⚙️Train")
                 _start_bertmodel()
         else:
             if st.button("⚙️Stop"):
-                st.write("⚙️Stop")
-                _stop_bertmodel()
+                #st.write("⚙️Stop")
+                _stop_user_process()
 
 def display_export():
     """
@@ -1484,17 +1489,16 @@ def _start_bertmodel():
     st.session_state.bert_training = True
     return True
 
-def _stop_bertmodel():
+def _stop_user_process():
     """
-    Stop bertmodel training
+    Stop user process training
     """
     params = {"project_name":st.session_state.current_project,
-                "user":st.session_state.user}
-    r = _post("/models/bert/stop", 
+              "user":st.session_state.user}
+    r = _post("/stop", 
             params = params)
-    time.sleep(2)
     st.session_state.bert_training = False
-    return True
+    return r
 
 @st.cache_data
 def _export_data():
