@@ -749,16 +749,28 @@ def display_configuration():
     """
     st.title("Configuration")
     st.subheader("User management")
+    existing_users = _get_users()
+
+    st.write("Access to this project")
+    st.write(pd.DataFrame(_get_auth(st.session_state.current_project)))
 
     col1, col2 = st.columns(2)
     with col1:
-        existing_users = _get_users()
-        users = st.selectbox("Existing users:",existing_users)
+        user = st.selectbox("Existing users:",existing_users)
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Delete"):
-            _delete_user()
+            _delete_user(user)
             st.write("Delete user")
+
+    st.write("Add auth")
+    col1, col2 = st.columns(2)
+    with col1:
+        users = st.selectbox("Auth:",st.session_state.state["auth"]["status"])
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Set"):
+            st.write("Add")    
 
     st.write("Add user")
     col1, col2, col3 = st.columns(3)
@@ -771,6 +783,7 @@ def display_configuration():
         if st.button("Create"):
             _create_user(new_user, new_password)
             st.write("Create user")
+
 
 def display_test():
     """
@@ -1293,7 +1306,7 @@ def _get_statistics():
     params = {"project_name":st.session_state.current_project, 
             "scheme":st.session_state.current_scheme, 
             "user":st.session_state.user}
-    r = _get("/description",params = params)
+    r = _get("/project/description",params = params)
     if r["status"]=="error":
         return r["message"]
     tab = pd.DataFrame([[k,v] for k,v in r["data"].items()], columns=["information","values"]).set_index("information")
@@ -1642,6 +1655,19 @@ def _get_logs():
     r = _get("/logs",
         params = params)
     return r["data"]["logs"]
+
+def _get_auth(project_name):
+    """
+    Get auth for a project
+    """
+    params = {"project_name":project_name
+                }
+    r = _get("/project/auth",
+        params = params)
+    if r["status"] == "error":
+        print(r["message"])
+        return False
+    return r["data"]["auth"]
 
 if __name__ == "__main__":
     main()

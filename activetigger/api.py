@@ -199,12 +199,11 @@ async def existing_users() -> ResponseModel:
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(username:str = Query(),
-                      password:str = Query(),
-                      projects:str = Query(None)) -> ResponseModel:
+                      password:str = Query()) -> ResponseModel:
     """
     Create user
     """
-    r = server.add_user(username, password, projects)
+    r = server.add_user(username, password)
     if "success" in r:
         return ResponseModel(status="success", message=r["success"])
     else:
@@ -221,6 +220,21 @@ async def delete_user(username:str = Query()) -> ResponseModel:
     else:
         return ResponseModel(status="error", message=r["success"])
 
+@app.get("/users/auth", dependencies=[Depends(verified_user)])
+async def get_auth(username:str, project_name:str = "all"):
+    """
+    Get user auth
+    """
+    r = server.get_auth(username, project_name)
+    return r
+
+@app.post("/users/auth", dependencies=[Depends(verified_user)])
+async def set_auth(username:str, project_name:str, status:str):
+    """
+    Set user auth
+    """
+    r = server.set_auth(username, project_name, status)
+    return ResponseModel(status="success", message=r["success"])
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(username:str, project_name:str = "all", limit = 100):
@@ -253,21 +267,6 @@ async def get_queue() -> ResponseModel:
     r = server.queue.state()
     return ResponseModel(status="success", data=r)
 
-@app.get("/description", dependencies=[Depends(verified_user)])
-async def get_description(project: Annotated[Project, Depends(get_project)],
-                          scheme: str|None = None,
-                          user: str|None = None)  -> ResponseModel:
-    """
-    Description of a specific element
-    """
-    data = project.get_description(scheme = scheme, 
-                                user = user)
-    if "error" in data:
-        r = ResponseModel(status="error", message=data["error"])
-    else:
-        r = ResponseModel(status="success", data=data)
-    return r
-
 @app.get("/server")
 async def info_server() -> ResponseModel:
     """
@@ -280,6 +279,33 @@ async def info_server() -> ResponseModel:
         }
     r = ResponseModel(status="success", data=data)
     return r
+
+@app.get("/project/description", dependencies=[Depends(verified_user)])
+async def get_description(project: Annotated[Project, Depends(get_project)],
+                          scheme: str|None = None,
+                          user: str|None = None)  -> ResponseModel:
+    """
+    Description of a specific element
+    """
+    data = project.get_description(scheme = scheme, 
+                                   user = user)
+    if "error" in data:
+        r = ResponseModel(status="error", message=data["error"])
+    else:
+        r = ResponseModel(status="success", data=data)
+    return r
+
+@app.get("/project/auth", dependencies=[Depends(verified_user)])
+async def get_project_auth(project_name:str):
+    """
+    Users auth on a project
+    """
+    r = server.users.get_project_auth(project_name)
+    if "error" in r:
+        return ResponseModel(status="error", message=data["error"])
+    else:
+        return ResponseModel(status="success", data={"auth":r})
+
 
 @app.post("/projects/testdata", dependencies=[Depends(verified_user)])
 async def add_testdata(project: Annotated[Project, Depends(get_project)],

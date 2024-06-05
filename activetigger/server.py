@@ -163,6 +163,7 @@ class Server():
         # activity of the server
         self.projects: dict = {}
         self.queue = Queue(self.n_workers)
+        self.users = Users(self.db)
 
         # add users if add_users.yaml exists
         if Path("add_users.yaml").exists():
@@ -249,7 +250,7 @@ class Server():
                 time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 user TEXT,
                 key TEXT,
-                projects TEXT
+                description TEXT
                 )
         '''
         cursor.execute(create_table_sql)
@@ -259,8 +260,9 @@ class Server():
             CREATE TABLE IF NOT EXISTS auth (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user TEXT,
-                project TEXT
-                  )
+                project TEXT,
+                status TEXT
+                )
         '''
         cursor.execute(create_table_sql)
 
@@ -280,7 +282,7 @@ class Server():
         conn.close()
 
         # create root user
-        self.add_user(self.default_user,self.default_user)
+        self.add_user(self.default_user, self.default_user)
         logger.error('Create database')
 
     def log_action(self, 
@@ -369,10 +371,10 @@ class Server():
         return [i[0] for i in existing_users]
     
     def add_user(self, name:str, 
-                 password:str, 
-                 projects = "all") -> bool:
+                 password:str) -> bool:
         """
         Add user to database
+        TODO : description of an user ?
         """
         # test if the user doesn't exist
         if name in self.existing_users():
@@ -381,8 +383,8 @@ class Server():
         # add user
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        insert_query = "INSERT INTO users (user, key, projects) VALUES (?, ?, ?)"
-        cursor.execute(insert_query, (name, hash_pwd, projects))
+        insert_query = "INSERT INTO users (user, key) VALUES (?, ?)"
+        cursor.execute(insert_query, (name, hash_pwd))
         conn.commit()
         conn.close()
         return {"success":"User added to the database"}
@@ -606,6 +608,9 @@ class Server():
                 conn.commit()
             conn.close()
 
+        # add user right on the project
+        self.users.set_auth(params.user, params.project_name, "manager")
+
         # save parameters 
         params.col_label = None #reverse dummy
         self.set_project_parameters(params)
@@ -662,9 +667,13 @@ class Project(Server):
                                         self.params.dir / self.labels_file, 
                                         self.params.dir / self.test_file, 
                                         self.db)
-        self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db, self.queue)
-        self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
-        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
+        self.features: Features = Features(project_name, 
+                                           self.params.dir / self.features_file, 
+                                           self.db, self.queue)
+        self.bertmodels: BertModels = BertModels(self.params.dir, 
+                                                 self.queue)
+        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, 
+                                                       self.queue)
         self.zeroshot = None
 
     def __del__(self):
@@ -939,6 +948,8 @@ class Project(Server):
         """
         r = {
             "params":self.params,
+            "auth":{"status":["manager","annotator"],
+                    "current":{}},
             "next":{
                     "methods_min":["deterministic","random"],
                     "methods":["deterministic","random","maxprob","active"],
@@ -1640,3 +1651,55 @@ class Schemes():
         conn.commit()
         conn.close()
         return results
+    
+class Users():
+    """
+    Managers users
+    """
+
+    def __init__(self, db_path:Path):
+        """
+        Init users references
+        """
+        self.db = db_path
+        
+    def get_project_auth(self, project_name:str):
+        """
+        Get user auth for a project
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """SELECT user, status FROM auth WHERE project = ?"""
+        cursor.execute(query, (project_name, ))
+        auth = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return auth
+    
+    def set_auth(self, username:str, project_name:str, status:str):
+        """
+        Set user auth for a project
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "INSERT OR REPLACE INTO auth (project, user, status) VALUES (?, ?, ?)"
+        cursor.execute(insert_query, (project_name, username, status))
+        conn.commit()
+        conn.close()
+        return {"success":"Auth added to database"}
+
+    def get_auth(self, username:str, project_name:str = "all"):
+        """
+        Get user auth
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        if project_name == "all":
+            query = """SELECT project, status FROM auth WHERE user = ?"""
+        else:
+            query = """SELECT status FROM auth WHERE user = ? AND project = ?"""
+        cursor.execute(query, (username, project_name))
+        auth = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return auth.to_json()
