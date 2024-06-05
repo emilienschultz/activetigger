@@ -688,7 +688,7 @@ def display_bertmodels():
         else:
             if st.button("⚙️Stop"):
                 #st.write("⚙️Stop")
-                _stop_bertmodel()
+                _stop_user_process()
 
 def display_export():
     """
@@ -1488,19 +1488,6 @@ def _start_bertmodel():
     time.sleep(2)
     st.session_state.bert_training = True
     return True
-
-def _stop_bertmodel():
-    """
-    Stop bertmodel training
-    """
-    params = {"project_name":st.session_state.current_project,
-              "user":st.session_state.user}
-    r = _post("/models/bert/stop", 
-            params = params)
-    time.sleep(2)
-    st.session_state.bert_training = False
-    return True
-
 
 def _stop_user_process():
     """
