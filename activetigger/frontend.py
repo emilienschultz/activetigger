@@ -91,7 +91,7 @@ def app_navigation():
     if st.session_state.state:
         if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
             st.session_state.bert_training = True
-            col1, col2 = st.columns(2)
+            col1, col2 = st.columns((3,1))
             with col1:
                 st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Computing (training / predicting). Wait the process to end before launching another one or stop it.</div>")
             with col2:
