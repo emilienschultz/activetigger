@@ -550,6 +550,7 @@ class Server():
         cursor.execute(f"DELETE FROM projects WHERE project_name = ?", (project_name,))
         cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_name,))
         cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_name,))
+        cursor.execute(f"DELETE FROM auth WHERE project = ?", (project_name,))
         conn.commit()
         conn.close()
         return {"success":"Project deleted"}
