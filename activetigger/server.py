@@ -1611,11 +1611,30 @@ class Users():
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        insert_query = "INSERT OR REPLACE INTO auth (project, user, status) VALUES (?, ?, ?)"
-        cursor.execute(insert_query, (project_name, username, status))
+        
+        # Attempt to update the entry
+        update_query = "UPDATE auth SET status = ? WHERE project = ? AND user = ?"
+        cursor.execute(update_query, (status, project_name, username))
+        
+        if cursor.rowcount == 0:
+            # If no rows were updated, insert a new entry
+            insert_query = "INSERT INTO auth (project, user, status) VALUES (?, ?, ?)"
+            cursor.execute(insert_query, (project_name, username, status))
         conn.commit()
         conn.close()
         return {"success":"Auth added to database"}
+    
+    def delete_auth(self, username:str, project_name:str):
+        """
+        Delete user auth
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "DELETE FROM auth WHERE project=? AND user = ?"
+        cursor.execute(insert_query, (project_name, username))
+        conn.commit()
+        conn.close()
+        return {"success":"Auth deleted"}
 
     def get_auth(self, username:str, project_name:str = "all"):
         """

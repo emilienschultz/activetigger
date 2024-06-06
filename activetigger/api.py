@@ -192,7 +192,7 @@ async def existing_users() -> ResponseModel:
     Get existing users
     """
     data = {
-        "users":server.existing_users()
+        "users":server.users.existing_users()
         }
     r = ResponseModel(status="success", data=data)
     return r
@@ -220,21 +220,35 @@ async def delete_user(username:str = Query()) -> ResponseModel:
     else:
         return ResponseModel(status="error", message=r["success"])
 
+@app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
+async def set_auth(action: str, 
+                   username:str = Query(), 
+                   project_name:str = Query(), 
+                   status:str = Query(None)):
+    """
+    Set user auth
+    """
+    if action == "add":
+        if not status:
+            return ResponseModel(status="error", message="Missing status")
+        r = server.users.set_auth(username, project_name, status)
+        return ResponseModel(status="success", message=r["success"])
+    
+    if action == "delete":
+        r = server.users.delete_auth(username, project_name)
+        return ResponseModel(status="success", message=r["success"])
+    return ResponseModel(status="error", message="Action not found")
+
 @app.get("/users/auth", dependencies=[Depends(verified_user)])
 async def get_auth(username:str, project_name:str = "all"):
     """
     Get user auth
     """
-    r = server.get_auth(username, project_name)
+    r = server.users.get_auth(username, project_name)
     return r
 
-@app.post("/users/auth", dependencies=[Depends(verified_user)])
-async def set_auth(username:str, project_name:str, status:str):
-    """
-    Set user auth
-    """
-    r = server.set_auth(username, project_name, status)
-    return ResponseModel(status="success", message=r["success"])
+
+    
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(username:str, project_name:str = "all", limit = 100):
@@ -275,7 +289,7 @@ async def info_server() -> ResponseModel:
     """
     data = {
         "projects":server.existing_projects(),
-        "users":server.existing_users()
+        "users":server.users.existing_users()
         }
     r = ResponseModel(status="success", data=data)
     return r

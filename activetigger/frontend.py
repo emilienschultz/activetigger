@@ -744,15 +744,12 @@ def display_export():
 
 def display_configuration():
     """
-    Configuration panel
+    Configuration panel 
     - User creation
     """
     st.title("Configuration")
     st.subheader("User management")
     existing_users = _get_users()
-
-    st.write("Access to this project")
-    st.write(pd.DataFrame(_get_auth(st.session_state.current_project)))
 
     col1, col2 = st.columns(2)
     with col1:
@@ -766,11 +763,12 @@ def display_configuration():
     st.write("Add auth")
     col1, col2 = st.columns(2)
     with col1:
-        users = st.selectbox("Auth:",st.session_state.state["auth"]["status"])
+        auth = st.selectbox("Auth:",st.session_state.state["auth"]["status"])
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Set"):
-            st.write("Add")    
+            st.write("Add")
+            _add_auth(user, auth) 
 
     st.write("Add user")
     col1, col2, col3 = st.columns(3)
@@ -784,6 +782,15 @@ def display_configuration():
             _create_user(new_user, new_password)
             st.write("Create user")
 
+    st.write("Access to this project")
+    df = pd.DataFrame(_get_auth(st.session_state.current_project))
+    for i,j in df.iterrows():
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.write(f"{j[0]} - {j[1]}")
+        with col2:
+            if st.button("Delete", key=i):
+                _delete_auth(j[0])
 
 def display_test():
     """
@@ -889,7 +896,9 @@ def _post(route:str,
                 files = files,
                 headers = st.session_state.header, 
                 verify = False)
+    
     if r.status_code == 422:
+        print(r.content)
         return {"status":"error", "message":"Not authorized"}
     return json.loads(r.content)
 
@@ -1656,7 +1665,7 @@ def _get_logs():
         params = params)
     return r["data"]["logs"]
 
-def _get_auth(project_name):
+def _get_auth(project_name:str):
     """
     Get auth for a project
     """
@@ -1668,6 +1677,41 @@ def _get_auth(project_name):
         print(r["message"])
         return False
     return r["data"]["auth"]
+
+def _add_auth(username:str, auth:str):
+    """
+    Add new auth
+    """
+    params = { 
+                "project_name":st.session_state.current_project,
+                "username":username,
+                "status":auth}
+    r = _post(route="/users/auth/add", 
+            params = params,
+            )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return True
+
+
+def _delete_auth(username:str):
+    """
+    Add new auth
+    """
+    r = _post(route="/users/auth/delete", 
+            params = {
+                    "project_name":st.session_state.current_project,
+                    "username":username
+                    },
+            )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return True
+    
 
 if __name__ == "__main__":
     main()
