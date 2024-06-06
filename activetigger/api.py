@@ -125,7 +125,7 @@ async def verified_user(token: Annotated[str, Depends(oauth2_scheme)]):
             return ResponseModel(status="error", message="Could not validate credential")
     except JWTError:
         return ResponseModel(status="error", message="Could not validate credential")
-    user = server.get_user(name=username)
+    user = server.users.get_user(name=username)
     if user is None:
         return ResponseModel(status="error", message="Could not validate credential")
     return user
@@ -170,7 +170,7 @@ async def login_for_access_token(
     """
     Authentificate user and return token
     """
-    user = server.authenticate_user(form_data.username, form_data.password)
+    user = server.users.authenticate_user(form_data.username, form_data.password)
     if "error" in user:
         return ResponseModel(status="error", message=user["error"])
     access_token = server.create_access_token(
@@ -203,7 +203,7 @@ async def create_user(username:str = Query(),
     """
     Create user
     """
-    r = server.add_user(username, password)
+    r = server.users.add_user(username, password)
     if "success" in r:
         return ResponseModel(status="success", message=r["success"])
     else:
@@ -214,7 +214,7 @@ async def delete_user(username:str = Query()) -> ResponseModel:
     """
     Delete user
     """
-    r = server.delete_user(username)
+    r = server.users.delete_user(username)
     if "success" in r:
         return ResponseModel(status="success", message=r["success"])
     else:

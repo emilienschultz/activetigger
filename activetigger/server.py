@@ -165,19 +165,6 @@ class Server():
         self.queue = Queue(self.n_workers)
         self.users = Users(self.db)
 
-        # add users if add_users.yaml exists
-        if Path("add_users.yaml").exists():
-            existing = self.existing_users()
-            with open('add_users.yaml') as f:
-                add_users = yaml.safe_load(f)
-            for user,password in add_users.items():
-                if not user in existing:
-                    self.add_user(user, password)
-                else:
-                    print(f"Not possible to add {user}, already exists")
-            # rename the file
-            os.rename('add_users.yaml', 'add_users_processed.yaml')
-
         # starting time
         self.starting_time = time.time()
                 
@@ -282,7 +269,7 @@ class Server():
         conn.close()
 
         # create root user
-        self.add_user(self.default_user, self.default_user)
+        self.users.add_user(self.default_user, self.default_user)
         logger.error('Create database')
 
     def log_action(self, 
@@ -357,78 +344,6 @@ class Server():
         existing_project = cursor.fetchall()
         conn.close()
         return [i[0] for i in existing_project]
-    
-    def existing_users(self) -> list:
-        """
-        Get existing users
-        """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT user FROM users"
-        cursor.execute(query)
-        existing_users = cursor.fetchall()
-        conn.close()
-        return [i[0] for i in existing_users]
-    
-    def add_user(self, name:str, 
-                 password:str) -> bool:
-        """
-        Add user to database
-        TODO : description of an user ?
-        """
-        # test if the user doesn't exist
-        if name in self.existing_users():
-            return {"error":"Username already exists"}
-        hash_pwd = functions.get_hash(password)
-        # add user
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        insert_query = "INSERT INTO users (user, key) VALUES (?, ?)"
-        cursor.execute(insert_query, (name, hash_pwd))
-        conn.commit()
-        conn.close()
-        return {"success":"User added to the database"}
-    
-    def delete_user(self, 
-                    name:str) -> dict:
-        """
-        Deleting user
-        """
-        if not name in self.existing_users():
-            return {"error":"Username does not exist"}
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "DELETE FROM users WHERE user = ?"
-        cursor.execute(query, (name,))
-        conn.commit()
-        conn.close()
-        return {"success":"User deleted"}    
-    
-    def get_user(self, name) -> UserInDB|dict:
-        """
-        Get user from database
-        """
-        if not name in self.existing_users():
-            return {"error":"Username doesn't exist"}
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM users WHERE user = ?"
-        cursor.execute(query, (name,))
-        user = cursor.fetchone()
-        u = UserInDB(username = name, hashed_password = user[3])
-        conn.close()
-        return u
-
-    def authenticate_user(self, username: str, password: str):
-        """
-        User authentification
-        """
-        user = self.get_user(username)
-        if "error" in user:
-            return user
-        if not functions.compare_to_hash(password, user.hashed_password):
-            return {"error":"Wrong password"}
-        return user
     
     def create_access_token(self, data: dict, expires_min: int  = 60):
         """
@@ -1657,12 +1572,26 @@ class Users():
     Managers users
     """
 
-    def __init__(self, db_path:Path):
+    def __init__(self, db_path:Path, 
+                 file_users:str = "add_users.yaml"):
         """
         Init users references
         """
         self.db = db_path
         
+        # add users if add_users.yaml exists
+        if Path(file_users).exists():
+            existing = self.existing_users()
+            with open('add_users.yaml') as f:
+                add_users = yaml.safe_load(f)
+            for user,password in add_users.items():
+                if not user in existing:
+                    self.add_user(user, password)
+                else:
+                    print(f"Not possible to add {user}, already exists")
+            # rename the file
+            os.rename('add_users.yaml', 'add_users_processed.yaml')
+
     def get_project_auth(self, project_name:str):
         """
         Get user auth for a project
@@ -1703,3 +1632,76 @@ class Users():
         conn.commit()
         conn.close()
         return auth.to_json()
+    
+    def existing_users(self) -> list:
+        """
+        Get existing users
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT user FROM users"
+        cursor.execute(query)
+        existing_users = cursor.fetchall()
+        conn.close()
+        return [i[0] for i in existing_users]
+    
+    def add_user(self, 
+                 name:str, 
+                 password:str) -> bool:
+        """
+        Add user to database
+        TODO : description of an user ?
+        """
+        # test if the user doesn't exist
+        if name in self.existing_users():
+            return {"error":"Username already exists"}
+        hash_pwd = functions.get_hash(password)
+        # add user
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "INSERT INTO users (user, key) VALUES (?, ?)"
+        cursor.execute(insert_query, (name, hash_pwd))
+        conn.commit()
+        conn.close()
+        return {"success":"User added to the database"}
+    
+    def delete_user(self, 
+                    name:str) -> dict:
+        """
+        Deleting user
+        """
+        if not name in self.existing_users():
+            return {"error":"Username does not exist"}
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "DELETE FROM users WHERE user = ?"
+        cursor.execute(query, (name,))
+        conn.commit()
+        conn.close()
+        return {"success":"User deleted"}    
+    
+    def get_user(self, name) -> UserInDB|dict:
+        """
+        Get user from database
+        """
+        if not name in self.existing_users():
+            return {"error":"Username doesn't exist"}
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT * FROM users WHERE user = ?"
+        cursor.execute(query, (name,))
+        user = cursor.fetchone()
+        u = UserInDB(username = name, hashed_password = user[3])
+        conn.close()
+        return u
+
+    def authenticate_user(self, username: str, password: str):
+        """
+        User authentification
+        """
+        user = self.get_user(username)
+        if "error" in user:
+            return user
+        if not functions.compare_to_hash(password, user.hashed_password):
+            return {"error":"Wrong password"}
+        return user
