@@ -1,5 +1,5 @@
 import time
-from fastapi import FastAPI, Depends, HTTPException,status, Header, UploadFile, File, Query, Form, Request
+from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
@@ -12,7 +12,7 @@ from activetigger.server import Server, Project
 import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
       SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
-      UmapParams, TsneParams, NextModel, ZeroShotModel
+      UmapParams, TsneParams, NextModel, ZeroShotModel, UserStatus, UserInDB
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -114,21 +114,42 @@ async def get_project(project_name: str) -> ProjectModel|None:
         server.start_project(project_name)            
         return server.projects[project_name]
 
-async def verified_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def verified_user(request: Request, token: Annotated[str, Depends(oauth2_scheme)]):
     """
     Dependency to test if the user is authentified with its token
     """
+    # decode token
     try:
         payload = server.decode_access_token(token)
         username: str = payload.get("sub")
         if username is None:
-            return ResponseModel(status="error", message="Could not validate credential")
+            return False
     except JWTError:
-        return ResponseModel(status="error", message="Could not validate credential")
+        return False
+    
+    # authentification
     user = server.users.get_user(name=username)
-    if user is None:
-        return ResponseModel(status="error", message="Could not validate credential")
-    return user
+    return user    
+
+async def check_auth_exists(request: Request, 
+                     username: Annotated[str, Header()], 
+                     project_name: str|None = None):
+    """
+    Check if a user is associated to a project
+    """
+    auth = server.users.auth(username, project_name)
+    if not auth:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
+
+async def check_auth_manager(request: Request, 
+                     username: Annotated[str, Header()], 
+                     project_name: str|None = None):
+    """
+    Check if a user is associated to a project
+    """
+    auth = server.users.auth(username, project_name)
+    if not auth == "manager":
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
 
 # ------
 # Routes
@@ -176,14 +197,16 @@ async def login_for_access_token(
     access_token = server.create_access_token(
             data={"sub": user.username}, 
             expires_min=60)
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type="bearer", status=user.status)
 
-@app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: Annotated[User, Depends(verified_user)]) -> ResponseModel:
+@app.get("/users/me")
+async def read_users_me(current_user: Annotated[UserInDB, Depends(verified_user)]) -> ResponseModel:
     """
     Information on current user
     """
-    r = ResponseModel(status="success", data=current_user)
+    r = ResponseModel(status="success", data={"username":current_user.username,
+                                              "status":current_user.status})
+    print(current_user)
     return r
 
 @app.get("/users", dependencies=[Depends(verified_user)])
@@ -209,7 +232,7 @@ async def create_user(username:str = Query(),
     else:
         return ResponseModel(status="error", message=r["success"])
 
-@app.post("/users/delete", dependencies=[Depends(verified_user)])
+@app.post("/users/delete", dependencies=[Depends(verified_user), Depends(check_auth_manager)])
 async def delete_user(username:str = Query()) -> ResponseModel:
     """
     Delete user
@@ -247,9 +270,6 @@ async def get_auth(username:str, project_name:str = "all"):
     r = server.users.get_auth(username, project_name)
     return r
 
-
-    
-
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(username:str, project_name:str = "all", limit = 100):
     """
@@ -262,7 +282,7 @@ async def get_logs(username:str, project_name:str = "all", limit = 100):
 # Projects management
 #--------------------
 
-@app.get("/state/{project_name}", dependencies=[Depends(verified_user)])
+@app.get("/state/{project_name}", dependencies=[Depends(verified_user), Depends(check_auth_exists)])
 async def get_state(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Get the state of a specific project
@@ -405,7 +425,7 @@ async def new_project(
 
     return ResponseModel(status = "success")
 
-@app.post("/projects/delete", dependencies=[Depends(verified_user)])
+@app.post("/projects/delete", dependencies=[Depends(verified_user), Depends(check_auth_exists)])
 async def delete_project(username: Annotated[str, Header()],
                          project_name:str) -> ResponseModel:
     """
@@ -996,7 +1016,8 @@ async def export_prediction(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
 async def export_bert(project: Annotated[Project, Depends(get_project)],
-                          name:str = Query()) -> FileResponse:
+                      username: Annotated[str, Header()],
+                      name:str = Query()) -> FileResponse:
     """
     Export fine-tuned BERT model
     """

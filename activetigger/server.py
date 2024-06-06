@@ -269,7 +269,7 @@ class Server():
         conn.close()
 
         # create root user
-        self.users.add_user(self.default_user, self.default_user)
+        self.users.add_user(self.default_user, self.default_user, role="root")
         logger.error('Create database')
 
     def log_action(self, 
@@ -1635,7 +1635,7 @@ class Users():
         cursor.execute(insert_query, (project_name, username))
         conn.commit()
         conn.close()
-        return {"success":"Auth deleted"}
+        return {"success":"Auth deleted"}  
 
     def get_auth(self, username:str, project_name:str = "all"):
         """
@@ -1651,7 +1651,7 @@ class Users():
         auth = cursor.fetchall()
         conn.commit()
         conn.close()
-        return auth.to_json()
+        return auth
     
     def existing_users(self) -> list:
         """
@@ -1667,10 +1667,12 @@ class Users():
     
     def add_user(self, 
                  name:str, 
-                 password:str) -> bool:
+                 password:str, 
+                 role:str = "manager") -> bool:
         """
         Add user to database
-        TODO : description of an user ?
+        Comments:
+            Default, users are managers
         """
         # test if the user doesn't exist
         if name in self.existing_users():
@@ -1679,8 +1681,8 @@ class Users():
         # add user
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        insert_query = "INSERT INTO users (user, key) VALUES (?, ?)"
-        cursor.execute(insert_query, (name, hash_pwd))
+        insert_query = "INSERT INTO users (user, key, description) VALUES (?, ?, ?)"
+        cursor.execute(insert_query, (name, hash_pwd, role))
         conn.commit()
         conn.close()
         return {"success":"User added to the database"}
@@ -1699,7 +1701,7 @@ class Users():
         conn.commit()
         conn.close()
         return {"success":"User deleted"}    
-    
+
     def get_user(self, name) -> UserInDB|dict:
         """
         Get user from database
@@ -1711,7 +1713,9 @@ class Users():
         query = "SELECT * FROM users WHERE user = ?"
         cursor.execute(query, (name,))
         user = cursor.fetchone()
-        u = UserInDB(username = name, hashed_password = user[3])
+        u = UserInDB(username = name, 
+                     hashed_password = user[3],
+                     status = user[4])
         conn.close()
         return u
 
@@ -1725,3 +1729,12 @@ class Users():
         if not functions.compare_to_hash(password, user.hashed_password):
             return {"error":"Wrong password"}
         return user
+    
+    def auth(self, username:str, project_name:str):
+        """
+        Check auth for a specific project
+        """
+        user_auth = self.get_auth(username, project_name)
+        if len(user_auth) == 0: #not associated
+            return None
+        return user_auth[0][0]

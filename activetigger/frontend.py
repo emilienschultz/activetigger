@@ -31,6 +31,10 @@ if not 'logged_in'  in st.session_state:
     st.session_state.logged_in = False
 if not 'page' in st.session_state:
     st.session_state.page = "Projects"
+if not "user" in st.session_state:
+    st.session_state.user = None
+if not "status" in st.session_state:
+    st.session_state.status = None
 if not "current_project" in st.session_state:
     st.session_state.current_project = None
 if not "current_element" in st.session_state:
@@ -897,7 +901,7 @@ def _post(route:str,
                 headers = st.session_state.header, 
                 verify = False)
     
-    if r.status_code == 422:
+    if r.status_code in [422, 403]:
         print(r.content)
         return {"status":"error", "message":"Not authorized"}
     return json.loads(r.content)
@@ -915,7 +919,7 @@ def _get(route:str,
                 data = data,
                 headers = st.session_state.header,
                 verify=False)
-    if r.status_code == 422:
+    if r.status_code in [422, 403]:
         return {"status":"error", "message":"Not authorized"}
     if is_json:
         return json.loads(r.content)
@@ -945,9 +949,13 @@ def _connect_user(user:str, password:str) -> bool:
     if not "access_token" in r:
         print(r)
         return False
-
+    
     # Update widget configuration
-    st.session_state.header = {"Authorization": f"Bearer {r['access_token']}", "username":user}
+    st.session_state.header = {"Authorization": f"Bearer {r['access_token']}", 
+                               "username":user}
+    
+    # Define conf for frontend
+    st.session_state.status = r["status"]
     st.session_state.user = user
     return True
 
@@ -1654,6 +1662,13 @@ def _get_queue():
     r = _get("/queue")
     return r
 
+def _get_current_user():
+    """
+    Get current user
+    """
+    r = _get("/users/me")
+    return r["data"]
+
 def _get_logs():
     """
     Get logs for the current user/project
@@ -1694,7 +1709,6 @@ def _add_auth(username:str, auth:str):
         st.write(r["message"])
         return False
     return True
-
 
 def _delete_auth(username:str):
     """
