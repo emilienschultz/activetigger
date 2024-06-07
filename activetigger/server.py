@@ -314,6 +314,17 @@ class Server():
         df = pd.DataFrame(logs, columns = ["id", "time", "user", "project", "action", "NA"])
         return df.to_json()
 
+    def get_session_info(self, username:str):
+        """
+        Get information of a username session
+        """
+        projects = self.users.get_auth(username)
+        data = {
+                "projects":[i[0] for i in projects],
+                "auth": ["manager","annotator"],
+                }
+        return data
+
     def db_get_project(self, project_name:str) -> ProjectModel|None:
         """
         Get project from database
@@ -872,8 +883,6 @@ class Project(Server):
         """
         r = {
             "params":self.params,
-            "auth":{"status":["manager","annotator"],
-                    "current":{}},
             "next":{
                     "methods_min":["deterministic","random"],
                     "methods":["deterministic","random","maxprob","active"],
@@ -1653,9 +1662,10 @@ class Users():
         cursor = conn.cursor()
         if project_name == "all":
             query = """SELECT project, status FROM auth WHERE user = ?"""
+            cursor.execute(query, (username,))
         else:
             query = """SELECT status FROM auth WHERE user = ? AND project = ?"""
-        cursor.execute(query, (username, project_name))
+            cursor.execute(query, (username, project_name))
         auth = cursor.fetchall()
         conn.commit()
         conn.close()

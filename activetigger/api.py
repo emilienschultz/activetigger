@@ -220,8 +220,10 @@ async def existing_users() -> ResponseModel:
     Get existing users
     """
     data = {
-        "users":server.users.existing_users()
+        "users":server.users.existing_users(),
+        "auth":["manager","annotator"]
         }
+    print(data)
     r = ResponseModel(status="success", data=data)
     return r
 
@@ -308,17 +310,18 @@ async def get_queue() -> ResponseModel:
     r = server.queue.state()
     return ResponseModel(status="success", data=r)
 
-@app.get("/server")
-async def info_server() -> ResponseModel:
+@app.get("/session")
+async def info_server(username: Annotated[str, Header()]) -> ResponseModel:
     """
-    Get general informations on the server 
-    (no validation needed)
+    Get general informations on the server
+    depending of the status of connected user
     """
-    data = {
-        "projects":server.existing_projects(),
-        "users":server.users.existing_users()
-        }
-    r = ResponseModel(status="success", data=data)
+    data = server.get_session_info(username)
+    print(data)
+    if "error" in data:
+        r = ResponseModel(status="error", message=data["error"])
+    else:
+        r = ResponseModel(status="success", data=data)
     return r
 
 @app.get("/project/description", dependencies=[Depends(verified_user)])

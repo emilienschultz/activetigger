@@ -140,6 +140,8 @@ def app_navigation():
         display_projects()
     elif st.session_state['page'] == "Doc":
         display_documentation()
+    elif st.session_state['page'] == "Conf":
+        display_configuration()   
     else:
         if not st.session_state.current_project:
             st.write("Select a project first")
@@ -154,8 +156,7 @@ def app_navigation():
             display_test()
         elif st.session_state['page'] == "Export":
             display_export()
-        elif st.session_state['page'] == "Conf":
-            display_configuration()   
+        
 
 def display_documentation():
     """
@@ -180,7 +181,7 @@ def display_projects():
     - delete project
     - create project
     """
-    r = _get("/server")
+    r = _get("/session")
     existing = r["data"]["projects"]
 
     # display menu
@@ -750,28 +751,33 @@ def display_configuration():
     """
     st.title("Configuration")
     st.subheader("Access to this project")
-    existing_users = _get_users()
+    temp = _get_users()
+    existing_users = temp["users"]
+    existing_status = temp["auth"]
 
-    st.write("Add auth")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        user = st.selectbox("Existing users:",existing_users)
-    with col2:
-        auth = st.selectbox("Auth:",st.session_state.state["auth"]["status"])
-    with col3:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Set"):
-            st.write("Add")
-            _add_auth(user, auth) 
-
-    df = pd.DataFrame(_get_auth(st.session_state.current_project))
-    for i,j in df.iterrows():
+    if st.session_state.current_project:
+        st.write("Add auth")
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.write(f"{j[0]} - {j[1]}")
+            user = st.selectbox("Existing users:",existing_users)
         with col2:
-            if st.button("Delete", key=i):
-                _delete_auth(j[0])
+            auth = st.selectbox("Auth:",existing_status)
+        with col3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Set"):
+                st.write("Add")
+                _add_auth(user, auth) 
+
+        df = pd.DataFrame(_get_auth(st.session_state.current_project))
+        for i,j in df.iterrows():
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(f"{j[0]} - {j[1]}")
+            with col2:
+                if st.button("Delete", key=i):
+                    _delete_auth(j[0])
+    else:
+        print("Load a project first")
 
     st.subheader("Add user")
     col1, col2, col3, col4 = st.columns(4)
@@ -780,7 +786,7 @@ def display_configuration():
     with col2:
         new_password = st.text_input("Password")
     with col3:
-        status = st.selectbox("Status", options=st.session_state.state["auth"]["status"])
+        status = st.selectbox("Status", options=existing_status)
     with col4:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Create"):
@@ -982,7 +988,7 @@ def _get_users():
     Get existing users
     """
     r = _get(route="/users")
-    return r["data"]["users"]
+    return r["data"]
 
 def _create_user(username:str, password:str, status:str):
     """
