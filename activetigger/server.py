@@ -305,9 +305,10 @@ class Server():
         cursor = conn.cursor()
         if project_name == "all":
             query = """SELECT * FROM logs WHERE user = ? ORDER BY time DESC"""
+            cursor.execute(query, (username, ))
         else:
             query = """SELECT * FROM logs WHERE user = ? AND project = ? ORDER BY time DESC LIMIT ?"""
-        cursor.execute(query, (username, project_name,limit))
+            cursor.execute(query, (username, project_name,limit))
         logs = cursor.fetchall()
         conn.commit()
         conn.close()
@@ -731,6 +732,7 @@ class Project(Server):
                     "proba":None
                     },
             "frame":[],
+            "limit":1200
             }
             print(element)
             return element
@@ -805,6 +807,7 @@ class Project(Server):
             "info":indicator,
             "predict":predict,
             "frame":frame,
+            "limit":int(self.content.loc[element_id, "limit"])
                 }
 
         return element

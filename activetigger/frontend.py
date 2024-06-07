@@ -162,12 +162,17 @@ def display_documentation():
     """
     Documentation page
     """
-    with st.expander("Parameters of the project"):
-        st.write(st.session_state.state)
+
 
     with st.expander("Documentation"):
         doc = _get_documentation()
         st.write(doc)
+
+    if not st.session_state.state:
+        return
+
+    with st.expander("Parameters of the project"):
+        st.write(st.session_state.state)
 
     with st.expander("Logs"):
         docs = _get_logs()
@@ -374,10 +379,19 @@ def display_annotate():
                     label_visibility="hidden",
                     on_change = _get_next_element)
     if st.session_state.current_element:
+
+        # separate the text with the limit
+        if len(st.session_state.current_element["text"])<st.session_state.current_element["limit"]:
+            text_in = st.session_state.current_element["text"]
+            text_out = ""
+        else:
+            text_in = st.session_state.current_element["text"][0:st.session_state.current_element["limit"]]
+            text_out = st.session_state.current_element["text"][st.session_state.current_element["limit"]:]
+
         st.markdown(f"""
             <div style="
                 border: 2px solid #4CAF50;
-                padding: 10px;
+                padding: 30px;
                 border-radius: 5px;
                 color: #4CAF50;
                 font-family: sans-serif;
@@ -385,7 +399,7 @@ def display_annotate():
                 margin: 10px;
                 min-height: 300px;
             ">
-                {st.session_state.current_element["text"]}
+                {text_in}<span style='color: gray'>{text_out}</span>
             </div>
 
         """, unsafe_allow_html=True)
