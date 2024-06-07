@@ -107,9 +107,6 @@ def app_navigation():
         if not len(c) == 0:
             st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>")
 
-    # user logged
-    #st.sidebar.write(f"Current user: {st.session_state.user}")
-
     # creating the menu
     options = [
             "Projects",
@@ -122,11 +119,11 @@ def app_navigation():
             ]
     
     # add user management
-    if st.session_state.user == "root":
+    if check_status(["root","manager"]):
         options = options + ["Conf"]    
 
     #with st.sidebar:
-    st.session_state['page'] = option_menu(f"pyActiveTigger {__version__} - Current user : {st.session_state.user} - Current project : {st.session_state.current_project}", 
+    st.session_state['page'] = option_menu(f"pyActiveTigger {__version__} - Current user : {st.session_state.user} ({st.session_state.status}) - Current project : {st.session_state.current_project}", 
                                                options, 
                                                menu_icon="bi-bookmark-check",
                                                icons=['house', 
@@ -752,41 +749,21 @@ def display_configuration():
     - User creation
     """
     st.title("Configuration")
-    st.subheader("User management")
+    st.subheader("Access to this project")
     existing_users = _get_users()
 
-    col1, col2 = st.columns(2)
+    st.write("Add auth")
+    col1, col2, col3 = st.columns(3)
     with col1:
         user = st.selectbox("Existing users:",existing_users)
     with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Delete"):
-            _delete_user(user)
-            st.write("Delete user")
-
-    st.write("Add auth")
-    col1, col2 = st.columns(2)
-    with col1:
         auth = st.selectbox("Auth:",st.session_state.state["auth"]["status"])
-    with col2:
+    with col3:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Set"):
             st.write("Add")
             _add_auth(user, auth) 
 
-    st.write("Add user")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        new_user = st.text_input("New user")
-    with col2:
-        new_password = st.text_input("Password")
-    with col3:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Create"):
-            _create_user(new_user, new_password)
-            st.write("Create user")
-
-    st.write("Access to this project")
     df = pd.DataFrame(_get_auth(st.session_state.current_project))
     for i,j in df.iterrows():
         col1, col2, col3 = st.columns(3)
@@ -795,6 +772,34 @@ def display_configuration():
         with col2:
             if st.button("Delete", key=i):
                 _delete_auth(j[0])
+
+    st.subheader("Add user")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        new_user = st.text_input("New user")
+    with col2:
+        new_password = st.text_input("Password")
+    with col3:
+        status = st.selectbox("Status", options=st.session_state.state["auth"]["status"])
+    with col4:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Create"):
+            _create_user(new_user, new_password, status)
+            st.write("Create user")
+
+    if not check_status(["root"]):
+        return
+
+    st.subheader("Delete user")
+    col1, col2 = st.columns(2)
+    with col1:
+        user_del = st.selectbox("Existing users:", existing_users, key = "del_user")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Delete"):
+            _delete_user(user_del)
+            st.write("Delete user")
+
 
 def display_test():
     """
@@ -979,13 +984,13 @@ def _get_users():
     r = _get(route="/users")
     return r["data"]["users"]
 
-def _create_user(username:str, password:str):
+def _create_user(username:str, password:str, status:str):
     """
     Create user
     """
-    params = {"username":username,
-              "password":password, 
-              "projects":"all"}
+    params = {"username_to_create":username,
+              "password":password,
+              "status":status}
     r = _post(route="/users/create", 
                 params=params
                 )
@@ -1725,6 +1730,14 @@ def _delete_auth(username:str):
         st.write(r["message"])
         return False
     return True
+
+def check_status(accepted:list):
+    """
+    Check if the current status is in the list
+    """
+    if st.session_state.status in accepted:
+        return True
+    return False
     
 
 if __name__ == "__main__":

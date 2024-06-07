@@ -147,6 +147,11 @@ async def check_auth_manager(request: Request,
     """
     Check if a user is associated to a project
     """
+
+    #root can do anything TODO: secure that
+    if username == "root":
+        return
+
     auth = server.users.auth(username, project_name)
     if not auth == "manager":
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
@@ -221,12 +226,14 @@ async def existing_users() -> ResponseModel:
     return r
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
-async def create_user(username:str = Query(),
-                      password:str = Query()) -> ResponseModel:
+async def create_user(username: Annotated[str, Header()],
+                      username_to_create:str = Query(),
+                      password:str = Query(),
+                      status:str = Query()) -> ResponseModel:
     """
     Create user
     """
-    r = server.users.add_user(username, password)
+    r = server.users.add_user(username_to_create, password, status, username)
     if "success" in r:
         return ResponseModel(status="success", message=r["success"])
     else:

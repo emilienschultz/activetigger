@@ -237,7 +237,8 @@ class Server():
                 time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 user TEXT,
                 key TEXT,
-                description TEXT
+                description TEXT,
+                created_by TEXT
                 )
         '''
         cursor.execute(create_table_sql)
@@ -248,7 +249,8 @@ class Server():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user TEXT,
                 project TEXT,
-                status TEXT
+                status TEXT,
+                created_by TEXT
                 )
         '''
         cursor.execute(create_table_sql)
@@ -265,11 +267,16 @@ class Server():
                 )
         '''
         cursor.execute(create_table_sql)
+
+        # create root user
+        #self.users.add_user(self.default_user, self.default_user, role="root")
+        hash_pwd = functions.get_hash(self.default_user)
+        insert_query = "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
+        print((self.default_user, hash_pwd, "root", "system"))
+        cursor.execute(insert_query, (self.default_user, hash_pwd, "root", "system"))
         conn.commit()
         conn.close()
 
-        # create root user
-        self.users.add_user(self.default_user, self.default_user, role="root")
         logger.error('Create database')
 
     def log_action(self, 
@@ -523,8 +530,9 @@ class Server():
                 conn.commit()
             conn.close()
 
-        # add user right on the project
+        # add user right on the project + root
         self.users.set_auth(params.user, params.project_name, "manager")
+        self.users.set_auth("root", params.project_name, "manager")
 
         # save parameters 
         params.col_label = None #reverse dummy
@@ -1587,7 +1595,7 @@ class Users():
                 add_users = yaml.safe_load(f)
             for user,password in add_users.items():
                 if not user in existing:
-                    self.add_user(user, password)
+                    self.add_user(user, password, "manager", "system")
                 else:
                     print(f"Not possible to add {user}, already exists")
             # rename the file
@@ -1668,7 +1676,8 @@ class Users():
     def add_user(self, 
                  name:str, 
                  password:str, 
-                 role:str = "manager") -> bool:
+                 role:str = "manager", 
+                 created_by:str = "NA") -> bool:
         """
         Add user to database
         Comments:
@@ -1681,8 +1690,8 @@ class Users():
         # add user
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        insert_query = "INSERT INTO users (user, key, description) VALUES (?, ?, ?)"
-        cursor.execute(insert_query, (name, hash_pwd, role))
+        insert_query = "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
+        cursor.execute(insert_query, (name, hash_pwd, role, created_by))
         conn.commit()
         conn.close()
         return {"success":"User added to the database"}
