@@ -456,6 +456,9 @@ class Server():
         content = (content.rename(columns={params.col_id:"id",params.col_text:"text"}) # rename to normalize
                            .set_index("id") # set id as index
                            .dropna(subset=['text'])) # remove NA texts
+        
+        # drop duplicated index and assure it is string
+        content = content[~content.index.duplicated(keep='first')]
         content.index = [str(i) for i in list(content.index)] # sure to be str
     
         if params.col_label:
