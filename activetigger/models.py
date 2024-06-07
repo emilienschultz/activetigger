@@ -575,7 +575,8 @@ class BertModels():
         """
         if not (self.path / name).exists():
             return None
-        if (self.path / name / "status.log").exists():
+        if (self.path / name / "status.log").exists(): 
+            #process not finished
             return None    
         b = BertModel(name, self.path / name)
         b.load(lazy=lazy)
@@ -593,10 +594,12 @@ class BertModels():
             if not unique_id in self.queue.current:
                 del self.computing[u]
                 continue
+
             # else check its state
             if self.queue.current[unique_id]["future"].done():
                 b = self.computing[u][0]
-                if b.status == "prediction":
+                if b.status == "predicting":
+                    print("Prediction finished")
                     df = self.queue.current[unique_id]["future"].result()
                     predictions["predict_" + b.name] = df["prediction"]
                 if b.status == "training":
@@ -861,18 +864,24 @@ class SimpleModels():
             s = list(self.computing[u].keys())[0]
             unique_id = self.computing[u][s]["queue"]
             if self.queue.current[unique_id]["future"].done():
-                results = self.queue.current[unique_id]["future"].result()
-                sm = self.computing[u][s]["sm"]
-                sm.model = results["model"]
-                sm.proba = results["proba"]
-                sm.cv10 = results["cv10"]
-                sm.statistics = results["statistics"]
-                if not u in self.existing:
-                    self.existing[u] = {}
-                self.existing[u][s] = sm
-                del self.computing[u]
-                self.queue.delete(unique_id)
-                self.dumps()
+                #TODO : deal better exception in the training
+                try:
+                    results = self.queue.current[unique_id]["future"].result()
+                    sm = self.computing[u][s]["sm"]
+                    sm.model = results["model"]
+                    sm.proba = results["proba"]
+                    sm.cv10 = results["cv10"]
+                    sm.statistics = results["statistics"]
+                    if not u in self.existing:
+                        self.existing[u] = {}
+                    self.existing[u][s] = sm
+                    del self.computing[u]
+                    self.queue.delete(unique_id)
+                    self.dumps()
+                except: 
+                    print("Simplemodel failed")
+                    del self.computing[u]
+                    self.queue.delete(unique_id)
 
 class SimpleModel():
     def __init__(self,

@@ -73,10 +73,13 @@ async def check_processes(timer, step:int = 1) -> None:
         project.features.update_processes()
         project.simplemodels.update_processes()
         predictions = project.bertmodels.update_processes()
+
         # if predictions completed, add them as features
+        # careful : they are categorical variables
         if len(predictions)>0:
             for f in predictions:
-                project.features.add(f, predictions[f])
+                df_num = functions.cat2num(predictions[f])
+                project.features.add(f, df_num)
 
     # delete old project (they will be loaded if needed)
     for p in to_del:
@@ -783,7 +786,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         return ResponseModel(status="success", message=r["success"])
 
     # case for computation on specific processes
-    df = project.content[project.params.col_text]
+    df = project.content["text"]
     if name == "sbert":
         args = {
                 "texts":df,
@@ -890,7 +893,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
     """
     df = project.schemes.get_scheme_data(bert.scheme, complete = True) #move it elswhere ?
-    df = df[[project.params.col_text, "labels"]].dropna() #remove non tag data
+    df = df[["text", "labels"]].dropna() #remove non tag data
     r = project.bertmodels.start_training_process(
                                 name = bert.name,
                                 user = username,

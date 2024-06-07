@@ -840,7 +840,8 @@ class Project(Server):
             "selection":"request",
             "predict":predict,
             "info":"get specific",
-            "frame":None
+            "frame":None,
+            "limit":int(self.content.loc[element_id, "limit"])
             }
         
         return {'success':data}
@@ -1124,7 +1125,7 @@ class Features():
 
         self.content = pd.concat([self.content,
                                   content],
-                                     axis=1)
+                                  axis=1)
         # save
         self.content.to_parquet(self.path)
 

@@ -190,7 +190,22 @@ def display_projects():
     existing = r["data"]["projects"]
 
     # display menu
-    st.title("Projects")
+
+    with st.expander("How to use the interface"):
+        st.write("The general logic is :")
+        st.write("- create/load a project")
+        st.write("- add features based on text")
+        st.write("- pick up a scheme")
+        st.write("- start annotating / add labels")
+        st.write("- train active learning model to accelerate")
+        st.write("- once satisfied, train a BERT model")
+        st.write("- potentially, loop")
+
+    
+    st.title("Managing projects")
+
+    if st.button("New project"):
+        st.session_state.current_project = "create_new"
 
     col1, col2, col3 = st.columns([4, 1, 1])
     with col1:
@@ -206,8 +221,7 @@ def display_projects():
             _delete_project(select)
             st.session_state.current_project = None
 
-    if st.button("New project"):
-        st.session_state.current_project = "create_new"
+
 
     # case to create a new project
     if st.session_state.current_project == "create_new":
@@ -407,9 +421,12 @@ def display_annotate():
         _display_labels()
 
     # back button
-    st.write("History (reload to reset):", len(st.session_state.history))
-    if st.button("Back"):
-        _get_previous_element()
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("History (reload to reset):", len(st.session_state.history))
+    with col2:
+        if st.button("Back"):
+            _get_previous_element()
 
     with st.expander("Informations"):
         st.write("Informations on the element")
@@ -681,6 +698,7 @@ def display_bertmodels():
                 st.write("Rename", st.session_state.bm_new_name)
                 _save_bert()
 
+        st.write("Information on the model")
         data = _bert_informations()
         if data:
             st.pyplot(data[0], use_container_width=False)

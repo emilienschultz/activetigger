@@ -1,11 +1,12 @@
 import pandas as pd
+import multiprocessing
 from pandas import DataFrame, Series
 import fasttext
 from fasttext.util import download_model
 import spacy
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics import precision_score, f1_score, accuracy_score
 from sklearn.model_selection import KFold, cross_val_predict
@@ -21,6 +22,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, Bert
 from transformers import Trainer, TrainingArguments, TrainerCallback
 import json
 import shutil
+
 
 def get_hash(text:str):
     """
@@ -47,7 +49,8 @@ def to_dtm(texts: Series,
            min_term_freq:int=5,
            max_term_freq:int|float = 1.0,
            log:bool = False,
-           norm = None
+           norm = None,
+           **kwargs
            ):
     """
     Compute DFM embedding
@@ -91,7 +94,8 @@ def tokenize(texts: Series,
 
 def to_fasttext(texts: Series,
                 language: str,
-                path_models: Path) -> DataFrame:
+                path_models: Path,
+                **kwargs) -> DataFrame:
     """
     Compute fasttext embedding
     Download the model if needed
@@ -115,7 +119,8 @@ def to_fasttext(texts: Series,
     return {"success":df}
 
 def to_sbert(texts: Series, 
-            model:str = "distiluse-base-multilingual-cased-v1") -> DataFrame:
+            model:str = "distiluse-base-multilingual-cased-v1",
+            **kwargs) -> DataFrame:
     """
     Compute sbert embedding
     Args:
@@ -155,7 +160,7 @@ def compute_tsne(features:DataFrame,
     df = pd.DataFrame(reduced_features,index = features.index)
     return df
 
-def fit_model(model, X, Y, labels):
+def fit_model(model, X, Y, labels, **kwargs):
     """
     Fit simplemodel and calculate statistics
     """
@@ -213,8 +218,6 @@ def fit_model(model, X, Y, labels):
         }
     return r
 
-
-import multiprocessing
 
 def train_bert(path:Path,
             name:str,
@@ -369,6 +372,9 @@ def train_bert(path:Path,
     with open(current_path  / "log_history.txt", "w") as f:
         json.dump(trainer.state.log_history, f)
 
+    # remove temporary logs
+    os.remove(log_path)
+
     return True
 
 def predict_bert(
@@ -442,6 +448,8 @@ def predict_bert(
 
     # write the content in a parquet file
     pred.to_parquet(path / file_name)
+    # delete the logs
+    os.remove(log_path)
     print("function prediction : finished")
     return pred
 
@@ -459,3 +467,14 @@ def truncate_text(text:str, max_tokens:int = 512):
     else:
         text_t = text
     return text_t
+
+def cat2num(df):
+    """
+    Transform a categorical variable to numerics
+    """
+    df = pd.DataFrame(df)
+    encoder = OneHotEncoder(sparse_output=False)
+    encoded = encoder.fit_transform(df)
+    encoded = pd.DataFrame(encoded, index=df.index)
+    encoded.columns = ["col"+str(i) for i in encoded.columns]
+    return encoded
