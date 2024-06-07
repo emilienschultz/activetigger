@@ -79,7 +79,10 @@ async def check_processes(timer, step:int = 1) -> None:
         if len(predictions)>0:
             for f in predictions:
                 df_num = functions.cat2num(predictions[f])
-                project.features.add(f, df_num)
+                print(df_num)
+                name = f.replace("__","_")
+                project.features.add(name, df_num) # avoid __ in the name for features
+                print("Add feature", name)
 
     # delete old project (they will be loaded if needed)
     for p in to_del:

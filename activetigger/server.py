@@ -1108,6 +1108,9 @@ class Features():
         Add feature(s) and save
         """
 
+        #print(len(self.content),len(content))
+        #print(self.content)
+
         # test length
         if len(content) != len(self.content):
             raise ValueError("Features don't have the right shape") 
@@ -1187,7 +1190,7 @@ class Features():
                     self.add(name,df)
                     self.queue.delete(unique_id)
                     del self.training[name]
-                    print("Add feature")
+                    print("Add feature", name)
 
         # for projections
         training = [u for u in self.projections if "queue" in self.projections[u]]
