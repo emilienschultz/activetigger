@@ -718,6 +718,30 @@ async def delete_label(project: Annotated[Project, Depends(get_project)],
     server.log_action(username, f"delete label {label} to {scheme}", project.name)
     return ResponseModel(status="success", message=r["success"])
 
+@app.post("/schemes/label/rename", dependencies=[Depends(verified_user)])
+async def rename_label(project: Annotated[Project, Depends(get_project)],
+                    username: Annotated[str, Header()],
+                    scheme:str,
+                    former_label:str,
+                    new_label:str,
+                    ) -> ResponseModel:
+    """
+    Add a label to a scheme
+    - create new label (the order is important)
+    - convert tags (need the label to exist, add a new element for each former)
+    - delete former label
+    """
+    r = project.schemes.add_label(new_label, scheme, username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    r = project.schemes.convert_tags(former_label, new_label, scheme, username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    r = project.schemes.delete_label(former_label, scheme, username)
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    server.log_action(username, f"rename label {former_label} to {new_label} in {scheme}", project.name)
+    return ResponseModel(status="success", message=r["success"])
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
 async def post_schemes(username: Annotated[str, Header()],

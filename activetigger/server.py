@@ -1299,6 +1299,18 @@ class Schemes():
                 return self.content.join(df)
         return df
     
+    def convert_tags(self, former_label:str, new_label:str, scheme:str, username:str):
+        """
+        Convert tags from a specific label to another
+        """
+        #get id with the current tag
+        df = self.get_scheme_data(scheme) 
+        to_recode = df[df["labels"] == former_label].index
+        # for each of them, push the new tag
+        for i in to_recode:
+            self.push_tag(i, new_label, scheme, username, "add")
+        return {"success":"All tags recoded"}
+
     def get_table(self, scheme:str,
                         min:int,
                         max:int, 

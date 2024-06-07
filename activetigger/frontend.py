@@ -233,6 +233,7 @@ def display_projects():
         file = st.file_uploader("Load file (CSV or Parquet)", 
                                 type=['csv', 'parquet'], 
                                 accept_multiple_files=False)
+        st.write("The index needs to be unique for each row.")
         if file:
             if file.name.endswith('.csv'):
                 df = pd.read_csv(file)
@@ -502,6 +503,17 @@ def display_manage_tags():
             if label is not None:
                 st.write(f"Deleting label {label}")
                 _delete_label(label)
+
+    st.write("Replace existing label")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        former_label = st.selectbox("Label", options=options_labels)
+    with col2:
+        replace_by = st.text_input("Replace by")
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Valid"):
+            _rename_label(former_label, replace_by)
 
 def _display_labels():
     """
@@ -1776,7 +1788,24 @@ def check_status(accepted:list):
     if st.session_state.status in accepted:
         return True
     return False
-    
+
+def _rename_label(former_label:str, new_label:str):
+    """
+    Rename a label with another
+    """
+    params = {"project_name":st.session_state.current_project,
+                "scheme": st.session_state.current_scheme,
+                "former_label":former_label,
+                "new_label":new_label,
+                "user":st.session_state.user
+                }
+    r = _post("/schemes/label/rename", 
+                    params = params)
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return True    
 
 if __name__ == "__main__":
     main()
