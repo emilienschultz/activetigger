@@ -1,5 +1,5 @@
 import time
-from fastapi import FastAPI, Depends, HTTPException,status, Header, UploadFile, File, Query, Form, Request
+from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from contextlib import asynccontextmanager
@@ -12,7 +12,7 @@ from activetigger.server import Server, Project
 import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
       SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
-      UmapParams, TsneParams, NextModel, ZeroShotModel
+      UmapParams, TsneParams, NextModel, ZeroShotModel, UserStatus, UserInDB
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -73,10 +73,16 @@ async def check_processes(timer, step:int = 1) -> None:
         project.features.update_processes()
         project.simplemodels.update_processes()
         predictions = project.bertmodels.update_processes()
+
         # if predictions completed, add them as features
+        # careful : they are categorical variables
         if len(predictions)>0:
             for f in predictions:
-                project.features.add(f, predictions[f])
+                df_num = functions.cat2num(predictions[f])
+                print(df_num)
+                name = f.replace("__","_")
+                project.features.add(name, df_num) # avoid __ in the name for features
+                print("Add feature", name)
 
     # delete old project (they will be loaded if needed)
     for p in to_del:
@@ -114,21 +120,47 @@ async def get_project(project_name: str) -> ProjectModel|None:
         server.start_project(project_name)            
         return server.projects[project_name]
 
-async def verified_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def verified_user(request: Request, token: Annotated[str, Depends(oauth2_scheme)]):
     """
     Dependency to test if the user is authentified with its token
     """
+    # decode token
     try:
         payload = server.decode_access_token(token)
         username: str = payload.get("sub")
         if username is None:
-            return ResponseModel(status="error", message="Could not validate credential")
+            return False
     except JWTError:
-        return ResponseModel(status="error", message="Could not validate credential")
-    user = server.get_user(name=username)
-    if user is None:
-        return ResponseModel(status="error", message="Could not validate credential")
-    return user
+        return False
+    
+    # authentification
+    user = server.users.get_user(name=username)
+    return user    
+
+async def check_auth_exists(request: Request, 
+                     username: Annotated[str, Header()], 
+                     project_name: str|None = None):
+    """
+    Check if a user is associated to a project
+    """
+    auth = server.users.auth(username, project_name)
+    if not auth:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
+
+async def check_auth_manager(request: Request, 
+                     username: Annotated[str, Header()], 
+                     project_name: str|None = None):
+    """
+    Check if a user is associated to a project
+    """
+
+    #root can do anything TODO: secure that
+    if username == "root":
+        return
+
+    auth = server.users.auth(username, project_name)
+    if not auth == "manager":
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
 
 # ------
 # Routes
@@ -170,20 +202,22 @@ async def login_for_access_token(
     """
     Authentificate user and return token
     """
-    user = server.authenticate_user(form_data.username, form_data.password)
+    user = server.users.authenticate_user(form_data.username, form_data.password)
     if "error" in user:
         return ResponseModel(status="error", message=user["error"])
     access_token = server.create_access_token(
             data={"sub": user.username}, 
             expires_min=60)
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type="bearer", status=user.status)
 
-@app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: Annotated[User, Depends(verified_user)]) -> ResponseModel:
+@app.get("/users/me")
+async def read_users_me(current_user: Annotated[UserInDB, Depends(verified_user)]) -> ResponseModel:
     """
     Information on current user
     """
-    r = ResponseModel(status="success", data=current_user)
+    r = ResponseModel(status="success", data={"username":current_user.username,
+                                              "status":current_user.status})
+    print(current_user)
     return r
 
 @app.get("/users", dependencies=[Depends(verified_user)])
@@ -192,35 +226,64 @@ async def existing_users() -> ResponseModel:
     Get existing users
     """
     data = {
-        "users":server.existing_users()
+        "users":server.users.existing_users(),
+        "auth":["manager","annotator"]
         }
+    print(data)
     r = ResponseModel(status="success", data=data)
     return r
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
-async def create_user(username:str = Query(),
+async def create_user(username: Annotated[str, Header()],
+                      username_to_create:str = Query(),
                       password:str = Query(),
-                      projects:str = Query(None)) -> ResponseModel:
+                      status:str = Query()) -> ResponseModel:
     """
     Create user
     """
-    r = server.add_user(username, password, projects)
+    r = server.users.add_user(username_to_create, password, status, username)
     if "success" in r:
         return ResponseModel(status="success", message=r["success"])
     else:
         return ResponseModel(status="error", message=r["success"])
 
-@app.post("/users/delete", dependencies=[Depends(verified_user)])
+@app.post("/users/delete", dependencies=[Depends(verified_user), Depends(check_auth_manager)])
 async def delete_user(username:str = Query()) -> ResponseModel:
     """
     Delete user
     """
-    r = server.delete_user(username)
+    r = server.users.delete_user(username)
     if "success" in r:
         return ResponseModel(status="success", message=r["success"])
     else:
         return ResponseModel(status="error", message=r["success"])
 
+@app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
+async def set_auth(action: str, 
+                   username:str = Query(), 
+                   project_name:str = Query(), 
+                   status:str = Query(None)):
+    """
+    Set user auth
+    """
+    if action == "add":
+        if not status:
+            return ResponseModel(status="error", message="Missing status")
+        r = server.users.set_auth(username, project_name, status)
+        return ResponseModel(status="success", message=r["success"])
+    
+    if action == "delete":
+        r = server.users.delete_auth(username, project_name)
+        return ResponseModel(status="success", message=r["success"])
+    return ResponseModel(status="error", message="Action not found")
+
+@app.get("/users/auth", dependencies=[Depends(verified_user)])
+async def get_auth(username:str, project_name:str = "all"):
+    """
+    Get user auth
+    """
+    r = server.users.get_auth(username, project_name)
+    return r
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(username:str, project_name:str = "all", limit = 100):
@@ -234,7 +297,7 @@ async def get_logs(username:str, project_name:str = "all", limit = 100):
 # Projects management
 #--------------------
 
-@app.get("/state/{project_name}", dependencies=[Depends(verified_user)])
+@app.get("/state/{project_name}", dependencies=[Depends(verified_user), Depends(check_auth_exists)])
 async def get_state(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
     """
     Get the state of a specific project
@@ -253,7 +316,21 @@ async def get_queue() -> ResponseModel:
     r = server.queue.state()
     return ResponseModel(status="success", data=r)
 
-@app.get("/description", dependencies=[Depends(verified_user)])
+@app.get("/session")
+async def info_server(username: Annotated[str, Header()]) -> ResponseModel:
+    """
+    Get general informations on the server
+    depending of the status of connected user
+    """
+    data = server.get_session_info(username)
+    print(data)
+    if "error" in data:
+        r = ResponseModel(status="error", message=data["error"])
+    else:
+        r = ResponseModel(status="success", data=data)
+    return r
+
+@app.get("/project/description", dependencies=[Depends(verified_user)])
 async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
                           user: str|None = None)  -> ResponseModel:
@@ -261,25 +338,24 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
     Description of a specific element
     """
     data = project.get_description(scheme = scheme, 
-                                user = user)
+                                   user = user)
     if "error" in data:
         r = ResponseModel(status="error", message=data["error"])
     else:
         r = ResponseModel(status="success", data=data)
     return r
 
-@app.get("/server")
-async def info_server() -> ResponseModel:
+@app.get("/project/auth", dependencies=[Depends(verified_user)])
+async def get_project_auth(project_name:str):
     """
-    Get general informations on the server 
-    (no validation needed)
+    Users auth on a project
     """
-    data = {
-        "projects":server.existing_projects(),
-        "users":server.existing_users()
-        }
-    r = ResponseModel(status="success", data=data)
-    return r
+    r = server.users.get_project_auth(project_name)
+    if "error" in r:
+        return ResponseModel(status="error", message=data["error"])
+    else:
+        return ResponseModel(status="success", data={"auth":r})
+
 
 @app.post("/projects/testdata", dependencies=[Depends(verified_user)])
 async def add_testdata(project: Annotated[Project, Depends(get_project)],
@@ -365,7 +441,7 @@ async def new_project(
 
     return ResponseModel(status = "success")
 
-@app.post("/projects/delete", dependencies=[Depends(verified_user)])
+@app.post("/projects/delete", dependencies=[Depends(verified_user), Depends(check_auth_exists)])
 async def delete_project(username: Annotated[str, Header()],
                          project_name:str) -> ResponseModel:
     """
@@ -713,7 +789,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
         return ResponseModel(status="success", message=r["success"])
 
     # case for computation on specific processes
-    df = project.content[project.params.col_text]
+    df = project.content["text"]
     if name == "sbert":
         args = {
                 "texts":df,
@@ -820,7 +896,7 @@ async def post_bert(project: Annotated[Project, Depends(get_project)],
     TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
     """
     df = project.schemes.get_scheme_data(bert.scheme, complete = True) #move it elswhere ?
-    df = df[[project.params.col_text, "labels"]].dropna() #remove non tag data
+    df = df[["text", "labels"]].dropna() #remove non tag data
     r = project.bertmodels.start_training_process(
                                 name = bert.name,
                                 user = username,
@@ -956,7 +1032,8 @@ async def export_prediction(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
 async def export_bert(project: Annotated[Project, Depends(get_project)],
-                          name:str = Query()) -> FileResponse:
+                      username: Annotated[str, Header()],
+                      name:str = Query()) -> FileResponse:
     """
     Export fine-tuned BERT model
     """

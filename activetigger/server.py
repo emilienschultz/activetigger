@@ -163,19 +163,7 @@ class Server():
         # activity of the server
         self.projects: dict = {}
         self.queue = Queue(self.n_workers)
-
-        # add users if add_users.yaml exists
-        if Path("add_users.yaml").exists():
-            existing = self.existing_users()
-            with open('add_users.yaml') as f:
-                add_users = yaml.safe_load(f)
-            for user,password in add_users.items():
-                if not user in existing:
-                    self.add_user(user, password)
-                else:
-                    print(f"Not possible to add {user}, already exists")
-            # rename the file
-            os.rename('add_users.yaml', 'add_users_processed.yaml')
+        self.users = Users(self.db)
 
         # starting time
         self.starting_time = time.time()
@@ -249,7 +237,8 @@ class Server():
                 time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 user TEXT,
                 key TEXT,
-                projects TEXT
+                description TEXT,
+                created_by TEXT
                 )
         '''
         cursor.execute(create_table_sql)
@@ -259,8 +248,10 @@ class Server():
             CREATE TABLE IF NOT EXISTS auth (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user TEXT,
-                project TEXT
-                  )
+                project TEXT,
+                status TEXT,
+                created_by TEXT
+                )
         '''
         cursor.execute(create_table_sql)
 
@@ -276,11 +267,16 @@ class Server():
                 )
         '''
         cursor.execute(create_table_sql)
+
+        # create root user
+        #self.users.add_user(self.default_user, self.default_user, role="root")
+        hash_pwd = functions.get_hash(self.default_user)
+        insert_query = "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
+        print((self.default_user, hash_pwd, "root", "system"))
+        cursor.execute(insert_query, (self.default_user, hash_pwd, "root", "system"))
         conn.commit()
         conn.close()
 
-        # create root user
-        self.add_user(self.default_user,self.default_user)
         logger.error('Create database')
 
     def log_action(self, 
@@ -309,14 +305,26 @@ class Server():
         cursor = conn.cursor()
         if project_name == "all":
             query = """SELECT * FROM logs WHERE user = ? ORDER BY time DESC"""
+            cursor.execute(query, (username, ))
         else:
             query = """SELECT * FROM logs WHERE user = ? AND project = ? ORDER BY time DESC LIMIT ?"""
-        cursor.execute(query, (username, project_name,limit))
+            cursor.execute(query, (username, project_name,limit))
         logs = cursor.fetchall()
         conn.commit()
         conn.close()
         df = pd.DataFrame(logs, columns = ["id", "time", "user", "project", "action", "NA"])
         return df.to_json()
+
+    def get_session_info(self, username:str):
+        """
+        Get information of a username session
+        """
+        projects = self.users.get_auth(username)
+        data = {
+                "projects":[i[0] for i in projects],
+                "auth": ["manager","annotator"],
+                }
+        return data
 
     def db_get_project(self, project_name:str) -> ProjectModel|None:
         """
@@ -355,78 +363,6 @@ class Server():
         existing_project = cursor.fetchall()
         conn.close()
         return [i[0] for i in existing_project]
-    
-    def existing_users(self) -> list:
-        """
-        Get existing users
-        """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT user FROM users"
-        cursor.execute(query)
-        existing_users = cursor.fetchall()
-        conn.close()
-        return [i[0] for i in existing_users]
-    
-    def add_user(self, name:str, 
-                 password:str, 
-                 projects = "all") -> bool:
-        """
-        Add user to database
-        """
-        # test if the user doesn't exist
-        if name in self.existing_users():
-            return {"error":"Username already exists"}
-        hash_pwd = functions.get_hash(password)
-        # add user
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        insert_query = "INSERT INTO users (user, key, projects) VALUES (?, ?, ?)"
-        cursor.execute(insert_query, (name, hash_pwd, projects))
-        conn.commit()
-        conn.close()
-        return {"success":"User added to the database"}
-    
-    def delete_user(self, 
-                    name:str) -> dict:
-        """
-        Deleting user
-        """
-        if not name in self.existing_users():
-            return {"error":"Username does not exist"}
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "DELETE FROM users WHERE user = ?"
-        cursor.execute(query, (name,))
-        conn.commit()
-        conn.close()
-        return {"success":"User deleted"}    
-    
-    def get_user(self, name) -> UserInDB|dict:
-        """
-        Get user from database
-        """
-        if not name in self.existing_users():
-            return {"error":"Username doesn't exist"}
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM users WHERE user = ?"
-        cursor.execute(query, (name,))
-        user = cursor.fetchone()
-        u = UserInDB(username = name, hashed_password = user[3])
-        conn.close()
-        return u
-
-    def authenticate_user(self, username: str, password: str):
-        """
-        User authentification
-        """
-        user = self.get_user(username)
-        if "error" in user:
-            return user
-        if not functions.compare_to_hash(password, user.hashed_password):
-            return {"error":"Wrong password"}
-        return user
     
     def create_access_token(self, data: dict, expires_min: int  = 60):
         """
@@ -606,6 +542,10 @@ class Server():
                 conn.commit()
             conn.close()
 
+        # add user right on the project + root
+        self.users.set_auth(params.user, params.project_name, "manager")
+        self.users.set_auth("root", params.project_name, "manager")
+
         # save parameters 
         params.col_label = None #reverse dummy
         self.set_project_parameters(params)
@@ -630,6 +570,7 @@ class Server():
         cursor.execute(f"DELETE FROM projects WHERE project_name = ?", (project_name,))
         cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_name,))
         cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_name,))
+        cursor.execute(f"DELETE FROM auth WHERE project = ?", (project_name,))
         conn.commit()
         conn.close()
         return {"success":"Project deleted"}
@@ -662,9 +603,13 @@ class Project(Server):
                                         self.params.dir / self.labels_file, 
                                         self.params.dir / self.test_file, 
                                         self.db)
-        self.features: Features = Features(project_name, self.params.dir / self.features_file, self.db, self.queue)
-        self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
-        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
+        self.features: Features = Features(project_name, 
+                                           self.params.dir / self.features_file, 
+                                           self.db, self.queue)
+        self.bertmodels: BertModels = BertModels(self.params.dir, 
+                                                 self.queue)
+        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, 
+                                                       self.queue)
         self.zeroshot = None
 
     def __del__(self):
@@ -787,6 +732,7 @@ class Project(Server):
                     "proba":None
                     },
             "frame":[],
+            "limit":1200
             }
             print(element)
             return element
@@ -861,6 +807,7 @@ class Project(Server):
             "info":indicator,
             "predict":predict,
             "frame":frame,
+            "limit":int(self.content.loc[element_id, "limit"])
                 }
 
         return element
@@ -893,7 +840,8 @@ class Project(Server):
             "selection":"request",
             "predict":predict,
             "info":"get specific",
-            "frame":None
+            "frame":None,
+            "limit":int(self.content.loc[element_id, "limit"])
             }
         
         return {'success':data}
@@ -1160,6 +1108,9 @@ class Features():
         Add feature(s) and save
         """
 
+        #print(len(self.content),len(content))
+        #print(self.content)
+
         # test length
         if len(content) != len(self.content):
             raise ValueError("Features don't have the right shape") 
@@ -1177,7 +1128,7 @@ class Features():
 
         self.content = pd.concat([self.content,
                                   content],
-                                     axis=1)
+                                  axis=1)
         # save
         self.content.to_parquet(self.path)
 
@@ -1239,7 +1190,7 @@ class Features():
                     self.add(name,df)
                     self.queue.delete(unique_id)
                     del self.training[name]
-                    print("Add feature")
+                    print("Add feature", name)
 
         # for projections
         training = [u for u in self.projections if "queue" in self.projections[u]]
@@ -1640,3 +1591,176 @@ class Schemes():
         conn.commit()
         conn.close()
         return results
+    
+class Users():
+    """
+    Managers users
+    """
+
+    def __init__(self, db_path:Path, 
+                 file_users:str = "add_users.yaml"):
+        """
+        Init users references
+        """
+        self.db = db_path
+        
+        # add users if add_users.yaml exists
+        if Path(file_users).exists():
+            existing = self.existing_users()
+            with open('add_users.yaml') as f:
+                add_users = yaml.safe_load(f)
+            for user,password in add_users.items():
+                if not user in existing:
+                    self.add_user(user, password, "manager", "system")
+                else:
+                    print(f"Not possible to add {user}, already exists")
+            # rename the file
+            os.rename('add_users.yaml', 'add_users_processed.yaml')
+
+    def get_project_auth(self, project_name:str):
+        """
+        Get user auth for a project
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """SELECT user, status FROM auth WHERE project = ?"""
+        cursor.execute(query, (project_name, ))
+        auth = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return auth
+    
+    def set_auth(self, username:str, project_name:str, status:str):
+        """
+        Set user auth for a project
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        
+        # Attempt to update the entry
+        update_query = "UPDATE auth SET status = ? WHERE project = ? AND user = ?"
+        cursor.execute(update_query, (status, project_name, username))
+        
+        if cursor.rowcount == 0:
+            # If no rows were updated, insert a new entry
+            insert_query = "INSERT INTO auth (project, user, status) VALUES (?, ?, ?)"
+            cursor.execute(insert_query, (project_name, username, status))
+        conn.commit()
+        conn.close()
+        return {"success":"Auth added to database"}
+    
+    def delete_auth(self, username:str, project_name:str):
+        """
+        Delete user auth
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "DELETE FROM auth WHERE project=? AND user = ?"
+        cursor.execute(insert_query, (project_name, username))
+        conn.commit()
+        conn.close()
+        return {"success":"Auth deleted"}  
+
+    def get_auth(self, username:str, project_name:str = "all"):
+        """
+        Get user auth
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        if project_name == "all":
+            query = """SELECT project, status FROM auth WHERE user = ?"""
+            cursor.execute(query, (username,))
+        else:
+            query = """SELECT status FROM auth WHERE user = ? AND project = ?"""
+            cursor.execute(query, (username, project_name))
+        auth = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return auth
+    
+    def existing_users(self) -> list:
+        """
+        Get existing users
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT user FROM users"
+        cursor.execute(query)
+        existing_users = cursor.fetchall()
+        conn.close()
+        return [i[0] for i in existing_users]
+    
+    def add_user(self, 
+                 name:str, 
+                 password:str, 
+                 role:str = "manager", 
+                 created_by:str = "NA") -> bool:
+        """
+        Add user to database
+        Comments:
+            Default, users are managers
+        """
+        # test if the user doesn't exist
+        if name in self.existing_users():
+            return {"error":"Username already exists"}
+        hash_pwd = functions.get_hash(password)
+        # add user
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
+        cursor.execute(insert_query, (name, hash_pwd, role, created_by))
+        conn.commit()
+        conn.close()
+        return {"success":"User added to the database"}
+    
+    def delete_user(self, 
+                    name:str) -> dict:
+        """
+        Deleting user
+        """
+        if not name in self.existing_users():
+            return {"error":"Username does not exist"}
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "DELETE FROM users WHERE user = ?"
+        cursor.execute(query, (name,))
+        conn.commit()
+        conn.close()
+        return {"success":"User deleted"}    
+
+    def get_user(self, name) -> UserInDB|dict:
+        """
+        Get user from database
+        """
+        if not name in self.existing_users():
+            return {"error":"Username doesn't exist"}
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT * FROM users WHERE user = ?"
+        cursor.execute(query, (name,))
+        user = cursor.fetchone()
+        u = UserInDB(username = name, 
+                     hashed_password = user[3],
+                     status = user[4])
+        conn.close()
+        return u
+
+    def authenticate_user(self, username: str, password: str):
+        """
+        User authentification
+        """
+        user = self.get_user(username)
+        if "error" in user:
+            return user
+        if not functions.compare_to_hash(password, user.hashed_password):
+            return {"error":"Wrong password"}
+        return user
+    
+    def auth(self, username:str, project_name:str):
+        """
+        Check auth for a specific project
+        """
+        user_auth = self.get_auth(username, project_name)
+        if len(user_auth) == 0: #not associated
+            return None
+        return user_auth[0][0]

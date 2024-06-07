@@ -31,6 +31,10 @@ if not 'logged_in'  in st.session_state:
     st.session_state.logged_in = False
 if not 'page' in st.session_state:
     st.session_state.page = "Projects"
+if not "user" in st.session_state:
+    st.session_state.user = None
+if not "status" in st.session_state:
+    st.session_state.status = None
 if not "current_project" in st.session_state:
     st.session_state.current_project = None
 if not "current_element" in st.session_state:
@@ -103,9 +107,6 @@ def app_navigation():
         if not len(c) == 0:
             st.html(f"<div style='background-color: #ffcc00; padding: 10px;'>Processes currently running: {c}</div>")
 
-    # user logged
-    #st.sidebar.write(f"Current user: {st.session_state.user}")
-
     # creating the menu
     options = [
             "Projects",
@@ -118,11 +119,11 @@ def app_navigation():
             ]
     
     # add user management
-    if st.session_state.user == "root":
+    if check_status(["root","manager"]):
         options = options + ["Conf"]    
 
     #with st.sidebar:
-    st.session_state['page'] = option_menu(f"pyActiveTigger {__version__} - Current user : {st.session_state.user} - Current project : {st.session_state.current_project}", 
+    st.session_state['page'] = option_menu(f"pyActiveTigger {__version__} - Current user : {st.session_state.user} ({st.session_state.status}) - Current project : {st.session_state.current_project}", 
                                                options, 
                                                menu_icon="bi-bookmark-check",
                                                icons=['house', 
@@ -139,6 +140,8 @@ def app_navigation():
         display_projects()
     elif st.session_state['page'] == "Doc":
         display_documentation()
+    elif st.session_state['page'] == "Conf":
+        display_configuration()   
     else:
         if not st.session_state.current_project:
             st.write("Select a project first")
@@ -153,19 +156,23 @@ def app_navigation():
             display_test()
         elif st.session_state['page'] == "Export":
             display_export()
-        elif st.session_state['page'] == "Conf":
-            display_configuration()   
+        
 
 def display_documentation():
     """
     Documentation page
     """
-    with st.expander("Parameters of the project"):
-        st.write(st.session_state.state)
+
 
     with st.expander("Documentation"):
         doc = _get_documentation()
         st.write(doc)
+
+    if not st.session_state.state:
+        return
+
+    with st.expander("Parameters of the project"):
+        st.write(st.session_state.state)
 
     with st.expander("Logs"):
         docs = _get_logs()
@@ -179,11 +186,26 @@ def display_projects():
     - delete project
     - create project
     """
-    r = _get("/server")
+    r = _get("/session")
     existing = r["data"]["projects"]
 
     # display menu
-    st.title("Projects")
+
+    with st.expander("How to use the interface"):
+        st.write("The general logic is :")
+        st.write("- create/load a project")
+        st.write("- add features based on text")
+        st.write("- pick up a scheme")
+        st.write("- start annotating / add labels")
+        st.write("- train active learning model to accelerate")
+        st.write("- once satisfied, train a BERT model")
+        st.write("- potentially, loop")
+
+    
+    st.title("Managing projects")
+
+    if st.button("New project"):
+        st.session_state.current_project = "create_new"
 
     col1, col2, col3 = st.columns([4, 1, 1])
     with col1:
@@ -199,8 +221,7 @@ def display_projects():
             _delete_project(select)
             st.session_state.current_project = None
 
-    if st.button("New project"):
-        st.session_state.current_project = "create_new"
+
 
     # case to create a new project
     if st.session_state.current_project == "create_new":
@@ -372,10 +393,19 @@ def display_annotate():
                     label_visibility="hidden",
                     on_change = _get_next_element)
     if st.session_state.current_element:
+
+        # separate the text with the limit
+        if len(st.session_state.current_element["text"])<st.session_state.current_element["limit"]:
+            text_in = st.session_state.current_element["text"]
+            text_out = ""
+        else:
+            text_in = st.session_state.current_element["text"][0:st.session_state.current_element["limit"]]
+            text_out = st.session_state.current_element["text"][st.session_state.current_element["limit"]:]
+
         st.markdown(f"""
             <div style="
                 border: 2px solid #4CAF50;
-                padding: 10px;
+                padding: 30px;
                 border-radius: 5px;
                 color: #4CAF50;
                 font-family: sans-serif;
@@ -383,7 +413,7 @@ def display_annotate():
                 margin: 10px;
                 min-height: 300px;
             ">
-                {st.session_state.current_element["text"]}
+                {text_in}<span style='color: gray'>{text_out}</span>
             </div>
 
         """, unsafe_allow_html=True)
@@ -391,9 +421,12 @@ def display_annotate():
         _display_labels()
 
     # back button
-    st.write("History (reload to reset):", len(st.session_state.history))
-    if st.button("Back"):
-        _get_previous_element()
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("History (reload to reset):", len(st.session_state.history))
+    with col2:
+        if st.button("Back"):
+            _get_previous_element()
 
     with st.expander("Informations"):
         st.write("Informations on the element")
@@ -665,6 +698,7 @@ def display_bertmodels():
                 st.write("Rename", st.session_state.bm_new_name)
                 _save_bert()
 
+        st.write("Information on the model")
         data = _bert_informations()
         if data:
             st.pyplot(data[0], use_container_width=False)
@@ -744,33 +778,66 @@ def display_export():
 
 def display_configuration():
     """
-    Configuration panel
+    Configuration panel 
     - User creation
     """
     st.title("Configuration")
-    st.subheader("User management")
+    st.subheader("Access to this project")
+    temp = _get_users()
+    existing_users = temp["users"]
+    existing_status = temp["auth"]
 
-    col1, col2 = st.columns(2)
-    with col1:
-        existing_users = _get_users()
-        users = st.selectbox("Existing users:",existing_users)
-    with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Delete"):
-            _delete_user()
-            st.write("Delete user")
+    if st.session_state.current_project:
+        st.write("Add auth")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            user = st.selectbox("Existing users:",existing_users)
+        with col2:
+            auth = st.selectbox("Auth:",existing_status)
+        with col3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Set"):
+                st.write("Add")
+                _add_auth(user, auth) 
 
-    st.write("Add user")
-    col1, col2, col3 = st.columns(3)
+        df = pd.DataFrame(_get_auth(st.session_state.current_project))
+        for i,j in df.iterrows():
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.write(f"{j[0]} - {j[1]}")
+            with col2:
+                if st.button("Delete", key=i):
+                    _delete_auth(j[0])
+    else:
+        print("Load a project first")
+
+    st.subheader("Add user")
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         new_user = st.text_input("New user")
     with col2:
         new_password = st.text_input("Password")
     with col3:
+        status = st.selectbox("Status", options=existing_status)
+    with col4:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Create"):
-            _create_user(new_user, new_password)
+            _create_user(new_user, new_password, status)
             st.write("Create user")
+
+    if not check_status(["root"]):
+        return
+
+    st.subheader("Delete user")
+    col1, col2 = st.columns(2)
+    with col1:
+        user_del = st.selectbox("Existing users:", existing_users, key = "del_user")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Delete"):
+            _delete_user(user_del)
+            st.write("Delete user")
+
 
 def display_test():
     """
@@ -876,7 +943,9 @@ def _post(route:str,
                 files = files,
                 headers = st.session_state.header, 
                 verify = False)
-    if r.status_code == 422:
+    
+    if r.status_code in [422, 403]:
+        print(r.content)
         return {"status":"error", "message":"Not authorized"}
     return json.loads(r.content)
 
@@ -893,7 +962,7 @@ def _get(route:str,
                 data = data,
                 headers = st.session_state.header,
                 verify=False)
-    if r.status_code == 422:
+    if r.status_code in [422, 403]:
         return {"status":"error", "message":"Not authorized"}
     if is_json:
         return json.loads(r.content)
@@ -923,9 +992,13 @@ def _connect_user(user:str, password:str) -> bool:
     if not "access_token" in r:
         print(r)
         return False
-
+    
     # Update widget configuration
-    st.session_state.header = {"Authorization": f"Bearer {r['access_token']}", "username":user}
+    st.session_state.header = {"Authorization": f"Bearer {r['access_token']}", 
+                               "username":user}
+    
+    # Define conf for frontend
+    st.session_state.status = r["status"]
     st.session_state.user = user
     return True
 
@@ -947,15 +1020,15 @@ def _get_users():
     Get existing users
     """
     r = _get(route="/users")
-    return r["data"]["users"]
+    return r["data"]
 
-def _create_user(username:str, password:str):
+def _create_user(username:str, password:str, status:str):
     """
     Create user
     """
-    params = {"username":username,
-              "password":password, 
-              "projects":"all"}
+    params = {"username_to_create":username,
+              "password":password,
+              "status":status}
     r = _post(route="/users/create", 
                 params=params
                 )
@@ -1293,7 +1366,7 @@ def _get_statistics():
     params = {"project_name":st.session_state.current_project, 
             "scheme":st.session_state.current_scheme, 
             "user":st.session_state.user}
-    r = _get("/description",params = params)
+    r = _get("/project/description",params = params)
     if r["status"]=="error":
         return r["message"]
     tab = pd.DataFrame([[k,v] for k,v in r["data"].items()], columns=["information","values"]).set_index("information")
@@ -1632,6 +1705,13 @@ def _get_queue():
     r = _get("/queue")
     return r
 
+def _get_current_user():
+    """
+    Get current user
+    """
+    r = _get("/users/me")
+    return r["data"]
+
 def _get_logs():
     """
     Get logs for the current user/project
@@ -1642,6 +1722,61 @@ def _get_logs():
     r = _get("/logs",
         params = params)
     return r["data"]["logs"]
+
+def _get_auth(project_name:str):
+    """
+    Get auth for a project
+    """
+    params = {"project_name":project_name
+                }
+    r = _get("/project/auth",
+        params = params)
+    if r["status"] == "error":
+        print(r["message"])
+        return False
+    return r["data"]["auth"]
+
+def _add_auth(username:str, auth:str):
+    """
+    Add new auth
+    """
+    params = { 
+                "project_name":st.session_state.current_project,
+                "username":username,
+                "status":auth}
+    r = _post(route="/users/auth/add", 
+            params = params,
+            )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return True
+
+def _delete_auth(username:str):
+    """
+    Add new auth
+    """
+    r = _post(route="/users/auth/delete", 
+            params = {
+                    "project_name":st.session_state.current_project,
+                    "username":username
+                    },
+            )
+    if r["status"] == "error":
+        print(r["message"])
+        st.write(r["message"])
+        return False
+    return True
+
+def check_status(accepted:list):
+    """
+    Check if the current status is in the list
+    """
+    if st.session_state.status in accepted:
+        return True
+    return False
+    
 
 if __name__ == "__main__":
     main()
