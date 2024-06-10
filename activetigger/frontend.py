@@ -944,8 +944,7 @@ def display_reconciliate():
     Reconciliation menu
     """
     df = _get_reconciliation_table(st.session_state.current_scheme)
-    df = pd.read_json(df["table"], orient='records', lines=True)
-    #df = df.reset_index().pivot_table(index='id', columns='user', values='labels', aggfunc=len)
+    df = pd.read_json(df["table"], orient='records', lines=True, dtype={"id":str})
     st.write(df)
 
 # Internal functions

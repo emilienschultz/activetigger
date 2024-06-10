@@ -1302,6 +1302,7 @@ class Schemes():
     def get_reconciliation_table(self, scheme:str):
         """
         Get reconciliation table
+        TODO : add the filter on action
         """
         if not scheme in self.available():
             return {"error": "Scheme doesn't exist"}
@@ -1329,9 +1330,8 @@ class Schemes():
         df = pd.DataFrame(results, columns =["id","labels", "user", "time"]) # shape as a dataframe
         agg = lambda x : list(x)[0] if len(x)>0 else None # take the label else None
         df = df.pivot_table(index='id', columns='user', values='labels', aggfunc=agg) #pivot and keep the label
-        f_multi = ((df.notnull()).sum(axis="columns"))>1 # only if there are different labels
-        df.index = [str(i) for i in df.index]
-
+        f_multi = df.apply(lambda x : len(set([i for i in x if pd.notna(i)]))>1, axis=1)
+        df = df.join(self.content[["text"]],how='left') # add the text
         # return the result
         return {"success":df[f_multi].reset_index().to_json(orient='records', lines=True)}
 
