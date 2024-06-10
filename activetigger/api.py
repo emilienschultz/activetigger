@@ -582,6 +582,40 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success",  message=r["success"])
 
+
+@app.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
+async def get_reconciliation_table(project: Annotated[Project, Depends(get_project)],
+                                   scheme:str) -> ResponseModel:
+    """
+    Get the reconciliation table
+    """
+    r = project.schemes.get_reconciliation_table(scheme)
+    print(r["success"])
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success",  data={"table":r["success"]})
+
+@app.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
+async def post_reconciliation(username: Annotated[str, Header()],
+                              project: Annotated[Project, Depends(get_project)],
+                              users:list,
+                              annotation:AnnotationModel) -> ResponseModel:
+    """
+    Post a label for all user in a list
+    TODO : verify if it is ok and test
+    """
+    for u in users:
+        r = project.schemes.push_tag(annotation.element_id, 
+                                    annotation.tag, 
+                                    annotation.scheme,
+                                    u,
+                                    "add"
+                                    )
+        if "error" in r:
+            return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success",  message = "Tags updated")
+
+
 @app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])
 async def zeroshot(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],

@@ -1266,7 +1266,7 @@ class Schemes():
         Join with databases : content (train) or test
         """
         if not scheme in self.available():
-            raise ValueError("Scheme doesn't exist")
+            return {"error": "Scheme doesn't exist"}
         
         if isinstance(kind, str):
             kind = [kind]
@@ -1299,6 +1299,42 @@ class Schemes():
                 return self.content.join(df)
         return df
     
+    def get_reconciliation_table(self, scheme:str):
+        """
+        Get reconciliation table
+        TODO : add the filter on action
+        """
+        if not scheme in self.available():
+            return {"error": "Scheme doesn't exist"}
+
+        # get the last tag for each id and each user
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+
+        query = f"""
+            SELECT e.element_id, e.tag, e.user, e.time
+            FROM annotations AS e
+            INNER JOIN (
+                SELECT id, user, MAX(time) AS last_timestamp
+                FROM annotations
+                WHERE project = ? AND scheme = ? 
+                GROUP BY element_id, user
+            ) AS last_entries
+            ON e.id = last_entries.id;
+        """
+        cursor.execute(query, (self.project_name, scheme))
+        results = cursor.fetchall()
+        conn.close()
+
+        # Shape the data
+        df = pd.DataFrame(results, columns =["id","labels", "user", "time"]) # shape as a dataframe
+        agg = lambda x : list(x)[0] if len(x)>0 else None # take the label else None
+        df = df.pivot_table(index='id', columns='user', values='labels', aggfunc=agg) #pivot and keep the label
+        f_multi = df.apply(lambda x : len(set([i for i in x if pd.notna(i)]))>1, axis=1) # filter for disagreement
+        df = df.join(self.content[["text"]],how='left') # add the text
+        # return the result
+        return {"success":df[f_multi].reset_index().to_json(orient='records', lines=True)}
+
     def convert_tags(self, former_label:str, new_label:str, scheme:str, username:str):
         """
         Convert tags from a specific label to another

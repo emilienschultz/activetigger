@@ -451,6 +451,9 @@ def display_annotate():
     with st.expander("Explore data"):
         display_data()
 
+    with st.expander("Reconciliate within users"):
+        display_reconciliate()
+
 def display_projection():
     """
     Projection menu
@@ -935,6 +938,16 @@ def display_test():
         if informations:
             st.write(informations)
 
+
+def display_reconciliate():
+    """
+    Reconciliation menu
+    """
+    st.write("List of users last entries, only if there is disagreement.")
+    df = _get_reconciliation_table(st.session_state.current_scheme)
+    df = pd.read_json(df["table"], orient='records', lines=True, dtype={"id":str})
+    df.set_index("id", inplace=True)
+    st.write(df)
 
 # Internal functions
 # ------------------
@@ -1780,6 +1793,20 @@ def _delete_auth(username:str):
         st.write(r["message"])
         return False
     return True
+
+def _get_reconciliation_table(scheme:str):
+    """
+    Get reconcialiation table
+    """
+    params = {"project_name":st.session_state.current_project, 
+              "scheme":scheme
+                }
+    r = _get("/elements/reconciliate",
+        params = params)
+    if r["status"] == "error":
+        print(r["message"])
+        return False
+    return r["data"]
 
 def check_status(accepted:list):
     """
