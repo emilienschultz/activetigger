@@ -601,8 +601,8 @@ async def post_reconciliation(username: Annotated[str, Header()],
                               users:list,
                               annotation:AnnotationModel) -> ResponseModel:
     """
-    Get the reconciliation table
-    TODO : test
+    Post a label for all user in a list
+    TODO : verify if it is ok and test
     """
     for u in users:
         r = project.schemes.push_tag(annotation.element_id, 

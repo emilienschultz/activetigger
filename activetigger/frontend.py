@@ -943,8 +943,10 @@ def display_reconciliate():
     """
     Reconciliation menu
     """
+    st.write("List of users last entries, only if there is disagreement.")
     df = _get_reconciliation_table(st.session_state.current_scheme)
     df = pd.read_json(df["table"], orient='records', lines=True, dtype={"id":str})
+    df.set_index("id", inplace=True)
     st.write(df)
 
 # Internal functions
