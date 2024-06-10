@@ -593,7 +593,27 @@ async def get_reconciliation_table(project: Annotated[Project, Depends(get_proje
     print(r["success"])
     if "error" in r:
         return ResponseModel(status="error", message=r["error"])
-    return ResponseModel(status="success",  data=r["success"])
+    return ResponseModel(status="success",  data={"table":r["success"]})
+
+@app.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
+async def post_reconciliation(username: Annotated[str, Header()],
+                              project: Annotated[Project, Depends(get_project)],
+                              users:list,
+                              annotation:AnnotationModel) -> ResponseModel:
+    """
+    Get the reconciliation table
+    TODO : test
+    """
+    for u in users:
+        r = project.schemes.push_tag(annotation.element_id, 
+                                    annotation.tag, 
+                                    annotation.scheme,
+                                    u,
+                                    "add"
+                                    )
+        if "error" in r:
+            return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success",  message = "Tags updated")
 
 
 @app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])

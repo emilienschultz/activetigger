@@ -1306,6 +1306,7 @@ class Schemes():
         if not scheme in self.available():
             return {"error": "Scheme doesn't exist"}
 
+        # get the last tag for each id and each user
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
 
@@ -1323,9 +1324,16 @@ class Schemes():
         cursor.execute(query, (self.project_name, scheme))
         results = cursor.fetchall()
         conn.close()
-        df = pd.DataFrame(results, columns =["id","labels", "user", "time"])
-#        df.index = [str(i) for i in df.index]
-        return {"success":df.to_dict()}
+
+        # Shape the data
+        df = pd.DataFrame(results, columns =["id","labels", "user", "time"]) # shape as a dataframe
+        agg = lambda x : list(x)[0] if len(x)>0 else None # take the label else None
+        df = df.pivot_table(index='id', columns='user', values='labels', aggfunc=agg) #pivot and keep the label
+        f_multi = ((df.notnull()).sum(axis="columns"))>1 # only if there are different labels
+        df.index = [str(i) for i in df.index]
+
+        # return the result
+        return {"success":df[f_multi].reset_index().to_json(orient='records', lines=True)}
 
     def convert_tags(self, former_label:str, new_label:str, scheme:str, username:str):
         """
