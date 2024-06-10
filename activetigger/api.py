@@ -582,6 +582,20 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
         return ResponseModel(status="error", message=r["error"])
     return ResponseModel(status="success",  message=r["success"])
 
+
+@app.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
+async def get_reconciliation_table(project: Annotated[Project, Depends(get_project)],
+                                   scheme:str) -> ResponseModel:
+    """
+    Get the reconciliation table
+    """
+    r = project.schemes.get_reconciliation_table(scheme)
+    print(r["success"])
+    if "error" in r:
+        return ResponseModel(status="error", message=r["error"])
+    return ResponseModel(status="success",  data=r["success"])
+
+
 @app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])
 async def zeroshot(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],

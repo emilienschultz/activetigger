@@ -1266,7 +1266,7 @@ class Schemes():
         Join with databases : content (train) or test
         """
         if not scheme in self.available():
-            raise ValueError("Scheme doesn't exist")
+            return {"error": "Scheme doesn't exist"}
         
         if isinstance(kind, str):
             kind = [kind]
@@ -1299,6 +1299,34 @@ class Schemes():
                 return self.content.join(df)
         return df
     
+    def get_reconciliation_table(self, scheme:str):
+        """
+        Get reconciliation table
+        """
+        if not scheme in self.available():
+            return {"error": "Scheme doesn't exist"}
+
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+
+        query = f"""
+            SELECT e.element_id, e.tag, e.user, e.time
+            FROM annotations AS e
+            INNER JOIN (
+                SELECT id, user, MAX(time) AS last_timestamp
+                FROM annotations
+                WHERE project = ? AND scheme = ? 
+                GROUP BY element_id, user
+            ) AS last_entries
+            ON e.id = last_entries.id;
+        """
+        cursor.execute(query, (self.project_name, scheme))
+        results = cursor.fetchall()
+        conn.close()
+        df = pd.DataFrame(results, columns =["id","labels", "user", "time"])
+#        df.index = [str(i) for i in df.index]
+        return {"success":df.to_dict()}
+
     def convert_tags(self, former_label:str, new_label:str, scheme:str, username:str):
         """
         Convert tags from a specific label to another
