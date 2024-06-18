@@ -176,7 +176,7 @@ def display_documentation():
 
     with st.expander("Logs"):
         docs = _get_logs()
-        df = pd.read_json(docs)
+        df = pd.DataFrame(docs).set_index("time")
         st.dataframe(df)
 
 def display_projects():
@@ -187,7 +187,7 @@ def display_projects():
     - create project
     """
     r = _get("/session")
-    existing = r["data"]["projects"]
+    existing = r["projects"]
 
     # display menu
 
@@ -334,7 +334,7 @@ def display_features():
     st.markdown("<hr>", unsafe_allow_html=True)
 
     st.subheader("Regex")
-    st.dataframe(pd.Series(st.session_state.state["features"]["infos"], name="Matched"))
+    st.dataframe(pd.Series(st.session_state.state["features"]["infos"], name="Matched")) # display existing regex
     regex = st.text_input(label="Regex", placeholder="Write your regex", label_visibility="hidden")
     if st.button("Create regex"):
         if regex is not None:
@@ -434,7 +434,7 @@ def display_annotate():
         if st.session_state.current_element:
             st.write(f"Context : {st.session_state.current_element['context']}")
             st.write(f"Predict : {st.session_state.current_element['predict']}")
-            st.write(st.session_state.current_element['info'])
+            st.write(f"Informations : {st.session_state.current_element['info']}")
 
     with st.expander("Manage tags"):
         display_manage_tags()
@@ -473,8 +473,8 @@ def display_projection():
     # if visualisation available, display it
     if ("projection_data" in st.session_state) and (type(st.session_state.projection_data) == str):
         r = _get_projection_data()
-        if ("data" in r) and (type(r["data"]) is dict):
-            st.session_state.projection_data = pd.DataFrame(r["data"],)
+        if ("data" in r) and (type(r) is dict):
+            st.session_state.projection_data = pd.DataFrame(r,)
             if not "projection_visualization" in st.session_state:
                 st.session_state.projection_visualization = _plot_visualisation()
                 st.session_state.projection_visualization.update_layout({"uirevision": "foo"}, overwrite=True)
@@ -540,7 +540,7 @@ def display_description():
     st.subheader("Statistics")
     st.write("Description of the current data")
     statistics = _get_statistics()
-    st.dataframe(statistics, width=500)
+    st.write(statistics)
     st.markdown("<hr>", unsafe_allow_html=True)
     
 def display_data():
@@ -560,10 +560,10 @@ def display_data():
 
     # make the table editable
     labels =  st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    st.session_state.data_df["labels"] = (
-        (st.session_state.data_df["labels"].astype("category")).cat.add_categories([l for l in labels if not l in st.session_state.data_df["labels"].unique()])
+    st.session_state.data_df["label"] = (
+        (st.session_state.data_df["label"].astype("category")).cat.add_categories([l for l in labels if not l in st.session_state.data_df["label"].unique()])
             )
-    modified_table = st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
+    modified_table = st.data_editor(st.session_state.data_df[["label", "text"]], disabled=["text"])
 
     if st.button(label="Send changes"):
         st.write("Send changes")
@@ -605,9 +605,7 @@ def display_zeroshot():
             prompt += "Labels with their descriptions:\n"
             for label, description in json.loads(st.session_state.codebook).items():
                 prompt += f"- {label}: {description}\n"
-            r = _start_zeroshot(api, st.session_state.api_token, prompt, number)
-            if r["status"]=="error":
-                st.write(r["message"])
+            _start_zeroshot(api, st.session_state.api_token, prompt, number)
     st.write("If you predict an important element of entries, they will be chuncked")
     st.write("For the moment, only 10 elements possible")
     
@@ -815,14 +813,14 @@ def display_configuration():
                 st.write("Add")
                 _add_auth(user, auth) 
 
-        df = pd.DataFrame(_get_auth(st.session_state.current_project))
-        for i,j in df.iterrows():
+        auths = _get_auth(st.session_state.current_project)
+        for i,j in auths.items():
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.write(f"{j[0]} - {j[1]}")
+                st.write(f"{i} - {j}")
             with col2:
                 if st.button("Delete", key=i):
-                    _delete_auth(j[0])
+                    _delete_auth(i)
     else:
         print("Load a project first")
 
@@ -968,16 +966,15 @@ def _post(route:str,
                 files = files,
                 headers = st.session_state.header, 
                 verify = False)
-    
-    if r.status_code in [422, 403]:
-        print(r.content)
-        return {"status":"error", "message":"Not authorized"}
-    return json.loads(r.content)
+    if r.status_code == rq.codes.ok:
+        return json.loads(r.content)
+    else:
+        return {"error":r.content}
 
 def _get(route:str, 
         params:dict|None = None, 
         data:dict|None = None,
-        is_json = True) -> dict:
+        binary = False) -> dict:
     """
     Get from API
     """
@@ -987,22 +984,22 @@ def _get(route:str,
                 data = data,
                 headers = st.session_state.header,
                 verify=False)
-    if r.status_code in [422, 403]:
-        return {"status":"error", "message":"Not authorized"}
-    if is_json:
+    if r.status_code == rq.codes.ok:
+        if binary:
+            return r.content
         return json.loads(r.content)
-    return r.content
+    else:
+        return {"error":r.content}
 
 def _get_documentation():
     """
     Get documentation
     """
     r = _get(route = f"/documentation")
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
-        return r["message"]
-    return r["data"]
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
+        return False
+    return r
 
 def _connect_user(user:str, password:str) -> bool:
     """
@@ -1014,6 +1011,7 @@ def _connect_user(user:str, password:str) -> bool:
             }
     
     r = _post("/token", data = form)
+    print(r)
     if not "access_token" in r:
         print(r)
         return False
@@ -1033,11 +1031,11 @@ def _get_state() -> dict:
     """
     # only if a current project is selected
     if "current_project" in st.session_state:
-        state = _get(route = f"/state/{st.session_state.current_project}")
-        if state["status"]=="error":
-            print(state)
+        r = _get(route = f"/state/{st.session_state.current_project}")
+        if (r is not None) and ("error" in r):
+            st.write(r["error"])
             return {}
-        return state["data"]
+        return r
     return {}
 
 def _get_users():
@@ -1045,7 +1043,7 @@ def _get_users():
     Get existing users
     """
     r = _get(route="/users")
-    return r["data"]
+    return r
 
 def _create_user(username:str, password:str, status:str):
     """
@@ -1057,9 +1055,8 @@ def _create_user(username:str, password:str, status:str):
     r = _post(route="/users/create", 
                 params=params
                 )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return r
 
@@ -1071,9 +1068,8 @@ def _delete_user(username:str):
     r = _post(route="/users/delete", 
                 params=params
                 )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return r    
 
@@ -1091,8 +1087,8 @@ def _create_project(data, df, name) -> bool:
                 files=files,
                 data=data
                 )
-    if r["status"] == "error":
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return True
 
@@ -1258,12 +1254,11 @@ def _get_next_element() -> bool:
 
     print("return",r)
 
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
 
-    st.session_state.current_element = r["data"]
+    st.session_state.current_element = r
     return True
 
 def _send_tag(label):
@@ -1281,8 +1276,8 @@ def _send_tag(label):
                     json_data = data)
     
     # add in history
-    if r["status"] == "error":
-        print(r)
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
     else:
         st.session_state.history.append(st.session_state.current_element["element_id"])
 
@@ -1303,12 +1298,11 @@ def _display_element(element_id):
                     params = {"project_name":st.session_state.current_project,
                             "scheme":st.session_state.current_scheme})
     # Managing errors
-    if r["status"]=="error":
-        print(r)
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     # Update interface
-    print(r["data"])
-    st.session_state.current_element = r["data"]
+    st.session_state.current_element = r
     return True
 
 def _get_previous_element() -> bool:
@@ -1388,14 +1382,18 @@ def _get_projection_data():
     return r
 
 def _get_statistics():
+    """
+    Get statistics of the project
+    """
     params = {"project_name":st.session_state.current_project, 
             "scheme":st.session_state.current_scheme, 
             "user":st.session_state.user}
     r = _get("/project/description",params = params)
-    if r["status"]=="error":
-        return r["message"]
-    tab = pd.DataFrame([[k,v] for k,v in r["data"].items()], columns=["information","values"]).set_index("information")
-    return tab
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
+    #tab = pd.DataFrame([[k,v] for k,v in r["content"].items()], columns=["information","values"]).set_index("information")
+    #return tab
+    return r
 
 def _get_table():
     """
@@ -1410,7 +1408,7 @@ def _get_table():
                 "mode":st.session_state.data_mode
                 }
     r = _get("/elements/table", params = params)
-    df = pd.DataFrame(r["data"])
+    df = pd.DataFrame(r).set_index("id")
     return df
 
 def _send_table(df, labels="labels"):
@@ -1436,8 +1434,8 @@ def _send_table(df, labels="labels"):
                             "user":st.session_state.user
                             })
 
-    if r["status"] == "error":
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
 
     st.write("Data saved")
 
@@ -1464,8 +1462,8 @@ def _train_simplemodel():
     r = _post("/models/simplemodel", 
                     params = params, 
                     json_data = data)
-    if r["status"] == "error":
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     st.write("Computing model")
     return True
@@ -1482,8 +1480,8 @@ def _bert_prediction():
             }
     r = _post("/models/bert/predict", 
             params = params)
-    if r["status"]=="error":
-        print(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
     return True
 
 def _bert_test_informations(model):
@@ -1492,12 +1490,12 @@ def _bert_test_informations(model):
                 "name":model
                 }
     r = _get("/models/bert", params = params)
-    if r["status"] == "error":
-        print(r)
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return None
-    if not 'test_scores' in r["data"]:
+    if not 'test_scores' in r:
         return None
-    return r["data"]['test_scores']
+    return r['test_scores']
 
 def _bert_informations():
     """
@@ -1510,8 +1508,8 @@ def _bert_informations():
             "name":st.session_state.bm_trained
             }
     r = _get("/models/bert", params = params)
-    if r["status"] == "error":
-        print(r)
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
 
     loss = pd.DataFrame(r['data']["training"]["loss"])
@@ -1611,7 +1609,7 @@ def _export_data():
                 }
     r = _get("/export/data",
         params = params,
-        is_json= False)
+        binary= True)
     return r
 
 @st.cache_data
@@ -1629,7 +1627,7 @@ def _export_features():
                 }
     r = _get("/export/features",
         params = params,
-        is_json= False)
+        binary = True)
     return r
 
 @st.cache_data
@@ -1643,7 +1641,7 @@ def _export_predictions():
                 }
     r = _get("/export/prediction",
         params = params,
-        is_json= False)
+        binary = True)
     return r
 
 @st.cache_data
@@ -1656,7 +1654,7 @@ def _export_model():
                 }
     r = _get("/export/bert",
         params = params,
-        is_json= False)
+        binary = True)
     if type(r) is dict:
         print(r)
         return None
@@ -1683,8 +1681,8 @@ def _compute_test(model_name, scheme):
               }
     r = _post("/models/bert/test", 
             params = params)
-    if r["status"]=="error":
-        print(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return True    
 
@@ -1703,9 +1701,8 @@ def _start_zeroshot(api, token, prompt, number=10):
             params = {"project_name":st.session_state.current_project},
             json_data=data
             )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return r
 
@@ -1719,8 +1716,8 @@ def _create_testset(data, df, filename):
                 files=files,
                 data=data
                 )
-    if r["status"] == "error":
-        print(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
     return True
 
 def _get_queue():
@@ -1735,7 +1732,7 @@ def _get_current_user():
     Get current user
     """
     r = _get("/users/me")
-    return r["data"]
+    return r
 
 def _get_logs():
     """
@@ -1746,20 +1743,19 @@ def _get_logs():
                 }
     r = _get("/logs",
         params = params)
-    return r["data"]["logs"]
+    return r
 
 def _get_auth(project_name:str):
     """
     Get auth for a project
     """
-    params = {"project_name":project_name
-                }
+    params = {"project_name":project_name}
     r = _get("/project/auth",
         params = params)
-    if r["status"] == "error":
-        print(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
-    return r["data"]["auth"]
+    return r["auth"]
 
 def _add_auth(username:str, auth:str):
     """
@@ -1772,9 +1768,8 @@ def _add_auth(username:str, auth:str):
     r = _post(route="/users/auth/add", 
             params = params,
             )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return True
 
@@ -1788,9 +1783,8 @@ def _delete_auth(username:str):
                     "username":username
                     },
             )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return True
 
@@ -1828,9 +1822,8 @@ def _rename_label(former_label:str, new_label:str):
                 }
     r = _post("/schemes/label/rename", 
                     params = params)
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
     return True    
 

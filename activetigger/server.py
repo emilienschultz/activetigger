@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
-from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDB
+from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDBModel
 from pydantic import ValidationError
 import logging
 import openai
@@ -313,7 +313,7 @@ class Server():
         conn.commit()
         conn.close()
         df = pd.DataFrame(logs, columns = ["id", "time", "user", "project", "action", "NA"])
-        return df.to_json()
+        return df
 
     def get_session_info(self, username:str):
         """
@@ -814,6 +814,7 @@ class Project(Server):
                 }
 
         return element
+
     
     def get_element(self, 
                     element_id:str,
@@ -847,7 +848,7 @@ class Project(Server):
             "limit":int(self.content.loc[element_id, "limit"])
             }
         
-        return {'success':data}
+        return data
 
     def get_params(self) -> ProjectModel:
         """
@@ -861,28 +862,26 @@ class Project(Server):
         Return:
             JSON
         """
-        r = {
-            "N dataset":len(self.content)
-            }
-        
         if scheme is None:
             return {"error":"Scheme not defined"}
         
-        # part train
+        # part train        
+        r = {"trainset_n":len(self.content)}
         df = self.schemes.get_scheme_data(scheme, kind=["add","predict"])
-        r["N annotated"] = len(df)
-        r["Users"] = list(self.schemes.get_distinct_users(scheme))
-        r["Annotations"] = json.loads(df["labels"].value_counts().to_json())
+        r["annotated_n"] = len(df)
+        r["users"] = [i[0] for i in self.schemes.get_distinct_users(scheme)]
+        r["annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
 
         # part test
         df = self.schemes.get_scheme_data(scheme, kind=["test"])
-        r["N test annotated"] = len(df)
+        r["testset_n"] = len(df)
 
         if self.simplemodels.exists(user, scheme):
             sm = self.simplemodels.get_model(user, scheme) # get model
-            r["Simplemodel 10-CV"] = sm.cv10
+            r["sm_10cv"] = sm.cv10
 
         return r
+
 
     def get_state(self):
         """
@@ -1352,7 +1351,7 @@ class Schemes():
                         max:int, 
                         mode:str,
                         contains:str|None = None,
-                        user:str = "all"):
+                        user:str = "all") -> DataFrame:
         """
         Get data table
         - either recent
@@ -1393,7 +1392,7 @@ class Schemes():
         if (min > len(df)):
             return {"error":"min value too high"}
         
-        return df.sort_index().iloc[min:max].drop(columns="timestamp")
+        return df.sort_index().iloc[min:max]
 
     def add_scheme(self, scheme:SchemeModel):
         """
@@ -1679,7 +1678,7 @@ class Users():
         auth = cursor.fetchall()
         conn.commit()
         conn.close()
-        return auth
+        return {i[0]:i[1] for i in auth}
     
     def set_auth(self, username:str, project_name:str, status:str):
         """
@@ -1712,9 +1711,12 @@ class Users():
         conn.close()
         return {"success":"Auth deleted"}  
 
-    def get_auth(self, username:str, project_name:str = "all"):
+    def get_auth(self, username:str, project_name:str = "all") -> list:
         """
         Get user auth
+        Comments:
+        - Either for all projects
+        - Or one project
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
@@ -1779,7 +1781,7 @@ class Users():
         conn.close()
         return {"success":"User deleted"}    
 
-    def get_user(self, name) -> UserInDB|dict:
+    def get_user(self, name) -> UserInDBModel|dict:
         """
         Get user from database
         """
@@ -1790,7 +1792,7 @@ class Users():
         query = "SELECT * FROM users WHERE user = ?"
         cursor.execute(query, (name,))
         user = cursor.fetchone()
-        u = UserInDB(username = name, 
+        u = UserInDBModel(username = name, 
                      hashed_password = user[3],
                      status = user[4])
         conn.close()

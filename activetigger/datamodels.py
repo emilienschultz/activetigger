@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
-from typing import Optional
+from typing import Optional, List, Dict, Any
+
 
 class ProjectModel(BaseModel):
     """
@@ -24,19 +25,12 @@ class ProjectModel(BaseModel):
     cols_test:list = []
     test: bool = False
 
-
-class Action(str, Enum):
+class ActionModel(str, Enum):
     delete = "delete"
     add = "add"
     update = "update"
 
-class Scheme(BaseModel):
-    """
-    Set of labels
-    """
-    labels:list[str]
-
-class NextModel(BaseModel):
+class NextInModel(BaseModel):
     scheme:str
     selection:str = "deterministic"
     sample:str = "untagged"
@@ -44,39 +38,38 @@ class NextModel(BaseModel):
     frame:list[float]|None = None
     history: list = []
 
+class ElementOutModel(BaseModel):
+    element_id:str
+    text:str
+    context:Dict[str, Any]
+    selection:str
+    info:str|None
+    predict:dict
+    frame:list|None
+    limit:int|None
+
 class SchemesModel(BaseModel):
     """
     Schemes model    
     """
     project_name:str
     availables:dict
-
-class UserModel(BaseModel):
-    name:str
     
-class User(BaseModel):
+class UserModel(BaseModel):
     username: str
+    status:str|None
 
-class UserInDB(User):
+class UserInDBModel(UserModel):
     hashed_password: str
-    status:str|None
 
-class UserStatus(User):
-    status:str|None
+class UsersServerModel(BaseModel):
+    users:list
+    auth:list
 
-class Token(BaseModel):
+class TokenModel(BaseModel):
     access_token: str
     token_type: str
     status: str|None
-
-class ElementModel(BaseModel):
-    element_id:str
-    text:Optional[str] = None
-    selection: Optional[str] = None
-    info: Optional[str] = None
-    context: Optional[dict] = None
-    predict: Optional[dict] = None
-    frame: Optional[list] = None
 
 class AnnotationModel(BaseModel):
     """
@@ -106,20 +99,6 @@ class RegexModel(BaseModel):
     value:str
     user:str
 
-class ResponseModel(BaseModel):
-    status:str
-    message: Optional[str] = None
-    data: Optional[dict] = None
-
-class Error(BaseModel):
-    error:str
-
-class Success(BaseModel):
-    success:str
-
-class Data(BaseModel):
-    data:dict|str
-
 class SimpleModelModel(BaseModel):
     features:list
     model:str
@@ -137,16 +116,14 @@ class BertModelModel(BaseModel):
     params:dict
     test_size:float
 
-class TableElementsModel(BaseModel):
-    list_ids:list
-    list_labels:list
-    scheme:str
-    action:str
-
-class ProjectionModel(BaseModel):
+class ProjectionInModel(BaseModel):
     method:str
     features:list
     params:dict
+
+class ProjectionOutModel(BaseModel):
+    status: str
+    data: Dict[str, Any]
 
 class ParamsModel(BaseModel):
     params:dict
@@ -183,13 +160,13 @@ class BertParams(BaseModel):
     gpu: bool
     adapt: bool
 
-class UmapParams(BaseModel):
+class UmapModel(BaseModel):
     n_neighbors: int
     min_dist: float
     n_components: int
     metric: str
 
-class TsneParams(BaseModel):
+class TsneModel(BaseModel):
     n_components: int
     learning_rate: str|float
     init: str
@@ -201,3 +178,59 @@ class ZeroShotModel(BaseModel):
     api: str
     token: str
     number: int = 10
+
+class TableOutModel(BaseModel):
+    id: List[str]
+    timestamp: List[str]
+    label: List[str]
+    text: List[str]
+
+class TableLogsModel(BaseModel):
+    time: List
+    user: List
+    project: List
+    action: List
+
+class TableInModel(BaseModel):
+    list_ids:list
+    list_labels:list
+    scheme:str
+    action:str
+
+class ProjectsServerModel(BaseModel):
+    projects:list
+    auth:list
+
+class StateModel(BaseModel):
+    params: ProjectModel
+    next: Dict[str, Any]
+    schemes: Dict[str, Any]
+    features: Dict[str, Any]
+    simplemodel: Dict[str, Any]
+    bertmodels: Dict[str, Any]
+    projections: Dict[str, Any]
+    zeroshot: Dict[str, Any]
+
+class QueueModel(BaseModel):
+    content: Dict[str, Dict[str, Any]]
+
+class ProjectDescriptionModel(BaseModel):
+    trainset_n: int
+    annotated_n: int
+    users: List[str]
+    annotated_distribution: Dict[str, Any]
+    testset_n: Optional[int] = None
+    sm_10cv: Optional[Any] = None
+
+class ProjectAuthsModel(BaseModel):
+    auth: Dict[str, Any]
+
+class WaitingModel(BaseModel):
+    detail:str
+    status:str = "waiting"
+
+class DocumentationModel(BaseModel):
+    credits:List[str]
+    page: str
+    documentation: str
+    contact:str
