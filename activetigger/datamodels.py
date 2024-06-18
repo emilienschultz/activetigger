@@ -231,3 +231,9 @@ class ProjectAuthsModel(BaseModel):
 class WaitingModel(BaseModel):
     detail:str
     status:str = "waiting"
+
+class DocumentationModel(BaseModel):
+    credits:str
+    page: str
+    documentation: str
+    contact:str

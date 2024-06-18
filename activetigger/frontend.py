@@ -956,7 +956,7 @@ def _post(route:str,
     if r.status_code == rq.codes.ok:
         return json.loads(r.content)
     else:
-        return {"error":r.detail}
+        return {"error":r.content}
 
 def _get(route:str, 
         params:dict|None = None, 
@@ -976,7 +976,7 @@ def _get(route:str,
             return r.content
         return json.loads(r.content)
     else:
-        return {"error":r.detail}
+        return {"error":r.content}
 
 def _get_documentation():
     """

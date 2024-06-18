@@ -1681,6 +1681,9 @@ class Users():
     def get_auth(self, username:str, project_name:str = "all") -> list:
         """
         Get user auth
+        Comments:
+        - Either for all projects
+        - Or one project
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()

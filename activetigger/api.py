@@ -13,7 +13,7 @@ import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableInModel, TableOutModel, ActionModel, AnnotationModel,\
       SchemeModel, ProjectionInModel, ProjectionOutModel, TokenModel, SimpleModelModel, BertModelModel, ParamsModel,\
       UmapModel, TsneModel, NextInModel, ElementOutModel, ZeroShotModel, UserInDBModel, UserModel, UsersServerModel, ProjectsServerModel, \
-      StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel
+      StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel, DocumentationModel
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -103,7 +103,7 @@ async def middleware(request: Request, call_next):
 # Dependencies
 # ------------
 
-async def get_project(project_name: str) -> ProjectModel|None:
+async def get_project(project_name: str) -> ProjectModel:
     """
     Dependencie to check existing project
     - if already loaded, return it
@@ -112,16 +112,18 @@ async def get_project(project_name: str) -> ProjectModel|None:
 
     # if project doesn't exist
     if not server.exists(project_name):
-        return None
+        raise HTTPException(status_code=404, detail="Project not found")
 
-    # if the project exist
+    # if the project is already loaded
     if project_name in server.projects:
         return server.projects[project_name]
-    else:
-        server.start_project(project_name)            
-        return server.projects[project_name]
+    
+    # load it
+    server.start_project(project_name)            
+    return server.projects[project_name]
 
-async def verified_user(request: Request, token: Annotated[str, Depends(oauth2_scheme)]):
+async def verified_user(request: Request, 
+                        token: Annotated[str, Depends(oauth2_scheme)]) -> UserInDBModel:
     """
     Dependency to test if the user is authentified with its token
     """
@@ -136,11 +138,15 @@ async def verified_user(request: Request, token: Annotated[str, Depends(oauth2_s
     
     # authentification
     user = server.users.get_user(name=username)
+
+    if "error" in user:
+        raise HTTPException(status_code=404, detail=user["error"])
+
     return user    
 
 async def check_auth_exists(request: Request, 
                      username: Annotated[str, Header()], 
-                     project_name: str|None = None):
+                     project_name: str|None = None) -> None:
     """
     Check if a user is associated to a project
     """
@@ -150,18 +156,18 @@ async def check_auth_exists(request: Request,
 
 async def check_auth_manager(request: Request, 
                      username: Annotated[str, Header()], 
-                     project_name: str|None = None):
+                     project_name: str|None = None) -> None:
     """
     Check if a user is associated to a project
     """
 
     #root can do anything TODO: secure that
     if username == "root":
-        return
-
+        return None
     auth = server.users.auth(username, project_name)
     if not auth == "manager":
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
+    return None
 
 # ------
 # Routes
@@ -178,19 +184,20 @@ async def welcome() -> str:
     return r
 
 @app.get("/documentation")
-async def get_documentation()  -> dict:
+async def get_documentation()  -> DocumentationModel:
     """
     Path for documentation 
     Comments:
         For the moment, a dictionnary
     """
     data = {
-            "Credits":["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
-            "Contact":"emilien.schultz@ensae.fr",
-            "Page":"https://github.com/emilienschultz/pyactivetigger",
-            "Documentation":"To write ...."
+            "credits":["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
+            "contact":"emilien.schultz@ensae.fr",
+            "page":"https://github.com/emilienschultz/pyactivetigger",
+            "documentation":"To write ...."
             }
-    return data
+    return DocumentationModel(**data)
+
 
 # Users
 #------
@@ -214,8 +221,8 @@ async def read_users_me(current_user: Annotated[UserInDBModel, Depends(verified_
     """
     Information on current user
     """
-    r = UserModel(username=current_user.username, status=current_user.status)
-    return r
+    return UserModel(username=current_user.username, 
+                  status=current_user.status)
 
 @app.get("/users", dependencies=[Depends(verified_user)])
 async def existing_users() -> UsersServerModel:
@@ -246,10 +253,9 @@ async def delete_user(username:str = Query()) -> None:
     Delete user
     """
     r = server.users.delete_user(username)
-    if "success" in r:
-        return None
-    else:
+    if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    return None
 
 @app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
 async def set_auth(action: str, 
@@ -272,11 +278,11 @@ async def set_auth(action: str,
     raise HTTPException(status_code=400, detail="Action not found")
 
 @app.get("/users/auth", dependencies=[Depends(verified_user)])
-async def get_auth(username:str, project_name:str = "all") -> list: #TODO check type
+async def get_auth(username:str) -> List:
     """
-    Get user auth
+    Get all user auth
     """
-    r = server.users.get_auth(username, project_name)
+    r = server.users.get_auth(username, "all")
     return r
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
