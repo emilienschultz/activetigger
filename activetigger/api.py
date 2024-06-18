@@ -11,8 +11,8 @@ from pydantic import ValidationError
 from activetigger.server import Server, Project
 import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
-      SchemeModel, ResponseModel, ProjectionModel, User, Token, RegexModel, SimpleModelModel, BertModelModel, ParamsModel,\
-      UmapParams, TsneParams, NextModel, ZeroShotModel, UserStatus, UserInDB
+      SchemeModel, ResponseModel, ProjectionModel, Token, SimpleModelModel, BertModelModel, ParamsModel,\
+      UmapParams, TsneParams, NextModel, ZeroShotModel, UserInDB, User, UsersServer
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -196,84 +196,79 @@ async def get_documentation()  -> dict:
 
 @app.post("/token")
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token|ResponseModel:
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     """
     Authentificate user and return token
     """
     user = server.users.authenticate_user(form_data.username, form_data.password)
     if "error" in user:
-        return ResponseModel(status="error", message=user["error"])
+        raise HTTPException(status_code=500, detail=user["error"])
     access_token = server.create_access_token(
             data={"sub": user.username}, 
             expires_min=60)
     return Token(access_token=access_token, token_type="bearer", status=user.status)
 
 @app.get("/users/me")
-async def read_users_me(current_user: Annotated[UserInDB, Depends(verified_user)]) -> ResponseModel:
+async def read_users_me(current_user: Annotated[UserInDB, Depends(verified_user)]) -> User:
     """
     Information on current user
     """
-    r = ResponseModel(status="success", data={"username":current_user.username,
-                                              "status":current_user.status})
-    print(current_user)
+    r = User(username=current_user.username, status=current_user.status)
     return r
 
 @app.get("/users", dependencies=[Depends(verified_user)])
-async def existing_users() -> ResponseModel:
+async def existing_users() -> UsersServer:
     """
     Get existing users
     """
-    data = {
-        "users":server.users.existing_users(),
-        "auth":["manager","annotator"]
-        }
-    print(data)
-    r = ResponseModel(status="success", data=data)
+    r = UsersServer(users=server.users.existing_users(), 
+                    auth=["manager","annotator"])
     return r
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(username: Annotated[str, Header()],
                       username_to_create:str = Query(),
                       password:str = Query(),
-                      status:str = Query()) -> ResponseModel:
+                      status:str = Query()) -> None:
     """
     Create user
     """
     r = server.users.add_user(username_to_create, password, status, username)
     if "success" in r:
-        return ResponseModel(status="success", message=r["success"])
+        return None
     else:
-        return ResponseModel(status="error", message=r["success"])
+        raise HTTPException(status_code=500, detail=r["error"])
 
 @app.post("/users/delete", dependencies=[Depends(verified_user), Depends(check_auth_manager)])
-async def delete_user(username:str = Query()) -> ResponseModel:
+async def delete_user(username:str = Query()) -> None:
     """
     Delete user
     """
     r = server.users.delete_user(username)
     if "success" in r:
-        return ResponseModel(status="success", message=r["success"])
+        return None
     else:
-        return ResponseModel(status="error", message=r["success"])
+        raise HTTPException(status_code=500, detail=r["error"])
 
 @app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
 async def set_auth(action: str, 
                    username:str = Query(), 
                    project_name:str = Query(), 
-                   status:str = Query(None)):
+                   status:str = Query(None)) -> None:
     """
     Set user auth
     """
     if action == "add":
         if not status:
-            return ResponseModel(status="error", message="Missing status")
+            raise HTTPException(status_code=400, detail="Missing status")
         r = server.users.set_auth(username, project_name, status)
-        return ResponseModel(status="success", message=r["success"])
+        return None
     
     if action == "delete":
         r = server.users.delete_auth(username, project_name)
-        return ResponseModel(status="success", message=r["success"])
-    return ResponseModel(status="error", message="Action not found")
+        return None
+    
+    raise HTTPException(status_code=400, detail="Action not found")
 
 @app.get("/users/auth", dependencies=[Depends(verified_user)])
 async def get_auth(username:str, project_name:str = "all"):
@@ -344,16 +339,14 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
     return r
 
 @app.get("/project/auth", dependencies=[Depends(verified_user)])
-async def get_project_auth(project_name:str):
+async def get_project_auth(project_name:str) -> dict:
     """
     Users auth on a project
     """
     r = server.users.get_project_auth(project_name)
     if "error" in r:
-        return ResponseModel(status="error", message=data["error"])
-    else:
-        return ResponseModel(status="success", data={"auth":r})
-
+        raise HTTPException(status_code=500, detail=r["error"])
+    return {"auth":r}
 
 @app.post("/projects/testdata", dependencies=[Depends(verified_user)])
 async def add_testdata(project: Annotated[Project, Depends(get_project)],

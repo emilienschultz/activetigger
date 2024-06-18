@@ -50,19 +50,17 @@ class SchemesModel(BaseModel):
     """
     project_name:str
     availables:dict
-
-class UserModel(BaseModel):
-    name:str
     
 class User(BaseModel):
     username: str
+    status:str|None
 
 class UserInDB(User):
     hashed_password: str
-    status:str|None
 
-class UserStatus(User):
-    status:str|None
+class UsersServer(BaseModel):
+    users:list
+    auth:list
 
 class Token(BaseModel):
     access_token: str
