@@ -86,7 +86,7 @@ class BertModel():
             self.model =  AutoModelForSequenceClassification.from_pretrained(self.path)
             self.status = "loaded"
 
-    def informations(self):
+    def informations(self) -> dict:
         """
         Compute statistics for train & test
         - load statistics if computed

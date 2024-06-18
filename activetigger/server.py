@@ -313,7 +313,7 @@ class Server():
         conn.commit()
         conn.close()
         df = pd.DataFrame(logs, columns = ["id", "time", "user", "project", "action", "NA"])
-        return df.to_json()
+        return df
 
     def get_session_info(self, username:str):
         """
@@ -815,6 +815,9 @@ class Project(Server):
 
         return element
     
+
+
+    
     def get_element(self, 
                     element_id:str,
                     scheme:str|None = None,
@@ -883,6 +886,7 @@ class Project(Server):
             r["Simplemodel 10-CV"] = sm.cv10
 
         return r
+
 
     def get_state(self):
         """
@@ -1316,7 +1320,7 @@ class Schemes():
                         max:int, 
                         mode:str,
                         contains:str|None = None,
-                        user:str = "all"):
+                        user:str = "all") -> DataFrame:
         """
         Get data table
         - either recent
@@ -1643,7 +1647,7 @@ class Users():
         auth = cursor.fetchall()
         conn.commit()
         conn.close()
-        return auth
+        return {i[0]:i[1] for i in auth}
     
     def set_auth(self, username:str, project_name:str, status:str):
         """
@@ -1676,7 +1680,7 @@ class Users():
         conn.close()
         return {"success":"Auth deleted"}  
 
-    def get_auth(self, username:str, project_name:str = "all"):
+    def get_auth(self, username:str, project_name:str = "all") -> list:
         """
         Get user auth
         """

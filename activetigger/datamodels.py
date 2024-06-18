@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
-from typing import Optional
+from typing import Optional, List, Dict, Any
+
 
 class ProjectModel(BaseModel):
     """
@@ -36,13 +37,23 @@ class Scheme(BaseModel):
     """
     labels:list[str]
 
-class NextModel(BaseModel):
+class NextInModel(BaseModel):
     scheme:str
     selection:str = "deterministic"
     sample:str = "untagged"
     tag:str|None = None
     frame:list[float]|None = None
     history: list = []
+
+class ElementOutModel(BaseModel):
+    element_id:str
+    text:str
+    context:Dict[str, Any]
+    selection:str
+    info:str
+    predict:str
+    frame:list
+    limit:int
 
 class SchemesModel(BaseModel):
     """
@@ -66,15 +77,6 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     status: str|None
-
-class ElementModel(BaseModel):
-    element_id:str
-    text:Optional[str] = None
-    selection: Optional[str] = None
-    info: Optional[str] = None
-    context: Optional[dict] = None
-    predict: Optional[dict] = None
-    frame: Optional[list] = None
 
 class AnnotationModel(BaseModel):
     """
@@ -103,11 +105,6 @@ class RegexModel(BaseModel):
     name:str
     value:str
     user:str
-
-class ResponseModel(BaseModel):
-    status:str
-    message: Optional[str] = None
-    data: Optional[dict] = None
 
 class Error(BaseModel):
     error:str
@@ -141,10 +138,14 @@ class TableElementsModel(BaseModel):
     scheme:str
     action:str
 
-class ProjectionModel(BaseModel):
+class ProjectionInModel(BaseModel):
     method:str
     features:list
     params:dict
+
+class ProjectionOutModel(BaseModel):
+    status: str
+    data: Dict[str, Any]
 
 class ParamsModel(BaseModel):
     params:dict
@@ -199,3 +200,34 @@ class ZeroShotModel(BaseModel):
     api: str
     token: str
     number: int = 10
+
+class TableModel(BaseModel):
+    columns: List[str]
+    content: Dict[str, Any]
+
+class ProjectsServer(BaseModel):
+    projects:list
+    auth:list
+
+class StateModel(BaseModel):
+    params: ProjectModel
+    next: Dict[str, Any]
+    schemes: Dict[str, Any]
+    features: Dict[str, Any]
+    simplemodel: Dict[str, Any]
+    bertmodels: Dict[str, Any]
+    projections: Dict[str, Any]
+    zeroshot: Dict[str, Any]
+
+class QueueModel(BaseModel):
+    content: Dict[str, Dict[str, Any]]
+
+class DescriptionProject(BaseModel):
+    content: Dict[str, Any]
+
+class ProjectAuths(BaseModel):
+    auth: Dict[str, Any]
+
+class WaitingModel(BaseModel):
+    detail:str
+    status:str = "waiting"

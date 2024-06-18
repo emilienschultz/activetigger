@@ -176,7 +176,7 @@ def display_documentation():
 
     with st.expander("Logs"):
         docs = _get_logs()
-        df = pd.read_json(docs)
+        df = pd.DataFrame(docs["content"])
         st.dataframe(df)
 
 def display_projects():
@@ -602,9 +602,7 @@ def display_zeroshot():
             prompt += "Labels with their descriptions:\n"
             for label, description in json.loads(st.session_state.codebook).items():
                 prompt += f"- {label}: {description}\n"
-            r = _start_zeroshot(api, st.session_state.api_token, prompt, number)
-            if (r is not None) and ("error" in r):
-                st.write(r["error"])
+            _start_zeroshot(api, st.session_state.api_token, prompt, number)
     st.write("If you predict an important element of entries, they will be chuncked")
     st.write("For the moment, only 10 elements possible")
     
@@ -812,14 +810,14 @@ def display_configuration():
                 st.write("Add")
                 _add_auth(user, auth) 
 
-        df = pd.DataFrame(_get_auth(st.session_state.current_project))
-        for i,j in df.iterrows():
+        auths = _get_auth(st.session_state.current_project)
+        for i,j in auths.items():
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.write(f"{j[0]} - {j[1]}")
+                st.write(f"{i} - {j}")
             with col2:
                 if st.button("Delete", key=i):
-                    _delete_auth(j[0])
+                    _delete_auth(i)
     else:
         print("Load a project first")
 
@@ -1391,7 +1389,7 @@ def _get_table():
                 "mode":st.session_state.data_mode
                 }
     r = _get("/elements/table", params = params)
-    df = pd.DataFrame(r)
+    df = pd.DataFrame(r["content"])
     return df
 
 def _send_table(df, labels="labels"):
@@ -1726,7 +1724,7 @@ def _get_logs():
                 }
     r = _get("/logs",
         params = params)
-    return r["logs"]
+    return r
 
 def _get_auth(project_name:str):
     """
