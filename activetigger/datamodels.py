@@ -196,8 +196,16 @@ class ZeroShotModel(BaseModel):
     number: int = 10
 
 class TableOutModel(BaseModel):
-    columns: List[str]
-    content: Dict[str, Any]
+    id: List[str]
+    timestamp: List[str]
+    label: List[str]
+    text: List[str]
+
+class TableLogsModel(BaseModel):
+    time: List
+    user: List
+    project: List
+    action: List
 
 class TableInModel(BaseModel):
     list_ids:list
@@ -233,7 +241,7 @@ class WaitingModel(BaseModel):
     status:str = "waiting"
 
 class DocumentationModel(BaseModel):
-    credits:str
+    credits:List[str]
     page: str
     documentation: str
     contact:str

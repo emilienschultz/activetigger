@@ -13,7 +13,7 @@ import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableInModel, TableOutModel, ActionModel, AnnotationModel,\
       SchemeModel, ProjectionInModel, ProjectionOutModel, TokenModel, SimpleModelModel, BertModelModel, ParamsModel,\
       UmapModel, TsneModel, NextInModel, ElementOutModel, ZeroShotModel, UserInDBModel, UserModel, UsersServerModel, ProjectsServerModel, \
-      StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel, DocumentationModel
+      StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel, DocumentationModel, TableLogsModel
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -286,13 +286,15 @@ async def get_auth(username:str) -> List:
     return r
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
-async def get_logs(username:str, project_name:str = "all", limit = 100) -> TableOutModel:
+async def get_logs(username:str, project_name:str = "all", limit = 100) -> TableLogsModel:
     """
     Get all logs for a username/project
     """
     df = server.get_logs(username, project_name, limit)
-    r = TableOutModel(columns = list(df.columns), 
-                   content = df.to_dict())
+    r = TableLogsModel(time = list(df["time"]),
+                       user = list(df["user"]),
+                       project = list(df["project"]),
+                       action = list(df["action"]))
     return r
 
 # Projects management
@@ -560,7 +562,10 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
     df = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
     if "error" in df:
         raise HTTPException(status_code=500, detail=df["error"])
-    return TableOutModel(columns = list(df.columns), content=df.to_dict())
+    return TableOutModel(id = list(df.index),
+                        timestamp = list(df["timestamp"]),
+                        label = list(df["labels"]),
+                        text = list(df["text"]))
     
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],

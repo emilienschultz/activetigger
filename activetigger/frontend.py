@@ -176,7 +176,7 @@ def display_documentation():
 
     with st.expander("Logs"):
         docs = _get_logs()
-        df = pd.DataFrame(docs["content"])
+        df = pd.DataFrame(docs).set_index("time")
         st.dataframe(df)
 
 def display_projects():
@@ -557,10 +557,10 @@ def display_data():
 
     # make the table editable
     labels =  st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
-    st.session_state.data_df["labels"] = (
-        (st.session_state.data_df["labels"].astype("category")).cat.add_categories([l for l in labels if not l in st.session_state.data_df["labels"].unique()])
+    st.session_state.data_df["label"] = (
+        (st.session_state.data_df["label"].astype("category")).cat.add_categories([l for l in labels if not l in st.session_state.data_df["label"].unique()])
             )
-    modified_table = st.data_editor(st.session_state.data_df[["labels", "text"]], disabled=["text"])
+    modified_table = st.data_editor(st.session_state.data_df[["label", "text"]], disabled=["text"])
 
     if st.button(label="Send changes"):
         st.write("Send changes")
@@ -1394,7 +1394,7 @@ def _get_table():
                 "mode":st.session_state.data_mode
                 }
     r = _get("/elements/table", params = params)
-    df = pd.DataFrame(r["content"])
+    df = pd.DataFrame(r).set_index("id")
     return df
 
 def _send_table(df, labels="labels"):

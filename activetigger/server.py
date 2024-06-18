@@ -1359,7 +1359,7 @@ class Schemes():
         if (min > len(df)):
             return {"error":"min value too high"}
         
-        return df.sort_index().iloc[min:max].drop(columns="timestamp")
+        return df.sort_index().iloc[min:max]
 
     def add_scheme(self, scheme:SchemeModel):
         """
