@@ -334,7 +334,7 @@ def display_features():
     st.markdown("<hr>", unsafe_allow_html=True)
 
     st.subheader("Regex")
-    st.dataframe(pd.Series(st.session_state.state["features"]["infos"], name="Matched"))
+    st.dataframe(pd.Series(st.session_state.state["features"]["infos"], name="Matched")) # display existing regex
     regex = st.text_input(label="Regex", placeholder="Write your regex", label_visibility="hidden")
     if st.button("Create regex"):
         if regex is not None:
@@ -434,7 +434,7 @@ def display_annotate():
         if st.session_state.current_element:
             st.write(f"Context : {st.session_state.current_element['context']}")
             st.write(f"Predict : {st.session_state.current_element['predict']}")
-            st.write(st.session_state.current_element['info'])
+            st.write(f"Informations : {st.session_state.current_element['info']}")
 
     with st.expander("Manage tags"):
         display_manage_tags()
@@ -537,7 +537,7 @@ def display_description():
     st.subheader("Statistics")
     st.write("Description of the current data")
     statistics = _get_statistics()
-    st.dataframe(statistics, width=500)
+    st.write(statistics)
     st.markdown("<hr>", unsafe_allow_html=True)
     
 def display_data():
@@ -961,7 +961,7 @@ def _post(route:str,
 def _get(route:str, 
         params:dict|None = None, 
         data:dict|None = None,
-        is_json = True) -> dict:
+        binary = False) -> dict:
     """
     Get from API
     """
@@ -972,6 +972,8 @@ def _get(route:str,
                 headers = st.session_state.header,
                 verify=False)
     if r.status_code == rq.codes.ok:
+        if binary:
+            return r.content
         return json.loads(r.content)
     else:
         return {"error":r.detail}
@@ -1367,13 +1369,16 @@ def _get_projection_data():
     return r
 
 def _get_statistics():
+    """
+    Get statistics of the project
+    """
     params = {"project_name":st.session_state.current_project, 
             "scheme":st.session_state.current_scheme, 
             "user":st.session_state.user}
     r = _get("/project/description",params = params)
     if (r is not None) and ("error" in r):
         st.write(r["error"])
-    tab = pd.DataFrame([[k,v] for k,v in r.items()], columns=["information","values"]).set_index("information")
+    tab = pd.DataFrame([[k,v] for k,v in r["content"].items()], columns=["information","values"]).set_index("information")
     return tab
 
 def _get_table():
@@ -1590,7 +1595,7 @@ def _export_data():
                 }
     r = _get("/export/data",
         params = params,
-        is_json= False)
+        binary= True)
     return r
 
 @st.cache_data
@@ -1608,7 +1613,7 @@ def _export_features():
                 }
     r = _get("/export/features",
         params = params,
-        is_json= False)
+        binary = True)
     return r
 
 @st.cache_data
@@ -1622,7 +1627,7 @@ def _export_predictions():
                 }
     r = _get("/export/prediction",
         params = params,
-        is_json= False)
+        binary = True)
     return r
 
 @st.cache_data
@@ -1635,7 +1640,7 @@ def _export_model():
                 }
     r = _get("/export/bert",
         params = params,
-        is_json= False)
+        binary = True)
     if type(r) is dict:
         print(r)
         return None

@@ -10,10 +10,10 @@ import importlib
 from pydantic import ValidationError
 from activetigger.server import Server, Project
 import activetigger.functions as functions
-from activetigger.datamodels import ProjectModel, TableElementsModel, Action, AnnotationModel,\
-      SchemeModel, ProjectionInModel, ProjectionOutModel, Token, SimpleModelModel, BertModelModel, ParamsModel,\
-      UmapParams, TsneParams, NextInModel, ElementOutModel, ZeroShotModel, UserInDB, User, UsersServer, ProjectsServer, \
-      StateModel, QueueModel, DescriptionProject, ProjectAuths, WaitingModel, TableModel
+from activetigger.datamodels import ProjectModel, TableInModel, TableOutModel, ActionModel, AnnotationModel,\
+      SchemeModel, ProjectionInModel, ProjectionOutModel, TokenModel, SimpleModelModel, BertModelModel, ParamsModel,\
+      UmapModel, TsneModel, NextInModel, ElementOutModel, ZeroShotModel, UserInDBModel, UserModel, UsersServerModel, ProjectsServerModel, \
+      StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -197,7 +197,7 @@ async def get_documentation()  -> dict:
 
 @app.post("/token")
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> TokenModel:
     """
     Authentificate user and return token
     """
@@ -207,22 +207,22 @@ async def login_for_access_token(
     access_token = server.create_access_token(
             data={"sub": user.username}, 
             expires_min=60)
-    return Token(access_token=access_token, token_type="bearer", status=user.status)
+    return TokenModel(access_token=access_token, token_type="bearer", status=user.status)
 
 @app.get("/users/me")
-async def read_users_me(current_user: Annotated[UserInDB, Depends(verified_user)]) -> User:
+async def read_users_me(current_user: Annotated[UserInDBModel, Depends(verified_user)]) -> UserModel:
     """
     Information on current user
     """
-    r = User(username=current_user.username, status=current_user.status)
+    r = UserModel(username=current_user.username, status=current_user.status)
     return r
 
 @app.get("/users", dependencies=[Depends(verified_user)])
-async def existing_users() -> UsersServer:
+async def existing_users() -> UsersServerModel:
     """
     Get existing users
     """
-    r = UsersServer(users=server.users.existing_users(), 
+    r = UsersServerModel(users=server.users.existing_users(), 
                     auth=["manager","annotator"])
     return r
 
@@ -280,12 +280,12 @@ async def get_auth(username:str, project_name:str = "all") -> list: #TODO check 
     return r
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
-async def get_logs(username:str, project_name:str = "all", limit = 100) -> TableModel:
+async def get_logs(username:str, project_name:str = "all", limit = 100) -> TableOutModel:
     """
     Get all logs for a username/project
     """
     df = server.get_logs(username, project_name, limit)
-    r = TableModel(columns = list(df.columns), 
+    r = TableOutModel(columns = list(df.columns), 
                    content = df.to_dict())
     return r
 
@@ -312,7 +312,7 @@ async def get_queue() -> QueueModel:
     return QueueModel(**r)
 
 @app.get("/session")
-async def info_server(username: Annotated[str, Header()]) -> ProjectsServer:
+async def info_server(username: Annotated[str, Header()]) -> ProjectsServerModel:
     """
     Get general informations on the server
     depending of the status of connected user
@@ -320,12 +320,12 @@ async def info_server(username: Annotated[str, Header()]) -> ProjectsServer:
     r = server.get_session_info(username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    return ProjectsServer(**r)
+    return ProjectsServerModel(**r)
 
 @app.get("/project/description", dependencies=[Depends(verified_user)])
 async def get_description(project: Annotated[Project, Depends(get_project)],
                           scheme: str|None = None,
-                          user: str|None = None)  -> DescriptionProject:
+                          user: str|None = None)  -> ProjectDescriptionModel:
     """
     Description of a specific element
     """
@@ -333,17 +333,17 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
                                    user = user)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    return DescriptionProject(**r)
+    return ProjectDescriptionModel(content = r)
 
 @app.get("/project/auth", dependencies=[Depends(verified_user)])
-async def get_project_auth(project_name:str) -> ProjectAuths:
+async def get_project_auth(project_name:str) -> ProjectAuthsModel:
     """
     Users auth on a project
     """
     r = server.users.get_project_auth(project_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    return ProjectAuths(auth = r)
+    return ProjectAuthsModel(auth = r)
 
 @app.post("/projects/testdata", dependencies=[Depends(verified_user)])
 async def add_testdata(project: Annotated[Project, Depends(get_project)],
@@ -510,7 +510,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
 
     if projection.method == "umap":
         try:
-            e = UmapParams(**projection.params)
+            e = UmapModel(**projection.params)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -525,7 +525,7 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
     
     if projection.method == "tsne":
         try:
-            e = TsneParams(**projection.params)
+            e = TsneModel(**projection.params)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
         #future_result = server.executor.submit(functions.compute_tsne, **args)
@@ -547,19 +547,19 @@ async def get_list_elements(project: Annotated[Project, Depends(get_project)],
                             max:int = 0,
                             contains:str|None = None,
                             mode:str = "all",
-                        ) -> TableModel:
+                        ) -> TableOutModel:
     """
     Get table of elements
     """
     df = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
     if "error" in df:
         raise HTTPException(status_code=500, detail=df["error"])
-    return TableModel(columns = list(df.columns), content=df.to_dict())
+    return TableOutModel(columns = list(df.columns), content=df.to_dict())
     
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(project: Annotated[Project, Depends(get_project)],
                             username: Annotated[str, Header()],
-                            table:TableElementsModel
+                            table:TableInModel
                             ) -> None:
     """
     Post a table of annotations
@@ -602,7 +602,7 @@ async def get_element(project: Annotated[Project, Depends(get_project)],
     return ElementOutModel(**r)
     
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
-async def post_tag(action:Action,
+async def post_tag(action:ActionModel,
                    username: Annotated[str, Header()],
                    project: Annotated[Project, Depends(get_project)],
                    annotation:AnnotationModel) -> None:
@@ -719,7 +719,7 @@ async def rename_label(project: Annotated[Project, Depends(get_project)],
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
 async def post_schemes(username: Annotated[str, Header()],
                         project: Annotated[Project, Depends(get_project)],
-                        action:Action,
+                        action:ActionModel,
                         scheme:SchemeModel
                         ) -> None:
     """
@@ -810,7 +810,7 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     project.features.training[name] = unique_id
 
     server.log_action(username, f"Compute feature dfm", project.name)
-    return WaitingModel(status=f"computing {name}, it could take a few minutes")
+    return WaitingModel(detail=f"computing {name}, it could take a few minutes")
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
 async def delete_feature(project: Annotated[Project, Depends(get_project)],

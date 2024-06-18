@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
-from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDB
+from activetigger.datamodels import ProjectModel, SchemeModel, SimpleModelModel, UserInDBModel
 from pydantic import ValidationError
 import logging
 import openai
@@ -814,8 +814,6 @@ class Project(Server):
                 }
 
         return element
-    
-
 
     
     def get_element(self, 
@@ -850,7 +848,7 @@ class Project(Server):
             "limit":int(self.content.loc[element_id, "limit"])
             }
         
-        return {'success':data}
+        return data
 
     def get_params(self) -> ProjectModel:
         """
@@ -1747,7 +1745,7 @@ class Users():
         conn.close()
         return {"success":"User deleted"}    
 
-    def get_user(self, name) -> UserInDB|dict:
+    def get_user(self, name) -> UserInDBModel|dict:
         """
         Get user from database
         """
@@ -1758,7 +1756,7 @@ class Users():
         query = "SELECT * FROM users WHERE user = ?"
         cursor.execute(query, (name,))
         user = cursor.fetchone()
-        u = UserInDB(username = name, 
+        u = UserInDBModel(username = name, 
                      hashed_password = user[3],
                      status = user[4])
         conn.close()

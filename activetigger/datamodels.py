@@ -26,7 +26,7 @@ class ProjectModel(BaseModel):
     test: bool = False
 
 
-class Action(str, Enum):
+class ActionModel(str, Enum):
     delete = "delete"
     add = "add"
     update = "update"
@@ -50,10 +50,10 @@ class ElementOutModel(BaseModel):
     text:str
     context:Dict[str, Any]
     selection:str
-    info:str
-    predict:str
-    frame:list
-    limit:int
+    info:str|None
+    predict:dict
+    frame:list|None
+    limit:int|None
 
 class SchemesModel(BaseModel):
     """
@@ -62,18 +62,18 @@ class SchemesModel(BaseModel):
     project_name:str
     availables:dict
     
-class User(BaseModel):
+class UserModel(BaseModel):
     username: str
     status:str|None
 
-class UserInDB(User):
+class UserInDBModel(UserModel):
     hashed_password: str
 
-class UsersServer(BaseModel):
+class UsersServerModel(BaseModel):
     users:list
     auth:list
 
-class Token(BaseModel):
+class TokenModel(BaseModel):
     access_token: str
     token_type: str
     status: str|None
@@ -132,12 +132,6 @@ class BertModelModel(BaseModel):
     params:dict
     test_size:float
 
-class TableElementsModel(BaseModel):
-    list_ids:list
-    list_labels:list
-    scheme:str
-    action:str
-
 class ProjectionInModel(BaseModel):
     method:str
     features:list
@@ -182,13 +176,13 @@ class BertParams(BaseModel):
     gpu: bool
     adapt: bool
 
-class UmapParams(BaseModel):
+class UmapModel(BaseModel):
     n_neighbors: int
     min_dist: float
     n_components: int
     metric: str
 
-class TsneParams(BaseModel):
+class TsneModel(BaseModel):
     n_components: int
     learning_rate: str|float
     init: str
@@ -201,11 +195,17 @@ class ZeroShotModel(BaseModel):
     token: str
     number: int = 10
 
-class TableModel(BaseModel):
+class TableOutModel(BaseModel):
     columns: List[str]
     content: Dict[str, Any]
 
-class ProjectsServer(BaseModel):
+class TableInModel(BaseModel):
+    list_ids:list
+    list_labels:list
+    scheme:str
+    action:str
+
+class ProjectsServerModel(BaseModel):
     projects:list
     auth:list
 
@@ -222,10 +222,10 @@ class StateModel(BaseModel):
 class QueueModel(BaseModel):
     content: Dict[str, Dict[str, Any]]
 
-class DescriptionProject(BaseModel):
+class ProjectDescriptionModel(BaseModel):
     content: Dict[str, Any]
 
-class ProjectAuths(BaseModel):
+class ProjectAuthsModel(BaseModel):
     auth: Dict[str, Any]
 
 class WaitingModel(BaseModel):
