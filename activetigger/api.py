@@ -177,7 +177,7 @@ async def welcome() -> str:
     return r
 
 @app.get("/documentation")
-async def get_documentation()  -> ResponseModel:
+async def get_documentation()  -> dict:
     """
     Path for documentation 
     Comments:
@@ -189,9 +189,7 @@ async def get_documentation()  -> ResponseModel:
             "Page":"https://github.com/emilienschultz/pyactivetigger",
             "Documentation":"To write ...."
             }
-    r = ResponseModel(status="success", data=data)
-    return r
-
+    return data
 
 # Users
 #------
@@ -298,15 +296,15 @@ async def get_logs(username:str, project_name:str = "all", limit = 100):
 #--------------------
 
 @app.get("/state/{project_name}", dependencies=[Depends(verified_user), Depends(check_auth_exists)])
-async def get_state(project: Annotated[Project, Depends(get_project)]) -> ResponseModel:
+async def get_state(project: Annotated[Project, Depends(get_project)]) -> dict:
     """
     Get the state of a specific project
     """
     if project is None:
         return ResponseModel(status="error", message="Project not found")
     data = project.get_state()
-    r = ResponseModel(status="success", data=data)
-    return r
+    #r = ResponseModel(status="success", data=data)
+    return data
 
 @app.get("/queue")
 async def get_queue() -> ResponseModel:

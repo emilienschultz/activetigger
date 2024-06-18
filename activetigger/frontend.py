@@ -603,8 +603,8 @@ def display_zeroshot():
             for label, description in json.loads(st.session_state.codebook).items():
                 prompt += f"- {label}: {description}\n"
             r = _start_zeroshot(api, st.session_state.api_token, prompt, number)
-            if r["status"]=="error":
-                st.write(r["message"])
+            if "error" in r:
+                st.write(r["error"])
     st.write("If you predict an important element of entries, they will be chuncked")
     st.write("For the moment, only 10 elements possible")
     
@@ -955,11 +955,10 @@ def _post(route:str,
                 files = files,
                 headers = st.session_state.header, 
                 verify = False)
-    
-    if r.status_code in [422, 403]:
-        print(r.content)
-        return {"status":"error", "message":"Not authorized"}
-    return json.loads(r.content)
+    if r.status_code == rq.codes.ok:
+        return json.loads(r.content)
+    else:
+        return {"error":r.detail}
 
 def _get(route:str, 
         params:dict|None = None, 
@@ -974,22 +973,20 @@ def _get(route:str,
                 data = data,
                 headers = st.session_state.header,
                 verify=False)
-    if r.status_code in [422, 403]:
-        return {"status":"error", "message":"Not authorized"}
-    if is_json:
+    if r.status_code == rq.codes.ok:
         return json.loads(r.content)
-    return r.content
+    else:
+        return {"error":r.detail}
 
 def _get_documentation():
     """
     Get documentation
     """
     r = _get(route = f"/documentation")
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
-        return r["message"]
-    return r["data"]
+    if "error" in r:
+        st.write(r["error"])
+        return False
+    return r
 
 def _connect_user(user:str, password:str) -> bool:
     """
@@ -1001,6 +998,7 @@ def _connect_user(user:str, password:str) -> bool:
             }
     
     r = _post("/token", data = form)
+    print(r)
     if not "access_token" in r:
         print(r)
         return False
@@ -1020,11 +1018,11 @@ def _get_state() -> dict:
     """
     # only if a current project is selected
     if "current_project" in st.session_state:
-        state = _get(route = f"/state/{st.session_state.current_project}")
-        if state["status"]=="error":
-            print(state)
+        r = _get(route = f"/state/{st.session_state.current_project}")
+        if "error" in r:
+            st.write(r["error"])
             return {}
-        return state["data"]
+        return r
     return {}
 
 def _get_users():
@@ -1044,9 +1042,8 @@ def _create_user(username:str, password:str, status:str):
     r = _post(route="/users/create", 
                 params=params
                 )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return r
 
@@ -1058,9 +1055,8 @@ def _delete_user(username:str):
     r = _post(route="/users/delete", 
                 params=params
                 )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return r    
 
@@ -1078,8 +1074,8 @@ def _create_project(data, df, name) -> bool:
                 files=files,
                 data=data
                 )
-    if r["status"] == "error":
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return True
 
@@ -1245,12 +1241,11 @@ def _get_next_element() -> bool:
 
     print("return",r)
 
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
 
-    st.session_state.current_element = r["data"]
+    st.session_state.current_element = r
     return True
 
 def _send_tag(label):
@@ -1268,8 +1263,8 @@ def _send_tag(label):
                     json_data = data)
     
     # add in history
-    if r["status"] == "error":
-        print(r)
+    if "error" in r:
+        st.write(r["error"])
     else:
         st.session_state.history.append(st.session_state.current_element["element_id"])
 
@@ -1290,12 +1285,11 @@ def _display_element(element_id):
                     params = {"project_name":st.session_state.current_project,
                             "scheme":st.session_state.current_scheme})
     # Managing errors
-    if r["status"]=="error":
-        print(r)
+    if "error" in r:
+        st.write(r["error"])
         return False
     # Update interface
-    print(r["data"])
-    st.session_state.current_element = r["data"]
+    st.session_state.current_element = r
     return True
 
 def _get_previous_element() -> bool:
@@ -1379,9 +1373,9 @@ def _get_statistics():
             "scheme":st.session_state.current_scheme, 
             "user":st.session_state.user}
     r = _get("/project/description",params = params)
-    if r["status"]=="error":
-        return r["message"]
-    tab = pd.DataFrame([[k,v] for k,v in r["data"].items()], columns=["information","values"]).set_index("information")
+    if "error" in r:
+        st.write(r["error"])
+    tab = pd.DataFrame([[k,v] for k,v in r.items()], columns=["information","values"]).set_index("information")
     return tab
 
 def _get_table():
@@ -1423,8 +1417,8 @@ def _send_table(df, labels="labels"):
                             "user":st.session_state.user
                             })
 
-    if r["status"] == "error":
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
 
     st.write("Data saved")
 
@@ -1451,8 +1445,8 @@ def _train_simplemodel():
     r = _post("/models/simplemodel", 
                     params = params, 
                     json_data = data)
-    if r["status"] == "error":
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     st.write("Computing model")
     return True
@@ -1469,8 +1463,8 @@ def _bert_prediction():
             }
     r = _post("/models/bert/predict", 
             params = params)
-    if r["status"]=="error":
-        print(r["message"])
+    if "error" in r:
+        st.write(r["error"])
     return True
 
 def _bert_test_informations(model):
@@ -1479,12 +1473,12 @@ def _bert_test_informations(model):
                 "name":model
                 }
     r = _get("/models/bert", params = params)
-    if r["status"] == "error":
-        print(r)
+    if "error" in r:
+        st.write(r["error"])
         return None
-    if not 'test_scores' in r["data"]:
+    if not 'test_scores' in r:
         return None
-    return r["data"]['test_scores']
+    return r['test_scores']
 
 def _bert_informations():
     """
@@ -1497,8 +1491,8 @@ def _bert_informations():
             "name":st.session_state.bm_trained
             }
     r = _get("/models/bert", params = params)
-    if r["status"] == "error":
-        print(r)
+    if "error" in r:
+        st.write(r["error"])
         return False
 
     loss = pd.DataFrame(r['data']["training"]["loss"])
@@ -1670,8 +1664,8 @@ def _compute_test(model_name, scheme):
               }
     r = _post("/models/bert/test", 
             params = params)
-    if r["status"]=="error":
-        print(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return True    
 
@@ -1690,9 +1684,8 @@ def _start_zeroshot(api, token, prompt, number=10):
             params = {"project_name":st.session_state.current_project},
             json_data=data
             )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return r
 
@@ -1706,8 +1699,8 @@ def _create_testset(data, df, filename):
                 files=files,
                 data=data
                 )
-    if r["status"] == "error":
-        print(r["message"])
+    if "error" in r:
+        st.write(r["error"])
     return True
 
 def _get_queue():
@@ -1743,10 +1736,10 @@ def _get_auth(project_name:str):
                 }
     r = _get("/project/auth",
         params = params)
-    if r["status"] == "error":
-        print(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
-    return r["data"]["auth"]
+    return r["auth"]
 
 def _add_auth(username:str, auth:str):
     """
@@ -1759,9 +1752,8 @@ def _add_auth(username:str, auth:str):
     r = _post(route="/users/auth/add", 
             params = params,
             )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return True
 
@@ -1775,9 +1767,8 @@ def _delete_auth(username:str):
                     "username":username
                     },
             )
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return True
 
@@ -1801,9 +1792,8 @@ def _rename_label(former_label:str, new_label:str):
                 }
     r = _post("/schemes/label/rename", 
                     params = params)
-    if r["status"] == "error":
-        print(r["message"])
-        st.write(r["message"])
+    if "error" in r:
+        st.write(r["error"])
         return False
     return True    
 
