@@ -1378,8 +1378,9 @@ def _get_statistics():
     r = _get("/project/description",params = params)
     if (r is not None) and ("error" in r):
         st.write(r["error"])
-    tab = pd.DataFrame([[k,v] for k,v in r["content"].items()], columns=["information","values"]).set_index("information")
-    return tab
+    #tab = pd.DataFrame([[k,v] for k,v in r["content"].items()], columns=["information","values"]).set_index("information")
+    #return tab
+    return r
 
 def _get_table():
     """

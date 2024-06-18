@@ -341,7 +341,8 @@ async def get_description(project: Annotated[Project, Depends(get_project)],
                                    user = user)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    return ProjectDescriptionModel(content = r)
+    print(r)
+    return ProjectDescriptionModel(**r)
 
 @app.get("/project/auth", dependencies=[Depends(verified_user)])
 async def get_project_auth(project_name:str) -> ProjectAuthsModel:

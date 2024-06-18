@@ -862,26 +862,23 @@ class Project(Server):
         Return:
             JSON
         """
-        r = {
-            "N dataset":len(self.content)
-            }
-        
         if scheme is None:
             return {"error":"Scheme not defined"}
         
-        # part train
+        # part train        
+        r = {"trainset_n":len(self.content)}
         df = self.schemes.get_scheme_data(scheme, kind=["add","predict"])
-        r["N annotated"] = len(df)
-        r["Users"] = list(self.schemes.get_distinct_users(scheme))
-        r["Annotations"] = json.loads(df["labels"].value_counts().to_json())
+        r["annotated_n"] = len(df)
+        r["users"] = [i[0] for i in self.schemes.get_distinct_users(scheme)]
+        r["annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
 
         # part test
         df = self.schemes.get_scheme_data(scheme, kind=["test"])
-        r["N test annotated"] = len(df)
+        r["testset_n"] = len(df)
 
         if self.simplemodels.exists(user, scheme):
             sm = self.simplemodels.get_model(user, scheme) # get model
-            r["Simplemodel 10-CV"] = sm.cv10
+            r["sm_10cv"] = sm.cv10
 
         return r
 

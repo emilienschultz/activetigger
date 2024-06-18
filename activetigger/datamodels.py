@@ -25,17 +25,10 @@ class ProjectModel(BaseModel):
     cols_test:list = []
     test: bool = False
 
-
 class ActionModel(str, Enum):
     delete = "delete"
     add = "add"
     update = "update"
-
-class Scheme(BaseModel):
-    """
-    Set of labels
-    """
-    labels:list[str]
 
 class NextInModel(BaseModel):
     scheme:str
@@ -105,15 +98,6 @@ class RegexModel(BaseModel):
     name:str
     value:str
     user:str
-
-class Error(BaseModel):
-    error:str
-
-class Success(BaseModel):
-    success:str
-
-class Data(BaseModel):
-    data:dict|str
 
 class SimpleModelModel(BaseModel):
     features:list
@@ -231,7 +215,12 @@ class QueueModel(BaseModel):
     content: Dict[str, Dict[str, Any]]
 
 class ProjectDescriptionModel(BaseModel):
-    content: Dict[str, Any]
+    trainset_n: int
+    annotated_n: int
+    users: List[str]
+    annotated_distribution: Dict[str, Any]
+    testset_n: Optional[int] = None
+    sm_10cv: Optional[Any] = None
 
 class ProjectAuthsModel(BaseModel):
     auth: Dict[str, Any]
