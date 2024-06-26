@@ -3,6 +3,7 @@ from pathlib import Path
 from enum import Enum
 from typing import Optional, List, Dict, Any
 
+# Data model to use of the API
 
 class ProjectModel(BaseModel):
     """
@@ -12,25 +13,31 @@ class ProjectModel(BaseModel):
     user:str
     col_text:str
     col_id:str
-    n_rows:int = 2000
     n_train:int
     n_test:int
+    n_rows:int
     dir:Path|None = None
     embeddings:list = []
     n_skip:int = 0
     default_scheme: list = []
     language:str = "fr"
-    col_label:str|None = None # TODO: load existing tags
+    col_label:str|None = None
     cols_context:list = []
     cols_test:list = []
     test: bool = False
 
 class ActionModel(str, Enum):
+    """
+    Type of actions available
+    """
     delete = "delete"
     add = "add"
     update = "update"
 
 class NextInModel(BaseModel):
+    """
+    Requesting next element to annotate
+    """
     scheme:str
     selection:str = "deterministic"
     sample:str = "untagged"
@@ -39,6 +46,9 @@ class NextInModel(BaseModel):
     history: list = []
 
 class ElementOutModel(BaseModel):
+    """
+    Posting element to annotate
+    """
     element_id:str
     text:str
     context:Dict[str, Any]
@@ -47,26 +57,31 @@ class ElementOutModel(BaseModel):
     predict:dict
     frame:list|None
     limit:int|None
-
-class SchemesModel(BaseModel):
-    """
-    Schemes model    
-    """
-    project_name:str
-    availables:dict
     
 class UserModel(BaseModel):
+    """
+    User definition
+    """
     username: str
     status:str|None
 
 class UserInDBModel(UserModel):
+    """
+    Adding password to user definition
+    """
     hashed_password: str
 
 class UsersServerModel(BaseModel):
+    """
+    List of users on the server
+    """
     users:list
     auth:list
 
 class TokenModel(BaseModel):
+    """
+    Auth token
+    """
     access_token: str
     token_type: str
     status: str|None
@@ -100,14 +115,21 @@ class RegexModel(BaseModel):
     user:str
 
 class SimpleModelModel(BaseModel):
+    """
+    Request Simplemodel
+    TODO : model for parameters
+    """
     features:list
     model:str
     params:dict|None
     scheme:str
-#    user:str
     standardize: Optional[bool] = True
 
 class BertModelModel(BaseModel):
+    """
+    Request Bertmodel
+    TODO : model for parameters
+    """
     project_name:str
     user:str
     scheme:str
@@ -117,19 +139,23 @@ class BertModelModel(BaseModel):
     test_size:float
 
 class ProjectionInModel(BaseModel):
+    """
+    Request projection
+    TODO : model for parameters
+    """
     method:str
     features:list
     params:dict
 
 class ProjectionOutModel(BaseModel):
+    """
+    Posting projection
+    """
     status: str
     data: Dict[str, Any]
 
-class ParamsModel(BaseModel):
+class FeatureModel(BaseModel):
     params:dict
-
-# Validation JSON
-#----------------
 
 class LiblinearParams(BaseModel):
     cost:float
@@ -180,28 +206,43 @@ class ZeroShotModel(BaseModel):
     number: int = 10
 
 class TableOutModel(BaseModel):
+    """
+    Response for table of elements
+    """
     id: List[str]
     timestamp: List[str]
     label: List[str]
     text: List[str]
 
 class TableLogsModel(BaseModel):
+    """
+    Response for table of logs
+    """
     time: List
     user: List
     project: List
     action: List
 
 class TableInModel(BaseModel):
+    """
+    Requesting a table of elements
+    """
     list_ids:list
     list_labels:list
     scheme:str
     action:str
 
 class ProjectsServerModel(BaseModel):
+    """
+    Response for available projects
+    """
     projects:list
     auth:list
 
 class StateModel(BaseModel):
+    """
+    Response for server state
+    """
     params: ProjectModel
     next: Dict[str, Any]
     schemes: Dict[str, Any]
@@ -212,9 +253,15 @@ class StateModel(BaseModel):
     zeroshot: Dict[str, Any]
 
 class QueueModel(BaseModel):
+    """
+    Response for current queue
+    """
     content: Dict[str, Dict[str, Any]]
 
 class ProjectDescriptionModel(BaseModel):
+    """
+    Project description
+    """
     trainset_n: int
     annotated_n: int
     users: List[str]
@@ -223,17 +270,29 @@ class ProjectDescriptionModel(BaseModel):
     sm_10cv: Optional[Any] = None
 
 class ProjectAuthsModel(BaseModel):
+    """
+    Auth description for a project
+    """
     auth: Dict[str, Any]
 
 class WaitingModel(BaseModel):
+    """
+    Response for waiting
+    """
     detail:str
     status:str = "waiting"
 
 class DocumentationModel(BaseModel):
+    """
+    Documentation model
+    """
     credits:List[str]
     page: str
     documentation: str
     contact:str
 
 class ReconciliationModel(BaseModel):
+    """
+    List of elements to reconciliate
+    """
     list_disagreements: List[Dict[str, Dict[str, Any]]]

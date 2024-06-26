@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from activetigger.server import Server, Project
 import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableInModel, TableOutModel, ActionModel, AnnotationModel,\
-      SchemeModel, ProjectionInModel, ProjectionOutModel, TokenModel, SimpleModelModel, BertModelModel, ParamsModel,\
+      SchemeModel, ProjectionInModel, ProjectionOutModel, TokenModel, SimpleModelModel, BertModelModel, FeatureModel,\
       UmapModel, TsneModel, NextInModel, ElementOutModel, ZeroShotModel, UserInDBModel, UserModel, UsersServerModel, ProjectsServerModel, \
       StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel, DocumentationModel, TableLogsModel, ReconciliationModel
 
@@ -807,7 +807,7 @@ async def get_features(project: Annotated[Project, Depends(get_project)]) -> Lis
 async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                           username: Annotated[str, Header()],
                           name:str,
-                          params:ParamsModel
+                          params:FeatureModel
                           ) -> WaitingModel|None:
     """
     Compute features :
