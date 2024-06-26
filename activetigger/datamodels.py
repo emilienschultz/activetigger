@@ -242,6 +242,7 @@ class ProjectsServerModel(BaseModel):
 class StateModel(BaseModel):
     """
     Response for server state
+    TODO : have a more precise description of the fields
     """
     params: ProjectModel
     next: Dict[str, Any]

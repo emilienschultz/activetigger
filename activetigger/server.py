@@ -1396,7 +1396,7 @@ class Schemes():
         
         return df.sort_index().iloc[min:max]
 
-    def add_scheme(self, scheme:SchemeModel):
+    def add_scheme(self, scheme:SchemeModel, username:str):
         """
         Add new scheme
         """
@@ -1427,7 +1427,6 @@ class Schemes():
             return {"error":"label already exist"}
         labels = available[scheme]
         labels.append(label)
-        print(labels)
         self.update_scheme(scheme, labels, user)
         return {"success":"scheme updated with a new label"}
     
@@ -1451,7 +1450,7 @@ class Schemes():
         self.update_scheme(scheme, labels, user)
         return {"success":"scheme updated removing a label"}
 
-    def update_scheme(self, scheme:str, labels:list, user:str):
+    def update_scheme(self, scheme:str, labels:list, username:str):
         """
         Update existing schemes from database
         """
@@ -1466,14 +1465,14 @@ class Schemes():
         conn.close()
         return {"success":"scheme updated"}
         
-    def delete_scheme(self, scheme:SchemeModel) -> dict:
+    def delete_scheme(self, scheme:SchemeModel, username:str) -> dict:
         """
         Delete a scheme
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = "DELETE FROM schemes WHERE project = ? AND name = ?" 
-        cursor.execute(query, (self.project_name,scheme.name))
+        cursor.execute(query, (self.project_name, scheme.name))
         conn.commit()
         conn.close()
         return {"success":"scheme deleted"}

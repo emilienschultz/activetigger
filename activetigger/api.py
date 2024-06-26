@@ -157,11 +157,10 @@ async def check_auth_manager(request: Request,
                      username: Annotated[str, Header()], 
                      project_name: str|None = None) -> None:
     """
-    Check if a user is associated to a project
+    Check if a user has auth to a project
     """
 
-    #root can do anything TODO: secure that
-    if username == "root":
+    if username == "root": #root have complete power
         return None
     auth = server.users.auth(username, project_name)
     if not auth == "manager":
@@ -303,7 +302,6 @@ async def get_logs(username:str, project_name:str = "all", limit = 100) -> Table
 async def get_state(project: Annotated[Project, Depends(get_project)]) -> StateModel:
     """
     Get the state of a specific project
-    TODO : upgrade StateModel
     """
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -362,18 +360,19 @@ async def add_testdata(project: Annotated[Project, Depends(get_project)],
                       n_test:int = Form())-> None:
     """
     Add a dataset for test 
-    TODO : operation at the server level
     """
 
     r = project.add_testdata(file, col_text, col_id, n_test)
 
     # log action
-    server.log_action(username, "add testdata project", project.name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
 
     # if success, update also parameters of the project
     server.set_project_parameters(project.params)
+
+    # log
+    server.log_action(username, "add testdata project", project.name)
 
     return None
 
@@ -397,9 +396,9 @@ async def new_project(
     Load new project
         file (file)
         multiple parameters
-    Actuellement, pas la solution la plus jolie
-    mais je n'arrive pas à mettre tous les éléments dans un objet (query + form + file)
-    https://stackoverflow.com/questions/65504438/how-to-add-both-file-and-json-body-in-a-fastapi-post-request/70640522#70640522
+    Comments:
+        Since there is a file, the body can't contain JSON
+        and Pydantic model can't be used for Form
     """
 
     # grouping informations
@@ -486,7 +485,6 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
     if scheme is None:
         data = project.features.projections[username]["data"].fillna("NA").to_dict()
     else:
-        # TODO : add texts
         data = project.features.projections[username]["data"]
         df = project.schemes.get_scheme_data(scheme, complete = True)
         data["labels"] = df["labels"]
@@ -505,7 +503,6 @@ async def compute_projection(project: Annotated[Project, Depends(get_project)],
     Start projection computation using futures
     Dedicated process, end with a file on the project
     projection__user.parquet
-    TODO : intégrer directement dans la classe features ?
     """
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
@@ -769,16 +766,15 @@ async def post_schemes(username: Annotated[str, Header()],
                         ) -> None:
     """
     Add, Update or Delete scheme
-    TODO : user dans schememodel, necessary ?
     """
     if action == "add":
-        r = project.schemes.add_scheme(scheme)
+        r = project.schemes.add_scheme(scheme, username)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(username, f"add scheme {scheme.name}", project.name)
         return None
     if action == "delete":
-        r = project.schemes.delete_scheme(scheme)
+        r = project.schemes.delete_scheme(scheme, username)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(username, f"delete scheme {scheme.name}", project.name)
@@ -845,7 +841,6 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
                 }
         func = functions.to_fasttext    
     if name == "dfm":
-        # TODO save params with list to dict
         args = params.params
         args["texts"] = df
         func = functions.to_dtm
@@ -913,7 +908,6 @@ async def predict(project: Annotated[Project, Depends(get_project)],
                   data:str = "all")  -> None:
     """
     Start prediction with a model
-    TODO : scope data
     """
     df = project.content[["text"]] # get data
 
