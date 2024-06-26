@@ -234,3 +234,6 @@ class DocumentationModel(BaseModel):
     page: str
     documentation: str
     contact:str
+
+class ReconciliationModel(BaseModel):
+    list_disagreements: List[Dict[str, Dict[str, Any]]]

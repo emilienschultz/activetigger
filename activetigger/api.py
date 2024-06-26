@@ -13,14 +13,13 @@ import activetigger.functions as functions
 from activetigger.datamodels import ProjectModel, TableInModel, TableOutModel, ActionModel, AnnotationModel,\
       SchemeModel, ProjectionInModel, ProjectionOutModel, TokenModel, SimpleModelModel, BertModelModel, ParamsModel,\
       UmapModel, TsneModel, NextInModel, ElementOutModel, ZeroShotModel, UserInDBModel, UserModel, UsersServerModel, ProjectsServerModel, \
-      StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel, DocumentationModel, TableLogsModel
+      StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel, DocumentationModel, TableLogsModel, ReconciliationModel
 
 logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 # to log specific events from api
 logger = logging.getLogger('api')
-
 
 # General comments
 # - all post are logged
@@ -587,21 +586,21 @@ async def post_list_elements(project: Annotated[Project, Depends(get_project)],
 
 @app.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
 async def get_reconciliation_table(project: Annotated[Project, Depends(get_project)],
-                                   scheme:str) -> ResponseModel:
+                                   scheme:str):
     """
     Get the reconciliation table
     """
-    r = project.schemes.get_reconciliation_table(scheme)
-    print(r["success"])
-    if "error" in r:
-        return ResponseModel(status="error", message=r["error"])
-    return ResponseModel(status="success",  data={"table":r["success"]})
+    df = project.schemes.get_reconciliation_table(scheme)
+    if "error" in df:
+        raise HTTPException(status_code=500, detail=r["error"])
+    print("df", df)
+    return ReconciliationModel(list_disagreements = df.to_dict(orient="records"))
 
 @app.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
 async def post_reconciliation(username: Annotated[str, Header()],
                               project: Annotated[Project, Depends(get_project)],
                               users:list,
-                              annotation:AnnotationModel) -> ResponseModel:
+                              annotation:AnnotationModel) -> None:
     """
     Post a label for all user in a list
     TODO : verify if it is ok and test
@@ -614,8 +613,8 @@ async def post_reconciliation(username: Annotated[str, Header()],
                                     "add"
                                     )
         if "error" in r:
-            return ResponseModel(status="error", message=r["error"])
-    return ResponseModel(status="success",  message = "Tags updated")
+            raise HTTPException(status_code=500, detail=r["error"])
+    return None
 
 
 @app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])

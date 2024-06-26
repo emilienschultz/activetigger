@@ -941,10 +941,10 @@ def display_reconciliate():
     """
     Reconciliation menu
     """
+
     st.write("List of users last entries, only if there is disagreement.")
     df = _get_reconciliation_table(st.session_state.current_scheme)
-    df = pd.read_json(df["table"], orient='records', lines=True, dtype={"id":str})
-    df.set_index("id", inplace=True)
+    df = pd.DataFrame(df)
     st.write(df)
 
 # Internal functions
@@ -1797,10 +1797,10 @@ def _get_reconciliation_table(scheme:str):
                 }
     r = _get("/elements/reconciliate",
         params = params)
-    if r["status"] == "error":
-        print(r["message"])
+    if (r is not None) and ("error" in r):
+        st.write(r["error"])
         return False
-    return r["data"]
+    return r["list_disagreements"]
 
 def check_status(accepted:list):
     """

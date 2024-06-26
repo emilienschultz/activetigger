@@ -1331,8 +1331,10 @@ class Schemes():
         df = df.pivot_table(index='id', columns='user', values='labels', aggfunc=agg) #pivot and keep the label
         f_multi = df.apply(lambda x : len(set([i for i in x if pd.notna(i)]))>1, axis=1) # filter for disagreement
         df = df.join(self.content[["text"]],how='left') # add the text
+        df = df[f_multi].reset_index()
+
         # return the result
-        return {"success":df[f_multi].reset_index().to_json(orient='records', lines=True)}
+        return df
 
     def convert_tags(self, former_label:str, new_label:str, scheme:str, username:str):
         """
