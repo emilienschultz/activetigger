@@ -46,6 +46,9 @@ if not "sample" in st.session_state:
 if not "tag" in st.session_state:
     st.session_state.tag = None
 
+with st.expander("Debug - status"):
+    st.write(st.session_state.state)
+
 # TODO : see the computational use ...
 # TODO : windows of selection -> need to move to Dash
 
@@ -91,9 +94,10 @@ def app_navigation():
     """
     Select page
     """
-    # display computation state
+    # display computation state (either bertmodels ; simplemodels ; features)
     if st.session_state.state:
-        if st.session_state.user in st.session_state.state["bertmodels"]["training"]:
+        if (st.session_state.user in st.session_state.state["bertmodels"]["training"]) or \
+            st.session_state.user in st.session_state.state["simplemodel"]["training"]:
             st.session_state.bert_training = True
             col1, col2 = st.columns((3,1))
             with col1:
@@ -1411,7 +1415,7 @@ def _get_table():
     df = pd.DataFrame(r).set_index("id")
     return df
 
-def _send_table(df, labels="labels"):
+def _send_table(df, labels="label"):
     """
     Send table modified
     """

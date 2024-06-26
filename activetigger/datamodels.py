@@ -15,7 +15,6 @@ class ProjectModel(BaseModel):
     col_id:str
     n_train:int
     n_test:int
-    n_rows:int
     dir:Path|None = None
     embeddings:list = []
     n_skip:int = 0

@@ -152,6 +152,7 @@ async def check_auth_exists(request: Request,
     auth = server.users.auth(username, project_name)
     if not auth:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
+    return None
 
 async def check_auth_manager(request: Request, 
                      username: Annotated[str, Header()], 
@@ -159,7 +160,6 @@ async def check_auth_manager(request: Request,
     """
     Check if a user has auth to a project
     """
-
     if username == "root": #root have complete power
         return None
     auth = server.users.auth(username, project_name)
