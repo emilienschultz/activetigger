@@ -1375,6 +1375,7 @@ class Schemes():
             return df.loc[list_ids]
         
         # filter for contains
+
         if contains:
             f_contains = df["text"].str.contains(contains)
             df = df[f_contains]
