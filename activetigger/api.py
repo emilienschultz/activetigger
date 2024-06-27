@@ -477,10 +477,10 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
     Get projection data if computed
     """
     if not username in project.features.projections:
-        raise HTTPException(status_code=400, detail="There is no projection available or under computation")
+        raise HTTPException(status_code=404, detail="There is no projection available or under computation")
 
     if not "data" in project.features.projections[username]:
-        return WaitingModel(message="Computing projection")
+        return WaitingModel(status="computing", detail="Computing projection")
     
     if scheme is None: # only the projection without specific annotations
         data = project.features.projections[username]["data"].fillna("NA").to_dict()
@@ -490,7 +490,13 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
         data["labels"] = df["labels"]
         data["texts"] = df["text"]
         data = data.fillna("NA")
-        return ProjectionOutModel(status = "computed", content = data.to_dict())
+        print(data)
+        return ProjectionOutModel(index = list(data.index),
+                                  x = list(data[0]),
+                                  y = list(data[1]),
+                                  labels = list(data["labels"]),
+                                  texts = list(data["texts"]),
+                                  status = "computed")
 
     raise HTTPException(status_code=400, detail="No computation possible")
 

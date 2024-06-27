@@ -471,20 +471,25 @@ def display_projection():
     st.multiselect(label="Features", options=st.session_state.state["features"]["available"],
                     key = "projection_features")
     if st.button("Compute"):
-        st.write("Computing")
         _compute_projection()
     
     # if visualisation available, display it
     if ("projection_data" in st.session_state) and (type(st.session_state.projection_data) == str):
         r = _get_projection_data()
-        if ("data" in r) and (type(r) is dict):
-            st.session_state.projection_data = pd.DataFrame(r,)
+        if "error" in r:
+            st.write(r["error"])
+            return
+        if r["status"] == "computing":
+            st.write("Under computation")
+        if r["status"] == "computed":
+            df = pd.DataFrame({i:r[i] for i in r if i != "status"}).set_index("index")
+            st.session_state.projection_data = df
             if not "projection_visualization" in st.session_state:
                 st.session_state.projection_visualization = _plot_visualisation()
                 st.session_state.projection_visualization.update_layout({"uirevision": "foo"}, overwrite=True)
 
+
     if "projection_visualization" in st.session_state:
-        st.dataframe(st.session_state.projection_data)
         st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
 
 def display_manage_tags():
@@ -1362,7 +1367,6 @@ def _compute_projection():
         json_data = data)
     if r["status"] == "waiting":
         st.session_state.projection_data = "computing"
-        st.write(st.session_state.projection_data)
     else:
         print(r)
 
@@ -1372,8 +1376,8 @@ def _plot_visualisation():
     """
     df = st.session_state.projection_data
     df["to_show"] = df.apply(lambda x : f"{x.name}<br>{'<br>'.join(textwrap.wrap(x['texts'][0:300],width=30))}...", axis=1)
-    f = go.FigureWidget([go.Scatter(x=df[df["labels"]==i]["0"], 
-                                    y=df[df["labels"]==i]["1"], 
+    f = go.FigureWidget([go.Scatter(x=df[df["labels"]==i]["x"], 
+                                    y=df[df["labels"]==i]["y"], 
                                     mode='markers', 
                                     name = i,
                                     customdata = np.stack((df[df["labels"]==i]["to_show"],), axis=-1),

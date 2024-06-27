@@ -137,7 +137,8 @@ def to_sbert(texts: Series,
     return {"success":emb}
 
 def compute_umap(features:DataFrame, 
-                 params:dict):
+                 params:dict,
+                 **kwargs):
     """
     Compute UMAP
     """
@@ -151,7 +152,8 @@ def compute_umap(features:DataFrame,
     return df
 
 def compute_tsne(features:DataFrame, 
-                 params:dict):
+                 params:dict,
+                 **kwargs):
     """
     Compute TSNE
     """

@@ -151,7 +151,11 @@ class ProjectionOutModel(BaseModel):
     Posting projection
     """
     status: str
-    data: Dict[str, Any]
+    index: List
+    x: List
+    y: List
+    labels: List
+    texts: List
 
 class FeatureModel(BaseModel):
     params:dict
