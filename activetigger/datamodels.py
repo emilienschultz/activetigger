@@ -295,4 +295,4 @@ class ReconciliationModel(BaseModel):
     """
     List of elements to reconciliate
     """
-    list_disagreements: List[Dict[str, Dict[str, Any]]]
+    list_disagreements: List[Dict[str, Any]]
