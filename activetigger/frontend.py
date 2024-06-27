@@ -484,6 +484,7 @@ def display_projection():
                 st.session_state.projection_visualization.update_layout({"uirevision": "foo"}, overwrite=True)
 
     if "projection_visualization" in st.session_state:
+        st.dataframe(st.session_state.projection_data)
         st.plotly_chart(st.session_state.projection_visualization, use_container_width=True)            
 
 def display_manage_tags():

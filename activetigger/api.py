@@ -477,14 +477,14 @@ async def get_projection(project: Annotated[Project, Depends(get_project)],
     Get projection data if computed
     """
     if not username in project.features.projections:
-        raise HTTPException(status_code=400, detail="There is no projection available")
+        raise HTTPException(status_code=400, detail="There is no projection available or under computation")
 
     if not "data" in project.features.projections[username]:
         return WaitingModel(message="Computing projection")
     
-    if scheme is None:
+    if scheme is None: # only the projection without specific annotations
         data = project.features.projections[username]["data"].fillna("NA").to_dict()
-    else:
+    else: # add existing annotations in the data
         data = project.features.projections[username]["data"]
         df = project.schemes.get_scheme_data(scheme, complete = True)
         data["labels"] = df["labels"]
