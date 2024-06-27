@@ -1736,6 +1736,7 @@ class Users():
     def existing_users(self) -> list:
         """
         Get existing users
+        (except root which can't be modified)
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
@@ -1773,14 +1774,20 @@ class Users():
         """
         Deleting user
         """
+        # specific cases
         if not name in self.existing_users():
             return {"error":"Username does not exist"}
+        if name == "root":
+            return {"error":"Can't delete root user"}
+        
+        # delete the user
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = "DELETE FROM users WHERE user = ?"
         cursor.execute(query, (name,))
         conn.commit()
         conn.close()
+
         return {"success":"User deleted"}    
 
     def get_user(self, name) -> UserInDBModel|dict:

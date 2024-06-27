@@ -852,8 +852,8 @@ def display_configuration():
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Delete"):
-            _delete_user(user_del)
-            st.write("Delete user")
+            if _delete_user(user_del):
+                st.write("User deleted")
 
 
 def display_test():
@@ -973,7 +973,7 @@ def _post(route:str,
     if r.status_code == rq.codes.ok:
         return json.loads(r.content)
     else:
-        return {"error":r.content}
+        return {"error":json.loads(r.content)["detail"]}
 
 def _get(route:str, 
         params:dict|None = None, 
@@ -993,7 +993,7 @@ def _get(route:str,
             return r.content
         return json.loads(r.content)
     else:
-        return {"error":r.content}
+        return {"error":json.loads(r.content)["detail"]}
 
 def _get_documentation():
     """
