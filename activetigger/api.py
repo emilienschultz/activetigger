@@ -604,12 +604,14 @@ async def post_reconciliation(username: Annotated[str, Header()],
     TODO : a specific action for reconciliation ?
     """
 
-    # for each user, add a new tag plus one for the reconciliator
+    # for each user
     for u in users:
         project.schemes.push_tag(element_id, tag, scheme, u, "add")
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-    project.schemes.push_tag(element_id, tag, scheme, username, "add")
+        
+    # add a new tag for the reconciliator
+    project.schemes.push_tag(element_id, tag, scheme, username, "reconciliation")
     
     # log
     server.log_action(username, f"reconciliate annotation {element_id} for {users} with {tag}", project.name)
