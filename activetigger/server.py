@@ -1262,7 +1262,12 @@ class Schemes():
                         ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
-        Join with databases : content (train) or test
+        Join with text data in separate file (train or test)
+
+        Comments:
+            For the moment tags can be add, test, predict, reconciliation
+
+        TODO : replace all "add" with "train" in the code
         """
         if not scheme in self.available():
             return {"error": "Scheme doesn't exist"}

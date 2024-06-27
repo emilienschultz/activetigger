@@ -947,9 +947,25 @@ def display_reconciliate():
     """
 
     st.write("List of users last entries, only if there is disagreement.")
-    df = _get_reconciliation_table(st.session_state.current_scheme)
-    df = pd.DataFrame(df)
-    st.write(df)
+
+    # get divergent data
+    df = _get_reconciliation_table(st.session_state.current_scheme) 
+
+    # shape of the dataframe
+    df = pd.DataFrame(df).set_index("id")
+    cols = list(df.columns)
+    users = [i for i in cols if i != "text"]
+    df["Reconciliate"] = None
+    labels = st.session_state.state["schemes"]["available"][st.session_state.current_scheme]
+    df["Reconciliate"] = (df["Reconciliate"].astype("category")).cat.add_categories(labels)
+
+    # display the table
+    modified_table = st.data_editor(df, disabled=cols)
+
+    # validation disagreement
+    if st.button("Validate reconciliation"):
+        _post_reconciliation_table(dict(modified_table["Reconciliate"].dropna()), users)
+        
 
 # Internal functions
 # ------------------
@@ -1516,17 +1532,17 @@ def _bert_informations():
         st.write(r["error"])
         return False
 
-    loss = pd.DataFrame(r['data']["training"]["loss"])
+    loss = pd.DataFrame(r["training"]["loss"])
     fig, ax = plt.subplots(figsize=(5,2))
     loss.plot(ax = ax, rot=45)
     plt.ylabel("Loss")
     plt.xlabel("epoch")
     plt.title("Training indicators")
     text = ""
-    if "train_scores" in r['data']:
-        text+=f"f1: {r['data']['train_scores']['f1']}<br>"
-        text+=f"precision: {r['data']['train_scores']['precision']}<br>"
-        text+=f"recall: {r['data']['train_scores']['recall']}<br>"
+    if "train_scores" in r:
+        text+=f"f1: {r['train_scores']['f1']}<br>"
+        text+=f"precision: {r['train_scores']['precision']}<br>"
+        text+=f"recall: {r['train_scores']['recall']}<br>"
     else:
         text += "Compute prediction for scores"
 
@@ -1806,6 +1822,25 @@ def _get_reconciliation_table(scheme:str):
         return False
     return r["list_disagreements"]
 
+def _post_reconciliation_table(new_labels:dict, users:list):
+    """
+    Synchronize a label for users
+    """
+    # loop on each label to reconciliate
+    for i,j in new_labels.items():
+        params = {"project_name":st.session_state.current_project, 
+                "scheme":st.session_state.current_scheme,
+                "element_id":i,
+                "users":users,
+                "tag":j
+                    }
+        r = _post("/elements/reconciliate",
+            params = params)
+        if (r is not None) and ("error" in r):
+            st.write(r["error"])
+            return False
+        st.write(i)
+
 def check_status(accepted:list):
     """
     Check if the current status is in the list
@@ -1818,7 +1853,7 @@ def _rename_label(former_label:str, new_label:str):
     """
     Rename a label with another
     """
-    params = {"project_name":st.session_state.current_project,
+    params = {  "project_name":st.session_state.current_project,
                 "scheme": st.session_state.current_scheme,
                 "former_label":former_label,
                 "new_label":new_label,
