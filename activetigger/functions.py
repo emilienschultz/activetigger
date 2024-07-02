@@ -245,6 +245,9 @@ def train_bert(path:Path,
     params (dict) : training parameters
     test_size (dict): train/test distribution
     """
+    gpu = False
+    if torch.cuda.is_available():
+        gpu = True
 
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
 
@@ -303,7 +306,7 @@ def train_bert(path:Path,
     
     logger.info(f"Model loaded")
 
-    if (params["gpu"]):
+    if gpu:
         bert.cuda()
 
     total_steps = (params["epochs"] * len(df["train"])) // (params["batchsize"] * params["gradacc"])
@@ -395,6 +398,11 @@ def predict_bert(
     + probabilities
     + entropy
     """
+    # GPU available
+    gpu = False
+    if torch.cuda.is_available():
+        gpu = True
+
     # logging the process
     log_path = path / "status.log"
     logger = logging.getLogger('predict_bert_model')
@@ -404,7 +412,7 @@ def predict_bert(
     logger.addHandler(file_handler)
 
     print("function prediction : start")
-    if gpu:
+    if torch.cuda.is_available():
         model.cuda()
 
     # Start prediction with batches

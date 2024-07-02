@@ -56,7 +56,6 @@ async def check_processes(timer, step:int = 1) -> None:
     # max one update per second to avoid excessive action
     if (time.time()-timer)<step:
         return None
-    
     timer = time.time()
     
     # check the queue to see if process are completed

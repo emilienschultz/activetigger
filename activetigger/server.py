@@ -658,10 +658,13 @@ class Project(Server):
         return {"success":"test dataset added"}
 
     def update_simplemodel(self, simplemodel: SimpleModelModel, 
-                           username:str) -> dict:
+                           username:str, 
+                           n_min:int = 10) -> dict:
         """
         Update simplemodel on the base of an already existing
         simplemodel object
+
+        n_min: minimal number of elements annotated
         """
         if simplemodel.features is None or len(simplemodel.features)==0:
             return {"error":"Empty features"}
@@ -671,6 +674,7 @@ class Project(Server):
             return {"error":"Scheme doesn't exist"}
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
             return {"error":"2 different labels needed"}
+        
         # force dfm for multi_naivebayes
         if simplemodel.model == "multi_naivebayes":
             simplemodel.features = ["dfm"]
@@ -685,6 +689,11 @@ class Project(Server):
         
         df_features = self.features.get(simplemodel.features)
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
+
+        # test for a minimum of annotated elements
+        if len(df_scheme)<n_min:
+            return {"error":f"there are less than {n_min} annotated rows"}
+
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme,
                           df_features],

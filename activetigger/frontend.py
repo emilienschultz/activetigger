@@ -13,7 +13,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 
-__version__ = "0.4"
+__version__ = "0.5"
 URL_SERVER = "http://0.0.0.0:5000"
 update_time = 2000 #ms
 st.set_page_config(page_title=f"pyActiveTigger {__version__}", layout="wide")
@@ -663,7 +663,6 @@ def display_simplemodels():
         status = "Computing"
         st.session_state.computing_simplemodel = True
 
-    st.title("Active learning")
     st.write("Configure active learning model") 
     st.markdown(f"<b>{status}</b> - Current model: {current_model} <br> {statistics}",
                 unsafe_allow_html=True)
@@ -955,10 +954,11 @@ def display_reconciliate():
     st.write("List of users last entries, only if there is disagreement.")
 
     # get divergent data
-    df = _get_reconciliation_table(st.session_state.current_scheme) 
-
+    df_raw = _get_reconciliation_table(st.session_state.current_scheme) 
+    if len(df_raw) == 0:
+        return
     # shape of the dataframe
-    df = pd.DataFrame(df).set_index("id")
+    df = pd.DataFrame(df_raw).set_index("id")
     cols = list(df.columns)
     users = [i for i in cols if i != "text"]
     df["Reconciliate"] = None

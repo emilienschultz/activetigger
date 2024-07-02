@@ -186,7 +186,6 @@ class BertParams(BaseModel):
     wdecay: float
     best: bool
     eval: int
-    gpu: bool
     adapt: bool
 
 class UmapModel(BaseModel):
