@@ -1,14 +1,11 @@
 import pandas as pd
 from pandas import DataFrame
-import logging
 import json
 import os
 from pathlib import Path
 import numpy as np
 import shutil
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from transformers import Trainer, TrainingArguments, TrainerCallback
-import datasets
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
@@ -386,155 +383,6 @@ class BertModels():
                           args = (self.path / name, 'gztar', self.path / name))
         process.start()
         print("starting compression")
-
-    # def train_bert(self,
-    #            path:Path,
-    #            name:str,
-    #            df:DataFrame,
-    #            col_text:str,
-    #            col_label:str,
-    #            base_model:str,
-    #            params:dict,
-    #            test_size:float) -> bool:
-        
-    #     """
-    #     Train a bert model and write it
-
-    #     Parameters:
-    #     ----------
-    #     path (Path): path to save the files
-    #     name (str): name of the model
-    #     df (DataFrame): labelled data
-    #     col_text (str): text column
-    #     col_label (str): label column
-    #     model (str): model to use
-    #     params (dict) : training parameters
-    #     test_size (dict): train/test distribution
-
-    #     TODO : add possibility to check models from HF
-
-    #     """
-
-    #     # pour le moment fichier status.log existe tant que l'entrainement est en cours
-
-    #     #  create repertory for the specific model
-    #     current_path = path / name
-    #     if not current_path.exists():
-    #         os.makedirs(current_path)
-
-    #     # logging the process
-    #     log_path = current_path / "status.log"
-    #     logger = logging.getLogger('train_bert_model')
-    #     file_handler = logging.FileHandler(log_path)
-    #     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    #     file_handler.setFormatter(formatter)
-    #     logger.addHandler(file_handler)
-    #     logger.info(f"Start {base_model}")
-
-    #     # test labels missing values
-    #     if df[col_label].isnull().sum() > 0:
-    #         df = df[df[col_label].notnull()]
-    #         logger.info(f"Missing labels - reducing training data to {len(df)}")
-
-    #     # test empty texts
-    #     if df[col_text].isnull().sum() > 0:
-    #         df = df[df[col_text].notnull()]
-    #         logger.info(f"Missing texts - reducing training data to {len(df)}")
-
-    #     # formatting data
-    #     labels = sorted(list(df[col_label].dropna().unique())) # alphabetical order
-    #     label2id = {j:i for i,j in enumerate(labels)}
-    #     id2label = {i:j for i,j in enumerate(labels)}
-    #     training_data = df[[col_text,col_label]]
-    #     df["labels"] = df[col_label].copy().replace(label2id)
-    #     df["text"] = df[col_text]
-    #     df = datasets.Dataset.from_pandas(df[["text", "labels"]])
-
-    #     tokenizer = AutoTokenizer.from_pretrained(base_model)
-
-    #     print("tokenize")
-
-    #     # Tokenize
-    #     if params["adapt"]:
-    #         df = df.map(lambda e: tokenizer(e['text'], truncation=True, padding=True, max_length=512), batched=True)
-    #     else:
-    #         df = df.map(lambda e: tokenizer(e['text'], truncation=True, padding="max_length", max_length=512), batched=True)
-
-    #     # Build test dataset
-    #     df = df.train_test_split(test_size=test_size) #stratify_by_column="label"
-    #     logger.info(f"Train/test dataset created")
-
-    #     # Model
-    #     bert = AutoModelForSequenceClassification.from_pretrained(base_model, 
-    #                                                             num_labels = len(labels),
-    #                                                             id2label = id2label,
-    #                                                             label2id = label2id)
-        
-    #     logger.info(f"Model loaded")
-
-    #     if (params["gpu"]):
-    #         bert.cuda()
-
-    #     total_steps = (params["epochs"] * len(df["train"])) // (params["batchsize"] * params["gradacc"])
-    #     warmup_steps = (total_steps) // 10
-    #     eval_steps = total_steps // params["eval"]
-        
-    #     training_args = TrainingArguments(
-    #         output_dir = current_path / "train",
-    #         logging_dir = current_path / 'logs',
-    #         learning_rate=params["lrate"],
-    #         weight_decay=params["wdecay"],
-    #         num_train_epochs=params["epochs"],
-    #         gradient_accumulation_steps=params["gradacc"],
-    #         per_device_train_batch_size=params["batchsize"],
-    #         per_device_eval_batch_size=32,
-    #         warmup_steps=warmup_steps,
-    #         eval_steps=eval_steps,
-    #         evaluation_strategy="steps",
-    #         save_strategy="steps",
-    #         save_steps=eval_steps,
-    #         logging_steps=eval_steps,
-    #         do_eval=True,
-    #         greater_is_better=False,
-    #         load_best_model_at_end=params["best"],
-    #         metric_for_best_model="eval_loss"
-    #         )
-        
-    #     logger.info(f"Start training")
-
-    #     class CustomLoggingCallback(TrainerCallback):
-    #         def on_step_end(self, args, state, control, **kwargs):
-    #             logger.info(f"Step {state.global_step}")
-
-    #     trainer = Trainer(model=bert, 
-    #                      args=training_args, 
-    #                      train_dataset=df["train"], 
-    #                      eval_dataset=df["test"],
-    #                      callbacks=[CustomLoggingCallback()])
-    #     trainer.train()
-
-    #     # save model
-    #     bert.save_pretrained(current_path)
-    #     logger.info(f"Model trained {current_path}")
-
-    #     # save training data
-    #     training_data.to_parquet(current_path / "training_data.parquet")
-
-    #     # save parameters
-    #     params["test_size"] = test_size
-    #     params["base_model"] = base_model
-    #     with open(current_path / "parameters.json","w") as f:
-    #         json.dump(params, f)
-
-    #     # remove intermediate steps and logs if succeed
-    #     shutil.rmtree(current_path / "train")
-    #     os.rename(log_path, current_path / "finished")
-
-    #     # save log history of the training for statistics
-    #     with open(current_path  / "log_history.txt", "w") as f:
-    #         json.dump(trainer.state.log_history, f)
-
-    #     return True
     
     def stop_user_process(self,user:str):   
         """

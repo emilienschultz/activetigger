@@ -244,12 +244,15 @@ def train_bert(path:Path,
     model (str): model to use
     params (dict) : training parameters
     test_size (dict): train/test distribution
-    """
-    gpu = False
-    if torch.cuda.is_available():
-        gpu = True
 
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
+    """
+
+    # check if GPU is available
+    gpu = False
+    if torch.cuda.is_available():
+        print("GPU is available")
+        gpu = True
 
     #  create repertory for the specific model
     current_path = path / name
@@ -390,7 +393,6 @@ def predict_bert(
             col_text:str,
             event: multiprocessing.Event,
             col_labels:str|None = None,
-            gpu:bool = False, 
             batch:int = 128,
             file_name:str = "predict.parquet") -> DataFrame|bool:
     """
@@ -398,9 +400,10 @@ def predict_bert(
     + probabilities
     + entropy
     """
-    # GPU available
+    # check if GPU available
     gpu = False
     if torch.cuda.is_available():
+        print("GPU is available")
         gpu = True
 
     # logging the process

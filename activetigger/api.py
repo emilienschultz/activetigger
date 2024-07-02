@@ -15,11 +15,6 @@ from activetigger.datamodels import ProjectModel, TableInModel, TableOutModel, A
       UmapModel, TsneModel, NextInModel, ElementOutModel, ZeroShotModel, UserInDBModel, UserModel, UsersServerModel, ProjectsServerModel, \
       StateModel, QueueModel, ProjectDescriptionModel, ProjectAuthsModel, WaitingModel, DocumentationModel, TableLogsModel, ReconciliationModel
 
-logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# to log specific events from api
-logger = logging.getLogger('api')
 
 # General comments
 # - all post are logged
@@ -29,6 +24,11 @@ logger = logging.getLogger('api')
 #######
 # API #
 #######
+
+# to log specific events from api
+logging.basicConfig(filename='log_server.log', level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('api')
 
 # start the backend server
 logger.info("Start API")
@@ -51,6 +51,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") #defining the authentific
 async def check_processes(timer, step:int = 1) -> None:
     """
     Function called to update app state
+    (i.e. joining parallel processes)
     Limited to once per time interval
     """
     # max one update per second to avoid excessive action
@@ -103,7 +104,7 @@ async def middleware(request: Request, call_next):
 
 async def get_project(project_name: str) -> ProjectModel:
     """
-    Dependencie to check existing project
+    Dependencie to get existing project
     - if already loaded, return it
     - if not loaded, load it first
     """
@@ -219,16 +220,15 @@ async def read_users_me(current_user: Annotated[UserInDBModel, Depends(verified_
     Information on current user
     """
     return UserModel(username=current_user.username, 
-                  status=current_user.status)
+                     status=current_user.status)
 
 @app.get("/users", dependencies=[Depends(verified_user)])
 async def existing_users() -> UsersServerModel:
     """
     Get existing users
     """
-    r = UsersServerModel(users=server.users.existing_users(), 
+    return UsersServerModel(users=server.users.existing_users(), 
                     auth=["manager","annotator"])
-    return r
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(username: Annotated[str, Header()],
@@ -239,10 +239,9 @@ async def create_user(username: Annotated[str, Header()],
     Create user
     """
     r = server.users.add_user(username_to_create, password, status, username)
-    if "success" in r:
-        return None
-    else:
+    if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    return None
 
 @app.post("/users/delete", dependencies=[Depends(verified_user), Depends(check_auth_manager)])
 async def delete_user(username:str = Query()) -> None:
@@ -279,8 +278,7 @@ async def get_auth(username:str) -> List:
     """
     Get all user auth
     """
-    r = server.users.get_auth(username, "all")
-    return r
+    return server.users.get_auth(username, "all")
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(username:str, project_name:str = "all", limit = 100) -> TableLogsModel:
@@ -288,11 +286,10 @@ async def get_logs(username:str, project_name:str = "all", limit = 100) -> Table
     Get all logs for a username/project
     """
     df = server.get_logs(username, project_name, limit)
-    r = TableLogsModel(time = list(df["time"]),
+    return TableLogsModel(time = list(df["time"]),
                        user = list(df["user"]),
                        project = list(df["project"]),
                        action = list(df["action"]))
-    return r
 
 # Projects management
 #--------------------
@@ -360,7 +357,6 @@ async def add_testdata(project: Annotated[Project, Depends(get_project)],
     """
     Add a dataset for test 
     """
-
     r = project.add_testdata(file, col_text, col_id, n_test)
 
     # log action
@@ -620,7 +616,6 @@ async def post_reconciliation(username: Annotated[str, Header()],
     
     # log
     server.log_action(username, f"reconciliate annotation {element_id} for {users} with {tag}", project.name)
-
     return None
 
 
@@ -795,7 +790,6 @@ async def post_schemes(username: Annotated[str, Header()],
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(username, f"update scheme {scheme.name}", project.name)
         return None
-    
     raise HTTPException(status_code=400, detail="Wrong route")
 
 
@@ -877,15 +871,6 @@ async def delete_feature(project: Annotated[Project, Depends(get_project)],
 
 # Models management
 #------------------
-
-@app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def get_simplemodel(project: Annotated[Project, Depends(get_project)]) -> Dict[str, Any]:
-    """
-    Get Simplemodel parameters
-    Comments : 
-        Not used for the moment
-    """
-    return project.simplemodels.available()
 
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def post_simplemodel(project: Annotated[Project, Depends(get_project)],
