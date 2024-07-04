@@ -21,6 +21,59 @@ from activetigger.datamodels import ProjectModel, TableInModel, TableOutModel, A
 # - header identification with token
 # - username is in the header
 
+def test_rights(action:str, username:str, project_name:str|None = None) -> bool:
+    """
+    Management of rights on the routes
+    Different levels:
+    - create project (only user status)
+    - modify user (only user status)
+    - modify project (user - project)
+    - modify project element (user - project)
+    Based on:
+    - status of the account
+    - relation to the project
+    """
+
+    user = server.users.get_user(name=username)
+    status = user.status
+    #print(username, status, project_name)
+
+    # possibility to create project
+    if action == "create project":
+        if status in ["root", "manager"]:
+            return True
+        else:
+            raise HTTPException(403, "No rights for this action")
+
+    # possibility to create user
+    if action == "modify user":
+        if status in ["root", "manager"]:
+            return True
+        else:
+            raise HTTPException(403, "No rights for this action")
+
+    if not project_name:
+        raise HTTPException(500, "Project name missing")
+    
+    auth = server.users.auth(username, project_name)
+    #print(auth)
+
+    # possibility to modify project (create/delete)
+    if action == "modify project":
+        if (auth == "manager") or (status == "root"):
+            return True
+        else:
+            raise HTTPException(403, "No rights for this action")
+        
+    # possibility to create elements of a project
+    if action == "modify project element":
+        if (auth == "manager") or (status == "root"):
+            return True
+        else:
+            raise HTTPException(403, "No rights for this action")
+    raise HTTPException(404, "No action found")
+
+
 #######
 # API #
 #######
@@ -149,6 +202,7 @@ async def check_auth_exists(request: Request,
     """
     Check if a user is associated to a project
     """
+    #print("route", request.url.path, request.method)
     auth = server.users.auth(username, project_name)
     if not auth:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
@@ -238,6 +292,7 @@ async def create_user(username: Annotated[str, Header()],
     """
     Create user
     """
+    test_rights("modify user", username)
     r = server.users.add_user(username_to_create, password, status, username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -248,6 +303,7 @@ async def delete_user(username:str = Query()) -> None:
     """
     Delete user
     """
+    test_rights("modify user", username)
     r = server.users.delete_user(username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -261,6 +317,7 @@ async def set_auth(action: str,
     """
     Set user auth
     """
+    test_rights("modify project", username, project_name)
     if action == "add":
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")
@@ -395,6 +452,7 @@ async def new_project(
         Since there is a file, the body can't contain JSON
         and Pydantic model can't be used for Form
     """
+    test_rights("create project", username)
 
     # grouping informations
     params_in = {
@@ -438,6 +496,8 @@ async def delete_project(username: Annotated[str, Header()],
     """
     Delete a project
     """
+    test_rights("modify project", username, project_name)
+
     r = server.delete_project(project_name)
     server.log_action(username, "delete project", project_name)
     if "error" in r:
@@ -618,7 +678,6 @@ async def post_reconciliation(username: Annotated[str, Header()],
     server.log_action(username, f"reconciliate annotation {element_id} for {users} with {tag}", project.name)
     return None
 
-
 @app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])
 async def zeroshot(project: Annotated[Project, Depends(get_project)],
                     username: Annotated[str, Header()],
@@ -717,6 +776,8 @@ async def add_label(project: Annotated[Project, Depends(get_project)],
     """
     Add a label to a scheme
     """
+    test_rights("modify project element", username, project.name)
+
     r = project.schemes.add_label(label, scheme, username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -732,6 +793,8 @@ async def delete_label(project: Annotated[Project, Depends(get_project)],
     """
     Remove a label from a scheme
     """
+    test_rights("modify project element", username, project.name)
+
     r = project.schemes.delete_label(label, scheme, username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -751,6 +814,8 @@ async def rename_label(project: Annotated[Project, Depends(get_project)],
     - convert tags (need the label to exist, add a new element for each former)
     - delete former label
     """
+    test_rights("modify project element", username, project.name)
+
     r = project.schemes.add_label(new_label, scheme, username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -772,6 +837,8 @@ async def post_schemes(username: Annotated[str, Header()],
     """
     Add, Update or Delete scheme
     """
+    test_rights("modify project element", username, project.name)
+
     if action == "add":
         r = project.schemes.add_scheme(scheme, username)
         if "error" in r:
@@ -814,6 +881,8 @@ async def post_embeddings(project: Annotated[Project, Depends(get_project)],
     - same prcess
     - specific process : function + temporary file + update
     """
+    test_rights("modify project", username, project.name)
+
     if name in project.features.training:
         raise HTTPException(status_code=400, detail="This feature is already in training")
     if not name in {"sbert","fasttext","dfm", "regex"}:
@@ -863,6 +932,8 @@ async def delete_feature(project: Annotated[Project, Depends(get_project)],
     """
     Delete a specific feature
     """
+    test_rights("modify project", username, project.name)
+
     r = project.features.delete(name)
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
@@ -997,6 +1068,8 @@ async def delete_bert(project: Annotated[Project, Depends(get_project)],
     """
     Delete trained bert model
     """
+    test_rights("modify project", username, project.name)
+
     r = project.bertmodels.delete(bert_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -1011,6 +1084,8 @@ async def save_bert(project: Annotated[Project, Depends(get_project)],
     """
     Rename bertmodel
     """
+    test_rights("modify project", username, project.name)
+
     r = project.bertmodels.rename(former_name, new_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
