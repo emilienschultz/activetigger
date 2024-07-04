@@ -15,3 +15,5 @@ tests/__pycache__/
 activetigger/img/active_tigger2.png
 *.DS_Store
 log_server.log
+config.yaml
+add_users_processed.yaml
