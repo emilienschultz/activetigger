@@ -1,0 +1,43 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "compile": "tsc",
+    "build": "tsc -b && vite build",
+    "generate": "npx openapi-typescript http://localhost:5000/openapi.json -o src/generated/openapi.d.ts",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "bootstrap": "^5.3.3",
+    "classnames": "^2.5.1",
+    "lodash": "^4.17.21",
+    "openapi-fetch": "^0.10.2",
+    "prettier": "^3.3.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.52.1",
+    "react-icons": "^5.2.1",
+    "react-router-dom": "^6.24.0",
+    "react-router-typesafe": "^1.5.0",
+    "sass": "^1.77.6"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.6",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "openapi-typescript": "^7.0.0",
+    "typescript": "^5.4.2",
+    "vite": "^5.3.1"
+  }
+}
