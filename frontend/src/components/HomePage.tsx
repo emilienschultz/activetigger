@@ -10,6 +10,7 @@ export const HomePage: FC = () => {
       <main>
         <LoginForm />
       </main>
+      <p>2024</p>
     </>
   );
 };
