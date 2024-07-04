@@ -1,7 +1,9 @@
+from enum import StrEnum
 import time
 from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Query, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 from typing import Annotated, List, Dict, Any
@@ -150,6 +152,15 @@ async def middleware(request: Request, call_next):
     await check_processes(timer)
     response = await call_next(request)
     return response
+
+app.add_middleware(
+    CORSMiddleware,
+    #TODO: move origins in config
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ------------
 # Dependencies
@@ -309,8 +320,12 @@ async def delete_user(username:str = Query()) -> None:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
 
+class AuthActions(StrEnum):
+    add = "add"
+    delete = "delete"
+
 @app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
-async def set_auth(action: str, 
+async def set_auth(action: AuthActions, 
                    username:str = Query(), 
                    project_name:str = Query(), 
                    status:str = Query(None)) -> None:
