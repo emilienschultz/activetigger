@@ -1,6 +1,6 @@
 # (py) Active Tigger
 
-🚧 Under development 🚧
+🚧 Under development 🚧 **We are currently moving the frontend from Streamlit to React**.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/emilienschultz/pyactivetigger/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/)
@@ -8,23 +8,23 @@
 
 Server/client BERT fine tunning app using active learning
 
-[Python refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)]( https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+[Python refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
 
 ## Installation
 
-You can install `activetigger` via pip (be careful to use Python 3.11):
+For the moment, it is better to install `activetigger` via Github (be careful to use Python 3.11):
 
 ```bash
-pip install activetigger
+git clone https://github.com/emilienschultz/pyactivetigger.git
+pip install -r pyactivetigger/requirements.txt
 ```
 
 ## Start the server
 
-Create a config file `config.yaml` in the directory where you want to launch the server :
+Create a config file `config.yaml` in the directory where you want to launch the server (you can use the `config.yaml.sample` as an example):
 
 - `path` : path to store files (for instance `./data`)
 - `secret_key` : to secure tokens. To generate it `openssl rand -hex 32C`
-- `path_models`:  absolute path to fasttext models
 
 Then, to launch the server (on 0.0.0.0 port 8000 by default). You can configurate exposed port if needed.
 
@@ -52,11 +52,12 @@ user2: password2
 ## Technical specifications
 
 - REST-like client/server architecture
-- Moslty stateless
+  - Moslty stateless
 - Mixed data storage : sqlite + files
 - Backend Python
-    - FastAPI
-    - Multiprocessing for CPU-bound tasts (concurrent.futures.ProcessPoolExecutor)
+  - FastAPI
+  - Multiprocessing for CPU-bound tasts
 - Frontend
-    - Streamlit (prototyping)
-    - React (in the future)
+  - Streamlit (prototyping)
+  - React (in the future)
+- Role-Based Access Control (manager/annotator)
