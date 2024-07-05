@@ -339,11 +339,6 @@ export interface paths {
         /**
          * New Project
          * @description Load new project
-         *         file (file)
-         *         multiple parameters
-         *     Comments:
-         *         Since there is a file, the body can't contain JSON
-         *         and Pydantic model can't be used for Form
          */
         post: operations["new_project_projects_new_post"];
         delete?: never;
@@ -1039,36 +1034,6 @@ export interface components {
             /** Client Secret */
             client_secret?: string | null;
         };
-        /** Body_new_project_projects_new_post */
-        Body_new_project_projects_new_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-            /** Project Name */
-            project_name: string;
-            /** Col Text */
-            col_text: string;
-            /** Col Id */
-            col_id: string;
-            /** Col Label */
-            col_label?: string;
-            /** Cols Context */
-            cols_context?: string[];
-            /** N Train */
-            n_train: number;
-            /** N Test */
-            n_test: number;
-            /** Cols Test */
-            cols_test?: string[];
-            /** Embeddings */
-            embeddings?: unknown[];
-            /** N Skip */
-            n_skip?: number;
-            /** Language */
-            language?: string;
-        };
         /**
          * DocumentationModel
          * @description Documentation model
@@ -1175,8 +1140,10 @@ export interface components {
         ProjectModel: {
             /** Project Name */
             project_name: string;
-            /** User */
-            user: string;
+            /** Filename */
+            filename: string;
+            /** Csv */
+            csv: string;
             /** Col Text */
             col_text: string;
             /** Col Id */
@@ -1262,7 +1229,7 @@ export interface components {
          */
         ProjectsServerModel: {
             /** Projects */
-            projects: unknown[];
+            projects: string[];
             /** Auth */
             auth: unknown[];
         };
@@ -1930,7 +1897,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_new_project_projects_new_post"];
+                "application/json": components["schemas"]["ProjectModel"];
             };
         };
         responses: {
