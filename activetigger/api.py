@@ -246,9 +246,9 @@ async def verified_user(
         payload = server.decode_access_token(token)
         username: str = payload.get("sub")
         if username is None:
-            return False
+            raise HTTPException(status_code=401, detail="Problem with token")
     except JWTError:
-        return False
+        raise HTTPException(status_code=401, detail="Problem with token")
 
     # authentification
     user = server.users.get_user(name=username)
@@ -482,6 +482,9 @@ async def info_server(username: Annotated[str, Header()]) -> ProjectsServerModel
     return ProjectsServerModel(**r)
 
 
+# AJOUTER UNE ROUTE users/projects
+
+
 @app.get("/project/description", dependencies=[Depends(verified_user)])
 async def get_description(
     project: Annotated[Project, Depends(get_project)],
@@ -530,7 +533,7 @@ async def add_testdata(
     # if success, update also parameters of the project
     server.set_project_parameters(project.params)
 
-    # log
+    # log action
     server.log_action(username, "add testdata project", project.name)
 
     return None
@@ -538,67 +541,23 @@ async def add_testdata(
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
-    username: Annotated[str, Header()],
-    file: Annotated[UploadFile, File()],
-    project_name: str = Form(),
-    col_text: str = Form(),
-    col_id: str = Form(),
-    col_label: str = Form(None),
-    cols_context: List[str] = Form(None),
-    n_train: int = Form(),
-    n_test: int = Form(),
-    cols_test: List[str] = Form(None),
-    embeddings: list = Form(None),
-    n_skip: int = Form(None),
-    language: str = Form(None),
+    username: Annotated[str, Header()], project: ProjectModel
 ) -> None:
     """
     Load new project
-        file (file)
-        multiple parameters
-    Comments:
-        Since there is a file, the body can't contain JSON
-        and Pydantic model can't be used for Form
     """
+    # test rights to create project
     test_rights("create project", username)
 
-    # grouping informations
-    params_in = {
-        "project_name": project_name,
-        "user": username,
-        "col_text": col_text,
-        "col_id": col_id,
-        "n_train": n_train,
-        "n_test": n_test,
-        "cols_test": cols_test,
-        "embeddings": embeddings,
-        "n_skip": n_skip,
-        "language": language,
-        "col_label": col_label,
-        "cols_context": cols_context,
-    }
-
-    # removing None parameters
-    params = {i: params_in[i] for i in params_in if params_in[i] is not None}
-    project = ProjectModel(**params)
-
-    # format of the files (only CSV for the moment)
-    if (not file.filename.endswith(".csv")) and (
-        not file.filename.endswith(".parquet")
-    ):
-        raise HTTPException(
-            status_code=500, detail="Only CSV & Parquet file for the moment"
-        )
-
-    # test if project name already exists
+    # test if project_name already exists
     if server.exists(project.project_name):
         raise HTTPException(status_code=500, detail="Project already exist")
 
     # create the project
-    server.create_project(project, file)
+    server.create_project(project, username)
 
     # log action
-    server.log_action(username, "create project", params_in["project_name"])
+    server.log_action(username, "create project", project.project_name)
 
     return None
 

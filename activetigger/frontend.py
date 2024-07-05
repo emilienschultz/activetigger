@@ -12,6 +12,7 @@ import textwrap
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
+from datamodels import ProjectModel
 
 __version__ = "0.5"
 URL_SERVER = "http://0.0.0.0:5000"
@@ -264,20 +265,21 @@ def display_projects():
                 key="n_test",
             )
             cols_test = st.multiselect("Stratify by", list(df.columns))
-            data = {
-                "project_name": project_name,
-                "user": st.session_state.user,
-                "col_text": column_text,
-                "col_id": column_id,
-                "col_label": column_label,
-                "cols_context": columns_context,
-                "n_train": n_train,
-                "n_test": n_test,
-                "cols_test": cols_test,
-                "language": dic_langage[language],
-            }
+            data = ProjectModel(
+                project_name=project_name,
+                filename=file.name,
+                csv=str(df.to_csv()),
+                col_text=column_text,
+                col_id=column_id,
+                col_label=column_label,
+                cols_context=columns_context,
+                n_train=n_train,
+                n_test=n_test,
+                cols_test=cols_test,
+                language=dic_langage[language],
+            )
             if st.button("Create"):
-                _create_project(data, df, file.name)
+                _create_project(data)
                 st.session_state.current_project = project_name
 
     # case a project is loaded
@@ -304,6 +306,8 @@ def display_schemes():
     """
     Scheme menu
     """
+    if not "schemes" in st.session_state.state:
+        return
     options_schemes = list(st.session_state.state["schemes"]["available"].keys())
     col1, col2 = st.columns(2)
     with col1:
@@ -337,6 +341,9 @@ def display_features():
     """
     Feature page
     """
+    if not "features" in st.session_state.state:
+        return
+
     st.subheader("Manage features")
 
     feature = st.selectbox(
@@ -1308,17 +1315,11 @@ def _delete_user(username: str):
     return r
 
 
-def _create_project(data, df, name) -> bool:
+def _create_project(data) -> bool:
     """
     Create project
     """
-    # manage file to send
-    buffer = BytesIO()
-    df.to_csv(buffer)
-    buffer.seek(0)
-    files = {"file": (name, buffer)}
-    # post files
-    r = _post(route="/projects/new", files=files, data=data)
+    r = _post(route="/projects/new", json_data=data.dict())
     if (r is not None) and ("error" in r):
         st.write(r["error"])
         return False

@@ -13,7 +13,8 @@ class ProjectModel(BaseModel):
     """
 
     project_name: str
-    user: str
+    filename: str
+    csv: str
     col_text: str
     col_id: str
     n_train: int
@@ -287,7 +288,7 @@ class ProjectsServerModel(BaseModel):
     Response for available projects
     """
 
-    projects: list
+    projects: List[str]
     auth: list
 
 
