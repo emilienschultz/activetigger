@@ -17,6 +17,7 @@ export async function login(params: LoginParams) {
   if (res.data && !res.error) return res.data;
   else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
 }
+
 export async function me(token: string) {
   const res = await api.GET('/users/me', {
     headers: {
@@ -27,3 +28,20 @@ export async function me(token: string) {
   if (res.data) return res.data;
   //else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
 }
+
+export async function userProjects(username: string) {
+  // API /session should be rewritten at some point
+  const res = await api.GET('/session', {
+    params: {
+      header: { username },
+    },
+  });
+
+  if (res.data && !res.error) return res.data.projects as string[];
+  else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
+}
+
+// export const function createProject(project: ProjectModel,csvContent:string){
+
+//   const rest = await api.POST('/projects/new', {body: {file: csvContent, ...project}} )
+// }
