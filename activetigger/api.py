@@ -246,9 +246,9 @@ async def verified_user(
         payload = server.decode_access_token(token)
         username: str = payload.get("sub")
         if username is None:
-            return False
+            raise HTTPException(status_code=401, detail = "Problem with token")
     except JWTError:
-        return False
+        raise HTTPException(status_code=401, detail = "Problem with token")
 
     # authentification
     user = server.users.get_user(name=username)
