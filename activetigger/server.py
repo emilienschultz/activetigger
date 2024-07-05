@@ -435,7 +435,7 @@ class Server:
         return {"success": "project updated"}
 
     def create_project(
-        self, params: ProjectModel, file: UploadFile
+        self, params: ProjectModel, username: str
     ) -> ProjectModel | dict:
         """
         Set up a new project
@@ -459,8 +459,8 @@ class Server:
         os.makedirs(params.dir)
 
         # copy total dataset as a copy (csv for the moment)
-        with open(params.dir / "data_raw.csv", "wb") as f:
-            f.write(file.file.read())
+        with open(params.dir / "data_raw.csv", "w") as f:
+            f.write(params.csv)
 
         # TODO : maximise the aleardy tagged in the annotate dataset, and None in the test
         # if possible, annotated data in the annotation dataset
@@ -567,7 +567,7 @@ class Server:
                 print(
                     (
                         "add",
-                        params.user,
+                        username,
                         params.project_name,
                         element_id,
                         "default",
@@ -578,7 +578,7 @@ class Server:
                     query,
                     (
                         "add",
-                        params.user,
+                        username,
                         params.project_name,
                         element_id,
                         "default",
@@ -589,7 +589,7 @@ class Server:
             conn.close()
 
         # add user right on the project + root
-        self.users.set_auth(params.user, params.project_name, "manager")
+        self.users.set_auth(username, params.project_name, "manager")
         self.users.set_auth("root", params.project_name, "manager")
 
         # save parameters
