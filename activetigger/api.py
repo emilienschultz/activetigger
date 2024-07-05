@@ -1,4 +1,3 @@
-from enum import StrEnum
 import time
 from fastapi import (
     FastAPI,
@@ -52,6 +51,7 @@ from activetigger.datamodels import (
     DocumentationModel,
     TableLogsModel,
     ReconciliationModel,
+    AuthActions,
 )
 
 
@@ -393,11 +393,6 @@ async def delete_user(username: str = Query()) -> None:
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
-
-
-class AuthActions(StrEnum):
-    add = "add"
-    delete = "delete"
 
 
 @app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])

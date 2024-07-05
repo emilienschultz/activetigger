@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
 from typing import Optional, List, Dict, Any
+from enum import StrEnum
 
 # Data model to use of the API
 
@@ -361,3 +362,8 @@ class ReconciliationModel(BaseModel):
     """
 
     list_disagreements: List[Dict[str, Any]]
+
+
+class AuthActions(StrEnum):
+    add = "add"
+    delete = "delete"
