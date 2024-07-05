@@ -2,17 +2,20 @@ import cx from 'classnames';
 import { FC, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { PAGE_KEYS } from '../../core/router';
+import { useAppContext } from '../../core/context';
 
-const PAGES: { id: PAGE_KEYS; label: string; href: string }[] = [
+const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'home', label: 'Active Tigger', href: '/' },
 ];
 
 interface NavBarPropsType {
-  currentPage?: PAGE_KEYS;
+  currentPage?: string;
 }
 
 const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
+  const { appContext } = useAppContext();
+  const { user } = appContext;
+
   const [expanded, setExpanded] = useState<boolean>(false);
 
   return (
@@ -48,6 +51,11 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                   </Link>
                 </li>
               ))}
+              {user && (
+                <li>
+                  {user.username} ({user.status})
+                </li>
+              )}
             </ul>
           </div>
         </div>

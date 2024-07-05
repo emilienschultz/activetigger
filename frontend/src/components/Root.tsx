@@ -1,21 +1,28 @@
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
 
-import { AppContext } from '../core/context';
+import { AppContext, AppContextValue, defaultContext } from '../core/context';
 import { getRouter } from '../core/router';
 
 const Root: FC = () => {
-  const appContextValue = useMemo(
-    () => ({
-      // TODO
-    }),
-    [],
+  const storedAppContext = localStorage.getItem('appContext');
+
+  const [appContext, setAppContext] = useState<AppContextValue>(
+    storedAppContext ? JSON.parse(storedAppContext) : defaultContext,
   );
 
-  const router = useMemo(() => getRouter(appContextValue), [appContextValue]);
+  useEffect(() => {
+    const storedAppContext = localStorage.getItem('appContext');
+    console.log(storedAppContext);
+    if (storedAppContext) {
+      setAppContext(JSON.parse(storedAppContext));
+    }
+  }, [setAppContext]);
+
+  const router = useMemo(() => getRouter(appContext), [appContext]);
 
   return (
-    <AppContext.Provider value={appContextValue}>
+    <AppContext.Provider value={{ appContext: appContext, setAppContext }}>
       <RouterProvider router={router} />
     </AppContext.Provider>
   );

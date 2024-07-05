@@ -17,3 +17,13 @@ export async function login(params: LoginParams) {
   if (res.data && !res.error) return res.data;
   else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
 }
+export async function me(token: string) {
+  const res = await api.GET('/users/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (res.data) return res.data;
+  //else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
+}
