@@ -341,6 +341,13 @@ class Server:
         }
         return data
 
+    def get_projects(self, username: str) -> dict[dict]:
+        """
+        Get projects authorized for the user
+        """
+        projects_auth = self.users.get_auth_user(username)
+        return {i[0]:{"auth":i[1]} for i in projects_auth}
+
     def db_get_project(self, project_name: str) -> ProjectModel | None:
         """
         Get project from database
@@ -1790,6 +1797,22 @@ class Users:
         conn.commit()
         conn.close()
         return {"success": "Auth deleted"}
+
+    def get_auth_user(self, username: str) -> list:
+        """
+        Get user auth
+        Comments:
+        - Either for all projects
+        - Or one project
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """SELECT project, status FROM auth WHERE user = ?"""
+        cursor.execute(query, (username,))
+        auth = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return auth
 
     def get_auth(self, username: str, project_name: str = "all") -> list:
         """

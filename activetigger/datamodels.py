@@ -292,6 +292,14 @@ class ProjectsServerModel(BaseModel):
     auth: list
 
 
+class AvailableProjectsModel(BaseModel):
+    """
+    Response for available projects
+    """
+
+    projects: Dict[str, Dict[str, Any]]
+
+
 class StateModel(BaseModel):
     """
     Response for server state

@@ -52,6 +52,7 @@ from activetigger.datamodels import (
     TableLogsModel,
     ReconciliationModel,
     AuthActions,
+    AvailableProjectsModel,
 )
 
 
@@ -480,6 +481,18 @@ async def info_server(username: Annotated[str, Header()]) -> ProjectsServerModel
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return ProjectsServerModel(**r)
+
+
+@app.get("/projects")
+async def get_projects(username: Annotated[str, Header()]) -> AvailableProjectsModel:
+    """
+    Get general informations on the server
+    depending of the status of connected user
+    """
+    r = server.get_projects(username)
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
+    return AvailableProjectsModel(projects=r)
 
 
 # AJOUTER UNE ROUTE users/projects

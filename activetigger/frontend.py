@@ -197,6 +197,8 @@ def display_projects():
     - delete project
     - create project
     """
+    r = _get("/projects")
+    st.write(r)
     r = _get("/session")
     existing = r["projects"]
 
