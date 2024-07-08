@@ -23,6 +23,7 @@ from activetigger.server import Server, Project
 import activetigger.functions as functions
 from activetigger.datamodels import (
     ProjectModel,
+    ProjectDataModel,
     TableInModel,
     TableOutModel,
     ActionModel,
@@ -554,7 +555,7 @@ async def add_testdata(
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
-    username: Annotated[str, Header()], project: ProjectModel
+    username: Annotated[str, Header()], project: ProjectDataModel
 ) -> None:
     """
     Load new project

@@ -12,7 +12,7 @@ import textwrap
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
-from datamodels import ProjectModel
+from datamodels import ProjectDataModel
 
 __version__ = "0.5"
 URL_SERVER = "http://0.0.0.0:5000"
@@ -267,7 +267,7 @@ def display_projects():
                 key="n_test",
             )
             cols_test = st.multiselect("Stratify by", list(df.columns))
-            data = ProjectModel(
+            data = ProjectDataModel(
                 project_name=project_name,
                 filename=file.name,
                 csv=str(df.to_csv()),

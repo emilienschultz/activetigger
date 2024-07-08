@@ -9,12 +9,11 @@ from enum import StrEnum
 
 class ProjectModel(BaseModel):
     """
-    Parameters of a project
+    Parameters of a project to save in the database
     """
 
     project_name: str
     filename: str
-    csv: str
     col_text: str
     col_id: str
     n_train: int
@@ -28,6 +27,15 @@ class ProjectModel(BaseModel):
     cols_context: list = []
     cols_test: list = []
     test: bool = False
+
+
+class ProjectDataModel(ProjectModel):
+    """
+    Parameters of a project to create it
+    (with data field)
+    """
+
+    csv: str
 
 
 class ActionModel(str, Enum):
