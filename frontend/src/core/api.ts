@@ -1,7 +1,10 @@
 import createClient from 'openapi-fetch';
+import { useCallback } from 'react';
 
 import type { components, paths } from '../generated/openapi';
+import { ProjectModel } from '../types';
 import config from './config';
+import { useAppContext } from './context';
 
 const api = createClient<paths>({ baseUrl: `${config.api.url}` });
 
@@ -41,7 +44,23 @@ export async function userProjects(username: string) {
   else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
 }
 
-// export const function createProject(project: ProjectModel,csvContent:string){
-
-//   const rest = await api.POST('/projects/new', {body: {file: csvContent, ...project}} )
-// }
+export function useCreateProject() {
+  const { appContext } = useAppContext();
+  const createProject = useCallback(async (project: ProjectModel) => {
+    if (appContext.user) {
+      const res = await api.POST('/projects/new', {
+        headers: {
+          Authorization: `Bearer ${appContext.user.access_token}`,
+        },
+        params: { header: { username: appContext.user.username } },
+        body: project,
+      });
+      if (res.error)
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+    }
+    //TODO: notify
+  }, []);
+  return createProject;
+}

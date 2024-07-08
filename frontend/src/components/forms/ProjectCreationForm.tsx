@@ -3,7 +3,9 @@ import { unparse } from 'papaparse';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 
+import { useCreateProject } from '../../core/api';
 import { loadParquetFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
 
@@ -15,6 +17,8 @@ export interface DataType {
 export const ProjectCreationForm: FC = () => {
   const { register, control, handleSubmit } = useForm<ProjectModel & { files: FileList }>();
   const [data, setData] = useState<DataType | null>(null);
+  const navigate = useNavigate();
+  const createProject = useCreateProject();
 
   const files = useWatch({ control, name: 'files' });
   useEffect(() => {
@@ -31,9 +35,11 @@ export const ProjectCreationForm: FC = () => {
     }
   }, [files]);
 
-  const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = (formData) => {
+  const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {
     const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
     console.log('new project payload to send to API', { ...omit(formData, 'files'), csv });
+    await createProject({ ...omit(formData, 'files'), csv });
+    navigate(`/projects/`);
   };
 
   return (
@@ -114,6 +120,9 @@ export const ProjectCreationForm: FC = () => {
               )}
             </select>
           </div>
+          <button type="submit" className="btn btn-primary">
+            Create
+          </button>
         </form>
       </div>
     </div>
