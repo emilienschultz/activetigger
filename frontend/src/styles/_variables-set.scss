@@ -1,1 +1,24 @@
 $primary: #444;
+
+.project-link {
+    display: block;
+    padding: 10px;
+    margin: 30px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-decoration: none;
+    color: black;
+    transition: background-color 0.3s;
+    margin-bottom: 10px;
+  }
+  
+  .project-link:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .projects-list {
+    list-style-type: none; /* Remove bullets */
+    padding: 0;
+  }
+ 

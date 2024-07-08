@@ -267,6 +267,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projects
+         * @description Get general informations on the server
+         *     depending of the status of connected user
+         */
+        get: operations["get_projects_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/project/description": {
         parameters: {
             query?: never;
@@ -982,6 +1003,16 @@ export interface components {
          */
         AuthActions: "add" | "delete";
         /**
+         * AvailableProjectsModel
+         * @description Response for available projects
+         */
+        AvailableProjectsModel: {
+            /** Projects */
+            projects: {
+                [key: string]: Record<string, never> | undefined;
+            };
+        };
+        /**
          * BertModelModel
          * @description Request Bertmodel
          *     TODO : model for parameters
@@ -1116,6 +1147,66 @@ export interface components {
             auth: Record<string, never>;
         };
         /**
+         * ProjectDataModel
+         * @description Parameters of a project to create it
+         *     (with data field)
+         */
+        ProjectDataModel: {
+            /** Project Name */
+            project_name: string;
+            /** Filename */
+            filename: string;
+            /** Col Text */
+            col_text: string;
+            /** Col Id */
+            col_id: string;
+            /** N Train */
+            n_train: number;
+            /** N Test */
+            n_test: number;
+            /** Dir */
+            dir?: string | null;
+            /**
+             * Embeddings
+             * @default []
+             */
+            embeddings: unknown[];
+            /**
+             * N Skip
+             * @default 0
+             */
+            n_skip: number;
+            /**
+             * Default Scheme
+             * @default []
+             */
+            default_scheme: unknown[];
+            /**
+             * Language
+             * @default fr
+             */
+            language: string;
+            /** Col Label */
+            col_label?: string | null;
+            /**
+             * Cols Context
+             * @default []
+             */
+            cols_context: unknown[];
+            /**
+             * Cols Test
+             * @default []
+             */
+            cols_test: unknown[];
+            /**
+             * Test
+             * @default false
+             */
+            test: boolean;
+            /** Csv */
+            csv: string;
+        };
+        /**
          * ProjectDescriptionModel
          * @description Project description
          */
@@ -1135,15 +1226,13 @@ export interface components {
         };
         /**
          * ProjectModel
-         * @description Parameters of a project
+         * @description Parameters of a project to save in the database
          */
         ProjectModel: {
             /** Project Name */
             project_name: string;
             /** Filename */
             filename: string;
-            /** Csv */
-            csv: string;
             /** Col Text */
             col_text: string;
             /** Col Id */
@@ -1785,6 +1874,37 @@ export interface operations {
             };
         };
     };
+    get_projects_projects_get: {
+        parameters: {
+            query?: never;
+            header: {
+                username: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailableProjectsModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_description_project_description_get: {
         parameters: {
             query: {
@@ -1897,7 +2017,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProjectModel"];
+                "application/json": components["schemas"]["ProjectDataModel"];
             };
         };
         responses: {

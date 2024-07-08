@@ -34,13 +34,13 @@ export async function me(token: string) {
 
 export async function userProjects(username: string) {
   // API /session should be rewritten at some point
-  const res = await api.GET('/session', {
+  const res = await api.GET('/projects', {
     params: {
       header: { username },
     },
   });
 
-  if (res.data && !res.error) return res.data.projects as string[];
+  if (res.data && !res.error) return res.data.projects;
   else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
 }
 
