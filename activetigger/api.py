@@ -565,7 +565,7 @@ async def new_project(
 
     # test if project_name already exists
     if server.exists(project.project_name):
-        raise HTTPException(status_code=500, detail="Project already exist")
+        raise HTTPException(status_code=500, detail="Project name already exists (exact or slugified)")
 
     # create the project
     server.create_project(project, username)

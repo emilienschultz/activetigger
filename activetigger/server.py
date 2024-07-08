@@ -3,6 +3,7 @@ import time
 import uuid
 import yaml
 import concurrent.futures
+from slugify import slugify
 from pathlib import Path
 import sqlite3
 import re
@@ -379,10 +380,9 @@ class Server:
     def exists(self, project_name) -> bool:
         """
         Test if a project exists in the database
+        with a sluggified form (to be able to use it in URL)
         """
-        existing = self.existing_projects()
-        v = project_name in existing
-        return v
+        return slugify(project_name) in [slugify(i) for i in self.existing_projects()]
 
     def existing_projects(self) -> list:
         """
@@ -1700,7 +1700,7 @@ class Schemes:
 
     def get_element_tags(self, element_id: str, scheme: str, n_max: int = 10):
         """
-        Get all the tags for as specific element
+        Get all tags for a specific element/scheme in the database
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
