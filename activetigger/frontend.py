@@ -198,12 +198,9 @@ def display_projects():
     - create project
     """
     r = _get("/projects")
-    st.write(r)
-    r = _get("/session")
-    existing = r["projects"]
+    existing = list(r["projects"].keys())
 
     # display menu
-
     with st.expander("How to use the interface"):
         st.write("The general logic is :")
         st.write("- create/load a project")
