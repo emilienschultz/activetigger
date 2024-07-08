@@ -12,12 +12,8 @@ const Root: FC = () => {
   );
 
   useEffect(() => {
-    const storedAppContext = localStorage.getItem('appContext');
-    console.log(storedAppContext);
-    if (storedAppContext) {
-      setAppContext(JSON.parse(storedAppContext));
-    }
-  }, [setAppContext]);
+    localStorage.setItem('appContext', JSON.stringify(appContext));
+  }, [appContext]);
 
   const router = useMemo(() => getRouter(appContext), [appContext]);
 

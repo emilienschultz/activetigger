@@ -51,6 +51,7 @@ export function useCreateProject() {
       const res = await api.POST('/projects/new', {
         headers: {
           Authorization: `Bearer ${appContext.user.access_token}`,
+          username: appContext.user.username,
         },
         params: { header: { username: appContext.user.username } },
         body: project,

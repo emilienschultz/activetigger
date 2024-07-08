@@ -14,7 +14,7 @@ export async function loadParquetFile(file: File): Promise<DataType> {
         const headers = metadata.schema.slice(1).map((s) => s.name);
         console.log(metadata.schema);
         const data = arrayData.map((ad) => fromPairs(zip(headers, ad)));
-        resolve({ data, headers });
+        resolve({ data, headers, filename: file.name });
       },
     }),
   );

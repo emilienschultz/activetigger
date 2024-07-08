@@ -12,6 +12,7 @@ import { ProjectModel } from '../../types';
 export interface DataType {
   headers: string[];
   data: Record<string, string | number | bigint>[];
+  filename: string;
 }
 
 export const ProjectCreationForm: FC = () => {
@@ -36,10 +37,12 @@ export const ProjectCreationForm: FC = () => {
   }, [files]);
 
   const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {
-    const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
-    console.log('new project payload to send to API', { ...omit(formData, 'files'), csv });
-    await createProject({ ...omit(formData, 'files'), csv });
-    navigate(`/projects/`);
+    if (data) {
+      const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+      console.log('new project payload to send to API', { ...omit(formData, 'files'), csv });
+      await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
+      navigate(`/projects/`);
+    }
   };
 
   return (
