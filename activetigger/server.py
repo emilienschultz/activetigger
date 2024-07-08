@@ -17,6 +17,7 @@ from jose import jwt
 import activetigger.functions as functions
 from activetigger.models import BertModels, SimpleModels
 from activetigger.datamodels import (
+    ProjectDataModel,
     ProjectModel,
     SchemeModel,
     SimpleModelModel,
@@ -341,6 +342,22 @@ class Server:
         }
         return data
 
+    def get_projects(self, username: str) -> dict[dict]:
+        """
+        Get projects authorized for the user
+        """
+
+        projects_auth = self.users.get_auth_user(username)
+        return {
+            i[0]: {
+                "auth": i[1],
+                "parameters": json.loads(i[2]),
+                "created_by": i[3],
+                "created_at": i[4],
+            }
+            for i in projects_auth
+        }
+
     def db_get_project(self, project_name: str) -> ProjectModel | None:
         """
         Get project from database
@@ -406,7 +423,7 @@ class Server:
         self.projects[project_name] = Project(project_name, self.db, self.queue)
         return {"success": "Project loaded"}
 
-    def set_project_parameters(self, project: ProjectModel) -> dict:
+    def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """
         Update project parameters in the DB
         """
@@ -425,17 +442,17 @@ class Server:
             )
         else:
             # Insert a new project
-            insert_query = "INSERT INTO projects (project_name, parameters, time_modified) VALUES (?, ?, CURRENT_TIMESTAMP)"
+            insert_query = "INSERT INTO projects (project_name, parameters, time_modified, user) VALUES (?, ?, CURRENT_TIMESTAMP, ?)"
             cursor.execute(
                 insert_query,
-                (project.project_name, json.dumps(jsonable_encoder(project))),
+                (project.project_name, json.dumps(jsonable_encoder(project)), username),
             )
         conn.commit()
         conn.close()
         return {"success": "project updated"}
 
     def create_project(
-        self, params: ProjectModel, username: str
+        self, params: ProjectDataModel, username: str
     ) -> ProjectModel | dict:
         """
         Set up a new project
@@ -592,9 +609,9 @@ class Server:
         self.users.set_auth(username, params.project_name, "manager")
         self.users.set_auth("root", params.project_name, "manager")
 
-        # save parameters
+        # save parameters (without the data)
         params.col_label = None  # reverse dummy
-        self.set_project_parameters(params)
+        self.set_project_parameters(ProjectModel(**params.model_dump()), username)
         return {"success": "Project created"}
 
     def delete_project(self, project_name: str) -> dict:
@@ -1483,7 +1500,7 @@ class Schemes:
 
         return df.sort_index().iloc[min:max]
 
-    def add_scheme(self, scheme: SchemeModel, username: str):
+    def add_scheme(self, scheme: SchemeModel):
         """
         Add new scheme
         """
@@ -1790,6 +1807,26 @@ class Users:
         conn.commit()
         conn.close()
         return {"success": "Auth deleted"}
+
+    def get_auth_user(self, username: str) -> list:
+        """
+        Get user auth
+        Comments:
+        - Either for all projects
+        - Or one project
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """SELECT auth.project, auth.status, projects.parameters, projects.user, projects.time_created
+        FROM auth
+        JOIN projects ON auth.project = projects.project_name
+        WHERE auth.user = ?"""
+        #        query = """SELECT project, status FROM auth WHERE user = ?"""
+        cursor.execute(query, (username,))
+        auth = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return auth
 
     def get_auth(self, username: str, project_name: str = "all") -> list:
         """
