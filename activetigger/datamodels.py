@@ -71,9 +71,10 @@ class ElementOutModel(BaseModel):
     context: Dict[str, Any]
     selection: str
     info: str | None
-    predict: dict
+    predict: Dict[str, Any]
     frame: list | None
     limit: int | None
+    history: list
 
 
 class UserModel(BaseModel):

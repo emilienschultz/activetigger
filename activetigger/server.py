@@ -785,7 +785,7 @@ class Project(Server):
         - maxprob
         - test
         """
-        print("history", history)
+
         # specific case of test, random element
         if selection == "test":
             df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
@@ -842,9 +842,9 @@ class Project(Server):
                 df[f].drop(history, errors="ignore").sample(random_state=42).index[0]
             )
             indicator = None
-        if (
-            selection == "maxprob"
-        ):  # higher prob, only possible if the model has been trained
+
+        # higher prob, only possible if the model has been trained
+        if selection == "maxprob":
             if not self.simplemodels.exists(user, scheme):
                 return {"error": "Simplemodel doesn't exist"}
             if tag is None:  # default label to first
@@ -859,9 +859,9 @@ class Project(Server):
                 .index[0]
             )  # get max proba id
             indicator = f"probability: {round(proba.loc[element_id,tag],2)}"
-        if (
-            selection == "active"
-        ):  # higher entropy, only possible if the model has been trained
+
+        # higher entropy, only possible if the model has been trained
+        if selection == "active":
             if not self.simplemodels.exists(user, scheme):
                 return {"error": "Simplemodel doesn't exist"}
             sm = self.simplemodels.get_model(user, scheme)  # get model
@@ -885,6 +885,9 @@ class Project(Server):
             predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
             predict = {"label": predicted_label, "proba": predicted_proba}
 
+        # get all tags already existing for the element
+        history = self.schemes.get_element_tags(element_id, scheme)
+
         element = {
             "element_id": element_id,
             "text": self.content.fillna("NA").loc[element_id, "text"],
@@ -896,6 +899,7 @@ class Project(Server):
             "predict": predict,
             "frame": frame,
             "limit": int(self.content.loc[element_id, "limit"]),
+            "history": history,
         }
 
         return element
@@ -919,6 +923,10 @@ class Project(Server):
                 predicted_label = sm.proba.loc[element_id, "prediction"]
                 predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
                 predict = {"label": predicted_label, "proba": predicted_proba}
+
+        # get element tags
+        history = self.schemes.get_element_tags(element_id, scheme)
+
         data = {
             "element_id": element_id,
             "text": self.content.loc[element_id, "text"],
@@ -930,6 +938,7 @@ class Project(Server):
             "info": "get specific",
             "frame": None,
             "limit": int(self.content.loc[element_id, "limit"]),
+            "history": history,
         }
 
         return data
@@ -1688,6 +1697,25 @@ class Schemes:
             if "error" in r:
                 return {"error": "Something happened when recording."}
         return {"success": "table pushed"}
+
+    def get_element_tags(self, element_id: str, scheme: str, n_max: int = 10):
+        """
+        Get all the tags for as specific element
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """
+                SELECT tag, action, user, time
+                FROM annotations
+                WHERE  project = ? AND scheme = ? AND element_id = ?
+                ORDER BY time DESC
+                LIMIT ?
+                """
+        cursor.execute(query, (self.project_name, scheme, element_id, n_max))
+        results = cursor.fetchall()
+        conn.commit()
+        conn.close()
+        return results
 
     def get_recent_tags(self, user: str, scheme: str, n: int) -> list:
         """
