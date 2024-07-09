@@ -2,7 +2,7 @@ import createClient from 'openapi-fetch';
 import { useCallback } from 'react';
 
 import type { components, paths } from '../generated/openapi';
-import { ProjectModel } from '../types';
+import { ProjectDataModel } from '../types';
 import config from './config';
 import { useAppContext } from './context';
 
@@ -46,7 +46,7 @@ export async function userProjects(username: string) {
 
 export function useCreateProject() {
   const { appContext } = useAppContext();
-  const createProject = useCallback(async (project: ProjectModel) => {
+  const createProject = useCallback(async (project: ProjectDataModel) => {
     if (appContext.user) {
       const res = await api.POST('/projects/new', {
         headers: {
@@ -64,4 +64,29 @@ export function useCreateProject() {
     //TODO: notify
   }, []);
   return createProject;
+}
+
+export function useGetProject() {
+  const { appContext } = useAppContext();
+  const getProject = useCallback(async (projectName: string) => {
+    if (appContext.user) {
+      const res = await api.GET('/state/{project_name}', {
+        headers: {
+          Authorization: `Bearer ${appContext.user.access_token}`,
+          username: appContext.user.username,
+        },
+        params: {
+          header: { username: appContext.user.username },
+          path: { project_name: projectName },
+        },
+      });
+      if (res.error)
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+      return res.data.params;
+    }
+    //TODO: notify
+  }, []);
+  return getProject;
 }

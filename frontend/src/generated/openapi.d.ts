@@ -1100,6 +1100,8 @@ export interface components {
             frame: unknown[] | null;
             /** Limit */
             limit: number | null;
+            /** History */
+            history: unknown[];
         };
         /** FeatureModel */
         FeatureModel: {
