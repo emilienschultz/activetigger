@@ -5,7 +5,10 @@ import { Link } from 'react-router-dom';
 import { useAppContext } from '../../core/context';
 
 const PAGES: { id: string; label: string; href: string }[] = [
-  { id: 'home', label: 'Active Tigger', href: '/' },
+  { id: 'projects', label: 'Projects', href: '/projects' },
+  { id: 'actions', label: 'Actions', href: '/actions' },
+  { id: 'user', label: 'Account', href: '/user' },
+  { id: 'documentation', label: 'Documentation', href: '/documentation' },
 ];
 
 interface NavBarPropsType {

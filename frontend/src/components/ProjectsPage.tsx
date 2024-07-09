@@ -24,14 +24,14 @@ export const ProjectsPage: FC = () => {
     <PageLayout>
       {
         <ul>
-          <li className="projects-list col-md-4 mb-4">
+          <li className="projects-list col-md-6 mb-4">
             <Link to="/projects/new" className="project-link new-project">
               Create new project
             </Link>
           </li>
-          <li className="projects-title col-md-4 mb-4">Existing projects</li>
+          <li className="projects-title col-md-6 mb-4">Existing projects</li>
           {Object.entries(projects).map(([key]) => (
-            <li key={key} className="projects-list col-md-4 mb-4">
+            <li key={key} className="projects-list col-md-6 mb-4">
               <Link to={`/projects/${key}`} className="project-link">
                 <b>{key}</b>
                 <br></br> (created by {projects[key].created_by} the {projects[key].created_at}){' '}
