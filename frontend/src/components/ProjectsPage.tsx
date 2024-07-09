@@ -22,25 +22,30 @@ export const ProjectsPage: FC = () => {
 
   return (
     <PageLayout>
-      {
-        <ul>
-          <li className="projects-list col-md-6 mb-4">
-            <Link to="/projects/new" className="project-link new-project">
-              Create new project
-            </Link>
-          </li>
-          <li className="projects-title col-md-6 mb-4">Existing projects</li>
-          {Object.entries(projects).map(([key]) => (
-            <li key={key} className="projects-list col-md-6 mb-4">
-              <Link to={`/projects/${key}`} className="project-link">
-                <b>{key}</b>
-                <br></br> (created by {projects[key].created_by} the {projects[key].created_at}){' '}
-                {/* QUESTION how to remove this error "Object is possibly 'undefined'"*/}
+      <div className="d-flex justify-content-center align-items-center">
+        {
+          <ul className="col-md-6">
+            <li className="projects-list">
+              <Link to="/projects/new" className="project-link new-project">
+                Create new project
               </Link>
             </li>
-          ))}
-        </ul>
-      }
+            <li className="projects-title">Existing projects</li>
+            {Object.entries(projects).map(([key]) => (
+              <li key={key} className="projects-list">
+                <Link to={`/projects/${key}`} className="project-link">
+                  <b>{key}</b>
+                  <br />
+                  <p className="project-description">
+                    created by {projects[key].created_by} the {projects[key].created_at}
+                  </p>
+                  {/* QUESTION how to remove this error "Object is possibly 'undefined'"*/}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        }
+      </div>
     </PageLayout>
   );
 };

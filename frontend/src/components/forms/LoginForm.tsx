@@ -19,9 +19,12 @@ export const LoginForm: FC = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <input className="form-control" type="text" {...register('username')} />
-      <input className="form-control" type="password" {...register('password')} />
-      <button className="btn btn-primary">login</button>
+      <div>Connect to the service</div>
+      <input className="form-control form-appearance mt-2" type="text" {...register('username')} />
+      <input className="form-control mt-2" type="password" {...register('password')} />
+      <button className="btn btn-primary btn-validation">Login</button>
     </form>
+
+    // TODO : rediriger vers l'application si validé ?
   );
 };

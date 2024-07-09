@@ -1,4 +1,5 @@
 $primary: #444;
+
 .project-link {
     display: block;
     padding: 5px;
@@ -22,6 +23,9 @@ $primary: #444;
 
   }
 
+  .project-description{
+    color: #74797e;
+  }
   
   .project-link:hover {
     background-color: #e0e0e0;
@@ -44,5 +48,19 @@ $primary: #444;
 
   .nav-info{
     margin: 5px;
+    text-align: center;
+  }
+
+  .btn-validation{
+    margin-top: 20px;
+  }
+
+  .general-info {
+    margin-top: 40px;
+    background-color: #f8f9fa;
+    border: 1px solid #6c757d;
+    padding: 1rem; 
+    color: #343a40;
+    border-radius: 0.25rem;
     text-align: center;
   }

@@ -7,8 +7,8 @@ import { useAppContext } from '../../core/context';
 const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'projects', label: 'Projects', href: '/projects' },
   { id: 'actions', label: 'Actions', href: '/actions' },
-  { id: 'user', label: 'Account', href: '/user' },
   { id: 'documentation', label: 'Documentation', href: '/documentation' },
+  { id: 'login', label: 'Login', href: '/login' },
 ];
 
 interface NavBarPropsType {
