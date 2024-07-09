@@ -1274,7 +1274,7 @@ def _get_state() -> dict:
     """
     # only if a current project is selected
     if "current_project" in st.session_state:
-        r = _get(route=f"/state/{st.session_state.current_project}")
+        r = _get(route=f"/projects/{st.session_state.current_project}")
         if (r is not None) and ("error" in r):
             st.write(r["error"])
             return {}

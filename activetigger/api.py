@@ -450,10 +450,12 @@ async def get_logs(
 
 
 @app.get(
-    "/state/{project_slug}",
+    "/projects/{project_slug}",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
-async def get_state(project: Annotated[Project, Depends(get_project)]) -> StateModel:
+async def get_project_state(
+    project: Annotated[Project, Depends(get_project)]
+) -> StateModel:
     """
     Get the state of a specific project
     """
@@ -461,27 +463,6 @@ async def get_state(project: Annotated[Project, Depends(get_project)]) -> StateM
         raise HTTPException(status_code=404, detail="Project not found")
     data = project.get_state()
     return StateModel(**data)
-
-
-@app.get("/queue")
-async def get_queue() -> QueueModel:
-    """
-    Get the state of the server queue
-    """
-    r = server.queue.state()
-    return QueueModel(**r)
-
-
-@app.get("/session")
-async def info_server(username: Annotated[str, Header()]) -> ProjectsServerModel:
-    """
-    Get general informations on the server
-    depending of the status of connected user
-    """
-    r = server.get_session_info(username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return ProjectsServerModel(**r)
 
 
 @app.get("/projects")
@@ -496,7 +477,13 @@ async def get_projects(username: Annotated[str, Header()]) -> AvailableProjectsM
     return AvailableProjectsModel(projects=r)
 
 
-# AJOUTER UNE ROUTE users/projects
+@app.get("/queue")
+async def get_queue() -> QueueModel:
+    """
+    Get the state of the server queue
+    """
+    r = server.queue.state()
+    return QueueModel(**r)
 
 
 @app.get("/project/description", dependencies=[Depends(verified_user)])
