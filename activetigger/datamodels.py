@@ -118,7 +118,7 @@ class AnnotationModel(BaseModel):
     Specific Annotatoin
     """
 
-    project_name: str
+    project_slug: str
     element_id: str
     tag: str
     user: str
@@ -131,7 +131,7 @@ class SchemeModel(BaseModel):
     Specific scheme
     """
 
-    project_name: str
+    project_slug: str
     name: str
     tags: Optional[list] = []
 
@@ -141,7 +141,7 @@ class RegexModel(BaseModel):
     Regex
     """
 
-    project_name: str
+    project_slug: str
     name: str
     value: str
     user: str
@@ -166,7 +166,7 @@ class BertModelModel(BaseModel):
     TODO : model for parameters
     """
 
-    project_name: str
+    project_slug: str
     user: str
     scheme: str
     name: str

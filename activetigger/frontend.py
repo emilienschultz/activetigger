@@ -279,7 +279,7 @@ def display_projects():
             )
             if st.button("Create"):
                 _create_project(data)
-                st.session_state.current_project = project_name
+                #st.session_state.current_project = project_name
 
     # case a project is loaded
     if st.session_state.current_project and (
@@ -1105,7 +1105,7 @@ def display_test():
                 key="n_test",
             )
             data = {
-                "project_name": st.session_state.current_project,
+                "project_slug": st.session_state.current_project,
                 "user": st.session_state.user,
                 "col_text": column_text,
                 "col_id": column_id,
@@ -1325,11 +1325,11 @@ def _create_project(data) -> bool:
     return True
 
 
-def _delete_project(project_name: str) -> dict:
+def _delete_project(project_slug: str) -> dict:
     """
     Delete existing project
     """
-    params = {"project_name": project_name, "user": st.session_state.user}
+    params = {"project_slug": project_slug, "user": st.session_state.user}
     r = _post(route="/projects/delete", params=params)
     return r
 
@@ -1340,9 +1340,9 @@ def _create_scheme(s: str):
     """
     if s == "":
         return "Empty"
-    params = {"project_name": st.session_state.current_project}
+    params = {"project_slug": st.session_state.current_project}
     data = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "name": s,
         "tags": [],
     }
@@ -1357,7 +1357,7 @@ def _create_label(label: str):
     if label == "":
         return "Empty"
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "label": label,
         "user": st.session_state.user,
@@ -1372,9 +1372,9 @@ def _delete_scheme(s: str):
     """
     if s == "":
         return "Empty"
-    params = {"project_name": st.session_state.current_project}
+    params = {"project_slug": st.session_state.current_project}
     data = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "name": s,
     }
     r = _post("/schemes/delete", params=params, json_data=data)
@@ -1388,7 +1388,7 @@ def _delete_label(label: str):
     if label == "":
         return "Empty"
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "label": label,
         "user": st.session_state.user,
@@ -1404,7 +1404,7 @@ def _delete_feature(feature_name) -> bool:
     r = _post(
         f"/features/delete/{feature_name}",
         params={
-            "project_name": st.session_state.current_project,
+            "project_slug": st.session_state.current_project,
             "user": st.session_state.user,
         },
     )
@@ -1424,7 +1424,7 @@ def _add_feature(feature_name, feature_params) -> bool:
     r = _post(
         f"/features/add/{feature_name}",
         params={
-            "project_name": st.session_state.current_project,
+            "project_slug": st.session_state.current_project,
             "user": st.session_state.user,
         },
         json_data={"params": feature_params},
@@ -1443,7 +1443,7 @@ def _add_regex(value: str, name: str | None = None) -> bool:
 
     data = {
         "params": {
-            "project_name": st.session_state.current_project,
+            "project_slug": st.session_state.current_project,
             "name": name,
             "value": value,
             "user": st.session_state.user,
@@ -1452,7 +1452,7 @@ def _add_regex(value: str, name: str | None = None) -> bool:
 
     r = _post(
         "/features/add/regex",
-        params={"project_name": st.session_state.current_project},
+        params={"project_slug": st.session_state.current_project},
         json_data=data,
     )
     return True
@@ -1474,7 +1474,7 @@ def _get_next_element() -> bool:
     x1y1x2y2 = []
 
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "user": st.session_state.user,
     }
     data = {
@@ -1502,7 +1502,7 @@ def _get_next_element() -> bool:
 
 def _send_tag(label):
     data = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "element_id": st.session_state.current_element["element_id"],
         "tag": label,
@@ -1514,7 +1514,7 @@ def _send_tag(label):
 
     r = _post(
         route="/tags/add",
-        params={"project_name": st.session_state.current_project},
+        params={"project_slug": st.session_state.current_project},
         json_data=data,
     )
 
@@ -1540,7 +1540,7 @@ def _display_element(element_id):
     r = _get(
         route=f"/elements/{element_id}",
         params={
-            "project_name": st.session_state.current_project,
+            "project_slug": st.session_state.current_project,
             "scheme": st.session_state.current_scheme,
         },
     )
@@ -1570,7 +1570,7 @@ def _compute_projection():
     Start computing projection
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "user": st.session_state.user,
     }
 
@@ -1635,7 +1635,7 @@ def _get_projection_data():
     Get projection data
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "user": st.session_state.user,
         "scheme": st.session_state.current_scheme,
     }
@@ -1648,7 +1648,7 @@ def _get_statistics():
     Get statistics of the project
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "user": st.session_state.user,
     }
@@ -1665,7 +1665,7 @@ def _get_table():
     Get data as a table
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "min": st.session_state.data_min,
         "max": st.session_state.data_max,
@@ -1698,7 +1698,7 @@ def _send_table(df, labels="label"):
         "/elements/table",
         json_data=data,
         params={
-            "project_name": st.session_state.current_project,
+            "project_slug": st.session_state.current_project,
             "user": st.session_state.user,
         },
     )
@@ -1717,7 +1717,7 @@ def _train_simplemodel():
         len(st.session_state.sm_features) == 0
     ):
         return "Need at least one feature"
-    params = {"project_name": st.session_state.current_project}
+    params = {"project_slug": st.session_state.current_project}
     if type(st.session_state.sm_params) is str:
         try:
             parameters = json.loads(st.session_state.sm_params)
@@ -1746,7 +1746,7 @@ def _bert_prediction():
     if st.session_state.bm_trained is None:
         return False
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "user": st.session_state.user,
         "model_name": st.session_state.bm_trained,
     }
@@ -1757,7 +1757,7 @@ def _bert_prediction():
 
 
 def _bert_test_informations(model):
-    params = {"project_name": st.session_state.current_project, "name": model}
+    params = {"project_slug": st.session_state.current_project, "name": model}
     r = _get("/models/bert", params=params)
     if (r is not None) and ("error" in r):
         st.write(r["error"])
@@ -1774,7 +1774,7 @@ def _bert_informations():
     if st.session_state.bm_trained is None:
         return False
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "name": st.session_state.bm_trained,
     }
     r = _get("/models/bert", params=params)
@@ -1805,7 +1805,7 @@ def _delete_bert():
     Delete bert model
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "bert_name": st.session_state.bm_trained,
         "user": st.session_state.user,
     }
@@ -1818,7 +1818,7 @@ def _save_bert():
     Rename model
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "former_name": st.session_state.bm_trained,
         "new_name": st.session_state.bm_new_name,
         "user": st.session_state.user,
@@ -1836,7 +1836,7 @@ def _start_bertmodel():
     except:
         raise ValueError("Problem in the json parameters")
 
-    params = {"project_name": st.session_state.current_project}
+    params = {"project_slug": st.session_state.current_project}
 
     # Specific or generic model
     model_name = st.session_state.bm_train
@@ -1844,7 +1844,7 @@ def _start_bertmodel():
         model_name = st.session_state.bm_train_hf
 
     data = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "user": st.session_state.user,
         "name": f"_{st.session_state.user}",  # générique
@@ -1864,7 +1864,7 @@ def _stop_user_process():
     Stop user process training
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "user": st.session_state.user,
     }
     r = _post("/stop", params=params)
@@ -1878,7 +1878,7 @@ def _export_data():
     Get exported data
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,  # current scheme
         "format": st.session_state.export_format,
     }
@@ -1896,7 +1896,7 @@ def _export_features():
         return None
 
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "features": st.session_state.export_features,
         "format": st.session_state.export_format,
     }
@@ -1910,7 +1910,7 @@ def _export_predictions():
     Get exported prediction for a BERT model
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "name": st.session_state.bert_model,
         "format": st.session_state.export_format,
     }
@@ -1924,7 +1924,7 @@ def _export_model():
     Get BERT Model
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "name": st.session_state.bert_model,
     }
     r = _get("/export/bert", params=params, binary=True)
@@ -1957,7 +1957,7 @@ def _get_simplemodel():
 
 def _compute_test(model_name, scheme):
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": scheme,
         "model": model_name,
     }
@@ -1981,7 +1981,7 @@ def _start_zeroshot(api, token, prompt, number=10):
     }
     r = _post(
         route="/elements/zeroshot",
-        params={"project_name": st.session_state.current_project},
+        params={"project_slug": st.session_state.current_project},
         json_data=data,
     )
     if (r is not None) and ("error" in r):
@@ -1997,7 +1997,7 @@ def _create_testset(data, df, filename):
     files = {"file": (filename, buffer)}
     r = _post(
         route="/projects/testdata",
-        params={"project_name": st.session_state.current_project},
+        params={"project_slug": st.session_state.current_project},
         files=files,
         data=data,
     )
@@ -2027,18 +2027,18 @@ def _get_logs():
     Get logs for the current user/project
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "username": st.session_state.user,
     }
     r = _get("/logs", params=params)
     return r
 
 
-def _get_auth(project_name: str):
+def _get_auth(project_slug: str):
     """
     Get auth for a project
     """
-    params = {"project_name": project_name}
+    params = {"project_slug": project_slug}
     r = _get("/project/auth", params=params)
     if (r is not None) and ("error" in r):
         st.write(r["error"])
@@ -2051,7 +2051,7 @@ def _add_auth(username: str, auth: str):
     Add new auth
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "username": username,
         "status": auth,
     }
@@ -2071,7 +2071,7 @@ def _delete_auth(username: str):
     """
     r = _post(
         route="/users/auth/delete",
-        params={"project_name": st.session_state.current_project, "username": username},
+        params={"project_slug": st.session_state.current_project, "username": username},
     )
     if (r is not None) and ("error" in r):
         st.write(r["error"])
@@ -2083,7 +2083,7 @@ def _get_reconciliation_table(scheme: str):
     """
     Get reconcialiation table
     """
-    params = {"project_name": st.session_state.current_project, "scheme": scheme}
+    params = {"project_slug": st.session_state.current_project, "scheme": scheme}
     r = _get("/elements/reconciliate", params=params)
     if (r is not None) and ("error" in r):
         st.write(r["error"])
@@ -2098,7 +2098,7 @@ def _post_reconciliation_table(new_labels: dict, users: list):
     # loop on each label to reconciliate
     for i, j in new_labels.items():
         params = {
-            "project_name": st.session_state.current_project,
+            "project_slug": st.session_state.current_project,
             "scheme": st.session_state.current_scheme,
             "element_id": i,
             "users": users,
@@ -2125,7 +2125,7 @@ def _rename_label(former_label: str, new_label: str):
     Rename a label with another
     """
     params = {
-        "project_name": st.session_state.current_project,
+        "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "former_label": former_label,
         "new_label": new_label,

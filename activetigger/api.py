@@ -63,7 +63,7 @@ from activetigger.datamodels import (
 # - username is in the header
 
 
-def test_rights(action: str, username: str, project_name: str | None = None) -> bool:
+def test_rights(action: str, username: str, project_slug: str | None = None) -> bool:
     """
     Management of rights on the routes
     Different levels:
@@ -94,10 +94,10 @@ def test_rights(action: str, username: str, project_name: str | None = None) -> 
         else:
             raise HTTPException(403, "No rights for this action")
 
-    if not project_name:
+    if not project_slug:
         raise HTTPException(500, "Project name missing")
 
-    auth = server.users.auth(username, project_name)
+    auth = server.users.auth(username, project_slug)
     # print(auth)
 
     # possibility to modify project (create/delete)
@@ -217,7 +217,7 @@ app.add_middleware(
 # ------------
 
 
-async def get_project(project_name: str) -> ProjectModel:
+async def get_project(project_slug: str) -> ProjectModel:
     """
     Dependencie to get existing project
     - if already loaded, return it
@@ -225,16 +225,16 @@ async def get_project(project_name: str) -> ProjectModel:
     """
 
     # if project doesn't exist
-    if not server.exists(project_name):
+    if not server.exists(project_slug):
         raise HTTPException(status_code=404, detail="Project not found")
 
     # if the project is already loaded
-    if project_name in server.projects:
-        return server.projects[project_name]
+    if project_slug in server.projects:
+        return server.projects[project_slug]
 
     # load it
-    server.start_project(project_name)
-    return server.projects[project_name]
+    server.start_project(project_slug)
+    return server.projects[project_slug]
 
 
 async def verified_user(
@@ -264,13 +264,13 @@ async def verified_user(
 async def check_auth_exists(
     request: Request,
     username: Annotated[str, Header()],
-    project_name: str | None = None,
+    project_slug: str | None = None,
 ) -> None:
     """
     Check if a user is associated to a project
     """
     # print("route", request.url.path, request.method)
-    auth = server.users.auth(username, project_name)
+    auth = server.users.auth(username, project_slug)
     if not auth:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
     return None
@@ -279,14 +279,14 @@ async def check_auth_exists(
 async def check_auth_manager(
     request: Request,
     username: Annotated[str, Header()],
-    project_name: str | None = None,
+    project_slug: str | None = None,
 ) -> None:
     """
     Check if a user has auth to a project
     """
     if username == "root":  # root have complete power
         return None
-    auth = server.users.auth(username, project_name)
+    auth = server.users.auth(username, project_slug)
     if not auth == "manager":
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
     return None
@@ -401,21 +401,21 @@ async def delete_user(username: str = Query()) -> None:
 async def set_auth(
     action: AuthActions,
     username: str = Query(),
-    project_name: str = Query(),
+    project_slug: str = Query(),
     status: str = Query(None),
 ) -> None:
     """
     Set user auth
     """
-    test_rights("modify project", username, project_name)
+    test_rights("modify project", username, project_slug)
     if action == "add":
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")
-        r = server.users.set_auth(username, project_name, status)
+        r = server.users.set_auth(username, project_slug, status)
         return None
 
     if action == "delete":
-        r = server.users.delete_auth(username, project_name)
+        r = server.users.delete_auth(username, project_slug)
         return None
 
     raise HTTPException(status_code=400, detail="Action not found")
@@ -431,12 +431,12 @@ async def get_auth(username: str) -> List:
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(
-    username: str, project_name: str = "all", limit=100
+    username: str, project_slug: str = "all", limit=100
 ) -> TableLogsModel:
     """
     Get all logs for a username/project
     """
-    df = server.get_logs(username, project_name, limit)
+    df = server.get_logs(username, project_slug, limit)
     return TableLogsModel(
         time=list(df["time"]),
         user=list(df["user"]),
@@ -450,7 +450,7 @@ async def get_logs(
 
 
 @app.get(
-    "/state/{project_name}",
+    "/state/{project_slug}",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
 async def get_state(project: Annotated[Project, Depends(get_project)]) -> StateModel:
@@ -516,11 +516,11 @@ async def get_description(
 
 
 @app.get("/project/auth", dependencies=[Depends(verified_user)])
-async def get_project_auth(project_name: str) -> ProjectAuthsModel:
+async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
     """
     Users auth on a project
     """
-    r = server.users.get_project_auth(project_name)
+    r = server.users.get_project_auth(project_slug)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return ProjectAuthsModel(auth=r)
@@ -563,9 +563,11 @@ async def new_project(
     # test rights to create project
     test_rights("create project", username)
 
-    # test if project_name already exists
+    # test if project_slug already exists
     if server.exists(project.project_name):
-        raise HTTPException(status_code=500, detail="Project name already exists (exact or slugified)")
+        raise HTTPException(
+            status_code=500, detail="Project name already exists (exact or slugified)"
+        )
 
     # create the project
     server.create_project(project, username)
@@ -580,14 +582,14 @@ async def new_project(
     "/projects/delete",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
-async def delete_project(username: Annotated[str, Header()], project_name: str) -> None:
+async def delete_project(username: Annotated[str, Header()], project_slug: str) -> None:
     """
     Delete a project
     """
-    test_rights("modify project", username, project_name)
+    test_rights("modify project", username, project_slug)
 
-    r = server.delete_project(project_name)
-    server.log_action(username, "delete project", project_name)
+    r = server.delete_project(project_slug)
+    server.log_action(username, "delete project", project_slug)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
