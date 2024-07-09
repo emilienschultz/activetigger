@@ -1,5 +1,4 @@
 $primary: #444;
-
 .project-link {
     display: block;
     padding: 10px;
@@ -11,7 +10,16 @@ $primary: #444;
     color: black;
     transition: background-color 0.3s;
     margin-bottom: 10px;
+    text-align: center;
+
   }
+
+  .new-project {
+    background-color: #1989ea;
+    color: #ffffff;
+    font-size: 20px;
+  }
+
   
   .project-link:hover {
     background-color: #e0e0e0;
@@ -21,4 +29,14 @@ $primary: #444;
     list-style-type: none; /* Remove bullets */
     padding: 0;
   }
+
+  .projects-title {
+    list-style-type: none; /* Remove bullets */
+    padding: 0;
+    text-align: center;
+  }
  
+  .btn-create-project{
+    margin: 30px;
+   
+  }
