@@ -203,7 +203,7 @@ class Server:
         # Projects table
         create_table_sql = """
             CREATE TABLE IF NOT EXISTS projects (
-                project_name TEXT PRIMARY KEY,
+                project_slug TEXT PRIMARY KEY,
                 time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 parameters TEXT,
                 time_modified TIMESTAMP,
@@ -310,7 +310,7 @@ class Server:
         conn.close()
         logger.info(f"{action} from {user} in project {project}")
 
-    def get_logs(self, username: str, project_name: str, limit: int):
+    def get_logs(self, username: str, project_slug: str, limit: int):
         """
         Get logs for a user/project
 
@@ -318,12 +318,12 @@ class Server:
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        if project_name == "all":
+        if project_slug == "all":
             query = """SELECT * FROM logs WHERE user = ? ORDER BY time DESC"""
             cursor.execute(query, (username,))
         else:
             query = """SELECT * FROM logs WHERE user = ? AND project = ? ORDER BY time DESC LIMIT ?"""
-            cursor.execute(query, (username, project_name, limit))
+            cursor.execute(query, (username, project_slug, limit))
         logs = cursor.fetchall()
         conn.commit()
         conn.close()
@@ -359,14 +359,14 @@ class Server:
             for i in projects_auth
         }
 
-    def db_get_project(self, project_name: str) -> ProjectModel | None:
+    def db_get_project(self, project_slug: str) -> ProjectModel | None:
         """
         Get project from database
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        query = "SELECT * FROM projects WHERE project_name = ?"
-        cursor.execute(query, (project_name,))
+        query = "SELECT * FROM projects WHERE project_slug = ?"
+        cursor.execute(query, (project_slug,))
         existing_project = cursor.fetchone()
         conn.commit()
         conn.close()
@@ -382,7 +382,7 @@ class Server:
         Test if a project exists in the database
         with a sluggified form (to be able to use it in URL)
         """
-        return slugify(project_name) in [slugify(i) for i in self.existing_projects()]
+        return slugify(project_name) in self.existing_projects()
 
     def existing_projects(self) -> list:
         """
@@ -390,7 +390,7 @@ class Server:
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        query = "SELECT project_name FROM projects"
+        query = "SELECT project_slug FROM projects"
         cursor.execute(query)
         existing_project = cursor.fetchall()
         conn.close()
@@ -413,39 +413,39 @@ class Server:
         payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
         return payload
 
-    def start_project(self, project_name: str) -> dict:
+    def start_project(self, project_slug: str) -> dict:
         """
         Load project in server
         """
-        if not self.exists(project_name):
+        if not self.exists(project_slug):
             return {"error": "Project does not exist"}
 
-        self.projects[project_name] = Project(project_name, self.db, self.queue)
+        self.projects[project_slug] = Project(project_slug, self.db, self.queue)
         return {"success": "Project loaded"}
 
-    def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
+    def set_project_parameters(self, project_slug:str, project: ProjectModel, username: str) -> dict:
         """
         Update project parameters in the DB
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        query = "SELECT * FROM projects WHERE project_name = ?"
-        cursor.execute(query, (project.project_name,))
+        query = "SELECT * FROM projects WHERE project_slug = ?"
+        cursor.execute(query, (project_slug,))
         existing_project = cursor.fetchone()
 
         if existing_project:
             # Update the existing project
-            update_query = "UPDATE projects SET parameters = ?, time_modified = CURRENT_TIMESTAMP WHERE project_name = ?"
+            update_query = "UPDATE projects SET parameters = ?, time_modified = CURRENT_TIMESTAMP WHERE project_slug = ?"
             cursor.execute(
                 update_query,
-                (json.dumps(jsonable_encoder(project)), project.project_name),
+                (json.dumps(jsonable_encoder(project)), project_slug),
             )
         else:
             # Insert a new project
-            insert_query = "INSERT INTO projects (project_name, parameters, time_modified, user) VALUES (?, ?, CURRENT_TIMESTAMP, ?)"
+            insert_query = "INSERT INTO projects (project_slug, parameters, time_modified, user) VALUES (?, ?, CURRENT_TIMESTAMP, ?)"
             cursor.execute(
                 insert_query,
-                (project.project_name, json.dumps(jsonable_encoder(project)), username),
+                (project_slug, json.dumps(jsonable_encoder(project)), username),
             )
         conn.commit()
         conn.close()
@@ -467,8 +467,11 @@ class Server:
         # test if possible to create the project
         if self.exists(params.project_name):
             return {"error": "Project name already exist"}
+        
+        # get the slug of the project name as a key
+        project_slug = slugify(params.project_name)
 
-        params.dir = self.path / params.project_name
+        params.dir = self.path / project_slug
 
         if params.dir.exists():
             return {"error": "This name is already used"}
@@ -572,7 +575,7 @@ class Server:
                     """
             cursor.execute(
                 query,
-                (params.project_name, "default", json.dumps(params.default_scheme)),
+                (project_slug, "default", json.dumps(params.default_scheme)),
             )
             conn.commit()
             # add the labels in the database
@@ -585,7 +588,7 @@ class Server:
                     (
                         "add",
                         username,
-                        params.project_name,
+                        project_slug,
                         element_id,
                         "default",
                         label,
@@ -596,7 +599,7 @@ class Server:
                     (
                         "add",
                         username,
-                        params.project_name,
+                        project_slug,
                         element_id,
                         "default",
                         label,
@@ -606,33 +609,33 @@ class Server:
             conn.close()
 
         # add user right on the project + root
-        self.users.set_auth(username, params.project_name, "manager")
-        self.users.set_auth("root", params.project_name, "manager")
+        self.users.set_auth(username, project_slug, "manager")
+        self.users.set_auth("root", project_slug, "manager")
 
         # save parameters (without the data)
         params.col_label = None  # reverse dummy
-        self.set_project_parameters(ProjectModel(**params.model_dump()), username)
+        self.set_project_parameters(project_slug, ProjectModel(**params.model_dump()), username)
         return {"success": "Project created"}
 
-    def delete_project(self, project_name: str) -> dict:
+    def delete_project(self, project_slug: str) -> dict:
         """
         Delete a project
         """
 
-        if not self.exists(project_name):
+        if not self.exists(project_slug):
             return {"error": "Project doesn't exist"}
 
         # remove files
-        params = self.db_get_project(project_name)
+        params = self.db_get_project(project_slug)
         shutil.rmtree(params.dir)
 
         # clean database
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM projects WHERE project_name = ?", (project_name,))
-        cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_name,))
-        cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_name,))
-        cursor.execute(f"DELETE FROM auth WHERE project = ?", (project_name,))
+        cursor.execute(f"DELETE FROM projects WHERE project_slug = ?", (project_slug,))
+        cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_slug,))
+        cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_slug,))
+        cursor.execute(f"DELETE FROM auth WHERE project = ?", (project_slug,))
         conn.commit()
         conn.close()
         return {"success": "Project deleted"}
@@ -643,15 +646,15 @@ class Project(Server):
     Project object
     """
 
-    def __init__(self, project_name: str, path_db: Path, queue) -> None:
+    def __init__(self, project_slug: str, path_db: Path, queue) -> None:
         """
         Load existing project
         """
         self.starting_time = time.time()
-        self.name: str = project_name
+        self.name: str = project_slug
         self.db = path_db
         self.queue = queue
-        self.params: ProjectModel = self.load_params(project_name)
+        self.params: ProjectModel = self.load_params(project_slug)
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
 
@@ -660,13 +663,13 @@ class Project(Server):
 
         # create specific management objets
         self.schemes: Schemes = Schemes(
-            project_name,
+            project_slug,
             self.params.dir / self.labels_file,
             self.params.dir / self.test_file,
             self.db,
         )
         self.features: Features = Features(
-            project_name, self.params.dir / self.features_file, self.db, self.queue
+            project_slug, self.params.dir / self.features_file, self.db, self.queue
         )
         self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
@@ -675,14 +678,14 @@ class Project(Server):
     def __del__(self):
         pass
 
-    def load_params(self, project_name: str) -> ProjectModel:
+    def load_params(self, project_slug: str) -> ProjectModel:
         """
         Load params from database
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        query = "SELECT * FROM projects WHERE project_name = ?"
-        cursor.execute(query, (project_name,))
+        query = "SELECT * FROM projects WHERE project_slug = ?"
+        cursor.execute(query, (project_slug,))
         existing_project = cursor.fetchone()
         conn.commit()
         conn.close()
@@ -690,7 +693,7 @@ class Project(Server):
         if existing_project:
             return ProjectModel(**json.loads(existing_project[2]))
         else:
-            raise NameError(f"{project_name} does not exist.")
+            raise NameError(f"{project_slug} does not exist.")
 
     def add_testdata(self, file, col_text, col_id, n_test):
         """
@@ -1139,12 +1142,12 @@ class Features:
     """
 
     def __init__(
-        self, project_name: str, data_path: Path, db_path: Path, queue
+        self, project_slug: str, data_path: Path, db_path: Path, queue
     ) -> None:
         """
         Initit features
         """
-        self.project_name = project_name
+        self.project_slug = project_slug
         self.path = data_path
         self.db = db_path
         self.queue = queue
@@ -1325,7 +1328,7 @@ class Schemes:
 
     def __init__(
         self,
-        project_name: str,
+        project_slug: str,
         path_content: Path,  # training data
         path_test: Path,  # test data
         db_path: Path,
@@ -1333,7 +1336,7 @@ class Schemes:
         """
         Init empty
         """
-        self.project_name = project_name
+        self.project_slug = project_slug
         self.db = db_path
         self.content = pd.read_parquet(path_content)  # text + context
         self.test = None
@@ -1345,7 +1348,7 @@ class Schemes:
         # create a default scheme if not available
         if len(available) == 0:
             self.add_scheme(
-                SchemeModel(project_name=project_name, name="default", tags=[])
+                SchemeModel(project_slug=project_slug, name="default", tags=[])
             )
 
     def __repr__(self) -> str:
@@ -1384,7 +1387,7 @@ class Schemes:
             GROUP BY element_id
             ORDER BY time DESC;
         """
-        cursor.execute(query, (scheme, self.project_name) + tuple(kind))
+        cursor.execute(query, (scheme, self.project_slug) + tuple(kind))
         results = cursor.fetchall()
         conn.close()
         df = pd.DataFrame(
@@ -1422,7 +1425,7 @@ class Schemes:
             ) AS last_entries
             ON e.id = last_entries.id;
         """
-        cursor.execute(query, (self.project_name, scheme))
+        cursor.execute(query, (self.project_slug, scheme))
         results = cursor.fetchall()
         conn.close()
 
@@ -1523,7 +1526,7 @@ class Schemes:
                 INSERT INTO schemes (project, name, params) 
                 VALUES (?, ?, ?)
                 """
-        cursor.execute(query, (self.project_name, scheme.name, json.dumps(scheme.tags)))
+        cursor.execute(query, (self.project_slug, scheme.name, json.dumps(scheme.tags)))
         conn.commit()
         conn.close()
         return {"success": "scheme created"}
@@ -1570,7 +1573,7 @@ class Schemes:
         cursor = conn.cursor()
         query = "UPDATE schemes SET params = ?, time_modified = ? WHERE project = ? AND name = ?"
         cursor.execute(
-            query, (json.dumps(labels), datetime.now(), self.project_name, scheme)
+            query, (json.dumps(labels), datetime.now(), self.project_slug, scheme)
         )
         conn.commit()
         conn.close()
@@ -1583,7 +1586,7 @@ class Schemes:
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = "DELETE FROM schemes WHERE project = ? AND name = ?"
-        cursor.execute(query, (self.project_name, scheme.name))
+        cursor.execute(query, (self.project_slug, scheme.name))
         conn.commit()
         conn.close()
         return {"success": "scheme deleted"}
@@ -1595,7 +1598,7 @@ class Schemes:
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = "SELECT * FROM schemes WHERE project = ? AND name = ?"
-        cursor.execute(query, (self.project_name, name))
+        cursor.execute(query, (self.project_slug, name))
         result = cursor.fetchone()
         conn.close()
         if result is None:
@@ -1610,7 +1613,7 @@ class Schemes:
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = "SELECT name, params FROM schemes WHERE project = ?"
-        cursor.execute(query, (self.project_name,))
+        cursor.execute(query, (self.project_slug,))
         results = cursor.fetchall()
         conn.commit()
         conn.close()
@@ -1620,7 +1623,7 @@ class Schemes:
         """
         state of the schemes
         """
-        r = {"project_name": self.project_name, "availables": self.available()}
+        r = {"project_slug": self.project_slug, "availables": self.available()}
         return r
 
     def delete_tag(self, element_id: str, scheme: str, user: str = "server") -> bool:
@@ -1637,10 +1640,10 @@ class Schemes:
         """
         # add delete action and then add void action
         cursor.execute(
-            query, ("delete", user, self.project_name, element_id, scheme, None)
+            query, ("delete", user, self.project_slug, element_id, scheme, None)
         )
         cursor.execute(
-            query, ("add", user, self.project_name, element_id, scheme, None)
+            query, ("add", user, self.project_slug, element_id, scheme, None)
         )
         conn.commit()
         conn.close()
@@ -1677,9 +1680,9 @@ class Schemes:
             VALUES (?,?,?,?,?,?);
         """
         print("push tag")
-        print((action, user, self.project_name, element_id, scheme, tag))
+        print((action, user, self.project_slug, element_id, scheme, tag))
         cursor.execute(
-            query, (action, user, self.project_name, element_id, scheme, tag)
+            query, (action, user, self.project_slug, element_id, scheme, tag)
         )
         conn.commit()
         conn.close()
@@ -1711,7 +1714,7 @@ class Schemes:
                 ORDER BY time DESC
                 LIMIT ?
                 """
-        cursor.execute(query, (self.project_name, scheme, element_id, n_max))
+        cursor.execute(query, (self.project_slug, scheme, element_id, n_max))
         results = cursor.fetchall()
         conn.commit()
         conn.close()
@@ -1735,7 +1738,7 @@ class Schemes:
                     ORDER BY time DESC
                     LIMIT ?
                     """
-            cursor.execute(query, (self.project_name, scheme, "add", n))
+            cursor.execute(query, (self.project_slug, scheme, "add", n))
         else:  # only one user
             query = """
                     SELECT DISTINCT element_id 
@@ -1744,7 +1747,7 @@ class Schemes:
                     ORDER BY time DESC
                     LIMIT ?
                     """
-            cursor.execute(query, (self.project_name, user, scheme, "add", n))
+            cursor.execute(query, (self.project_slug, user, scheme, "add", n))
         results = cursor.fetchall()
         conn.commit()
         conn.close()
@@ -1761,7 +1764,7 @@ class Schemes:
                 FROM annotations
                 WHERE project = ? AND scheme = ? AND action = ?
                 """
-        cursor.execute(query, (self.project_name, scheme, "add"))
+        cursor.execute(query, (self.project_slug, scheme, "add"))
         results = cursor.fetchall()
         conn.commit()
         conn.close()
@@ -1792,20 +1795,20 @@ class Users:
             # rename the file
             os.rename("add_users.yaml", "add_users_processed.yaml")
 
-    def get_project_auth(self, project_name: str):
+    def get_project_auth(self, project_slug: str):
         """
         Get user auth for a project
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = """SELECT user, status FROM auth WHERE project = ?"""
-        cursor.execute(query, (project_name,))
+        cursor.execute(query, (project_slug,))
         auth = cursor.fetchall()
         conn.commit()
         conn.close()
         return {i[0]: i[1] for i in auth}
 
-    def set_auth(self, username: str, project_name: str, status: str):
+    def set_auth(self, username: str, project_slug: str, status: str):
         """
         Set user auth for a project
         """
@@ -1814,24 +1817,24 @@ class Users:
 
         # Attempt to update the entry
         update_query = "UPDATE auth SET status = ? WHERE project = ? AND user = ?"
-        cursor.execute(update_query, (status, project_name, username))
+        cursor.execute(update_query, (status, project_slug, username))
 
         if cursor.rowcount == 0:
             # If no rows were updated, insert a new entry
             insert_query = "INSERT INTO auth (project, user, status) VALUES (?, ?, ?)"
-            cursor.execute(insert_query, (project_name, username, status))
+            cursor.execute(insert_query, (project_slug, username, status))
         conn.commit()
         conn.close()
         return {"success": "Auth added to database"}
 
-    def delete_auth(self, username: str, project_name: str):
+    def delete_auth(self, username: str, project_slug: str):
         """
         Delete user auth
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         insert_query = "DELETE FROM auth WHERE project=? AND user = ?"
-        cursor.execute(insert_query, (project_name, username))
+        cursor.execute(insert_query, (project_slug, username))
         conn.commit()
         conn.close()
         return {"success": "Auth deleted"}
@@ -1847,7 +1850,7 @@ class Users:
         cursor = conn.cursor()
         query = """SELECT auth.project, auth.status, projects.parameters, projects.user, projects.time_created
         FROM auth
-        JOIN projects ON auth.project = projects.project_name
+        JOIN projects ON auth.project = projects.project_slug
         WHERE auth.user = ?"""
         #        query = """SELECT project, status FROM auth WHERE user = ?"""
         cursor.execute(query, (username,))
@@ -1856,7 +1859,7 @@ class Users:
         conn.close()
         return auth
 
-    def get_auth(self, username: str, project_name: str = "all") -> list:
+    def get_auth(self, username: str, project_slug: str = "all") -> list:
         """
         Get user auth
         Comments:
@@ -1865,12 +1868,12 @@ class Users:
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
-        if project_name == "all":
+        if project_slug == "all":
             query = """SELECT project, status FROM auth WHERE user = ?"""
             cursor.execute(query, (username,))
         else:
             query = """SELECT status FROM auth WHERE user = ? AND project = ?"""
-            cursor.execute(query, (username, project_name))
+            cursor.execute(query, (username, project_slug))
         auth = cursor.fetchall()
         conn.commit()
         conn.close()
@@ -1958,11 +1961,11 @@ class Users:
             return {"error": "Wrong password"}
         return user
 
-    def auth(self, username: str, project_name: str):
+    def auth(self, username: str, project_slug: str):
         """
         Check auth for a specific project
         """
-        user_auth = self.get_auth(username, project_name)
+        user_auth = self.get_auth(username, project_slug)
         if len(user_auth) == 0:  # not associated
             return None
         return user_auth[0][0]
