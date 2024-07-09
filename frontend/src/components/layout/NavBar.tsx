@@ -54,12 +54,8 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                   </Link>
                 </li>
               ))}
-              {user && (
-                <li>
-                  {user.username} ({user.status})
-                </li>
-              )}
             </ul>
+            {user && <span className="navbar-text">Logged as {user.username}</span>}
           </div>
         </div>
       </nav>
