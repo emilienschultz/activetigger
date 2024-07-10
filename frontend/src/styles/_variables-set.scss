@@ -64,3 +64,23 @@ $primary: #444;
     border-radius: 0.25rem;
     text-align: center;
   }
+
+.form-frame {
+  padding: 30px;
+}
+
+.form-label {
+    margin-top: 20px;
+    padding: 5px;
+    font-weight: bold;
+    color: #607d8b;
+  }
+
+  .form-button {
+    margin-top: 30px;
+  }
+
+.form-button:hover {
+  background-color: #28a745; 
+  border-color: #28a745; 
+}
