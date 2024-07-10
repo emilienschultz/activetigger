@@ -1,19 +1,21 @@
 import { FC } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 
-import { LoginParams, login, me } from '../../core/api';
-import { useAppContext } from '../../core/context';
+import { LoginParams } from '../../core/api';
+import { useAuth } from '../../core/auth';
 
-export const LoginForm: FC = () => {
-  const { setAppContext } = useAppContext();
-  const { handleSubmit, register } = useForm<LoginParams>();
+export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
+  const { login, authenticatedUser } = useAuth();
+  const navigate = useNavigate();
+  const { handleSubmit, register } = useForm<LoginParams>({
+    defaultValues: { username: authenticatedUser?.username },
+  });
 
   const onSubmit: SubmitHandler<LoginParams> = async (data) => {
-    const response = await login(data);
-    if (response.access_token) {
-      const user = await me(response.access_token);
-      if (user) setAppContext({ user: { ...user, access_token: response.access_token } });
-      else setAppContext({ user: undefined });
+    await login(data);
+    if (redirectTo) {
+      navigate(redirectTo);
     }
   };
 

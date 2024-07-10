@@ -2,7 +2,7 @@ import cx from 'classnames';
 import { FC, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAppContext } from '../../core/context';
+import { useAuth } from '../../core/auth';
 
 const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'projects', label: 'Projects', href: '/projects' },
@@ -16,8 +16,7 @@ interface NavBarPropsType {
 }
 
 const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
-  const { appContext } = useAppContext();
-  const { user } = appContext;
+  const { authenticatedUser } = useAuth();
 
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -55,7 +54,9 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </li>
               ))}
             </ul>
-            {user && <span className="navbar-text">Logged as {user.username}</span>}
+            {authenticatedUser && (
+              <span className="navbar-text">Logged as {authenticatedUser.username}</span>
+            )}
           </div>
         </div>
       </nav>

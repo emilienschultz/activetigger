@@ -1,10 +1,12 @@
+import { values } from 'lodash';
 import createClient from 'openapi-fetch';
 import { useCallback } from 'react';
 
 import type { components, paths } from '../generated/openapi';
-import { ProjectDataModel } from '../types';
+import { AvailableProjectsModel, ProjectDataModel } from '../types';
+import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
-import { useAppContext } from './context';
+import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
 
 const api = createClient<paths>({ baseUrl: `${config.api.url}` });
 
@@ -16,7 +18,6 @@ export async function login(params: LoginParams) {
     body: params,
     bodySerializer: (body) => new URLSearchParams(body as Record<string, string>),
   });
-
   if (res.data && !res.error) return res.data;
   else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
 }
@@ -32,51 +33,65 @@ export async function me(token: string) {
   //else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
 }
 
-export async function userProjects(username: string) {
-  // API /session should be rewritten at some point
-  const res = await api.GET('/projects', {
-    params: {
-      header: { username },
-    },
-  });
+export function useUserProjects(): AvailableProjectsModel[] | undefined {
+  const { authenticatedUser } = useAuth();
 
-  if (res.data && !res.error) return res.data.projects;
-  else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
+  const projects = useAsyncMemo(async () => {
+    const authHeaders = getAuthHeaders(authenticatedUser);
+    if (authHeaders) {
+      const res = await api.GET('/projects', {
+        ...authHeaders,
+        params: {
+          header: { username: authHeaders.headers.username },
+        },
+      });
+
+      // TODO: type API response in Python code
+      if (res.data && !res.error)
+        return values(res.data.projects) as unknown as AvailableProjectsModel[];
+      else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
+    }
+    //TODO notify must be loged in
+  }, [authenticatedUser]);
+
+  return getAsyncMemoData(projects);
 }
 
 export function useCreateProject() {
-  const { appContext } = useAppContext();
-  const createProject = useCallback(async (project: ProjectDataModel) => {
-    if (appContext.user) {
-      const res = await api.POST('/projects/new', {
-        headers: {
-          Authorization: `Bearer ${appContext.user.access_token}`,
-          username: appContext.user.username,
-        },
-        params: { header: { username: appContext.user.username } },
-        body: project,
-      });
-      if (res.error)
-        throw new Error(
-          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
-        );
-    }
-    //TODO: notify
-  }, []);
+  const { authenticatedUser } = useAuth();
+  const createProject = useCallback(
+    async (project: ProjectDataModel) => {
+      const authHeaders = getAuthHeaders(authenticatedUser);
+      if (authenticatedUser) {
+        const res = await api.POST('/projects/new', {
+          ...authHeaders,
+          params: { header: { username: authenticatedUser.username } },
+          body: project,
+        });
+        if (res.error)
+          throw new Error(
+            res.error.detail
+              ? res.error.detail?.map((d) => d.msg).join('; ')
+              : res.error.toString(),
+          );
+      }
+      //TODO: notify
+    },
+    [authenticatedUser],
+  );
   return createProject;
 }
 
-export function useGetProject() {
-  const { appContext } = useAppContext();
-  const getProject = useCallback(async (projectName: string) => {
-    if (appContext.user) {
+export function useProject(projectName?: string) {
+  const { authenticatedUser } = useAuth();
+
+  const project = useAsyncMemo(async () => {
+    const authHeaders = getAuthHeaders(authenticatedUser);
+    if (authenticatedUser && projectName) {
       const res = await api.GET('/state/{project_name}', {
-        headers: {
-          Authorization: `Bearer ${appContext.user.access_token}`,
-          username: appContext.user.username,
-        },
+        ...authHeaders,
         params: {
-          header: { username: appContext.user.username },
+          header: { username: authenticatedUser.username },
           path: { project_name: projectName },
         },
       });
@@ -87,6 +102,7 @@ export function useGetProject() {
       return res.data.params;
     }
     //TODO: notify
-  }, []);
-  return getProject;
+  }, [authenticatedUser, projectName]);
+
+  return getAsyncMemoData(project);
 }

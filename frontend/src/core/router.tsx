@@ -5,9 +5,9 @@ import { LoginPage } from '../components/LoginPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
 import { ProjectsPage } from '../components/ProjectsPage';
-import { AppContextValue } from './context';
+import { AuthRequired } from '../components/auth/AuthRequired';
 
-export function getRouter(_appContext: AppContextValue) {
+export function getRouter() {
   return createBrowserRouter([
     {
       path: '/',
@@ -17,14 +17,29 @@ export function getRouter(_appContext: AppContextValue) {
       path: '/login',
       element: <LoginPage />,
     },
-    { path: '/projects/new', element: <ProjectNewPage /> },
+    {
+      path: '/projects/new',
+      element: (
+        <AuthRequired>
+          <ProjectNewPage />
+        </AuthRequired>
+      ),
+    },
     {
       path: '/projects',
-      element: <ProjectsPage />,
+      element: (
+        <AuthRequired>
+          <ProjectsPage />
+        </AuthRequired>
+      ),
     },
     {
       path: '/projects/:projectName',
-      element: <ProjectPage />,
+      element: (
+        <AuthRequired>
+          <ProjectPage />
+        </AuthRequired>
+      ),
     },
   ]);
 }

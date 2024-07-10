@@ -1,24 +1,11 @@
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import { Link } from 'react-router-dom';
 
-import { userProjects } from '../core/api';
-import { useAppContext } from '../core/context';
+import { useUserProjects } from '../core/api';
 import { PageLayout } from './layout/PageLayout';
 
-// define an object to represent the projects QUESTION : where to put it ?
-interface Projects {
-  [key: string]: Record<string, never> | undefined;
-}
-
 export const ProjectsPage: FC = () => {
-  const { appContext } = useAppContext();
-
-  const [projects, setProjects] = useState<Projects>({}); // QUESTION no need to specify the type of element returned ?
-
-  useEffect(() => {
-    if (appContext.user?.username) userProjects(appContext.user?.username).then(setProjects);
-    else setProjects({});
-  }, [appContext.user?.username]);
+  const projects = useUserProjects();
 
   return (
     <PageLayout>
@@ -31,15 +18,14 @@ export const ProjectsPage: FC = () => {
               </Link>
             </li>
             <li className="projects-title">Existing projects</li>
-            {Object.entries(projects).map(([key]) => (
-              <li key={key} className="projects-list">
-                <Link to={`/projects/${key}`} className="project-link">
-                  <b>{key}</b>
+            {(projects || []).map((project) => (
+              <li key={project.parameters.project_name} className="projects-list">
+                <Link to={`/projects/${project.parameters.project_name}`} className="project-link">
+                  <b>{project.parameters.project_name}</b>
                   <br />
                   <p className="project-description">
-                    created by {projects[key].created_by} the {projects[key].created_at}
+                    (created by {project.created_by} the {project.created_at})
                   </p>
-                  {/* QUESTION how to remove this error "Object is possibly 'undefined'"*/}
                 </Link>
               </li>
             ))}
