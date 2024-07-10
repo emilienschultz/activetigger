@@ -23,6 +23,7 @@ from activetigger.datamodels import (
     SchemeModel,
     SimpleModelModel,
     UserInDBModel,
+    ProjectSummaryModel,
 )
 from pydantic import ValidationError
 import logging
@@ -349,15 +350,15 @@ class Server:
         """
 
         projects_auth = self.users.get_auth_user(username)
-        return {
-            i[0]: {
-                "auth": i[1],
-                "parameters": json.loads(i[2]),
-                "created_by": i[3],
-                "created_at": i[4],
-            }
+        return [
+            ProjectSummaryModel(
+                user_right=i[1],
+                parameters=ProjectModel(**json.loads(i[2])),
+                created_by=i[3],
+                created_at=i[4],
+            )
             for i in projects_auth
-        }
+        ]
 
     def db_get_project(self, project_slug: str) -> ProjectModel | None:
         """
@@ -423,16 +424,14 @@ class Server:
         self.projects[project_slug] = Project(project_slug, self.db, self.queue)
         return {"success": "Project loaded"}
 
-    def set_project_parameters(
-        self, project_slug: str, project: ProjectModel, username: str
-    ) -> dict:
+    def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """
         Update project parameters in the DB
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()
         query = "SELECT * FROM projects WHERE project_slug = ?"
-        cursor.execute(query, (project_slug,))
+        cursor.execute(query, (project.project_slug,))
         existing_project = cursor.fetchone()
 
         if existing_project:
@@ -440,22 +439,20 @@ class Server:
             update_query = "UPDATE projects SET parameters = ?, time_modified = CURRENT_TIMESTAMP WHERE project_slug = ?"
             cursor.execute(
                 update_query,
-                (json.dumps(jsonable_encoder(project)), project_slug),
+                (json.dumps(jsonable_encoder(project)), project.project_slug),
             )
         else:
             # Insert a new project
             insert_query = "INSERT INTO projects (project_slug, parameters, time_modified, user) VALUES (?, ?, CURRENT_TIMESTAMP, ?)"
             cursor.execute(
                 insert_query,
-                (project_slug, json.dumps(jsonable_encoder(project)), username),
+                (project.project_slug, json.dumps(jsonable_encoder(project)), username),
             )
         conn.commit()
         conn.close()
         return {"success": "project updated"}
 
-    def create_project(
-        self, params: ProjectDataModel, username: str
-    ) -> ProjectModel | dict:
+    def create_project(self, params: ProjectDataModel, username: str) -> dict:
         """
         Set up a new project
         - load data and save
@@ -616,9 +613,10 @@ class Server:
 
         # save parameters (without the data)
         params.col_label = None  # reverse dummy
-        self.set_project_parameters(
-            project_slug, ProjectModel(**params.model_dump()), username
-        )
+        project = params.model_dump()
+        project["project_slug"] = project_slug
+        self.set_project_parameters(ProjectModel(**project), username)
+
         return {"success": "Project created"}
 
     def delete_project(self, project_slug: str) -> dict:
