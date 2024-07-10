@@ -30,8 +30,18 @@ export const ProjectCreationForm: FC = () => {
   const [data, setData] = useState<DataType | null>(null); // state for the data
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
-
-  const files = useWatch({ control, name: 'files' }); // watch the files entry in the form
+  const files = useWatch({ control, name: 'files' }); // watch the files entry
+  // available columns
+  const columns = data?.headers.map((h) => (
+    <option key={h} value={h}>
+      {h}
+    </option>
+  ));
+  // select the text on input on click
+  const handleClickOnText = (event: React.MouseEvent<HTMLInputElement>) => {
+    const target = event.target as HTMLInputElement;
+    target.select(); // Select the content of the input
+  };
 
   // convert paquet file in csv if needed when event on files
   useEffect(() => {
@@ -61,7 +71,7 @@ export const ProjectCreationForm: FC = () => {
   return (
     <div className="container-fluid">
       <div className="row">
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>
             <label className="form-label" htmlFor="project_name">
               Project name
@@ -71,6 +81,7 @@ export const ProjectCreationForm: FC = () => {
               id="project_name"
               type="text"
               {...register('project_name')}
+              onClick={handleClickOnText}
             />
           </div>
 
@@ -117,11 +128,7 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('col_id')}
                   >
-                    {data?.headers.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
+                    {columns}
                   </select>
                 </div>
                 <div>
@@ -134,11 +141,7 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('col_text')}
                   >
-                    {data?.headers.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
+                    {columns}
                   </select>
                   <label className="form-label" htmlFor="col_label">
                     Column for label (if exists)
@@ -149,15 +152,11 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('col_label')}
                   >
-                    {data?.headers.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
+                    {columns}
                   </select>
 
                   <label className="form-label" htmlFor="cols_context">
-                    Column for label (if exists)
+                    Column for contextual information to display
                   </label>
                   <select
                     className="form-control"
@@ -166,11 +165,7 @@ export const ProjectCreationForm: FC = () => {
                     {...register('cols_context')}
                     multiple
                   >
-                    {data?.headers.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
+                    {columns}
                   </select>
 
                   <label className="form-label" htmlFor="n_train">
@@ -194,7 +189,7 @@ export const ProjectCreationForm: FC = () => {
                   />
 
                   <label className="form-label" htmlFor="cols_test">
-                    Stratify the test set with
+                    Stratify the test set by
                   </label>
                   <select
                     className="form-control"
@@ -203,14 +198,10 @@ export const ProjectCreationForm: FC = () => {
                     {...register('cols_test')}
                     multiple
                   >
-                    {data?.headers.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
+                    {columns}
                   </select>
                 </div>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className="btn btn-primary form-button">
                   Create
                 </button>
               </div>
