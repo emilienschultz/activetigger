@@ -423,7 +423,9 @@ class Server:
         self.projects[project_slug] = Project(project_slug, self.db, self.queue)
         return {"success": "Project loaded"}
 
-    def set_project_parameters(self, project_slug:str, project: ProjectModel, username: str) -> dict:
+    def set_project_parameters(
+        self, project_slug: str, project: ProjectModel, username: str
+    ) -> dict:
         """
         Update project parameters in the DB
         """
@@ -467,7 +469,7 @@ class Server:
         # test if possible to create the project
         if self.exists(params.project_name):
             return {"error": "Project name already exist"}
-        
+
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
 
@@ -614,7 +616,9 @@ class Server:
 
         # save parameters (without the data)
         params.col_label = None  # reverse dummy
-        self.set_project_parameters(project_slug, ProjectModel(**params.model_dump()), username)
+        self.set_project_parameters(
+            project_slug, ProjectModel(**params.model_dump()), username
+        )
         return {"success": "Project created"}
 
     def delete_project(self, project_slug: str) -> dict:
@@ -1950,12 +1954,14 @@ class Users:
         conn.close()
         return u
 
-    def authenticate_user(self, username: str, password: str):
+    def authenticate_user(
+        self, username: str, password: str
+    ) -> UserInDBModel | dict[str, str]:
         """
         User authentification
         """
         user = self.get_user(username)
-        if "error" in user:
+        if not isinstance(user, UserInDBModel):
             return user
         if not functions.compare_to_hash(password, user.hashed_password):
             return {"error": "Wrong password"}

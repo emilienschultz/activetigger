@@ -336,8 +336,8 @@ async def login_for_access_token(
     Authentificate user and return token
     """
     user = server.users.authenticate_user(form_data.username, form_data.password)
-    if "error" in user:
-        raise HTTPException(status_code=500, detail=user["error"])
+    if not isinstance(user, UserInDBModel):
+        raise HTTPException(status_code=401, detail=user["error"])
     access_token = server.create_access_token(
         data={"sub": user.username}, expires_min=60
     )

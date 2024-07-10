@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 
 import type { paths } from '../generated/openapi';
 import { AvailableProjectsModel, LoginParams, ProjectDataModel } from '../types';
+import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
 import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
@@ -33,8 +34,16 @@ export async function login(params: LoginParams) {
     body: params,
     bodySerializer: (body) => new URLSearchParams(body as Record<string, string>),
   });
+
   if (res.data && !res.error) return res.data;
-  else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
+  else {
+    console.log(res.error);
+    throw new HttpError(
+      res.response.status,
+      // TODO: debug API type for error, data received are not coherent with types
+      res.error.detail + '',
+    );
+  }
 }
 /**
  * me : GET an authenticated user info
@@ -49,7 +58,7 @@ export async function me(token: string) {
   });
 
   if (res.data) return res.data;
-  //else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
+  else throw new HttpError(res.response.status, '');
 }
 
 /**
@@ -76,19 +85,23 @@ export function useUserProjects(): AvailableProjectsModel[] | undefined {
   const projects = useAsyncMemo(async () => {
     // the HTTP call headers needs the Bearer token
     const authHeaders = getAuthHeaders(authenticatedUser);
-    if (authHeaders) {
+    if (authenticatedUser) {
       // api calls uses openapi fetch that make sure that method GET, paths `/projects` and params respect API specs
       const res = await api.GET('/projects', {
         ...authHeaders,
         params: {
-          header: { username: authHeaders.headers.username },
+          header: { username: authenticatedUser.username },
         },
       });
 
       if (res.data && !res.error)
         // TODO: type API response in Python code and remove the as unknown as AvailableProjectsModel[]
         return values(res.data.projects) as unknown as AvailableProjectsModel[];
-      else throw new Error(res.error.detail?.map((d) => d.msg).join('; '));
+      else
+        throw new HttpError(
+          res.response.status,
+          res.error.detail?.map((d) => d.msg).join('; ') || '',
+        );
     }
     //TODO notify that user must be logged in
     // this should only happen in a component mounted in a route which is not protected in the router

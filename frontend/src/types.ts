@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 import { components } from './generated/openapi';
 
 /**
@@ -17,3 +19,14 @@ export type AvailableProjectsModel = {
   parameters: ProjectModel;
 };
 export type LoginParams = components['schemas']['Body_login_for_access_token_token_post'];
+
+/**
+ * Notifications
+ */
+export interface NotificationData {
+  title?: ReactNode;
+  message: ReactNode;
+  type: 'success' | 'info' | 'warning' | 'error';
+}
+
+export type NotificationType = NotificationData & { id: number; createdAt: Date };

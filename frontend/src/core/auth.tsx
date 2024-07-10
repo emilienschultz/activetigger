@@ -9,7 +9,9 @@ import {
 } from 'react';
 
 import { LoginParams, UserModel } from '../types';
+import { HttpError } from './HTTPError';
 import { login, me } from './api';
+import { useNotifications } from './notifications';
 
 // Information about the current authenticated user
 export type AuthenticatedUser = UserModel & {
@@ -36,12 +38,17 @@ const _useAuth = (): AuthContext => {
   // internal state to store the current authenticated user
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | undefined>(
     // by default we load the local storage version
-    storedAuth ? JSON.parse(storedAuth) : {},
+    storedAuth ? JSON.parse(storedAuth) : undefined,
   );
+
+  // notifications
+  const { notify } = useNotifications();
 
   useEffect(() => {
     // when authenticated user changes to update our local storage
-    localStorage.setItem('activeTigger.auth', JSON.stringify(authenticatedUser));
+    if (authenticatedUser)
+      localStorage.setItem('activeTigger.auth', JSON.stringify(authenticatedUser));
+    else localStorage.removeItem('activeTigger.auth');
   }, [authenticatedUser]);
 
   // TODO check session validity
@@ -52,17 +59,26 @@ const _useAuth = (): AuthContext => {
    */
   const _login = useCallback(
     async (params: LoginParams) => {
-      const response = await login(params);
-      if (response.access_token) {
-        const user = await me(response.access_token);
+      try {
+        const response = await login(params);
+        if (response.access_token) {
+          const user = await me(response.access_token);
 
-        if (user !== undefined) {
-          setAuthenticatedUser({ ...user, access_token: response.access_token });
-        } else setAuthenticatedUser(undefined);
+          if (user !== undefined) {
+            setAuthenticatedUser({ ...user, access_token: response.access_token });
+          } else setAuthenticatedUser(undefined);
+        }
+      } catch (error) {
+        console.log(error);
+        if (error instanceof HttpError) {
+          // TODO: create a nice message depending on error.status
+        }
+        notify({ type: 'error', message: error + '' });
+        setAuthenticatedUser(undefined);
       }
     },
     // the method code will change if setAuthenticatedUser changes which happens only at init
-    [setAuthenticatedUser],
+    [setAuthenticatedUser, notify],
   );
 
   // returns the AuthContext new value each time the authenticatedUser changes
