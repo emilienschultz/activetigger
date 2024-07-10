@@ -20,6 +20,7 @@ export function getRouter() {
     {
       path: '/projects/new',
       element: (
+        //AuthRequired makes sure that the user is currently authenticated before rendering this route page
         <AuthRequired>
           <ProjectNewPage />
         </AuthRequired>
