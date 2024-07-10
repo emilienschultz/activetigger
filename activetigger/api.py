@@ -472,6 +472,7 @@ async def get_projects(username: Annotated[str, Header()]) -> AvailableProjectsM
     depending of the status of connected user
     """
     r = server.get_projects(username)
+    print("current", r)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return AvailableProjectsModel(projects=r)

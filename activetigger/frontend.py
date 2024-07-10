@@ -198,7 +198,7 @@ def display_projects():
     - create project
     """
     r = _get("/projects")
-    existing = list(r["projects"].keys())
+    existing = [i["parameters"]["project_slug"] for i in r["projects"]]
 
     # display menu
     with st.expander("How to use the interface"):
@@ -279,7 +279,7 @@ def display_projects():
             )
             if st.button("Create"):
                 _create_project(data)
-                #st.session_state.current_project = project_name
+                # st.session_state.current_project = project_name
 
     # case a project is loaded
     if st.session_state.current_project and (

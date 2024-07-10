@@ -308,12 +308,19 @@ class ProjectsServerModel(BaseModel):
     auth: list
 
 
+class ProjectSummaryModel(BaseModel):
+    parameters: ProjectModel
+    user_right: str
+    created_by: str
+    created_at: str
+
+
 class AvailableProjectsModel(BaseModel):
     """
     Response for available projects
     """
 
-    projects: Dict[str, Dict[str, Any]]
+    projects: List[ProjectSummaryModel]
 
 
 class StateModel(BaseModel):

@@ -23,6 +23,7 @@ from activetigger.datamodels import (
     SchemeModel,
     SimpleModelModel,
     UserInDBModel,
+    ProjectSummaryModel,
 )
 from pydantic import ValidationError
 import logging
@@ -349,15 +350,15 @@ class Server:
         """
 
         projects_auth = self.users.get_auth_user(username)
-        return {
-            i[0]: {
-                "auth": i[1],  # nom plus spécifique
-                "parameters": json.loads(i[2]),
-                "created_by": i[3],
-                "created_at": i[4],
-            }
+        return [
+            ProjectSummaryModel(
+                user_right=i[1],
+                parameters=ProjectModel(**json.loads(i[2])),
+                created_by=i[3],
+                created_at=i[4],
+            )
             for i in projects_auth
-        }
+        ]
 
     def db_get_project(self, project_slug: str) -> ProjectModel | None:
         """
