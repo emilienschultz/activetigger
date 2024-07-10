@@ -7,7 +7,7 @@ from enum import StrEnum
 # Data model to use of the API
 
 
-class ProjectModel(BaseModel):
+class BaseProjectModel(BaseModel):
     """
     Parameters of a project to save in the database
     """
@@ -29,10 +29,17 @@ class ProjectModel(BaseModel):
     test: bool = False
 
 
-class ProjectDataModel(ProjectModel):
+class ProjectModel(BaseProjectModel):
     """
-    Parameters of a project to create it
-    (with data field)
+    Once created
+    """
+
+    project_slug: str
+
+
+class ProjectDataModel(BaseProjectModel):
+    """
+    To create a new project
     """
 
     csv: str
