@@ -54,6 +54,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </li>
               ))}
             </ul>
+            {/* TODO: add login and logout action items here */}
             {authenticatedUser && (
               <span className="navbar-text">Logged as {authenticatedUser.username}</span>
             )}
