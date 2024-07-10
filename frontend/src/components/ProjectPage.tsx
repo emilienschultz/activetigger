@@ -7,6 +7,10 @@ import { PageLayout } from './layout/PageLayout';
 export const ProjectPage: FC = () => {
   const { projectName } = useParams();
 
+  // API get hook provides the project querying the API for us
+  // it also handles auth for us making the component code here very clean
+  // project can be undefined has at the very first render the API has not yet responded
+  // project undefined means the data is not ready yet or there was an error
   const project = useProject(projectName);
 
   return <PageLayout>{project && <div>{JSON.stringify(project, null, 2)}</div>}</PageLayout>;

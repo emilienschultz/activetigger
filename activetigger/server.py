@@ -616,6 +616,7 @@ class Server:
         project = params.model_dump()
         project["project_slug"] = project_slug
         self.set_project_parameters(ProjectModel(**project), username)
+
         return {"success": "Project created"}
 
     def delete_project(self, project_slug: str) -> dict:
@@ -1951,12 +1952,14 @@ class Users:
         conn.close()
         return u
 
-    def authenticate_user(self, username: str, password: str):
+    def authenticate_user(
+        self, username: str, password: str
+    ) -> UserInDBModel | dict[str, str]:
         """
         User authentification
         """
         user = self.get_user(username)
-        if "error" in user:
+        if not isinstance(user, UserInDBModel):
             return user
         if not functions.compare_to_hash(password, user.hashed_password):
             return {"error": "Wrong password"}
