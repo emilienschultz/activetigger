@@ -8,7 +8,7 @@ export const ProjectsPage: FC = () => {
   const projects = useUserProjects();
 
   return (
-    <PageLayout>
+    <PageLayout currentPage="projects">
       <div className="d-flex justify-content-center align-items-center">
         {
           <ul className="col-md-6">

@@ -15,7 +15,7 @@ export const ProjectPage: FC = () => {
   const project = useProject(projectName);
 
   return (
-    <PageLayout>
+    <PageLayout currentPage="projects" projectName="test">
       {project && (
         <div>
           <div>
