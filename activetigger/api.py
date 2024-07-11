@@ -246,7 +246,9 @@ async def verified_user(
     # decode token
     try:
         payload = server.decode_access_token(token)
-        username: str = payload.get("sub")
+        if "error" in payload:
+            raise HTTPException(status_code=403, detail=payload["error"])
+        username = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Problem with token")
     except JWTError:
@@ -344,6 +346,15 @@ async def login_for_access_token(
     return TokenModel(
         access_token=access_token, token_type="bearer", status=user.status
     )
+
+
+@app.post("/users/disconnect", dependencies=[Depends(verified_user)])
+async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None:
+    """
+    Revoke user connexion
+    """
+    server.revoke_access_token(token)
+    return None
 
 
 @app.get("/users/me")

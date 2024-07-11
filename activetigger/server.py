@@ -280,6 +280,18 @@ class Server:
         """
         cursor.execute(create_table_sql)
 
+        # Token revoked
+        create_table_sql = """
+            CREATE TABLE IF NOT EXISTS tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                token TEXT,
+                status TEXT,
+                time_revoked TIMESTAMP
+                )
+        """
+        cursor.execute(create_table_sql)
+
         # create root user
         # self.users.add_user(self.default_user, self.default_user, role="root")
         hash_pwd = functions.get_hash(self.default_user)
@@ -401,16 +413,50 @@ class Server:
         """
         Create access token
         """
+        # create the token
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+
+        # add it in the database
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "INSERT INTO tokens (time_created, token, status) VALUES (CURRENT_TIMESTAMP, ?, ?)"
+        cursor.execute(query, (encoded_jwt, "active"))
+        conn.commit()
+        conn.close()
+
         return encoded_jwt
+
+    def revoke_access_token(self, token) -> None:
+        """
+        Revoke existing access token
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "UPDATE tokens SET status = ?, time_revoked=CURRENT_TIMESTAMP WHERE token = ?"
+        cursor.execute(query, ("revoked", token))
+        conn.commit()
+        conn.close()
+        return None
 
     def decode_access_token(self, token: str):
         """
         Decode access token
         """
+        # check if token is not revoked
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT * FROM tokens WHERE token = ? AND status = ?"
+        cursor.execute(query, (token, "active"))
+        el = cursor.fetchall()
+        if len(el) == 0:
+            return {"error": "This token is not active"}
+        conn.commit()
+        conn.close()
+
+        # decode payload
         payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
         return payload
 
