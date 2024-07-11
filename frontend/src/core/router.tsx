@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 
+import { HelpPage } from '../components/HelpPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
@@ -16,6 +17,10 @@ export function getRouter() {
     {
       path: '/login',
       element: <LoginPage />,
+    },
+    {
+      path: '/help',
+      element: <HelpPage />,
     },
     {
       path: '/projects/new',

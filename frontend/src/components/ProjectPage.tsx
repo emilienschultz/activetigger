@@ -2,7 +2,6 @@ import { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useProject } from '../core/api';
-import NavBar from './layout/NavBar';
 import { PageLayout } from './layout/PageLayout';
 
 export const ProjectPage: FC = () => {
