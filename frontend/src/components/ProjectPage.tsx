@@ -19,19 +19,8 @@ export const ProjectPage: FC = () => {
       {project && (
         <div>
           <div>
-            <h1>
-              Project <span>{project.project_name}</span>
-            </h1>
+            You are working on the project <span>{project.project_name}</span>
           </div>
-          <div>
-            <h2>Actions available</h2>
-          </div>
-          {/*Different sub-navbar*/}
-          <ul>
-            <li>Annotate the data</li>
-            <li>Train a model</li>
-            <li>Test a model</li>
-          </ul>
           <div>
             <h2>Statistics</h2>
           </div>
