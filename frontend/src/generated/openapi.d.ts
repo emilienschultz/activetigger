@@ -206,7 +206,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/state/{project_name}": {
+    "/projects/{project_slug}": {
         parameters: {
             query?: never;
             header?: never;
@@ -214,51 +214,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get State
+         * Get Project State
          * @description Get the state of a specific project
          */
-        get: operations["get_state_state__project_name__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/queue": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Queue
-         * @description Get the state of the server queue
-         */
-        get: operations["get_queue_queue_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Info Server
-         * @description Get general informations on the server
-         *     depending of the status of connected user
-         */
-        get: operations["info_server_session_get"];
+        get: operations["get_project_state_projects__project_slug__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -280,6 +239,26 @@ export interface paths {
          *     depending of the status of connected user
          */
         get: operations["get_projects_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Queue
+         * @description Get the state of the server queue
+         */
+        get: operations["get_queue_queue_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -984,8 +963,8 @@ export interface components {
          * @description Specific Annotatoin
          */
         AnnotationModel: {
-            /** Project Name */
-            project_name: string;
+            /** Project Slug */
+            project_slug: string;
             /** Element Id */
             element_id: string;
             /** Tag */
@@ -1008,9 +987,7 @@ export interface components {
          */
         AvailableProjectsModel: {
             /** Projects */
-            projects: {
-                [key: string]: Record<string, never> | undefined;
-            };
+            projects: components["schemas"]["ProjectSummaryModel"][];
         };
         /**
          * BertModelModel
@@ -1018,8 +995,8 @@ export interface components {
          *     TODO : model for parameters
          */
         BertModelModel: {
-            /** Project Name */
-            project_name: string;
+            /** Project Slug */
+            project_slug: string;
             /** User */
             user: string;
             /** Scheme */
@@ -1150,8 +1127,7 @@ export interface components {
         };
         /**
          * ProjectDataModel
-         * @description Parameters of a project to create it
-         *     (with data field)
+         * @description To create a new project
          */
         ProjectDataModel: {
             /** Project Name */
@@ -1228,7 +1204,7 @@ export interface components {
         };
         /**
          * ProjectModel
-         * @description Parameters of a project to save in the database
+         * @description Once created
          */
         ProjectModel: {
             /** Project Name */
@@ -1282,6 +1258,18 @@ export interface components {
              * @default false
              */
             test: boolean;
+            /** Project Slug */
+            project_slug: string;
+        };
+        /** ProjectSummaryModel */
+        ProjectSummaryModel: {
+            parameters: components["schemas"]["ProjectModel"];
+            /** User Right */
+            user_right: string;
+            /** Created By */
+            created_by: string;
+            /** Created At */
+            created_at: string;
         };
         /**
          * ProjectionInModel
@@ -1315,16 +1303,6 @@ export interface components {
             texts: unknown[];
         };
         /**
-         * ProjectsServerModel
-         * @description Response for available projects
-         */
-        ProjectsServerModel: {
-            /** Projects */
-            projects: string[];
-            /** Auth */
-            auth: unknown[];
-        };
-        /**
          * QueueModel
          * @description Response for current queue
          */
@@ -1339,8 +1317,8 @@ export interface components {
          * @description Specific scheme
          */
         SchemeModel: {
-            /** Project Name */
-            project_name: string;
+            /** Project Slug */
+            project_slug: string;
             /** Name */
             name: string;
             /**
@@ -1663,7 +1641,7 @@ export interface operations {
     delete_user_users_delete_post: {
         parameters: {
             query?: {
-                project_name?: string | null;
+                project_slug?: string | null;
             };
             header: {
                 username: string;
@@ -1697,7 +1675,7 @@ export interface operations {
         parameters: {
             query: {
                 username: string;
-                project_name: string;
+                project_slug: string;
                 status?: string;
             };
             header?: never;
@@ -1763,7 +1741,7 @@ export interface operations {
         parameters: {
             query: {
                 username: string;
-                project_name?: string;
+                project_slug?: string;
                 limit?: unknown;
             };
             header?: never;
@@ -1792,14 +1770,14 @@ export interface operations {
             };
         };
     };
-    get_state_state__project_name__get: {
+    get_project_state_projects__project_slug__get: {
         parameters: {
             query?: never;
             header: {
                 username: string;
             };
             path: {
-                project_name: string;
+                project_slug: string;
             };
             cookie?: never;
         };
@@ -1812,57 +1790,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StateModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_queue_queue_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QueueModel"];
-                };
-            };
-        };
-    };
-    info_server_session_get: {
-        parameters: {
-            query?: never;
-            header: {
-                username: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectsServerModel"];
                 };
             };
             /** @description Validation Error */
@@ -1907,12 +1834,32 @@ export interface operations {
             };
         };
     };
+    get_queue_queue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueModel"];
+                };
+            };
+        };
+    };
     get_description_project_description_get: {
         parameters: {
             query: {
                 scheme?: string | null;
                 user?: string | null;
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -1943,7 +1890,7 @@ export interface operations {
     get_project_auth_project_auth_get: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -1974,7 +1921,7 @@ export interface operations {
     add_testdata_projects_testdata_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2046,7 +1993,7 @@ export interface operations {
     delete_project_projects_delete_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2079,7 +2026,7 @@ export interface operations {
     get_next_elements_next_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2117,7 +2064,7 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string | null;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2150,7 +2097,7 @@ export interface operations {
     compute_projection_elements_projection_compute_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2192,7 +2139,7 @@ export interface operations {
                 max?: number;
                 contains?: string | null;
                 mode?: string;
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -2223,7 +2170,7 @@ export interface operations {
     post_list_elements_elements_table_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2261,7 +2208,7 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string;
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -2296,7 +2243,7 @@ export interface operations {
                 element_id: string;
                 tag: string;
                 scheme: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2329,7 +2276,7 @@ export interface operations {
     zeroshot_elements_zeroshot_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2367,7 +2314,7 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2402,7 +2349,7 @@ export interface operations {
     post_tag_tags__action__post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2441,7 +2388,7 @@ export interface operations {
     stop_process_stop_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2476,7 +2423,7 @@ export interface operations {
             query: {
                 scheme: string;
                 label: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2511,7 +2458,7 @@ export interface operations {
             query: {
                 scheme: string;
                 label: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2547,7 +2494,7 @@ export interface operations {
                 scheme: string;
                 former_label: string;
                 new_label: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2580,7 +2527,7 @@ export interface operations {
     post_schemes_schemes__action__post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2619,7 +2566,7 @@ export interface operations {
     get_features_features_get: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -2650,7 +2597,7 @@ export interface operations {
     post_embeddings_features_add__name__post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2689,7 +2636,7 @@ export interface operations {
     delete_feature_features_delete__name__post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2724,7 +2671,7 @@ export interface operations {
     post_simplemodel_models_simplemodel_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2762,7 +2709,7 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -2795,7 +2742,7 @@ export interface operations {
             query: {
                 model_name: string;
                 data?: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2828,7 +2775,7 @@ export interface operations {
     post_bert_models_bert_train_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2865,7 +2812,7 @@ export interface operations {
     stop_bert_models_bert_stop_post: {
         parameters: {
             query: {
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2900,7 +2847,7 @@ export interface operations {
             query: {
                 scheme: string;
                 model: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2934,7 +2881,7 @@ export interface operations {
         parameters: {
             query: {
                 bert_name: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -2969,7 +2916,7 @@ export interface operations {
             query: {
                 former_name: string;
                 new_name: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;
@@ -3004,7 +2951,7 @@ export interface operations {
             query: {
                 scheme: string;
                 format: string;
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -3037,7 +2984,7 @@ export interface operations {
             query: {
                 features: unknown[];
                 format: string;
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -3070,7 +3017,7 @@ export interface operations {
             query: {
                 format: string;
                 name: string;
-                project_name: string;
+                project_slug: string;
             };
             header?: never;
             path?: never;
@@ -3102,7 +3049,7 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
-                project_name: string;
+                project_slug: string;
             };
             header: {
                 username: string;

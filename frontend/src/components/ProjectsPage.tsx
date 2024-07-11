@@ -20,7 +20,7 @@ export const ProjectsPage: FC = () => {
             <li className="projects-title">Existing projects</li>
             {(projects || []).map((project) => (
               <li key={project.parameters.project_name} className="projects-list">
-                <Link to={`/projects/${project.parameters.project_name}`} className="project-link">
+                <Link to={`/projects/${project.parameters.project_slug}`} className="project-link">
                   <b>{project.parameters.project_name}</b>
                   <br />
                   <p className="project-description">

@@ -168,11 +168,11 @@ export function useProject(projectName?: string) {
   const project = useAsyncMemo(async () => {
     const authHeaders = getAuthHeaders(authenticatedUser);
     if (authenticatedUser && projectName) {
-      const res = await api.GET('/state/{project_name}', {
+      const res = await api.GET('/projects/{project_slug}', {
         ...authHeaders,
         params: {
           header: { username: authenticatedUser.username },
-          path: { project_name: projectName },
+          path: { project_slug: projectName },
         },
       });
       if (res.error)
