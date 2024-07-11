@@ -5,9 +5,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../core/auth';
 
 const PAGES: { id: string; label: string; href: string }[] = [
+  { id: 'login', label: 'Login', href: '/login' },
   { id: 'projects', label: 'Projects', href: '/projects' },
   { id: 'help', label: 'Help', href: '/help' },
-  { id: 'login', label: 'Login', href: '/login' },
 ];
 
 interface NavBarPropsType {
