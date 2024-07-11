@@ -8,7 +8,7 @@ export const ProjectsPage: FC = () => {
   const projects = useUserProjects();
 
   return (
-    <PageLayout>
+    <PageLayout currentPage="projects">
       <div className="d-flex justify-content-center align-items-center">
         {
           <ul className="col-md-6">
@@ -20,7 +20,7 @@ export const ProjectsPage: FC = () => {
             <li className="projects-title">Existing projects</li>
             {(projects || []).map((project) => (
               <li key={project.parameters.project_name} className="projects-list">
-                <Link to={`/projects/${project.parameters.project_name}`} className="project-link">
+                <Link to={`/projects/${project.parameters.project_slug}`} className="project-link">
                   <b>{project.parameters.project_name}</b>
                   <br />
                   <p className="project-description">

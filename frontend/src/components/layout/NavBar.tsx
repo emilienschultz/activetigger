@@ -6,16 +6,16 @@ import { useAuth } from '../../core/auth';
 
 const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'projects', label: 'Projects', href: '/projects' },
-  { id: 'actions', label: 'Actions', href: '/actions' },
   { id: 'documentation', label: 'Documentation', href: '/documentation' },
   { id: 'login', label: 'Login', href: '/login' },
 ];
 
 interface NavBarPropsType {
   currentPage?: string;
+  projectName?: string;
 }
 
-const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
+const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
   const { authenticatedUser } = useAuth();
 
   const [expanded, setExpanded] = useState<boolean>(false);
@@ -56,7 +56,12 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
             </ul>
             {/* TODO: add login and logout action items here */}
             {authenticatedUser && (
-              <span className="navbar-text">Logged as {authenticatedUser.username}</span>
+              <span className="navbar-text navbar-text-margins">
+                Logged as {authenticatedUser.username}
+              </span>
+            )}
+            {projectName && (
+              <span className="navbar-text navbar-text-margins">Project {projectName}</span>
             )}
           </div>
         </div>
