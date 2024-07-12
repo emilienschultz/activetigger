@@ -10,10 +10,16 @@ export function useNotifications() {
   const notify = useCallback(
     (notif: NotificationData) => {
       const id = ++INCREMENTAL_ID;
-      setAppContext((state) => ({
-        ...state,
-        notifications: [{ id, createdAt: new Date(), ...notif }, ...state.notifications],
-      }));
+      setAppContext(
+        // in a setter we can use a state modification method
+        (state) =>
+          // the param is the current state
+          ({
+            ...state, // here we want to keep the current state object untouched so we spread it
+            // but we update the notifications key with it's new value
+            notifications: [{ id, createdAt: new Date(), ...notif }, ...state.notifications],
+          }),
+      );
     },
     [setAppContext],
   );

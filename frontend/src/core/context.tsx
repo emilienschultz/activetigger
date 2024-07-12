@@ -13,7 +13,7 @@ export type AppContextType = {
   setAppContext: React.Dispatch<React.SetStateAction<AppContextValue>>;
 };
 
-export const AppContext = createContext(null as unknown as AppContextType);
+export const AppContext = createContext<AppContextType>(null as unknown as AppContextType);
 
 const _useAppContext = () => {
   const [appContext, setAppContext] = useState<AppContextValue>(defaultContext);
