@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useProject } from '../core/api';
-import { PageLayout } from './layout/PageLayout';
+import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectPage: FC = () => {
   const { projectName } = useParams();
@@ -12,9 +12,9 @@ export const ProjectPage: FC = () => {
   // project can be undefined has at the very first render the API has not yet responded
   // project undefined means the data is not ready yet or there was an error
   const project = useProject(projectName);
-
+  if (!projectName) return null;
   return (
-    <PageLayout currentPage="projects" projectName="test">
+    <ProjectPageLayout projectName={projectName}>
       {project && (
         <div>
           <div>
@@ -26,6 +26,6 @@ export const ProjectPage: FC = () => {
           <div>{JSON.stringify(project, null, 2)}</div>
         </div>
       )}
-    </PageLayout>
+    </ProjectPageLayout>
   );
 };

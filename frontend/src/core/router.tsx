@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { HelpPage } from '../components/HelpPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
+import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
 import { ProjectsPage } from '../components/ProjectsPage';
@@ -44,6 +45,14 @@ export function getRouter() {
       element: (
         <AuthRequired>
           <ProjectPage />
+        </AuthRequired>
+      ),
+    },
+    {
+      path: '/projects/:projectName/annotate',
+      element: (
+        <AuthRequired>
+          <ProjectAnnotationPage />
         </AuthRequired>
       ),
     },
