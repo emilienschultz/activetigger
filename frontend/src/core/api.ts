@@ -46,6 +46,28 @@ export async function login(params: LoginParams) {
   }
 }
 /**
+ * logout : POST a login form data to get an auth token
+ * @param params LoginParams
+ * @returns an access_token
+ */
+export async function logout(token: string) {
+  const res = await api.POST('/users/disconnect', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (res.response.status === 200) return true;
+  else {
+    console.log(res.error);
+    throw new HttpError(
+      res.response.status,
+      // TODO: debug API type for error, data received are not coherent with types
+      'could not logout',
+    );
+  }
+}
+/**
  * me : GET an authenticated user info
  * @param token
  * @returns user

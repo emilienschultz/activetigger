@@ -1,6 +1,7 @@
 import cx from 'classnames';
 import { FC, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../core/auth';
 
@@ -16,7 +17,8 @@ interface NavBarPropsType {
 }
 
 const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
-  const { authenticatedUser } = useAuth();
+  const { authenticatedUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -55,10 +57,24 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
               ))}
             </ul>
             {/* TODO: add login and logout action items here */}
-            {authenticatedUser && (
+            {authenticatedUser ? (
               <span className="navbar-text navbar-text-margins">
-                Logged as {authenticatedUser.username} - <Link to="/logout">Logout</Link>
+                Logged as {authenticatedUser.username} -{' '}
+                <button
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    const success = await logout();
+                    if (success) navigate('/');
+                  }}
+                >
+                  {' '}
+                  <IoMdLogOut title="Logout" />
+                </button>
               </span>
+            ) : (
+              <Link to="/login">
+                <IoMdLogIn title="login" />
+              </Link>
             )}
             {projectName && (
               <span className="navbar-text navbar-text-margins">Project {projectName}</span>

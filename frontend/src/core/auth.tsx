@@ -10,7 +10,7 @@ import {
 
 import { LoginParams, UserModel } from '../types';
 import { HttpError } from './HTTPError';
-import { login, me } from './api';
+import { login, logout, me } from './api';
 import { useNotifications } from './notifications';
 
 // Information about the current authenticated user
@@ -21,12 +21,14 @@ export type AuthenticatedUser = UserModel & {
 export type AuthContext = {
   authenticatedUser?: AuthenticatedUser;
   login: (params: LoginParams) => Promise<void>;
+  logout: () => Promise<boolean>;
 };
 
 // create a react context to centralize and share auth state and mechanism with the whole application
 const authContext = createContext<AuthContext>({
   authenticatedUser: undefined,
   login: async (_: LoginParams) => {},
+  logout: async () => false,
 });
 
 // internal hook which must not be used outside the context
@@ -81,11 +83,38 @@ const _useAuth = (): AuthContext => {
     [setAuthenticatedUser, notify],
   );
 
+  const _logout = useCallback(
+    async () => {
+      if (authenticatedUser && authenticatedUser.access_token) {
+        try {
+          const success = await logout(authenticatedUser.access_token);
+          if (success) {
+            setAuthenticatedUser(undefined);
+            return success;
+          }
+          return false;
+        } catch (error) {
+          console.log(error);
+          if (error instanceof HttpError) {
+            // TODO: create a nice message depending on error.status
+          }
+          notify({ type: 'error', message: error + '' });
+          return false;
+        }
+      } else {
+        notify({ type: 'warning', message: 'You must be logged-in to be able to log out!' });
+        return false;
+      }
+    },
+    // the method code will change if setAuthenticatedUser changes which happens only at init
+    [setAuthenticatedUser, notify, authenticatedUser],
+  );
+
   // returns the AuthContext new value each time the authenticatedUser changes
   return {
     authenticatedUser,
     login: _login,
-    //TODO: logout
+    logout: _logout,
   };
 };
 
