@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useProject } from '../core/api';
+import { SchemeManagement } from './forms/SchemesManagementForms';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectPage: FC = () => {
@@ -10,8 +11,9 @@ export const ProjectPage: FC = () => {
   // API get hook provides the project querying the API for us
   // it also handles auth for us making the component code here very clean
   // project can be undefined has at the very first render the API has not yet responded
-  // project undefined means the data is not ready yet or there was an error
-  const project = useProject(projectName); // get project
+  // project undefined means the data is not ready yet or there was an error$
+
+  const project = useProject(projectName); // get project statefrom the API
 
   if (!projectName) return null;
   return (
@@ -19,10 +21,10 @@ export const ProjectPage: FC = () => {
       {project && (
         <div>
           <div>
-            You are working on the project <span>{project.params.project_name}</span>
-          </div>
-          <div>
-            <h2>Schemes</h2>
+            <SchemeManagement
+              available_schemes={Object.keys(project.schemes.available)}
+              projectSlug={projectName}
+            />
           </div>
           <div>
             <h2>Statistics</h2>

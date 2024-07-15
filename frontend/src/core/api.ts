@@ -3,7 +3,7 @@ import createClient from 'openapi-fetch';
 import { useCallback } from 'react';
 
 import type { paths } from '../generated/openapi';
-import { AvailableProjectsModel, LoginParams, ProjectDataModel } from '../types';
+import { AvailableProjectsModel, LoginParams, ProjectDataModel, SchemeModel } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
@@ -214,3 +214,34 @@ export function useProject(projectSlug?: string) {
   // 3. make sure to simplify the data returned by discarding the status
   return getAsyncMemoData(project);
 }
+
+/**
+ * delete a scheme // TODO to check
+ */
+export function delete_scheme(projectSlug:string, schemeName: string) {
+
+  const { authenticatedUser } = useAuth();
+
+  const deleteScheme = useAsyncMemo(async () => {
+
+    const authHeaders = getAuthHeaders(authenticatedUser);
+
+    if (authenticatedUser) {
+      // do the new projects POST call
+      const res = await api.POST('/schemes/{action}', {
+        ...authHeaders,
+        params: { header: 
+          { username: authenticatedUser.username }, 
+            path:{action:"delete" },
+            query: { project_slug: projectSlug }},
+        // POST has a body
+        body: {project_slug:projectSlug, name: schemeName, tags: null},
+      });
+      if (res.error)
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+      }}, [authenticatedUser, projectSlug, schemeName]);
+      
+      return deleteScheme;
+    }
