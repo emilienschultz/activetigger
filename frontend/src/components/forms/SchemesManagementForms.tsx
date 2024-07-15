@@ -1,22 +1,24 @@
-import { FC } from 'react';
-import { useState } from 'react';
+import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { IoIosAddCircle } from 'react-icons/io';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
 import { useAddScheme, useDeleteScheme } from '../../core/api';
 import { useAppContext } from '../../core/context';
+import { useNotifications } from '../../core/notifications';
 import { SchemeModel } from '../../types';
 
 interface SchemesManagementProps {
   available_schemes: string[];
   projectSlug: string;
+  reFetchProject: () => void;
 }
 
 /* Manage schemes*/
 export const SchemesManagement: FC<SchemesManagementProps> = ({
   available_schemes,
   projectSlug,
+  reFetchProject,
 }) => {
   const {
     appContext: { current_scheme }, //destructuration of the object from hook
@@ -55,31 +57,50 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
             </option>
           ))}{' '}
         </select>
-        <button onClick={deleteScheme} className="btn">
+        <button
+          onClick={async () => {
+            //TODO: try catch and throw
+            await deleteScheme();
+            reFetchProject();
+          }}
+          className="btn"
+        >
           <MdOutlineDeleteOutline size={30} />
         </button>
         <button onClick={handleIconClick} className="btn">
           <IoIosAddCircle size={30} />
         </button>
       </div>
-      <div>{showCreateNewScheme && <CreateNewScheme projectSlug={projectSlug} />}</div>
+      <div>
+        {showCreateNewScheme && (
+          <CreateNewScheme projectSlug={projectSlug} reFetchProject={reFetchProject} />
+        )}
+      </div>
     </div>
   );
 };
 
 interface CreateNewSchemeProps {
   projectSlug: string;
+  reFetchProject: () => void;
 }
 
 /* New Scheme creation */
-export const CreateNewScheme: FC<CreateNewSchemeProps> = ({ projectSlug }) => {
+export const CreateNewScheme: FC<CreateNewSchemeProps> = ({ projectSlug, reFetchProject }) => {
   // hooks to use the objets
   const { register, handleSubmit } = useForm<SchemeModel>({});
   const addScheme = useAddScheme(projectSlug);
+  const { notify } = useNotifications();
 
   // action when form validated
   const onSubmit: SubmitHandler<SchemeModel> = async (formData) => {
-    addScheme(formData.name);
+    try {
+      addScheme(formData.name);
+      notify({ type: 'success', message: 'Scheme created' });
+      reFetchProject();
+    } catch (error) {
+      notify({ type: 'error', message: error + '' });
+    }
   };
 
   return (

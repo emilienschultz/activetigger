@@ -13,8 +13,9 @@ export const ProjectPage: FC = () => {
   // project can be undefined has at the very first render the API has not yet responded
   // project undefined means the data is not ready yet or there was an error$
 
-  const project = useProject(projectName); // get project statefrom the API
+  const { project, reFetch } = useProject(projectName); // get project statefrom the API
 
+  console.log(project);
   if (!projectName) return null;
   return (
     <ProjectPageLayout projectName={projectName}>
@@ -24,6 +25,7 @@ export const ProjectPage: FC = () => {
             <SchemesManagement
               available_schemes={Object.keys(project.schemes.available)}
               projectSlug={projectName}
+              reFetchProject={reFetch}
             />
           </div>
           <div>
