@@ -249,3 +249,37 @@ export function useDeleteScheme(projectSlug:string, schemeName: string|null) {
 
       return deleteScheme;
     }
+
+
+/**
+ * create a scheme
+ (its a hook)
+ */
+ export function useAddScheme(projectSlug:string) {
+
+  const { authenticatedUser } = useAuth();
+
+  const {notify} = useNotifications()
+
+  const addScheme = useCallback(async (schemeName:string) => {
+    const authHeaders = getAuthHeaders(authenticatedUser);
+
+    if (authenticatedUser && schemeName) {
+      // do the new projects POST call
+      const res = await api.POST('/schemes/{action}', {
+        ...authHeaders,
+        params: { header: 
+          { username: authenticatedUser.username }, 
+            path:{action:"add" },
+            query: { project_slug: projectSlug }},
+        body: {project_slug:projectSlug, name: schemeName, tags: null},
+      });
+      if (res.error)
+        notify({type:"error", message:res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString()})
+    
+      notify({type:"success", message:"Scheme created"})
+      }}, [authenticatedUser, projectSlug, notify]);
+
+
+      return addScheme;
+    }

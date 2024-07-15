@@ -4,7 +4,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { IoIosAddCircle } from 'react-icons/io';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
-import { useDeleteScheme } from '../../core/api';
+import { useAddScheme, useDeleteScheme } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { SchemeModel } from '../../types';
 
@@ -62,17 +62,25 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
           <IoIosAddCircle size={30} />
         </button>
       </div>
-      <div>{showCreateNewScheme && <CreateNewScheme />}</div>
+      <div>{showCreateNewScheme && <CreateNewScheme projectSlug={projectSlug} />}</div>
     </div>
   );
 };
 
+interface CreateNewSchemeProps {
+  projectSlug: string;
+}
+
 /* New Scheme creation */
-export const CreateNewScheme: FC = () => {
+export const CreateNewScheme: FC<CreateNewSchemeProps> = ({ projectSlug }) => {
+  // hooks to use the objets
   const { register, handleSubmit } = useForm<SchemeModel>({});
+  const addScheme = useAddScheme(projectSlug);
 
   // action when form validated
-  const onSubmit: SubmitHandler<SchemeModel> = async () => {};
+  const onSubmit: SubmitHandler<SchemeModel> = async (formData) => {
+    addScheme(formData.name);
+  };
 
   return (
     <div className="container-fluid">
