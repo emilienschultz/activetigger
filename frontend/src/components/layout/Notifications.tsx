@@ -15,7 +15,7 @@ import { NotificationData, NotificationType } from '../../types';
 
 export const Notifications: FC = () => {
   const {
-    appContext: { notifications },
+    appContext: { notifications }, //destructuration of the object from hook
     setAppContext,
   } = useAppContext();
 

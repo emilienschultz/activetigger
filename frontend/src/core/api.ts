@@ -3,11 +3,12 @@ import createClient from 'openapi-fetch';
 import { useCallback } from 'react';
 
 import type { paths } from '../generated/openapi';
-import { AvailableProjectsModel, LoginParams, ProjectDataModel } from '../types';
+import { AvailableProjectsModel, LoginParams, ProjectDataModel, SchemeModel } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
 import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
+import { useNotifications } from './notifications';
 
 /**
  * API methods
@@ -174,13 +175,15 @@ export function useCreateProject() {
   // this POST hook returns a function ready to be used by a component
   return createProject;
 }
+
+
 /**
  * useProject
- * GET project by projectName
- * @param projectName
+ * GET project by projectSlug
+ * @param projectSlug
  * @returns ProjectModel
  */
-export function useProject(projectName?: string) {
+export function useProject(projectSlug?: string) {
   // it's a GET data hook. It's using the exact same pattern as useUserProjects
 
   // 1. get auth
@@ -189,25 +192,94 @@ export function useProject(projectName?: string) {
   // 2. use an internal state to store the project thanks to useAsyncMemo
   const project = useAsyncMemo(async () => {
     const authHeaders = getAuthHeaders(authenticatedUser);
-    if (authenticatedUser && projectName) {
+    if (authenticatedUser && projectSlug) {
       const res = await api.GET('/projects/{project_slug}', {
         ...authHeaders,
         params: {
           header: { username: authenticatedUser.username },
-          path: { project_slug: projectName },
+          path: { project_slug: projectSlug },
         },
       });
       if (res.error)
         throw new Error(
           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
         );
-      return res.data.params;
+      //return res.data.params;
+      return res.data;
     }
     //TODO: notify
 
-    // in this dependencies list we add projectName has a different API call will be made if it changes
-  }, [authenticatedUser, projectName]);
+    // in this dependencies list we add projectSlug has a different API call will be made if it changes
+  }, [authenticatedUser, projectSlug]);
 
   // 3. make sure to simplify the data returned by discarding the status
   return getAsyncMemoData(project);
 }
+
+/**
+ * delete a scheme
+ (its a hook)
+ */
+export function useDeleteScheme(projectSlug:string, schemeName: string|null) {
+
+  const { authenticatedUser } = useAuth();
+
+  const {notify} = useNotifications()
+
+  const deleteScheme = useCallback(async () => {
+
+    const authHeaders = getAuthHeaders(authenticatedUser);
+
+    if (authenticatedUser && schemeName) {
+      // do the new projects POST call
+      const res = await api.POST('/schemes/{action}', {
+        ...authHeaders,
+        params: { header: 
+          { username: authenticatedUser.username }, 
+            path:{action:"delete" },
+            query: { project_slug: projectSlug }},
+        body: {project_slug:projectSlug, name: schemeName, tags: null},
+      });
+      if (res.error)
+        notify({type:"error", message:res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString()})
+    
+      notify({type:"success", message:"Scheme deleted"})
+      }}, [authenticatedUser, projectSlug, schemeName, notify]);
+
+
+      return deleteScheme;
+    }
+
+
+/**
+ * create a scheme
+ (its a hook)
+ */
+ export function useAddScheme(projectSlug:string) {
+
+  const { authenticatedUser } = useAuth();
+
+  const {notify} = useNotifications()
+
+  const addScheme = useCallback(async (schemeName:string) => {
+    const authHeaders = getAuthHeaders(authenticatedUser);
+
+    if (authenticatedUser && schemeName) {
+      // do the new projects POST call
+      const res = await api.POST('/schemes/{action}', {
+        ...authHeaders,
+        params: { header: 
+          { username: authenticatedUser.username }, 
+            path:{action:"add" },
+            query: { project_slug: projectSlug }},
+        body: {project_slug:projectSlug, name: schemeName, tags: null},
+      });
+      if (res.error)
+        notify({type:"error", message:res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString()})
+    
+      notify({type:"success", message:"Scheme created"})
+      }}, [authenticatedUser, projectSlug, notify]);
+
+
+      return addScheme;
+    }

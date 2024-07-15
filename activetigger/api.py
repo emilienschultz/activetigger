@@ -970,7 +970,7 @@ async def post_schemes(
     test_rights("modify project element", username, project.name)
 
     if action == "add":
-        r = project.schemes.add_scheme(scheme, username)
+        r = project.schemes.add_scheme(scheme)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(username, f"add scheme {scheme.name}", project.name)

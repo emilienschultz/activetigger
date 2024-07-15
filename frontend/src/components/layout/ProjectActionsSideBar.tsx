@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 
 import { PossibleProjectActions } from './ProjectPageLayout';
 
+/* define a component for project action bar 
+with the project & the current action*/
 export const ProjectActionsSidebar: FC<{
   projectName: string;
   currentProjectAction?: PossibleProjectActions;
@@ -18,7 +20,10 @@ export const ProjectActionsSidebar: FC<{
             className={classNames('nav-link', !currentProjectAction && 'active')}
             aria-current="page"
           >
-            {projectName}
+            Project{' '}
+            <span>
+              <b>{projectName}</b>
+            </span>
           </Link>
         </li>
         <li className="nav-item">
