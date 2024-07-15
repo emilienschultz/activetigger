@@ -8,6 +8,7 @@ import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
 import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
+import { useNotifications } from './notifications';
 
 /**
  * API methods
@@ -216,17 +217,20 @@ export function useProject(projectSlug?: string) {
 }
 
 /**
- * delete a scheme // TODO to check
+ * delete a scheme
+ (its a hook)
  */
-export function delete_scheme(projectSlug:string, schemeName: string) {
+export function useDeleteScheme(projectSlug:string, schemeName: string|null) {
 
   const { authenticatedUser } = useAuth();
 
-  const deleteScheme = useAsyncMemo(async () => {
+  const {notify} = useNotifications()
+
+  const deleteScheme = useCallback(async () => {
 
     const authHeaders = getAuthHeaders(authenticatedUser);
 
-    if (authenticatedUser) {
+    if (authenticatedUser && schemeName) {
       // do the new projects POST call
       const res = await api.POST('/schemes/{action}', {
         ...authHeaders,
@@ -234,14 +238,14 @@ export function delete_scheme(projectSlug:string, schemeName: string) {
           { username: authenticatedUser.username }, 
             path:{action:"delete" },
             query: { project_slug: projectSlug }},
-        // POST has a body
         body: {project_slug:projectSlug, name: schemeName, tags: null},
       });
       if (res.error)
-        throw new Error(
-          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
-        );
-      }}, [authenticatedUser, projectSlug, schemeName]);
-      
+        notify({type:"error", message:res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString()})
+    
+      notify({type:"success", message:"Scheme deleted"})
+      }}, [authenticatedUser, projectSlug, schemeName, notify]);
+
+
       return deleteScheme;
     }

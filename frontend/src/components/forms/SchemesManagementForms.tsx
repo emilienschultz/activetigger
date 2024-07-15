@@ -4,7 +4,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { IoIosAddCircle } from 'react-icons/io';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
-import { delete_scheme } from '../../core/api';
+import { useDeleteScheme } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { SchemeModel } from '../../types';
 
@@ -18,12 +18,13 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   available_schemes,
   projectSlug,
 }) => {
-  // TODO if default, set the first scheme
-
   const {
     appContext: { current_scheme }, //destructuration of the object from hook
     setAppContext,
   } = useAppContext();
+
+  // hook to get the api call
+  const deleteScheme = useDeleteScheme(projectSlug, current_scheme);
 
   // put the current scheme in the context
   const handleChange = (event: any) => {
@@ -31,23 +32,13 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
       ...state,
       current_scheme: event.target.value,
     }));
-    setSelectedScheme(event.target.value);
-    console.log(current_scheme);
+    console.log(`Current scheme ${event.target.value}`);
   };
 
   // state for displaying the new scheme menu
   const [showCreateNewScheme, setShowCreateNewScheme] = useState(false);
   const handleIconClick = () => {
     setShowCreateNewScheme(!showCreateNewScheme);
-  };
-
-  // state for deleting
-  const [selectedScheme, setSelectedScheme] = useState('');
-
-  // call the deletion for the current scheme
-  const deleteScheme = () => {
-    delete_scheme(projectSlug, selectedScheme);
-    console.log(`Delete ${selectedScheme}`);
   };
 
   return (
@@ -57,14 +48,19 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
       </label>
       <div>
         <select id="scheme-selected" className="form-select-lg mb-3 col-3" onChange={handleChange}>
+          <option></option> {/*empty possibility*/}
           {available_schemes.map((element) => (
             <option key={element} value={element}>
               {element}
             </option>
           ))}{' '}
         </select>
-        <MdOutlineDeleteOutline size={30} onClick={deleteScheme} />
-        <IoIosAddCircle onClick={handleIconClick} size={30} />
+        <button onClick={deleteScheme} className="btn">
+          <MdOutlineDeleteOutline size={30} />
+        </button>
+        <button onClick={handleIconClick} className="btn">
+          <IoIosAddCircle size={30} />
+        </button>
       </div>
       <div>{showCreateNewScheme && <CreateNewScheme />}</div>
     </div>
