@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useProject } from '../core/api';
-import { SchemeManagement } from './forms/SchemesManagementForms';
+import { SchemesManagement } from './forms/SchemesManagementForms';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectPage: FC = () => {
@@ -21,7 +21,7 @@ export const ProjectPage: FC = () => {
       {project && (
         <div>
           <div>
-            <SchemeManagement
+            <SchemesManagement
               available_schemes={Object.keys(project.schemes.available)}
               projectSlug={projectName}
             />

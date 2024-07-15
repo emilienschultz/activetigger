@@ -8,13 +8,16 @@ import { delete_scheme } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { SchemeModel } from '../../types';
 
-interface SchemeManagementProps {
+interface SchemesManagementProps {
   available_schemes: string[];
   projectSlug: string;
 }
 
 /* Manage schemes*/
-export const SchemeManagement: FC<SchemeManagementProps> = ({ available_schemes, projectSlug }) => {
+export const SchemesManagement: FC<SchemesManagementProps> = ({
+  available_schemes,
+  projectSlug,
+}) => {
   // TODO if default, set the first scheme
 
   const {
