@@ -11,14 +11,18 @@ export const ProjectPage: FC = () => {
   // it also handles auth for us making the component code here very clean
   // project can be undefined has at the very first render the API has not yet responded
   // project undefined means the data is not ready yet or there was an error
-  const project = useProject(projectName);
+  const project = useProject(projectName); // get project
+
   if (!projectName) return null;
   return (
     <ProjectPageLayout projectName={projectName}>
       {project && (
         <div>
           <div>
-            You are working on the project <span>{project.project_name}</span>
+            You are working on the project <span>{project.params.project_name}</span>
+          </div>
+          <div>
+            <h2>Schemes</h2>
           </div>
           <div>
             <h2>Statistics</h2>

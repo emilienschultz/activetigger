@@ -17,7 +17,6 @@ export const PageLayout: FC<PageLayoutProps> = ({ children, currentPage, project
     <div>
       <NavBar currentPage={currentPage} projectName={projectName} />
       <main>{children}</main>
-
       <Notifications />
     </div>
   );

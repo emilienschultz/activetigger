@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 
 import { PossibleProjectActions } from './ProjectPageLayout';
 
+/* define a component for project action bar 
+with the project & the current action*/
 export const ProjectActionsSidebar: FC<{
   projectName: string;
   currentProjectAction?: PossibleProjectActions;

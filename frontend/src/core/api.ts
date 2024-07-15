@@ -174,13 +174,15 @@ export function useCreateProject() {
   // this POST hook returns a function ready to be used by a component
   return createProject;
 }
+
+
 /**
  * useProject
- * GET project by projectName
- * @param projectName
+ * GET project by projectSlug
+ * @param projectSlug
  * @returns ProjectModel
  */
-export function useProject(projectName?: string) {
+export function useProject(projectSlug?: string) {
   // it's a GET data hook. It's using the exact same pattern as useUserProjects
 
   // 1. get auth
@@ -189,24 +191,25 @@ export function useProject(projectName?: string) {
   // 2. use an internal state to store the project thanks to useAsyncMemo
   const project = useAsyncMemo(async () => {
     const authHeaders = getAuthHeaders(authenticatedUser);
-    if (authenticatedUser && projectName) {
+    if (authenticatedUser && projectSlug) {
       const res = await api.GET('/projects/{project_slug}', {
         ...authHeaders,
         params: {
           header: { username: authenticatedUser.username },
-          path: { project_slug: projectName },
+          path: { project_slug: projectSlug },
         },
       });
       if (res.error)
         throw new Error(
           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
         );
-      return res.data.params;
+      //return res.data.params;
+      return res.data;
     }
     //TODO: notify
 
-    // in this dependencies list we add projectName has a different API call will be made if it changes
-  }, [authenticatedUser, projectName]);
+    // in this dependencies list we add projectSlug has a different API call will be made if it changes
+  }, [authenticatedUser, projectSlug]);
 
   // 3. make sure to simplify the data returned by discarding the status
   return getAsyncMemoData(project);

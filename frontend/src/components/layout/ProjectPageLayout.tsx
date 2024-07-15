@@ -10,6 +10,7 @@ type ProjectPageLayoutProps = PropsWithChildren<{
   currentAction?: PossibleProjectActions;
 }>;
 
+/* On a specific project, add the ActionSideBar*/
 export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
   projectName,
   currentAction,
@@ -22,7 +23,6 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
           <div className="col-3">
             <ProjectActionsSidebar projectName={projectName} currentProjectAction={currentAction} />
           </div>
-
           <div className="col-9">{children}</div>
         </div>
       </div>
