@@ -1002,12 +1002,11 @@ async def get_features(project: Annotated[Project, Depends(get_project)]) -> Lis
     return list(project.features.map.keys())
 
 
-@app.post("/features/add/{name}", dependencies=[Depends(verified_user)])
+@app.post("/features/add", dependencies=[Depends(verified_user)])
 async def post_embeddings(
     project: Annotated[Project, Depends(get_project)],
     username: Annotated[str, Header()],
-    name: str,
-    params: FeatureModel,
+    feature: FeatureModel,
 ) -> WaitingModel | None:
     """
     Compute features :
@@ -1016,48 +1015,50 @@ async def post_embeddings(
     """
     test_rights("modify project", username, project.name)
 
-    if name in project.features.training:
+    if feature.type in project.features.training:
         raise HTTPException(
             status_code=400, detail="This feature is already in training"
         )
-    if not name in {"sbert", "fasttext", "dfm", "regex"}:
+    if not feature.type in {"sbert", "fasttext", "dfm", "regex"}:
         raise HTTPException(status_code=400, detail="Not implemented")
 
     # specific case of regex that is not parallelized yet
-    if name == "regex":
-        if (not "name" in params.params) or (not "value" in params.params):
+    if feature.type == "regex":
+        if (not "name" in feature.parameters) or (not "value" in feature.parameters):
             raise HTTPException(
                 status_code=400, detail="Parameters missing for the regex"
             )
-        r = project.add_regex(params.params["name"], params.params["value"])
+        r = project.add_regex(feature.parameters["name"], feature.parameters["value"])
         if "error" in r:
             raise HTTPException(status_code=400, detail=r["error"])
-        server.log_action(username, f"add regex {params.params['name']}", project.name)
+        server.log_action(
+            username, f"add regex {feature.parameters['name']}", project.name
+        )
         return None
 
     # case for computation on specific processes
     df = project.content["text"]
-    if name == "sbert":
+    if feature.type == "sbert":
         args = {"texts": df, "model": "distiluse-base-multilingual-cased-v1"}
         func = functions.to_sbert
-    if name == "fasttext":
+    if feature.type == "fasttext":
         args = {
             "texts": df,
             "language": project.params.language,
             "path_models": server.path_models,
         }
         func = functions.to_fasttext
-    if name == "dfm":
-        args = params.params
+    if feature.type == "dfm":
+        args = feature.parameters
         args["texts"] = df
         func = functions.to_dtm
 
     # add the computation to queue
     unique_id = server.queue.add("feature", func, args)
-    project.features.training[name] = unique_id
+    project.features.training[feature.type] = unique_id
 
     server.log_action(username, f"Compute feature dfm", project.name)
-    return WaitingModel(detail=f"computing {name}, it could take a few minutes")
+    return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
 
 @app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])

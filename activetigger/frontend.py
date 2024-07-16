@@ -1422,12 +1422,12 @@ def _add_feature(feature_name, feature_params) -> bool:
     except:
         raise ValueError("Problem in the json parameters")
     r = _post(
-        f"/features/add/{feature_name}",
+        f"/features/add",
         params={
             "project_slug": st.session_state.current_project,
             "user": st.session_state.user,
         },
-        json_data={"params": feature_params},
+        json_data={"type": feature_name, "parameters": feature_params},
     )
     return True
 

@@ -207,7 +207,8 @@ class ProjectionOutModel(BaseModel):
 
 
 class FeatureModel(BaseModel):
-    params: dict
+    type: str
+    parameters: dict
 
 
 class LiblinearParams(BaseModel):
