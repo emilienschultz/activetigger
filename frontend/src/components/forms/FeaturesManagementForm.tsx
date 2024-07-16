@@ -5,7 +5,7 @@ import { MdOutlineDeleteOutline } from 'react-icons/md';
 
 import { useAddFeature, useDeleteFeature } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
-import { FeatureModel } from '../../types';
+import { FeatureModelExtended } from '../../types';
 
 interface FeaturesManagementProps {
   availableFeatures: string[];
@@ -25,7 +25,7 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
   reFetchProject,
 }) => {
   // hooks to use the objets
-  const { register, handleSubmit } = useForm<FeatureModel>({});
+  const { register, handleSubmit } = useForm<FeatureModelExtended>({});
   const { notify } = useNotifications();
 
   // hook to get the api call
@@ -44,14 +44,13 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
   // manage selected feature
   const handleSelectFeature = (event: any) => {
     setSelectedScheme(event.target.value);
-    console.log(event.target.value);
   };
 
   // state for the type of feature to create
   const [selectedFeatureToCreate, setFeatureToCreate] = useState('');
 
   // action to create the new scheme
-  const createNewFeature: SubmitHandler<FeatureModel> = async (formData) => {
+  const createNewFeature: SubmitHandler<FeatureModelExtended> = async (formData) => {
     try {
       addFeature(formData.type, formData.name, formData.parameters);
       notify({ type: 'success', message: `Feature created` });
@@ -126,43 +125,57 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
 
                   {selectedFeatureToCreate === 'dfm' && (
                     <div>
+                      <button className="btn btn-primary btn-validation">Create</button>
                       <div>
                         <label htmlFor="dfm_tfidf">TF-IDF</label>
-                        <select id="dfm_tfidf">
+                        <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
                           <option>True</option>
                           <option>False</option>
                         </select>
                       </div>
                       <div>
                         <label htmlFor="dfm_ngrams">Ngrams</label>
-                        <input type="number" id="dfm_ngrams" value={1} />
+                        <input
+                          type="number"
+                          id="dfm_ngrams"
+                          value={1}
+                          {...register('parameters.dfm_ngrams')}
+                        />
                       </div>
                       <div>
                         <label htmlFor="dfm_min_term_freq">Min term freq</label>
-                        <input type="number" id="dfm_min_term_freq" value={5} />
+                        <input
+                          type="number"
+                          id="dfm_min_term_freq"
+                          value={5}
+                          {...register('parameters.dfm_min_term_freq')}
+                        />
                       </div>
                       <div>
                         <label htmlFor="dfm_max_term_freq">Max term freq</label>
-                        <input type="number" id="dfm_max_term_freq" value={100} />
+                        <input
+                          type="number"
+                          id="dfm_max_term_freq"
+                          value={100}
+                          {...register('parameters.dfm_max_term_freq')}
+                        />
                       </div>
                       <div>
                         <label htmlFor="dfm_norm">Norm</label>
-                        <select id="dfm_norm">
+                        <select id="dfm_norm" {...register('parameters.dfm_norm')}>
                           <option>False</option>
                           <option>True</option>
                         </select>
                       </div>
                       <div>
                         <label htmlFor="dfm_log">Log</label>
-                        <select id="dfm_log">
+                        <select id="dfm_log" {...register('parameters.dfm_log')}>
                           <option>False</option>
                           <option>True</option>
                         </select>
                       </div>
                     </div>
                   )}
-
-                  <button className="btn btn-primary btn-validation">Create</button>
                 </div>
               </form>
             </div>

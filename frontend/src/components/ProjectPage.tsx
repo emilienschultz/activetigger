@@ -16,7 +16,6 @@ export const ProjectPage: FC = () => {
 
   const { project, reFetch } = useProject(projectName); // get project statefrom the API
 
-  console.log(project);
   if (!projectName) return null;
   return (
     <ProjectPageLayout projectName={projectName}>

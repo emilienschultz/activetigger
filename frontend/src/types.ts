@@ -35,4 +35,18 @@ export type SchemeModel = components['schemas']['SchemeModel'];
 
 export type FeatureModel = components['schemas']['FeatureModel'];
 
+export interface FeatureDfmParameters {
+  dfm_tfidf: string;
+  ngrams: number;
+  dfm_ngrams: number;
+  dfm_min_term_freq: number;
+  dfm_max_term_freq: number;
+  dfm_norm: string;
+  dfm_log: string;
+}
 
+export interface FeatureModelExtended {
+  name: string;
+  type: string;
+  parameters: null | FeatureDfmParameters;
+}

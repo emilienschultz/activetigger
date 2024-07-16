@@ -3,7 +3,7 @@ import createClient from 'openapi-fetch';
 import { useCallback, useState } from 'react';
 
 import type { paths } from '../generated/openapi';
-import { AvailableProjectsModel, LoginParams, ProjectDataModel } from '../types';
+import { AvailableProjectsModel, LoginParams, ProjectDataModel, FeatureDfmParameters } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
@@ -299,17 +299,24 @@ export function useAddScheme(projectSlug: string) {
 
 /**
  * create a feature
-*/
+ **/
 export function useAddFeature(projectSlug: string) {
 
   const { authenticatedUser } = useAuth();
   const { notify } = useNotifications();
 
   const addFeature = useCallback(
-    async (featureType: string, featureName: string, featureParameters:{}) => {
-      const authHeaders = getAuthHeaders(authenticatedUser);
+    async (featureType: string, featureName: string, featureParameters:FeatureDfmParameters|any) => { // TODO fix types
 
-      if (authenticatedUser && featureName && featureType && featureParameters) {
+      console.log("add features")
+
+
+      const authHeaders = getAuthHeaders(authenticatedUser);
+      if (!featureParameters) featureParameters={};
+
+      if (!featureName) featureName = featureType;
+
+      if (authenticatedUser && featureType && featureParameters) {
         const res = await api.POST('/features/add', {
           ...authHeaders,
           params: {
