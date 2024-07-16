@@ -122,10 +122,10 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
                       </option>
                     ))}{' '}
                   </select>
+                  <button className="btn btn-primary btn-validation">Create</button>
 
                   {selectedFeatureToCreate === 'dfm' && (
                     <div>
-                      <button className="btn btn-primary btn-validation">Create</button>
                       <div>
                         <label htmlFor="dfm_tfidf">TF-IDF</label>
                         <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
