@@ -9,7 +9,7 @@ import { FeatureModel } from '../../types';
 
 interface FeaturesManagementProps {
   availableFeatures: string[];
-  possibleFeatures: {};
+  possibleFeatures: { [key: string]: { [key: string]: any } };
   projectSlug: string;
   reFetchProject: () => void;
 }
@@ -46,6 +46,9 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
     setSelectedScheme(event.target.value);
     console.log(event.target.value);
   };
+
+  // state for the type of feature to create
+  const [selectedFeatureToCreate, setFeatureToCreate] = useState('');
 
   // action to create the new scheme
   const createNewFeature: SubmitHandler<FeatureModel> = async (formData) => {
@@ -105,7 +108,14 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
                   <label className="form-label" htmlFor="newFeature">
                     Add new feature
                   </label>
-                  <select className="form-control" id="newFeature" {...register('name')}>
+                  <select
+                    className="form-control"
+                    id="newFeature"
+                    {...register('type')}
+                    onChange={(event) => {
+                      setFeatureToCreate(event.target.value);
+                    }}
+                  >
                     <option></option>
                     {Object.keys(possibleFeatures).map((element) => (
                       <option key={element} value={element}>
@@ -113,6 +123,45 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
                       </option>
                     ))}{' '}
                   </select>
+
+                  {selectedFeatureToCreate === 'dfm' && (
+                    <div>
+                      <div>
+                        <label htmlFor="dfm_tfidf">TF-IDF</label>
+                        <select id="dfm_tfidf">
+                          <option>True</option>
+                          <option>False</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="dfm_ngrams">Ngrams</label>
+                        <input type="number" id="dfm_ngrams" value={1} />
+                      </div>
+                      <div>
+                        <label htmlFor="dfm_min_term_freq">Min term freq</label>
+                        <input type="number" id="dfm_min_term_freq" value={5} />
+                      </div>
+                      <div>
+                        <label htmlFor="dfm_max_term_freq">Max term freq</label>
+                        <input type="number" id="dfm_max_term_freq" value={100} />
+                      </div>
+                      <div>
+                        <label htmlFor="dfm_norm">Norm</label>
+                        <select id="dfm_norm">
+                          <option>False</option>
+                          <option>True</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="dfm_log">Log</label>
+                        <select id="dfm_log">
+                          <option>False</option>
+                          <option>True</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   <button className="btn btn-primary btn-validation">Create</button>
                 </div>
               </form>
