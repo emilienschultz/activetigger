@@ -684,7 +684,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/features/add/{name}": {
+    "/features/add": {
         parameters: {
             query?: never;
             header?: never;
@@ -699,14 +699,14 @@ export interface paths {
          *     - same prcess
          *     - specific process : function + temporary file + update
          */
-        post: operations["post_embeddings_features_add__name__post"];
+        post: operations["post_embeddings_features_add_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/features/delete/{name}": {
+    "/features/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -719,7 +719,7 @@ export interface paths {
          * Delete Feature
          * @description Delete a specific feature
          */
-        post: operations["delete_feature_features_delete__name__post"];
+        post: operations["delete_feature_features_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1100,10 +1100,17 @@ export interface components {
             /** History */
             history: unknown[];
         };
-        /** FeatureModel */
+        /**
+         * FeatureModel
+         * @description Feature model
+         */
         FeatureModel: {
-            /** Params */
-            params: Record<string, never>;
+            /** Type */
+            type: string;
+            /** Name */
+            name: string;
+            /** Parameters */
+            parameters: Record<string, never>;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2634,7 +2641,7 @@ export interface operations {
             };
         };
     };
-    post_embeddings_features_add__name__post: {
+    post_embeddings_features_add_post: {
         parameters: {
             query: {
                 project_slug: string;
@@ -2642,9 +2649,7 @@ export interface operations {
             header: {
                 username: string;
             };
-            path: {
-                name: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
@@ -2673,17 +2678,16 @@ export interface operations {
             };
         };
     };
-    delete_feature_features_delete__name__post: {
+    delete_feature_features_delete_post: {
         parameters: {
             query: {
+                name: string;
                 project_slug: string;
             };
             header: {
                 username: string;
             };
-            path: {
-                name: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;

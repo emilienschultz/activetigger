@@ -2,7 +2,8 @@ import { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useProject } from '../core/api';
-import { SchemesManagement } from './forms/SchemesManagementForms';
+import { FeaturesManagement } from './forms/FeaturesManagementForm';
+import { SchemesManagement } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectPage: FC = () => {
@@ -26,6 +27,14 @@ export const ProjectPage: FC = () => {
               available_schemes={Object.keys(project.schemes.available)}
               projectSlug={projectName}
               reFetchProject={reFetch}
+            />
+          </div>
+          <div>
+            <FeaturesManagement
+              projectSlug={projectName}
+              reFetchProject={reFetch}
+              availableFeatures={project.features.available}
+              possibleFeatures={project.features.options}
             />
           </div>
           <div>

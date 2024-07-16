@@ -1015,7 +1015,7 @@ async def post_embeddings(
     """
     test_rights("modify project", username, project.name)
 
-    if feature.type in project.features.training:
+    if feature.name in project.features.training:
         raise HTTPException(
             status_code=400, detail="This feature is already in training"
         )
@@ -1055,13 +1055,13 @@ async def post_embeddings(
 
     # add the computation to queue
     unique_id = server.queue.add("feature", func, args)
-    project.features.training[feature.type] = unique_id
+    project.features.training[feature.name] = unique_id
 
     server.log_action(username, f"Compute feature dfm", project.name)
     return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
 
-@app.post("/features/delete/{name}", dependencies=[Depends(verified_user)])
+@app.post("/features/delete", dependencies=[Depends(verified_user)])
 async def delete_feature(
     project: Annotated[Project, Depends(get_project)],
     username: Annotated[str, Header()],

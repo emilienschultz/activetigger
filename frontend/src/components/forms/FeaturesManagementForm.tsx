@@ -5,10 +5,11 @@ import { MdOutlineDeleteOutline } from 'react-icons/md';
 
 import { useAddFeature, useDeleteFeature } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
-import { SchemeModel } from '../../types';
+import { FeatureModel } from '../../types';
 
 interface FeaturesManagementProps {
   availableFeatures: string[];
+  possibleFeatures: {};
   projectSlug: string;
   reFetchProject: () => void;
 }
@@ -17,23 +18,19 @@ interface FeaturesManagementProps {
  * Select ; Delete ; Add
  */
 
-// TODO
-interface FeatureModel {
-  to_define: string;
-}
-
 export const FeaturesManagement: FC<FeaturesManagementProps> = ({
   availableFeatures,
+  possibleFeatures,
   projectSlug,
   reFetchProject,
 }) => {
   // hooks to use the objets
-  const addFeature = useAddFeature(projectSlug);
   const { register, handleSubmit } = useForm<FeatureModel>({});
   const { notify } = useNotifications();
 
   // hook to get the api call
-  const deleteFeature = useDeleteFeature(projectSlug, current_scheme);
+  const addFeature = useAddFeature(projectSlug);
+  const deleteFeature = useDeleteFeature(projectSlug);
 
   // state for displaying the new scheme menu
   const [showCreateNewFeature, setShowCreateNewFeature] = useState(false);
@@ -41,10 +38,19 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
     setShowCreateNewFeature(!showCreateNewFeature);
   };
 
+  // state for the current selected feature
+  const [getSelectedScheme, setSelectedScheme] = useState(null);
+
+  // manage selected feature
+  const handleSelectFeature = (event: any) => {
+    setSelectedScheme(event.target.value);
+    console.log(event.target.value);
+  };
+
   // action to create the new scheme
-  const createNewFeature: SubmitHandler<SchemeModel> = async (formData) => {
+  const createNewFeature: SubmitHandler<FeatureModel> = async (formData) => {
     try {
-      addFeature(formData.name);
+      addFeature(formData.type, formData.name, formData.parameters);
       notify({ type: 'success', message: `Feature created` });
     } catch (error) {
       notify({ type: 'error', message: error + '' });
@@ -56,7 +62,7 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
   // action to delete feature
   const deleteSelectedFeature = async () => {
     //TODO: try catch and throw
-    await deleteFeature();
+    await deleteFeature(getSelectedScheme);
     reFetchProject();
   };
 
@@ -64,10 +70,14 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
     <div className="container-fluid">
       <div className="row">
         <label className="form-label" htmlFor="existing-feature-selected">
-          Select existing feature
+          Existing feature
         </label>
         <div>
-          <select id="existing-feature-selected" className="form-select-lg col-3 mb-3">
+          <select
+            id="existing-feature-selected"
+            className="form-select-lg col-3 mb-3"
+            onChange={handleSelectFeature}
+          >
             <option></option> {/*empty possibility*/}
             {availableFeatures.map((element) => (
               <option key={element} value={element}>
@@ -75,9 +85,11 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
               </option>
             ))}{' '}
           </select>
-          <button onClick={deleteSelectedFeature} className="btn btn p-0">
-            <MdOutlineDeleteOutline size={30} />
-          </button>
+          {
+            <button className="btn btn p-0" onClick={deleteSelectedFeature}>
+              <MdOutlineDeleteOutline size={30} />
+            </button>
+          }
           <button onClick={handleAddIconClick} className="btn p-0">
             <IoIosAddCircle size={30} />
           </button>
@@ -91,9 +103,16 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
               <form onSubmit={handleSubmit(createNewFeature)}>
                 <div className="secondary-panel col-4">
                   <label className="form-label" htmlFor="newFeature">
-                    New scheme
+                    Add new feature
                   </label>
-                  <select className="form-control" id="newFeature" {...register('name')}></select>
+                  <select className="form-control" id="newFeature" {...register('name')}>
+                    <option></option>
+                    {Object.keys(possibleFeatures).map((element) => (
+                      <option key={element} value={element}>
+                        {element}
+                      </option>
+                    ))}{' '}
+                  </select>
                   <button className="btn btn-primary btn-validation">Create</button>
                 </div>
               </form>

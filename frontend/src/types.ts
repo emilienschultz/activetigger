@@ -33,3 +33,6 @@ export type NotificationType = NotificationData & { id: number; createdAt: Date 
 
 export type SchemeModel = components['schemas']['SchemeModel'];
 
+export type FeatureModel = components['schemas']['FeatureModel'];
+
+

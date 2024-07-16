@@ -1402,10 +1402,11 @@ def _delete_feature(feature_name) -> bool:
     Delete existing feature
     """
     r = _post(
-        f"/features/delete/{feature_name}",
+        f"/features/delete",
         params={
             "project_slug": st.session_state.current_project,
             "user": st.session_state.user,
+            "name": feature_name,
         },
     )
     return True
@@ -1427,7 +1428,11 @@ def _add_feature(feature_name, feature_params) -> bool:
             "project_slug": st.session_state.current_project,
             "user": st.session_state.user,
         },
-        json_data={"type": feature_name, "parameters": feature_params},
+        json_data={
+            "name": feature_name,
+            "type": feature_name,
+            "parameters": feature_params,
+        },
     )
     return True
 
@@ -1442,16 +1447,18 @@ def _add_regex(value: str, name: str | None = None) -> bool:
     name = f"regex_{st.session_state.user}_{name}"
 
     data = {
+        "type": "regex",
+        "name": name,
         "params": {
             "project_slug": st.session_state.current_project,
             "name": name,
             "value": value,
             "user": st.session_state.user,
-        }
+        },
     }
 
     r = _post(
-        "/features/add/regex",
+        "/features/add",
         params={"project_slug": st.session_state.current_project},
         json_data=data,
     )

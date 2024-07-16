@@ -1,4 +1,4 @@
-import { values } from 'lodash';
+import { String, values } from 'lodash';
 import createClient from 'openapi-fetch';
 import { useCallback, useState } from 'react';
 
@@ -295,4 +295,77 @@ export function useAddScheme(projectSlug: string) {
   );
 
   return addScheme;
+}
+
+/**
+ * create a feature
+*/
+export function useAddFeature(projectSlug: string) {
+
+  const { authenticatedUser } = useAuth();
+  const { notify } = useNotifications();
+
+  const addFeature = useCallback(
+    async (featureType: string, featureName: string, featureParameters:{}) => {
+      const authHeaders = getAuthHeaders(authenticatedUser);
+
+      if (authenticatedUser && featureName && featureType && featureParameters) {
+        const res = await api.POST('/features/add', {
+          ...authHeaders,
+          params: {
+            header: { username: authenticatedUser.username },
+            query: { project_slug: projectSlug },
+          },
+          body: { name: featureName, type: featureType, parameters: featureParameters},
+        });
+        if (res.error)
+          throw new Error(
+            res.error.detail
+              ? res.error.detail?.map((d) => d.msg).join('; ')
+              : res.error.toString(),
+          );
+        return true;
+      }
+    },
+    [authenticatedUser, projectSlug, notify],
+  );
+
+  return addFeature;
+}
+
+/**
+ * delete a feature
+ * @param projectSlug
+ * @returns deleteFeature
+ *  */
+export function useDeleteFeature(projectSlug: string) {
+
+  const { authenticatedUser } = useAuth();
+  const { notify } = useNotifications();
+
+  const deleteFeature = useCallback(
+    async (featureName: string|null) => {
+      const authHeaders = getAuthHeaders(authenticatedUser);
+
+      if (authenticatedUser && featureName) {
+        const res = await api.POST('/features/delete', {
+          ...authHeaders,
+          params: {
+            header: { username: authenticatedUser.username },
+            query: { project_slug: projectSlug, name: featureName },
+          }
+        });
+        if (res.error)
+          throw new Error(
+            res.error.detail
+              ? res.error.detail?.map((d) => d.msg).join('; ')
+              : res.error.toString(),
+          );
+        return true;
+      }
+    },
+    [authenticatedUser, projectSlug, notify],
+  );
+
+  return deleteFeature;
 }
