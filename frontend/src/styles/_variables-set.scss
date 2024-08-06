@@ -68,3 +68,28 @@ $primary: #444;
 .navbar-text-margins{
   margin-left: 10px;
 }
+
+
+.delete-button {
+  background-color: #ff4c4c; /* couleur de fond rouge */
+  color: white; /* texte blanc */
+  border: none; /* pas de bordure */
+  border-radius: 5px; /* coins arrondis */
+  padding: 10px 20px; /* espacement intérieur */
+  font-size: 16px; /* taille de police */
+  cursor: pointer; /* curseur de la souris en mode "pointer" */
+  transition: background-color 0.3s ease; /* transition douce pour la couleur */
+}
+
+.delete-button:hover {
+  background-color: #e60000; /* couleur plus foncée au survol */
+}
+
+.delete-button:focus {
+  outline: none; /* pas de contour */
+  box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.5); /* effet de focus */
+}
+
+.delete-button:active {
+  background-color: #cc0000; /* couleur encore plus foncée lors du clic */
+}

@@ -3,7 +3,7 @@ import { FC, PropsWithChildren } from 'react';
 import { PageLayout } from './PageLayout';
 import { ProjectActionsSidebar } from './ProjectActionsSideBar';
 
-export type PossibleProjectActions = 'annotate' | 'train';
+export type PossibleProjectActions = 'annotate' | 'train' | 'delete';
 
 type ProjectPageLayoutProps = PropsWithChildren<{
   projectName: string;

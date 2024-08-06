@@ -142,6 +142,7 @@ export function useUserProjects(): AvailableProjectsModel[] | undefined {
 export function useCreateProject() {
   // auth hook
   const { authenticatedUser } = useAuth();
+  const { notify } = useNotifications();
 
   // POST method hook generates an async function which will do the API call
   // the component using this hook will decide when to use this method  in its lifecycle
@@ -168,12 +169,49 @@ export function useCreateProject() {
               : res.error.toString(),
           );
       }
-      //TODO: notify
+      notify({ type: 'success', message: 'Project created' });
     },
     [authenticatedUser],
   );
   // this POST hook returns a function ready to be used by a component
   return createProject;
+}
+
+
+/**
+ * useDeleteProject
+ * provide a method to delete existing projext
+ * @returns void
+ */
+export function useDeleteProject() {
+
+  const { authenticatedUser } = useAuth();
+  const { notify } = useNotifications();
+  const deleteProject = useCallback(async (projectSlug: string) => {
+    const authHeaders = getAuthHeaders(authenticatedUser);
+    if (authenticatedUser) {
+      // do the new projects POST call
+      const res = await api.POST('/projects/delete', {
+        ...authHeaders,
+        params: { header: { username: authenticatedUser.username }, 
+        query:{project_slug:projectSlug} },
+      });
+      if (res.error)
+        notify({
+          type: 'error',
+          message: res.error.detail
+            ? res.error.detail?.map((d) => d.msg).join('; ')
+            : res.error.toString(),
+        });
+
+        notify({ type: 'success', message: 'Project deleted' });
+
+    }
+  
+
+},[authenticatedUser])
+
+return deleteProject
 }
 
 /**
