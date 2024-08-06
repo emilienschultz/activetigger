@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { useDeleteProject } from '../core/api';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
@@ -14,6 +14,8 @@ export const ProjectDeletePage: FC = () => {
   // function to delete project
   const deleteProject = useDeleteProject();
 
+  const navigate = useNavigate(); // rooting
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="delete">
       <div className="container mt-5">
@@ -27,6 +29,7 @@ export const ProjectDeletePage: FC = () => {
               onClick={() => {
                 deleteProject(projectName);
                 console.log('Delete project');
+                navigate(`/projects/`);
               }}
               className="delete-button"
             >
