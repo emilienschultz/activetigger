@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 import { FC } from 'react';
-import { FaTrash } from 'react-icons/fa';
+import { FaCogs } from 'react-icons/fa';
 import { PiTagDuotone } from 'react-icons/pi';
 import { Link } from 'react-router-dom';
 
@@ -38,12 +38,12 @@ export const ProjectActionsSidebar: FC<{
         </li>
         <li className="nav-item">
           <Link
-            to={`/projects/${projectName}/delete`}
-            className={classNames('nav-link', currentProjectAction === 'delete' && 'active')}
+            to={`/projects/${projectName}/parameters`}
+            className={classNames('nav-link', currentProjectAction === 'parameters' && 'active')}
             aria-current="page"
           >
-            <span className="delete">
-              <FaTrash /> Delete
+            <span className="parameters">
+              <FaCogs /> Parameters
             </span>
           </Link>
         </li>

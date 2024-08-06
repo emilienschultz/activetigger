@@ -4,9 +4,9 @@ import { HelpPage } from '../components/HelpPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
-import { ProjectDeletePage } from '../components/ProjectDeletePage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
+import { ProjectParametersPage } from '../components/ProjectParametersPage';
 import { ProjectsPage } from '../components/ProjectsPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 
@@ -58,10 +58,10 @@ export function getRouter() {
       ),
     },
     {
-      path: '/projects/:projectName/delete',
+      path: '/projects/:projectName/parameters',
       element: (
         <AuthRequired>
-          <ProjectDeletePage />
+          <ProjectParametersPage />
         </AuthRequired>
       ),
     },
