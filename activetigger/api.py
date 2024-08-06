@@ -476,6 +476,23 @@ async def get_project_state(
     return StateModel(**data)
 
 
+@app.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
+async def get_description(
+    project: Annotated[Project, Depends(get_project)],
+    scheme: str | None = None,
+    user: str | None = None,
+) -> ProjectDescriptionModel:
+    """
+    Statistics for a scheme and a user
+    """
+    r = project.get_description(scheme=scheme, user=user)
+    if "error" in r:
+        print(r)
+        raise HTTPException(status_code=500, detail=r["error"])
+    print(r)
+    return ProjectDescriptionModel(**r)
+
+
 @app.get("/projects")
 async def get_projects(username: Annotated[str, Header()]) -> AvailableProjectsModel:
     """

@@ -46,6 +46,8 @@ export async function login(params: LoginParams) {
     );
   }
 }
+
+
 /**
  * logout : POST a login form data to get an auth token
  * @param params LoginParams
@@ -68,6 +70,8 @@ export async function logout(token: string) {
     );
   }
 }
+
+
 /**
  * me : GET an authenticated user info
  * @param token
@@ -213,6 +217,43 @@ export function useDeleteProject() {
 
 return deleteProject
 }
+
+/**
+ * useStatistics
+ * GET the current stats of the project
+ * @param projectSlug
+ * @param currentScheme
+ */
+export function useStatistics(projectSlug: string, currentScheme: string|null) {
+
+  const { authenticatedUser } = useAuth();
+  const project = useAsyncMemo(async () => {
+    const authHeaders = getAuthHeaders(authenticatedUser);
+    if (authenticatedUser && projectSlug) {
+      const res = await api.GET('/projects/{project_slug}/statistics', {
+        ...authHeaders,
+        params: {
+          path: { project_slug: projectSlug },
+          query:{ scheme:currentScheme, user:authenticatedUser.username} ,
+        },
+      });
+      if (res.error)
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+      //return res.data.params;
+      return res.data;
+    }
+    //TODO: notify
+
+    // in this dependencies list we add projectSlug has a different API call will be made if it changes
+    // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
+  }, [authenticatedUser, projectSlug, currentScheme]);
+
+  return {statistics:getAsyncMemoData(project)}
+}
+
+
 
 /**
  * useProject

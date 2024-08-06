@@ -72,7 +72,7 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
     <div className="container-fluid">
       <div className="row">
         <label className="form-label" htmlFor="existing-feature-selected">
-          Existing feature
+          Existing features
         </label>
         <div>
           <select

@@ -23,9 +23,9 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   projectSlug,
   reFetchProject,
 }) => {
-  // manage context
+  // get element from the context
   const {
-    appContext: { current_scheme },
+    appContext: { currentScheme },
     setAppContext,
   } = useAppContext();
 
@@ -35,7 +35,7 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
 
   // hook to get the api call
   const addScheme = useAddScheme(projectSlug);
-  const deleteScheme = useDeleteScheme(projectSlug, current_scheme);
+  const deleteScheme = useDeleteScheme(projectSlug, currentScheme);
 
   // state for displaying the new scheme menu
   const [showCreateNewScheme, setShowCreateNewScheme] = useState(false);
@@ -47,9 +47,9 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   const handleSelectScheme = (event: any) => {
     setAppContext((state) => ({
       ...state,
-      current_scheme: event.target.value,
+      currentScheme: event.target.value,
     }));
-    console.log(`Current scheme ${event.target.value}`);
+    notify({ type: 'success', message: 'Scheme selected' });
   };
 
   // action to create the new scheme
@@ -82,6 +82,7 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
             id="scheme-selected"
             className="form-select-lg col-3 mb-3"
             onChange={handleSelectScheme}
+            value={currentScheme ? currentScheme : ''}
           >
             <option></option> {/*empty possibility*/}
             {available_schemes.map((element) => (

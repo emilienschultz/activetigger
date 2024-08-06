@@ -5,10 +5,10 @@ import { NotificationType } from '../types';
 // Context content
 export type AppContextValue = {
   notifications: NotificationType[];
-  current_scheme: string | null;
+  currentScheme: string | null;
 };
 
-export const defaultContext: AppContextValue = { notifications: [], current_scheme: null };
+export const defaultContext: AppContextValue = { notifications: [], currentScheme: null };
 
 export type AppContextType = {
   appContext: AppContextValue;

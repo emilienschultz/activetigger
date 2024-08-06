@@ -1,13 +1,19 @@
 import { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { useProject } from '../core/api';
+import { useProject, useStatistics } from '../core/api';
+import { useAppContext } from '../core/context';
 import { FeaturesManagement } from './forms/FeaturesManagementForm';
 import { SchemesManagement } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectPage: FC = () => {
   const { projectName } = useParams();
+  if (!projectName) return null;
+
+  const {
+    appContext: { currentScheme },
+  } = useAppContext();
 
   // API get hook provides the project querying the API for us
   // it also handles auth for us making the component code here very clean
@@ -16,7 +22,8 @@ export const ProjectPage: FC = () => {
 
   const { project, reFetch } = useProject(projectName); // get project statefrom the API
 
-  if (!projectName) return null;
+  const { statistics } = useStatistics(projectName, currentScheme);
+
   return (
     <ProjectPageLayout projectName={projectName}>
       {project && (
@@ -38,8 +45,8 @@ export const ProjectPage: FC = () => {
           </div>
           <div>
             <h2>Statistics</h2>
+            {JSON.stringify(statistics, null, 2)}
           </div>
-          <div>{JSON.stringify(project, null, 2)}</div>
         </div>
       )}
     </ProjectPageLayout>
