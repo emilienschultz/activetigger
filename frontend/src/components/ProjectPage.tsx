@@ -7,6 +7,63 @@ import { FeaturesManagement } from './forms/FeaturesManagementForm';
 import { SchemesManagement } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
+interface StatisticsProps {
+  projectSlug: string;
+  scheme: string;
+}
+
+/**
+ * Component to display statistics
+ */
+const DisplayStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) => {
+  const { statistics } = useStatistics(projectSlug, scheme);
+
+  if (!statistics) return null;
+
+  return (
+    <div>
+      <h3>Statistics</h3>
+      <table className="table-statistics">
+        <tbody>
+          <tr className="table-delimiter">
+            <td>Trainset</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Total</td>
+            <td>{statistics['trainset_n']}</td>
+          </tr>
+          <tr>
+            <td>Annotated</td>
+            <td>{statistics['annotated_n']}</td>
+          </tr>
+          <tr>
+            <td>Users involved</td>
+            <td>{statistics['users']}</td>
+          </tr>
+          <tr>
+            <td>Distribution</td>
+            <td>{JSON.stringify(statistics['annotated_distribution'])}</td>
+          </tr>
+          <tr className="table-delimiter">
+            <td>Testset</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Total</td>
+            <td>{statistics['testset_n']}</td>
+          </tr>
+        </tbody>
+      </table>
+      {/*JSON.stringify(statistics, null, 2)*/}
+    </div>
+  );
+};
+
+/**
+ * Component to display the project page
+ */
+
 export const ProjectPage: FC = () => {
   const { projectName } = useParams();
   if (!projectName) return null;
@@ -21,8 +78,6 @@ export const ProjectPage: FC = () => {
   // project undefined means the data is not ready yet or there was an error$
 
   const { project, reFetch } = useProject(projectName); // get project statefrom the API
-
-  const { statistics } = useStatistics(projectName, currentScheme);
 
   return (
     <ProjectPageLayout projectName={projectName}>
@@ -43,10 +98,7 @@ export const ProjectPage: FC = () => {
               possibleFeatures={project.features.options}
             />
           </div>
-          <div>
-            <h2>Statistics</h2>
-            {JSON.stringify(statistics, null, 2)}
-          </div>
+          {currentScheme && <DisplayStatistics projectSlug={projectName} scheme={currentScheme} />}
         </div>
       )}
     </ProjectPageLayout>

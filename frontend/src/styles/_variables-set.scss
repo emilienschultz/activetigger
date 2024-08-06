@@ -92,3 +92,35 @@ $primary: #444;
 .delete-button:active {
   background-color: #cc0000; /* couleur encore plus foncée lors du clic */
 }
+
+
+.table-statistics {
+  width: 80%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+
+
+.table-statistics th,
+.table-statistics td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.table-statistics th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+
+.table-statistics tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.table-delimiter {
+  background-color: #cccccc;
+  font-weight: bold;
+  text-align: center;
+}
