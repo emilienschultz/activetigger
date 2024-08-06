@@ -161,11 +161,12 @@ class Server:
             config = yaml.safe_load(f)
         self.path = Path(config["path"])
         self.SECRET_KEY = config["secret_key"]  # generate it automatically ?
-        if config["path_models"] is not None:
+        if (config["path_models"] is not None) and Path(config["path_models"]).exists():
             self.path_models = Path(config["path_models"])
         else:
-            self.path_models = None
-            print("Fasttext path model not specified")
+            print("Creating repertory for models")
+            self.path_models = Path("./models")
+            os.mkdir(self.path_models)
 
         # create the database
         self.db = self.path / self.db_name

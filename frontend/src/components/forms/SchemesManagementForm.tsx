@@ -56,11 +56,11 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   const createNewScheme: SubmitHandler<SchemeModel> = async (formData) => {
     try {
       addScheme(formData.name);
+      reFetchProject();
       notify({ type: 'success', message: `Scheme ${formData.name} created` });
     } catch (error) {
       notify({ type: 'error', message: error + '' });
     }
-    reFetchProject();
     setShowCreateNewScheme(!showCreateNewScheme);
   };
 

@@ -188,6 +188,7 @@ export function useProject(projectSlug?: string) {
 
   // 1. get auth
   const { authenticatedUser } = useAuth();
+
   // 2. create a fetchTrigger, a simple boolean which we will use to trigger an API call
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
@@ -217,7 +218,8 @@ export function useProject(projectSlug?: string) {
 
   // 4. make sure to simplify the data returned by discarding the status
   // we also return a refetch method which toggle the fetchTrigger state in order to trigger a new API call
-  return { project: getAsyncMemoData(project), reFetch: () => setFetchTrigger((f) => !f) };
+  return { project: getAsyncMemoData(project), 
+    reFetch: () => setFetchTrigger((f) => !f) };
 }
 
 /**

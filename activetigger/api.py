@@ -1035,7 +1035,6 @@ async def post_embeddings(
             username, f"add regex {feature.parameters['name']}", project.name
         )
         return None
-
     # case for computation on specific processes
     df = project.content["text"]
     if feature.type == "sbert":
