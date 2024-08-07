@@ -1,9 +1,14 @@
-import { String, values } from 'lodash';
+import { values } from 'lodash';
 import createClient from 'openapi-fetch';
 import { useCallback, useState } from 'react';
 
 import type { paths } from '../generated/openapi';
-import { AvailableProjectsModel, LoginParams, ProjectDataModel, FeatureDfmParameters } from '../types';
+import {
+  AvailableProjectsModel,
+  FeatureDfmParameters,
+  LoginParams,
+  ProjectDataModel,
+} from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
@@ -47,7 +52,6 @@ export async function login(params: LoginParams) {
   }
 }
 
-
 /**
  * logout : POST a login form data to get an auth token
  * @param params LoginParams
@@ -70,7 +74,6 @@ export async function logout(token: string) {
     );
   }
 }
-
 
 /**
  * me : GET an authenticated user info
@@ -102,6 +105,7 @@ export async function me(token: string) {
 export function useUserProjects(): AvailableProjectsModel[] | undefined {
   // auth hook which provides the current authenticated user
   const { authenticatedUser } = useAuth();
+  const { notify } = useNotifications();
 
   // This method is a GET it retrieves data by querying the API
   // but a hook can not be async it has to be a pure function
@@ -124,11 +128,13 @@ export function useUserProjects(): AvailableProjectsModel[] | undefined {
       if (res.data && !res.error)
         // TODO: type API response in Python code and remove the as unknown as AvailableProjectsModel[]
         return values(res.data.projects) as unknown as AvailableProjectsModel[];
-      else
+      else {
+        notify({ type: 'error', message: res.error.detail?.map((d) => d.msg).join('; ') || '' });
         throw new HttpError(
           res.response.status,
           res.error.detail?.map((d) => d.msg).join('; ') || '',
         );
+      }
     }
     //TODO notify that user must be logged in
     // this should only happen in a component mounted in a route which is not protected in the router
@@ -181,41 +187,41 @@ export function useCreateProject() {
   return createProject;
 }
 
-
 /**
  * useDeleteProject
  * provide a method to delete existing projext
  * @returns void
  */
 export function useDeleteProject() {
-
   const { authenticatedUser } = useAuth();
   const { notify } = useNotifications();
-  const deleteProject = useCallback(async (projectSlug: string) => {
-    const authHeaders = getAuthHeaders(authenticatedUser);
-    if (authenticatedUser) {
-      // do the new projects POST call
-      const res = await api.POST('/projects/delete', {
-        ...authHeaders,
-        params: { header: { username: authenticatedUser.username }, 
-        query:{project_slug:projectSlug} },
-      });
-      if (res.error)
-        notify({
-          type: 'error',
-          message: res.error.detail
-            ? res.error.detail?.map((d) => d.msg).join('; ')
-            : res.error.toString(),
+  const deleteProject = useCallback(
+    async (projectSlug: string) => {
+      const authHeaders = getAuthHeaders(authenticatedUser);
+      if (authenticatedUser) {
+        // do the new projects POST call
+        const res = await api.POST('/projects/delete', {
+          ...authHeaders,
+          params: {
+            header: { username: authenticatedUser.username },
+            query: { project_slug: projectSlug },
+          },
         });
+        if (res.error)
+          notify({
+            type: 'error',
+            message: res.error.detail
+              ? res.error.detail?.map((d) => d.msg).join('; ')
+              : res.error.toString(),
+          });
 
         notify({ type: 'success', message: 'Project deleted' });
+      }
+    },
+    [authenticatedUser],
+  );
 
-    }
-  
-
-},[authenticatedUser])
-
-return deleteProject
+  return deleteProject;
 }
 
 /**
@@ -224,8 +230,7 @@ return deleteProject
  * @param projectSlug
  * @param currentScheme
  */
-export function useStatistics(projectSlug: string, currentScheme: string|null) {
-
+export function useStatistics(projectSlug: string, currentScheme: string | null) {
   const { authenticatedUser } = useAuth();
   const project = useAsyncMemo(async () => {
     const authHeaders = getAuthHeaders(authenticatedUser);
@@ -234,7 +239,7 @@ export function useStatistics(projectSlug: string, currentScheme: string|null) {
         ...authHeaders,
         params: {
           path: { project_slug: projectSlug },
-          query:{ scheme:currentScheme, user:authenticatedUser.username} ,
+          query: { scheme: currentScheme, user: authenticatedUser.username },
         },
       });
       if (res.error)
@@ -250,10 +255,8 @@ export function useStatistics(projectSlug: string, currentScheme: string|null) {
     // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
   }, [authenticatedUser, projectSlug, currentScheme]);
 
-  return {statistics:getAsyncMemoData(project)}
+  return { statistics: getAsyncMemoData(project) };
 }
-
-
 
 /**
  * useProject
@@ -297,8 +300,7 @@ export function useProject(projectSlug?: string) {
 
   // 4. make sure to simplify the data returned by discarding the status
   // we also return a refetch method which toggle the fetchTrigger state in order to trigger a new API call
-  return { project: getAsyncMemoData(project), 
-    reFetch: () => setFetchTrigger((f) => !f) };
+  return { project: getAsyncMemoData(project), reFetch: () => setFetchTrigger((f) => !f) };
 }
 
 /**
@@ -331,8 +333,7 @@ export function useDeleteScheme(projectSlug: string, schemeName: string | null) 
             ? res.error.detail?.map((d) => d.msg).join('; ')
             : res.error.toString(),
         });
-
-      notify({ type: 'success', message: 'Scheme deleted' });
+      else notify({ type: 'success', message: 'Scheme deleted' });
     }
   }, [authenticatedUser, projectSlug, schemeName, notify]);
 
@@ -382,18 +383,21 @@ export function useAddScheme(projectSlug: string) {
  * create a feature
  **/
 export function useAddFeature(projectSlug: string) {
-
   const { authenticatedUser } = useAuth();
   const { notify } = useNotifications();
 
   const addFeature = useCallback(
-    async (featureType: string, featureName: string, featureParameters:FeatureDfmParameters|any) => { // TODO fix types
+    async (
+      featureType: string,
+      featureName: string,
+      featureParameters: FeatureDfmParameters | any,
+    ) => {
+      // TODO fix types
 
-      console.log("add features")
-
+      console.log('add features');
 
       const authHeaders = getAuthHeaders(authenticatedUser);
-      if (!featureParameters) featureParameters={};
+      if (!featureParameters) featureParameters = {};
 
       if (!featureName) featureName = featureType;
 
@@ -404,7 +408,7 @@ export function useAddFeature(projectSlug: string) {
             header: { username: authenticatedUser.username },
             query: { project_slug: projectSlug },
           },
-          body: { name: featureName, type: featureType, parameters: featureParameters},
+          body: { name: featureName, type: featureType, parameters: featureParameters },
         });
         if (res.error)
           throw new Error(
@@ -427,12 +431,11 @@ export function useAddFeature(projectSlug: string) {
  * @returns deleteFeature
  *  */
 export function useDeleteFeature(projectSlug: string) {
-
   const { authenticatedUser } = useAuth();
   const { notify } = useNotifications();
 
   const deleteFeature = useCallback(
-    async (featureName: string|null) => {
+    async (featureName: string | null) => {
       const authHeaders = getAuthHeaders(authenticatedUser);
 
       if (authenticatedUser && featureName) {
@@ -441,7 +444,7 @@ export function useDeleteFeature(projectSlug: string) {
           params: {
             header: { username: authenticatedUser.username },
             query: { project_slug: projectSlug, name: featureName },
-          }
+          },
         });
         if (res.error)
           throw new Error(
