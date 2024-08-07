@@ -50,7 +50,15 @@ export function getRouter() {
       ),
     },
     {
-      path: '/projects/:projectName/annotate',
+      path: '/projects/:projectName/annotate/',
+      element: (
+        <AuthRequired>
+          <ProjectAnnotationPage />
+        </AuthRequired>
+      ),
+    },
+    {
+      path: '/projects/:projectName/annotate/:elementId',
       element: (
         <AuthRequired>
           <ProjectAnnotationPage />
