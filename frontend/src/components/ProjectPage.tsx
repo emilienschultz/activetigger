@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useProject, useStatistics } from '../core/api';
@@ -82,6 +82,16 @@ export const ProjectPage: FC = () => {
   // project undefined means the data is not ready yet or there was an error$
 
   const { project, reFetch } = useProject(projectName); // get project statefrom the API
+
+  // Effect to poll project data regularly to monitor long lasting server tasks
+  useEffect(() => {
+    // execute a fetch call to update project data every 2000ms
+    const intervalId = setInterval(reFetch, 2000);
+    // useEffect can return a method which is executed when the component is unmounted
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [reFetch]);
 
   return (
     <ProjectPageLayout projectName={projectName}>
