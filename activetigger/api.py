@@ -265,14 +265,14 @@ async def verified_user(
 
 async def check_auth_exists(
     request: Request,
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_slug: str | None = None,
 ) -> None:
     """
     Check if a user is associated to a project
     """
     # print("route", request.url.path, request.method)
-    auth = server.users.auth(username, project_slug)
+    auth = server.users.auth(current_user.username, project_slug)
     if not auth:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
     return None
@@ -379,7 +379,7 @@ async def existing_users() -> UsersServerModel:
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
 async def create_user(
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     username_to_create: str = Query(),
     password: str = Query(),
     status: str = Query(),
@@ -387,8 +387,10 @@ async def create_user(
     """
     Create user
     """
-    test_rights("modify user", username)
-    r = server.users.add_user(username_to_create, password, status, username)
+    test_rights("modify user", current_user.username)
+    r = server.users.add_user(
+        username_to_create, password, status, current_user.username
+    )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
@@ -477,15 +479,15 @@ async def get_project_state(
 
 
 @app.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
-async def get_description(
+async def get_project_statistics(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str | None = None,
-    user: str | None = None,
 ) -> ProjectDescriptionModel:
     """
     Statistics for a scheme and a user
     """
-    r = project.get_description(scheme=scheme, user=user)
+    r = project.get_description(scheme=scheme, user=current_user.username)
     if "error" in r:
         print(r)
         raise HTTPException(status_code=500, detail=r["error"])
@@ -494,12 +496,14 @@ async def get_description(
 
 
 @app.get("/projects")
-async def get_projects(username: Annotated[str, Header()]) -> AvailableProjectsModel:
+async def get_projects(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)]
+) -> AvailableProjectsModel:
     """
     Get general informations on the server
     depending of the status of connected user
     """
-    r = server.get_projects(username)
+    r = server.get_projects(current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return AvailableProjectsModel(projects=r)
@@ -544,7 +548,7 @@ async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
 @app.post("/projects/testdata", dependencies=[Depends(verified_user)])
 async def add_testdata(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     file: Annotated[UploadFile, File()],
     col_text: str = Form(),
     col_id: str = Form(),
@@ -560,23 +564,24 @@ async def add_testdata(
         raise HTTPException(status_code=500, detail=r["error"])
 
     # if success, update also parameters of the project
-    server.set_project_parameters(project.params)
+    server.set_project_parameters(project.params, current_user.username)
 
     # log action
-    server.log_action(username, "add testdata project", project.name)
+    server.log_action(current_user.username, "add testdata project", project.name)
 
     return None
 
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
-    username: Annotated[str, Header()], project: ProjectDataModel
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project: ProjectDataModel,
 ) -> None:
     """
     Load new project
     """
     # test rights to create project
-    test_rights("create project", username)
+    test_rights("create project", current_user.username)
 
     # test if project_slug already exists
     if server.exists(project.project_name):
@@ -585,10 +590,10 @@ async def new_project(
         )
 
     # create the project
-    server.create_project(project, username)
+    server.create_project(project, current_user.username)
 
     # log action
-    server.log_action(username, "create project", project.project_name)
+    server.log_action(current_user.username, "create project", project.project_name)
 
     return None
 
@@ -597,14 +602,17 @@ async def new_project(
     "/projects/delete",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
-async def delete_project(username: Annotated[str, Header()], project_slug: str) -> None:
+async def delete_project(
+    project_slug: str,
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> None:
     """
     Delete a project
     """
-    test_rights("modify project", username, project_slug)
+    test_rights("modify project", current_user.username, project_slug)
 
     r = server.delete_project(project_slug)
-    server.log_action(username, "delete project", project_slug)
+    server.log_action(current_user.username, "delete project", project_slug)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
@@ -613,7 +621,7 @@ async def delete_project(username: Annotated[str, Header()], project_slug: str) 
 @app.post("/elements/next", dependencies=[Depends(verified_user)])
 async def get_next(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     next: NextInModel,
 ) -> ElementOutModel:
     """
@@ -623,7 +631,7 @@ async def get_next(
         scheme=next.scheme,
         selection=next.selection,
         sample=next.sample,
-        user=username,
+        user=current_user.username,
         tag=next.tag,
         history=next.history,
         frame=next.frame,
@@ -636,25 +644,29 @@ async def get_next(
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str | None,
 ) -> ProjectionOutModel | WaitingModel:
     """
     Get projection data if computed
     """
-    if not username in project.features.projections:
+    if not current_user.username in project.features.projections:
         raise HTTPException(
             status_code=404,
             detail="There is no projection available or under computation",
         )
 
-    if not "data" in project.features.projections[username]:
+    if not "data" in project.features.projections[current_user.username]:
         return WaitingModel(status="computing", detail="Computing projection")
 
     if scheme is None:  # only the projection without specific annotations
-        data = project.features.projections[username]["data"].fillna("NA").to_dict()
+        data = (
+            project.features.projections[current_user.username]["data"]
+            .fillna("NA")
+            .to_dict()
+        )
     else:  # add existing annotations in the data
-        data = project.features.projections[username]["data"]
+        data = project.features.projections[current_user.username]["data"]
         df = project.schemes.get_scheme_data(scheme, complete=True)
         data["labels"] = df["labels"]
         data["texts"] = df["text"]
@@ -675,7 +687,7 @@ async def get_projection(
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     projection: ProjectionInModel,
 ) -> WaitingModel:
     """
@@ -696,7 +708,7 @@ async def compute_projection(
             raise HTTPException(status_code=500, detail=str(e))
 
         unique_id = server.queue.add("projection", functions.compute_umap, args)
-        project.features.projections[username] = {
+        project.features.projections[current_user.username] = {
             "params": projection,
             "method": "umap",
             "queue": unique_id,
@@ -711,7 +723,7 @@ async def compute_projection(
             raise HTTPException(status_code=500, detail=str(e))
         # future_result = server.executor.submit(functions.compute_tsne, **args)
         unique_id = server.queue.add("projection", functions.compute_tsne, args)
-        project.features.projections[username] = {
+        project.features.projections[current_user.username] = {
             "params": projection,
             "method": "tsne",
             "queue": unique_id,
@@ -747,14 +759,16 @@ async def get_list_elements(
 @app.post("/elements/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     table: TableInModel,
 ) -> None:
     """
     Post a table of annotations
     """
-    r = project.schemes.push_table(table=table, user=username, action=table.action)
-    server.log_action(username, "update data table", project.name)
+    r = project.schemes.push_table(
+        table=table, user=current_user.username, action=table.action
+    )
+    server.log_action(current_user.username, "update data table", project.name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
@@ -775,7 +789,7 @@ async def get_reconciliation_table(
 
 @app.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
 async def post_reconciliation(
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     users: list = Query(),
     element_id: str = Query(),
@@ -794,11 +808,13 @@ async def post_reconciliation(
             raise HTTPException(status_code=500, detail=r["error"])
 
     # add a new tag for the reconciliator
-    project.schemes.push_tag(element_id, tag, scheme, username, "reconciliation")
+    project.schemes.push_tag(
+        element_id, tag, scheme, current_user.username, "reconciliation"
+    )
 
     # log
     server.log_action(
-        username,
+        current_user.username,
         f"reconciliate annotation {element_id} for {users} with {tag}",
         project.name,
     )
@@ -808,7 +824,6 @@ async def post_reconciliation(
 @app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])
 async def zeroshot(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
     zshot: ZeroShotModel,
 ) -> WaitingModel:
     """
@@ -826,14 +841,14 @@ async def zeroshot(
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
 async def get_element(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     element_id: str,
     scheme: str,
 ) -> ElementOutModel:
     """
     Get specific element
     """
-    r = project.get_element(element_id, scheme=scheme, user=username)
+    r = project.get_element(element_id, scheme=scheme, user=current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return ElementOutModel(**r)
@@ -842,7 +857,7 @@ async def get_element(
 @app.post("/tags/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(
     action: ActionModel,
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     annotation: AnnotationModel,
 ) -> None:
@@ -856,25 +871,33 @@ async def post_tag(
         if annotation.tag is None:
             raise HTTPException(status_code=422, detail="Missing a tag")
         r = project.schemes.push_tag(
-            annotation.element_id, annotation.tag, annotation.scheme, username, "add"
+            annotation.element_id,
+            annotation.tag,
+            annotation.scheme,
+            current_user.username,
+            "add",
         )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
         server.log_action(
-            username, f"push annotation {annotation.element_id}", project.name
+            current_user.username,
+            f"push annotation {annotation.element_id}",
+            project.name,
         )
         return None
 
     if action == "delete":
         r = project.schemes.delete_tag(
-            annotation.element_id, annotation.scheme, username
+            annotation.element_id, annotation.scheme, current_user.username
         )  # add user deletion
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
         server.log_action(
-            username, f"delete annotation {annotation.element_id}", project.name
+            current_user.username,
+            f"delete annotation {annotation.element_id}",
+            project.name,
         )
         return None
 
@@ -884,18 +907,18 @@ async def post_tag(
 @app.post("/stop", dependencies=[Depends(verified_user)])
 async def stop_process(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> None:
     """
     Stop user process
     """
-    if not username in project.bertmodels.computing:
+    if not current_user.username in project.bertmodels.computing:
         raise HTTPException(status_code=400, detail="Process missing")
-    unique_id = project.bertmodels.computing[username][1]
+    unique_id = project.bertmodels.computing[current_user.username][1]
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"stop process", project.name)
+    server.log_action(current_user.username, f"stop process", project.name)
     return None
 
 
@@ -906,45 +929,49 @@ async def stop_process(
 @app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
 async def add_label(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
     label: str,
 ) -> None:
     """
     Add a label to a scheme
     """
-    test_rights("modify project element", username, project.name)
+    test_rights("modify project element", current_user.username, project.name)
 
-    r = project.schemes.add_label(label, scheme, username)
+    r = project.schemes.add_label(label, scheme, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"add label {label} to {scheme}", project.name)
+    server.log_action(
+        current_user.username, f"add label {label} to {scheme}", project.name
+    )
     return None
 
 
 @app.post("/schemes/label/delete", dependencies=[Depends(verified_user)])
 async def delete_label(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
     label: str,
 ) -> None:
     """
     Remove a label from a scheme
     """
-    test_rights("modify project element", username, project.name)
+    test_rights("modify project element", current_user.username, project.name)
 
-    r = project.schemes.delete_label(label, scheme, username)
+    r = project.schemes.delete_label(label, scheme, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"delete label {label} to {scheme}", project.name)
+    server.log_action(
+        current_user.username, f"delete label {label} to {scheme}", project.name
+    )
     return None
 
 
 @app.post("/schemes/label/rename", dependencies=[Depends(verified_user)])
 async def rename_label(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
     former_label: str,
     new_label: str,
@@ -955,19 +982,21 @@ async def rename_label(
     - convert tags (need the label to exist, add a new element for each former)
     - delete former label
     """
-    test_rights("modify project element", username, project.name)
+    test_rights("modify project element", current_user.username, project.name)
 
-    r = project.schemes.add_label(new_label, scheme, username)
+    r = project.schemes.add_label(new_label, scheme, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    r = project.schemes.convert_tags(former_label, new_label, scheme, username)
+    r = project.schemes.convert_tags(
+        former_label, new_label, scheme, current_user.username
+    )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    r = project.schemes.delete_label(former_label, scheme, username)
+    r = project.schemes.delete_label(former_label, scheme, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
-        username,
+        current_user.username,
         f"rename label {former_label} to {new_label} in {scheme}",
         project.name,
     )
@@ -976,7 +1005,7 @@ async def rename_label(
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
 async def post_schemes(
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     action: ActionModel,
     scheme: SchemeModel,
@@ -984,25 +1013,33 @@ async def post_schemes(
     """
     Add, Update or Delete scheme
     """
-    test_rights("modify project element", username, project.name)
+    test_rights("modify project element", current_user.username, project.name)
 
     if action == "add":
         r = project.schemes.add_scheme(scheme)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(username, f"add scheme {scheme.name}", project.name)
+        server.log_action(
+            current_user.username, f"add scheme {scheme.name}", project.name
+        )
         return None
     if action == "delete":
-        r = project.schemes.delete_scheme(scheme, username)
+        r = project.schemes.delete_scheme(scheme, current_user.username)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(username, f"delete scheme {scheme.name}", project.name)
+        server.log_action(
+            current_user.username, f"delete scheme {scheme.name}", project.name
+        )
         return None
     if action == "update":
-        r = project.schemes.update_scheme(scheme.name, scheme.tags, username)
+        r = project.schemes.update_scheme(
+            scheme.name, scheme.tags, current_user.username
+        )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(username, f"update scheme {scheme.name}", project.name)
+        server.log_action(
+            current_user.username, f"update scheme {scheme.name}", project.name
+        )
         return None
     raise HTTPException(status_code=400, detail="Wrong route")
 
@@ -1022,7 +1059,7 @@ async def get_features(project: Annotated[Project, Depends(get_project)]) -> Lis
 @app.post("/features/add", dependencies=[Depends(verified_user)])
 async def post_embeddings(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     feature: FeatureModel,
 ) -> WaitingModel | None:
     """
@@ -1030,7 +1067,7 @@ async def post_embeddings(
     - same prcess
     - specific process : function + temporary file + update
     """
-    test_rights("modify project", username, project.name)
+    test_rights("modify project", current_user.username, project.name)
 
     if feature.name in project.features.training:
         raise HTTPException(
@@ -1049,7 +1086,9 @@ async def post_embeddings(
         if "error" in r:
             raise HTTPException(status_code=400, detail=r["error"])
         server.log_action(
-            username, f"add regex {feature.parameters['name']}", project.name
+            current_user.username,
+            f"add regex {feature.parameters['name']}",
+            project.name,
         )
         return None
     # case for computation on specific processes
@@ -1073,25 +1112,25 @@ async def post_embeddings(
     unique_id = server.queue.add("feature", func, args)
     project.features.training[feature.name] = unique_id
 
-    server.log_action(username, f"Compute feature dfm", project.name)
+    server.log_action(current_user.username, f"Compute feature dfm", project.name)
     return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
 
 @app.post("/features/delete", dependencies=[Depends(verified_user)])
 async def delete_feature(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str,
 ) -> None:
     """
     Delete a specific feature
     """
-    test_rights("modify project", username, project.name)
+    test_rights("modify project", current_user.username, project.name)
 
     r = project.features.delete(name)
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
-    server.log_action(username, f"delete feature {name}", project.name)
+    server.log_action(current_user.username, f"delete feature {name}", project.name)
     return None
 
 
@@ -1102,13 +1141,13 @@ async def delete_feature(
 @app.post("/models/simplemodel", dependencies=[Depends(verified_user)])
 async def post_simplemodel(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     simplemodel: SimpleModelModel,
 ) -> None:
     """
     Compute simplemodel
     """
-    r = project.update_simplemodel(simplemodel, username)
+    r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
@@ -1131,7 +1170,7 @@ async def get_bert(
 @app.post("/models/bert/predict", dependencies=[Depends(verified_user)])
 async def predict(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_name: str,
     data: str = "all",
 ) -> None:
@@ -1142,18 +1181,18 @@ async def predict(
 
     # start process
     r = project.bertmodels.start_predicting_process(
-        name=model_name, df=df, col_text="text", user=username
+        name=model_name, df=df, col_text="text", user=current_user.username
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"predict bert {model_name}", project.name)
+    server.log_action(current_user.username, f"predict bert {model_name}", project.name)
     return None
 
 
 @app.post("/models/bert/train", dependencies=[Depends(verified_user)])
 async def post_bert(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     bert: BertModelModel,
 ) -> None:
     """
@@ -1166,7 +1205,7 @@ async def post_bert(
     df = df[["text", "labels"]].dropna()  # remove non tag data
     r = project.bertmodels.start_training_process(
         name=bert.name,
-        user=username,
+        user=current_user.username,
         scheme=bert.scheme,
         df=df,
         col_text=df.columns[0],
@@ -1177,32 +1216,32 @@ async def post_bert(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"train bert {bert.name}", project.name)
+    server.log_action(current_user.username, f"train bert {bert.name}", project.name)
     return None
 
 
 @app.post("/models/bert/stop", dependencies=[Depends(verified_user)])
 async def stop_bert(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> None:
     """
     Stop user process
     """
-    if not username in project.bertmodels.computing:
+    if not current_user.username in project.bertmodels.computing:
         raise HTTPException(status_code=400, detail="No process found")
-    unique_id = project.bertmodels.computing[username][1]
+    unique_id = project.bertmodels.computing[current_user.username][1]
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"stop bert training", project.name)
+    server.log_action(current_user.username, f"stop bert training", project.name)
     return None
 
 
 @app.post("/models/bert/test", dependencies=[Depends(verified_user)])
 async def start_test(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
     model: str,
 ) -> None:
@@ -1222,52 +1261,56 @@ async def start_test(
     # launch testing process : prediction
     r = project.bertmodels.start_testing_process(
         name=model,
-        user=username,
+        user=current_user.username,
         df=df,
         col_text="text",
         col_labels="labels",
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"predict bert for testing", project.name)
+    server.log_action(current_user.username, f"predict bert for testing", project.name)
     return None
 
 
 @app.post("/models/bert/delete", dependencies=[Depends(verified_user)])
 async def delete_bert(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     bert_name: str,
 ) -> None:
     """
     Delete trained bert model
     """
-    test_rights("modify project", username, project.name)
+    test_rights("modify project", current_user.username, project.name)
 
     r = project.bertmodels.delete(bert_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(username, f"delete bert model {bert_name}", project.name)
+    server.log_action(
+        current_user.username, f"delete bert model {bert_name}", project.name
+    )
     return None
 
 
 @app.post("/models/bert/rename", dependencies=[Depends(verified_user)])
 async def save_bert(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     former_name: str,
     new_name: str,
 ) -> None:
     """
     Rename bertmodel
     """
-    test_rights("modify project", username, project.name)
+    test_rights("modify project", current_user.username, project.name)
 
     r = project.bertmodels.rename(former_name, new_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
-        username, f"rename bert model {former_name} - {new_name}", project.name
+        current_user.username,
+        f"rename bert model {former_name} - {new_name}",
+        project.name,
     )
     return None
 
@@ -1322,7 +1365,7 @@ async def export_prediction(
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
 async def export_bert(
     project: Annotated[Project, Depends(get_project)],
-    username: Annotated[str, Header()],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(),
 ) -> FileResponse:
     """

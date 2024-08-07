@@ -254,10 +254,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Description
+         * Get Project Statistics
          * @description Statistics for a scheme and a user
          */
-        get: operations["get_description_projects__project_slug__statistics_get"];
+        get: operations["get_project_statistics_projects__project_slug__statistics_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1677,9 +1677,7 @@ export interface operations {
                 password: string;
                 status: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -1840,9 +1838,7 @@ export interface operations {
     get_project_state_projects__project_slug__get: {
         parameters: {
             query?: never;
-            header: {
-                username: string;
-            };
+            header?: never;
             path: {
                 project_slug: string;
             };
@@ -1870,11 +1866,10 @@ export interface operations {
             };
         };
     };
-    get_description_projects__project_slug__statistics_get: {
+    get_project_statistics_projects__project_slug__statistics_get: {
         parameters: {
             query?: {
                 scheme?: string | null;
-                user?: string | null;
             };
             header?: never;
             path: {
@@ -1907,9 +1902,7 @@ export interface operations {
     get_projects_projects_get: {
         parameters: {
             query?: never;
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -1922,15 +1915,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AvailableProjectsModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2024,9 +2008,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2059,9 +2041,7 @@ export interface operations {
     new_project_projects_new_post: {
         parameters: {
             query?: never;
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2096,9 +2076,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2129,9 +2107,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2167,9 +2143,7 @@ export interface operations {
                 scheme: string | null;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2200,9 +2174,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2273,9 +2245,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2346,9 +2316,7 @@ export interface operations {
                 scheme: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2379,9 +2347,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2417,9 +2383,7 @@ export interface operations {
                 scheme: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path: {
                 element_id: string;
             };
@@ -2452,9 +2416,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path: {
                 action: components["schemas"]["ActionModel"];
             };
@@ -2491,9 +2453,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2526,9 +2486,7 @@ export interface operations {
                 label: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2561,9 +2519,7 @@ export interface operations {
                 label: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2597,9 +2553,7 @@ export interface operations {
                 new_label: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2630,9 +2584,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path: {
                 action: components["schemas"]["ActionModel"];
             };
@@ -2700,9 +2652,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2738,9 +2688,7 @@ export interface operations {
                 name: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2771,9 +2719,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2842,9 +2788,7 @@ export interface operations {
                 data?: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2875,9 +2819,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2912,9 +2854,7 @@ export interface operations {
             query: {
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2947,9 +2887,7 @@ export interface operations {
                 model: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -2981,9 +2919,7 @@ export interface operations {
                 bert_name: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3016,9 +2952,7 @@ export interface operations {
                 new_name: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -3149,9 +3083,7 @@ export interface operations {
                 name: string;
                 project_slug: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
