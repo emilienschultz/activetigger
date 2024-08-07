@@ -1,4 +1,5 @@
 $primary: #444;
+$secondary: #3d0748;
 
 .project-link {
     display: block;
@@ -100,8 +101,6 @@ $primary: #444;
   margin-top: 20px;
 }
 
-
-
 .table-statistics th,
 .table-statistics td {
   padding: 10px;
@@ -114,7 +113,6 @@ $primary: #444;
   font-weight: bold;
 }
 
-
 .table-statistics tbody tr:hover {
   background-color: #f1f1f1;
 }
@@ -123,4 +121,10 @@ $primary: #444;
   background-color: #cccccc;
   font-weight: bold;
   text-align: center;
+}
+
+.subsection {
+  font-weight: bold;
+  color: $secondary; /* texte blanc */
+  margin-top: 20px;
 }

@@ -74,8 +74,8 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   return (
     <div className="container-fluid">
       <div className="row">
-        <label className="form-label" htmlFor="scheme-selected">
-          Select current scheme
+        <label className="subsection" htmlFor="scheme-selected">
+          Current scheme
         </label>
         <div>
           <select

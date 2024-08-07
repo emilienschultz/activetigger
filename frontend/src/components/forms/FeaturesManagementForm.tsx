@@ -71,8 +71,8 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
   return (
     <div className="container-fluid">
       <div className="row">
-        <label className="form-label" htmlFor="existing-feature-selected">
-          Existing features
+        <label className="subsection" htmlFor="existing-feature-selected">
+          Manage features
         </label>
         <div>
           <select
