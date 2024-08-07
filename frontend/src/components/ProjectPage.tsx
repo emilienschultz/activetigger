@@ -73,25 +73,31 @@ export const ProjectPage: FC = () => {
   if (!projectName) return null;
 
   const {
-    appContext: { currentScheme },
+    appContext: { currentScheme, currentProject: project },
+    setAppContext,
   } = useAppContext();
+
+  // we update the context with the project currently opened
+  useEffect(() => {
+    setAppContext((prev) => ({ ...prev, currentProjectSlug: projectName }));
+  }, [projectName]);
 
   // API get hook provides the project querying the API for us
   // it also handles auth for us making the component code here very clean
   // project can be undefined has at the very first render the API has not yet responded
   // project undefined means the data is not ready yet or there was an error$
 
-  const { project, reFetch } = useProject(projectName); // get project statefrom the API
+  const { reFetch } = useProject(projectName); // get project statefrom the API
 
-  // Effect to poll project data regularly to monitor long lasting server tasks
-  useEffect(() => {
-    // execute a fetch call to update project data every 2000ms
-    const intervalId = setInterval(reFetch, 2000);
-    // useEffect can return a method which is executed when the component is unmounted
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [reFetch]);
+  // // Effect to poll project data regularly to monitor long lasting server tasks
+  // useEffect(() => {
+  //   // execute a fetch call to update project data every 2000ms
+  //   const intervalId = setInterval(reFetch, 2000);
+  //   // useEffect can return a method which is executed when the component is unmounted
+  //   return () => {
+  //     clearInterval(intervalId);
+  //   };
+  // }, [reFetch]);
 
   return (
     <ProjectPageLayout projectName={projectName}>

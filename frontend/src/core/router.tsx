@@ -1,5 +1,6 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { Outlet, createBrowserRouter } from 'react-router-dom';
 
+import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
 import { HelpPage } from '../components/HelpPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
@@ -34,7 +35,7 @@ export function getRouter() {
       ),
     },
     {
-      path: '/projects',
+      path: '/projects/',
       element: (
         <AuthRequired>
           <ProjectsPage />
@@ -45,33 +46,28 @@ export function getRouter() {
       path: '/projects/:projectName',
       element: (
         <AuthRequired>
-          <ProjectPage />
+          <CurrentProjectMonitoring />
+          <Outlet />
         </AuthRequired>
       ),
-    },
-    {
-      path: '/projects/:projectName/annotate/',
-      element: (
-        <AuthRequired>
-          <ProjectAnnotationPage />
-        </AuthRequired>
-      ),
-    },
-    {
-      path: '/projects/:projectName/annotate/:elementId',
-      element: (
-        <AuthRequired>
-          <ProjectAnnotationPage />
-        </AuthRequired>
-      ),
-    },
-    {
-      path: '/projects/:projectName/parameters',
-      element: (
-        <AuthRequired>
-          <ProjectParametersPage />
-        </AuthRequired>
-      ),
+      children: [
+        {
+          path: '/projects/:projectName/',
+          element: <ProjectPage />,
+        },
+        {
+          path: '/projects/:projectName/annotate/:elementId',
+          element: <ProjectAnnotationPage />,
+        },
+        {
+          path: '/projects/:projectName/annotate/',
+          element: <ProjectAnnotationPage />,
+        },
+        {
+          path: '/projects/:projectName/parameters',
+          element: <ProjectParametersPage />,
+        },
+      ],
     },
   ]);
 }

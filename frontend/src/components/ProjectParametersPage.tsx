@@ -1,8 +1,8 @@
 import { FC } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useProject } from '../core/api';
 import { useDeleteProject } from '../core/api';
+import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 // project deletion page
@@ -12,7 +12,9 @@ export const ProjectParametersPage: FC = () => {
   // we must get the project annotation payload /element
   if (!projectName) return null;
 
-  const { project, reFetch } = useProject(projectName); // get project statefrom the API
+  const {
+    appContext: { currentProject },
+  } = useAppContext();
 
   const navigate = useNavigate();
 
@@ -29,7 +31,7 @@ export const ProjectParametersPage: FC = () => {
       <div className="container mt-5">
         <div>
           <h2>Parameters</h2>
-          <div>{JSON.stringify(project, null, 2)}</div>
+          <div>{JSON.stringify(currentProject, null, 2)}</div>
         </div>
         <div className="row mb-4">
           <div className="col-12"></div>

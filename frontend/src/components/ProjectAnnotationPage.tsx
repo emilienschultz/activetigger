@@ -13,7 +13,7 @@ export const ProjectAnnotationPage: FC = () => {
   const navigateToNextElement = useCallback(async () => {
     // change url using the new elementId
     // const newElementId = await  apiCall()
-    navigate('/project/${projectName}/annotate/newid');
+    //navigate('/project/${projectName}/annotate/newid');
   }, [projectName, navigate]);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export const ProjectAnnotationPage: FC = () => {
       // fetch next elementId
       // change url using the new elementId
       // navigate("/project/${projectName}/annotate/newid");
-      navigateToNextElement();
+      //navigateToNextElement();
     } else {
       //fetch element information (text and labels)
     }

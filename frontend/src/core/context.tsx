@@ -1,14 +1,15 @@
 import { FC, PropsWithChildren, createContext, useContext, useState } from 'react';
 
-import { NotificationType } from '../types';
+import { NotificationType, ProjectStateModel } from '../types';
 
 // Context content
 export type AppContextValue = {
   notifications: NotificationType[];
-  currentScheme: string | null;
+  currentProject?: ProjectStateModel;
+  currentScheme?: string;
 };
 
-export const defaultContext: AppContextValue = { notifications: [], currentScheme: null };
+export const defaultContext: AppContextValue = { notifications: [] };
 
 export type AppContextType = {
   appContext: AppContextValue;
