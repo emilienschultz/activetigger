@@ -1,16 +1,20 @@
 import { FC, PropsWithChildren, createContext, useContext, useState } from 'react';
 
-import { NotificationType, ProjectStateModel } from '../types';
+import { NextModel, NotificationType, ProjectStateModel } from '../types';
 
 // Context content
 export type AppContextValue = {
-  notifications: NotificationType[];
-  currentProject?: ProjectStateModel;
-  reFetchCurrentProject?: () => void;
-  currentScheme?: string;
+  notifications: NotificationType[]; // manage notification
+  selectionConfig: NextModel; // selection for the next element
+  currentProject?: ProjectStateModel; // current project selected
+  reFetchCurrentProject?: () => void; // update the state of the project
+  currentScheme?: string; // scheme selected to annotate
 };
 
-export const defaultContext: AppContextValue = { notifications: [] };
+export const defaultContext: AppContextValue = {
+  notifications: [],
+  selectionConfig: { mode: 'deterministic', sample: 'untagged' },
+};
 
 export type AppContextType = {
   appContext: AppContextValue;

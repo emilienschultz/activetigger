@@ -51,3 +51,9 @@ export interface FeatureModelExtended {
   type: string;
   parameters: null | FeatureDfmParameters;
 }
+
+export interface NextModel{
+  mode: string;
+  sample: string;
+  label?: string;
+}

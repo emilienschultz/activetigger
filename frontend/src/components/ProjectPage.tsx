@@ -27,16 +27,20 @@ export const ProjectPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName}>
       {project && (
-        <div>
-          <h2>Project panel</h2>
-          <div className="explanations">Select a scheme to start annotating</div>
-          <div>
-            <SchemesManagement
-              available_schemes={Object.keys(project.schemes.available)}
-              projectSlug={projectName}
-            />
+        <div className="container-fluid">
+          <div className="row">
+            <h2 className="subsection">Project panel</h2>
+            <div className="explanations">Select a scheme to start annotating</div>
+            <div>
+              <SchemesManagement
+                available_schemes={Object.keys(project.schemes.available)}
+                projectSlug={projectName}
+              />
+            </div>
+            {currentScheme && (
+              <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
+            )}
           </div>
-          {currentScheme && <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />}
         </div>
       )}
     </ProjectPageLayout>
