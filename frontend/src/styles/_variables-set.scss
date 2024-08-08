@@ -69,31 +69,29 @@ $secondary: #3d0748;
   margin-left: 10px;
 }
 
-
 .delete-button {
-  background-color: #ff4c4c; /* couleur de fond rouge */
-  color: white; /* texte blanc */
-  border: none; /* pas de bordure */
-  border-radius: 5px; /* coins arrondis */
-  padding: 10px 20px; /* espacement intérieur */
-  font-size: 16px; /* taille de police */
-  cursor: pointer; /* curseur de la souris en mode "pointer" */
-  transition: background-color 0.3s ease; /* transition douce pour la couleur */
+  background-color: #ff4c4c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .delete-button:hover {
-  background-color: #e60000; /* couleur plus foncée au survol */
+  background-color: #e60000;
 }
 
 .delete-button:focus {
-  outline: none; /* pas de contour */
-  box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.5); /* effet de focus */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.5);
 }
 
 .delete-button:active {
-  background-color: #cc0000; /* couleur encore plus foncée lors du clic */
+  background-color: #cc0000;
 }
-
 
 .table-statistics {
   width: 80%;
@@ -125,6 +123,19 @@ $secondary: #3d0748;
 
 .subsection {
   font-weight: bold;
-  color: $secondary; /* texte blanc */
-  margin-top: 20px;
+  color: $secondary;
+  padding-top: 20px;
+}
+
+.explanations{
+  color: #909090;
+  font-style: italic;
+  margin-top: 10px;
+  margin-bottom: 10px;
+
+}
+
+.add-feature {
+  background-color: #aebfff;
+  padding: 10px;
 }

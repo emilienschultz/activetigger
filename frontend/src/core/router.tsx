@@ -5,6 +5,7 @@ import { HelpPage } from '../components/HelpPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
+import { ProjectFeaturesPage } from '../components/ProjectFeaturesPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
 import { ProjectParametersPage } from '../components/ProjectParametersPage';
@@ -58,6 +59,10 @@ export function getRouter() {
         {
           path: '/projects/:projectName/annotate/:elementId',
           element: <ProjectAnnotationPage />,
+        },
+        {
+          path: '/projects/:projectName/features/',
+          element: <ProjectFeaturesPage />,
         },
         {
           path: '/projects/:projectName/annotate/',

@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom';
 import { useProject } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ProjectStatistics } from './ProjectStatistics';
-import { FeaturesManagement } from './forms/FeaturesManagementForm';
 import { SchemesManagement } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
@@ -37,19 +36,13 @@ export const ProjectPage: FC = () => {
     <ProjectPageLayout projectName={projectName}>
       {project && (
         <div>
+          <h2>Project panel</h2>
+          <div className="explanations">Select a scheme to start annotating</div>
           <div>
             <SchemesManagement
               available_schemes={Object.keys(project.schemes.available)}
               projectSlug={projectName}
               reFetchProject={reFetch}
-            />
-          </div>
-          <div>
-            <FeaturesManagement
-              projectSlug={projectName}
-              reFetchProject={reFetch}
-              availableFeatures={project.features.available}
-              possibleFeatures={project.features.options}
             />
           </div>
           {currentScheme && <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />}

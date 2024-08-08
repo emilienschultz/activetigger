@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCogs } from 'react-icons/fa';
+import { MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { Link } from 'react-router-dom';
 
@@ -25,6 +26,15 @@ export const ProjectActionsSidebar: FC<{
             <span>
               <b>{projectName}</b>
             </span>
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
+            to={`/projects/${projectName}/features`}
+            className={classNames('nav-link', currentProjectAction === 'features' && 'active')}
+            aria-current="page"
+          >
+            <MdOutlineTransform /> Features
           </Link>
         </li>
         <li className="nav-item">
