@@ -8,7 +8,6 @@ import {
   FeatureDfmParameters,
   LoginParams,
   ProjectDataModel,
-  RequestNextModel,
   SelectionConfig,
 } from '../types';
 import { HttpError } from './HTTPError';
@@ -399,27 +398,19 @@ export function useGetNextElementId(
   selectionConfig: SelectionConfig,
 ) {
   const { notify } = useNotifications();
+  const nextElement = useAsyncMemo(async () => {
+    const res = await api.POST('/elements/next', {
+      params: { query: { project_slug: projectSlug } },
+      body: {
+        scheme: currentScheme,
+        selection: selectionConfig.mode,
+        sample: selectionConfig.sample,
+        tag: selectionConfig.label,
+        history: [],
+      },
+    });
+    return res.data;
+  }, [projectSlug, currentScheme, selectionConfig, notify]);
 
-  // build object to send
-  const request: RequestNextModel = {
-    scheme: currentScheme,
-    selection: selectionConfig.mode,
-    sample: selectionConfig.sample,
-    tag: selectionConfig.label,
-    history: [],
-  };
-
-  const getNextElementId = useCallback(
-    async (featureName: string | null) => {
-      if (featureName) {
-        const res = await api.POST('/elements/next', {
-          body: request,
-        });
-        return true;
-      }
-    },
-    [projectSlug, currentScheme, selectionConfig, notify],
-  );
-
-  return getNextElementId;
+  return { nextElement: getAsyncMemoData(nextElement) };
 }

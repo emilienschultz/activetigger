@@ -2,18 +2,31 @@ import { range } from 'lodash';
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { useGetNextElementId } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectAnnotationPage: FC = () => {
   const { projectName, elementId } = useParams();
   const { authenticatedUser } = useAuth();
+  const { notify } = useNotifications();
   const {
     appContext: { currentScheme, reFetchCurrentProject, currentProject: project, selectionConfig },
     setAppContext,
   } = useAppContext();
+
   const navigate = useNavigate();
+
+  // hook to get next element id
+  if (!projectName) return null;
+  if (!currentScheme) {
+    notify({ type: 'warning', message: 'You need to select first a scheme' });
+    navigate(`/projects/${projectName}`);
+    return null;
+  }
+  const getNextElement = useGetNextElementId(projectName, currentScheme, selectionConfig);
 
   // define parameters of the menu
   const availableSamples = project?.next.sample ? project?.next.sample : [];
@@ -59,13 +72,12 @@ export const ProjectAnnotationPage: FC = () => {
     }
   }, [elementId]);
 
-  // we must get the project annotation payload / element
-  if (!projectName) return null;
-
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
         <div>{JSON.stringify(selectionConfig)}</div>
+        <div>{JSON.stringify(getNextElement)}</div>
+
         <div className="row">
           <h2 className="subsection">Annotation</h2>
         </div>
