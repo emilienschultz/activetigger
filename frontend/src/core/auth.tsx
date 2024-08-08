@@ -1,18 +1,8 @@
-import { toPairs } from 'lodash';
-import { Middleware } from 'openapi-fetch';
-import {
-  FC,
-  PropsWithChildren,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { FC, PropsWithChildren, createContext, useCallback, useContext, useState } from 'react';
 
 import { LoginParams, UserModel } from '../types';
 import { HttpError } from './HTTPError';
-import { api, login, logout, me } from './api';
+import { login, logout, me } from './api';
 import { useNotifications } from './notifications';
 
 // Information about the current authenticated user
@@ -48,14 +38,6 @@ const _useAuth = (): AuthContext => {
   // notifications
   const { notify } = useNotifications();
 
-  useEffect(() => {
-    // when authenticated user changes to update our local storage
-    if (authenticatedUser)
-      localStorage.setItem('activeTigger.auth', JSON.stringify(authenticatedUser));
-    else localStorage.removeItem('activeTigger.auth');
-  }, [authenticatedUser]);
-
-  // TODO check session validity
   /**
    * This method wraps the login API call into our authenticated user state management
    * It does the call and make sure to update our internal state accordingly
@@ -69,10 +51,16 @@ const _useAuth = (): AuthContext => {
           const user = await me(response.access_token);
 
           if (user !== undefined) {
-            setAuthenticatedUser({ ...user, access_token: response.access_token });
-          } else setAuthenticatedUser(undefined);
+            const authUser = { ...user, access_token: response.access_token };
+            localStorage.setItem('activeTigger.auth', JSON.stringify(authUser));
+            setAuthenticatedUser(authUser);
+          } else {
+            localStorage.removeItem('activeTigger.auth');
+            setAuthenticatedUser(undefined);
+          }
         }
       } catch (error) {
+        localStorage.removeItem('activeTigger.auth');
         setAuthenticatedUser(undefined);
       }
     },
@@ -86,6 +74,7 @@ const _useAuth = (): AuthContext => {
         try {
           const success = await logout(authenticatedUser.access_token);
           if (success) {
+            localStorage.removeItem('activeTigger.auth');
             setAuthenticatedUser(undefined);
             return success;
           }
@@ -120,55 +109,9 @@ const _useAuth = (): AuthContext => {
  */
 export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
   const auth = _useAuth();
-  const { notify } = useNotifications();
-
-  // generate auth middleware
-  useEffect(() => {
-    const middleware: Middleware = {
-      // on each request the middleware inject auth headers
-      onRequest: ({ request }) => {
-        const { authenticatedUser } = auth;
-        if (authenticatedUser) {
-          const authHeaders = getAuthHeaders(authenticatedUser);
-          if (authHeaders) {
-            toPairs(authHeaders.headers).map(([header, value]) =>
-              request.headers.set(header, value),
-            );
-            //params.header = { ...params.header, username: authenticatedUser.username };
-          }
-          return request;
-        }
-        return undefined;
-      },
-      // on response check if session is correct
-      onResponse: async ({ response }) => {
-        // if session is expired or invalid we catch the 401 and redirect to login page
-        if (response.status === 401) {
-          notify({
-            type: 'error',
-            message: 'Invalid user session: redirecting you to login page...',
-          });
-          setTimeout(
-            () => window.history.pushState({ path: location.pathname }, '', '/login'),
-            500,
-          ); //, { state: { path: location.pathname }, replace: true });
-        } else {
-          if (response.status !== 200) {
-            //TODO : check error body is correct
-            const { body, ...resOptions } = response;
-
-            notify({ type: 'error', message: await response.json() });
-            return new Response(body, resOptions);
-          }
-        }
-      },
-    };
-    api.use(middleware);
-    return () => api.eject(middleware);
-  }, [auth.authenticatedUser]);
-
   return <authContext.Provider value={auth}>{children}</authContext.Provider>;
 };
+
 /**
  * useAuth
  * the main auth hook which provides the auth context current value
