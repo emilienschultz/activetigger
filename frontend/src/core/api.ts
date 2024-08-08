@@ -8,6 +8,7 @@ import {
   FeatureDfmParameters,
   LoginParams,
   ProjectDataModel,
+  RequestNextModel,
   SelectionConfig,
 } from '../types';
 import { HttpError } from './HTTPError';
@@ -376,15 +377,21 @@ export function useGetNextElementId(
 ) {
   const { notify } = useNotifications();
 
+  // build object to send
+  const request: RequestNextModel = {
+    scheme: currentScheme,
+    selection: selectionConfig.mode,
+    sample: selectionConfig.sample,
+    tag: selectionConfig.label,
+    history: [],
+  };
+
   const getNextElementId = useCallback(
     async (featureName: string | null) => {
       if (featureName) {
-        const res = await api.POST('/features/delete', {
-          params: {
-            query: { project_slug: projectSlug, name: featureName },
-          },
+        const res = await api.POST('/elements/next', {
+          body: request,
         });
-        if (!res.error) notify({ type: 'success', message: 'Features deleted' });
         return true;
       }
     },
