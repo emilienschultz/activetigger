@@ -8,6 +8,7 @@ import {
   FeatureDfmParameters,
   LoginParams,
   ProjectDataModel,
+  SelectionConfig,
 } from '../types';
 import { HttpError } from './HTTPError';
 import config from './config';
@@ -113,16 +114,12 @@ export function useUserProjects(): AvailableProjectsModel[] | undefined {
   const projects = useAsyncMemo(async () => {
     // api calls uses openapi fetch that make sure that method GET, paths `/projects` and params respect API specs
     const res = await api.GET('/projects');
-
     if (res.data && !res.error)
       // TODO: type API response in Python code and remove the as unknown as AvailableProjectsModel[]
       return values(res.data.projects) as unknown as AvailableProjectsModel[];
     else {
-      notify({ type: 'error', message: res.error.detail?.map((d) => d.msg).join('; ') || '' });
-      throw new HttpError(
-        res.response.status,
-        res.error.detail?.map((d) => d.msg).join('; ') || '',
-      );
+      notify({ type: 'error', message: JSON.stringify(res.error) });
+      throw new HttpError(res.response.status, '');
     }
   }, []);
 
@@ -291,6 +288,7 @@ export function useAddScheme(projectSlug: string) {
           },
           body: { project_slug: projectSlug, name: schemeName, tags: null },
         });
+        if (!res.error) notify({ type: 'success', message: 'Scheme add' });
 
         return true;
       }
@@ -362,4 +360,36 @@ export function useDeleteFeature(projectSlug: string) {
   );
 
   return deleteFeature;
+}
+
+/**
+ * get next element
+ * @param projectSlug
+ * @param currentScheme
+ * @param selectionConfig
+ * @returns ElementId
+ *  */
+export function useGetNextElementId(
+  projectSlug: string,
+  currentScheme: string,
+  selectionConfig: SelectionConfig,
+) {
+  const { notify } = useNotifications();
+
+  const getNextElementId = useCallback(
+    async (featureName: string | null) => {
+      if (featureName) {
+        const res = await api.POST('/features/delete', {
+          params: {
+            query: { project_slug: projectSlug, name: featureName },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Features deleted' });
+        return true;
+      }
+    },
+    [projectSlug, currentScheme, selectionConfig, notify],
+  );
+
+  return getNextElementId;
 }

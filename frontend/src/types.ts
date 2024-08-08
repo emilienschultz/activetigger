@@ -36,6 +36,8 @@ export type SchemeModel = components['schemas']['SchemeModel'];
 
 export type FeatureModel = components['schemas']['FeatureModel'];
 
+export type RequestNextModel = components["schemas"]['NextInModel']
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;
@@ -52,8 +54,9 @@ export interface FeatureModelExtended {
   parameters: null | FeatureDfmParameters;
 }
 
-export interface NextModel{
+export interface SelectionConfig{
   mode: string;
   sample: string;
   label?: string;
+  frame?: number[]
 }

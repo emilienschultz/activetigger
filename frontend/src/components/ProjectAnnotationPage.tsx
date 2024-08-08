@@ -15,9 +15,11 @@ export const ProjectAnnotationPage: FC = () => {
   } = useAppContext();
   const navigate = useNavigate();
 
-  console.log(elementId);
-
-  // available methods depend if there is a simple model trained for the user/scheme TO TEST
+  // define parameters of the menu
+  const availableSamples = project?.next.sample ? project?.next.sample : [];
+  const availableLabels = currentScheme && project ? project?.schemes.available[currentScheme] : [];
+  // available methods depend if there is a simple model trained for the user/scheme
+  // TO TEST, and in the future change the API if possible
   var availableModes = project?.next.methods_min ? project?.next.methods_min : [];
   if (
     project?.simplemodel.available &&
@@ -26,8 +28,6 @@ export const ProjectAnnotationPage: FC = () => {
     Array(project?.simplemodel.available[authenticatedUser.username]).includes(currentScheme)
   )
     availableModes = project?.next.methods;
-
-  const availableSamples = project?.next.sample ? project?.next.sample : [];
 
   // manage the hide/visible menu for the label
   const [selectedMode, setSelectedMode] = useState('');
@@ -45,7 +45,7 @@ export const ProjectAnnotationPage: FC = () => {
   const navigateToNextElement = useCallback(async () => {
     // change url using the new elementId
     // const newElementId = await  apiCall()
-    //navigate('/project/${projectName}/annotate/newid');
+    //navigate('/projects/${projectName}/annotate/newid');
   }, [projectName, navigate]);
 
   useEffect(() => {
@@ -61,9 +61,11 @@ export const ProjectAnnotationPage: FC = () => {
 
   // we must get the project annotation payload / element
   if (!projectName) return null;
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
+        <div>{JSON.stringify(selectionConfig)}</div>
         <div className="row">
           <h2 className="subsection">Annotation</h2>
         </div>
@@ -80,8 +82,10 @@ export const ProjectAnnotationPage: FC = () => {
             {selectedMode == 'random' && (
               <div>
                 <label>Label</label>
-                <select disabled onChange={(e) => (selectionConfig.label = e.target.value)}>
-                  <option>not available</option>
+                <select onChange={(e) => (selectionConfig.label = e.target.value)}>
+                  {availableLabels.map((e) => (
+                    <option>{e}</option>
+                  ))}{' '}
                 </select>
               </div>
             )}

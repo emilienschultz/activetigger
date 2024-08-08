@@ -1,11 +1,11 @@
 import { FC, PropsWithChildren, createContext, useContext, useState } from 'react';
 
-import { NextModel, NotificationType, ProjectStateModel } from '../types';
+import { NotificationType, ProjectStateModel, SelectionConfig } from '../types';
 
 // Context content
 export type AppContextValue = {
   notifications: NotificationType[]; // manage notification
-  selectionConfig: NextModel; // selection for the next element
+  selectionConfig: SelectionConfig; // selection for the next element
   currentProject?: ProjectStateModel; // current project selected
   reFetchCurrentProject?: () => void; // update the state of the project
   currentScheme?: string; // scheme selected to annotate
