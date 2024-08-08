@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useAppContext } from '../core/context';
@@ -16,13 +16,7 @@ export const ProjectPage: FC = () => {
 
   const {
     appContext: { currentScheme, currentProject: project },
-    setAppContext,
   } = useAppContext();
-
-  // we update the context with the project currently opened
-  useEffect(() => {
-    setAppContext((prev) => ({ ...prev, currentProjectSlug: projectName }));
-  }, [projectName]);
 
   return (
     <ProjectPageLayout projectName={projectName}>
