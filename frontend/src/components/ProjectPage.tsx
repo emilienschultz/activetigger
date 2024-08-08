@@ -1,7 +1,6 @@
 import { FC, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { useProject } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ProjectStatistics } from './ProjectStatistics';
 import { SchemesManagement } from './forms/SchemesManagementForm';
@@ -25,13 +24,6 @@ export const ProjectPage: FC = () => {
     setAppContext((prev) => ({ ...prev, currentProjectSlug: projectName }));
   }, [projectName]);
 
-  // API get hook provides the project querying the API for us
-  // it also handles auth for us making the component code here very clean
-  // project can be undefined has at the very first render the API has not yet responded
-  // project undefined means the data is not ready yet or there was an error$
-
-  const { reFetch } = useProject(projectName); // get project statefrom the API
-
   return (
     <ProjectPageLayout projectName={projectName}>
       {project && (
@@ -42,7 +34,6 @@ export const ProjectPage: FC = () => {
             <SchemesManagement
               available_schemes={Object.keys(project.schemes.available)}
               projectSlug={projectName}
-              reFetchProject={reFetch}
             />
           </div>
           {currentScheme && <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />}

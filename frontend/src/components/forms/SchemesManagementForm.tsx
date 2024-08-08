@@ -4,7 +4,6 @@ import { IoIosAddCircle } from 'react-icons/io';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
 import { useAddScheme, useDeleteScheme } from '../../core/api';
-import { updateProjectState } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { SchemeModel } from '../../types';
@@ -12,7 +11,6 @@ import { SchemeModel } from '../../types';
 interface SchemesManagementProps {
   available_schemes: string[];
   projectSlug: string;
-  reFetchProject: () => void;
 }
 
 /* Manage schemes
@@ -22,11 +20,10 @@ interface SchemesManagementProps {
 export const SchemesManagement: FC<SchemesManagementProps> = ({
   available_schemes,
   projectSlug,
-  reFetchProject,
 }) => {
   // get element from the context
   const {
-    appContext: { currentScheme },
+    appContext: { currentScheme, reFetchCurrentProject },
     setAppContext,
   } = useAppContext();
 
@@ -36,7 +33,7 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
 
   // hook to get the api call
   const addScheme = useAddScheme(projectSlug);
-  const deleteScheme = useDeleteScheme(projectSlug, currentScheme);
+  const deleteScheme = useDeleteScheme(projectSlug, currentScheme || null);
 
   // state for displaying the new scheme menu
   const [showCreateNewScheme, setShowCreateNewScheme] = useState(false);
@@ -56,9 +53,8 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   // action to create the new scheme
   const createNewScheme: SubmitHandler<SchemeModel> = async (formData) => {
     try {
-      addScheme(formData.name);
-      updateProjectState(projectSlug); //ERREUR ICI
-      //reFetchProject();
+      await addScheme(formData.name);
+      if (reFetchCurrentProject) reFetchCurrentProject();
       notify({ type: 'success', message: `Scheme ${formData.name} created` });
     } catch (error) {
       notify({ type: 'error', message: error + '' });
@@ -70,7 +66,7 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   const deleteSelectedScheme = async () => {
     //TODO: try catch and throw
     await deleteScheme();
-    reFetchProject();
+    if (reFetchCurrentProject) reFetchCurrentProject();
   };
 
   return (

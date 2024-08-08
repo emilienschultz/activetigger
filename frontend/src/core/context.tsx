@@ -6,6 +6,7 @@ import { NotificationType, ProjectStateModel } from '../types';
 export type AppContextValue = {
   notifications: NotificationType[];
   currentProject?: ProjectStateModel;
+  reFetchCurrentProject?: () => void;
   currentScheme?: string;
 };
 
