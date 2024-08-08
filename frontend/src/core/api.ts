@@ -13,6 +13,7 @@ import { HttpError } from './HTTPError';
 import config from './config';
 import { useNotifications } from './notifications';
 import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
+import { useAppContext } from '../core/context';
 
 /**
  * API methods
@@ -273,9 +274,20 @@ export function useDeleteScheme(projectSlug: string, schemeName: string | null) 
   return deleteScheme;
 }
 
+/** UpdateProjectState
+ * TODO : NE MARCHE PAS
+ */
+export function updateProjectState(projectSlug:string){
+const { setAppContext } = useAppContext();
+const { project } = useProject(projectSlug); // api call
+setAppContext((prev) => ({ ...prev, currentProject: project }));
+console.log("Update project state in context")
+return null;
+}
+
 /**
  * create a scheme
- (its a hook)
+ * (its a hook)
  */
 export function useAddScheme(projectSlug: string) {
   const { notify } = useNotifications();

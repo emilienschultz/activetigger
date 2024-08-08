@@ -4,6 +4,7 @@ import { IoIosAddCircle } from 'react-icons/io';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
 import { useAddScheme, useDeleteScheme } from '../../core/api';
+import { updateProjectState } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { SchemeModel } from '../../types';
@@ -56,7 +57,8 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   const createNewScheme: SubmitHandler<SchemeModel> = async (formData) => {
     try {
       addScheme(formData.name);
-      reFetchProject();
+      updateProjectState(projectSlug); //ERREUR ICI
+      //reFetchProject();
       notify({ type: 'success', message: `Scheme ${formData.name} created` });
     } catch (error) {
       notify({ type: 'error', message: error + '' });
