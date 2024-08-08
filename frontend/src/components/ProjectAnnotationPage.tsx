@@ -26,7 +26,7 @@ export const ProjectAnnotationPage: FC = () => {
     navigate(`/projects/${projectName}`);
     return null;
   }
-  const getNextElement = useGetNextElementId(projectName, currentScheme, selectionConfig);
+  const { nextElement } = useGetNextElementId(projectName, currentScheme, selectionConfig);
 
   // define parameters of the menu
   const availableSamples = project?.next.sample ? project?.next.sample : [];
@@ -76,7 +76,7 @@ export const ProjectAnnotationPage: FC = () => {
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
         <div>{JSON.stringify(selectionConfig)}</div>
-        <div>{JSON.stringify(getNextElement)}</div>
+        <div>{JSON.stringify(nextElement?.element_id)}</div>
 
         <div className="row">
           <h2 className="subsection">Annotation</h2>
