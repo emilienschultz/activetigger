@@ -40,6 +40,8 @@ export type FeatureModel = components['schemas']['FeatureModel'];
 
 export type RequestNextModel = components['schemas']['NextInModel'];
 
+export type AnnotationModel = components['schemas']['AnnotationModel'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

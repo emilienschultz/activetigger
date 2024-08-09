@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 
 import type { paths } from '../generated/openapi';
 import {
+  AnnotationModel,
   AvailableProjectsModel,
   FeatureDfmParameters,
   LoginParams,
@@ -455,4 +456,37 @@ export function useGetElementById(projectSlug: string, currentScheme: string) {
   );
 
   return { getElementById };
+}
+
+/**
+ * add an annotation
+ * (its a hook)
+ */
+export function useAddAnnotation(projectSlug: string, scheme: string, username: string) {
+  const { notify } = useNotifications();
+
+  const addAnnotation = useCallback(
+    async (element_id: string, tag: string) => {
+      // do the new projects POST call
+      const res = await api.POST('/tags/{action}', {
+        params: {
+          path: { action: 'add' },
+          query: { project_slug: projectSlug },
+        },
+        body: {
+          project_slug: projectSlug,
+          element_id: element_id,
+          tag: tag,
+          user: username,
+          scheme: scheme,
+        },
+      });
+      //if (!res.error) notify({ type: 'success', message: 'Annotation added' });
+
+      return true;
+    },
+    [projectSlug, scheme, username, notify],
+  );
+
+  return { addAnnotation };
 }

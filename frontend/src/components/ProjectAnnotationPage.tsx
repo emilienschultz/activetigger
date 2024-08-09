@@ -2,7 +2,7 @@ import { range } from 'lodash';
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useGetElementById, useGetNextElementId } from '../core/api';
+import { useAddAnnotation, useGetElementById, useGetNextElementId } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -19,18 +19,27 @@ export const ProjectAnnotationPage: FC = () => {
   } = useAppContext();
 
   const navigate = useNavigate();
-  const [element, setElement] = useState<ElementOutModel | null>(null);
+  const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
 
-  // hook to get next element id
+  // be sure to have a scheme selected
   if (!projectName) return null;
+  if (!authenticatedUser?.username) return null;
   if (!currentScheme) {
     notify({ type: 'warning', message: 'You need to select first a scheme' });
     navigate(`/projects/${projectName}`);
     return null;
   }
-  // use a hook/factory to get the method to get next element
+
+  // hooks to manage element
   const { getNextElementId } = useGetNextElementId(projectName, currentScheme);
   const { getElementById } = useGetElementById(projectName, currentScheme);
+
+  // hooks to manage annotation
+  const { addAnnotation } = useAddAnnotation(
+    projectName,
+    currentScheme,
+    authenticatedUser?.username,
+  );
 
   // define parameters of the menu
   const availableSamples = project?.next.sample ? project?.next.sample : [];
@@ -63,6 +72,9 @@ export const ProjectAnnotationPage: FC = () => {
     // change url using the new elementId
     // const newElementId = await  apiCall()
     //navigate('/projects/${projectName}/annotate/newid');
+    getNextElementId(selectionConfig).then((nextElementId) => {
+      if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+    });
   }, [projectName, navigate]);
 
   useEffect(() => {
@@ -79,14 +91,12 @@ export const ProjectAnnotationPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
-        <div>{JSON.stringify(selectionConfig)}</div>
-        <div>element ? {JSON.stringify(element)} : "loading..."</div>
-
         <div className="row">
           <h2 className="subsection">Annotation</h2>
+          <span className="explanations">Configure selection mode and annotate data</span>
         </div>
         <div className="row">
-          <div className="col-6">
+          <div className="col-6 ">
             <div>
               <label>Selection mode</label>
               <select onChange={handleSelectChangeMode}>
@@ -95,7 +105,7 @@ export const ProjectAnnotationPage: FC = () => {
                 ))}
               </select>
             </div>
-            {selectedMode == 'random' && (
+            {selectedMode == 'maxprob' && (
               <div>
                 <label>Label</label>
                 <select onChange={(e) => (selectionConfig.label = e.target.value)}>
@@ -118,23 +128,26 @@ export const ProjectAnnotationPage: FC = () => {
           </div>
         </div>
       </div>
+      <hr />
+
       <div className="row">
-        <h1>Du texte à annoter</h1>
+        <div className="col-10 annotation-frame my-4">{element?.text}</div>
       </div>
       <div className="row">
-        <h2>labels</h2>
-        <div className="d-flex flex-wrap gap-2">
-          {range(10).map((i) => (
+        <div className="d-flex flex-wrap gap-2 justify-content-center">
+          {availableLabels.map((i) => (
             <button
               key={i}
+              value={i}
               className="btn btn-primary grow-1"
-              onClick={() => {
-                // add tag to element
-                // if pas d'erreur
-                navigateToNextElement();
+              onClick={(e) => {
+                if (elementId) {
+                  addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
+                  // TODO manage erreur
+                }
               }}
             >
-              blabla {i}
+              {i}
             </button>
           ))}
         </div>
@@ -146,6 +159,7 @@ export const ProjectAnnotationPage: FC = () => {
         </summary>
         Plein de bordel
       </details>
+      <div>{element ? JSON.stringify(element) : 'loading...'}</div>
     </ProjectPageLayout>
   );
 };
