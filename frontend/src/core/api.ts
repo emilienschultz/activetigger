@@ -34,7 +34,9 @@ const authMiddleware: Middleware = {
     if (authenticatedUser) {
       const authHeaders = getAuthHeaders(authenticatedUser);
       if (authHeaders) {
-        toPairs(authHeaders.headers).map(([header, value]) => request.headers.set(header, value));
+        toPairs(authHeaders.headers).map(([header, value]) => {
+          if (request.headers.get(header) === null) request.headers.set(header, value);
+        });
         //params.header = { ...params.header, username: authenticatedUser.username };
       }
       return request;

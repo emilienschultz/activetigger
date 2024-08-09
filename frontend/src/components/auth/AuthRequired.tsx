@@ -38,7 +38,7 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
       // on response check if session is correct
       onResponse: async ({ response }) => {
         // if session is expired or invalid we catch the 401 and redirect to login page
-        if (response.status === 401) {
+        if ([401, 403].includes(response.status)) {
           redirectToLogin('Invalid user session: redirecting you to login page...');
         } else {
           if (response.status !== 200) {
