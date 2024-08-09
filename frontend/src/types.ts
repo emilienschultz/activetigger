@@ -14,6 +14,8 @@ export type UserModel = components['schemas']['UserModel'];
 export type ProjectModel = components['schemas']['ProjectModel'];
 export type ProjectDataModel = components['schemas']['ProjectDataModel'];
 export type ProjectStateModel = components['schemas']['StateModel'];
+export type ElementOutModel = components['schemas']['ElementOutModel'];
+
 export type AvailableProjectsModel = {
   created_by: string;
   created_at: string;
@@ -36,7 +38,7 @@ export type SchemeModel = components['schemas']['SchemeModel'];
 
 export type FeatureModel = components['schemas']['FeatureModel'];
 
-export type RequestNextModel = components["schemas"]['NextInModel']
+export type RequestNextModel = components['schemas']['NextInModel'];
 
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
@@ -54,9 +56,9 @@ export interface FeatureModelExtended {
   parameters: null | FeatureDfmParameters;
 }
 
-export interface SelectionConfig{
+export interface SelectionConfig {
   mode: string;
   sample: string;
   label?: string;
-  frame?: number[]
+  frame?: number[];
 }

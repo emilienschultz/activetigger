@@ -394,27 +394,26 @@ export function useDeleteFeature(projectSlug: string) {
  * @param selectionConfig
  * @returns ElementId
  */
-export function useGetNextElementId(
-  projectSlug: string,
-  currentScheme: string,
-  selectionConfig: SelectionConfig,
-) {
+export function useGetNextElementId(projectSlug: string, currentScheme: string) {
   const { notify } = useNotifications();
-  const nextElement = useAsyncMemo(async () => {
-    const res = await api.POST('/elements/next', {
-      params: { query: { project_slug: projectSlug } },
-      body: {
-        scheme: currentScheme,
-        selection: selectionConfig.mode,
-        sample: selectionConfig.sample,
-        tag: selectionConfig.label,
-        history: [],
-      },
-    });
-    return res.data;
-  }, [projectSlug, currentScheme, selectionConfig, notify]);
+  const getNextElementId = useCallback(
+    async (selectionConfig: SelectionConfig) => {
+      const res = await api.POST('/elements/next', {
+        params: { query: { project_slug: projectSlug } },
+        body: {
+          scheme: currentScheme,
+          selection: selectionConfig.mode,
+          sample: selectionConfig.sample,
+          tag: selectionConfig.label,
+          history: [],
+        },
+      });
+      return res.data?.element_id;
+    },
+    [projectSlug, currentScheme, notify],
+  );
 
-  return { nextElementId: getAsyncMemoData(nextElement)?.element_id };
+  return { getNextElementId };
 }
 
 /**
@@ -441,7 +440,7 @@ export function useGetElementById(projectSlug: string, currentScheme: string, el
 */
 export function useGetElementById(projectSlug: string, currentScheme: string) {
   const { notify } = useNotifications();
-  const getNextElement = useCallback(
+  const getElementById = useCallback(
     async (elementId: string) => {
       const res = await api.GET('/elements/{element_id}', {
         params: {
@@ -450,9 +449,10 @@ export function useGetElementById(projectSlug: string, currentScheme: string) {
         },
       });
       if (!res.error) return res.data;
+      else return null;
     },
     [projectSlug, currentScheme, notify],
   );
 
-  return getNextElement;
+  return { getElementById };
 }

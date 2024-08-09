@@ -6,6 +6,7 @@ import { useGetElementById, useGetNextElementId } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
+import { ElementOutModel } from '../types';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectAnnotationPage: FC = () => {
@@ -18,6 +19,7 @@ export const ProjectAnnotationPage: FC = () => {
   } = useAppContext();
 
   const navigate = useNavigate();
+  const [element, setElement] = useState<ElementOutModel | null>(null);
 
   // hook to get next element id
   if (!projectName) return null;
@@ -26,8 +28,9 @@ export const ProjectAnnotationPage: FC = () => {
     navigate(`/projects/${projectName}`);
     return null;
   }
-  //const { nextElementId } = useGetNextElementId(projectName, currentScheme, selectionConfig);
-  const getNextElement = useGetElementById(projectName, currentScheme);
+  // use a hook/factory to get the method to get next element
+  const { getNextElementId } = useGetNextElementId(projectName, currentScheme);
+  const { getElementById } = useGetElementById(projectName, currentScheme);
 
   // define parameters of the menu
   const availableSamples = project?.next.sample ? project?.next.sample : [];
@@ -64,20 +67,20 @@ export const ProjectAnnotationPage: FC = () => {
 
   useEffect(() => {
     if (elementId === undefined) {
-      //const { nextElementId } = useGetNextElementId(projectName, currentScheme, selectionConfig);
-      //navigate(`/project/${projectName}/annotate/${nextElementId}`);
+      getNextElementId(selectionConfig).then((nextElementId) => {
+        if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+      });
     } else {
       //fetch element information (text and labels)
+      getElementById(elementId).then(setElement);
     }
   }, [elementId]);
-
-  const el = getNextElement('1493472396988276739');
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
         <div>{JSON.stringify(selectionConfig)}</div>
-        <div>{JSON.stringify(el)}</div>
+        <div>element ? {JSON.stringify(element)} : "loading..."</div>
 
         <div className="row">
           <h2 className="subsection">Annotation</h2>
@@ -87,8 +90,8 @@ export const ProjectAnnotationPage: FC = () => {
             <div>
               <label>Selection mode</label>
               <select onChange={handleSelectChangeMode}>
-                {availableModes.map((e) => (
-                  <option>{e}</option>
+                {availableModes.map((e, i) => (
+                  <option key={i}>{e}</option>
                 ))}
               </select>
             </div>
@@ -96,8 +99,8 @@ export const ProjectAnnotationPage: FC = () => {
               <div>
                 <label>Label</label>
                 <select onChange={(e) => (selectionConfig.label = e.target.value)}>
-                  {availableLabels.map((e) => (
-                    <option>{e}</option>
+                  {availableLabels.map((e, i) => (
+                    <option key={i}>{e}</option>
                   ))}{' '}
                 </select>
               </div>
@@ -108,8 +111,8 @@ export const ProjectAnnotationPage: FC = () => {
           <div className="col-6">
             <label>On</label>
             <select onChange={(e) => (selectionConfig.sample = e.target.value)}>
-              {availableSamples.map((e) => (
-                <option>{e}</option>
+              {availableSamples.map((e, i) => (
+                <option key={i}>{e}</option>
               ))}{' '}
             </select>
           </div>
