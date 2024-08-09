@@ -159,3 +159,23 @@ $secondary: #3d0748;
   white-space: pre-wrap;  /* Préserve les sauts de ligne et les espaces */
   overflow-y: auto; 
 }
+
+.custom-details {
+  border: 2px solid $primary;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 20px 0; 
+  background-color: #f8f9fa;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.custom-summary {
+  cursor: pointer; /* Pointer cursor on hover */
+  font-weight: bold; /* Bold font */
+  color: $primary; /* Blue text color */
+  margin: 0; /* Remove default margin */
+}
+
+.custom-summary:hover {
+  color: #0056b3; /* Darker blue on hover */
+}

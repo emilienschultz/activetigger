@@ -1,8 +1,18 @@
 import { range } from 'lodash';
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
+import { FaRegTrashAlt } from 'react-icons/fa';
+import { FaPlusCircle } from 'react-icons/fa';
+import { RiFindReplaceLine } from 'react-icons/ri';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useAddAnnotation, useGetElementById, useGetNextElementId } from '../core/api';
+import {
+  useAddAnnotation,
+  useAddLabel,
+  useDeleteLabel,
+  useGetElementById,
+  useGetNextElementId,
+  useRenameLabel,
+} from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -40,6 +50,11 @@ export const ProjectAnnotationPage: FC = () => {
     currentScheme,
     authenticatedUser?.username,
   );
+
+  // hooks to manage labels
+  const { addLabel } = useAddLabel(projectName, currentScheme);
+  const { deleteLabel } = useDeleteLabel(projectName, currentScheme);
+  const { renameLabel } = useRenameLabel(projectName, currentScheme);
 
   // define parameters of the menu
   const availableSamples = project?.next.sample ? project?.next.sample : [];
@@ -88,6 +103,30 @@ export const ProjectAnnotationPage: FC = () => {
     }
   }, [elementId]);
 
+  // manage label creation
+  const [createLabelValue, setCreateLabelValue] = useState('');
+  const handleCreateLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCreateLabelValue(event.target.value);
+  };
+  const createLabel = () => {
+    addLabel(createLabelValue);
+    setCreateLabelValue('');
+  };
+
+  // manage label deletion
+  const [deleteLabelValue, setDeleteLabelValue] = useState('');
+  const handleDeleteLabelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setDeleteLabelValue(event.target.value);
+  };
+  const removeLabel = () => {
+    deleteLabel(deleteLabelValue);
+  };
+
+  // manage label replacement
+  const replaceLabel = () => {
+    renameLabel(deleteLabelValue, createLabelValue);
+  };
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
@@ -97,38 +136,35 @@ export const ProjectAnnotationPage: FC = () => {
         </div>
         <div className="row">
           <div className="col-6 ">
-            <div>
+            <details className="custom-details">
+              <summary className="custom-summary">Configure selection mode</summary>
               <label>Selection mode</label>
               <select onChange={handleSelectChangeMode}>
                 {availableModes.map((e, i) => (
                   <option key={i}>{e}</option>
                 ))}
               </select>
-            </div>
-            {selectedMode == 'maxprob' && (
-              <div>
-                <label>Label</label>
-                <select onChange={(e) => (selectionConfig.label = e.target.value)}>
-                  {availableLabels.map((e, i) => (
-                    <option key={i}>{e}</option>
-                  ))}{' '}
-                </select>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="row">
-          <div className="col-6">
-            <label>On</label>
-            <select onChange={(e) => (selectionConfig.sample = e.target.value)}>
-              {availableSamples.map((e, i) => (
-                <option key={i}>{e}</option>
-              ))}{' '}
-            </select>
+              {selectedMode == 'maxprob' && (
+                <div>
+                  <label>Label</label>
+                  <select onChange={(e) => (selectionConfig.label = e.target.value)}>
+                    {availableLabels.map((e, i) => (
+                      <option key={i}>{e}</option>
+                    ))}{' '}
+                  </select>
+                </div>
+              )}
+              <br></br>
+              <label>On</label>
+              <select onChange={(e) => (selectionConfig.sample = e.target.value)}>
+                {availableSamples.map((e, i) => (
+                  <option key={i}>{e}</option>
+                ))}{' '}
+              </select>
+            </details>
           </div>
         </div>
       </div>
-      <hr />
 
       <div className="row">
         <div className="col-10 annotation-frame my-4">{element?.text}</div>
@@ -153,13 +189,39 @@ export const ProjectAnnotationPage: FC = () => {
         </div>
       </div>
       <hr />
-      <details>
-        <summary>
-          <h2>Label management</h2>
-        </summary>
-        Plein de bordel
+      <details className="custom-details">
+        <summary className="custom-summary">Delete, create or replace labels</summary>
+        <div className="d-flex align-items-center">
+          <select id="delete-label" onChange={handleDeleteLabelChange}>
+            {availableLabels.map((e, i) => (
+              <option key={i}>{e}</option>
+            ))}{' '}
+          </select>
+          <button onClick={removeLabel} className="btn btn p-0">
+            <FaRegTrashAlt size={20} className="m-2" />
+          </button>
+        </div>
+        <div className="d-flex align-items-center">
+          <input
+            type="text"
+            id="new-label"
+            value={createLabelValue}
+            onChange={handleCreateLabelChange}
+            placeholder="Enter new label"
+          />
+          <button onClick={createLabel} className="btn btn p-0">
+            <FaPlusCircle size={20} className="m-2" />
+          </button>
+        </div>
+        <div className="d-flex align-items-center">
+          Replace selected label to the new one
+          <button onClick={replaceLabel} className="btn btn p-0">
+            <RiFindReplaceLine size={20} className="m-2" />
+          </button>
+        </div>
       </details>
-      <div>{element ? JSON.stringify(element) : 'loading...'}</div>
     </ProjectPageLayout>
   );
 };
+
+//<div>{element ? JSON.stringify(element) : 'loading...'}</div>

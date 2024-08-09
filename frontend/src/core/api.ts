@@ -460,7 +460,6 @@ export function useGetElementById(projectSlug: string, currentScheme: string) {
 
 /**
  * add an annotation
- * (its a hook)
  */
 export function useAddAnnotation(projectSlug: string, scheme: string, username: string) {
   const { notify } = useNotifications();
@@ -489,4 +488,81 @@ export function useAddAnnotation(projectSlug: string, scheme: string, username: 
   );
 
   return { addAnnotation };
+}
+
+/**
+ * create a new label
+ */
+export function useAddLabel(projectSlug: string, scheme: string) {
+  const { notify } = useNotifications();
+
+  const addLabel = useCallback(
+    async (label: string) => {
+      const res = await api.POST('/schemes/label/add', {
+        params: {
+          query: { project_slug: projectSlug, scheme: scheme, label: label },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'New label created' });
+
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { addLabel };
+}
+
+/**
+ * Delete a label
+ */
+export function useDeleteLabel(projectSlug: string, scheme: string) {
+  const { notify } = useNotifications();
+
+  const deleteLabel = useCallback(
+    async (label: string) => {
+      const res = await api.POST('/schemes/label/delete', {
+        params: {
+          query: { project_slug: projectSlug, scheme: scheme, label: label },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Label deleted' });
+
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { deleteLabel };
+}
+
+/**
+ * Rename a label
+ */
+export function useRenameLabel(projectSlug: string, scheme: string) {
+  const { notify } = useNotifications();
+
+  const renameLabel = useCallback(
+    async (formerLabel: string, newLabel: string) => {
+      const res = await api.POST('/schemes/label/rename', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+            scheme: scheme,
+            former_label: formerLabel,
+            new_label: newLabel,
+          },
+        },
+      });
+
+      console.log(JSON.stringify(res));
+      if (!res.error) notify({ type: 'success', message: 'Label renamed' });
+      else notify({ type: 'error', message: 'Error when renamed' });
+
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { renameLabel };
 }

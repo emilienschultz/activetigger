@@ -960,6 +960,7 @@ async def delete_label(
 
     r = project.schemes.delete_label(label, scheme, current_user.username)
     if "error" in r:
+        print(r["error"])
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
         current_user.username, f"delete label {label} to {scheme}", project.name
