@@ -2,7 +2,7 @@ import { range } from 'lodash';
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useGetNextElementId } from '../core/api';
+import { useGetElementById, useGetNextElementId } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -26,7 +26,8 @@ export const ProjectAnnotationPage: FC = () => {
     navigate(`/projects/${projectName}`);
     return null;
   }
-  const { nextElement } = useGetNextElementId(projectName, currentScheme, selectionConfig);
+  //const { nextElementId } = useGetNextElementId(projectName, currentScheme, selectionConfig);
+  const getNextElement = useGetElementById(projectName, currentScheme);
 
   // define parameters of the menu
   const availableSamples = project?.next.sample ? project?.next.sample : [];
@@ -63,20 +64,20 @@ export const ProjectAnnotationPage: FC = () => {
 
   useEffect(() => {
     if (elementId === undefined) {
-      // fetch next elementId
-      // change url using the new elementId
-      // navigate("/project/${projectName}/annotate/newid");
-      //navigateToNextElement();
+      //const { nextElementId } = useGetNextElementId(projectName, currentScheme, selectionConfig);
+      //navigate(`/project/${projectName}/annotate/${nextElementId}`);
     } else {
       //fetch element information (text and labels)
     }
   }, [elementId]);
 
+  const el = getNextElement('1493472396988276739');
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
         <div>{JSON.stringify(selectionConfig)}</div>
-        <div>{JSON.stringify(nextElement?.element_id)}</div>
+        <div>{JSON.stringify(el)}</div>
 
         <div className="row">
           <h2 className="subsection">Annotation</h2>

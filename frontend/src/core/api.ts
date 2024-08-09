@@ -386,12 +386,14 @@ export function useDeleteFeature(projectSlug: string) {
 }
 
 /**
- * get next element
+ * Get the id of the next element
+ * with a specific configuration of selection
+ *
  * @param projectSlug
  * @param currentScheme
  * @param selectionConfig
  * @returns ElementId
- *  */
+ */
 export function useGetNextElementId(
   projectSlug: string,
   currentScheme: string,
@@ -412,5 +414,45 @@ export function useGetNextElementId(
     return res.data;
   }, [projectSlug, currentScheme, selectionConfig, notify]);
 
+  return { nextElementId: getAsyncMemoData(nextElement)?.element_id };
+}
+
+/**
+ * Get element content by specific id
+ * @param projectSlug
+ * @param currentScheme
+ * @param elementId
+ * @returns
+ 
+export function useGetElementById(projectSlug: string, currentScheme: string, elementId: string) {
+  const { notify } = useNotifications();
+  const nextElement = useAsyncMemo(async () => {
+    const res = await api.GET('/elements/{element_id}', {
+      params: {
+        path: { element_id: elementId },
+        query: { project_slug: projectSlug, scheme: currentScheme },
+      },
+    });
+    return res.data;
+  }, [projectSlug, currentScheme, notify]);
+
   return { nextElement: getAsyncMemoData(nextElement) };
+}
+*/
+export function useGetElementById(projectSlug: string, currentScheme: string) {
+  const { notify } = useNotifications();
+  const getNextElement = useCallback(
+    async (elementId: string) => {
+      const res = await api.GET('/elements/{element_id}', {
+        params: {
+          path: { element_id: elementId },
+          query: { project_slug: projectSlug, scheme: currentScheme },
+        },
+      });
+      if (!res.error) return res.data;
+    },
+    [projectSlug, currentScheme, notify],
+  );
+
+  return getNextElement;
 }

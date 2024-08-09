@@ -43,7 +43,6 @@ from activetigger.datamodels import (
     UserInDBModel,
     UserModel,
     UsersServerModel,
-    ProjectsServerModel,
     StateModel,
     QueueModel,
     ProjectDescriptionModel,
