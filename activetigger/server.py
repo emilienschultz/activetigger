@@ -1585,6 +1585,8 @@ class Schemes:
         Add label in a scheme
         """
         available = self.available()
+        if (label is None) or (label == ""):
+            return {"error": "the name is void"}
         if not scheme in available:
             return {"error": "scheme doesn't exist"}
         if label in available[scheme]:
@@ -1593,6 +1595,17 @@ class Schemes:
         labels.append(label)
         self.update_scheme(scheme, labels, user)
         return {"success": "scheme updated with a new label"}
+
+    def exists_label(self, scheme: str, label: str):
+        """
+        Test if a label exist in a scheme
+        """
+        available = self.available()
+        if not scheme in available:
+            return {"error": "scheme doesn't exist"}
+        if label in available[scheme]:
+            return True
+        return False
 
     def delete_label(self, label: str, scheme: str, user: str):
         """

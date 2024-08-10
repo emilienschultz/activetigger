@@ -939,7 +939,7 @@ async def add_label(
 
     r = project.schemes.add_label(label, scheme, current_user.username)
     if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+        raise HTTPException(status_code=400, detail=r["error"])
     server.log_action(
         current_user.username, f"add label {label} to {scheme}", project.name
     )
@@ -984,17 +984,28 @@ async def rename_label(
     """
     test_rights("modify project element", current_user.username, project.name)
 
-    r = project.schemes.add_label(new_label, scheme, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    # test if the new label exist, either create it
+
+    exists = project.schemes.exists_label(scheme, new_label)
+
+    if not exists:
+        r = project.schemes.add_label(new_label, scheme, current_user.username)
+        if "error" in r:
+            raise HTTPException(status_code=500, detail=r["error"])
+
+    # convert the tags from the previous label
     r = project.schemes.convert_tags(
         former_label, new_label, scheme, current_user.username
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+
+    # delete previous label in the scheme
     r = project.schemes.delete_label(former_label, scheme, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+
+    # log
     server.log_action(
         current_user.username,
         f"rename label {former_label} to {new_label} in {scheme}",

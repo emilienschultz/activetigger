@@ -17,6 +17,7 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel } from '../types';
+import { LabelsManagement } from './LabelsManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectAnnotationPage: FC = () => {
@@ -110,7 +111,7 @@ export const ProjectAnnotationPage: FC = () => {
   };
   const createLabel = () => {
     addLabel(createLabelValue);
-    setCreateLabelValue('');
+    if (reFetchCurrentProject) reFetchCurrentProject();
   };
 
   // manage label deletion
@@ -120,11 +121,14 @@ export const ProjectAnnotationPage: FC = () => {
   };
   const removeLabel = () => {
     deleteLabel(deleteLabelValue);
+    if (reFetchCurrentProject) reFetchCurrentProject();
   };
 
   // manage label replacement
   const replaceLabel = () => {
     renameLabel(deleteLabelValue, createLabelValue);
+    setCreateLabelValue('');
+    if (reFetchCurrentProject) reFetchCurrentProject();
   };
 
   return (
@@ -192,32 +196,12 @@ export const ProjectAnnotationPage: FC = () => {
       <details className="custom-details">
         <summary className="custom-summary">Delete, create or replace labels</summary>
         <div className="d-flex align-items-center">
-          <select id="delete-label" onChange={handleDeleteLabelChange}>
-            {availableLabels.map((e, i) => (
-              <option key={i}>{e}</option>
-            ))}{' '}
-          </select>
-          <button onClick={removeLabel} className="btn btn p-0">
-            <FaRegTrashAlt size={20} className="m-2" />
-          </button>
-        </div>
-        <div className="d-flex align-items-center">
-          <input
-            type="text"
-            id="new-label"
-            value={createLabelValue}
-            onChange={handleCreateLabelChange}
-            placeholder="Enter new label"
+          <LabelsManagement
+            projectName={projectName}
+            currentScheme={currentScheme}
+            availableLabels={availableLabels}
+            reFetchCurrentProject={reFetchCurrentProject}
           />
-          <button onClick={createLabel} className="btn btn p-0">
-            <FaPlusCircle size={20} className="m-2" />
-          </button>
-        </div>
-        <div className="d-flex align-items-center">
-          Replace selected label to the new one
-          <button onClick={replaceLabel} className="btn btn p-0">
-            <RiFindReplaceLine size={20} className="m-2" />
-          </button>
         </div>
       </details>
     </ProjectPageLayout>

@@ -45,7 +45,7 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
             //TODO : check error body is correct
             const { body, ...resOptions } = response;
 
-            notify({ type: 'error', message: await response.json() });
+            notify({ type: 'error', message: await JSON.stringify(response.json()) });
             return new Response(body, resOptions);
           }
         }
