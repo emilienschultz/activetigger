@@ -18,6 +18,7 @@ import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel } from '../types';
 import { LabelsManagement } from './LabelsManagement';
+import { SimpleModelManagement } from './SimpleModelManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectAnnotationPage: FC = () => {
@@ -201,6 +202,18 @@ export const ProjectAnnotationPage: FC = () => {
             currentScheme={currentScheme}
             availableLabels={availableLabels}
             reFetchCurrentProject={reFetchCurrentProject}
+          />
+        </div>
+      </details>
+      <details className="custom-details">
+        <summary className="custom-summary">Configure prediction model</summary>
+        <div className="d-flex align-items-center">
+          <SimpleModelManagement
+            projectName={projectName}
+            currentScheme={currentScheme}
+            currentModel={'test'}
+            availableSimpleModels={['test', 'lol']}
+            availableFeatures={[]}
           />
         </div>
       </details>

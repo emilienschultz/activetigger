@@ -568,3 +568,11 @@ export function useRenameLabel(projectSlug: string, scheme: string) {
 
   return { renameLabel };
 }
+
+export function useUpdateSimpleModel(projectSlug: string, scheme: string) {
+  const updateSimpleModel = useCallback(async (formData: any) => {}, []);
+
+  const { notify } = useNotifications();
+
+  return { updateSimpleModel };
+}
