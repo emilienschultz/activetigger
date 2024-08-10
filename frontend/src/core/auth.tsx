@@ -54,12 +54,13 @@ const _useAuth = (): AuthContext => {
             const authUser = { ...user, access_token: response.access_token };
             localStorage.setItem('activeTigger.auth', JSON.stringify(authUser));
             setAuthenticatedUser(authUser);
+            notify({ type: 'success', message: `Logged in as ${user.username}` });
           } else {
-            localStorage.removeItem('activeTigger.auth');
-            setAuthenticatedUser(undefined);
+            throw new Error('Good token but no user?');
           }
         }
       } catch (error) {
+        notify({ type: 'warning', message: 'could not authenticate. Please retry.' });
         localStorage.removeItem('activeTigger.auth');
         setAuthenticatedUser(undefined);
       }
