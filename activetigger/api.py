@@ -1158,6 +1158,7 @@ async def post_simplemodel(
     """
     Compute simplemodel
     """
+    print(simplemodel)
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

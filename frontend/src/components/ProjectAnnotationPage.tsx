@@ -58,7 +58,12 @@ export const ProjectAnnotationPage: FC = () => {
   const { deleteLabel } = useDeleteLabel(projectName, currentScheme);
   const { renameLabel } = useRenameLabel(projectName, currentScheme);
 
-  // define parameters of the menu
+  // define parameters for configuration panels
+  const availableFeatures = project?.features.available ? project?.features.available : [];
+  const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
+  const currentModel = project?.simplemodel.available[authenticatedUser?.username][currentScheme]
+    ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
+    : 'No simplemodel trained';
   const availableSamples = project?.next.sample ? project?.next.sample : [];
   const availableLabels = currentScheme && project ? project?.schemes.available[currentScheme] : [];
   // available methods depend if there is a simple model trained for the user/scheme
@@ -207,14 +212,16 @@ export const ProjectAnnotationPage: FC = () => {
       </details>
       <details className="custom-details">
         <summary className="custom-summary">Configure prediction model</summary>
-        <div className="d-flex align-items-center">
-          <SimpleModelManagement
-            projectName={projectName}
-            currentScheme={currentScheme}
-            currentModel={'test'}
-            availableSimpleModels={['test', 'lol']}
-            availableFeatures={[]}
-          />
+        <div className="row">
+          <div className="col">
+            <SimpleModelManagement
+              projectName={projectName}
+              currentScheme={currentScheme}
+              currentModel={currentModel}
+              availableSimpleModels={availableSimpleModels}
+              availableFeatures={availableFeatures}
+            />
+          </div>
         </div>
       </details>
     </ProjectPageLayout>

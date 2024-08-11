@@ -162,7 +162,7 @@ class SimpleModelModel(BaseModel):
 
     features: list
     model: str
-    params: dict | None
+    params: Dict[str, Any] | Dict[str, Dict[str, Any]] | None
     scheme: str
     standardize: Optional[bool] = True
 

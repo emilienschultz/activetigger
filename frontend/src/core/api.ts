@@ -570,9 +570,33 @@ export function useRenameLabel(projectSlug: string, scheme: string) {
 }
 
 export function useUpdateSimpleModel(projectSlug: string, scheme: string) {
-  const updateSimpleModel = useCallback(async (formData: any) => {}, []);
-
   const { notify } = useNotifications();
+
+  const updateSimpleModel = useCallback(
+    async (formData: any) => {
+      const res = await api.POST('/models/simplemodel', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+          },
+        },
+        body: {
+          features: formData.features,
+          scheme: scheme,
+          model: formData.model,
+          params: formData.params,
+          standardize: true,
+        },
+      });
+
+      console.log(JSON.stringify(res));
+      if (!res.error) notify({ type: 'warning', message: 'Model under training' });
+      else notify({ type: 'error', message: 'Error when model submitted' });
+
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
 
   return { updateSimpleModel };
 }

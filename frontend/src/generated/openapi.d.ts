@@ -1385,7 +1385,9 @@ export interface components {
             /** Model */
             model: string;
             /** Params */
-            params: Record<string, never> | null;
+            params: Record<string, never> | {
+                [key: string]: Record<string, never> | undefined;
+            } | null;
             /** Scheme */
             scheme: string;
             /**
