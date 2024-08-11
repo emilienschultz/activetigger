@@ -1,16 +1,17 @@
-import { FC, useState } from 'react';
+import { FC, useContext, useState } from 'react';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { FaPlusCircle } from 'react-icons/fa';
 import { RiFindReplaceLine } from 'react-icons/ri';
 
 import { useUpdateSimpleModel } from '../core/api';
+import { useAppContext } from '../core/context';
 import { SimpleModelModel } from '../types';
 
 interface SimpleModelManagementProps {
   projectName: string;
   currentScheme: string;
-  currentModel: string;
+  currentModel: {};
   availableSimpleModels: { [key: string]: any };
   availableFeatures: string[];
 }
@@ -22,8 +23,18 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   availableSimpleModels,
   availableFeatures,
 }) => {
+  // element from the context to refresh parameter of the model
+  const {
+    appContext: { freqRefreshSimpleModel },
+    setAppContext,
+  } = useAppContext();
+
+  const refreshFreq = (newValue: number) => {
+    setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
+  };
+
   // form management
-  const { register, control, handleSubmit, reset } = useForm<SimpleModelModel>({
+  const { register, handleSubmit, reset } = useForm<SimpleModelModel>({
     defaultValues: {
       features: [],
       model: '',
@@ -140,8 +151,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div>Current model : {currentModel ? JSON.stringify(currentModel) : 'No model trained'}</div>
-
       <label htmlFor="model">Select a model</label>
       <select
         id="model"
@@ -164,6 +173,21 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         </select>
       </div>
       <button className="btn btn-primary btn-validation">Train</button>
+      <div>
+        <label htmlFor="frequencySlider">
+          Refresh the model every {freqRefreshSimpleModel} annotations
+        </label>
+        <input
+          type="range"
+          id="frequencySlider"
+          min="5"
+          max="500"
+          onChange={(e) => {
+            refreshFreq(Number(e.currentTarget.value));
+          }}
+          step="1"
+        />
+      </div>
     </form>
   );
 };

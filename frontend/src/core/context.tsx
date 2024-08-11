@@ -9,6 +9,7 @@ export type AppContextValue = {
   currentProject?: ProjectStateModel; // current project selected
   reFetchCurrentProject?: () => void; // update the state of the project
   currentScheme?: string; // scheme selected to annotate
+  freqRefreshSimpleModel?: number;
 };
 
 export const defaultContext: AppContextValue = {

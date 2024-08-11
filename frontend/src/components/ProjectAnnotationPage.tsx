@@ -63,7 +63,7 @@ export const ProjectAnnotationPage: FC = () => {
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
   const currentModel = project?.simplemodel.available[authenticatedUser?.username][currentScheme]
     ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-    : 'No simplemodel trained';
+    : { name: 'No simplemodel trained' };
   const availableSamples = project?.next.sample ? project?.next.sample : [];
   const availableLabels = currentScheme && project ? project?.schemes.available[currentScheme] : [];
   // available methods depend if there is a simple model trained for the user/scheme
@@ -171,6 +171,10 @@ export const ProjectAnnotationPage: FC = () => {
                   <option key={i}>{e}</option>
                 ))}{' '}
               </select>
+              <div>
+                Current model :{' '}
+                {currentModel ? JSON.stringify(currentModel.name) : 'No model trained'}
+              </div>
             </details>
           </div>
         </div>
