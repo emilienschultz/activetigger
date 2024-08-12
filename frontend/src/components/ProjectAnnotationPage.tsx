@@ -273,7 +273,8 @@ export const ProjectAnnotationPage: FC = () => {
           </div>
         </div>
       </details>
-      <div>{element ? JSON.stringify(element) : 'loading...'}</div>
     </ProjectPageLayout>
   );
 };
+
+//<div>{element ? JSON.stringify(element) : 'loading...'}</div>
