@@ -1,8 +1,5 @@
-import { FC, useContext, useState } from 'react';
-import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
-import { FaRegTrashAlt } from 'react-icons/fa';
-import { FaPlusCircle } from 'react-icons/fa';
-import { RiFindReplaceLine } from 'react-icons/ri';
+import { FC, useState } from 'react';
+import { SubmitHandler, useForm } from 'react-hook-form';
 
 import { useUpdateSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
@@ -177,6 +174,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         <label htmlFor="frequencySlider">
           Refresh the model every {freqRefreshSimpleModel} annotations
         </label>
+        <span>5</span>
         <input
           type="range"
           id="frequencySlider"
@@ -187,6 +185,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           }}
           step="1"
         />
+        <span>500</span>
       </div>
     </form>
   );

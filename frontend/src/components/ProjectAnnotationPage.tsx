@@ -1,18 +1,7 @@
-import { range } from 'lodash';
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
-import { FaRegTrashAlt } from 'react-icons/fa';
-import { FaPlusCircle } from 'react-icons/fa';
-import { RiFindReplaceLine } from 'react-icons/ri';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import {
-  useAddAnnotation,
-  useAddLabel,
-  useDeleteLabel,
-  useGetElementById,
-  useGetNextElementId,
-  useRenameLabel,
-} from '../core/api';
+import { useAddAnnotation, useGetElementById, useGetNextElementId } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -53,11 +42,6 @@ export const ProjectAnnotationPage: FC = () => {
     authenticatedUser?.username,
   );
 
-  // hooks to manage labels
-  const { addLabel } = useAddLabel(projectName, currentScheme);
-  const { deleteLabel } = useDeleteLabel(projectName, currentScheme);
-  const { renameLabel } = useRenameLabel(projectName, currentScheme);
-
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
@@ -68,14 +52,9 @@ export const ProjectAnnotationPage: FC = () => {
   const availableLabels = currentScheme && project ? project?.schemes.available[currentScheme] : [];
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
-  var availableModes = project?.next.methods_min ? project?.next.methods_min : [];
-  if (
-    project?.simplemodel.available &&
-    authenticatedUser &&
-    Array(project?.simplemodel.available).includes(authenticatedUser.username) &&
-    Array(project?.simplemodel.available[authenticatedUser.username]).includes(currentScheme)
-  )
-    availableModes = project?.next.methods;
+  var availableModes = project?.simplemodel.available[authenticatedUser.username][currentScheme]
+    ? project?.next.methods
+    : project?.next.methods_min;
 
   // manage the hide/visible menu for the label
   const [selectedMode, setSelectedMode] = useState('');
@@ -110,31 +89,8 @@ export const ProjectAnnotationPage: FC = () => {
     }
   }, [elementId]);
 
-  // manage label creation
-  const [createLabelValue, setCreateLabelValue] = useState('');
-  const handleCreateLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setCreateLabelValue(event.target.value);
-  };
-  const createLabel = () => {
-    addLabel(createLabelValue);
-    if (reFetchCurrentProject) reFetchCurrentProject();
-  };
-
-  // manage label deletion
-  const [deleteLabelValue, setDeleteLabelValue] = useState('');
-  const handleDeleteLabelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setDeleteLabelValue(event.target.value);
-  };
-  const removeLabel = () => {
-    deleteLabel(deleteLabelValue);
-    if (reFetchCurrentProject) reFetchCurrentProject();
-  };
-
-  // manage label replacement
-  const replaceLabel = () => {
-    renameLabel(deleteLabelValue, createLabelValue);
-    setCreateLabelValue('');
-    if (reFetchCurrentProject) reFetchCurrentProject();
+  const handleDisplayPrediction = () => {
+    selectionConfig.displayPrediction = !selectionConfig.displayPrediction;
   };
 
   return (
@@ -150,9 +106,7 @@ export const ProjectAnnotationPage: FC = () => {
               <summary className="custom-summary">Configure selection mode</summary>
               <label>Selection mode</label>
               <select onChange={handleSelectChangeMode}>
-                {availableModes.map((e, i) => (
-                  <option key={i}>{e}</option>
-                ))}
+                {availableModes ? availableModes : [].map((e, i) => <option key={i}>{e}</option>)}
               </select>
               {selectedMode == 'maxprob' && (
                 <div>
@@ -177,11 +131,37 @@ export const ProjectAnnotationPage: FC = () => {
               </div>
             </details>
           </div>
+          <div className="col-6 ">
+            {' '}
+            <details className="custom-details">
+              <summary className="custom-summary">Display parameters</summary>
+              <div>
+                <label style={{ display: 'block', marginBottom: '10px' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectionConfig.displayPrediction}
+                    onChange={handleDisplayPrediction}
+                    style={{ marginRight: '10px' }}
+                  />
+                  Display prediction
+                </label>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
 
       <div className="row">
         <div className="col-10 annotation-frame my-4">{element?.text}</div>
+
+        {
+          //display proba
+          selectionConfig.displayPrediction && (
+            <div className="d-flex mb-2 justify-content-center display-prediction">
+              Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
+            </div>
+          )
+        }
       </div>
       <div className="row">
         <div className="d-flex flex-wrap gap-2 justify-content-center">
@@ -228,8 +208,7 @@ export const ProjectAnnotationPage: FC = () => {
           </div>
         </div>
       </details>
+      <div>{element ? JSON.stringify(element) : 'loading...'}</div>
     </ProjectPageLayout>
   );
 };
-
-//<div>{element ? JSON.stringify(element) : 'loading...'}</div>

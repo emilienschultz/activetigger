@@ -1,5 +1,6 @@
 $primary: #444;
-$secondary: #3d0748;
+$secondary: #000972;
+$tertiary: #8f8d8d;
 
 .project-link {
     display: block;
@@ -142,40 +143,42 @@ $secondary: #3d0748;
 
 .annotation-frame{
   height: 200px;
-  font-family: 'Arial', sans-serif;  /* Utilisez une police claire et lisible */
-  font-size: 16px;  /* Taille de police agréable pour la lecture */
-  line-height: 1.6;  /* Espacement entre les lignes pour une meilleure lisibilité */
-  color: #333;  /* Couleur du texte, assez sombre pour un bon contraste */
-  
-  background-color: #f9f9f9;  /* Fond légèrement gris pour réduire l'éblouissement */
-  border: 1px solid #ddd;  /* Bordure fine et discrète */
-  border-radius: 8px;  /* Coins légèrement arrondis pour adoucir le cadre */
-  padding: 16px;  /* Espacement interne pour que le texte ne soit pas collé aux bords */
-  
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  /* Légère ombre pour créer de la profondeur */
-  max-width: 800px;  /* Limite la largeur pour éviter les lignes trop longues */
-  margin: 20px auto;  /* Centre le cadre horizontalement et ajoute de l'espace autour */
-  
-  white-space: pre-wrap;  /* Préserve les sauts de ligne et les espaces */
+  font-family: 'Arial', sans-serif; 
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f9f9f9;
+  border: 1px solid $primary;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  margin: 20px auto;
+  white-space: pre-wrap;
   overflow-y: auto; 
 }
 
+.display-prediction{
+  color: #737373; 
+
+}
+
 .custom-details {
-  border: 2px solid $primary;
+  border: 0px solid $tertiary;
   border-radius: 8px;
   padding: 10px;
   margin: 20px 0; 
   background-color: #f8f9fa;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .custom-summary {
-  cursor: pointer; /* Pointer cursor on hover */
-  font-weight: bold; /* Bold font */
-  color: $primary; /* Blue text color */
-  margin: 0; /* Remove default margin */
+  cursor: pointer;
+  font-weight: bold;
+  color: $tertiary; 
+  margin: 0;
 }
 
 .custom-summary:hover {
-  color: #0056b3; /* Darker blue on hover */
+  color: $primary;
 }

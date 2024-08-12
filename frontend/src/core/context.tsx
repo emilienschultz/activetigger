@@ -14,7 +14,7 @@ export type AppContextValue = {
 
 export const defaultContext: AppContextValue = {
   notifications: [],
-  selectionConfig: { mode: 'deterministic', sample: 'untagged' },
+  selectionConfig: { mode: 'deterministic', sample: 'untagged', displayPrediction: false },
 };
 
 export type AppContextType = {
