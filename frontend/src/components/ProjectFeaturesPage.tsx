@@ -102,7 +102,17 @@ export const ProjectFeaturesPage: FC = () => {
                           </option>
                         ))}{' '}
                       </select>
-                      <button className="btn btn-primary btn-validation">Create</button>
+
+                      {selectedFeatureToCreate === 'regex' && (
+                        <label htmlFor="regex">
+                          Regex
+                          <input
+                            type="text"
+                            placeholder="Enter the regex"
+                            {...register('parameters.value')}
+                          />
+                        </label>
+                      )}
 
                       {selectedFeatureToCreate === 'dfm' && (
                         <div>
@@ -156,6 +166,7 @@ export const ProjectFeaturesPage: FC = () => {
                           </div>
                         </div>
                       )}
+                      <button className="btn btn-primary btn-validation">Create</button>
                     </div>
                   </form>
                 </div>

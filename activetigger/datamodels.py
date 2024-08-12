@@ -66,6 +66,7 @@ class NextInModel(BaseModel):
     tag: str | None = None
     frame: list[float] | None = None
     history: list = []
+    filter: Optional[str] = None
 
 
 class ElementOutModel(BaseModel):

@@ -54,10 +54,14 @@ export interface FeatureDfmParameters {
   dfm_log: string;
 }
 
+export interface FeatureRegexParameters {
+  value: string;
+}
+
 export interface FeatureModelExtended {
   name: string;
   type: string;
-  parameters: null | FeatureDfmParameters;
+  parameters: null | FeatureDfmParameters | FeatureRegexParameters;
 }
 
 export interface SelectionConfig {
@@ -66,4 +70,5 @@ export interface SelectionConfig {
   label?: string;
   frame?: number[];
   displayPrediction?: boolean;
+  filter?: string;
 }

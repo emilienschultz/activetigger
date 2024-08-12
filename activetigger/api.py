@@ -634,6 +634,7 @@ async def get_next(
         tag=next.tag,
         history=next.history,
         frame=next.frame,
+        filter=next.filter,
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -1079,7 +1080,6 @@ async def post_embeddings(
     - specific process : function + temporary file + update
     """
     test_rights("modify project", current_user.username, project.name)
-
     if feature.name in project.features.training:
         raise HTTPException(
             status_code=400, detail="This feature is already in training"
@@ -1089,16 +1089,17 @@ async def post_embeddings(
 
     # specific case of regex that is not parallelized yet
     if feature.type == "regex":
-        if (not "name" in feature.parameters) or (not "value" in feature.parameters):
+        if not "value" in feature.parameters:
             raise HTTPException(
                 status_code=400, detail="Parameters missing for the regex"
             )
-        r = project.add_regex(feature.parameters["name"], feature.parameters["value"])
+        regex_name = f"regex_[{feature.parameters['value']}]_by_{current_user.username}"
+        regex_value = feature.parameters["value"]
+        r = project.add_regex(regex_name, regex_value)
         if "error" in r:
             raise HTTPException(status_code=400, detail=r["error"])
         server.log_action(
-            current_user.username,
-            f"add regex {feature.parameters['name']}",
+            f"add regex {regex_name}",
             project.name,
         )
         return None

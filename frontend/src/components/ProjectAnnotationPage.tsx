@@ -61,8 +61,10 @@ export const ProjectAnnotationPage: FC = () => {
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
   var availableModes = project?.simplemodel.available[authenticatedUser.username][currentScheme]
-    ? project?.next.methods
-    : project?.next.methods_min;
+    ? project.next.methods
+    : project?.next.methods_min
+      ? project?.next.methods_min
+      : [];
 
   // manage the hide/visible menu for the label
   const [selectedMode, setSelectedMode] = useState('');
@@ -130,7 +132,9 @@ export const ProjectAnnotationPage: FC = () => {
               <summary className="custom-summary">Configure selection mode</summary>
               <label>Selection mode</label>
               <select onChange={handleSelectChangeMode}>
-                {availableModes ? availableModes : [].map((e, i) => <option key={i}>{e}</option>)}
+                {availableModes.map((e, i) => (
+                  <option key={i}>{e}</option>
+                ))}
               </select>
               {selectedMode == 'maxprob' && (
                 <div>
@@ -142,13 +146,25 @@ export const ProjectAnnotationPage: FC = () => {
                   </select>
                 </div>
               )}
-              <br></br>
-              <label>On</label>
-              <select onChange={(e) => (selectionConfig.sample = e.target.value)}>
-                {availableSamples.map((e, i) => (
-                  <option key={i}>{e}</option>
-                ))}{' '}
-              </select>
+              <div>
+                <label>On</label>
+                <select onChange={(e) => (selectionConfig.sample = e.target.value)}>
+                  {availableSamples.map((e, i) => (
+                    <option key={i}>{e}</option>
+                  ))}{' '}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="select_regex">
+                  Filter
+                  <input
+                    type="text"
+                    id="select_regex"
+                    placeholder="Enter a regex"
+                    onChange={(e) => (selectionConfig.filter = e.target.value)}
+                  />
+                </label>
+              </div>
               <div>Current model : {currentModel ? currentModel.model : 'No model trained'}</div>
             </details>
           </div>

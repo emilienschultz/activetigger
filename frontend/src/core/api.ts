@@ -407,6 +407,7 @@ export function useGetNextElementId(projectSlug: string, currentScheme: string) 
           selection: selectionConfig.mode,
           sample: selectionConfig.sample,
           tag: selectionConfig.label,
+          filter: selectionConfig.filter,
           history: [],
         },
       });

@@ -828,6 +828,7 @@ class Project(Server):
         tag: None | str = None,
         history: list = [],
         frame: None | list = None,
+        filter: str | None = None,
     ) -> dict:
         """
         Get next item for a specific scheme with a specific method
@@ -836,6 +837,8 @@ class Project(Server):
         - active
         - maxprob
         - test
+
+        filter is a regex to use on the corpus
         """
 
         # specific case of test, random element
@@ -865,6 +868,11 @@ class Project(Server):
             f = df["labels"].isnull()
         if sample == "tagged":
             f = df["labels"].notnull()
+
+        # add a regex condition to the selection
+        if filter:
+            f_regex = df["text"].str.contains(filter, regex=True, case=True, na=False)
+            f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
         try:
@@ -1235,6 +1243,7 @@ class Features:
                 "norm": None,
                 "log": None,
             },
+            "regex": {"formula": None},
         }
 
     def __repr__(self) -> str:
