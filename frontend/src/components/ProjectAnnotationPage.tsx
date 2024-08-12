@@ -55,7 +55,7 @@ export const ProjectAnnotationPage: FC = () => {
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
   const currentModel = project?.simplemodel.available[authenticatedUser?.username][currentScheme]
     ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-    : { name: 'No simplemodel trained' };
+    : { model: 'No simplemodel trained' };
   const availableSamples = project?.next.sample ? project?.next.sample : [];
   const availableLabels = currentScheme && project ? project?.schemes.available[currentScheme] : [];
   // available methods depend if there is a simple model trained for the user/scheme
@@ -108,8 +108,6 @@ export const ProjectAnnotationPage: FC = () => {
   const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
   useEffect(() => {
     if (!updatedSimpleModel && currentModel && history.length % freqRefreshSimpleModel == 0) {
-      console.log(currentModel);
-      console.log('Update active learning model');
       setUpdatedSimpleModel(true);
       updateSimpleModel(currentModel);
     }
@@ -151,10 +149,7 @@ export const ProjectAnnotationPage: FC = () => {
                   <option key={i}>{e}</option>
                 ))}{' '}
               </select>
-              <div>
-                Current model :{' '}
-                {currentModel ? JSON.stringify(currentModel.name) : 'No model trained'}
-              </div>
+              <div>Current model : {currentModel ? currentModel.model : 'No model trained'}</div>
             </details>
           </div>
           <div className="col-6 ">

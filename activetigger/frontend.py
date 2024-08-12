@@ -778,7 +778,7 @@ def display_simplemodels():
         ][st.session_state.current_scheme]
         statistics = f"F1: {round(current_model['statistics']['weighted_f1'],2)} - accuracy: {round(current_model['statistics']['accuracy'],2)}"
         params = json.dumps(current_model["params"], indent=2)
-        current_model = current_model["name"]
+        current_model = current_model["model"]
 
     # if there is a model under training
     if (
@@ -807,7 +807,7 @@ def display_simplemodels():
         indent=2,
     )
     sm = _get_simplemodel()
-    if sm and sm["name"] == st.session_state.sm_model:
+    if sm and sm["model"] == st.session_state.sm_model:
         params = json.dumps(sm["params"])  # current params
     st.text_area(
         label="Parameters", key="sm_params", value=params, label_visibility="hidden"
@@ -1530,14 +1530,6 @@ def _send_tag(label):
         st.write(r["error"])
     else:
         st.session_state.history.append(st.session_state.current_element["element_id"])
-
-    # TODO # check if simplemodel need to be retrained
-    # if self.is_simplemodel() and (len(self.history) % self.simplemodel_autotrain.value == 0):
-    #     sm = self.state["simplemodel"]["available"][self.user][self.select_scheme.value]
-    #     self.create_simplemodel(self.select_scheme.value,
-    #                 model = sm["name"],
-    #                 parameters = sm["params"],
-    #                 features = sm["features"])
 
 
 def _display_element(element_id):
