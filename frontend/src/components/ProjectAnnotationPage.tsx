@@ -103,6 +103,10 @@ export const ProjectAnnotationPage: FC = () => {
     selectionConfig.displayPrediction = !selectionConfig.displayPrediction;
   };
 
+  const handleDisplayInformations = () => {
+    selectionConfig.displayContext = !selectionConfig.displayContext;
+  };
+
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
 
@@ -182,6 +186,15 @@ export const ProjectAnnotationPage: FC = () => {
                   />
                   Display prediction
                 </label>
+                <label style={{ display: 'block', marginBottom: '10px' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectionConfig.displayInformations}
+                    onChange={handleDisplayInformations}
+                    style={{ marginRight: '10px' }}
+                  />
+                  Display informations
+                </label>
               </div>
             </details>
           </div>
@@ -196,6 +209,14 @@ export const ProjectAnnotationPage: FC = () => {
           selectionConfig.displayPrediction && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
+            </div>
+          )
+        }
+        {
+          //display informations
+          selectionConfig.displayContext && (
+            <div className="d-flex mb-2 justify-content-center display-prediction">
+              Context : {JSON.stringify(element?.context)}
             </div>
           )
         }

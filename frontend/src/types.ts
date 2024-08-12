@@ -70,5 +70,6 @@ export interface SelectionConfig {
   label?: string;
   frame?: number[];
   displayPrediction?: boolean;
+  displayContext?: boolean;
   filter?: string;
 }
