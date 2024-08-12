@@ -123,6 +123,9 @@ export const ProjectAnnotationPage: FC = () => {
   }),
     [history];
 
+  console.log(element?.limit);
+  console.log(element?.text.slice(0, 1200));
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
@@ -189,7 +192,7 @@ export const ProjectAnnotationPage: FC = () => {
                 <label style={{ display: 'block', marginBottom: '10px' }}>
                   <input
                     type="checkbox"
-                    checked={selectionConfig.displayInformations}
+                    checked={selectionConfig.displayContext}
                     onChange={handleDisplayInformations}
                     style={{ marginRight: '10px' }}
                   />
@@ -202,7 +205,10 @@ export const ProjectAnnotationPage: FC = () => {
       </div>
 
       <div className="row">
-        <div className="col-10 annotation-frame my-4">{element?.text}</div>
+        <div className="col-10 annotation-frame my-4">
+          <span>{element?.text.slice(0, element?.limit as number)}</span>
+          <span className="text-out-context">{element?.text.slice(element?.limit as number)}</span>
+        </div>
 
         {
           //display proba
