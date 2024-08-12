@@ -5,6 +5,7 @@ import { HelpPage } from '../components/HelpPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
+import { ProjectExploratePage } from '../components/ProjectExploratePage';
 import { ProjectFeaturesPage } from '../components/ProjectFeaturesPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
@@ -71,6 +72,10 @@ export function getRouter() {
         {
           path: '/projects/:projectName/parameters',
           element: <ProjectParametersPage />,
+        },
+        {
+          path: '/projects/:projectName/explorate',
+          element: <ProjectExploratePage />,
         },
       ],
     },

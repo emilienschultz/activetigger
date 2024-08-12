@@ -4,6 +4,7 @@ import { FaCogs } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
+import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
 
 import { ProjectStateModel } from '../../types';
@@ -51,11 +52,20 @@ export const ProjectActionsSidebar: FC<{
         </li>
         <li className="nav-item">
           <Link
+            to={`/projects/${projectName}/explorate`}
+            className={classNames('nav-link', currentProjectAction === 'explorate' && 'active')}
+            aria-current="page"
+          >
+            <PiTagDuotone /> Explorate
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
             to={`/projects/${projectName}/annotate`}
             className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
             aria-current="page"
           >
-            <PiTagDuotone /> Annotate
+            <TbListSearch /> Annotate
           </Link>
         </li>
         <li className="nav-item">
