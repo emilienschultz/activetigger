@@ -44,8 +44,9 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
           if (response.status !== 200) {
             //TODO : check error body is correct
             const { body, ...resOptions } = response;
-
-            notify({ type: 'error', message: await JSON.stringify(response.json()) });
+            const message = await JSON.stringify(response.json());
+            console.log(message);
+            notify({ type: 'error', message: message });
             return new Response(body, resOptions);
           }
         }

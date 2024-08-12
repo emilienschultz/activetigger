@@ -2,6 +2,7 @@ import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useAddAnnotation, useGetElementById, useGetNextElementId } from '../core/api';
+import { useUpdateSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -15,7 +16,14 @@ export const ProjectAnnotationPage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { notify } = useNotifications();
   const {
-    appContext: { currentScheme, reFetchCurrentProject, currentProject: project, selectionConfig },
+    appContext: {
+      currentScheme,
+      reFetchCurrentProject,
+      currentProject: project,
+      selectionConfig,
+      freqRefreshSimpleModel,
+      history,
+    },
     setAppContext,
   } = useAppContext();
 
@@ -92,6 +100,24 @@ export const ProjectAnnotationPage: FC = () => {
   const handleDisplayPrediction = () => {
     selectionConfig.displayPrediction = !selectionConfig.displayPrediction;
   };
+
+  // hooks to update simplemodel
+  const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
+
+  // use a memory to only update once
+  const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
+  useEffect(() => {
+    if (!updatedSimpleModel && currentModel && history.length % freqRefreshSimpleModel == 0) {
+      console.log(currentModel);
+      console.log('Update active learning model');
+      setUpdatedSimpleModel(true);
+      updateSimpleModel(currentModel);
+    }
+    if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
+      setUpdatedSimpleModel(false);
+    // TODO UPDATE SIMPLEMODEL
+  }),
+    [history];
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
@@ -173,6 +199,7 @@ export const ProjectAnnotationPage: FC = () => {
               onClick={(e) => {
                 if (elementId) {
                   addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
+                  history.push(elementId);
                   // TODO manage erreur
                 }
               }}

@@ -566,7 +566,7 @@ class SimpleModels:
             for s in self.existing[u]:
                 sm = self.existing[u][s]
                 r[u][s] = {
-                    "name": sm.name,
+                    "model": sm.name,
                     "params": sm.model_params,
                     "features": sm.features,
                     "statistics": sm.statistics,

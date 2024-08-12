@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 
 import type { paths } from '../generated/openapi';
 import {
-  AnnotationModel,
   AvailableProjectsModel,
   FeatureDfmParameters,
   LoginParams,

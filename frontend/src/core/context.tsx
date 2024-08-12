@@ -7,14 +7,17 @@ export type AppContextValue = {
   notifications: NotificationType[]; // manage notification
   selectionConfig: SelectionConfig; // selection for the next element
   currentProject?: ProjectStateModel; // current project selected
-  reFetchCurrentProject?: () => void; // update the state of the project
   currentScheme?: string; // scheme selected to annotate
-  freqRefreshSimpleModel?: number;
+  freqRefreshSimpleModel: number; // freq to refresh active learning model
+  history: string[]; // element annotated
+  reFetchCurrentProject?: () => void; // update the state of the project
 };
 
 export const defaultContext: AppContextValue = {
   notifications: [],
   selectionConfig: { mode: 'deterministic', sample: 'untagged', displayPrediction: false },
+  history: [],
+  freqRefreshSimpleModel: 10,
 };
 
 export type AppContextType = {
