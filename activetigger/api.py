@@ -77,7 +77,6 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
 
     user = server.users.get_user(name=username)
     status = user.status
-    # print(username, status, project_name)
 
     # possibility to create project
     if action == "create project":
@@ -396,12 +395,14 @@ async def create_user(
 
 
 @app.post("/users/delete", dependencies=[Depends(verified_user)])
-async def delete_user(user: str) -> None:
+async def delete_user(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)], user_to_delete: str
+) -> None:
     """
     Delete user
     """
-    test_rights("modify user", user)
-    r = server.users.delete_user(user)
+    test_rights("modify user", current_user.username)
+    r = server.users.delete_user(user_to_delete)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None

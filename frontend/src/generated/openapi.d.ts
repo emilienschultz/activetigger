@@ -1490,9 +1490,9 @@ export interface components {
          */
         UsersServerModel: {
             /** Users */
-            users: unknown[];
+            users: string[];
             /** Auth */
-            auth: unknown[];
+            auth: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -1710,7 +1710,7 @@ export interface operations {
     delete_user_users_delete_post: {
         parameters: {
             query: {
-                user: string;
+                user_to_delete: string;
             };
             header?: never;
             path?: never;

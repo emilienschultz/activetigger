@@ -686,7 +686,7 @@ export function useDeleteUser() {
     async (username: string) => {
       const res = await api.POST('/users/delete', {
         params: {
-          query: { user: username },
+          query: { user_to_delete: username },
         },
       });
       if (!res.error) notify({ type: 'success', message: 'User deleted' });
