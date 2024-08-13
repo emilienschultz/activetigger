@@ -107,8 +107,8 @@ class UsersServerModel(BaseModel):
     List of users on the server
     """
 
-    users: list
-    auth: list
+    users: List[str]
+    auth: List[str]
 
 
 class TokenModel(BaseModel):

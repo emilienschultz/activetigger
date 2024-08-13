@@ -9,6 +9,7 @@ import {
   LoginParams,
   ProjectDataModel,
   SelectionConfig,
+  UsersServerModel,
 } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders } from './auth';
@@ -599,4 +600,100 @@ export function useUpdateSimpleModel(projectSlug: string, scheme: string) {
   );
 
   return { updateSimpleModel };
+}
+
+/**
+ * Get users for a project
+ */
+export function useGetProjectUsers(projectSlug: string) {
+  const { notify } = useNotifications();
+  const getProjectUsers = useAsyncMemo(async () => {
+    const res = await api.GET('/auth/project', {
+      params: { query: { project_slug: projectSlug } },
+    });
+    if (!res.error) return res.data.auth;
+  }, [notify, projectSlug]);
+
+  return { authUsers: getAsyncMemoData(getProjectUsers) };
+}
+
+/**
+ * Delete a user auth
+ */
+export function useDeleteUserAuthProject(projectSlug: string) {
+  const { notify } = useNotifications();
+
+  const deleteUserAuth = useCallback(
+    async (username: string) => {
+      const res = await api.POST('/users/auth/{action}', {
+        params: {
+          path: { action: 'delete' },
+          query: { project_slug: projectSlug, username: username },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
+      return true;
+    },
+    [projectSlug, notify],
+  );
+
+  return { deleteUserAuth };
+}
+
+/**
+ * Get all users
+ */
+export function useGetUsers() {
+  const { notify } = useNotifications();
+  const getUsers = useAsyncMemo(async () => {
+    const res = await api.GET('/users', {});
+    if (!res.error) return res.data.users as unknown as string[];
+  }, [notify]);
+
+  return { users: getAsyncMemoData(getUsers) };
+}
+
+/**
+ * Create a user
+ */
+export function useCreateUser() {
+  // TODO :  check the strengh of the password
+  const { notify } = useNotifications();
+
+  const createUser = useCallback(
+    async (username: string, password: string, status: string) => {
+      const res = await api.POST('/users/create', {
+        params: {
+          query: { username_to_create: username, password: password, status: status },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'User created' });
+      return true;
+    },
+    [notify],
+  );
+
+  return { createUser };
+}
+
+/**
+ * Delete a user
+ */
+export function useDeleteUser() {
+  const { notify } = useNotifications();
+
+  const deleteUser = useCallback(
+    async (username: string) => {
+      const res = await api.POST('/users/delete', {
+        params: {
+          query: { user: username },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'User deleted' });
+      return true;
+    },
+    [notify],
+  );
+
+  return { deleteUser };
 }

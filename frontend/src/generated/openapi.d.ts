@@ -307,7 +307,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/project/description": {
+    "/projects/description": {
         parameters: {
             query?: never;
             header?: never;
@@ -318,7 +318,7 @@ export interface paths {
          * Get Description
          * @description Description of a specific element
          */
-        get: operations["get_description_project_description_get"];
+        get: operations["get_description_projects_description_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -327,7 +327,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/project/auth": {
+    "/auth/project": {
         parameters: {
             query?: never;
             header?: never;
@@ -338,7 +338,7 @@ export interface paths {
          * Get Project Auth
          * @description Users auth on a project
          */
-        get: operations["get_project_auth_project_auth_get"];
+        get: operations["get_project_auth_auth_project_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1163,6 +1163,8 @@ export interface components {
              * @default []
              */
             history: unknown[];
+            /** Filter */
+            filter?: string | null;
         };
         /**
          * ProjectAuthsModel
@@ -1707,12 +1709,10 @@ export interface operations {
     };
     delete_user_users_delete_post: {
         parameters: {
-            query?: {
-                project_slug?: string | null;
+            query: {
+                user: string;
             };
-            header: {
-                username: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -1941,7 +1941,7 @@ export interface operations {
             };
         };
     };
-    get_description_project_description_get: {
+    get_description_projects_description_get: {
         parameters: {
             query: {
                 scheme?: string | null;
@@ -1974,7 +1974,7 @@ export interface operations {
             };
         };
     };
-    get_project_auth_project_auth_get: {
+    get_project_auth_auth_project_get: {
         parameters: {
             query: {
                 project_slug: string;

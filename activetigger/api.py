@@ -395,15 +395,13 @@ async def create_user(
     return None
 
 
-@app.post(
-    "/users/delete", dependencies=[Depends(verified_user), Depends(check_auth_manager)]
-)
-async def delete_user(username: str = Query()) -> None:
+@app.post("/users/delete", dependencies=[Depends(verified_user)])
+async def delete_user(user: str) -> None:
     """
     Delete user
     """
-    test_rights("modify user", username)
-    r = server.users.delete_user(username)
+    test_rights("modify user", user)
+    r = server.users.delete_user(user)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
@@ -427,6 +425,9 @@ async def set_auth(
         return None
 
     if action == "delete":
+        # prevent to destroy root auth to access projects
+        if username == "root":
+            raise HTTPException(status_code=403, detail="Forbidden to delete root auth")
         r = server.users.delete_auth(username, project_slug)
         return None
 
@@ -517,7 +518,7 @@ async def get_queue() -> QueueModel:
     return QueueModel(**r)
 
 
-@app.get("/project/description", dependencies=[Depends(verified_user)])
+@app.get("/projects/description", dependencies=[Depends(verified_user)])
 async def get_description(
     project: Annotated[Project, Depends(get_project)],
     scheme: str | None = None,
@@ -533,11 +534,13 @@ async def get_description(
     return ProjectDescriptionModel(**r)
 
 
-@app.get("/project/auth", dependencies=[Depends(verified_user)])
+@app.get("/auth/project", dependencies=[Depends(verified_user)])
 async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
     """
     Users auth on a project
     """
+    if not server.exists(project_slug):
+        raise HTTPException(status_code=404, detail="Project doesn't exist")
     r = server.users.get_project_auth(project_slug)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

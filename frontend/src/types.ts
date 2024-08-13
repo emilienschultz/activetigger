@@ -44,6 +44,8 @@ export type AnnotationModel = components['schemas']['AnnotationModel'];
 
 export type SimpleModelModel = components['schemas']['SimpleModelModel'];
 
+export type UsersServerModel = components['schemas']['UsersServerModel'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

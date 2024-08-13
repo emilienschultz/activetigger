@@ -11,6 +11,7 @@ import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
 import { ProjectParametersPage } from '../components/ProjectParametersPage';
 import { ProjectsPage } from '../components/ProjectsPage';
+import { UsersPage } from '../components/UsersPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 
 export function getRouter() {
@@ -26,6 +27,10 @@ export function getRouter() {
     {
       path: '/help',
       element: <HelpPage />,
+    },
+    {
+      path: '/users',
+      element: <UsersPage />,
     },
     {
       path: '/projects/new',

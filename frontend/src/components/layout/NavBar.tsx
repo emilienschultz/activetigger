@@ -8,6 +8,7 @@ import { useAuth } from '../../core/auth';
 const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'login', label: 'Login', href: '/login' },
   { id: 'projects', label: 'Projects', href: '/projects' },
+  { id: 'users', label: 'Users', href: '/users' },
   { id: 'help', label: 'Help', href: '/help' },
 ];
 
@@ -56,7 +57,6 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
                 </li>
               ))}
             </ul>
-            {/* TODO: add login and logout action items here */}
             {authenticatedUser ? (
               <span className="navbar-text navbar-text-margins">
                 Logged as {authenticatedUser.username} -{' '}

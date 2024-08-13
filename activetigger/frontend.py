@@ -1651,7 +1651,7 @@ def _get_statistics():
         "scheme": st.session_state.current_scheme,
         "user": st.session_state.user,
     }
-    r = _get("/project/description", params=params)
+    r = _get("/projects/description", params=params)
     if (r is not None) and ("error" in r):
         st.write(r["error"])
     # tab = pd.DataFrame([[k,v] for k,v in r["content"].items()], columns=["information","values"]).set_index("information")
@@ -2038,7 +2038,7 @@ def _get_auth(project_slug: str):
     Get auth for a project
     """
     params = {"project_slug": project_slug}
-    r = _get("/project/auth", params=params)
+    r = _get("/auth/project", params=params)
     if (r is not None) and ("error" in r):
         st.write(r["error"])
         return False
