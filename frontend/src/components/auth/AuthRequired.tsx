@@ -47,7 +47,8 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
             const message = await response.json();
             notify({
               type: 'error',
-              message: 'detail' in message ? message.detail : JSON.stringify(message),
+              message:
+                'detail' in message ? JSON.stringify(message.detail) : JSON.stringify(message),
             });
             return new Response(body, resOptions);
           }

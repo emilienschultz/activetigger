@@ -53,14 +53,14 @@ export const ProjectAnnotationPage: FC = () => {
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
-  const currentModel = project?.simplemodel.available[authenticatedUser?.username][currentScheme]
+  const currentModel = project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
     ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
     : { model: 'No simplemodel trained' };
   const availableSamples = project?.next.sample ? project?.next.sample : [];
   const availableLabels = currentScheme && project ? project?.schemes.available[currentScheme] : [];
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
-  var availableModes = project?.simplemodel.available[authenticatedUser.username][currentScheme]
+  var availableModes = project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
     ? project.next.methods
     : project?.next.methods_min
       ? project?.next.methods_min
@@ -112,6 +112,7 @@ export const ProjectAnnotationPage: FC = () => {
 
   // use a memory to only update once
   const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
+
   useEffect(() => {
     if (!updatedSimpleModel && currentModel && history.length % freqRefreshSimpleModel == 0) {
       setUpdatedSimpleModel(true);
@@ -122,9 +123,6 @@ export const ProjectAnnotationPage: FC = () => {
     // TODO UPDATE SIMPLEMODEL
   }),
     [history];
-
-  console.log(element?.limit);
-  console.log(element?.text.slice(0, 1200));
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
