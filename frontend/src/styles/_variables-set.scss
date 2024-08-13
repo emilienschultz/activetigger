@@ -190,3 +190,31 @@ $tertiary: #8f8d8d;
 .text-out-context{
   color:#909090;
 }
+
+.table-auth {
+  width: 100%; 
+  margin-top: 30px; 
+  border-collapse: collapse; 
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.table-auth th,
+.table-auth td {
+  text-align: left;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1); 
+  flex: 1;
+}
+
+.table-auth th {
+  background-color: rgba(0, 0, 0, 0.1); 
+}
+
+.table-auth td:last-child ,
+  .table-auth th:last-child {
+
+  background-color: #f0f0f0;
+  text-align: center;
+}
+
