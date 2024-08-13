@@ -411,6 +411,7 @@ async def delete_user(
 @app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
 async def set_auth(
     action: AuthActions,
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     username: str = Query(),
     project_slug: str = Query(),
     status: str = Query(None),
@@ -418,7 +419,7 @@ async def set_auth(
     """
     Set user auth
     """
-    test_rights("modify project", username, project_slug)
+    test_rights("modify project", current_user.username, project_slug)
     if action == "add":
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")

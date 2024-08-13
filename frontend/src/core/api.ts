@@ -603,7 +603,9 @@ export function useUpdateSimpleModel(projectSlug: string, scheme: string) {
 /**
  * Get users for a project
  */
-export function useGetProjectUsers(projectSlug: string | null) {
+export function useUsersAuth(projectSlug: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
   const { notify } = useNotifications();
   const getProjectUsers = useAsyncMemo(async () => {
     if (projectSlug) {
@@ -612,15 +614,17 @@ export function useGetProjectUsers(projectSlug: string | null) {
       });
       if (!res.error) return res.data.auth;
     }
-  }, [notify, projectSlug]);
+  }, [notify, projectSlug, fetchTrigger]);
 
-  return { authUsers: getAsyncMemoData(getProjectUsers) };
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { authUsers: getAsyncMemoData(getProjectUsers), reFetchUsersAuth: reFetch };
 }
 
 /**
  * Delete a user auth
  */
-export function useDeleteUserAuthProject(projectSlug: string | null) {
+export function useDeleteUserAuthProject(projectSlug: string | null, reFetchUsersAuth: () => void) {
   const { notify } = useNotifications();
   const deleteUserAuth = useCallback(
     async (username: string | null) => {
@@ -632,6 +636,7 @@ export function useDeleteUserAuthProject(projectSlug: string | null) {
           },
         });
         if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
+        reFetchUsersAuth();
         return true;
       }
     },
@@ -660,7 +665,7 @@ export function useUsers() {
 /**
  * Create a user
  */
-export function useCreateUser() {
+export function useCreateUser(reFetchUsers: () => void) {
   // TODO :  check the strengh of the password
   const { notify } = useNotifications();
 
@@ -672,9 +677,10 @@ export function useCreateUser() {
         },
       });
       if (!res.error) notify({ type: 'success', message: 'User created' });
+      reFetchUsers();
       return true;
     },
-    [notify],
+    [notify, reFetchUsers],
   );
 
   return { createUser };
@@ -683,7 +689,7 @@ export function useCreateUser() {
 /**
  * Delete a user
  */
-export function useDeleteUser() {
+export function useDeleteUser(reFetchUsers: () => void) {
   const { notify } = useNotifications();
 
   const deleteUser = useCallback(
@@ -695,11 +701,37 @@ export function useDeleteUser() {
           },
         });
         if (!res.error) notify({ type: 'success', message: 'User deleted' });
+        reFetchUsers();
         return true;
       }
     },
-    [notify],
+    [notify, reFetchUsers],
   );
 
   return { deleteUser };
+}
+
+/**
+ * Create user auth
+ */
+export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAuth: () => void) {
+  const { notify } = useNotifications();
+  const addUserAuth = useCallback(
+    async (username: string, auth: string) => {
+      if (projectSlug && username) {
+        const res = await api.POST('/users/auth/{action}', {
+          params: {
+            path: { action: 'add' },
+            query: { project_slug: projectSlug, username: username, status: auth },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
+        reFetchUsersAuth();
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { addUserAuth };
 }

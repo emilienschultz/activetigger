@@ -3,12 +3,13 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
 import {
+  useAddUserAuthProject,
   useCreateUser,
   useDeleteUser,
   useDeleteUserAuthProject,
-  useGetProjectUsers,
   useUserProjects,
   useUsers,
+  useUsersAuth,
 } from '../core/api';
 import { PageLayout } from './layout/PageLayout';
 
@@ -23,19 +24,21 @@ export const UsersPage: FC = () => {
   const [currentProjectSlug, setCurrentProjectSlug] = useState<string | null>(null);
 
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentAuth, setCurrentAuth] = useState<string | null>(null);
 
-  const { authUsers } = useGetProjectUsers(currentProjectSlug);
-  const { deleteUserAuth } = useDeleteUserAuthProject(currentProjectSlug);
+  const { authUsers, reFetchUsersAuth } = useUsersAuth(currentProjectSlug);
   const { users, reFetchUsers } = useUsers();
-  const { deleteUser } = useDeleteUser();
-  const { createUser } = useCreateUser();
 
-  const { handleSubmit, register } = useForm<newUser>();
+  const { deleteUser } = useDeleteUser(reFetchUsers);
+  const { createUser } = useCreateUser(reFetchUsers);
+
+  const { deleteUserAuth } = useDeleteUserAuthProject(currentProjectSlug, reFetchUsersAuth);
+  const { addUserAuth } = useAddUserAuthProject(currentProjectSlug, reFetchUsersAuth);
+
+  const { handleSubmit, register, reset } = useForm<newUser>();
   const onSubmit: SubmitHandler<newUser> = async (data) => {
     await createUser(data.username, data.password, data.status);
-    // refetch
-    reFetchUsers();
-    console.log(data);
+    reset();
   };
 
   return (
@@ -44,34 +47,11 @@ export const UsersPage: FC = () => {
         <div className="row">
           <div className="col-6">
             <h2 className="subsection">Manage users and auth</h2>
+            <span className="explanations">
+              Create or delete users and authorization to projects
+            </span>
             <div className="row">
-              <h4 className="subsection">Create user</h4>
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="d-flex align-items-center">
-                  <input
-                    className="form-control me-2 mt-2"
-                    type="text"
-                    {...register('username')}
-                    placeholder="New user name"
-                  />
-                  <input
-                    className="form-control me-2 mt-2"
-                    type="text"
-                    {...register('password')}
-                    placeholder="Password"
-                  />
-                </div>
-                <div className="col-3">
-                  <select {...register('status')} className="me-2 mt-2">
-                    <option>manager</option>
-                    <option>annotator</option>
-                  </select>
-                  <button className="btn btn-primary me-2 mt-2">Create user</button>
-                </div>
-              </form>
-            </div>
-            <div className="row">
-              <h4 className="subsection">Delete user</h4>
+              <h4 className="subsection">Users</h4>
             </div>
             <div className="row">
               <div className="col-4 d-flex align-items-center">
@@ -82,12 +62,15 @@ export const UsersPage: FC = () => {
                     setCurrentUser(e.target.value);
                   }}
                 >
+                  <option></option>
+
                   {users && users.map((e) => <option key={e}>{e}</option>)}
                 </select>
                 <button
                   className="btn btn p-0"
                   onClick={() => {
                     deleteUser(currentUser);
+                    reFetchUsers();
                   }}
                 >
                   <MdOutlineDeleteOutline size={30} />
@@ -95,11 +78,40 @@ export const UsersPage: FC = () => {
               </div>
             </div>
             <div className="row">
-              <h4 className="subsection">Manage project rights</h4>
+              <details>
+                <summary>Create user</summary>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <div className="d-flex align-items-center">
+                    <input
+                      className="form-control me-2 mt-2"
+                      type="text"
+                      {...register('username')}
+                      placeholder="New user name"
+                    />
+                    <input
+                      className="form-control me-2 mt-2"
+                      type="text"
+                      {...register('password')}
+                      placeholder="Password"
+                    />
+                  </div>
+                  <div className="col-3">
+                    <select {...register('status')} className="me-2 mt-2">
+                      <option>manager</option>
+                      <option>annotator</option>
+                    </select>
+                    <button className="btn btn-primary me-2 mt-2">Create user</button>
+                  </div>
+                </form>
+              </details>
             </div>
             <div className="row">
-              <div className="col-4">
-                <label htmlFor="projectSlug">Available projects</label>
+              <h4 className="subsection">Rights</h4>
+            </div>
+            <div className="row">
+              <div className="col-8">
+                <span className="explanations">Select the project to see authorizations</span>
+
                 <br></br>
                 {
                   <select
@@ -142,9 +154,43 @@ export const UsersPage: FC = () => {
                       ))}
                     </table>
                   ) : (
-                    <span>Choose a project</span>
+                    <span></span>
                   )}
                 </div>
+              </div>
+            </div>
+            <div className="row">
+              <div className="col-8">
+                <details>
+                  <summary>Add authorization</summary>
+                  <div className="d-flex align-items-center">
+                    <div className="row">
+                      <select
+                        id="select-auth"
+                        className="form-select"
+                        onChange={(e) => {
+                          setCurrentAuth(e.target.value);
+                        }}
+                      >
+                        <option>manager</option>
+                        <option>annotator</option>
+                      </select>
+                      <button
+                        onClick={() => {
+                          console.log(currentUser);
+                          console.log(currentAuth);
+                          if (currentUser && currentAuth) {
+                            addUserAuth(currentUser, currentAuth);
+                          }
+                          reFetchUsers();
+                        }}
+                        className="btn btn-primary me-2 mt-2"
+                      >
+                        Add rights
+                      </button>
+                    </div>
+                  </div>
+                </details>
               </div>
             </div>
           </div>
