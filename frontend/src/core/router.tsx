@@ -30,7 +30,11 @@ export function getRouter() {
     },
     {
       path: '/users',
-      element: <UsersPage />,
+      element: (
+        <AuthRequired>
+          <UsersPage />
+        </AuthRequired>
+      ),
     },
     {
       path: '/projects/new',
