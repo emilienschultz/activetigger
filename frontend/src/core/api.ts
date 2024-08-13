@@ -9,7 +9,6 @@ import {
   LoginParams,
   ProjectDataModel,
   SelectionConfig,
-  UsersServerModel,
 } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders } from './auth';
@@ -605,13 +604,15 @@ export function useUpdateSimpleModel(projectSlug: string, scheme: string) {
 /**
  * Get users for a project
  */
-export function useGetProjectUsers(projectSlug: string) {
+export function useGetProjectUsers(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getProjectUsers = useAsyncMemo(async () => {
-    const res = await api.GET('/auth/project', {
-      params: { query: { project_slug: projectSlug } },
-    });
-    if (!res.error) return res.data.auth;
+    if (projectSlug) {
+      const res = await api.GET('/auth/project', {
+        params: { query: { project_slug: projectSlug } },
+      });
+      if (!res.error) return res.data.auth;
+    }
   }, [notify, projectSlug]);
 
   return { authUsers: getAsyncMemoData(getProjectUsers) };
@@ -620,19 +621,20 @@ export function useGetProjectUsers(projectSlug: string) {
 /**
  * Delete a user auth
  */
-export function useDeleteUserAuthProject(projectSlug: string) {
+export function useDeleteUserAuthProject(projectSlug: string | null) {
   const { notify } = useNotifications();
-
   const deleteUserAuth = useCallback(
-    async (username: string) => {
-      const res = await api.POST('/users/auth/{action}', {
-        params: {
-          path: { action: 'delete' },
-          query: { project_slug: projectSlug, username: username },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
-      return true;
+    async (username: string | null) => {
+      if (projectSlug && username) {
+        const res = await api.POST('/users/auth/{action}', {
+          params: {
+            path: { action: 'delete' },
+            query: { project_slug: projectSlug, username: username },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
+        return true;
+      }
     },
     [projectSlug, notify],
   );
@@ -643,14 +645,17 @@ export function useDeleteUserAuthProject(projectSlug: string) {
 /**
  * Get all users
  */
-export function useGetUsers() {
-  const { notify } = useNotifications();
-  const getUsers = useAsyncMemo(async () => {
+export function useUsers() {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const users = useAsyncMemo(async () => {
     const res = await api.GET('/users', {});
     if (!res.error) return res.data.users as unknown as string[];
-  }, [notify]);
+  }, [fetchTrigger]);
 
-  return { users: getAsyncMemoData(getUsers) };
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { users: getAsyncMemoData(users), reFetchUsers: reFetch };
 }
 
 /**
@@ -683,14 +688,16 @@ export function useDeleteUser() {
   const { notify } = useNotifications();
 
   const deleteUser = useCallback(
-    async (username: string) => {
-      const res = await api.POST('/users/delete', {
-        params: {
-          query: { user_to_delete: username },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'User deleted' });
-      return true;
+    async (username: string | null) => {
+      if (username) {
+        const res = await api.POST('/users/delete', {
+          params: {
+            query: { user_to_delete: username },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'User deleted' });
+        return true;
+      }
     },
     [notify],
   );

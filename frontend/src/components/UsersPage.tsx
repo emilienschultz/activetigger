@@ -7,8 +7,8 @@ import {
   useDeleteUser,
   useDeleteUserAuthProject,
   useGetProjectUsers,
-  useGetUsers,
   useUserProjects,
+  useUsers,
 } from '../core/api';
 import { PageLayout } from './layout/PageLayout';
 
@@ -20,18 +20,21 @@ interface newUser {
 
 export const UsersPage: FC = () => {
   const projects = useUserProjects();
-  const [currentProjectSlug, setCurrentProjectSlug] = useState('');
-  const [refreshComponent, setRefreshComponent] = useState(false);
-  const [currentUser, setCurrentUser] = useState('');
+  const [currentProjectSlug, setCurrentProjectSlug] = useState<string | null>(null);
+
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
   const { authUsers } = useGetProjectUsers(currentProjectSlug);
   const { deleteUserAuth } = useDeleteUserAuthProject(currentProjectSlug);
-  const { users } = useGetUsers();
+  const { users, reFetchUsers } = useUsers();
   const { deleteUser } = useDeleteUser();
   const { createUser } = useCreateUser();
 
   const { handleSubmit, register } = useForm<newUser>();
   const onSubmit: SubmitHandler<newUser> = async (data) => {
-    createUser(data.username, data.password, data.status);
+    await createUser(data.username, data.password, data.status);
+    // refetch
+    reFetchUsers();
     console.log(data);
   };
 
