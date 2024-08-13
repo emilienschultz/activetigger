@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { useAuth } from '../core/auth';
@@ -8,19 +8,6 @@ import { PageLayout } from './layout/PageLayout';
 export const LoginPage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { state } = useLocation();
-
-  const handleKeyboardEvents = (ev: KeyboardEvent) => {
-    if (ev.code === 'Numpad1') {
-      // apply tag #1
-    }
-
-    console.log(ev.code);
-  };
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyboardEvents);
-
-    return () => document.removeEventListener('keydown', handleKeyboardEvents);
-  }, []);
 
   return (
     <PageLayout currentPage="login">

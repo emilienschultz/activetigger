@@ -124,6 +124,27 @@ export const ProjectAnnotationPage: FC = () => {
   }),
     [history];
 
+  // manage keyboard shortcut if less than 10 label
+  if (availableLabels.length < 10) {
+    const handleKeyboardEvents = (ev: KeyboardEvent) => {
+      availableLabels.forEach((label, i) => {
+        if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
+          if (elementId) {
+            console.log(label);
+            addAnnotation(elementId, label).then(navigateToNextElement);
+            history.push(elementId);
+          }
+        }
+      });
+    };
+
+    useEffect(() => {
+      document.addEventListener('keydown', handleKeyboardEvents);
+
+      return () => document.removeEventListener('keydown', handleKeyboardEvents);
+    }, [availableLabels]);
+  }
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
       <div className="container-fluid">
