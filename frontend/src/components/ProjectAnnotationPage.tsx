@@ -1,8 +1,12 @@
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useAddAnnotation, useGetElementById, useGetNextElementId } from '../core/api';
-import { useUpdateSimpleModel } from '../core/api';
+import {
+  useAddAnnotation,
+  useGetElementById,
+  useGetNextElementId,
+  useUpdateSimpleModel,
+} from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -57,7 +61,9 @@ export const ProjectAnnotationPage: FC = () => {
     ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
     : { model: 'No simplemodel trained' };
   const availableSamples = project?.next.sample ? project?.next.sample : [];
-  const availableLabels = currentScheme && project ? project?.schemes.available[currentScheme] : [];
+  const availableLabels =
+    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
   var availableModes = project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
