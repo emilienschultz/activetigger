@@ -4,6 +4,7 @@ import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import {
+  useComputeModelPrediction,
   useDeleteBertModel,
   useModelInformations,
   useRenameBertModel,
@@ -43,13 +44,16 @@ export const ProjectTrainPage: FC = () => {
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug, currentModel);
+  const model_scores = model?.train_scores;
 
   // available models
   const availableModels = project?.bertmodels.available[currentScheme]
     ? Object.keys(project?.bertmodels.available[currentScheme])
     : [];
-
   const { deleteBertModel } = useDeleteBertModel(projectSlug);
+
+  // compute model preduction
+  const { computeModelPrediction } = useComputeModelPrediction(projectSlug);
 
   // form to rename
   const { renameBertModel } = useRenameBertModel(projectSlug);
@@ -145,22 +149,40 @@ export const ProjectTrainPage: FC = () => {
                   {' '}
                   <summary className="custom-summary">Description of the model</summary>
                   {model && (
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th scope="col">Key</th>
-                          <th scope="col">Value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(model.training['parameters']).map(([key, value]) => (
-                          <tr key={key}>
-                            <td>{key}</td>
-                            <td>{JSON.stringify(value)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div>
+                      {!model_scores && (
+                        <button
+                          className="btn btn-primary me-2 mt-2"
+                          onClick={() => computeModelPrediction(currentModel)}
+                        >
+                          Compute prediction
+                        </button>
+                      )}
+                      <details>
+                        <summary>Parameters of the model</summary>
+                        <table className="table">
+                          <thead>
+                            <tr>
+                              <th scope="col">Key</th>
+                              <th scope="col">Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.entries(model.training['parameters']).map(([key, value]) => (
+                              <tr key={key}>
+                                <td>{key}</td>
+                                <td>{JSON.stringify(value)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </details>
+                      <details>
+                        <summary>Scores</summary>
+                        <div>{JSON.stringify(model.training['loss'])}</div>
+                        <div>{JSON.stringify(model.train_scores)}</div>
+                      </details>
+                    </div>
                   )}
                 </details>
               </div>

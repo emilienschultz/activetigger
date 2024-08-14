@@ -825,3 +825,30 @@ export function useModelInformations(project_slug: string, model_name: string | 
 
   return { model: getAsyncMemoData(modelInformations), reFetchModelInformation: reFetch };
 }
+
+/**
+ * Compute model prediction
+ */
+export function useComputeModelPrediction(projectSlug: string) {
+  const { notify } = useNotifications();
+  const computeModelPrediction = useCallback(
+    async (model_name: string) => {
+      if (projectSlug) {
+        const res = await api.POST('/models/bert/predict', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              model_name: model_name,
+            },
+          },
+        });
+        if (!res.error)
+          notify({ type: 'warning', message: 'Computing prediction. It can take some time.' });
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { computeModelPrediction };
+}
