@@ -3,6 +3,7 @@ import { FC } from 'react';
 import { FaCogs } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { MdOutlineTransform } from 'react-icons/md';
+import { MdModelTraining } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
@@ -67,6 +68,15 @@ export const ProjectActionsSidebar: FC<{
             aria-current="page"
           >
             <PiTagDuotone /> Annotate
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
+            to={`/projects/${projectName}/train`}
+            className={classNames('nav-link', currentProjectAction === 'train' && 'active')}
+            aria-current="page"
+          >
+            <MdModelTraining /> Train model
           </Link>
         </li>
         <li className="nav-item">

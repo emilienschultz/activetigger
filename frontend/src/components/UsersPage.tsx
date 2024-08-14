@@ -156,6 +156,7 @@ export const UsersPage: FC = () => {
                   setCurrentAuth(e.target.value);
                 }}
               >
+                <option></option>
                 <option>manager</option>
                 <option>annotator</option>
               </select>
