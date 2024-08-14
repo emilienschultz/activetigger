@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, createContext, useContext, useState } from 'react';
+import { FC, PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
 
 import { NotificationType, ProjectStateModel, SelectionConfig } from '../types';
 
@@ -13,12 +13,18 @@ export type AppContextValue = {
   reFetchCurrentProject?: () => void; // update the state of the project
 };
 
-export const defaultContext: AppContextValue = {
-  notifications: [],
-  selectionConfig: { mode: 'deterministic', sample: 'untagged', displayPrediction: false },
-  history: [],
-  freqRefreshSimpleModel: 10,
-};
+const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
+
+const storedContext = localStorage.getItem(CONTEXT_LOCAL_STORAGE_KEY);
+
+export const defaultContext: AppContextValue = storedContext
+  ? JSON.parse(storedContext)
+  : {
+      notifications: [],
+      selectionConfig: { mode: 'deterministic', sample: 'untagged', displayPrediction: false },
+      history: [],
+      freqRefreshSimpleModel: 10,
+    };
 
 export type AppContextType = {
   appContext: AppContextValue;
@@ -29,6 +35,12 @@ export const AppContext = createContext<AppContextType>(null as unknown as AppCo
 
 const _useAppContext = () => {
   const [appContext, setAppContext] = useState<AppContextValue>(defaultContext);
+
+  //store context in localstorage
+  useEffect(() => {
+    localStorage.setItem(CONTEXT_LOCAL_STORAGE_KEY, JSON.stringify(appContext));
+  }, [appContext]);
+
   return {
     appContext,
     setAppContext,
