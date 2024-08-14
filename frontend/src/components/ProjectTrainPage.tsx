@@ -3,10 +3,11 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { useDeleteBertModel, useRenameBertModel, useTrainBertModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
-import { BertModelParametersModel, newBertModel } from '../types';
+import { newBertModel } from '../types';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -18,7 +19,7 @@ interface renameModel {
 }
 
 export const ProjectTrainPage: FC = () => {
-  const { projectName, elementId } = useParams();
+  const { projectName: projectSlug } = useParams();
   const { authenticatedUser } = useAuth();
   const navigate = useNavigate();
 
@@ -28,16 +29,24 @@ export const ProjectTrainPage: FC = () => {
     setAppContext,
   } = useAppContext();
 
-  if (!projectName) return null;
+  if (!projectSlug) return null;
   if (!currentScheme) {
     notify({ type: 'warning', message: 'You need to select first a scheme' });
-    navigate(`/projects/${projectName}`);
+    navigate(`/projects/${projectSlug}`);
     return null;
   }
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
 
+  // available models
+  const availableModels = project?.bertmodels.available[currentScheme]
+    ? Object.keys(project?.bertmodels.available[currentScheme])
+    : [];
+
+  const { deleteBertModel } = useDeleteBertModel(projectSlug);
+
   // form to rename
+  const { renameBertModel } = useRenameBertModel(projectSlug);
   const {
     handleSubmit: handleSubmitRename,
     register: registerRename,
@@ -45,10 +54,14 @@ export const ProjectTrainPage: FC = () => {
   } = useForm<renameModel>();
 
   const onSubmitRename: SubmitHandler<renameModel> = async (data) => {
-    console.log(data);
+    if (currentModel) {
+      await renameBertModel(currentModel, data.new_name);
+      resetRename();
+    } else notify({ type: 'error', message: 'New name is void' });
   };
 
   // form to train a model
+  const { trainBertModel } = useTrainBertModel(projectSlug, currentScheme);
   const {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
@@ -69,11 +82,13 @@ export const ProjectTrainPage: FC = () => {
     },
   });
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
+    await trainBertModel(data);
+    resetNewModel();
     console.log(data);
   };
 
   return (
-    <ProjectPageLayout projectName={projectName} currentAction="train">
+    <ProjectPageLayout projectName={projectSlug} currentAction="train">
       <div className="container-fluid">
         <div className="row">
           <div className="col-2"></div>
@@ -89,19 +104,16 @@ export const ProjectTrainPage: FC = () => {
                 onChange={(e) => setCurrentModel(e.target.value)}
               >
                 <option></option>
-                {(project?.bertmodels.available
-                  ? Object.keys(project?.bertmodels.available)
-                  : []
-                ).map((e) => (
+                {availableModels.map((e) => (
                   <option key={e}>{e}</option>
                 ))}
               </select>
               <button
                 className="btn btn p-0"
                 onClick={() => {
-                  //deleteModel(currentModel);
-                  //reFetchUsers();
-                  console.log('delete model');
+                  if (currentModel) {
+                    deleteBertModel(currentModel);
+                  }
                 }}
               >
                 <MdOutlineDeleteOutline size={30} />
@@ -142,7 +154,10 @@ export const ProjectTrainPage: FC = () => {
                   ))}
                 </select>
               </div>
-
+              <div>
+                <label>Name to identify the model</label>
+                <input type="text" {...registerNewModel('name')} placeholder="Name the model" />
+              </div>
               <div>
                 <label>Batch Size:</label>
                 <input type="number" {...registerNewModel('parameters.batchsize')} />

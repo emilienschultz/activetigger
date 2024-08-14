@@ -23,7 +23,7 @@ export const CurrentProjectMonitoring: FC = () => {
     //expose refetch method into context
     setAppContext((prev) => ({ ...prev, reFetchCurrentProject: reFetch }));
     // execute a fetch call to update project data every 2000ms
-    const intervalId = setInterval(reFetch, 2000);
+    const intervalId = setInterval(reFetch, 3000);
     // useEffect can return a method which is executed when the component is unmounted
     return () => {
       clearInterval(intervalId);

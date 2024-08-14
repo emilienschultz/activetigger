@@ -79,6 +79,7 @@ export interface SelectionConfig {
 }
 
 export interface newBertModel {
+  name?: string;
   base: string;
   parameters: BertModelParametersModel;
 }

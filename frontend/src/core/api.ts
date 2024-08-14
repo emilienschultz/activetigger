@@ -744,8 +744,7 @@ export function useTrainBertModel(projectSlug: string, scheme: string) {
   const { notify } = useNotifications();
   const trainBertModel = useCallback(
     async (dataForm: newBertModel) => {
-      if (projectSlug && dataForm) {
-        const name = 'temporary';
+      if (projectSlug && scheme && dataForm) {
         const res = await api.POST('/models/bert/train', {
           params: {
             query: { project_slug: projectSlug },
@@ -754,12 +753,12 @@ export function useTrainBertModel(projectSlug: string, scheme: string) {
             project_slug: projectSlug,
             scheme: scheme,
             base_model: dataForm.base,
-            name: name,
+            name: dataForm.name || '',
             test_size: 0.2,
             params: dataForm.parameters,
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Starting bertmodel training' });
+        if (!res.error) notify({ type: 'warning', message: 'Starting bertmodel training' });
         return true;
       }
     },
@@ -767,4 +766,57 @@ export function useTrainBertModel(projectSlug: string, scheme: string) {
   );
 
   return { trainBertModel };
+}
+
+/**
+ * Rename bert model
+ */
+export function useRenameBertModel(projectSlug: string) {
+  const { notify } = useNotifications();
+  const renameBertModel = useCallback(
+    async (former_model_name: string, new_model_name: string) => {
+      if (projectSlug) {
+        const res = await api.POST('/models/bert/rename', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              former_name: former_model_name,
+              new_name: new_model_name,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Model renamed' });
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { renameBertModel };
+}
+
+/**
+ * Delete bert model
+ */
+export function useDeleteBertModel(projectSlug: string) {
+  const { notify } = useNotifications();
+  const deleteBertModel = useCallback(
+    async (model_name: string) => {
+      if (projectSlug) {
+        const res = await api.POST('/models/bert/delete', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              bert_name: model_name,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Model deleted' });
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { deleteBertModel };
 }

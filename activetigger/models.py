@@ -306,8 +306,12 @@ class BertModels:
         except ValidationError as e:
             return {"error": e.json()}
 
-        # name integrating the scheme
-        name = f"{name}__{scheme}"
+        # name integrating the scheme & user + date
+        current_date = datetime.now()
+        day = current_date.strftime("%d")
+        month = current_date.strftime("%m")
+        year = current_date.strftime("%Y")
+        name = f"{name}__{user}__{day}-{month}-{year}__{scheme}"
 
         # launch as a independant process
         args = {
