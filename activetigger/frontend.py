@@ -1845,7 +1845,7 @@ def _start_bertmodel():
     data = {
         "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
-        "user": st.session_state.user,
+        # "user": st.session_state.user,
         "name": f"_{st.session_state.user}",  # générique
         "base_model": model_name,
         "params": bert_params,

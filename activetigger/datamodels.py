@@ -175,7 +175,7 @@ class BertModelParametersModel(BaseModel):
 
     batchsize: int = 4
     gradacc: float = 1
-    epochs: int = (3,)
+    epochs: int = 3
     lrate: float = 5e-05
     wdecay: float = 0.01
     best: bool = True
@@ -191,7 +191,7 @@ class BertModelModel(BaseModel):
     """
 
     project_slug: str
-    user: str
+    # user: str
     scheme: str
     name: str
     base_model: str

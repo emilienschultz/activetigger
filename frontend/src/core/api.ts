@@ -9,6 +9,7 @@ import {
   LoginParams,
   ProjectDataModel,
   SelectionConfig,
+  newBertModel,
 } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders } from './auth';
@@ -734,4 +735,38 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
   );
 
   return { addUserAuth };
+}
+
+/**
+ * Train a new bert project
+ */
+export function useTrainBertModel(
+  projectSlug: string,
+  scheme: string,
+) {
+  const { notify } = useNotifications();
+  const trainBertModel = useCallback(
+    async (dataForm: newBertModel) => {
+      if (projectSlug && dataForm) {
+        const name = "temporary"
+        const res = await api.POST('/models/bert/train', {
+          params: {
+            query: { project_slug: projectSlug },
+          },
+          body: {
+            scheme: scheme,
+            base_model: dataForm.base,
+            name:name, 
+            test_size:0.2,
+            params:{dataForm.parameters.batchsize}
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Starting bertmodel training' });
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { trainBertModel };
 }

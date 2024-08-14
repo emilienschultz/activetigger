@@ -77,3 +77,8 @@ export interface SelectionConfig {
   displayContext?: boolean;
   filter?: string;
 }
+
+export interface newBertModel {
+  base: string;
+  parameters: BertModelParametersModel;
+}
