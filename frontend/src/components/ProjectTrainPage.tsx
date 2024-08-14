@@ -3,7 +3,12 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useDeleteBertModel, useRenameBertModel, useTrainBertModel } from '../core/api';
+import {
+  useDeleteBertModel,
+  useModelInformations,
+  useRenameBertModel,
+  useTrainBertModel,
+} from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -37,6 +42,7 @@ export const ProjectTrainPage: FC = () => {
   }
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
+  const { model } = useModelInformations(projectSlug, currentModel);
 
   // available models
   const availableModels = project?.bertmodels.available[currentScheme]
@@ -138,6 +144,24 @@ export const ProjectTrainPage: FC = () => {
                 <details className="custom-details">
                   {' '}
                   <summary className="custom-summary">Description of the model</summary>
+                  {model && (
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Key</th>
+                          <th scope="col">Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(model.training['parameters']).map(([key, value]) => (
+                          <tr key={key}>
+                            <td>{key}</td>
+                            <td>{JSON.stringify(value)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </details>
               </div>
             )}

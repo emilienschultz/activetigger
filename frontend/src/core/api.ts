@@ -426,22 +426,7 @@ export function useGetNextElementId(projectSlug: string, currentScheme: string) 
  * @param currentScheme
  * @param elementId
  * @returns
- 
-export function useGetElementById(projectSlug: string, currentScheme: string, elementId: string) {
-  const { notify } = useNotifications();
-  const nextElement = useAsyncMemo(async () => {
-    const res = await api.GET('/elements/{element_id}', {
-      params: {
-        path: { element_id: elementId },
-        query: { project_slug: projectSlug, scheme: currentScheme },
-      },
-    });
-    return res.data;
-  }, [projectSlug, currentScheme, notify]);
-
-  return { nextElement: getAsyncMemoData(nextElement) };
-}
-*/
+ */
 export function useGetElementById(projectSlug: string, currentScheme: string) {
   const { notify } = useNotifications();
   const getElementById = useCallback(
@@ -819,4 +804,24 @@ export function useDeleteBertModel(projectSlug: string) {
   );
 
   return { deleteBertModel };
+}
+
+/**
+ * Get model informations
+ */
+export function useModelInformations(project_slug: string, model_name: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const modelInformations = useAsyncMemo(async () => {
+    if (model_name && project_slug) {
+      const res = await api.GET('/models/bert', {
+        params: { query: { project_slug: project_slug, name: model_name } },
+      });
+      if (!res.error) return res.data;
+    }
+  }, [fetchTrigger, model_name]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { model: getAsyncMemoData(modelInformations), reFetchModelInformation: reFetch };
 }
