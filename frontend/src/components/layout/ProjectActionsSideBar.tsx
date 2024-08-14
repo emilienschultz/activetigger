@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCogs } from 'react-icons/fa';
+import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { MdOutlineTransform } from 'react-icons/md';
 import { MdModelTraining } from 'react-icons/md';
@@ -57,8 +58,7 @@ export const ProjectActionsSidebar: FC<{
             className={classNames('nav-link', currentProjectAction === 'explorate' && 'active')}
             aria-current="page"
           >
-            <TbListSearch />
-            Explorate
+            <TbListSearch /> Explorate
           </Link>
         </li>
         <li className="nav-item">
@@ -77,6 +77,15 @@ export const ProjectActionsSidebar: FC<{
             aria-current="page"
           >
             <MdModelTraining /> Train model
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
+            to={`/projects/${projectName}/export`}
+            className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
+            aria-current="page"
+          >
+            <FaCloudDownloadAlt /> Export
           </Link>
         </li>
         <li className="nav-item">

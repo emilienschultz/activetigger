@@ -147,7 +147,9 @@ class BertModel:
                 "precision": list(precision_score(list(Y), list(Y_pred), average=None)),
                 "recall": list(recall_score(list(Y), list(Y_pred), average=None)),
                 "accuracy": accuracy_score(Y, Y_pred),
-                "false_prediction": df[f][["text", "labels", "prediction"]].to_dict(),
+                "false_prediction": df[f][["text", "labels", "prediction"]]
+                .reset_index()
+                .to_json(orient="records"),
             }
             flag_modification = True
 

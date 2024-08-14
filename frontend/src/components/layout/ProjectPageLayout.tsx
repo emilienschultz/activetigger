@@ -5,7 +5,13 @@ import { useAppContext } from '../../core/context';
 import { PageLayout } from './PageLayout';
 import { ProjectActionsSidebar } from './ProjectActionsSideBar';
 
-export type PossibleProjectActions = 'annotate' | 'train' | 'parameters' | 'features' | 'explorate';
+export type PossibleProjectActions =
+  | 'annotate'
+  | 'train'
+  | 'parameters'
+  | 'features'
+  | 'explorate'
+  | 'export';
 
 type ProjectPageLayoutProps = PropsWithChildren<{
   projectName: string;

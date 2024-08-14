@@ -1,4 +1,5 @@
 import { FC, useState } from 'react';
+import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -98,7 +99,7 @@ export const ProjectTrainPage: FC = () => {
     console.log(data);
   };
 
-  // shape data
+  // loss chart shape data
   const loss = model?.training['loss'] ? JSON.parse(model?.training['loss']) : null;
   const val_epochs = model?.training['loss'] ? Object.values(loss['epoch']) : [];
   const val_loss = model?.training['loss'] ? Object.values(loss['val_loss']) : [];
@@ -149,6 +150,46 @@ export const ProjectTrainPage: FC = () => {
       />
     </VictoryChart>
   );
+
+  // display table false prediction
+  const falsePredictions = model?.train_scores
+    ? JSON.parse(model.train_scores['false_prediction'])
+    : null;
+
+  const columns = [
+    {
+      name: 'Id',
+      selector: (row: any) => row.index,
+      minWidth: '100px',
+      maxWidth: '200px',
+    },
+    {
+      name: 'Label',
+      selector: (row: any) => row.labels,
+      minWidth: '100px',
+      maxWidth: '100px',
+    },
+    {
+      name: 'Prediction',
+      selector: (row: any) => row.prediction,
+      sortable: true,
+      minWidth: '100px',
+      maxWidth: '100px',
+    },
+    {
+      name: 'Text',
+      selector: (row: any) => row.text,
+      minWidth: '100px',
+      maxWidth: '300px',
+      wrap: true,
+    },
+  ];
+
+  function TableFalsePrediction() {
+    return (
+      <DataTable responsive pagination highlightOnHover columns={columns} data={falsePredictions} />
+    );
+  }
 
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="train">
@@ -278,7 +319,7 @@ export const ProjectTrainPage: FC = () => {
                       </details>
                       <details>
                         <summary>False predictions</summary>
-                        <div>{JSON.stringify(model.train_scores['false_prediction'])}</div>
+                        <TableFalsePrediction />
                       </details>
                     </div>
                   )}

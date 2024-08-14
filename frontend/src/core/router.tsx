@@ -6,6 +6,7 @@ import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
 import { ProjectExploratePage } from '../components/ProjectExploratePage';
+import { ProjectExportPage } from '../components/ProjectExportPage';
 import { ProjectFeaturesPage } from '../components/ProjectFeaturesPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
@@ -76,6 +77,10 @@ export function getRouter() {
           element: <ProjectFeaturesPage />,
         },
         {
+          path: '/projects/:projectName/explorate',
+          element: <ProjectExploratePage />,
+        },
+        {
           path: '/projects/:projectName/annotate/',
           element: <ProjectAnnotationPage />,
         },
@@ -84,12 +89,12 @@ export function getRouter() {
           element: <ProjectTrainPage />,
         },
         {
-          path: '/projects/:projectName/parameters',
-          element: <ProjectParametersPage />,
+          path: '/projects/:projectName/export',
+          element: <ProjectExportPage />,
         },
         {
-          path: '/projects/:projectName/explorate',
-          element: <ProjectExploratePage />,
+          path: '/projects/:projectName/parameters',
+          element: <ProjectParametersPage />,
         },
       ],
     },
