@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
+import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
 
 import {
   useComputeModelPrediction,
@@ -97,6 +98,58 @@ export const ProjectTrainPage: FC = () => {
     console.log(data);
   };
 
+  // shape data
+  const loss = model?.training['loss'] ? JSON.parse(model?.training['loss']) : null;
+  const val_epochs = model?.training['loss'] ? Object.values(loss['epoch']) : [];
+  const val_loss = model?.training['loss'] ? Object.values(loss['val_loss']) : [];
+  const val_eval_loss = model?.training['loss'] ? Object.values(loss['val_eval_loss']) : [];
+
+  const valLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_loss[i] }));
+  const valEvalLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_eval_loss[i] }));
+
+  const LossChart = () => (
+    <VictoryChart theme={VictoryTheme.material}>
+      <VictoryAxis
+        label="Epoch"
+        style={{
+          axisLabel: { padding: 30 },
+        }}
+      />
+      <VictoryAxis
+        dependentAxis
+        label="Loss"
+        style={{
+          axisLabel: { padding: 40 },
+        }}
+      />
+      <VictoryLine
+        data={valLossData}
+        style={{
+          data: { stroke: '#c43a31' }, // Rouge pour val_loss
+        }}
+      />
+      <VictoryLine
+        data={valEvalLossData}
+        style={{
+          data: { stroke: '#0000ff' }, // Bleu pour val_eval_loss
+        }}
+      />
+      <VictoryLegend
+        x={125}
+        y={10}
+        title="Legend"
+        centerTitle
+        orientation="horizontal"
+        gutter={20}
+        style={{ border: { stroke: 'black' }, title: { fontSize: 10 } }}
+        data={[
+          { name: 'Loss', symbol: { fill: '#c43a31' } },
+          { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
+        ]}
+      />
+    </VictoryChart>
+  );
+
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="train">
       <div className="container-fluid">
@@ -176,18 +229,62 @@ export const ProjectTrainPage: FC = () => {
                             ))}
                           </tbody>
                         </table>
+
+                        <LossChart></LossChart>
                       </details>
                       <details>
                         <summary>Scores</summary>
-                        <div>{JSON.stringify(model.training['loss'])}</div>
-                        <div>{JSON.stringify(model.train_scores)}</div>
+                        {model.train_scores && (
+                          <table className="table">
+                            {' '}
+                            <thead>
+                              <tr>
+                                <th scope="col">Key</th>
+                                <th scope="col">Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>F1 micro</td>
+                                <td>{model.train_scores['f1_micro']}</td>
+                              </tr>
+                              <tr>
+                                <td>F1 macro</td>
+                                <td>{model.train_scores['f1_macro']}</td>
+                              </tr>
+                              <tr>
+                                <td>F1 weighted</td>
+                                <td>{model.train_scores['f1_weighted']}</td>
+                              </tr>
+                              <tr>
+                                <td>F1</td>
+                                <td>{String(model.train_scores['f1'])}</td>
+                              </tr>
+                              <tr>
+                                <td>Precision</td>
+                                <td>{String(model.train_scores['precision'])}</td>
+                              </tr>
+                              <tr>
+                                <td>Recall</td>
+                                <td>{String(model.train_scores['recall'])}</td>
+                              </tr>
+                              <tr>
+                                <td>Accuray</td>
+                                <td>{String(model.train_scores['accuracy'])}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        )}
+                      </details>
+                      <details>
+                        <summary>False predictions</summary>
+                        <div>{JSON.stringify(model.train_scores['false_prediction'])}</div>
                       </details>
                     </div>
                   )}
                 </details>
               </div>
             )}
-
             <h4 className="subsection">Train a new model</h4>
             <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
               <label htmlFor="new-model-type"></label>

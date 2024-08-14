@@ -124,9 +124,12 @@ class BertModel:
                     ]
                     for i in range(0, int((len(log) - 1) / 2))
                 ],
-                columns=["epoch", "loss", "eval_loss"],
-            ).set_index("epoch")
-            r["training"] = {"loss": loss.to_dict(), "parameters": self.params}
+                columns=["epoch", "val_loss", "val_eval_loss"],
+            )
+            r["training"] = {
+                "loss": loss.to_json(orient="columns"),
+                "parameters": self.params,
+            }
             flag_modification = True
 
         # add train scores
