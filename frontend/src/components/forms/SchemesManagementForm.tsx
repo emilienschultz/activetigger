@@ -68,7 +68,6 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
     await deleteScheme();
     if (reFetchCurrentProject) reFetchCurrentProject();
   };
-
   return (
     <div className="container-fluid">
       <div className="row">
@@ -84,7 +83,7 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
           >
             <option></option> {/*empty possibility*/}
             {available_schemes.map((element) => (
-              <option key={element} value={element}>
+              <option key={element} value={element} selected={element === currentScheme}>
                 {element}
               </option>
             ))}{' '}
