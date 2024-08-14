@@ -1037,8 +1037,6 @@ export interface components {
         BertModelModel: {
             /** Project Slug */
             project_slug: string;
-            /** User */
-            user: string;
             /** Scheme */
             scheme: string;
             /** Name */
@@ -1067,9 +1065,7 @@ export interface components {
             gradacc: number;
             /**
              * Epochs
-             * @default [
-             *       3
-             *     ]
+             * @default 3
              */
             epochs: number;
             /**

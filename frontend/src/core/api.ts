@@ -740,25 +740,23 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
 /**
  * Train a new bert project
  */
-export function useTrainBertModel(
-  projectSlug: string,
-  scheme: string,
-) {
+export function useTrainBertModel(projectSlug: string, scheme: string) {
   const { notify } = useNotifications();
   const trainBertModel = useCallback(
     async (dataForm: newBertModel) => {
       if (projectSlug && dataForm) {
-        const name = "temporary"
+        const name = 'temporary';
         const res = await api.POST('/models/bert/train', {
           params: {
             query: { project_slug: projectSlug },
           },
           body: {
+            project_slug: projectSlug,
             scheme: scheme,
             base_model: dataForm.base,
-            name:name, 
-            test_size:0.2,
-            params:{dataForm.parameters.batchsize}
+            name: name,
+            test_size: 0.2,
+            params: dataForm.parameters,
           },
         });
         if (!res.error) notify({ type: 'success', message: 'Starting bertmodel training' });
