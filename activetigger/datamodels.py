@@ -168,6 +168,22 @@ class SimpleModelModel(BaseModel):
     standardize: Optional[bool] = True
 
 
+class BertModelParametersModel(BaseModel):
+    """
+    Parameters for bertmodel training
+    """
+
+    batchsize: int = 4
+    gradacc: float = 1
+    epochs: int = (3,)
+    lrate: float = 5e-05
+    wdecay: float = 0.01
+    best: bool = True
+    eval: int = 10
+    gpu: bool = False
+    adapt: bool = True
+
+
 class BertModelModel(BaseModel):
     """
     Request Bertmodel
@@ -179,7 +195,7 @@ class BertModelModel(BaseModel):
     scheme: str
     name: str
     base_model: str
-    params: dict
+    params: dict | BertModelParametersModel
     test_size: float
 
 

@@ -46,6 +46,8 @@ export type SimpleModelModel = components['schemas']['SimpleModelModel'];
 
 export type UsersServerModel = components['schemas']['UsersServerModel'];
 
+export type BertModelParametersModel = components['schemas']['BertModelParametersModel'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

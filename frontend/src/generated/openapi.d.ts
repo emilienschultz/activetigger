@@ -1046,9 +1046,62 @@ export interface components {
             /** Base Model */
             base_model: string;
             /** Params */
-            params: Record<string, never>;
+            params: Record<string, never> | components["schemas"]["BertModelParametersModel"];
             /** Test Size */
             test_size: number;
+        };
+        /**
+         * BertModelParametersModel
+         * @description Parameters for bertmodel training
+         */
+        BertModelParametersModel: {
+            /**
+             * Batchsize
+             * @default 4
+             */
+            batchsize: number;
+            /**
+             * Gradacc
+             * @default 1
+             */
+            gradacc: number;
+            /**
+             * Epochs
+             * @default [
+             *       3
+             *     ]
+             */
+            epochs: number;
+            /**
+             * Lrate
+             * @default 0.00005
+             */
+            lrate: number;
+            /**
+             * Wdecay
+             * @default 0.01
+             */
+            wdecay: number;
+            /**
+             * Best
+             * @default true
+             */
+            best: boolean;
+            /**
+             * Eval
+             * @default 10
+             */
+            eval: number;
+            /**
+             * Gpu
+             * @default false
+             */
+            gpu: boolean;
+            /**
+             * Adapt
+             * @default true
+             */
+            adapt: boolean;
         };
         /** Body_add_testdata_projects_testdata_post */
         Body_add_testdata_projects_testdata_post: {
