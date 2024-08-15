@@ -185,18 +185,6 @@ export const ProjectTrainPage: FC = () => {
     },
   ];
 
-  function TableFalsePrediction() {
-    return (
-      <DataTable
-        responsive
-        pagination
-        highlightOnHover
-        columns={columns || []}
-        data={falsePredictions || []}
-      />
-    );
-  }
-
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="train">
       <div className="container-fluid">
@@ -325,7 +313,13 @@ export const ProjectTrainPage: FC = () => {
                       </details>
                       <details>
                         <summary>False predictions</summary>
-                        <TableFalsePrediction />
+                        <DataTable
+                          responsive
+                          pagination
+                          highlightOnHover
+                          columns={columns || []}
+                          data={falsePredictions || []}
+                        />
                       </details>
                     </div>
                   )}
