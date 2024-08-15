@@ -24,8 +24,8 @@ export const ProjectActionsSidebar: FC<{
 
   // test if computation is currently undergoing
   const currentComputation =
-    Array(projectState.bertmodels.training).includes(currentUser) ||
-    Array(projectState.simplemodel.training).includes(currentUser) ||
+    currentUser in projectState.bertmodels.training ||
+    currentUser in projectState.simplemodel.training ||
     (projectState.features.training as string[]).length > 0;
 
   return (

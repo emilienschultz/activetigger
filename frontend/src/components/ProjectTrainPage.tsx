@@ -187,7 +187,13 @@ export const ProjectTrainPage: FC = () => {
 
   function TableFalsePrediction() {
     return (
-      <DataTable responsive pagination highlightOnHover columns={columns} data={falsePredictions} />
+      <DataTable
+        responsive
+        pagination
+        highlightOnHover
+        columns={columns || []}
+        data={falsePredictions || []}
+      />
     );
   }
 
