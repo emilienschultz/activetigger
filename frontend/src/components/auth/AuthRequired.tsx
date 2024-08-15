@@ -37,6 +37,8 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
     const apiErrorMiddleware: Middleware = {
       // on response check if session is correct
       onResponse: async ({ response }) => {
+        const clonedResponse = response.clone();
+
         // if session is expired or invalid we catch the 401 and redirect to login page
         if ([401].includes(response.status)) {
           redirectToLogin('Invalid user session: redirecting you to login page...');
@@ -44,7 +46,7 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
           if (response.status !== 200) {
             //TODO : check error body is correct
             const { body, ...resOptions } = response;
-            const message = await response.json();
+            const message = await clonedResponse.json();
             notify({
               type: 'error',
               message:

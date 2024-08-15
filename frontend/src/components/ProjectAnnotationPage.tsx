@@ -85,12 +85,25 @@ export const ProjectAnnotationPage: FC = () => {
     console.log('Update selectionConfig');
   }, [selectionConfig]);
 
+  const elementOutModel = {
+    element_id: '', // String, initially empty
+    text: '', // String, initially empty
+    context: {}, // Dictionary, initially empty
+    selection: '', // String, initially empty
+    info: null, // String or null
+    predict: {}, // Dictionary, initially empty
+    frame: [], // List or null, initially an empty array
+    limit: null, // Integer or null
+    history: [], // List, initially an empty array
+  };
+
   const navigateToNextElement = useCallback(async () => {
     // change url using the new elementId
     // const newElementId = await  apiCall()
     //navigate('/projects/${projectName}/annotate/newid');
     getNextElementId(selectionConfig).then((nextElementId) => {
       if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+      else setElement(elementOutModel);
     });
   }, [projectName, navigate]);
 
