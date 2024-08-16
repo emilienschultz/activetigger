@@ -1502,14 +1502,10 @@ export interface components {
          * @description Response for table of elements
          */
         TableOutModel: {
-            /** Id */
-            id: string[];
-            /** Timestamp */
-            timestamp: string[];
-            /** Label */
-            label: string[];
-            /** Text */
-            text: string[];
+            /** Items */
+            items: unknown[];
+            /** Total */
+            total: number;
         };
         /**
          * TokenModel
@@ -3146,7 +3142,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": string;
                 };
             };
             /** @description Validation Error */

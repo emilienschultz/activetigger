@@ -997,3 +997,28 @@ export function useGetModelFile(projectSlug: string) {
 
   return { getModelFile };
 }
+
+/**
+ * Get table of elements
+ */
+export function useGetTableElements(
+  project_slug: string,
+  scheme: string,
+  from: number,
+  to: number,
+) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getTableElements = useAsyncMemo(async () => {
+    if (scheme && project_slug) {
+      const res = await api.GET('/elements/table', {
+        params: { query: { project_slug: project_slug, scheme: scheme, min: from, max: to } },
+      });
+      if (!res.error) return res.data;
+    }
+  }, [fetchTrigger, scheme]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { table: getAsyncMemoData(getTableElements), reFetchTableElements: reFetch };
+}

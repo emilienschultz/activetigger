@@ -289,15 +289,25 @@ class ZeroShotModel(BaseModel):
     number: int = 10
 
 
+# class TableOutModel(BaseModel):
+#     """
+#     Response for table of elements
+#     """
+
+#     id: List[str]
+#     timestamp: List[str]
+#     label: List[str]
+#     text: List[str]
+#     total: int
+
+
 class TableOutModel(BaseModel):
     """
     Response for table of elements
     """
 
-    id: List[str]
-    timestamp: List[str]
-    label: List[str]
-    text: List[str]
+    items: List
+    total: int
 
 
 class TableLogsModel(BaseModel):

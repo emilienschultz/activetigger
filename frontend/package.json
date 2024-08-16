@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "ag-grid-react": "^32.1.0",
     "bootstrap": "^5.3.3",
     "classnames": "^2.5.1",
     "hyparquet": "^1.0.0",
@@ -22,6 +23,7 @@
     "prettier": "^3.3.2",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.4",
+    "react-data-grid": "^7.0.0-beta.46",
     "react-data-table-component": "^7.6.2",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.52.1",

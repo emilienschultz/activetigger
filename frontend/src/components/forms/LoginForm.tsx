@@ -36,8 +36,18 @@ export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <input className="form-control form-appearance mt-2" type="text" {...register('username')} />
-      <input className="form-control mt-2" type="password" {...register('password')} />
+      <input
+        className="form-control form-appearance mt-2"
+        type="text"
+        {...register('username')}
+        placeholder="Username"
+      />
+      <input
+        className="form-control mt-2"
+        type="password"
+        {...register('password')}
+        placeholder="Password"
+      />
       <button className="btn btn-primary btn-validation">Login</button>
     </form>
   );

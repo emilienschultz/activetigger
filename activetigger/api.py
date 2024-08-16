@@ -741,6 +741,30 @@ async def compute_projection(
     raise HTTPException(status_code=400, detail="Projection not available")
 
 
+# @app.get("/elements/table", dependencies=[Depends(verified_user)])
+# async def get_list_elements(
+#     project: Annotated[Project, Depends(get_project)],
+#     scheme: str,
+#     min: int = 0,
+#     max: int = 0,
+#     contains: str | None = None,
+#     mode: str = "all",
+# ) -> TableOutModel:
+#     """
+#     Get table of elements
+#     """
+#     df = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
+#     if "error" in df:
+#         raise HTTPException(status_code=500, detail=df["error"])
+#     return TableOutModel(
+#         id=list(df.index),
+#         timestamp=list(df["timestamp"]),
+#         label=list(df["labels"]),
+#         text=list(df["text"]),
+#         total_row=project.schemes.get_total(),
+#     )
+
+
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(
     project: Annotated[Project, Depends(get_project)],
@@ -756,11 +780,11 @@ async def get_list_elements(
     df = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
     if "error" in df:
         raise HTTPException(status_code=500, detail=df["error"])
+    print(df)
+    table = (df[["index", "timestamp", "labels", "text"]]).to_dict(orient="records")
     return TableOutModel(
-        id=list(df.index),
-        timestamp=list(df["timestamp"]),
-        label=list(df["labels"]),
-        text=list(df["text"]),
+        items=table,
+        total=project.schemes.get_total(),
     )
 
 

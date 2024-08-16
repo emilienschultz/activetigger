@@ -1522,6 +1522,12 @@ class Schemes:
             self.push_tag(i, new_label, scheme, username, "add")
         return {"success": "All tags recoded"}
 
+    def get_total(self):
+        """
+        Number of element in the dataset
+        """
+        return len(self.content)
+
     def get_table(
         self,
         scheme: str,
@@ -1572,7 +1578,7 @@ class Schemes:
         if min > len(df):
             return {"error": "min value too high"}
 
-        return df.sort_index().iloc[min:max]
+        return df.sort_index().iloc[min:max].reset_index()
 
     def add_scheme(self, scheme: SchemeModel):
         """
