@@ -14,7 +14,10 @@ export const ProjectExploratePage: FC = () => {
     <ProjectPageLayout projectName={projectName} currentAction="explorate">
       <div className="container-fluid">
         <div className="row">
-          <h2 className="subsection">Data exploration</h2>
+          <div className="col-1"></div>
+          <div className="col-8">
+            <h2 className="subsection">Data exploration</h2>
+          </div>
         </div>
       </div>
     </ProjectPageLayout>

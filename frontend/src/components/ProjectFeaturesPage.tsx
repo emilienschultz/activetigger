@@ -62,137 +62,140 @@ export const ProjectFeaturesPage: FC = () => {
       {project && (
         <div className="container-fluid">
           <div className="row">
-            <h2 className="subsection">Managing features</h2>
-            <span className="explanations">Features are computed from the textual data</span>
+            <div className="col-1"></div>
+            <div className="col-8">
+              <h2 className="subsection">Managing features</h2>
+              <span className="explanations">Features are computed from the textual data</span>
 
-            {/*Display button to add features*/}
-            <div className="row">
-              <div className="col-3">
-                <button
-                  className="add-feature"
-                  onClick={() => {
-                    setShowCreateNewFeature(!showCreateNewFeature);
-                  }}
-                >
-                  <IoIosAddCircle size={20} /> Add feature{' '}
-                </button>
-              </div>
-            </div>
-            {
-              /*Display the menu to add features*/
-              showCreateNewFeature && (
-                <div className="row">
-                  <form onSubmit={handleSubmit(createNewFeature)}>
-                    <div className="col-4 secondary-panel">
-                      <label className="form-label" htmlFor="newFeature">
-                        Select feature to add
-                      </label>
-                      <select
-                        className="form-control"
-                        id="newFeature"
-                        {...register('type')}
-                        onChange={(event) => {
-                          setFeatureToCreate(event.target.value);
-                        }}
-                      >
-                        <option></option>
-                        {Object.keys(project.features.options).map((element) => (
-                          <option key={element} value={element}>
-                            {element}
-                          </option>
-                        ))}{' '}
-                      </select>
-
-                      {selectedFeatureToCreate === 'regex' && (
-                        <label htmlFor="regex">
-                          Regex
-                          <input
-                            type="text"
-                            placeholder="Enter the regex"
-                            {...register('parameters.value')}
-                          />
-                        </label>
-                      )}
-
-                      {selectedFeatureToCreate === 'dfm' && (
-                        <div>
-                          <div>
-                            <label htmlFor="dfm_tfidf">TF-IDF</label>
-                            <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
-                              <option>True</option>
-                              <option>False</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label htmlFor="dfm_ngrams">Ngrams</label>
-                            <input
-                              type="number"
-                              id="dfm_ngrams"
-                              value={1}
-                              {...register('parameters.dfm_ngrams')}
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="dfm_min_term_freq">Min term freq</label>
-                            <input
-                              type="number"
-                              id="dfm_min_term_freq"
-                              value={5}
-                              {...register('parameters.dfm_min_term_freq')}
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="dfm_max_term_freq">Max term freq</label>
-                            <input
-                              type="number"
-                              id="dfm_max_term_freq"
-                              value={100}
-                              {...register('parameters.dfm_max_term_freq')}
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="dfm_norm">Norm</label>
-                            <select id="dfm_norm" {...register('parameters.dfm_norm')}>
-                              <option>False</option>
-                              <option>True</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label htmlFor="dfm_log">Log</label>
-                            <select id="dfm_log" {...register('parameters.dfm_log')}>
-                              <option>False</option>
-                              <option>True</option>
-                            </select>
-                          </div>
-                        </div>
-                      )}
-                      <button className="btn btn-primary btn-validation">Create</button>
-                    </div>
-                  </form>
+              {/*Display button to add features*/}
+              <div className="row">
+                <div className="col-3">
+                  <button
+                    className="add-feature"
+                    onClick={() => {
+                      setShowCreateNewFeature(!showCreateNewFeature);
+                    }}
+                  >
+                    <IoIosAddCircle size={20} /> Add feature{' '}
+                  </button>
                 </div>
-              )
-            }
+              </div>
+              {
+                /*Display the menu to add features*/
+                showCreateNewFeature && (
+                  <div className="row">
+                    <form onSubmit={handleSubmit(createNewFeature)}>
+                      <div className="col-4 secondary-panel">
+                        <label className="form-label" htmlFor="newFeature">
+                          Select feature to add
+                        </label>
+                        <select
+                          className="form-control"
+                          id="newFeature"
+                          {...register('type')}
+                          onChange={(event) => {
+                            setFeatureToCreate(event.target.value);
+                          }}
+                        >
+                          <option></option>
+                          {Object.keys(project.features.options).map((element) => (
+                            <option key={element} value={element}>
+                              {element}
+                            </option>
+                          ))}{' '}
+                        </select>
 
-            {/* Display cards for each feature*/}
-            <div className="row">
-              <h2 className="subsection">Computed features</h2>
-              {availableFeatures.map((element) => (
-                <div className="card text-bg-light m-2 text-center" style={{ width: '10rem' }}>
-                  <div className="card-body">
-                    <h5 className="card-title">{element as string}</h5>
-                    <div>
-                      <button
-                        className="btn btn p-0"
-                        onClick={() => {
-                          deleteSelectedFeature(element as string);
-                        }}
-                      >
-                        <MdOutlineDeleteOutline size={30} />
-                      </button>
+                        {selectedFeatureToCreate === 'regex' && (
+                          <label htmlFor="regex">
+                            Regex
+                            <input
+                              type="text"
+                              placeholder="Enter the regex"
+                              {...register('parameters.value')}
+                            />
+                          </label>
+                        )}
+
+                        {selectedFeatureToCreate === 'dfm' && (
+                          <div>
+                            <div>
+                              <label htmlFor="dfm_tfidf">TF-IDF</label>
+                              <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
+                                <option>True</option>
+                                <option>False</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="dfm_ngrams">Ngrams</label>
+                              <input
+                                type="number"
+                                id="dfm_ngrams"
+                                value={1}
+                                {...register('parameters.dfm_ngrams')}
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="dfm_min_term_freq">Min term freq</label>
+                              <input
+                                type="number"
+                                id="dfm_min_term_freq"
+                                value={5}
+                                {...register('parameters.dfm_min_term_freq')}
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="dfm_max_term_freq">Max term freq</label>
+                              <input
+                                type="number"
+                                id="dfm_max_term_freq"
+                                value={100}
+                                {...register('parameters.dfm_max_term_freq')}
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="dfm_norm">Norm</label>
+                              <select id="dfm_norm" {...register('parameters.dfm_norm')}>
+                                <option>False</option>
+                                <option>True</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="dfm_log">Log</label>
+                              <select id="dfm_log" {...register('parameters.dfm_log')}>
+                                <option>False</option>
+                                <option>True</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                        <button className="btn btn-primary btn-validation">Create</button>
+                      </div>
+                    </form>
+                  </div>
+                )
+              }
+
+              {/* Display cards for each feature*/}
+              <div className="row">
+                <h2 className="subsection">Computed features</h2>
+                {availableFeatures.map((element) => (
+                  <div className="card text-bg-light m-2 text-center" style={{ width: '10rem' }}>
+                    <div className="card-body">
+                      <h5 className="card-title">{element as string}</h5>
+                      <div>
+                        <button
+                          className="btn btn p-0"
+                          onClick={() => {
+                            deleteSelectedFeature(element as string);
+                          }}
+                        >
+                          <MdOutlineDeleteOutline size={30} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}{' '}
+                ))}{' '}
+              </div>
             </div>
           </div>
           <div></div>
