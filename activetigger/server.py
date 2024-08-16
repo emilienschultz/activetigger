@@ -173,6 +173,10 @@ class Server:
         if not self.db.exists():
             self.create_db()
 
+        # create the static repertory
+        if not (self.path / "static").exists():
+            os.mkdir((self.path / "static"))
+
         # activity of the server
         self.projects: dict = {}
         self.queue = Queue(self.n_workers)

@@ -10,6 +10,7 @@ from fastapi import (
     Form,
     Request,
 )
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
@@ -144,6 +145,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)  # defining the fastapi app
+app.mount("/static", StaticFiles(directory=server.path / "static"), name="static")
+
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token"
 )  # defining the authentification object
@@ -1380,16 +1383,31 @@ async def export_prediction(
     return FileResponse(r["path"], filename=r["name"])
 
 
+# @app.get("/export/bert", dependencies=[Depends(verified_user)])
+# async def export_bert(
+#     project: Annotated[Project, Depends(get_project)],
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+#     name: str = Query(),
+# ) -> FileResponse:
+#     """
+#     Export fine-tuned BERT model
+#     """
+#     r = project.bertmodels.export_bert(name=name)
+#     if "error" in r:
+#         raise HTTPException(status_code=500, detail=r["error"])
+#     return FileResponse(r["path"], filename=r["name"])
+
+
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
 async def export_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(),
-) -> FileResponse:
+) -> str:
     """
     Export fine-tuned BERT model
     """
     r = project.bertmodels.export_bert(name=name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    return FileResponse(r["path"], filename=r["name"])
+    return r["name"]

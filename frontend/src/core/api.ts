@@ -852,3 +852,148 @@ export function useComputeModelPrediction(projectSlug: string) {
 
   return { computeModelPrediction };
 }
+
+/**
+ * Get file features
+ */
+export function useGetFeaturesFile(projectSlug: string) {
+  const { notify } = useNotifications();
+  const getFeaturesFile = useCallback(
+    async (features: string[], format: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/features', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              features: features,
+              format: format,
+            },
+          },
+          parseAs: 'blob',
+        });
+        console.log(res);
+
+        if (!res.error) {
+          notify({ type: 'warning', message: 'Exporting the predictions of the model' });
+          var csvURL = window.URL.createObjectURL(res.data);
+          var tempLink = document.createElement('a');
+          tempLink.href = csvURL;
+          tempLink.setAttribute('download', 'features.' + format);
+          tempLink.click();
+        }
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { getFeaturesFile };
+}
+
+/**
+ * Get file annotations
+ */
+export function useGetAnnotationsFile(projectSlug: string) {
+  const { notify } = useNotifications();
+  const getAnnotationsFile = useCallback(
+    async (scheme: string, format: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/data', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              scheme: scheme,
+              format: format,
+            },
+          },
+          parseAs: 'blob',
+        });
+        console.log(res);
+
+        if (!res.error) {
+          notify({ type: 'warning', message: 'Exporting the annotated data' });
+          var csvURL = window.URL.createObjectURL(res.data);
+          var tempLink = document.createElement('a');
+          tempLink.href = csvURL;
+          tempLink.setAttribute('download', 'annotations.' + format);
+          tempLink.click();
+        }
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { getAnnotationsFile };
+}
+
+/**
+ * Get file predictions
+ */
+export function useGetPredictionsFile(projectSlug: string) {
+  const { notify } = useNotifications();
+  const getPredictionsFile = useCallback(
+    async (model: string, format: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/prediction', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: model,
+              format: format,
+            },
+          },
+          parseAs: 'blob',
+        });
+        console.log(res);
+
+        if (!res.error) {
+          notify({ type: 'warning', message: 'Exporting the predictions data' });
+          var csvURL = window.URL.createObjectURL(res.data);
+          var tempLink = document.createElement('a');
+          tempLink.href = csvURL;
+          tempLink.setAttribute('download', 'predictions.' + format);
+          tempLink.click();
+        }
+        return true;
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { getPredictionsFile };
+}
+
+/**
+ * Get model file (as a static file)
+ */
+export function useGetModelFile(projectSlug: string) {
+  const { notify } = useNotifications();
+  const getModelFile = useCallback(
+    async (model: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/bert', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: model,
+            },
+          },
+        });
+
+        if (!res.error) {
+          notify({ type: 'success', message: 'Downloading the model' });
+          const link = document.createElement('a');
+          link.href = config.api.url + res.data;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          return res.data;
+        }
+      }
+    },
+    [projectSlug, notify],
+  );
+
+  return { getModelFile };
+}

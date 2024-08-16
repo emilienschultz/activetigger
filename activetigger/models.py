@@ -247,7 +247,7 @@ class BertModels:
                 if (self.path / i / "predict.parquet").exists():
                     predict = True
                 # test if compression available
-                if (self.path / f"{i}.tar.gz").exists():
+                if (self.path / "../../static" / f"{i}.tar.gz").exists():
                     compressed = True
                 else:
                     self.start_compression(i)
@@ -272,7 +272,7 @@ class BertModels:
 
         try:
             shutil.rmtree(self.path / bert_name)
-            os.remove(self.path / f"{bert_name}.tar.gz")
+            os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
             return {"success": "Bert model deleted"}
         except:
             return {"error": "An error occured in deleting bert model"}
@@ -409,10 +409,9 @@ class BertModels:
         """
         Compress bertmodel as a separate process
         """
-        print(self.path / name, "gztar", self.path)
         process = Process(
             target=shutil.make_archive,
-            args=(self.path / name, "gztar", self.path / name),
+            args=(self.path / "../../static" / name, "gztar", self.path / name),
         )
         process.start()
         print("starting compression")
@@ -519,9 +518,9 @@ class BertModels:
         Export bert archive if exists
         """
         file_name = f"{name}.tar.gz"
-        if not (self.path / file_name).exists():
+        if not (self.path / "../../static" / file_name).exists():
             return {"error": "file does not exist"}
-        r = {"name": file_name, "path": self.path / file_name}
+        r = {"name": file_name, "path": self.path / "../../static" / file_name}
         return r
 
 
