@@ -3,6 +3,7 @@ import { FC, useState } from 'react';
 import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
 
+import logo from '../../../assets/at.png';
 import { useAuth } from '../../core/auth';
 
 const PAGES: { id: string; label: string; href: string }[] = [
@@ -28,6 +29,12 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
       <nav className="navbar navbar-dark navbar-expand-lg bg-primary">
         <div className="container">
           <Link className="navbar-brand" to="/">
+            <img
+              src={logo}
+              alt="ActiveTigger"
+              className="me-2"
+              style={{ width: '50px', height: '50px' }}
+            />
             Active Tigger
           </Link>
           <button
