@@ -189,7 +189,7 @@ export const ProjectTrainPage: FC = () => {
     <ProjectPageLayout projectName={projectSlug} currentAction="train">
       <div className="container-fluid">
         <div className="row">
-          <div className="col-2"></div>
+          <div className="col-1"></div>
           <div className="col-8">
             <h2 className="subsection">Models</h2>
             <span className="explanations">Train and modify models</span>
