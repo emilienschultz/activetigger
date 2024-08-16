@@ -7,7 +7,10 @@ export const HelpPage: FC = () => {
     <PageLayout currentPage="help">
       <div className="container-fluid">
         <div className="row">
-          <h2 className="subsection">Documentation</h2>
+          <div className="col-1"></div>
+          <div className="col-8">
+            <h2 className="subsection">Documentation</h2>
+          </div>
         </div>
       </div>{' '}
     </PageLayout>

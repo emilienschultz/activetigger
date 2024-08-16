@@ -45,8 +45,8 @@ export const UsersPage: FC = () => {
     <PageLayout currentPage="users">
       <div className="container-fluid">
         <div className="row">
-          <div className="col-2"></div>
-          <div className="col-6">
+          <div className="col-1"></div>
+          <div className="col-8">
             <h2 className="subsection">Manage users and auth</h2>
             <span className="explanations">
               Create or delete users and authorization to projects

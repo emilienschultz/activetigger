@@ -14,13 +14,17 @@ export const LoginPage: FC = () => {
       <div className="container-fluid">
         {authenticatedUser?.username && (
           <div className="row">
-            <div className="col-12 col-lg-6">
+            <div className="col-1"></div>
+
+            <div className="col-11 col-lg-6">
               You're logged in as {authenticatedUser.username} ({authenticatedUser.status})
             </div>
           </div>
         )}
         <div className="row">
-          <div className="col-12 col-lg-6">
+          <div className="col-1"></div>
+
+          <div className="col-11 col-lg-6">
             <LoginForm redirectTo={state?.path || '/projects'} />
           </div>
         </div>
