@@ -1,5 +1,7 @@
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
+import { IoMdReturnLeft } from 'react-icons/io';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import {
   useAddAnnotation,
@@ -242,6 +244,13 @@ export const ProjectAnnotationPage: FC = () => {
         </div>
       </div>
 
+      {
+        // back button
+      }
+
+      {
+        // display content
+      }
       <div className="row">
         <div className="col-10 annotation-frame my-4">
           <span>{element?.text.slice(0, element?.limit as number)}</span>
@@ -267,6 +276,15 @@ export const ProjectAnnotationPage: FC = () => {
       </div>
       <div className="row">
         <div className="d-flex flex-wrap gap-2 justify-content-center">
+          <Link
+            to={'/projects/test3/annotate/' + history[history.length - 1]}
+            className="btn btn-outline-secondary"
+            onClick={() => {
+              history.pop();
+            }}
+          >
+            <IoMdReturnLeft />
+          </Link>
           {availableLabels.map((i) => (
             <button
               key={i}
