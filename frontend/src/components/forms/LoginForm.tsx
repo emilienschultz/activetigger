@@ -36,7 +36,6 @@ export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div>Connect to the service</div>
       <input className="form-control form-appearance mt-2" type="text" {...register('username')} />
       <input className="form-control mt-2" type="password" {...register('password')} />
       <button className="btn btn-primary btn-validation">Login</button>

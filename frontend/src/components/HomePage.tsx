@@ -27,13 +27,13 @@ export const HomePage: FC = () => {
                 <LoginForm />
               ) : (
                 <div>
-                  <p>
-                    you're logged in as <b>{authenticatedUser.username}</b> (
+                  <div className="user-info">
+                    You're logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
                     {authenticatedUser.status})
-                  </p>
+                  </div>
                   <Link
                     to="/projects"
-                    className="btn btn-primary btn-lg shadow-sm rounded-pill btn-light"
+                    className="btn btn-primary btn-lg shadow-sm rounded-pill m-3"
                   >
                     Go to your projects
                   </Link>

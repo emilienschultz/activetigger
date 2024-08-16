@@ -8,6 +8,7 @@ import { PageLayout } from './layout/PageLayout';
 export const LoginPage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { state } = useLocation();
+  console.log(authenticatedUser);
 
   return (
     <PageLayout currentPage="login">
@@ -16,8 +17,11 @@ export const LoginPage: FC = () => {
           <div className="row">
             <div className="col-1"></div>
 
-            <div className="col-11 col-lg-6">
-              You're logged in as {authenticatedUser.username} ({authenticatedUser.status})
+            <div className="col-11 col-lg-6 ">
+              <div className="user-info">
+                You're logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
+                {authenticatedUser.status})
+              </div>
             </div>
           </div>
         )}
