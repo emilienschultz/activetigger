@@ -3,6 +3,9 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { AgGridReact } from 'ag-grid-react';
 import { FC, useState } from 'react';
+import DataGrid, { RenderEditCellProps, SelectColumn, textEditor } from 'react-data-grid';
+import type { Row } from 'react-data-grid';
+import 'react-data-grid/lib/styles.css';
 import { useParams } from 'react-router-dom';
 
 import { useGetTableElements } from '../core/api';
@@ -12,6 +15,24 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 /**
  * Component to display the features page
  */
+
+const labels = ['Dr.', 'Mr.', 'Mrs.', 'Miss', 'Ms.'] as const;
+
+export function renderDropdown({ row, onRowChange }: RenderEditCellProps<Row>) {
+  return (
+    <select
+      value={row.labels}
+      onChange={(event) => onRowChange({ ...row, labels: event.target.value }, true)}
+      autoFocus
+    >
+      {labels.map((l) => (
+        <option key={l} value={l}>
+          {l}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 export const ProjectExploratePage: FC = () => {
   const { projectName } = useParams();
@@ -24,8 +45,9 @@ export const ProjectExploratePage: FC = () => {
   const [rowData, setRowData] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+
   const [loading, setLoading] = useState(false);
-  const pageSize = 10;
   const { table } = useGetTableElements(
     projectName,
     currentScheme,
@@ -33,21 +55,15 @@ export const ProjectExploratePage: FC = () => {
     (page + 1) * pageSize,
   );
   console.log(table);
+  console.log(pageSize);
+  console.log(page);
 
-  const onPaginationChanged = (event: any) => {
-    if (event.api.paginationGetCurrentPage() !== page) {
-      setPage(event.api.paginationGetCurrentPage());
-    }
-  };
-
-  const columnDefs: ColDef[] = [
-    { field: 'index', headerName: 'ID', sortable: true, filter: true },
-    { field: 'timestamp', headerName: 'Timestamp', sortable: true, filter: true },
-    { field: 'labels', headerName: 'Label', sortable: true, filter: true },
-    { field: 'text', headerName: 'Text', sortable: true, filter: true },
+  const columns = [
+    { key: 'index', name: 'ID', resizable: true },
+    { key: 'timestamp', name: 'Timestamp', resizable: true },
+    { key: 'labels', name: 'Label', resizable: true, renderEditCell: renderDropdown },
+    { key: 'text', name: 'Text', resizable: true },
   ];
-
-  //Je veux utiliser AG Grid https://www.ag-grid.com/react-data-grid/getting-started/?utm_source=ag-grid-react-readme&utm_medium=repository&utm_campaign=github pour afficher un tableau en react des éléments de ma base de données, paginées par 10, avec un appel à l'API pour charger par page de 10
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="explorate">
@@ -56,25 +72,34 @@ export const ProjectExploratePage: FC = () => {
           <div className="col-0"></div>
           <div className="col-10">
             <h2 className="subsection">Data exploration</h2>
-            <div
-              className="ag-theme-quartz" // applying the Data Grid theme
-              style={{ height: 800 }}
-            >
-              {table && (
-                <AgGridReact
-                  rowData={table['items'] ? table['items'] : []}
-                  columnDefs={columnDefs}
-                  pagination={true}
-                  paginationPageSize={pageSize}
-                  onPaginationChanged={onPaginationChanged}
-                  suppressPaginationPanel={false}
-                  loadingOverlayComponentParams={{ loadingMessage: 'Chargement...' }}
-                  overlayLoadingTemplate='<span class="ag-overlay-loading-center">Chargement des données...</span>'
-                  overlayNoRowsTemplate='<span class="ag-overlay-no-rows-center">Aucune donnée disponible</span>'
-                />
-              )}
-            </div>{' '}
-          </div>
+
+            {table && (
+              <div>
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <span>Total elements : {table['total']}</span>
+                  <span>Page size</span>
+                  <select onChange={(e) => setPageSize(Number(e.target.value))}>
+                    {[10, 20, 50, 100].map((e) => (
+                      <option key={e}>{e}</option>
+                    ))}
+                  </select>
+                  <label>Page</label>
+                  <input
+                    type="number"
+                    step="1"
+                    value={page}
+                    onChange={(e) => {
+                      let val = Number(e.target.value);
+                      if (val < table['total'] / pageSize) setPage(val);
+                    }}
+                  />
+                </div>
+                <div>
+                  <DataGrid columns={columns} rows={table['items'] ? table['items'] : []} />
+                </div>
+              </div>
+            )}
+          </div>{' '}
         </div>
       </div>
     </ProjectPageLayout>

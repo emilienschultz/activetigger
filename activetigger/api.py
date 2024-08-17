@@ -780,7 +780,6 @@ async def get_list_elements(
     df = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
     if "error" in df:
         raise HTTPException(status_code=500, detail=df["error"])
-    print(df)
     table = (df[["index", "timestamp", "labels", "text"]]).to_dict(orient="records")
     return TableOutModel(
         items=table,

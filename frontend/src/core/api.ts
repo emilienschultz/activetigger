@@ -1016,7 +1016,7 @@ export function useGetTableElements(
       });
       if (!res.error) return res.data;
     }
-  }, [fetchTrigger, scheme]);
+  }, [fetchTrigger, scheme, from]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
