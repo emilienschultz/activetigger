@@ -1069,7 +1069,9 @@ class Project(Server):
                 "test": {},
                 "base_parameters": self.bertmodels.params_default,
             },
-            "projections": {"available": self.features.possible_projections},
+            "projections": {"options": self.features.possible_projections,
+                            "available":[]
+                            },
             "zeroshot": {"data": self.zeroshot},
         }
         return r
