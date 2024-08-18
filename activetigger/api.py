@@ -703,11 +703,13 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
+
+    print(projection)
+
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
 
     features = project.features.get(projection.features)
-    args = {"features": features, "params": projection.params}
 
     if projection.method == "umap":
         try:
@@ -715,6 +717,7 @@ async def compute_projection(
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+        args = {"features": features, "params": e.__dict__}
         unique_id = server.queue.add("projection", functions.compute_umap, args)
         project.features.projections[current_user.username] = {
             "params": projection,
@@ -729,7 +732,7 @@ async def compute_projection(
             e = TsneModel(**projection.params)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
-        # future_result = server.executor.submit(functions.compute_tsne, **args)
+        args = {"features": features, "params": e.__dict__}
         unique_id = server.queue.add("projection", functions.compute_tsne, args)
         project.features.projections[current_user.username] = {
             "params": projection,

@@ -513,8 +513,8 @@ def display_annotate():
     with st.expander("0-shot annotation with LLM"):
         display_zeroshot()
 
-    with st.expander("Explore data"):
-        display_data()
+    # with st.expander("Explore data"):
+    # display_data()
 
     with st.expander("Reconciliate within users"):
         display_reconciliate()

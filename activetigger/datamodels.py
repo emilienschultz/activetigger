@@ -199,6 +199,28 @@ class BertModelModel(BaseModel):
     test_size: float
 
 
+class UmapModel(BaseModel):
+    """
+    Params UmapModel
+    """
+
+    n_neighbors: int
+    min_dist: float
+    n_components: int
+    metric: str
+
+
+class TsneModel(BaseModel):
+    """
+    Params TsneModel
+    """
+
+    n_components: int
+    learning_rate: str | float
+    init: str
+    perplexity: int
+
+
 class ProjectionInModel(BaseModel):
     """
     Request projection
@@ -265,20 +287,6 @@ class BertParams(BaseModel):
     best: bool
     eval: int
     adapt: bool
-
-
-class UmapModel(BaseModel):
-    n_neighbors: int
-    min_dist: float
-    n_components: int
-    metric: str
-
-
-class TsneModel(BaseModel):
-    n_components: int
-    learning_rate: str | float
-    init: str
-    perplexity: int
 
 
 class ZeroShotModel(BaseModel):

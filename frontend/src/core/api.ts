@@ -1022,3 +1022,54 @@ export function useGetTableElements(
 
   return { table: getAsyncMemoData(getTableElements), reFetchTableElements: reFetch };
 }
+
+/**
+ * Post update projection
+ */
+export function useUpdateProjection(projectSlug: string, scheme: string) {
+  const { notify } = useNotifications();
+
+  const updateProjection = useCallback(
+    async (formData: any) => {
+      if (formData.features && scheme && formData.params) {
+        const res = await api.POST('/elements/projection/compute', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+            },
+          },
+          body: {
+            method: formData.method,
+            features: formData.features,
+            params: formData.params,
+          },
+        });
+        if (!res.error) notify({ type: 'warning', message: 'Projection under training' });
+      }
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { updateProjection };
+}
+
+/**
+ * Get projection data
+ */
+export function useGetProjectionData(project_slug: string, scheme: string) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getProjectionData = useAsyncMemo(async () => {
+    if (scheme && project_slug) {
+      const res = await api.GET('/elements/projection/current', {
+        params: { query: { project_slug: project_slug, scheme: scheme } },
+      });
+      if (!res.error) return res.data;
+    }
+  }, [fetchTrigger, scheme]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { projectionData: getAsyncMemoData(getProjectionData), reFetchProjectionData: reFetch };
+}

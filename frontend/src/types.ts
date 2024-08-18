@@ -48,6 +48,10 @@ export type UsersServerModel = components['schemas']['UsersServerModel'];
 
 export type BertModelParametersModel = components['schemas']['BertModelParametersModel'];
 
+export type ProjectionInModel = components['schemas']['ProjectionInModel'];
+export type TsneModel = components['schemas']['TsneModel'];
+export type UmapModel = components['schemas']['UmapModel'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

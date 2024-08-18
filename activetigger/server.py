@@ -1060,7 +1060,7 @@ class Project(Server):
             "simplemodel": {
                 "options": self.simplemodels.available_models,
                 "available": self.simplemodels.available(),
-                "training": self.simplemodels.training(),  # {user:list_schemes_under}
+                "training": self.simplemodels.training(),
             },
             "bertmodels": {
                 "options": self.bertmodels.base_models,

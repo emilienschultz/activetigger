@@ -14,6 +14,7 @@ import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel } from '../types';
 import { LabelsManagement } from './LabelsManagement';
+import { ProjectionManagement } from './ProjectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
@@ -38,6 +39,7 @@ export const ProjectAnnotationPage: FC = () => {
 
   // be sure to have a scheme selected
   if (!projectName) return null;
+  if (!project) return null;
   if (!authenticatedUser?.username) return null;
   if (!currentScheme) {
     notify({ type: 'warning', message: 'You need to select first a scheme' });
@@ -65,7 +67,6 @@ export const ProjectAnnotationPage: FC = () => {
   const availableSamples = project?.next.sample ? project?.next.sample : [];
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
-
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
   var availableModes = project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
@@ -329,8 +330,18 @@ export const ProjectAnnotationPage: FC = () => {
           </div>
         </div>
       </details>
+      <details className="custom-details">
+        <summary className="custom-summary">Projection</summary>
+        <div className="row">
+          <div className="col">
+            <ProjectionManagement
+              currentScheme={currentScheme}
+              projectName={projectName}
+              project={project}
+            />
+          </div>
+        </div>
+      </details>
     </ProjectPageLayout>
   );
 };
-
-//<div>{element ? JSON.stringify(element) : 'loading...'}</div>

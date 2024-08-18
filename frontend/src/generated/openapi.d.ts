@@ -1380,7 +1380,7 @@ export interface components {
             /** Features */
             features: unknown[];
             /** Params */
-            params: Record<string, never>;
+            params: components["schemas"]["UmapModel"] | components["schemas"]["TsneModel"];
         };
         /**
          * ProjectionOutModel
@@ -1518,6 +1518,34 @@ export interface components {
             token_type: string;
             /** Status */
             status: string | null;
+        };
+        /**
+         * TsneModel
+         * @description Params TsneModel
+         */
+        TsneModel: {
+            /** N Components */
+            n_components: number;
+            /** Learning Rate */
+            learning_rate: string | number;
+            /** Init */
+            init: string;
+            /** Perplexity */
+            perplexity: number;
+        };
+        /**
+         * UmapModel
+         * @description Params UmapModel
+         */
+        UmapModel: {
+            /** N Neighbors */
+            n_neighbors: number;
+            /** Min Dist */
+            min_dist: number;
+            /** N Components */
+            n_components: number;
+            /** Metric */
+            metric: string;
         };
         /**
          * UserModel
