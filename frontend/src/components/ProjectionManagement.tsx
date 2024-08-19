@@ -1,5 +1,6 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import {
   VictoryChart,
   VictoryLegend,
@@ -19,7 +20,7 @@ interface ProjectionManagementProps {
   project: ProjectStateModel;
 }
 
-// generate random colors
+// function to generate random colors
 const generateRandomColor = () => {
   const letters = '0123456789ABCDEF';
   let color = '#';
@@ -29,6 +30,7 @@ const generateRandomColor = () => {
   return color;
 };
 
+// define the component
 export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   projectName,
   currentScheme,
@@ -36,6 +38,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 }) => {
   const { authenticatedUser } = useAuth();
   if (!authenticatedUser?.username) return null;
+
+  const navigate = useNavigate();
 
   // get projection data (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -86,12 +90,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       : {};
   }, [reFetchProjectionData]); // Le calcul ne sera refait que si uniqueLabels change
 
-  /*const labelColorMapping = uniqueLabels
-    ? uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
-        acc[label as string] = generateRandomColor();
-        return acc;
-      }, {})
-    : {};*/
+  // manage zoom selection
+  const [zoomDomain, setZoomDomain] = useState(null);
+  const handleZoom = (domain: any) => {
+    setZoomDomain(domain);
+  };
+
+  console.log(zoomDomain);
 
   return (
     <div>
@@ -185,7 +190,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           {
             <VictoryChart
               theme={VictoryTheme.material}
-              containerComponent={<VictoryZoomContainer />}
+              containerComponent={<VictoryZoomContainer onZoomDomainChange={handleZoom} />}
               height={300}
               width={300}
             >
@@ -197,7 +202,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   },
                 }}
                 size={1}
-                labels={({ datum }) => datum.texts}
+                labels={({ datum }) => datum.index}
                 labelComponent={
                   <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />
                 }
@@ -207,8 +212,20 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     y: projectionData.y[index],
                     labels: projectionData.labels[index],
                     texts: projectionData.texts[index],
+                    index: projectionData.index[index],
                   };
                 })}
+                events={[
+                  {
+                    target: 'data',
+                    eventHandlers: {
+                      onClick: (event, props) => {
+                        const { datum } = props;
+                        navigate(`/projects/test3/annotate/${datum.index}`);
+                      },
+                    },
+                  },
+                ]}
               />
               <VictoryLegend
                 x={125}
@@ -222,11 +239,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   title: { fontSize: 5 },
                   labels: { fontSize: 5 },
                 }}
-                data={[
-                  { name: 'Autre', symbol: { fill: labelColorMapping.Autre } },
-                  { name: 'Règles', symbol: { fill: labelColorMapping.Règles } },
-                  { name: 'NA', symbol: { fill: labelColorMapping.NA } },
-                ]}
+                data={Object.keys(labelColorMapping).map((label) => ({
+                  name: label,
+                  symbol: { fill: labelColorMapping[label] },
+                }))}
               />
             </VictoryChart>
           }
