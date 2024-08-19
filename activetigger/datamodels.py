@@ -204,9 +204,9 @@ class UmapModel(BaseModel):
     Params UmapModel
     """
 
+    n_components: int
     n_neighbors: int
     min_dist: float
-    n_components: int
     metric: str
 
 
@@ -228,8 +228,8 @@ class ProjectionInModel(BaseModel):
     """
 
     method: str
-    features: list
-    params: UmapModel | TsneModel
+    features: List
+    params: Dict[str, Any]
 
 
 class ProjectionOutModel(BaseModel):

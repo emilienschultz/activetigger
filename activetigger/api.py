@@ -738,6 +738,7 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
+    print(projection)
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
 
@@ -745,8 +746,8 @@ async def compute_projection(
 
     if projection.method == "umap":
         try:
-            # e = UmapModel(**projection.params)
-            e = UmapModel(**projection.params.__dict__)
+            e = UmapModel(**projection.params)
+            # e = UmapModel(**projection.params.__dict__)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -761,8 +762,8 @@ async def compute_projection(
 
     if projection.method == "tsne":
         try:
-            # e = TsneModel(**projection.params)
-            e = TsneModel(**projection.params.__dict__)
+            e = TsneModel(**projection.params)
+            # e = TsneModel(**projection.params.__dict__)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
         args = {"features": features, "params": e.__dict__}

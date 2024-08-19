@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -74,22 +74,42 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   };
 
   // scatterplot management for colors
-  const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
+  const [labelColorMapping, setLabelColorMapping] = useState<{ [key: string]: string } | null>(
+    null,
+  );
 
+  useEffect(() => {
+    if (projectionData && !labelColorMapping) {
+      const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
+      const colors = uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
+        acc[label as string] = generateRandomColor();
+        return acc;
+      }, {});
+      setLabelColorMapping(colors);
+    }
+  }, [project]);
+
+  /*
   const labelColorMapping = useMemo(() => {
+    const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
     return uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
       acc[label as string] = generateRandomColor();
       return acc;
     }, {});
-  }, [reFetchProjectionData]); // Le calcul ne sera refait que si uniqueLabels change
+  }, [reFetchProjectionData, project]); // Le calcul ne sera refait que si uniqueLabels change
+
+  console.log(labelColorMapping);
+  */
 
   // manage zoom selection
   const [zoomDomain, setZoomDomain] = useState(null);
+  console.log(zoomDomain);
+
   const handleZoom = (domain: any) => {
     setZoomDomain(domain);
   };
   // TODO : add to configuration context
-  console.log(zoomDomain);
+  //console.log(zoomDomain);
 
   return (
     <div>
@@ -179,7 +199,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           <button className="btn btn-primary btn-validation">Compute</button>
         </form>
       </details>
-      {projectionData && (
+      {projectionData && labelColorMapping && (
         <div style={{ height: 500, padding: 30 }}>
           {
             <VictoryChart
@@ -195,7 +215,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     opacity: 0.7,
                   },
                 }}
-                size={1}
+                size={2}
                 labels={({ datum }) => datum.index}
                 labelComponent={
                   <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />

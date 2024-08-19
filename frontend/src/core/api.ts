@@ -8,6 +8,7 @@ import {
   FeatureDfmParameters,
   LoginParams,
   ProjectDataModel,
+  ProjectionInModel,
   SelectionConfig,
   newBertModel,
 } from '../types';
@@ -1030,7 +1031,9 @@ export function useUpdateProjection(projectSlug: string, scheme: string) {
   const { notify } = useNotifications();
 
   const updateProjection = useCallback(
-    async (formData: any) => {
+    async (formData: ProjectionInModel) => {
+      console.log('format');
+      console.log(formData);
       if (formData.features && scheme && formData.params) {
         const res = await api.POST('/elements/projection/compute', {
           params: {
