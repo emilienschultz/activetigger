@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,16 +11,17 @@ import {
 } from 'victory';
 
 import { useGetProjectionData, useUpdateProjection } from '../core/api';
-import { useAuth } from '../core/auth';
 import { ProjectStateModel, ProjectionInModel } from '../types';
 
 interface ProjectionManagementProps {
   projectName: string;
   currentScheme: string;
   project: ProjectStateModel;
+  username?: string;
 }
 
 // function to generate random colors
+// TODO : better selection
 const generateRandomColor = () => {
   const letters = '0123456789ABCDEF';
   let color = '#';
@@ -36,25 +37,20 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   currentScheme,
   project,
 }) => {
-  const { authenticatedUser } = useAuth();
-  if (!authenticatedUser?.username) return null;
-
   const navigate = useNavigate();
 
-  // get projection data (null if no model)
+  // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
     projectName,
     currentScheme,
   );
 
-  console.log(projectionData);
-
   // form management
-  // state for the model selected
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableProjections = project?.projections.options ? project?.projections.options : null;
+
+  const [selectedModel, setSelectedModel] = useState<string | null>(null); // state for the model selected to modify parameters
   const { register, handleSubmit } = useForm<ProjectionInModel>({
     defaultValues: {
       method: '',
@@ -72,22 +68,19 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   });
 
   // action when form validated
-
   const { updateProjection } = useUpdateProjection(projectName, currentScheme);
-
   const onSubmit: SubmitHandler<ProjectionInModel> = async (formData) => {
     await updateProjection(formData);
   };
 
-  const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : null;
+  // scatterplot management for colors
+  const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
 
   const labelColorMapping = useMemo(() => {
-    return uniqueLabels
-      ? uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
-          acc[label as string] = generateRandomColor();
-          return acc;
-        }, {})
-      : {};
+    return uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
+      acc[label as string] = generateRandomColor();
+      return acc;
+    }, {});
   }, [reFetchProjectionData]); // Le calcul ne sera refait que si uniqueLabels change
 
   // manage zoom selection
@@ -95,12 +88,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const handleZoom = (domain: any) => {
     setZoomDomain(domain);
   };
-
+  // TODO : add to configuration context
   console.log(zoomDomain);
 
   return (
     <div>
-      <div>
+      <details>
+        <summary>Configure</summary>
         <form onSubmit={handleSubmit(onSubmit)}>
           <label htmlFor="model">Select a model</label>
           <select
@@ -184,7 +178,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
           <button className="btn btn-primary btn-validation">Compute</button>
         </form>
-      </div>
+      </details>
       {projectionData && (
         <div style={{ height: 500, padding: 30 }}>
           {

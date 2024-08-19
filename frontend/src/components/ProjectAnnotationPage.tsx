@@ -331,7 +331,7 @@ export const ProjectAnnotationPage: FC = () => {
         </div>
       </details>
       <details className="custom-details">
-        <summary className="custom-summary">Projection</summary>
+        <summary className="custom-summary">Compute projection</summary>
         <div className="row">
           <div className="col">
             <ProjectionManagement
