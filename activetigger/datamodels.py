@@ -224,12 +224,21 @@ class TsneModel(BaseModel):
 class ProjectionInModel(BaseModel):
     """
     Request projection
-    TODO : model for parameters
     """
 
     method: str
     features: List
     params: Dict[str, Any]
+
+
+class ProjectionInStrictModel(BaseModel):
+    """
+    Request projection
+    """
+
+    method: str
+    features: List
+    params: TsneModel | UmapModel
 
 
 class ProjectionOutModel(BaseModel):

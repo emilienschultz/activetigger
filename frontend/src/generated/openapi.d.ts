@@ -1392,7 +1392,6 @@ export interface components {
         /**
          * ProjectionInModel
          * @description Request projection
-         *     TODO : model for parameters
          */
         ProjectionInModel: {
             /** Method */

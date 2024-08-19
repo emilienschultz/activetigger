@@ -20,6 +20,22 @@ interface ProjectionManagementProps {
   username?: string;
 }
 
+type Params = {
+  n_components: number;
+  perplexity: number;
+  learning_rate: string;
+  init: string;
+  metric: string;
+  n_neighbors: number;
+  min_dist: number;
+};
+
+type ProjectionInStrictModel = {
+  method: string;
+  features: string[];
+  params: Params;
+};
+
 // function to generate random colors
 // TODO : better selection
 const generateRandomColor = () => {
@@ -51,7 +67,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const availableProjections = project?.projections.options ? project?.projections.options : null;
 
   const [selectedModel, setSelectedModel] = useState<string | null>(null); // state for the model selected to modify parameters
-  const { register, handleSubmit } = useForm<ProjectionInModel>({
+  const { register, handleSubmit } = useForm<ProjectionInStrictModel>({
     defaultValues: {
       method: '',
       features: [],
@@ -69,7 +85,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   // action when form validated
   const { updateProjection } = useUpdateProjection(projectName, currentScheme);
-  const onSubmit: SubmitHandler<ProjectionInModel> = async (formData) => {
+  const onSubmit: SubmitHandler<ProjectionInStrictModel> = async (formData) => {
     await updateProjection(formData);
   };
 
@@ -87,7 +103,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       }, {});
       setLabelColorMapping(colors);
     }
-  }, [project]);
+  }, [projectionData, labelColorMapping]);
 
   /*
   const labelColorMapping = useMemo(() => {
