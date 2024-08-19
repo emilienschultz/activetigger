@@ -1062,10 +1062,13 @@ export function useGetProjectionData(project_slug: string, scheme: string) {
 
   const getProjectionData = useAsyncMemo(async () => {
     if (scheme && project_slug) {
-      const res = await api.GET('/elements/projection/current', {
+      const res = await api.GET('/elements/projection', {
         params: { query: { project_slug: project_slug, scheme: scheme } },
       });
-      if (!res.error) return res.data;
+      if (!res.error) {
+        if ('data' in res) return res.data;
+        else return null;
+      }
     }
   }, [fetchTrigger, scheme]);
 

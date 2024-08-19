@@ -229,7 +229,7 @@ class ProjectionInModel(BaseModel):
 
     method: str
     features: list
-    params: dict
+    params: UmapModel | TsneModel
 
 
 class ProjectionOutModel(BaseModel):

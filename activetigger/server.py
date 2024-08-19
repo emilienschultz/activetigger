@@ -1069,9 +1069,15 @@ class Project(Server):
                 "test": {},
                 "base_parameters": self.bertmodels.params_default,
             },
-            "projections": {"options": self.features.possible_projections,
-                            "available":[]
-                            },
+            "projections": {
+                "options": self.features.possible_projections,
+                # if computed : user + unique id
+                "available": {
+                    u: self.features.projections[u]["id"]
+                    for u in self.features.projections
+                    if "data" in self.features.projections[u]
+                },
+            },
             "zeroshot": {"data": self.zeroshot},
         }
         return r
@@ -1363,6 +1369,7 @@ class Features:
             if self.queue.current[unique_id]["future"].done():
                 df = self.queue.current[unique_id]["future"].result()
                 self.projections[u]["data"] = df
+                self.projections[u]["id"] = self.projections[u]["queue"]
                 del self.projections[u]["queue"]
                 self.queue.delete(unique_id)
 

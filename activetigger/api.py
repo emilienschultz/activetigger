@@ -649,6 +649,41 @@ async def get_next(
     return ElementOutModel(**r)
 
 
+@app.get("/elements/projection", dependencies=[Depends(verified_user)])
+async def get_projection(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    scheme: str | None,
+) -> ProjectionOutModel | None:
+    """
+    Get projection data if computed
+    """
+    if not current_user.username in project.features.projections:
+        return None
+
+    if scheme is None:  # only the projection without specific annotations
+        data = (
+            project.features.projections[current_user.username]["data"]
+            .fillna("NA")
+            .to_dict()
+        )
+    else:  # add existing annotations in the data
+        data = project.features.projections[current_user.username]["data"]
+        df = project.schemes.get_scheme_data(scheme, complete=True)
+        data["labels"] = df["labels"]
+        data["texts"] = df["text"]
+        data = data.fillna("NA")
+        return ProjectionOutModel(
+            index=list(data.index),
+            x=list(data[0]),
+            y=list(data[1]),
+            labels=list(data["labels"]),
+            texts=list(data["texts"]),
+            status=project.features.projections[current_user.username]["id"],
+        )
+    raise HTTPException(status_code=400, detail="Projection problem")
+
+
 @app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
 async def get_projection(
     project: Annotated[Project, Depends(get_project)],
@@ -703,9 +738,6 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
-
-    print(projection)
-
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
 
@@ -713,7 +745,8 @@ async def compute_projection(
 
     if projection.method == "umap":
         try:
-            e = UmapModel(**projection.params)
+            # e = UmapModel(**projection.params)
+            e = UmapModel(**projection.params.__dict__)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -723,13 +756,13 @@ async def compute_projection(
             "params": projection,
             "method": "umap",
             "queue": unique_id,
-            # "future":future_result
         }
         return WaitingModel(detail="Projection umap under computation")
 
     if projection.method == "tsne":
         try:
-            e = TsneModel(**projection.params)
+            # e = TsneModel(**projection.params)
+            e = TsneModel(**projection.params.__dict__)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
         args = {"features": features, "params": e.__dict__}
@@ -738,7 +771,6 @@ async def compute_projection(
             "params": projection,
             "method": "tsne",
             "queue": unique_id,
-            # "future":future_result
         }
         return WaitingModel(detail="Projection tsne under computation")
     raise HTTPException(status_code=400, detail="Projection not available")
