@@ -1010,14 +1010,14 @@ interface PageInfo {
   pageSize: number;
 }
 export function useTableElements(
-  project_slug: string,
-  scheme: string,
-  initialPage: number,
-  initialPageSize: number,
+  project_slug?: string,
+  scheme?: string,
+  initialPage?: number | null,
+  initialPageSize?: number | null,
 ) {
   const [pageInfo, setPageInfo] = useState<PageInfo>({
-    pageIndex: initialPage,
-    pageSize: initialPageSize,
+    pageIndex: initialPage || 1,
+    pageSize: initialPageSize || 10,
   });
   const [total, setTotal] = useState<number>(0);
 

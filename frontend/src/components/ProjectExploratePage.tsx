@@ -22,12 +22,9 @@ interface Row {
 
 export const ProjectExploratePage: FC = () => {
   const { projectName } = useParams();
-  if (!projectName) return null;
   const {
     appContext: { currentScheme, currentProject: project },
   } = useAppContext();
-  if (!currentScheme) return null;
-  if (!project) return null;
 
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
@@ -52,7 +49,11 @@ export const ProjectExploratePage: FC = () => {
 
   useEffect(() => {
     if (page !== null) getPage({ pageIndex: page, pageSize });
-  }, [page, pageSize]);
+  }, [page, pageSize, getPage]);
+
+  if (!projectName) return null;
+  if (!currentScheme) return null;
+  if (!project) return null;
 
   // define table
   const columns: readonly Column<Row>[] = [
