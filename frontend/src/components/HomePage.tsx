@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Link } from 'react-router-dom';
 
-import logo from '../../assets/at.png';
+import logo from '../assets/at.png';
 import { useAuth } from '../core/auth';
 import { LoginForm } from './forms/LoginForm';
 import Notifications from './layout/Notifications';

@@ -3,7 +3,7 @@ import { FC, useState } from 'react';
 import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
 
-import logo from '../../../assets/at.png';
+import logo from '../../assets/at.png';
 import { useAuth } from '../../core/auth';
 
 const PAGES: { id: string; label: string; href: string }[] = [
