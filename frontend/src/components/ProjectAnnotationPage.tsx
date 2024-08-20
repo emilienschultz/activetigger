@@ -69,7 +69,7 @@ export const ProjectAnnotationPage: FC = () => {
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
-  var availableModes =
+  const availableModes =
     authenticatedUser && project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
       ? project.next.methods
       : project?.next.methods_min

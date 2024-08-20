@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from 'react';
 
 function isTimeoutValid(timeout: number): boolean {
   return !isNaN(timeout) && timeout >= 0 && timeout !== Infinity;
@@ -11,7 +11,10 @@ function isTimeoutValid(timeout: number): boolean {
  * @param timeout The time to wait before to execute the callback
  * @returns a function to cancel the timeout, and an other to reschedule it
  */
-export function useTimeout(callback: () => void, timeout: number = 0): { cancel: () => void; reschedule: () => void } {
+export function useTimeout(
+  callback: () => void,
+  timeout: number = 0,
+): { cancel: () => void; reschedule: () => void } {
   // reference the current timeoutId
   const timeoutIdRef = useRef<number | null>(null);
 

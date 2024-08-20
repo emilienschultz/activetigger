@@ -879,8 +879,8 @@ export function useGetFeaturesFile(projectSlug: string) {
 
         if (!res.error) {
           notify({ type: 'warning', message: 'Exporting the predictions of the model' });
-          var csvURL = window.URL.createObjectURL(res.data);
-          var tempLink = document.createElement('a');
+          const csvURL = window.URL.createObjectURL(res.data);
+          const tempLink = document.createElement('a');
           tempLink.href = csvURL;
           tempLink.setAttribute('download', 'features.' + format);
           tempLink.click();
@@ -916,8 +916,8 @@ export function useGetAnnotationsFile(projectSlug: string) {
 
         if (!res.error) {
           notify({ type: 'warning', message: 'Exporting the annotated data' });
-          var csvURL = window.URL.createObjectURL(res.data);
-          var tempLink = document.createElement('a');
+          const csvURL = window.URL.createObjectURL(res.data);
+          const tempLink = document.createElement('a');
           tempLink.href = csvURL;
           tempLink.setAttribute('download', 'annotations.' + format);
           tempLink.click();
@@ -953,8 +953,8 @@ export function useGetPredictionsFile(projectSlug: string) {
 
         if (!res.error) {
           notify({ type: 'warning', message: 'Exporting the predictions data' });
-          var csvURL = window.URL.createObjectURL(res.data);
-          var tempLink = document.createElement('a');
+          const csvURL = window.URL.createObjectURL(res.data);
+          const tempLink = document.createElement('a');
           tempLink.href = csvURL;
           tempLink.setAttribute('download', 'predictions.' + format);
           tempLink.click();
