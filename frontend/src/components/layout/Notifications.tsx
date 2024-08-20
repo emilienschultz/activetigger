@@ -1,4 +1,5 @@
 import cx from 'classnames';
+import { isDate } from 'lodash';
 import { FC, ReactNode, useCallback, useState } from 'react';
 import {
   BsFillCheckCircleFill,
@@ -81,7 +82,9 @@ const Notification: FC<{
       <div className="toast-header">
         {ICONS_TOAST[notification.type]}
         <strong className="ms-2 me-auto">{notification.title || notification.type}</strong>
-        {notification.createdAt && <small>{dateToFromAgo(notification.createdAt)}</small>}
+        {notification.createdAt && isDate(notification.createdAt) && (
+          <small>{dateToFromAgo(notification.createdAt)}</small>
+        )}
 
         <button type="button" className="btn-close" onClick={() => close()}></button>
       </div>
