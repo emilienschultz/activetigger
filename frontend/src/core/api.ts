@@ -1002,26 +1002,42 @@ export function useGetModelFile(projectSlug: string) {
 /**
  * Get table of elements
  */
-export function useGetTableElements(
+interface PageInfo {
+  pageIndex: number;
+  pageSize: number;
+}
+export function useTableElements(
   project_slug: string,
   scheme: string,
-  from: number,
-  to: number,
+  initialPage: number,
+  initialPageSize: number,
 ) {
-  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+  const [pageInfo, setPageInfo] = useState<PageInfo>({
+    pageIndex: initialPage,
+    pageSize: initialPageSize,
+  });
+  const [total, setTotal] = useState<number>(0);
 
   const getTableElements = useAsyncMemo(async () => {
     if (scheme && project_slug) {
       const res = await api.GET('/elements/table', {
-        params: { query: { project_slug: project_slug, scheme: scheme, min: from, max: to } },
+        params: {
+          query: {
+            project_slug: project_slug,
+            scheme: scheme,
+            min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
+            max: Math.min((pageInfo.pageIndex + 1) * pageInfo.pageSize, total),
+          },
+        },
       });
-      if (!res.error) return res.data;
+      if (!res.error) {
+        setTotal(res.data.total);
+        return res.data.items;
+      }
     }
-  }, [fetchTrigger, scheme, from]);
+  }, [scheme, pageInfo]);
 
-  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
-
-  return { table: getAsyncMemoData(getTableElements), reFetchTableElements: reFetch };
+  return { table: getAsyncMemoData(getTableElements), total, getPage: setPageInfo };
 }
 
 /**
