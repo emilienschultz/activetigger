@@ -1,4 +1,5 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { pick } from 'lodash';
+import { FC, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,7 +12,7 @@ import {
 } from 'victory';
 
 import { useGetProjectionData, useUpdateProjection } from '../core/api';
-import { ProjectStateModel, ProjectionInModel } from '../types';
+import { ProjectStateModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
 
 interface ProjectionManagementProps {
   projectName: string;
@@ -19,22 +20,6 @@ interface ProjectionManagementProps {
   project: ProjectStateModel;
   username?: string;
 }
-
-type Params = {
-  n_components: number;
-  perplexity: number;
-  learning_rate: string;
-  init: string;
-  metric: string;
-  n_neighbors: number;
-  min_dist: number;
-};
-
-type ProjectionInStrictModel = {
-  method: string;
-  features: string[];
-  params: Params;
-};
 
 // function to generate random colors
 // TODO : better selection
@@ -66,27 +51,41 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableProjections = project?.projections.options ? project?.projections.options : null;
 
-  const [selectedModel, setSelectedModel] = useState<string | null>(null); // state for the model selected to modify parameters
-  const { register, handleSubmit } = useForm<ProjectionInStrictModel>({
+  const { register, handleSubmit, watch } = useForm<ProjectionInStrictModel>({
     defaultValues: {
       method: '',
       features: [],
       params: {
-        n_components: 2,
+        // T-SNE
+        number_components: 2,
         perplexity: 30,
         learning_rate: 'auto',
         init: 'random',
+        // UMAP
+        n_components: 2,
         metric: 'euclidean',
         n_neighbors: 15,
         min_dist: 0.1,
       },
     },
   });
+  const selectedMethod = watch('method'); // state for the model selected to modify parameters
 
   // action when form validated
   const { updateProjection } = useUpdateProjection(projectName, currentScheme);
   const onSubmit: SubmitHandler<ProjectionInStrictModel> = async (formData) => {
-    await updateProjection(formData);
+    // fromData has all fields whatever the selected method
+
+    // discard unrelevant fields depending on selected method
+    const relevantParams =
+      selectedMethod === 'tsne'
+        ? ['perplexity', 'n_components', 'learning_rate', 'init']
+        : selectedMethod === 'umap'
+          ? ['n_neighbors', 'min_dist', 'metric', 'n_components']
+          : [];
+    const params = pick(formData.params, relevantParams) as ProjectionModelParams;
+    const data = { ...formData, params };
+    await updateProjection(data);
   };
 
   // scatterplot management for colors
@@ -133,13 +132,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         <summary>Configure</summary>
         <form onSubmit={handleSubmit(onSubmit)}>
           <label htmlFor="model">Select a model</label>
-          <select
-            id="model"
-            {...register('method')}
-            onChange={(e) => {
-              setSelectedModel(e.currentTarget.value);
-            }}
-          >
+          <select id="model" {...register('method')}>
             <option value=""></option>
             {Object.keys(availableProjections ? availableProjections : []).map((e) => (
               <option key={e} value={e}>
@@ -157,7 +150,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               ))}{' '}
             </select>
           </div>
-          {availableProjections && selectedModel == 'tsne' && (
+          {availableProjections && selectedMethod == 'tsne' && (
             <div>
               <label htmlFor="perplexity">perplexity</label>
               <input
@@ -180,7 +173,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               </select>
             </div>
           )}
-          {availableProjections && selectedModel == 'umap' && (
+          {availableProjections && selectedMethod == 'umap' && (
             <div>
               <label htmlFor="n_neighbors">n_neighbors</label>
               <input
@@ -209,7 +202,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             type="number"
             id="n_components"
             step="1"
-            {...register('params.n_components', { valueAsNumber: true })}
+            {...register('params.n_components', { valueAsNumber: true, required: true })}
           ></input>
 
           <button className="btn btn-primary btn-validation">Compute</button>

@@ -1390,16 +1390,16 @@ export interface components {
             created_at: string;
         };
         /**
-         * ProjectionInModel
+         * ProjectionInStrictModel
          * @description Request projection
          */
-        ProjectionInModel: {
+        ProjectionInStrictModel: {
             /** Method */
             method: string;
             /** Features */
             features: unknown[];
             /** Params */
-            params: Record<string, never>;
+            params: components["schemas"]["TsneModel"] | components["schemas"]["UmapModel"];
         };
         /**
          * ProjectionOutModel
@@ -1537,6 +1537,34 @@ export interface components {
             token_type: string;
             /** Status */
             status: string | null;
+        };
+        /**
+         * TsneModel
+         * @description Params TsneModel
+         */
+        TsneModel: {
+            /** N Components */
+            n_components: number;
+            /** Learning Rate */
+            learning_rate: string | number;
+            /** Init */
+            init: string;
+            /** Perplexity */
+            perplexity: number;
+        };
+        /**
+         * UmapModel
+         * @description Params UmapModel
+         */
+        UmapModel: {
+            /** N Components */
+            n_components: number;
+            /** N Neighbors */
+            n_neighbors: number;
+            /** Min Dist */
+            min_dist: number;
+            /** Metric */
+            metric: string;
         };
         /**
          * UserModel
@@ -2278,7 +2306,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProjectionInModel"];
+                "application/json": components["schemas"]["ProjectionInStrictModel"];
             };
         };
         responses: {

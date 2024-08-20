@@ -8,7 +8,7 @@ import {
   FeatureDfmParameters,
   LoginParams,
   ProjectDataModel,
-  ProjectionInModel,
+  ProjectionInStrictModel,
   SelectionConfig,
   newBertModel,
 } from '../types';
@@ -1026,7 +1026,7 @@ export function useTableElements(
             project_slug: project_slug,
             scheme: scheme,
             min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
-            max: Math.min((pageInfo.pageIndex + 1) * pageInfo.pageSize, total),
+            max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
           },
         },
       });
@@ -1047,7 +1047,7 @@ export function useUpdateProjection(projectSlug: string, scheme: string) {
   const { notify } = useNotifications();
 
   const updateProjection = useCallback(
-    async (formData: ProjectionInModel) => {
+    async (formData: ProjectionInStrictModel) => {
       console.log('format');
       console.log(formData);
       if (formData.features && scheme && formData.params) {

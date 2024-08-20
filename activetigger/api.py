@@ -25,6 +25,7 @@ import activetigger.functions as functions
 from activetigger.datamodels import (
     ProjectModel,
     ProjectDataModel,
+    ProjectionInStrictModel,
     TableInModel,
     TableOutModel,
     ActionModel,
@@ -731,7 +732,7 @@ async def get_projection(
 async def compute_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    projection: ProjectionInModel,
+    projection: ProjectionInStrictModel,
 ) -> WaitingModel:
     """
     Start projection computation using futures
@@ -746,8 +747,8 @@ async def compute_projection(
 
     if projection.method == "umap":
         try:
-            e = UmapModel(**projection.params)
-            # e = UmapModel(**projection.params.__dict__)
+            # e = UmapModel(**projection.params)
+            e = UmapModel(**projection.params.__dict__)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -762,8 +763,8 @@ async def compute_projection(
 
     if projection.method == "tsne":
         try:
-            e = TsneModel(**projection.params)
-            # e = TsneModel(**projection.params.__dict__)
+            # e = TsneModel(**projection.params)
+            e = TsneModel(**projection.params.__dict__)
         except ValidationError as e:
             raise HTTPException(status_code=500, detail=str(e))
         args = {"features": features, "params": e.__dict__}

@@ -48,7 +48,10 @@ export type UsersServerModel = components['schemas']['UsersServerModel'];
 
 export type BertModelParametersModel = components['schemas']['BertModelParametersModel'];
 
-export type ProjectionInModel = components['schemas']['ProjectionInModel'];
+export type ProjectionInStrictModel = components['schemas']['ProjectionInStrictModel'];
+export type ProjectionModelParams =
+  | components['schemas']['TsneModel']
+  | components['schemas']['UmapModel'];
 
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
