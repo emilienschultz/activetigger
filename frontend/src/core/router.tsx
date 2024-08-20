@@ -1,4 +1,4 @@
-import { Outlet, createBrowserRouter } from 'react-router-dom';
+import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
 import { HelpPage } from '../components/HelpPage';
@@ -17,7 +17,7 @@ import { UsersPage } from '../components/UsersPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 
 export function getRouter() {
-  return createBrowserRouter([
+  return createHashRouter([
     {
       path: '/',
       element: <HomePage />,
