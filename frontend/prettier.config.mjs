@@ -1,4 +1,6 @@
 /** @type {import("prettier").Config} */
+import prettierPluginSortImports from '@trivago/prettier-plugin-sort-imports';
+
 const config = {
   printWidth: 100,
   singleQuote: true,
@@ -9,7 +11,7 @@ const config = {
   importOrderSeparation: true,
   importOrderSortSpecifiers: true,
   importOrderGroupNamespaceSpecifiers: true,
-  plugins: ['@trivago/prettier-plugin-sort-imports'],
+  plugins: [prettierPluginSortImports],
 };
 
 export default config;

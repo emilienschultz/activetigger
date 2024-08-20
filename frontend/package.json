@@ -5,14 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "compile": "tsc",
+    "compile": "npm run lint && tsc -b",
     "build": "tsc -b && vite build",
     "generate": "npx openapi-typescript http://localhost:5000/openapi.json -o src/generated/openapi.d.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "ag-grid-react": "^32.1.0",
     "bootstrap": "^5.3.3",
     "classnames": "^2.5.1",
@@ -20,7 +19,6 @@
     "lodash": "^4.17.21",
     "openapi-fetch": "^0.10.2",
     "papaparse": "^5.4.1",
-    "prettier": "^3.3.2",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.4",
     "react-data-grid": "^7.0.0-beta.46",
@@ -34,17 +32,22 @@
     "victory": "^37.0.2"
   },
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/lodash": "^4.17.6",
     "@types/papaparse": "^5.3.14",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.13.1",
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.7",
     "openapi-typescript": "^7.0.0",
+    "prettier": "^3.3.2",
     "typescript": "^5.4.2",
     "vite": "^5.3.1"
   }
