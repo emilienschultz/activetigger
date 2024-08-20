@@ -1,7 +1,6 @@
 import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
 import { IoMdReturnLeft } from 'react-icons/io';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import {
   useAddAnnotation,
@@ -39,7 +38,6 @@ export const ProjectAnnotationPage: FC = () => {
 
   // be sure to have a scheme selected
   if (!projectName) return null;
-  if (!project) return null;
   if (!authenticatedUser?.username) return null;
   if (!currentScheme) {
     notify({ type: 'warning', message: 'You need to select first a scheme' });
@@ -61,32 +59,22 @@ export const ProjectAnnotationPage: FC = () => {
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
-  const currentModel = project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
-    ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-    : { model: 'No simplemodel trained' };
+  const currentModel =
+    authenticatedUser &&
+    project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
+      ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
+      : { model: 'No simplemodel trained' };
   const availableSamples = project?.next.sample ? project?.next.sample : [];
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
-  var availableModes = project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
-    ? project.next.methods
-    : project?.next.methods_min
-      ? project?.next.methods_min
-      : [];
-
-  // manage the hide/visible menu for the label
-  const [selectedMode, setSelectedMode] = useState('');
-  const handleSelectChangeMode = (e: ChangeEvent<HTMLSelectElement>) => {
-    selectionConfig.mode = e.target.value;
-    setSelectedMode(e.target.value);
-  };
-
-  // update the selection config when the user change a menu
-  useEffect(() => {
-    setAppContext((prev) => ({ ...prev, selectionConfig: selectionConfig }));
-    console.log('Update selectionConfig');
-  }, [selectionConfig]);
+  var availableModes =
+    authenticatedUser && project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
+      ? project.next.methods
+      : project?.next.methods_min
+        ? project?.next.methods_min
+        : [];
 
   const elementOutModel = {
     element_id: '',
@@ -121,14 +109,6 @@ export const ProjectAnnotationPage: FC = () => {
     }
   }, [elementId]);
 
-  const handleDisplayPrediction = () => {
-    selectionConfig.displayPrediction = !selectionConfig.displayPrediction;
-  };
-
-  const handleDisplayInformations = () => {
-    selectionConfig.displayContext = !selectionConfig.displayContext;
-  };
-
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
 
@@ -143,29 +123,35 @@ export const ProjectAnnotationPage: FC = () => {
     if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
       setUpdatedSimpleModel(false);
     // TODO UPDATE SIMPLEMODEL
-  }),
-    [history];
+  }, [history]);
 
-  // manage keyboard shortcut if less than 10 label
-  if (availableLabels.length < 10) {
-    const handleKeyboardEvents = (ev: KeyboardEvent) => {
+  const handleKeyboardEvents = useCallback(
+    (ev: KeyboardEvent) => {
       availableLabels.forEach((label, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           if (elementId) {
             console.log(label);
             addAnnotation(elementId, label).then(navigateToNextElement);
-            history.push(elementId);
+            setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
           }
         }
       });
-    };
+    },
+    [availableLabels, addAnnotation, setAppContext],
+  );
 
-    useEffect(() => {
+  useEffect(() => {
+    // manage keyboard shortcut if less than 10 label
+    if (availableLabels.length > 0 && availableLabels.length < 10) {
       document.addEventListener('keydown', handleKeyboardEvents);
+    }
 
-      return () => document.removeEventListener('keydown', handleKeyboardEvents);
-    }, [availableLabels]);
-  }
+    return () => {
+      if (availableLabels.length > 0 && availableLabels.length < 10) {
+        document.removeEventListener('keydown', handleKeyboardEvents);
+      }
+    };
+  }, [availableLabels]);
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="annotate">
@@ -179,15 +165,29 @@ export const ProjectAnnotationPage: FC = () => {
             <details className="custom-details">
               <summary className="custom-summary">Configure selection mode</summary>
               <label>Selection mode</label>
-              <select onChange={handleSelectChangeMode}>
+              <select
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: { ...selectionConfig, mode: e.target.value },
+                  }));
+                }}
+              >
                 {availableModes.map((e, i) => (
                   <option key={i}>{e}</option>
                 ))}
               </select>
-              {selectedMode == 'maxprob' && (
+              {selectionConfig.mode == 'maxprob' && (
                 <div>
                   <label>Label</label>
-                  <select onChange={(e) => (selectionConfig.label = e.target.value)}>
+                  <select
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: { ...selectionConfig, label: e.target.value },
+                      }));
+                    }}
+                  >
                     {availableLabels.map((e, i) => (
                       <option key={i}>{e}</option>
                     ))}{' '}
@@ -196,7 +196,14 @@ export const ProjectAnnotationPage: FC = () => {
               )}
               <div>
                 <label>On</label>
-                <select onChange={(e) => (selectionConfig.sample = e.target.value)}>
+                <select
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: { ...selectionConfig, sample: e.target.value },
+                    }));
+                  }}
+                >
                   {availableSamples.map((e, i) => (
                     <option key={i}>{e}</option>
                   ))}{' '}
@@ -209,7 +216,12 @@ export const ProjectAnnotationPage: FC = () => {
                     type="text"
                     id="select_regex"
                     placeholder="Enter a regex"
-                    onChange={(e) => (selectionConfig.filter = e.target.value)}
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: { ...selectionConfig, filter: e.target.value },
+                      }));
+                    }}
                   />
                 </label>
               </div>
@@ -225,7 +237,15 @@ export const ProjectAnnotationPage: FC = () => {
                   <input
                     type="checkbox"
                     checked={selectionConfig.displayPrediction}
-                    onChange={handleDisplayPrediction}
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: {
+                          ...selectionConfig,
+                          displayPrediction: !selectionConfig.displayPrediction,
+                        },
+                      }));
+                    }}
                     style={{ marginRight: '10px' }}
                   />
                   Display prediction
@@ -234,7 +254,15 @@ export const ProjectAnnotationPage: FC = () => {
                   <input
                     type="checkbox"
                     checked={selectionConfig.displayContext}
-                    onChange={handleDisplayInformations}
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: {
+                          ...selectionConfig,
+                          displayContext: !selectionConfig.displayContext,
+                        },
+                      }));
+                    }}
                     style={{ marginRight: '10px' }}
                   />
                   Display informations
@@ -281,7 +309,7 @@ export const ProjectAnnotationPage: FC = () => {
             to={'/projects/test3/annotate/' + history[history.length - 1]}
             className="btn btn-outline-secondary"
             onClick={() => {
-              history.pop();
+              setAppContext((prev) => ({ ...prev, history: history.slice(0, -1) }));
             }}
           >
             <IoMdReturnLeft />
@@ -294,7 +322,7 @@ export const ProjectAnnotationPage: FC = () => {
               onClick={(e) => {
                 if (elementId) {
                   addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
-                  history.push(elementId);
+                  setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
                   // TODO manage erreur
                 }
               }}
@@ -323,25 +351,26 @@ export const ProjectAnnotationPage: FC = () => {
             <SimpleModelManagement
               projectName={projectName}
               currentScheme={currentScheme}
-              currentModel={currentModel}
               availableSimpleModels={availableSimpleModels}
               availableFeatures={availableFeatures}
             />
           </div>
         </div>
       </details>
-      <details className="custom-details">
-        <summary className="custom-summary">Compute projection</summary>
-        <div className="row">
-          <div className="col">
-            <ProjectionManagement
-              currentScheme={currentScheme}
-              projectName={projectName}
-              project={project}
-            />
+      {project && (
+        <details className="custom-details">
+          <summary className="custom-summary">Compute projection</summary>
+          <div className="row">
+            <div className="col">
+              <ProjectionManagement
+                currentScheme={currentScheme}
+                projectName={projectName}
+                project={project}
+              />
+            </div>
           </div>
-        </div>
-      </details>
+        </details>
+      )}
     </ProjectPageLayout>
   );
 };
