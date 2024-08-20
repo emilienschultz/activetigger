@@ -226,7 +226,7 @@ export function useStatistics(projectSlug: string, currentScheme: string | null)
       return res.data;
     }
     //TODO: notify
-
+    return null;
     // in this dependencies list we add projectSlug has a different API call will be made if it changes
     // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
   }, [projectSlug, currentScheme]);
@@ -450,28 +450,31 @@ export function useGetElementById(projectSlug: string, currentScheme: string) {
 /**
  * add an annotation
  */
-export function useAddAnnotation(projectSlug: string, scheme: string, username: string) {
+export function useAddAnnotation(projectSlug: string, scheme: string, username?: string) {
   const { notify } = useNotifications();
 
   const addAnnotation = useCallback(
     async (element_id: string, tag: string) => {
       // do the new projects POST call
-      const res = await api.POST('/tags/{action}', {
-        params: {
-          path: { action: 'add' },
-          query: { project_slug: projectSlug },
-        },
-        body: {
-          project_slug: projectSlug,
-          element_id: element_id,
-          tag: tag,
-          user: username,
-          scheme: scheme,
-        },
-      });
-      //if (!res.error) notify({ type: 'success', message: 'Annotation added' });
+      if (username) {
+        await api.POST('/tags/{action}', {
+          params: {
+            path: { action: 'add' },
+            query: { project_slug: projectSlug },
+          },
+          body: {
+            project_slug: projectSlug,
+            element_id: element_id,
+            tag: tag,
+            user: username,
+            scheme: scheme,
+          },
+        });
+        //if (!res.error) notify({ type: 'success', message: 'Annotation added' });
 
-      return true;
+        return true;
+      }
+      return false;
     },
     [projectSlug, scheme, username, notify],
   );

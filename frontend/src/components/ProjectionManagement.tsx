@@ -56,13 +56,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       method: '',
       features: [],
       params: {
+        //common
+        n_components: 2,
         // T-SNE
-        number_components: 2,
         perplexity: 30,
         learning_rate: 'auto',
         init: 'random',
         // UMAP
-        n_components: 2,
         metric: 'euclidean',
         n_neighbors: 15,
         min_dist: 0.1,
@@ -242,7 +242,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   {
                     target: 'data',
                     eventHandlers: {
-                      onClick: (event, props) => {
+                      onClick: (_, props) => {
                         const { datum } = props;
                         navigate(`/projects/test3/annotate/${datum.index}`);
                       },

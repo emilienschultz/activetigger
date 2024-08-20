@@ -8,7 +8,6 @@ import { SimpleModelModel } from '../types';
 interface SimpleModelManagementProps {
   projectName: string;
   currentScheme: string;
-  currentModel: {};
   availableSimpleModels: { [key: string]: any };
   availableFeatures: string[];
 }
@@ -16,7 +15,6 @@ interface SimpleModelManagementProps {
 export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   projectName,
   currentScheme,
-  currentModel,
   availableSimpleModels,
   availableFeatures,
 }) => {
