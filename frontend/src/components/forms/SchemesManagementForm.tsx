@@ -71,9 +71,7 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   return (
     <div className="container-fluid">
       <div className="row">
-        <label className="subsection" htmlFor="scheme-selected">
-          Select current scheme to annotate
-        </label>
+        <label htmlFor="scheme-selected">Available schemes</label>
         <div>
           <select
             id="scheme-selected"

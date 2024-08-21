@@ -19,7 +19,6 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
     <div className="container-fluid">
       <div className="row">
         <div className="col-md-12">
-          <div className="subsection">Statistics</div>
           <table className="table-statistics">
             <tbody>
               <tr className="table-delimiter">
@@ -52,7 +51,6 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
               </tr>
             </tbody>
           </table>
-          {/*JSON.stringify(statistics, null, 2)*/}
         </div>
       </div>
     </div>

@@ -1613,10 +1613,14 @@ class Schemes:
         Add label in a scheme
         """
         available = self.available()
+        print("AVAILABLE", available)
+
         if (label is None) or (label == ""):
             return {"error": "the name is void"}
         if not scheme in available:
             return {"error": "scheme doesn't exist"}
+        if available[scheme] is None:
+            available[scheme] = []
         if label in available[scheme]:
             return {"error": "label already exist"}
         labels = available[scheme]

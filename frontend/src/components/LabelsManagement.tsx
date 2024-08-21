@@ -53,7 +53,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   return (
     <div>
       <div className="d-flex align-items-center">
-        <select id="delete-label" onChange={handleDeleteLabelChange}>
+        <select id="delete-label" onChange={handleDeleteLabelChange} className="form-select">
           {availableLabels.map((e, i) => (
             <option key={i}>{e}</option>
           ))}{' '}
@@ -69,6 +69,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           value={createLabelValue}
           onChange={handleCreateLabelChange}
           placeholder="Enter new label"
+          className="form-input"
         />
         <button onClick={createLabel} className="btn btn p-0">
           <FaPlusCircle size={20} className="m-2" />
