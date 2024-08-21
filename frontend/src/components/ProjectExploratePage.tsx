@@ -31,6 +31,9 @@ export const ProjectExploratePage: FC = () => {
   const [page, setPage] = useState<number | null>(0);
   const [pageSize, setPageSize] = useState(20);
 
+  // data modification management
+  const [modifiedRows, setModifiedRows] = useState<Record<string, string>>({});
+
   // get API elements when table shape change
   const {
     table,
@@ -57,8 +60,19 @@ export const ProjectExploratePage: FC = () => {
 
   // define table
   const columns: readonly Column<Row>[] = [
-    { key: 'index', name: 'ID', resizable: true, width: 180 },
-    { key: 'timestamp', name: 'Timestamp', resizable: true, width: 50 },
+    {
+      key: 'index',
+      name: 'ID',
+      resizable: true,
+      width: 180,
+      renderCell: (props) =>
+        props.row.index in modifiedRows ? (
+          <div className="modified-cell">{props.row.index}</div>
+        ) : (
+          <div>{props.row.index}</div>
+        ),
+    },
+    { key: 'timestamp', name: 'Timestamp', resizable: true, width: 100 },
     { key: 'labels', name: 'Label', resizable: true, renderEditCell: renderDropdown, width: 100 },
     {
       key: 'text',
@@ -87,6 +101,11 @@ export const ProjectExploratePage: FC = () => {
         value={row.labels}
         onChange={(event) => {
           onRowChange({ ...row, labels: event.target.value }, true);
+          setModifiedRows((prevState) => ({
+            ...prevState,
+            [row.index]: event.target.value,
+          }));
+          console.log(modifiedRows);
         }}
         autoFocus
       >
@@ -99,15 +118,26 @@ export const ProjectExploratePage: FC = () => {
     );
   }
 
+  // send changes
+  function validateChanges() {
+    console.log(modifiedRows);
+    // TODO SEND MODIFS
+    //setModifiedRows({});
+  }
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="explorate">
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
             <h2 className="subsection">Data exploration</h2>
+
             {table && (
               <div>
                 <div className="d-flex align-items-center justify-content-between mb-3">
+                  {Object.keys(modifiedRows).length > 0 && (
+                    <button onClick={validateChanges}>Validate changes</button>
+                  )}
                   <span>Total elements : {totalElement}</span>
                   <span>Page size</span>
                   <select
