@@ -50,11 +50,7 @@ export const ProjectAnnotationPage: FC = () => {
   const { getElementById } = useGetElementById(projectName, currentScheme);
 
   // hooks to manage annotation
-  const { addAnnotation } = useAddAnnotation(
-    projectName,
-    currentScheme,
-    authenticatedUser?.username,
-  );
+  const { addAnnotation } = useAddAnnotation(projectName, currentScheme);
 
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];

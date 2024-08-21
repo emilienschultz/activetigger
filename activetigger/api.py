@@ -55,6 +55,7 @@ from activetigger.datamodels import (
     ReconciliationModel,
     AuthActions,
     AvailableProjectsModel,
+    TableAnnotationsModel,
 )
 
 
@@ -778,30 +779,6 @@ async def compute_projection(
     raise HTTPException(status_code=400, detail="Projection not available")
 
 
-# @app.get("/elements/table", dependencies=[Depends(verified_user)])
-# async def get_list_elements(
-#     project: Annotated[Project, Depends(get_project)],
-#     scheme: str,
-#     min: int = 0,
-#     max: int = 0,
-#     contains: str | None = None,
-#     mode: str = "all",
-# ) -> TableOutModel:
-#     """
-#     Get table of elements
-#     """
-#     df = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
-#     if "error" in df:
-#         raise HTTPException(status_code=500, detail=df["error"])
-#     return TableOutModel(
-#         id=list(df.index),
-#         timestamp=list(df["timestamp"]),
-#         label=list(df["labels"]),
-#         text=list(df["text"]),
-#         total_row=project.schemes.get_total(),
-#     )
-
-
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(
     project: Annotated[Project, Depends(get_project)],
@@ -824,21 +801,63 @@ async def get_list_elements(
     )
 
 
-@app.post("/elements/table", dependencies=[Depends(verified_user)])
+# @app.post("/annotation/table", dependencies=[Depends(verified_user)])
+# async def post_list_elements(
+#     project: Annotated[Project, Depends(get_project)],
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+#     table: TableInModel,
+# ) -> None:
+#     """
+#     Post a table of annotations
+#     """
+#     r = project.schemes.push_table(
+#         table=table, user=current_user.username, action=table.action
+#     )
+#     server.log_action(current_user.username, "update data table", project.name)
+#     if "error" in r:
+#         raise HTTPException(status_code=500, detail=r["error"])
+#     return None
+
+
+@app.post("/annotation/table", dependencies=[Depends(verified_user)])
 async def post_list_elements(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    table: TableInModel,
+    table: TableAnnotationsModel,
 ) -> None:
     """
-    Post a table of annotations
+    Update a table of annotations
     """
-    r = project.schemes.push_table(
-        table=table, user=current_user.username, action=table.action
-    )
-    server.log_action(current_user.username, "update data table", project.name)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    print(table)
+    errors = []
+    # loop on annotations
+    for annotation in table.annotations:
+        if annotation.label is None or annotation.element_id is None:
+            errors.append(annotation)
+            continue
+
+        r = project.schemes.push_tag(
+            annotation.element_id,
+            annotation.label,
+            annotation.scheme,
+            current_user.username,
+            "add",
+        )
+        if "error" in r:
+            errors.append(annotation)
+            continue
+        server.log_action(
+            current_user.username,
+            f"update annotation {annotation.element_id}",
+            project.name,
+        )
+
+    if len(errors) > 0:
+        raise HTTPException(
+            status_code=500,
+            detail="Error with some of the annotations - " + str(errors),
+        )
+
     return None
 
 
@@ -922,7 +941,7 @@ async def get_element(
     return ElementOutModel(**r)
 
 
-@app.post("/tags/{action}", dependencies=[Depends(verified_user)])
+@app.post("/annotation/{action}", dependencies=[Depends(verified_user)])
 async def post_tag(
     action: ActionModel,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -936,11 +955,11 @@ async def post_tag(
     - No information kept of selection process
     """
     if action in ["add", "update"]:
-        if annotation.tag is None:
+        if annotation.label is None:
             raise HTTPException(status_code=422, detail="Missing a tag")
         r = project.schemes.push_tag(
             annotation.element_id,
-            annotation.tag,
+            annotation.label,
             annotation.scheme,
             current_user.username,
             "add",

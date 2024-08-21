@@ -123,15 +123,21 @@ class TokenModel(BaseModel):
 
 class AnnotationModel(BaseModel):
     """
-    Specific Annotatoin
+    Specific Annotation
     """
 
     project_slug: str
-    element_id: str
-    tag: str
-    user: str
     scheme: str
-    selection: Optional[str] = None
+    element_id: str
+    label: str
+
+
+class TableAnnotationsModel(BaseModel):
+    """
+    Table of annotations
+    """
+
+    annotations: List[AnnotationModel]
 
 
 class SchemeModel(BaseModel):

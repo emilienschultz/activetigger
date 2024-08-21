@@ -41,6 +41,7 @@ export type FeatureModel = components['schemas']['FeatureModel'];
 export type RequestNextModel = components['schemas']['NextInModel'];
 
 export type AnnotationModel = components['schemas']['AnnotationModel'];
+export type TableAnnotationsModel = components['schemas']['TableAnnotationsModel'];
 
 export type SimpleModelModel = components['schemas']['SimpleModelModel'];
 

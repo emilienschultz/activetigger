@@ -4,12 +4,14 @@ import { useCallback, useState } from 'react';
 
 import type { paths } from '../generated/openapi';
 import {
+  AnnotationModel,
   AvailableProjectsModel,
   FeatureDfmParameters,
   LoginParams,
   ProjectDataModel,
   ProjectionInStrictModel,
   SelectionConfig,
+  TableAnnotationsModel,
   newBertModel,
 } from '../types';
 import { HttpError } from './HTTPError';
@@ -450,14 +452,14 @@ export function useGetElementById(projectSlug: string, currentScheme: string) {
 /**
  * add an annotation
  */
-export function useAddAnnotation(projectSlug: string, scheme: string, username?: string) {
+export function useAddAnnotation(projectSlug: string, scheme: string) {
   const { notify } = useNotifications();
 
   const addAnnotation = useCallback(
-    async (element_id: string, tag: string) => {
+    async (element_id: string, label: string) => {
       // do the new projects POST call
-      if (username) {
-        await api.POST('/tags/{action}', {
+      if (projectSlug && scheme) {
+        await api.POST('/annotation/{action}', {
           params: {
             path: { action: 'add' },
             query: { project_slug: projectSlug },
@@ -465,8 +467,7 @@ export function useAddAnnotation(projectSlug: string, scheme: string, username?:
           body: {
             project_slug: projectSlug,
             element_id: element_id,
-            tag: tag,
-            user: username,
+            label: label,
             scheme: scheme,
           },
         });
@@ -476,10 +477,39 @@ export function useAddAnnotation(projectSlug: string, scheme: string, username?:
       }
       return false;
     },
-    [projectSlug, scheme, username, notify],
+    [projectSlug, scheme, notify],
   );
 
   return { addAnnotation };
+}
+
+/**
+ * add a table of annotations
+ */
+export function useAddTableAnnotations(projectSlug: string, scheme: string) {
+  const { notify } = useNotifications();
+
+  const addTableAnnotations = useCallback(
+    async (table: AnnotationModel[]) => {
+      if (projectSlug && scheme) {
+        const res = await api.POST('/annotation/table', {
+          params: {
+            query: { project_slug: projectSlug },
+          },
+          body: {
+            annotations: table,
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Annotations added' });
+
+        return true;
+      }
+      return false;
+    },
+    [projectSlug, scheme],
+  );
+
+  return { addTableAnnotations };
 }
 
 /**

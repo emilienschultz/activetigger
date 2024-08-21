@@ -5,8 +5,9 @@ import DataGrid, { Column, RenderEditCellProps } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import { useParams } from 'react-router-dom';
 
-import { useTableElements } from '../core/api';
+import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
+import { AnnotationModel } from '../types';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -32,7 +33,7 @@ export const ProjectExploratePage: FC = () => {
   const [pageSize, setPageSize] = useState(20);
 
   // data modification management
-  const [modifiedRows, setModifiedRows] = useState<Record<string, string>>({});
+  const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
 
   // get API elements when table shape change
   const {
@@ -103,7 +104,12 @@ export const ProjectExploratePage: FC = () => {
           onRowChange({ ...row, labels: event.target.value }, true);
           setModifiedRows((prevState) => ({
             ...prevState,
-            [row.index]: event.target.value,
+            [row.index]: {
+              element_id: row.index,
+              label: event.target.value,
+              scheme: currentScheme as string,
+              project_slug: projectName as string,
+            },
           }));
           console.log(modifiedRows);
         }}
@@ -119,10 +125,10 @@ export const ProjectExploratePage: FC = () => {
   }
 
   // send changes
+  const { addTableAnnotations } = useAddTableAnnotations(projectName, currentScheme);
   function validateChanges() {
-    console.log(modifiedRows);
-    // TODO SEND MODIFS
-    //setModifiedRows({});
+    addTableAnnotations(Object.values(modifiedRows)); // send the modifications
+    setModifiedRows({}); // reset modified rows
   }
 
   return (

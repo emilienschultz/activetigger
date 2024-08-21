@@ -1512,7 +1512,7 @@ def _send_tag(label):
         "project_slug": st.session_state.current_project,
         "scheme": st.session_state.current_scheme,
         "element_id": st.session_state.current_element["element_id"],
-        "tag": label,
+        "label": label,
         "user": st.session_state.user,
         "selection": st.session_state.current_element[
             "selection"
@@ -1520,7 +1520,7 @@ def _send_tag(label):
     }
 
     r = _post(
-        route="/tags/add",
+        route="/annotation/add",
         params={"project_slug": st.session_state.current_project},
         json_data=data,
     )
@@ -1694,7 +1694,7 @@ def _send_table(df, labels="label"):
     }
 
     r = _post(
-        "/elements/table",
+        "/annotation/table",
         json_data=data,
         params={
             "project_slug": st.session_state.current_project,

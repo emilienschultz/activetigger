@@ -502,11 +502,27 @@ export interface paths {
          */
         get: operations["get_list_elements_elements_table_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/annotation/table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
         /**
          * Post List Elements
-         * @description Post a table of annotations
+         * @description Update a table of annotations
          */
-        post: operations["post_list_elements_elements_table_post"];
+        post: operations["post_list_elements_annotation_table_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -578,7 +594,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tags/{action}": {
+    "/annotation/{action}": {
         parameters: {
             query?: never;
             header?: never;
@@ -594,7 +610,7 @@ export interface paths {
          *     - For the moment add == update
          *     - No information kept of selection process
          */
-        post: operations["post_tag_tags__action__post"];
+        post: operations["post_tag_annotation__action__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1020,21 +1036,17 @@ export interface components {
         ActionModel: "delete" | "add" | "update";
         /**
          * AnnotationModel
-         * @description Specific Annotatoin
+         * @description Specific Annotation
          */
         AnnotationModel: {
             /** Project Slug */
             project_slug: string;
-            /** Element Id */
-            element_id: string;
-            /** Tag */
-            tag: string;
-            /** User */
-            user: string;
             /** Scheme */
             scheme: string;
-            /** Selection */
-            selection?: string | null;
+            /** Element Id */
+            element_id: string;
+            /** Label */
+            label: string;
         };
         /**
          * AuthActions
@@ -1489,18 +1501,12 @@ export interface components {
             zeroshot: Record<string, never>;
         };
         /**
-         * TableInModel
-         * @description Requesting a table of elements
+         * TableAnnotationsModel
+         * @description Table of annotations
          */
-        TableInModel: {
-            /** List Ids */
-            list_ids: unknown[];
-            /** List Labels */
-            list_labels: unknown[];
-            /** Scheme */
-            scheme: string;
-            /** Action */
-            action: string;
+        TableAnnotationsModel: {
+            /** Annotations */
+            annotations: components["schemas"]["AnnotationModel"][];
         };
         /**
          * TableLogsModel
@@ -2366,7 +2372,7 @@ export interface operations {
             };
         };
     };
-    post_list_elements_elements_table_post: {
+    post_list_elements_annotation_table_post: {
         parameters: {
             query: {
                 project_slug: string;
@@ -2377,7 +2383,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TableInModel"];
+                "application/json": components["schemas"]["TableAnnotationsModel"];
             };
         };
         responses: {
@@ -2537,7 +2543,7 @@ export interface operations {
             };
         };
     };
-    post_tag_tags__action__post: {
+    post_tag_annotation__action__post: {
         parameters: {
             query: {
                 project_slug: string;
