@@ -12,14 +12,9 @@ import {
 } from 'victory';
 
 import { useGetProjectionData, useUpdateProjection } from '../core/api';
-import { ProjectStateModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
-
-interface ProjectionManagementProps {
-  projectName: string;
-  currentScheme: string;
-  project: ProjectStateModel;
-  username?: string;
-}
+import { useAuth } from '../core/auth';
+import { useAppContext } from '../core/context';
+import { ProjectionInStrictModel, ProjectionModelParams } from '../types';
 
 // function to generate random colors
 // TODO : better selection
@@ -32,13 +27,30 @@ const generateRandomColor = () => {
   return color;
 };
 
+const colormap = [
+  '#1f77b4', // tab:blue
+  '#ff7f0e', // tab:orange
+  '#2ca02c', // tab:green
+  '#d62728', // tab:red
+  '#9467bd', // tab:purple
+  '#8c564b', // tab:brown
+  '#e377c2', // tab:pink
+  '#7f7f7f', // tab:gray
+  '#bcbd22', // tab:olive
+  '#17becf', // tab:cyan
+];
+
 // define the component
-export const ProjectionManagement: FC<ProjectionManagementProps> = ({
-  projectName,
-  currentScheme,
-  project,
-}) => {
+export const ProjectionManagement: FC = () => {
+  // hook for all the parameters
+  const {
+    appContext: { currentProject: project, currentScheme, currentProjection },
+    setAppContext,
+  } = useAppContext();
   const navigate = useNavigate();
+  const { authenticatedUser } = useAuth();
+
+  const projectName = project?.params.project_slug ? project?.params.project_slug : null;
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -47,7 +59,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   );
 
   // form management
-
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableProjections = project?.projections.options ? project?.projections.options : null;
 
@@ -93,38 +104,64 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     null,
   );
 
+  // useEffect(() => {
+  //   if (projectionData && !labelColorMapping) {
+  //     const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
+  //     const colors = uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
+  //       acc[label as string] = generateRandomColor();
+  //       return acc;
+  //     }, {});
+  //     setLabelColorMapping(colors);
+  //   }
+  // }, [projectionData, labelColorMapping]);
+
   useEffect(() => {
     if (projectionData && !labelColorMapping) {
       const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
-      const colors = uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
-        acc[label as string] = generateRandomColor();
-        return acc;
-      }, {});
-      setLabelColorMapping(colors);
+      const labeledColors = uniqueLabels.reduce<Record<string, string>>(
+        (acc, label, index: number) => {
+          acc[label as string] = colormap[index];
+          return acc;
+        },
+        {},
+      );
+      setLabelColorMapping(labeledColors);
     }
   }, [projectionData, labelColorMapping]);
 
-  /*
-  const labelColorMapping = useMemo(() => {
-    const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
-    return uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
-      acc[label as string] = generateRandomColor();
-      return acc;
-    }, {});
-  }, [reFetchProjectionData, project]); // Le calcul ne sera refait que si uniqueLabels change
-
-  console.log(labelColorMapping);
-  */
+  // manage projection refresh (could be AMELIORATED)
+  useEffect(() => {
+    // case a first projection is added
+    if (
+      project &&
+      authenticatedUser &&
+      !currentProjection &&
+      authenticatedUser?.username in project?.projections.available
+    ) {
+      reFetchProjectionData();
+      setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
+      console.log('Fetch projection data');
+    }
+    // case if the projection changed
+    if (
+      authenticatedUser &&
+      currentProjection &&
+      currentProjection != project?.projections.available[authenticatedUser?.username]
+    ) {
+      console.log('Refetch projection data');
+      reFetchProjectionData();
+      setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
+    }
+  }, [project, authenticatedUser, currentProjection]);
 
   // manage zoom selection
   const [zoomDomain, setZoomDomain] = useState(null);
-  console.log(zoomDomain);
+  // console.log(zoomDomain);
 
   const handleZoom = (domain: any) => {
     setZoomDomain(domain);
   };
   // TODO : add to configuration context
-  //console.log(zoomDomain);
 
   return (
     <div>

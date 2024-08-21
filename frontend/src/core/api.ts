@@ -1046,14 +1046,17 @@ export function useTableElements(
 /**
  * Post update projection
  */
-export function useUpdateProjection(projectSlug: string, scheme: string) {
+export function useUpdateProjection(
+  projectSlug: string | null | undefined,
+  scheme: string | null | undefined,
+) {
   const { notify } = useNotifications();
 
   const updateProjection = useCallback(
     async (formData: ProjectionInStrictModel) => {
       console.log('format');
       console.log(formData);
-      if (formData.features && scheme && formData.params) {
+      if (projectSlug && formData.features && scheme && formData.params) {
         const res = await api.POST('/elements/projection/compute', {
           params: {
             query: {
@@ -1079,7 +1082,10 @@ export function useUpdateProjection(projectSlug: string, scheme: string) {
 /**
  * Get projection data
  */
-export function useGetProjectionData(project_slug: string, scheme: string) {
+export function useGetProjectionData(
+  project_slug: string | undefined | null,
+  scheme: string | undefined | null,
+) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getProjectionData = useAsyncMemo(async () => {

@@ -362,11 +362,7 @@ export const ProjectAnnotationPage: FC = () => {
           <summary className="custom-summary">Compute projection</summary>
           <div className="row">
             <div className="col">
-              <ProjectionManagement
-                currentScheme={currentScheme}
-                projectName={projectName}
-                project={project}
-              />
+              <ProjectionManagement />
             </div>
           </div>
         </details>
