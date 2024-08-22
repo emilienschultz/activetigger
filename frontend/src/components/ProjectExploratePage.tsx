@@ -132,6 +132,10 @@ export const ProjectExploratePage: FC = () => {
     setModifiedRows({}); // reset modified rows
   }
 
+  function range(start: number, end: number) {
+    return Array.from({ length: end - start }, (_, i) => start + i);
+  }
+
   if (!projectName) return null;
   if (!project) return null;
 
@@ -163,22 +167,19 @@ export const ProjectExploratePage: FC = () => {
                     ))}
                   </select>
                   <label>Page</label>
-                  <input
-                    // todo change this input to a select plus previous/next button
-                    className="from-control"
-                    type="number"
-                    step="1"
-                    min="1"
-                    max={totalElement > 0 ? Math.ceil(totalElement / pageSize) : 1}
-                    value={page || ''}
+                  <select
+                    className="from-select"
                     onChange={(e) => {
-                      if (e.target.value === '') setPage(null);
-                      let val = Number(e.target.value);
-                      // user can input float number 5.6 in which case we keep 5
-                      val = Math.floor(val);
-                      if (val > 0 && val <= Math.ceil(totalElement / pageSize)) setPage(val);
+                      setPage(Number(e.target.value));
                     }}
-                  />
+                    value={page || '1'}
+                  >
+                    {range(1, totalElement > 0 ? Math.ceil(totalElement / pageSize) : 1).map(
+                      (v) => (
+                        <option key={v}>{v}</option>
+                      ),
+                    )}
+                  </select>
                 </div>
 
                 <DataGrid
