@@ -86,14 +86,11 @@ export const ProjectAnnotationPage: FC = () => {
   };
 
   const navigateToNextElement = useCallback(async () => {
-    // change url using the new elementId
-    // const newElementId = await  apiCall()
-    //navigate('/projects/${projectName}/annotate/newid');
     getNextElementId(selectionConfig).then((nextElementId) => {
       if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
       else setElement(elementOutModel);
     });
-  }, [projectName, navigate]);
+  }, [projectName, navigate, selectionConfig]);
 
   useEffect(() => {
     if (elementId === undefined) {
@@ -128,7 +125,7 @@ export const ProjectAnnotationPage: FC = () => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           if (elementId) {
             console.log(label);
-            addAnnotation(elementId, label).then(navigateToNextElement);
+            addAnnotation(elementId, label).then(() => navigateToNextElement);
             setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
           }
         }
@@ -166,19 +163,22 @@ export const ProjectAnnotationPage: FC = () => {
           <div className="col-6 ">
             <details className="custom-details">
               <summary className="custom-summary">Configure selection mode</summary>
-              <label>Selection mode</label>
-              <select
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: { ...selectionConfig, mode: e.target.value },
-                  }));
-                }}
-              >
-                {availableModes.map((e, i) => (
-                  <option key={i}>{e}</option>
-                ))}
-              </select>
+              <div className="d-flex align-items-center justify-content-between">
+                <label>Selection mode</label>
+                <select
+                  className="form-select w-50"
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: { ...selectionConfig, mode: e.target.value },
+                    }));
+                  }}
+                >
+                  {availableModes.map((e, i) => (
+                    <option key={i}>{e}</option>
+                  ))}
+                </select>
+              </div>
               {selectionConfig.mode == 'maxprob' && (
                 <div>
                   <label>Label</label>
@@ -196,9 +196,10 @@ export const ProjectAnnotationPage: FC = () => {
                   </select>
                 </div>
               )}
-              <div>
+              <div className="d-flex align-items-center justify-content-between">
                 <label>On</label>
                 <select
+                  className="form-select w-50"
                   onChange={(e) => {
                     setAppContext((prev) => ({
                       ...prev,
@@ -211,21 +212,20 @@ export const ProjectAnnotationPage: FC = () => {
                   ))}{' '}
                 </select>
               </div>
-              <div>
-                <label htmlFor="select_regex">
-                  Filter
-                  <input
-                    type="text"
-                    id="select_regex"
-                    placeholder="Enter a regex"
-                    onChange={(e) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        selectionConfig: { ...selectionConfig, filter: e.target.value },
-                      }));
-                    }}
-                  />
-                </label>
+              <div className="d-flex align-items-center justify-content-between">
+                <label htmlFor="select_regex">Filter</label>
+                <input
+                  className="form-control w-75"
+                  type="text"
+                  id="select_regex"
+                  placeholder="Enter a regex / CONTEXT= for context"
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: { ...selectionConfig, filter: e.target.value },
+                    }));
+                  }}
+                />
               </div>
               <div>Current model : {currentModel ? currentModel.model : 'No model trained'}</div>
             </details>

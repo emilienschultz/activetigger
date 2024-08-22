@@ -401,9 +401,10 @@ export function useDeleteFeature(projectSlug: string) {
  * @returns ElementId
  */
 export function useGetNextElementId(projectSlug: string, currentScheme: string) {
-  const { notify } = useNotifications();
   const getNextElementId = useCallback(
     async (selectionConfig: SelectionConfig) => {
+      console.log('next element callback');
+      console.log(selectionConfig);
       const res = await api.POST('/elements/next', {
         params: { query: { project_slug: projectSlug } },
         body: {
@@ -417,7 +418,7 @@ export function useGetNextElementId(projectSlug: string, currentScheme: string) 
       });
       return res.data?.element_id;
     },
-    [projectSlug, currentScheme, notify],
+    [projectSlug, currentScheme],
   );
 
   return { getNextElementId };

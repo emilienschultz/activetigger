@@ -875,7 +875,19 @@ class Project(Server):
 
         # add a regex condition to the selection
         if filter:
-            f_regex = df["text"].str.contains(filter, regex=True, case=True, na=False)
+            print(filter)
+            if "CONTEXT=" in filter:  # case to search in the context
+                f_regex = (
+                    df[self.params.cols_context]
+                    .apply(lambda row: " ".join(row.values.astype(str)), axis=1)
+                    .str.contains(
+                        filter.replace("CONTEXT=", ""), regex=True, case=True, na=False
+                    )
+                )
+            else:
+                f_regex = df["text"].str.contains(
+                    filter, regex=True, case=True, na=False
+                )
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
