@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { IoIosAddCircle } from 'react-icons/io';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
+import { FaRegTrashAlt } from 'react-icons/fa';
+import { FaPlusCircle } from 'react-icons/fa';
 
 import { useAddScheme, useDeleteScheme } from '../../core/api';
 import { useAppContext } from '../../core/context';
@@ -69,13 +69,13 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
     if (reFetchCurrentProject) reFetchCurrentProject();
   };
   return (
-    <div className="container-fluid">
+    <div>
       <div className="row">
         <label htmlFor="scheme-selected">Available schemes</label>
-        <div>
+        <div className="d-flex align-items-center mb-3">
           <select
             id="scheme-selected"
-            className="form-select-lg col-3 mb-3"
+            className="form-select-lg"
             onChange={handleSelectScheme}
             value={currentScheme ? currentScheme : ''}
           >
@@ -86,11 +86,11 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
               </option>
             ))}{' '}
           </select>
-          <button onClick={deleteSelectedScheme} className="btn btn p-0">
-            <MdOutlineDeleteOutline size={30} />
+          <button onClick={deleteSelectedScheme} className="btn btn p-0 m-1">
+            <FaRegTrashAlt size={20} />
           </button>
-          <button onClick={handleIconClick} className="btn p-0">
-            <IoIosAddCircle size={30} />
+          <button onClick={handleIconClick} className="btn p-0 m-1">
+            <FaPlusCircle size={20} />
           </button>
         </div>
       </div>

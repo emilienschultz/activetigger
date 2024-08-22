@@ -52,8 +52,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 
   return (
     <div>
-      <div className="d-flex align-items-center">
-        <select id="delete-label" onChange={handleDeleteLabelChange} className="form-select">
+      <label htmlFor="select-label">Available labels</label>
+      <div className="d-flex align-items-center w-100">
+        <select id="select-label" onChange={handleDeleteLabelChange} className="form-select">
           {availableLabels.map((e, i) => (
             <option key={i}>{e}</option>
           ))}{' '}
@@ -62,14 +63,14 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           <FaRegTrashAlt size={20} className="m-2" />
         </button>
       </div>
-      <div className="d-flex align-items-center">
+      <div className="d-flex align-items-center w-100 mt-2">
         <input
           type="text"
           id="new-label"
           value={createLabelValue}
           onChange={handleCreateLabelChange}
           placeholder="Enter new label"
-          className="form-input"
+          className="form-control"
         />
         <button onClick={createLabel} className="btn btn p-0">
           <FaPlusCircle size={20} className="m-2" />
