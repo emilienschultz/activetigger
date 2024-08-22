@@ -3,7 +3,7 @@ import { FC, ReactNode } from 'react';
 import NavBar from './NavBar';
 import Notifications from './Notifications';
 
-type PageLayoutProps = { currentPage?: string; children?: ReactNode; projectName?: string };
+type PageLayoutProps = { currentPage?: string; children?: ReactNode; projectName?: string | null };
 //type PageLayoutProps = PropsWithChildren<{ currentPage?: string;}>
 
 /**
@@ -15,7 +15,7 @@ type PageLayoutProps = { currentPage?: string; children?: ReactNode; projectName
 export const PageLayout: FC<PageLayoutProps> = ({ children, currentPage, projectName }) => {
   return (
     <div>
-      <NavBar currentPage={currentPage} projectName={projectName} />
+      <NavBar currentPage={currentPage} projectName={projectName || null} />
       <main>{children}</main>
       <Notifications />
     </div>

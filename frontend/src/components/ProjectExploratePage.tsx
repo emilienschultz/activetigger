@@ -55,10 +55,6 @@ export const ProjectExploratePage: FC = () => {
     if (page !== null) getPage({ pageIndex: page, pageSize });
   }, [page, pageSize, getPage]);
 
-  if (!projectName) return null;
-  if (!currentScheme) return null;
-  if (!project) return null;
-
   // define table
   const columns: readonly Column<Row>[] = [
     {
@@ -125,11 +121,18 @@ export const ProjectExploratePage: FC = () => {
   }
 
   // send changes
-  const { addTableAnnotations } = useAddTableAnnotations(projectName, currentScheme);
+  const { addTableAnnotations } = useAddTableAnnotations(
+    projectName || null,
+    currentScheme || null,
+  );
   function validateChanges() {
     addTableAnnotations(Object.values(modifiedRows)); // send the modifications
     setModifiedRows({}); // reset modified rows
   }
+
+  if (!projectName) return null;
+  if (!currentScheme) return null;
+  if (!project) return null;
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="explorate">

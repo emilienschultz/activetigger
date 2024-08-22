@@ -15,7 +15,7 @@ const PAGES: { id: string; label: string; href: string }[] = [
 
 interface NavBarPropsType {
   currentPage?: string;
-  projectName?: string;
+  projectName?: string | null;
 }
 
 const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {

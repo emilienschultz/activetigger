@@ -16,12 +16,12 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectExportPage: FC = () => {
   const { projectName } = useParams();
-  if (!projectName) return null;
 
   const {
     appContext: { currentProject: project, currentScheme },
     setAppContext,
   } = useAppContext();
+
   const [format, setFormat] = useState<string>('csv');
   const [features, setFeatures] = useState<string[] | null>(null);
   const [model, setModel] = useState<string | null>(null);
@@ -36,13 +36,13 @@ export const ProjectExportPage: FC = () => {
       ? project?.bertmodels.available[currentScheme][model]['predicted']
       : false;
 
-  const { getFeaturesFile } = useGetFeaturesFile(projectName);
-  const { getAnnotationsFile } = useGetAnnotationsFile(projectName);
-  const { getModelFile } = useGetModelFile(projectName);
-  const { getPredictionsFile } = useGetPredictionsFile(projectName);
+  const { getFeaturesFile } = useGetFeaturesFile(projectName || null);
+  const { getAnnotationsFile } = useGetAnnotationsFile(projectName || null);
+  const { getModelFile } = useGetModelFile(projectName || null);
+  const { getPredictionsFile } = useGetPredictionsFile(projectName || null);
 
   return (
-    <ProjectPageLayout projectName={projectName} currentAction="export">
+    <ProjectPageLayout projectName={projectName || null} currentAction="export">
       <div className="container-fluid">
         <div className="row">
           <div className="col-1"></div>

@@ -14,7 +14,7 @@ export type PossibleProjectActions =
   | 'export';
 
 type ProjectPageLayoutProps = PropsWithChildren<{
-  projectName: string;
+  projectName: string | null;
   currentAction?: PossibleProjectActions;
 }>;
 
@@ -34,7 +34,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
   if (!authenticatedUser) return '';
 
   return (
-    <PageLayout currentPage="projects" projectName={projectName}>
+    <PageLayout currentPage="projects" projectName={projectName || null}>
       <div className="container-fluid">
         <div className="row">
           <div className="col-3">

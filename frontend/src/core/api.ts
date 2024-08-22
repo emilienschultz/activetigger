@@ -486,7 +486,7 @@ export function useAddAnnotation(projectSlug: string, scheme: string) {
 /**
  * add a table of annotations
  */
-export function useAddTableAnnotations(projectSlug: string, scheme: string) {
+export function useAddTableAnnotations(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
   const addTableAnnotations = useCallback(
@@ -890,7 +890,7 @@ export function useComputeModelPrediction(projectSlug: string) {
 /**
  * Get file features
  */
-export function useGetFeaturesFile(projectSlug: string) {
+export function useGetFeaturesFile(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getFeaturesFile = useCallback(
     async (features: string[], format: string) => {
@@ -927,7 +927,7 @@ export function useGetFeaturesFile(projectSlug: string) {
 /**
  * Get file annotations
  */
-export function useGetAnnotationsFile(projectSlug: string) {
+export function useGetAnnotationsFile(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getAnnotationsFile = useCallback(
     async (scheme: string, format: string) => {
@@ -964,7 +964,7 @@ export function useGetAnnotationsFile(projectSlug: string) {
 /**
  * Get file predictions
  */
-export function useGetPredictionsFile(projectSlug: string) {
+export function useGetPredictionsFile(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getPredictionsFile = useCallback(
     async (model: string, format: string) => {
@@ -1001,7 +1001,7 @@ export function useGetPredictionsFile(projectSlug: string) {
 /**
  * Get model file (as a static file)
  */
-export function useGetModelFile(projectSlug: string) {
+export function useGetModelFile(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getModelFile = useCallback(
     async (model: string) => {
