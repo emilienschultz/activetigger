@@ -9,7 +9,7 @@ import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { AnnotationModel } from '../types';
-import { SelectCurrentScheme } from './forms/SchemesManagementForm';
+import { SelectCurrentScheme } from './SchemesManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**

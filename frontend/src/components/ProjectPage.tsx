@@ -6,7 +6,7 @@ import { useDeleteProject } from '../core/api';
 import { useAppContext } from '../core/context';
 import { LabelsManagement } from './LabelsManagement';
 import { ProjectStatistics } from './ProjectStatistics';
-import { SchemesManagement, SelectCurrentScheme } from './forms/SchemesManagementForm';
+import { SchemesManagement, SelectCurrentScheme } from './SchemesManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**

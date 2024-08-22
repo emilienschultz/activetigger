@@ -14,8 +14,8 @@ import { useNotifications } from '../core/notifications';
 import { ElementOutModel } from '../types';
 import { LabelsManagement } from './LabelsManagement';
 import { ProjectionManagement } from './ProjectionManagement';
+import { SelectCurrentScheme } from './SchemesManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
-import { SelectCurrentScheme } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectAnnotationPage: FC = () => {

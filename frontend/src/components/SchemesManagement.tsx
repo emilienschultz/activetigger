@@ -3,10 +3,10 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { FaPlusCircle } from 'react-icons/fa';
 
-import { useAddScheme, useDeleteScheme } from '../../core/api';
-import { useAppContext } from '../../core/context';
-import { useNotifications } from '../../core/notifications';
-import { SchemeModel } from '../../types';
+import { useAddScheme, useDeleteScheme } from '../core/api';
+import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
+import { SchemeModel } from '../types';
 
 interface SchemesManagementProps {
   available_schemes: string[];
