@@ -1384,7 +1384,8 @@ class Features:
         for f in self.map:
             if ("regex_" in f) and (not f in self.informations):
                 df = self.get(f)
-                self.informations[f] = int(df[df.columns[0]].sum())
+                if len(df.columns) > 0:
+                    self.informations[f] = int(df[df.columns[0]].sum())
         return dict(self.informations)
 
 

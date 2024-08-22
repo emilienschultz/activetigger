@@ -26,7 +26,9 @@ export const ProjectFeaturesPage: FC = () => {
   const availableFeatures = project ? Object.values(project.features.available) : [];
 
   // hooks to use the objets
-  const { register, handleSubmit } = useForm<FeatureModelExtended>({});
+  const { register, handleSubmit, watch, reset } = useForm<FeatureModelExtended>({
+    defaultValues: { parameters: { value: '' }, type: '' },
+  });
   const { notify } = useNotifications();
 
   // hook to get the api call
@@ -37,7 +39,8 @@ export const ProjectFeaturesPage: FC = () => {
   const [showCreateNewFeature, setShowCreateNewFeature] = useState(false);
 
   // state for the type of feature to create
-  const [selectedFeatureToCreate, setFeatureToCreate] = useState('');
+  // const [selectedFeatureToCreate, setFeatureToCreate] = useState('');
+  const selectedFeatureToCreate = watch('type');
 
   // action to create the new scheme
   const createNewFeature: SubmitHandler<FeatureModelExtended> = async (formData) => {
@@ -46,8 +49,8 @@ export const ProjectFeaturesPage: FC = () => {
     } catch (error) {
       notify({ type: 'error', message: error + '' });
     }
-    //reFetch();
     setShowCreateNewFeature(!showCreateNewFeature);
+    reset();
   };
 
   // action to delete feature
@@ -62,23 +65,20 @@ export const ProjectFeaturesPage: FC = () => {
       {project && (
         <div className="container-fluid">
           <div className="row">
-            <div className="col-1"></div>
             <div className="col-8">
               <h2 className="subsection">Managing features</h2>
               <span className="explanations">Features are computed from the textual data</span>
 
               {/*Display button to add features*/}
               <div className="row">
-                <div className="col-3">
-                  <button
-                    className="add-feature"
-                    onClick={() => {
-                      setShowCreateNewFeature(!showCreateNewFeature);
-                    }}
-                  >
-                    <IoIosAddCircle size={20} /> Add feature{' '}
-                  </button>
-                </div>
+                <button
+                  className="btn btn-primary btn-validation mt-4"
+                  onClick={() => {
+                    setShowCreateNewFeature(!showCreateNewFeature);
+                  }}
+                >
+                  <IoIosAddCircle size={20} /> Add feature{' '}
+                </button>
               </div>
               {
                 /*Display the menu to add features*/
@@ -89,14 +89,7 @@ export const ProjectFeaturesPage: FC = () => {
                         <label className="form-label" htmlFor="newFeature">
                           Select feature to add
                         </label>
-                        <select
-                          className="form-control"
-                          id="newFeature"
-                          {...register('type')}
-                          onChange={(event) => {
-                            setFeatureToCreate(event.target.value);
-                          }}
-                        >
+                        <select className="form-control" id="newFeature" {...register('type')}>
                           <option></option>
                           {Object.keys(project.features.options).map((element) => (
                             <option key={element} value={element}>
@@ -177,21 +170,18 @@ export const ProjectFeaturesPage: FC = () => {
 
               {/* Display cards for each feature*/}
               <div className="row">
-                <h2 className="subsection">Computed features</h2>
                 {availableFeatures.map((element) => (
-                  <div className="card text-bg-light m-2 text-center" style={{ width: '10rem' }}>
-                    <div className="card-body">
-                      <h5 className="card-title">{element as string}</h5>
-                      <div>
-                        <button
-                          className="btn btn p-0"
-                          onClick={() => {
-                            deleteSelectedFeature(element as string);
-                          }}
-                        >
-                          <MdOutlineDeleteOutline size={30} />
-                        </button>
-                      </div>
+                  <div className="card text-bg-light mt-4">
+                    <div className="card-body d-flex justify-content-between align-items-center">
+                      <span>{element as string}</span>
+                      <button
+                        className="btn btn p-0"
+                        onClick={() => {
+                          deleteSelectedFeature(element as string);
+                        }}
+                      >
+                        <MdOutlineDeleteOutline size={20} />
+                      </button>
                     </div>
                   </div>
                 ))}{' '}
