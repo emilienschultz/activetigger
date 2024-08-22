@@ -65,8 +65,8 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
               ))}
             </ul>
             {authenticatedUser ? (
-              <span className="navbar-text navbar-text-margins">
-                Logged as {authenticatedUser.username} -{' '}
+              <span className="d-flex align-items-center navbar-text navbar-text-margins">
+                Logged as {authenticatedUser.username}
                 <button
                   className="btn btn-primary"
                   onClick={async () => {
@@ -82,9 +82,6 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
               <Link to="/login">
                 <IoMdLogIn title="login" />
               </Link>
-            )}
-            {projectName && (
-              <span className="navbar-text navbar-text-margins">Project {projectName}</span>
             )}
           </div>
         </div>
