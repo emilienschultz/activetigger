@@ -14,18 +14,19 @@ import { PossibleProjectActions } from './ProjectPageLayout';
 /* define a component for project action bar 
 with the project & the current action*/
 export const ProjectActionsSidebar: FC<{
-  projectState: ProjectStateModel;
+  projectState: ProjectStateModel | null;
   currentProjectAction?: PossibleProjectActions;
   currentScheme?: string;
   currentUser: string;
 }> = ({ currentProjectAction, projectState, currentUser }) => {
-  const projectName = projectState.params.project_slug;
+  const projectName = projectState ? projectState.params.project_slug : null;
 
   // test if computation is currently undergoing
-  const currentComputation =
-    currentUser in projectState.bertmodels.training ||
-    currentUser in projectState.simplemodel.training ||
-    (projectState.features.training as string[]).length > 0;
+  const currentComputation = projectState
+    ? currentUser in projectState.bertmodels.training ||
+      currentUser in projectState.simplemodel.training ||
+      (projectState.features.training as string[]).length > 0
+    : false;
 
   return (
     <div className="project-sidebar d-flex flex-column flex-shrink-0 p-3 bg-light">

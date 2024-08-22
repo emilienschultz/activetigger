@@ -126,7 +126,7 @@ export const UsersPage: FC = () => {
                     <th>Delete</th>
                   </tr>
                   {Object.entries(authUsers).map(([user, auth]) => (
-                    <tr>
+                    <tr key={user}>
                       <td>{user}</td>
                       <td>{auth}</td>
                       <td>

@@ -28,7 +28,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
   const {
     appContext: { currentProject: project, currentScheme },
   } = useAppContext();
-  if (!project) return '';
+
   // get current user
   const { authenticatedUser } = useAuth();
   if (!authenticatedUser) return '';
@@ -39,7 +39,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
         <div className="row">
           <div className="col-3">
             <ProjectActionsSidebar
-              projectState={project}
+              projectState={project || null}
               currentProjectAction={currentAction}
               currentScheme={currentScheme}
               currentUser={authenticatedUser.username}

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from pathlib import Path
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from enum import StrEnum
 
 # Data model to use of the API
@@ -267,7 +267,7 @@ class FeatureModel(BaseModel):
 
     type: str
     name: str
-    parameters: Dict[str, Any]
+    parameters: Dict[str, Union[str, float]]
 
 
 class LiblinearParams(BaseModel):

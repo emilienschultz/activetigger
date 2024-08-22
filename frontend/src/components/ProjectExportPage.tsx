@@ -19,7 +19,6 @@ export const ProjectExportPage: FC = () => {
 
   const {
     appContext: { currentProject: project, currentScheme },
-    setAppContext,
   } = useAppContext();
 
   const [format, setFormat] = useState<string>('csv');

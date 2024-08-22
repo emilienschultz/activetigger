@@ -3,6 +3,7 @@ import { FC, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import {
+  DomainTuple,
   VictoryChart,
   VictoryLegend,
   VictoryScatter,
@@ -16,16 +17,10 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectionInStrictModel, ProjectionModelParams } from '../types';
 
-// function to generate random colors
-// TODO : better selection
-const generateRandomColor = () => {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-};
+interface ZoomDomain {
+  x?: DomainTuple;
+  y?: DomainTuple;
+}
 
 const colormap = [
   '#1f77b4', // tab:blue
@@ -136,7 +131,7 @@ export const ProjectionManagement: FC = () => {
       project &&
       authenticatedUser &&
       !currentProjection &&
-      authenticatedUser?.username in project?.projections.available
+      project?.projections.available[authenticatedUser?.username]
     ) {
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
@@ -152,15 +147,23 @@ export const ProjectionManagement: FC = () => {
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
     }
-  }, [project, authenticatedUser, currentProjection]);
+  }, [
+    project,
+    authenticatedUser,
+    currentProjection,
+    reFetchProjectionData,
+    projectionData,
+    setAppContext,
+  ]);
 
   // manage zoom selection
-  const [zoomDomain, setZoomDomain] = useState(null);
+  const [_, setZoomDomain] = useState<ZoomDomain | null>(null);
   // console.log(zoomDomain);
 
-  const handleZoom = (domain: any) => {
+  const handleZoom = (domain: ZoomDomain) => {
     setZoomDomain(domain);
   };
+
   // TODO : add to configuration context
 
   return (

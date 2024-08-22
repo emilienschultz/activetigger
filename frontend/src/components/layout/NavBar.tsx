@@ -18,7 +18,7 @@ interface NavBarPropsType {
   projectName?: string | null;
 }
 
-const NavBar: FC<NavBarPropsType> = ({ currentPage, projectName }) => {
+const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
   const { authenticatedUser, logout } = useAuth();
   const navigate = useNavigate();
 

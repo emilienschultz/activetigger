@@ -65,7 +65,7 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
     return () => {
       api.eject(apiErrorMiddleware);
     };
-  }, []);
+  }, [authenticatedUser, notify, redirectToLogin]);
 
   if (authenticatedUser)
     // if the user is currently authenticated just let him go through its destination by mounting children (i.e. the requested page component)

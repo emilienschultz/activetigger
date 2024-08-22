@@ -6,12 +6,11 @@ import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
   AvailableProjectsModel,
-  FeatureDfmParameters,
   LoginParams,
   ProjectDataModel,
   ProjectionInStrictModel,
   SelectionConfig,
-  TableAnnotationsModel,
+  SimpleModelModel,
   newBertModel,
 } from '../types';
 import { HttpError } from './HTTPError';
@@ -182,7 +181,7 @@ export function useCreateProject() {
           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
         );
     },
-    [],
+    [notify],
   );
   // this POST hook returns a function ready to be used by a component
   return createProject;
@@ -195,15 +194,18 @@ export function useCreateProject() {
  */
 export function useDeleteProject() {
   const { notify } = useNotifications();
-  const deleteProject = useCallback(async (projectSlug: string) => {
-    // do the new projects POST call
-    const res = await api.POST('/projects/delete', {
-      params: {
-        query: { project_slug: projectSlug },
-      },
-    });
-    if (!res.error) notify({ type: 'success', message: 'Project deleted' });
-  }, []);
+  const deleteProject = useCallback(
+    async (projectSlug: string) => {
+      // do the new projects POST call
+      const res = await api.POST('/projects/delete', {
+        params: {
+          query: { project_slug: projectSlug },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Project deleted' });
+    },
+    [notify],
+  );
 
   return deleteProject;
 }
@@ -271,7 +273,7 @@ export function useProject(projectSlug?: string) {
   // 4. make sure to simplify the data returned by discarding the status
   // we also return a refetch method which toggle the fetchTrigger state in order to trigger a new API call
 
-  const reFetch = useCallback(() => setFetchTrigger((f) => !f), [projectSlug]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
   return { project: getAsyncMemoData(project), reFetch };
 }
 
@@ -331,15 +333,11 @@ export function useAddScheme(projectSlug: string) {
 /**
  * create a feature
  **/
-export function useAddFeature(projectSlug: string) {
+export function useAddFeature(projectSlug: string | null) {
   const { notify } = useNotifications();
 
   const addFeature = useCallback(
-    async (
-      featureType: string,
-      featureName: string,
-      featureParameters: FeatureDfmParameters | any,
-    ) => {
+    async (featureType: string, featureName: string, featureParameters: Record<string, string>) => {
       // TODO fix types
 
       console.log('add features');
@@ -348,7 +346,7 @@ export function useAddFeature(projectSlug: string) {
 
       if (!featureName) featureName = featureType;
 
-      if (featureType && featureParameters) {
+      if (featureType && featureParameters && projectSlug) {
         const res = await api.POST('/features/add', {
           params: {
             query: { project_slug: projectSlug },
@@ -358,6 +356,7 @@ export function useAddFeature(projectSlug: string) {
         if (!res.error) notify({ type: 'warning', message: 'Features are under computation...' });
         return true;
       }
+      return false;
     },
     [projectSlug, notify],
   );
@@ -370,12 +369,12 @@ export function useAddFeature(projectSlug: string) {
  * @param projectSlug
  * @returns deleteFeature
  *  */
-export function useDeleteFeature(projectSlug: string) {
+export function useDeleteFeature(projectSlug: string | null) {
   const { notify } = useNotifications();
 
   const deleteFeature = useCallback(
     async (featureName: string | null) => {
-      if (featureName) {
+      if (featureName && projectSlug) {
         const res = await api.POST('/features/delete', {
           params: {
             query: { project_slug: projectSlug, name: featureName },
@@ -384,6 +383,7 @@ export function useDeleteFeature(projectSlug: string) {
         if (!res.error) notify({ type: 'success', message: 'Features deleted' });
         return true;
       }
+      return false;
     },
     [projectSlug, notify],
   );
@@ -400,23 +400,24 @@ export function useDeleteFeature(projectSlug: string) {
  * @param selectionConfig
  * @returns ElementId
  */
-export function useGetNextElementId(projectSlug: string, currentScheme: string) {
+export function useGetNextElementId(projectSlug: string | null, currentScheme: string | null) {
   const getNextElementId = useCallback(
     async (selectionConfig: SelectionConfig) => {
-      console.log('next element callback');
-      console.log(selectionConfig);
-      const res = await api.POST('/elements/next', {
-        params: { query: { project_slug: projectSlug } },
-        body: {
-          scheme: currentScheme,
-          selection: selectionConfig.mode,
-          sample: selectionConfig.sample,
-          tag: selectionConfig.label,
-          filter: selectionConfig.filter,
-          history: [],
-        },
-      });
-      return res.data?.element_id;
+      if (projectSlug && currentScheme) {
+        const res = await api.POST('/elements/next', {
+          params: { query: { project_slug: projectSlug } },
+          body: {
+            scheme: currentScheme,
+            selection: selectionConfig.mode,
+            sample: selectionConfig.sample,
+            tag: selectionConfig.label,
+            filter: selectionConfig.filter,
+            history: [],
+          },
+        });
+        return res.data?.element_id;
+      }
+      return null;
     },
     [projectSlug, currentScheme],
   );
@@ -431,20 +432,21 @@ export function useGetNextElementId(projectSlug: string, currentScheme: string) 
  * @param elementId
  * @returns
  */
-export function useGetElementById(projectSlug: string, currentScheme: string) {
-  const { notify } = useNotifications();
+export function useGetElementById(projectSlug: string | null, currentScheme: string | null) {
   const getElementById = useCallback(
     async (elementId: string) => {
-      const res = await api.GET('/elements/{element_id}', {
-        params: {
-          path: { element_id: elementId },
-          query: { project_slug: projectSlug, scheme: currentScheme },
-        },
-      });
-      if (!res.error) return res.data;
-      else return null;
+      if (projectSlug && currentScheme) {
+        const res = await api.GET('/elements/{element_id}', {
+          params: {
+            path: { element_id: elementId },
+            query: { project_slug: projectSlug, scheme: currentScheme },
+          },
+        });
+        if (!res.error) return res.data;
+      }
+      return null;
     },
-    [projectSlug, currentScheme, notify],
+    [projectSlug, currentScheme],
   );
 
   return { getElementById };
@@ -453,9 +455,7 @@ export function useGetElementById(projectSlug: string, currentScheme: string) {
 /**
  * add an annotation
  */
-export function useAddAnnotation(projectSlug: string, scheme: string) {
-  const { notify } = useNotifications();
-
+export function useAddAnnotation(projectSlug: string | null, scheme: string | null) {
   const addAnnotation = useCallback(
     async (element_id: string, label: string) => {
       // do the new projects POST call
@@ -478,7 +478,7 @@ export function useAddAnnotation(projectSlug: string, scheme: string) {
       }
       return false;
     },
-    [projectSlug, scheme, notify],
+    [projectSlug, scheme],
   );
 
   return { addAnnotation };
@@ -507,7 +507,7 @@ export function useAddTableAnnotations(projectSlug: string | null, scheme: strin
       }
       return false;
     },
-    [projectSlug, scheme],
+    [projectSlug, scheme, notify],
   );
 
   return { addTableAnnotations };
@@ -516,19 +516,22 @@ export function useAddTableAnnotations(projectSlug: string | null, scheme: strin
 /**
  * create a new label
  */
-export function useAddLabel(projectSlug: string, scheme: string) {
+export function useAddLabel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
   const addLabel = useCallback(
     async (label: string) => {
-      const res = await api.POST('/schemes/label/add', {
-        params: {
-          query: { project_slug: projectSlug, scheme: scheme, label: label },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'New label created' });
+      if (projectSlug && scheme) {
+        const res = await api.POST('/schemes/label/add', {
+          params: {
+            query: { project_slug: projectSlug, scheme: scheme, label: label },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'New label created' });
 
-      return true;
+        return true;
+      }
+      return false;
     },
     [projectSlug, scheme, notify],
   );
@@ -539,19 +542,22 @@ export function useAddLabel(projectSlug: string, scheme: string) {
 /**
  * Delete a label
  */
-export function useDeleteLabel(projectSlug: string, scheme: string) {
+export function useDeleteLabel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
   const deleteLabel = useCallback(
     async (label: string) => {
-      const res = await api.POST('/schemes/label/delete', {
-        params: {
-          query: { project_slug: projectSlug, scheme: scheme, label: label },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Label deleted' });
+      if (projectSlug && scheme) {
+        const res = await api.POST('/schemes/label/delete', {
+          params: {
+            query: { project_slug: projectSlug, scheme: scheme, label: label },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Label deleted' });
 
-      return true;
+        return true;
+      }
+      return false;
     },
     [projectSlug, scheme, notify],
   );
@@ -562,25 +568,25 @@ export function useDeleteLabel(projectSlug: string, scheme: string) {
 /**
  * Rename a label
  */
-export function useRenameLabel(projectSlug: string, scheme: string) {
+export function useRenameLabel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
   const renameLabel = useCallback(
     async (formerLabel: string, newLabel: string) => {
-      const res = await api.POST('/schemes/label/rename', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-            scheme: scheme,
-            former_label: formerLabel,
-            new_label: newLabel,
+      if (projectSlug && scheme) {
+        const res = await api.POST('/schemes/label/rename', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              scheme: scheme,
+              former_label: formerLabel,
+              new_label: newLabel,
+            },
           },
-        },
-      });
-
-      console.log(JSON.stringify(res));
-      if (!res.error) notify({ type: 'success', message: 'Label renamed' });
-      else notify({ type: 'error', message: 'Error when renamed' });
+        });
+        if (!res.error) notify({ type: 'success', message: 'Label renamed' });
+        else notify({ type: 'error', message: 'Error when renamed' });
+      }
 
       return true;
     },
@@ -590,12 +596,12 @@ export function useRenameLabel(projectSlug: string, scheme: string) {
   return { renameLabel };
 }
 
-export function useUpdateSimpleModel(projectSlug: string, scheme: string) {
+export function useUpdateSimpleModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
   const updateSimpleModel = useCallback(
-    async (formData: any) => {
-      if (formData.features && scheme && formData.model && formData.params) {
+    async (formData: SimpleModelModel) => {
+      if (projectSlug && formData.features && scheme && formData.model && formData.params) {
         const res = await api.POST('/models/simplemodel', {
           params: {
             query: {
@@ -661,7 +667,7 @@ export function useDeleteUserAuthProject(projectSlug: string | null, reFetchUser
         return true;
       }
     },
-    [projectSlug, notify],
+    [projectSlug, notify, reFetchUsersAuth],
   );
 
   return { deleteUserAuth };
@@ -751,7 +757,7 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
         return true;
       }
     },
-    [projectSlug, notify],
+    [projectSlug, notify, reFetchUsersAuth],
   );
 
   return { addUserAuth };
@@ -760,7 +766,7 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
 /**
  * Train a new bert project
  */
-export function useTrainBertModel(projectSlug: string, scheme: string) {
+export function useTrainBertModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
   const trainBertModel = useCallback(
     async (dataForm: newBertModel) => {
@@ -781,8 +787,9 @@ export function useTrainBertModel(projectSlug: string, scheme: string) {
         if (!res.error) notify({ type: 'warning', message: 'Starting bertmodel training' });
         return true;
       }
+      return null;
     },
-    [projectSlug, notify],
+    [projectSlug, notify, scheme],
   );
 
   return { trainBertModel };
@@ -791,7 +798,7 @@ export function useTrainBertModel(projectSlug: string, scheme: string) {
 /**
  * Rename bert model
  */
-export function useRenameBertModel(projectSlug: string) {
+export function useRenameBertModel(projectSlug: string | null) {
   const { notify } = useNotifications();
   const renameBertModel = useCallback(
     async (former_model_name: string, new_model_name: string) => {
@@ -808,6 +815,7 @@ export function useRenameBertModel(projectSlug: string) {
         if (!res.error) notify({ type: 'success', message: 'Model renamed' });
         return true;
       }
+      return null;
     },
     [projectSlug, notify],
   );
@@ -818,7 +826,7 @@ export function useRenameBertModel(projectSlug: string) {
 /**
  * Delete bert model
  */
-export function useDeleteBertModel(projectSlug: string) {
+export function useDeleteBertModel(projectSlug: string | null) {
   const { notify } = useNotifications();
   const deleteBertModel = useCallback(
     async (model_name: string) => {
@@ -834,6 +842,7 @@ export function useDeleteBertModel(projectSlug: string) {
         if (!res.error) notify({ type: 'success', message: 'Model deleted' });
         return true;
       }
+      return null;
     },
     [projectSlug, notify],
   );
@@ -844,7 +853,7 @@ export function useDeleteBertModel(projectSlug: string) {
 /**
  * Get model informations
  */
-export function useModelInformations(project_slug: string, model_name: string | null) {
+export function useModelInformations(project_slug: string | null, model_name: string | null) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const modelInformations = useAsyncMemo(async () => {
@@ -854,6 +863,7 @@ export function useModelInformations(project_slug: string, model_name: string | 
       });
       if (!res.error) return res.data;
     }
+    return null;
   }, [fetchTrigger, model_name]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
@@ -864,7 +874,7 @@ export function useModelInformations(project_slug: string, model_name: string | 
 /**
  * Compute model prediction
  */
-export function useComputeModelPrediction(projectSlug: string) {
+export function useComputeModelPrediction(projectSlug: string | null) {
   const { notify } = useNotifications();
   const computeModelPrediction = useCallback(
     async (model_name: string) => {
@@ -881,6 +891,7 @@ export function useComputeModelPrediction(projectSlug: string) {
           notify({ type: 'warning', message: 'Computing prediction. It can take some time.' });
         return true;
       }
+      return null;
     },
     [projectSlug, notify],
   );

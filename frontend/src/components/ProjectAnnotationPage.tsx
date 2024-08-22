@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
+import { ChangeEvent, FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { IoMdReturnLeft } from 'react-icons/io';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
@@ -10,7 +10,6 @@ import {
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
-import { useNotifications } from '../core/notifications';
 import { ElementOutModel } from '../types';
 import { LabelsManagement } from './LabelsManagement';
 import { ProjectionManagement } from './ProjectionManagement';
@@ -21,7 +20,6 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 export const ProjectAnnotationPage: FC = () => {
   const { projectName, elementId } = useParams();
   const { authenticatedUser } = useAuth();
-  const { notify } = useNotifications();
   const {
     appContext: {
       currentScheme,
@@ -37,60 +35,58 @@ export const ProjectAnnotationPage: FC = () => {
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
 
-  // be sure to have a scheme selected
-  if (!projectName) return null;
-  if (!authenticatedUser?.username) return null;
-  if (!currentScheme) {
-    notify({ type: 'warning', message: 'You need to select first a scheme' });
-    navigate(`/projects/${projectName}`);
-    return null;
-  }
-
   // hooks to manage element
-  const { getNextElementId } = useGetNextElementId(projectName, currentScheme);
-  const { getElementById } = useGetElementById(projectName, currentScheme);
+  const { getNextElementId } = useGetNextElementId(projectName || null, currentScheme || null);
+  const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
 
   // hooks to manage annotation
-  const { addAnnotation } = useAddAnnotation(projectName, currentScheme);
+  const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null);
 
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
-  const currentModel =
-    authenticatedUser &&
-    project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
+  const currentModel = useMemo(() => {
+    return authenticatedUser &&
+      currentScheme &&
+      project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
       ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-      : { model: 'No simplemodel trained' };
+      : null;
+  }, [project, currentScheme, authenticatedUser]);
   const availableSamples = project?.next.sample ? project?.next.sample : [];
-  const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+  const availableLabels = useMemo(() => {
+    return currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+  }, [project, currentScheme]);
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
   const availableModes =
-    authenticatedUser && project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
+    authenticatedUser &&
+    currentScheme &&
+    project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
       ? project.next.methods
       : project?.next.methods_min
         ? project?.next.methods_min
         : [];
 
-  const elementOutModel = {
-    element_id: '',
-    text: '',
-    context: {},
-    selection: '',
-    info: null,
-    predict: {},
-    frame: [],
-    limit: null,
-    history: [],
-  };
+  const elementOutModel = useMemo(() => {
+    return {
+      element_id: '',
+      text: '',
+      context: {},
+      selection: '',
+      info: null,
+      predict: {},
+      frame: [],
+      limit: null,
+      history: [],
+    };
+  }, []);
 
   const navigateToNextElement = useCallback(async () => {
     getNextElementId(selectionConfig).then((nextElementId) => {
       if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
       else setElement(elementOutModel);
     });
-  }, [projectName, navigate, selectionConfig]);
+  }, [projectName, navigate, selectionConfig, getNextElementId, elementOutModel]);
 
   useEffect(() => {
     if (elementId === undefined) {
@@ -101,13 +97,21 @@ export const ProjectAnnotationPage: FC = () => {
       //fetch element information (text and labels)
       getElementById(elementId).then(setElement);
     }
-  }, [elementId]);
+  }, [
+    elementId,
+    elementOutModel,
+    getNextElementId,
+    getElementById,
+    navigate,
+    selectionConfig,
+    projectName,
+  ]);
 
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
 
   // use a memory to only update once
-  const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
+  const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
 
   useEffect(() => {
     if (!updatedSimpleModel && currentModel && history.length % freqRefreshSimpleModel == 0) {
@@ -117,7 +121,14 @@ export const ProjectAnnotationPage: FC = () => {
     if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
       setUpdatedSimpleModel(false);
     // TODO UPDATE SIMPLEMODEL
-  }, [history]);
+  }, [
+    history,
+    updateSimpleModel,
+    setUpdatedSimpleModel,
+    currentModel,
+    freqRefreshSimpleModel,
+    updatedSimpleModel,
+  ]);
 
   const handleKeyboardEvents = useCallback(
     (ev: KeyboardEvent) => {
@@ -131,7 +142,7 @@ export const ProjectAnnotationPage: FC = () => {
         }
       });
     },
-    [availableLabels, addAnnotation, setAppContext],
+    [availableLabels, addAnnotation, setAppContext, elementId, history, navigateToNextElement],
   );
 
   useEffect(() => {
@@ -145,10 +156,10 @@ export const ProjectAnnotationPage: FC = () => {
         document.removeEventListener('keydown', handleKeyboardEvents);
       }
     };
-  }, [availableLabels]);
+  }, [availableLabels, handleKeyboardEvents]);
 
   return (
-    <ProjectPageLayout projectName={projectName} currentAction="annotate">
+    <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
         <div className="row">
           <h2 className="subsection">Annotation</h2>
@@ -227,7 +238,7 @@ export const ProjectAnnotationPage: FC = () => {
                   }}
                 />
               </div>
-              <div>Current model : {currentModel ? currentModel.model : 'No model trained'}</div>
+              <div>Current model : {currentModel ? currentModel['model'] : 'No model trained'}</div>
             </details>
           </div>
           <div className="col-6 ">
@@ -239,7 +250,7 @@ export const ProjectAnnotationPage: FC = () => {
                   <input
                     type="checkbox"
                     checked={selectionConfig.displayPrediction}
-                    onChange={(e) => {
+                    onChange={(_) => {
                       setAppContext((prev) => ({
                         ...prev,
                         selectionConfig: {
@@ -256,7 +267,7 @@ export const ProjectAnnotationPage: FC = () => {
                   <input
                     type="checkbox"
                     checked={selectionConfig.displayContext}
-                    onChange={(e) => {
+                    onChange={(_) => {
                       setAppContext((prev) => ({
                         ...prev,
                         selectionConfig: {
@@ -339,10 +350,10 @@ export const ProjectAnnotationPage: FC = () => {
         <summary className="custom-summary">Delete, create or replace labels</summary>
         <div className="d-flex align-items-center">
           <LabelsManagement
-            projectName={projectName}
-            currentScheme={currentScheme}
+            projectName={projectName || null}
+            currentScheme={currentScheme || null}
             availableLabels={availableLabels}
-            reFetchCurrentProject={reFetchCurrentProject}
+            reFetchCurrentProject={reFetchCurrentProject || (() => null)}
           />
         </div>
       </details>
@@ -351,8 +362,8 @@ export const ProjectAnnotationPage: FC = () => {
         <div className="row">
           <div className="col">
             <SimpleModelManagement
-              projectName={projectName}
-              currentScheme={currentScheme}
+              projectName={projectName || null}
+              currentScheme={currentScheme || null}
               availableSimpleModels={availableSimpleModels}
               availableFeatures={availableFeatures}
             />

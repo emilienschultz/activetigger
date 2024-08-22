@@ -4,9 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useDeleteProject } from '../core/api';
 //import { useUserProjects } from '../core/api';
 import { useAppContext } from '../core/context';
-import { LabelsManagement } from './LabelsManagement';
 import { ProjectStatistics } from './ProjectStatistics';
-import { SchemesManagement, SelectCurrentScheme } from './SchemesManagement';
+import { SchemesManagement } from './SchemesManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -17,11 +16,8 @@ export const ProjectPage: FC = () => {
   const { projectName } = useParams();
 
   const {
-    appContext: { currentScheme, currentProject: project, reFetchCurrentProject },
+    appContext: { currentScheme, currentProject: project },
   } = useAppContext();
-
-  const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
 
   const navigate = useNavigate();
 
@@ -44,7 +40,7 @@ export const ProjectPage: FC = () => {
             </div>
 
             <div className="row">
-              <SelectCurrentScheme></SelectCurrentScheme>
+              <SchemesManagement projectSlug={projectName} />
             </div>
 
             {currentScheme && (

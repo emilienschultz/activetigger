@@ -9,7 +9,7 @@ import { FeatureModelExtended } from '../../types';
 
 interface FeaturesManagementProps {
   availableFeatures: string[];
-  possibleFeatures: { [key: string]: { [key: string]: any } };
+  possibleFeatures: Record<string, Record<string, number>>;
   projectSlug: string;
   reFetchProject: () => void;
 }
@@ -39,10 +39,10 @@ export const FeaturesManagement: FC<FeaturesManagementProps> = ({
   };
 
   // state for the current selected feature
-  const [getSelectedScheme, setSelectedScheme] = useState(null);
+  const [getSelectedScheme, setSelectedScheme] = useState<string | null>(null);
 
   // manage selected feature
-  const handleSelectFeature = (event: any) => {
+  const handleSelectFeature = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedScheme(event.target.value);
   };
 

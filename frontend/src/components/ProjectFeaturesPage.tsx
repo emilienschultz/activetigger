@@ -16,7 +16,6 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectFeaturesPage: FC = () => {
   const { projectName } = useParams();
-  if (!projectName) return null;
 
   // get element from the state
   const {
@@ -32,8 +31,8 @@ export const ProjectFeaturesPage: FC = () => {
   const { notify } = useNotifications();
 
   // hook to get the api call
-  const addFeature = useAddFeature(projectName);
-  const deleteFeature = useDeleteFeature(projectName);
+  const addFeature = useAddFeature(projectName || null);
+  const deleteFeature = useDeleteFeature(projectName || null);
 
   // state for displaying the new scheme menu
   const [showCreateNewFeature, setShowCreateNewFeature] = useState(false);
@@ -61,7 +60,7 @@ export const ProjectFeaturesPage: FC = () => {
   };
 
   return (
-    <ProjectPageLayout projectName={projectName} currentAction="features">
+    <ProjectPageLayout projectName={projectName || null} currentAction="features">
       {project && (
         <div className="container-fluid">
           <div className="row">
@@ -90,7 +89,7 @@ export const ProjectFeaturesPage: FC = () => {
                           Select feature to add
                         </label>
                         <select className="form-control" id="newFeature" {...register('type')}>
-                          <option></option>
+                          <option key="empty"></option>
                           {Object.keys(project.features.options).map((element) => (
                             <option key={element} value={element}>
                               {element}
@@ -114,8 +113,8 @@ export const ProjectFeaturesPage: FC = () => {
                             <div>
                               <label htmlFor="dfm_tfidf">TF-IDF</label>
                               <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
-                                <option>True</option>
-                                <option>False</option>
+                                <option key="true">True</option>
+                                <option key="false">False</option>
                               </select>
                             </div>
                             <div>
@@ -148,15 +147,15 @@ export const ProjectFeaturesPage: FC = () => {
                             <div>
                               <label htmlFor="dfm_norm">Norm</label>
                               <select id="dfm_norm" {...register('parameters.dfm_norm')}>
-                                <option>False</option>
-                                <option>True</option>
+                                <option key="true">True</option>
+                                <option key="false">False</option>
                               </select>
                             </div>
                             <div>
                               <label htmlFor="dfm_log">Log</label>
                               <select id="dfm_log" {...register('parameters.dfm_log')}>
-                                <option>False</option>
-                                <option>True</option>
+                                <option key="true">True</option>
+                                <option key="false">False</option>
                               </select>
                             </div>
                           </div>
@@ -171,7 +170,7 @@ export const ProjectFeaturesPage: FC = () => {
               {/* Display cards for each feature*/}
               <div className="row">
                 {availableFeatures.map((element) => (
-                  <div className="card text-bg-light mt-4">
+                  <div className="card text-bg-light mt-4" key={element as string}>
                     <div className="card-body d-flex justify-content-between align-items-center">
                       <span>{element as string}</span>
                       <button

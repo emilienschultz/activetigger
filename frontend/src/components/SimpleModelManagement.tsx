@@ -6,9 +6,9 @@ import { useAppContext } from '../core/context';
 import { SimpleModelModel } from '../types';
 
 interface SimpleModelManagementProps {
-  projectName: string;
-  currentScheme: string;
-  availableSimpleModels: { [key: string]: any };
+  projectName: string | null;
+  currentScheme: string | null;
+  availableSimpleModels: Record<string, Record<string, number>>;
   availableFeatures: string[];
 }
 
@@ -33,7 +33,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     defaultValues: {
       features: [],
       model: '',
-      scheme: currentScheme,
+      scheme: currentScheme || undefined,
     },
   });
 

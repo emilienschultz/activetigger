@@ -15,7 +15,7 @@ export const CurrentProjectMonitoring: FC = () => {
 
   useEffect(() => {
     setAppContext((prev) => ({ ...prev, currentProject: project }));
-  }, [project]);
+  }, [project, setAppContext]);
 
   // Effect to poll project data regularly to monitor long lasting server tasks
   // each time reFetch change
@@ -28,7 +28,7 @@ export const CurrentProjectMonitoring: FC = () => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [reFetch]);
+  }, [reFetch, setAppContext]);
 
   return null;
 };

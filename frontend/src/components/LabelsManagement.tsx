@@ -6,10 +6,10 @@ import { RiFindReplaceLine } from 'react-icons/ri';
 import { useAddLabel, useDeleteLabel, useRenameLabel } from '../core/api';
 
 interface LabelsManagementProps {
-  projectName: string;
-  currentScheme: string;
+  projectName: string | null;
+  currentScheme: string | null;
   availableLabels: string[];
-  reFetchCurrentProject: any;
+  reFetchCurrentProject: () => void;
 }
 
 export const LabelsManagement: FC<LabelsManagementProps> = ({
@@ -19,9 +19,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   reFetchCurrentProject,
 }) => {
   // hooks to manage labels
-  const { addLabel } = useAddLabel(projectName, currentScheme);
-  const { deleteLabel } = useDeleteLabel(projectName, currentScheme);
-  const { renameLabel } = useRenameLabel(projectName, currentScheme);
+  const { addLabel } = useAddLabel(projectName || null, currentScheme || null);
+  const { deleteLabel } = useDeleteLabel(projectName || null, currentScheme || null);
+  const { renameLabel } = useRenameLabel(projectName || null, currentScheme || null);
 
   // manage label creation
   const [createLabelValue, setCreateLabelValue] = useState('');

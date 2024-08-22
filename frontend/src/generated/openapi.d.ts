@@ -1211,7 +1211,9 @@ export interface components {
             /** Name */
             name: string;
             /** Parameters */
-            parameters: Record<string, never>;
+            parameters: {
+                [key: string]: (string | number) | undefined;
+            };
         };
         /** HTTPValidationError */
         HTTPValidationError: {

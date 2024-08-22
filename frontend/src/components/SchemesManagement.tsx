@@ -8,11 +8,6 @@ import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { SchemeModel } from '../types';
 
-interface SchemesManagementProps {
-  available_schemes: string[];
-  projectSlug: string;
-}
-
 /* Select current scheme
  */
 
@@ -28,7 +23,7 @@ export const SelectCurrentScheme: FC = () => {
   const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
 
   // put the current scheme in the context on change
-  const handleSelectScheme = (event: any) => {
+  const handleSelectScheme = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setAppContext((state) => ({
       ...state,
       currentScheme: event.target.value,
@@ -61,14 +56,12 @@ export const SelectCurrentScheme: FC = () => {
  * Select ; Delete ; Add
  */
 
-export const SchemesManagement: FC<SchemesManagementProps> = ({
-  available_schemes,
-  projectSlug,
-}) => {
+export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) => {
+  // get element from the context
+
   // get element from the context
   const {
     appContext: { currentScheme, reFetchCurrentProject },
-    setAppContext,
   } = useAppContext();
 
   // hooks to use the objets
@@ -83,15 +76,6 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   const [showCreateNewScheme, setShowCreateNewScheme] = useState(false);
   const handleIconClick = () => {
     setShowCreateNewScheme(!showCreateNewScheme);
-  };
-
-  // put the current scheme in the context on change
-  const handleSelectScheme = (event: any) => {
-    setAppContext((state) => ({
-      ...state,
-      currentScheme: event.target.value,
-    }));
-    notify({ type: 'success', message: 'Scheme selected' });
   };
 
   // action to create the new scheme

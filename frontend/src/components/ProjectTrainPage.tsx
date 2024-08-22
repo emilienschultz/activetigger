@@ -2,7 +2,7 @@ import { FC, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
 
 import {
@@ -12,7 +12,6 @@ import {
   useRenameBertModel,
   useTrainBertModel,
 } from '../core/api';
-import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { newBertModel } from '../types';
@@ -25,40 +24,37 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 interface renameModel {
   new_name: string;
 }
+interface Row {
+  labels: string;
+  index: string;
+  prediction: string;
+  text: string;
+}
 
 export const ProjectTrainPage: FC = () => {
   const { projectName: projectSlug } = useParams();
-  const { authenticatedUser } = useAuth();
-  const navigate = useNavigate();
 
   const { notify } = useNotifications();
   const {
     appContext: { currentScheme, currentProject: project },
-    setAppContext,
   } = useAppContext();
 
-  if (!projectSlug) return null;
-  if (!currentScheme) {
-    notify({ type: 'warning', message: 'You need to select first a scheme' });
-    navigate(`/projects/${projectSlug}`);
-    return null;
-  }
-
   const [currentModel, setCurrentModel] = useState<string | null>(null);
-  const { model } = useModelInformations(projectSlug, currentModel);
+  const { model } = useModelInformations(projectSlug || null, currentModel || null);
   const model_scores = model?.train_scores;
 
   // available models
-  const availableModels = project?.bertmodels.available[currentScheme]
-    ? Object.keys(project?.bertmodels.available[currentScheme])
-    : [];
-  const { deleteBertModel } = useDeleteBertModel(projectSlug);
+  const availableModels =
+    currentScheme && project?.bertmodels.available[currentScheme]
+      ? Object.keys(project?.bertmodels.available[currentScheme])
+      : [];
+  const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // compute model preduction
-  const { computeModelPrediction } = useComputeModelPrediction(projectSlug);
+  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null);
 
   // form to rename
-  const { renameBertModel } = useRenameBertModel(projectSlug);
+  const { renameBertModel } = useRenameBertModel(projectSlug || null);
   const {
     handleSubmit: handleSubmitRename,
     register: registerRename,
@@ -73,7 +69,7 @@ export const ProjectTrainPage: FC = () => {
   };
 
   // form to train a model
-  const { trainBertModel } = useTrainBertModel(projectSlug, currentScheme);
+  const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
   const {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
@@ -159,26 +155,26 @@ export const ProjectTrainPage: FC = () => {
   const columns = [
     {
       name: 'Id',
-      selector: (row: any) => row.index,
+      selector: (row: Row) => row.index,
       minWidth: '100px',
       maxWidth: '200px',
     },
     {
       name: 'Label',
-      selector: (row: any) => row.labels,
+      selector: (row: Row) => row.labels,
       minWidth: '100px',
       maxWidth: '100px',
     },
     {
       name: 'Prediction',
-      selector: (row: any) => row.prediction,
+      selector: (row: Row) => row.prediction,
       sortable: true,
       minWidth: '100px',
       maxWidth: '100px',
     },
     {
       name: 'Text',
-      selector: (row: any) => row.text,
+      selector: (row: Row) => row.text,
       minWidth: '100px',
       maxWidth: '300px',
       wrap: true,
@@ -186,7 +182,7 @@ export const ProjectTrainPage: FC = () => {
   ];
 
   return (
-    <ProjectPageLayout projectName={projectSlug} currentAction="train">
+    <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
         <div className="row">
           <div className="col-8">
@@ -332,7 +328,7 @@ export const ProjectTrainPage: FC = () => {
                 <label>Model base</label>
 
                 <select id="new-model-type" {...registerNewModel('base')}>
-                  {(project?.bertmodels.options ? project?.bertmodels.options : []).map((e) => (
+                  {(project?.bertmodels.options || []).map((e) => (
                     <option key={e}>{e}</option>
                   ))}
                 </select>
