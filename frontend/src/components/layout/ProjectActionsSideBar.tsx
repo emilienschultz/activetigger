@@ -1,6 +1,5 @@
 import classNames from 'classnames';
 import { FC } from 'react';
-import { FaCogs } from 'react-icons/fa';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { MdOutlineTransform } from 'react-icons/md';
@@ -19,7 +18,7 @@ export const ProjectActionsSidebar: FC<{
   currentProjectAction?: PossibleProjectActions;
   currentScheme?: string;
   currentUser: string;
-}> = ({ currentProjectAction, projectState, currentScheme, currentUser }) => {
+}> = ({ currentProjectAction, projectState, currentUser }) => {
   const projectName = projectState.params.project_slug;
 
   // test if computation is currently undergoing
@@ -86,17 +85,6 @@ export const ProjectActionsSidebar: FC<{
             aria-current="page"
           >
             <FaCloudDownloadAlt /> Export
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/parameters`}
-            className={classNames('nav-link', currentProjectAction === 'parameters' && 'active')}
-            aria-current="page"
-          >
-            <span className="parameters">
-              <FaCogs /> Parameters
-            </span>
           </Link>
         </li>
         {currentComputation && (

@@ -10,7 +10,6 @@ import { ProjectExportPage } from '../components/ProjectExportPage';
 import { ProjectFeaturesPage } from '../components/ProjectFeaturesPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
-import { ProjectParametersPage } from '../components/ProjectParametersPage';
 import { ProjectTrainPage } from '../components/ProjectTrainPage';
 import { ProjectsPage } from '../components/ProjectsPage';
 import { UsersPage } from '../components/UsersPage';
@@ -91,10 +90,6 @@ export function getRouter() {
         {
           path: '/projects/:projectName/export',
           element: <ProjectExportPage />,
-        },
-        {
-          path: '/projects/:projectName/parameters',
-          element: <ProjectParametersPage />,
         },
       ],
     },
