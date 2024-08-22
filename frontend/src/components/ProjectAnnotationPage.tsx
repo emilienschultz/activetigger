@@ -15,6 +15,7 @@ import { ElementOutModel } from '../types';
 import { LabelsManagement } from './LabelsManagement';
 import { ProjectionManagement } from './ProjectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
+import { SelectCurrentScheme } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectAnnotationPage: FC = () => {
@@ -155,6 +156,11 @@ export const ProjectAnnotationPage: FC = () => {
         <div className="row">
           <h2 className="subsection">Annotation</h2>
           <span className="explanations">Configure selection mode and annotate data</span>
+        </div>
+        <div className="row">
+          <div className="col-6">
+            <SelectCurrentScheme />
+          </div>
         </div>
         <div className="row">
           <div className="col-6 ">

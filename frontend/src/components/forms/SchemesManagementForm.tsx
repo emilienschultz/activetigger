@@ -13,6 +13,50 @@ interface SchemesManagementProps {
   projectSlug: string;
 }
 
+/* Select current scheme
+ */
+
+export const SelectCurrentScheme: FC = () => {
+  const { notify } = useNotifications();
+
+  // get element from the context
+  const {
+    appContext: { currentProject, currentScheme },
+    setAppContext,
+  } = useAppContext();
+
+  const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
+
+  // put the current scheme in the context on change
+  const handleSelectScheme = (event: any) => {
+    setAppContext((state) => ({
+      ...state,
+      currentScheme: event.target.value,
+    }));
+    notify({ type: 'success', message: 'Scheme selected' });
+  };
+
+  return (
+    <div className="row">
+      <label htmlFor="scheme-selected">Select current scheme</label>
+      <div className="d-flex align-items-center mb-3">
+        <select
+          id="scheme-selected"
+          className="form-select"
+          onChange={handleSelectScheme}
+          value={currentScheme ? currentScheme : availableSchemes[0]}
+        >
+          {availableSchemes.map((element) => (
+            <option key={element} value={element} selected={element === currentScheme}>
+              {element}
+            </option>
+          ))}{' '}
+        </select>
+      </div>
+    </div>
+  );
+};
+
 /* Manage schemes
  * Select ; Delete ; Add
  */
@@ -71,21 +115,9 @@ export const SchemesManagement: FC<SchemesManagementProps> = ({
   return (
     <div>
       <div className="row">
-        <label htmlFor="scheme-selected">Available schemes</label>
         <div className="d-flex align-items-center mb-3">
-          <select
-            id="scheme-selected"
-            className="form-select-lg"
-            onChange={handleSelectScheme}
-            value={currentScheme ? currentScheme : ''}
-          >
-            <option></option> {/*empty possibility*/}
-            {available_schemes.map((element) => (
-              <option key={element} value={element} selected={element === currentScheme}>
-                {element}
-              </option>
-            ))}{' '}
-          </select>
+          <SelectCurrentScheme />
+
           <button onClick={deleteSelectedScheme} className="btn btn p-0 m-1">
             <FaRegTrashAlt size={20} />
           </button>

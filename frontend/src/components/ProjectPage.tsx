@@ -15,11 +15,7 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 export const ProjectPage: FC = () => {
   const { projectName } = useParams();
-  /* TODO check if the project exist, otherwise redirect to the projects page
-  const projects = useUserProjects();
-  const navigate = useNavigate();
-  if (!projects) navigate('/projects');
-  else if (!(projectName in projects)) navigate('/projects');*/
+
   const {
     appContext: { currentScheme, currentProject: project, reFetchCurrentProject },
   } = useAppContext();
@@ -51,7 +47,6 @@ export const ProjectPage: FC = () => {
                 <div>{JSON.stringify(project.params, null, 2)}</div>
               </details>
 
-              <div className="explanations">Select a scheme to start annotating</div>
               <div>
                 <h4 className="subsection">Scheme management</h4>
 

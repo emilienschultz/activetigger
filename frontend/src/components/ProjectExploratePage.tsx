@@ -7,7 +7,9 @@ import { useParams } from 'react-router-dom';
 
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
 import { AnnotationModel } from '../types';
+import { SelectCurrentScheme } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -131,7 +133,6 @@ export const ProjectExploratePage: FC = () => {
   }
 
   if (!projectName) return null;
-  if (!currentScheme) return null;
   if (!project) return null;
 
   return (
@@ -140,8 +141,8 @@ export const ProjectExploratePage: FC = () => {
         <div className="row">
           <div className="col-12">
             <h2 className="subsection">Data exploration</h2>
-
-            {table && (
+            <SelectCurrentScheme />
+            {currentScheme && table && (
               <div>
                 <div className="d-flex align-items-center justify-content-between mb-3">
                   {Object.keys(modifiedRows).length > 0 && (
