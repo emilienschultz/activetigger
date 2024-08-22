@@ -45,7 +45,6 @@ export const ProjectExportPage: FC = () => {
     <ProjectPageLayout projectName={projectName || null} currentAction="export">
       <div className="container-fluid">
         <div className="row">
-          <div className="col-1"></div>
           <div className="col-8">
             <h2 className="subsection">Export data and models</h2>
             <div className="explanations">Download data as files</div>

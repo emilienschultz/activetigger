@@ -6,7 +6,7 @@ import { useDeleteProject } from '../core/api';
 import { useAppContext } from '../core/context';
 import { LabelsManagement } from './LabelsManagement';
 import { ProjectStatistics } from './ProjectStatistics';
-import { SchemesManagement } from './forms/SchemesManagementForm';
+import { SchemesManagement, SelectCurrentScheme } from './forms/SchemesManagementForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -41,48 +41,27 @@ export const ProjectPage: FC = () => {
           <div className="container-fluid">
             <div className="row">
               <h2 className="subsection">Project panel</h2>
+            </div>
 
+            <div className="row">
+              <SelectCurrentScheme></SelectCurrentScheme>
+            </div>
+
+            {currentScheme && (
+              <div className="row">
+                {' '}
+                <h4 className="subsection">Statistics of the scheme</h4>
+                <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
+              </div>
+            )}
+            <div className="row mt-4">
               <details className="custom-details">
                 <summary className="custom-summary">Parameters of the project</summary>
                 <div>{JSON.stringify(project.params, null, 2)}</div>
-              </details>
-
-              <div>
-                <h4 className="subsection">Scheme management</h4>
-
-                <SchemesManagement
-                  available_schemes={Object.keys(project.schemes.available)}
-                  projectSlug={projectName}
-                />
-              </div>
-              <div>
-                <h4 className="subsection">Label management</h4>
-
-                {currentScheme && (
-                  <div className="d-flex align-items-center">
-                    <LabelsManagement
-                      projectName={projectName}
-                      currentScheme={currentScheme}
-                      availableLabels={availableLabels}
-                      reFetchCurrentProject={reFetchCurrentProject}
-                    />
-                  </div>
-                )}
-              </div>
-              {currentScheme && (
-                <div>
-                  {' '}
-                  <h4 className="subsection">Statistics of the scheme</h4>
-                  <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
-                </div>
-              )}
-            </div>
-            <div className="row justify-content-left">
-              <div className="col-12 d-flex justify-content-center align-items-center">
-                <button onClick={actionDelete} className="delete-button m-3">
+                <button onClick={actionDelete} className="delete-button">
                   Delete the project
                 </button>
-              </div>
+              </details>
             </div>
           </div>
         )}
