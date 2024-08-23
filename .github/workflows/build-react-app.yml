@@ -59,7 +59,7 @@ jobs:
       - name: Build Frontend code
 
         env:
-          VITE_API_URL: https://projet-datalab-gpu-40gb-609227-user.lab.groupe-genes.fr:80 # https://someurl:someport
+          VITE_API_URL: https://projet-datalab-gpu-40gb-609227-user.lab.groupe-genes.fr # https://someurl:someport
 
         run: |
 
