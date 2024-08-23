@@ -44,7 +44,11 @@ export const ProjectFeaturesPage: FC = () => {
   // action to create the new scheme
   const createNewFeature: SubmitHandler<FeatureModelExtended> = async (formData) => {
     try {
-      addFeature(formData.type, formData.name, formData.parameters);
+      addFeature(
+        formData.type,
+        formData.name,
+        formData.parameters as unknown as Record<string, string | number | undefined>,
+      );
     } catch (error) {
       notify({ type: 'error', message: error + '' });
     }
