@@ -6,7 +6,7 @@ import { NotificationType, ProjectStateModel, SelectionConfig } from '../types';
 export type AppContextValue = {
   notifications: NotificationType[]; // manage notification
   selectionConfig: SelectionConfig; // selection for the next element
-  currentProject?: ProjectStateModel; // current project selected
+  currentProject?: ProjectStateModel | null; // current project selected
   currentScheme?: string; // scheme selected to annotate
   currentProjection?: string;
   freqRefreshSimpleModel: number; // freq to refresh active learning model

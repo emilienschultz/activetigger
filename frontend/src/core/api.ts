@@ -265,7 +265,7 @@ export function useProject(projectSlug?: string) {
       //return res.data.params;
       return res.data;
     }
-
+    return null;
     // in this dependencies list we add projectSlug has a different API call will be made if it changes
     // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
   }, [projectSlug, fetchTrigger]);
@@ -323,6 +323,7 @@ export function useAddScheme(projectSlug: string) {
 
         return true;
       }
+      return null;
     },
     [projectSlug, notify],
   );
@@ -337,12 +338,10 @@ export function useAddFeature(projectSlug: string | null) {
   const { notify } = useNotifications();
 
   const addFeature = useCallback(
-    async (featureType: string, featureName: string, featureParameters: Record<string, string>) => {
+    async (featureType: string, featureName: string, featureParameters: {} | null) => {
       // TODO fix types
 
       console.log('add features');
-
-      if (!featureParameters) featureParameters = {};
 
       if (!featureName) featureName = featureType;
 
@@ -641,6 +640,7 @@ export function useUsersAuth(projectSlug: string | null) {
       });
       if (!res.error) return res.data.auth;
     }
+    return null;
   }, [notify, projectSlug, fetchTrigger]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
@@ -666,6 +666,7 @@ export function useDeleteUserAuthProject(projectSlug: string | null, reFetchUser
         reFetchUsersAuth();
         return true;
       }
+      return null;
     },
     [projectSlug, notify, reFetchUsersAuth],
   );
@@ -682,6 +683,7 @@ export function useUsers() {
   const users = useAsyncMemo(async () => {
     const res = await api.GET('/users', {});
     if (!res.error) return res.data.users as unknown as string[];
+    return null;
   }, [fetchTrigger]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
@@ -731,6 +733,7 @@ export function useDeleteUser(reFetchUsers: () => void) {
         reFetchUsers();
         return true;
       }
+      return null;
     },
     [notify, reFetchUsers],
   );
@@ -756,6 +759,7 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
         reFetchUsersAuth();
         return true;
       }
+      return null;
     },
     [projectSlug, notify, reFetchUsersAuth],
   );
@@ -929,6 +933,7 @@ export function useGetFeaturesFile(projectSlug: string | null) {
         }
         return true;
       }
+      return null;
     },
     [projectSlug, notify],
   );
@@ -966,6 +971,7 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
         }
         return true;
       }
+      return null;
     },
     [projectSlug, notify],
   );
@@ -1003,6 +1009,7 @@ export function useGetPredictionsFile(projectSlug: string | null) {
         }
         return true;
       }
+      return null;
     },
     [projectSlug, notify],
   );
@@ -1037,6 +1044,7 @@ export function useGetModelFile(projectSlug: string | null) {
           return res.data;
         }
       }
+      return null;
     },
     [projectSlug, notify],
   );
@@ -1080,6 +1088,7 @@ export function useTableElements(
         return res.data.items;
       }
     }
+    return null;
   }, [scheme, pageInfo]);
 
   return { table: getAsyncMemoData(getTableElements), total, getPage: setPageInfo };
@@ -1140,6 +1149,7 @@ export function useGetProjectionData(
         else return null;
       }
     }
+    return null;
   }, [fetchTrigger, scheme]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);

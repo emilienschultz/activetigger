@@ -56,6 +56,7 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
             return new Response(body, resOptions);
           }
         }
+        return clonedResponse;
       },
     };
     if (!authenticatedUser) {
