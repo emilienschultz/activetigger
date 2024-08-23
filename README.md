@@ -1,14 +1,17 @@
 # (py) Active Tigger
 
-🚧 Under development 🚧 **We are currently moving the frontend from Streamlit to React**.
+🚧 Under development 🚧
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/emilienschultz/pyactivetigger/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/)
 [![PyPI Version](https://img.shields.io/pypi/v/activetigger)](https://pypi.org/project/activetigger/)
 
+[Python refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+
 Server/client BERT fine tunning app using active learning
 
-[Python refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+- API in Python
+- Frontend in React
 
 ## Installation
 
@@ -40,9 +43,7 @@ uvicorn activetigger.api:app --host 0.0.0.0 --port 80 --reload
 
 ## Users management
 
-You can create/delete users with the root account.
-
-You can also create a `add_users.yaml` file with the users to add when the server starts :
+You can create a `add_users.yaml` file with the users to add when the server starts :
 
 ```
 user1: password1
@@ -53,11 +54,11 @@ user2: password2
 
 - REST-like client/server architecture
   - Moslty stateless
+  - Client-side parameters
 - Mixed data storage : sqlite + files
 - Backend Python
   - FastAPI
   - Multiprocessing for CPU-bound tasts
 - Frontend
-  - Streamlit (prototyping)
-  - React (in the future)
+  - React/Typescript
 - Role-Based Access Control (manager/annotator)
