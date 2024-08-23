@@ -404,6 +404,12 @@ def train_bert(
     # remove temporary logs
     os.remove(log_path)
 
+    # clean memory
+    try:
+        torch.cuda.empty_cache()
+    except:
+        print("problem cleaning cache")
+
     return True
 
 
