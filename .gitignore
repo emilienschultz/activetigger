@@ -17,3 +17,4 @@ activetigger/img/active_tigger2.png
 log_server.log
 config.yaml
 add_users_processed.yaml
+activetigger/frontend_deprecated.py
