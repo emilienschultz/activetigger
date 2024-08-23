@@ -252,7 +252,11 @@ def train_bert(
     test_size (dict): train/test distribution
 
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
+    # TODO : memory use
     """
+
+    # clear memory
+    torch.cuda.empty_cache()
 
     # check if GPU is available
     gpu = False
@@ -405,10 +409,8 @@ def train_bert(
     os.remove(log_path)
 
     # clean memory
-    try:
-        torch.cuda.empty_cache()
-    except:
-        print("problem cleaning cache")
+    del trainer, bert
+    torch.cuda.empty_cache()
 
     return True
 
