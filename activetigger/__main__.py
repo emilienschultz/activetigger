@@ -98,6 +98,4 @@ path_models: ./models
     # launch fastapi app
 
     print("Streamlit app launched")
-    uvicorn.run(
-        "activetigger.api:app", host=args.adress, port=args.portapi, reload=True
-    )
+    uvicorn.run("activetigger.api:app", host="0.0.0.0", port=args.portapi, reload=True)
