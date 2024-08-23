@@ -8,7 +8,8 @@ import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { SchemeModel } from '../types';
 
-/* Select current scheme
+/*
+ * Select current scheme
  */
 
 export const SelectCurrentScheme: FC = () => {
@@ -21,6 +22,15 @@ export const SelectCurrentScheme: FC = () => {
   } = useAppContext();
 
   const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
+
+  // select a default scheme if not
+  if (!currentScheme && availableSchemes.length > 0) {
+    setAppContext((state) => ({
+      ...state,
+      currentScheme: availableSchemes[0],
+    }));
+    notify({ type: 'success', message: `Scheme ${currentScheme} selected by default` });
+  }
 
   // put the current scheme in the context on change
   const handleSelectScheme = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -57,8 +67,6 @@ export const SelectCurrentScheme: FC = () => {
  */
 
 export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) => {
-  // get element from the context
-
   // get element from the context
   const {
     appContext: { currentScheme, reFetchCurrentProject },

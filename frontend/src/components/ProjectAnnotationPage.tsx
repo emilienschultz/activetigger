@@ -136,7 +136,7 @@ export const ProjectAnnotationPage: FC = () => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           if (elementId) {
             console.log(label);
-            addAnnotation(elementId, label).then(() => navigateToNextElement);
+            addAnnotation(elementId, label).then(navigateToNextElement);
             setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
           }
         }

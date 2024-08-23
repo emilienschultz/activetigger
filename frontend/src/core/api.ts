@@ -338,7 +338,11 @@ export function useAddFeature(projectSlug: string | null) {
   const { notify } = useNotifications();
 
   const addFeature = useCallback(
-    async (featureType: string, featureName: string, featureParameters: {} | null) => {
+    async (
+      featureType: string,
+      featureName: string,
+      featureParameters: Record<string, string | number | undefined> | null,
+    ) => {
       // TODO fix types
 
       console.log('add features');
@@ -400,6 +404,7 @@ export function useDeleteFeature(projectSlug: string | null) {
  * @returns ElementId
  */
 export function useGetNextElementId(projectSlug: string | null, currentScheme: string | null) {
+  const { notify } = useNotifications();
   const getNextElementId = useCallback(
     async (selectionConfig: SelectionConfig) => {
       if (projectSlug && currentScheme) {
@@ -415,10 +420,12 @@ export function useGetNextElementId(projectSlug: string | null, currentScheme: s
           },
         });
         return res.data?.element_id;
+      } else {
+        notify({ type: 'error', message: 'Select a project/scheme to get elements' });
+        return null;
       }
-      return null;
     },
-    [projectSlug, currentScheme],
+    [projectSlug, currentScheme, notify],
   );
 
   return { getNextElementId };

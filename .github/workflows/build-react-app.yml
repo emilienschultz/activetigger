@@ -1,23 +1,17 @@
 # This is a basic workflow to help you get started with Actions
 
-
 name: Build the frontend
-
 
 # Controls when the workflow will run
 
 on:
-
   # Triggers the workflow on push or pull request events but only for the main branch
 
   push:
-
     branches: [prod]
 
   pull_request:
-
     branches: [prod]
-
 
   # Allows you to run this workflow manually from the Actions tab
 
@@ -31,27 +25,22 @@ permissions:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 
 jobs:
-
   # This workflow contains a single job called "build"
 
   build:
-
     # The type of runner that the job will run on
 
     runs-on: ubuntu-latest
 
-
     # Steps represent a sequence of tasks that will be executed as part of the job
 
     steps:
-    
-
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
 
       - uses: actions/checkout@v2
 
       - name: Clean previous deployment
-      
+
         run: |
           rm -rf github-pages-deploy-action-temp-deployment-folder
           git worktree prune
@@ -61,18 +50,15 @@ jobs:
         uses: actions/setup-node@v2.4.0
 
         with:
-
           # Version Spec of the version to use.  Examples: 12.x, 10.15.1, >=10.15.0
 
           node-version: 20
-
 
       # Runs a single command using the runners shell
 
       - name: Build Frontend code
 
         env:
-
           VITE_API_URL: https://projet-datalab-gpu-40gb-609227-user.lab.groupe-genes.fr/:80 # https://someurl:someport
 
         run: |
@@ -83,7 +69,6 @@ jobs:
 
           npm run build -- --base=/pyactivetigger/
 
-
       - name: Deploy 🚀
 
         uses: JamesIves/github-pages-deploy-action@4.1.5
@@ -92,7 +77,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         with:
-
           branch: gh-pages # The branch the action should deploy to.
 
           folder: frontend/dist # The folder the action should deploy.
