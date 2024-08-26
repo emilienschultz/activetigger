@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import Optional
 import multiprocessing
 from pandas import DataFrame, Series
 import fasttext
@@ -11,13 +12,13 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics import precision_score, f1_score, accuracy_score
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.manifold import TSNE
+import datasets
+import os
+import torch
 import umap
 import bcrypt
 import numpy as np
-import torch
-import os
 import logging
-import datasets
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -235,7 +236,7 @@ def train_bert(
     base_model: str,
     params: dict,
     test_size: float,
-    event: multiprocessing.Event,
+    event: Optional[multiprocessing.Event] = None,
 ) -> bool:
     """
     Train a bert model and write it
@@ -250,6 +251,7 @@ def train_bert(
     model (str): model to use
     params (dict) : training parameters
     test_size (dict): train/test distribution
+    event : possibility to interrupt
 
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
     # TODO : memory use
@@ -366,9 +368,10 @@ def train_bert(
         def on_step_end(self, args, state, control, **kwargs):
             logger.info(f"Step {state.global_step}")
             # end if event set
-            if event.is_set():
-                logger.info("Event set, stopping training.")
-                control.should_training_stop = True
+            if event != None:
+                if event.is_set():
+                    logger.info("Event set, stopping training.")
+                    control.should_training_stop = True
 
     trainer = Trainer(
         model=bert,
