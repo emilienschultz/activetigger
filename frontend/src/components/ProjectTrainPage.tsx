@@ -1,9 +1,13 @@
 import { FC, useState } from 'react';
-import DataTable from 'react-data-table-component';
+//import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
+
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+import DataGrid, { Column } from 'react-data-grid';
 
 import {
   useComputeModelPrediction,
@@ -149,35 +153,29 @@ export const ProjectTrainPage: FC = () => {
 
   // display table false prediction
   const falsePredictions = model?.train_scores
-    ? JSON.parse(model.train_scores['false_prediction'])
+    ? (JSON.parse(model.train_scores['false_prediction']) as Row[])
     : null;
 
-  const columns = [
+  const columns: readonly Column<Row>[] = [
     {
       name: 'Id',
-      selector: (row: Row) => row.index,
-      minWidth: '100px',
-      maxWidth: '200px',
+      key: 'index',
+      resizable: true,
     },
     {
       name: 'Label',
-      selector: (row: Row) => row.labels,
-      minWidth: '100px',
-      maxWidth: '100px',
+      key: 'labels',
+      resizable: true,
     },
     {
       name: 'Prediction',
-      selector: (row: Row) => row.prediction,
-      sortable: true,
-      minWidth: '100px',
-      maxWidth: '100px',
+      key: 'prediction',
+      resizable: true,
     },
     {
       name: 'Text',
-      selector: (row: Row) => row.text,
-      minWidth: '100px',
-      maxWidth: '300px',
-      wrap: true,
+      key: 'text',
+      resizable: true,
     },
   ];
 
@@ -308,12 +306,10 @@ export const ProjectTrainPage: FC = () => {
                       </details>
                       <details>
                         <summary>False predictions</summary>
-                        <DataTable
-                          responsive
-                          pagination
-                          highlightOnHover
-                          columns={columns || []}
-                          data={falsePredictions || []}
+                        <DataGrid
+                          className="fill-grid"
+                          columns={columns}
+                          rows={falsePredictions || []}
                         />
                       </details>
                     </div>
