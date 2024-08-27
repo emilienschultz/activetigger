@@ -58,6 +58,7 @@ export const ProjectAnnotationPage: FC = () => {
   }, [project, currentScheme]);
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
+
   const availableModes =
     authenticatedUser &&
     currentScheme &&

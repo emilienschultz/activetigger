@@ -292,7 +292,7 @@ export const ProjectionManagement: FC = () => {
                     eventHandlers: {
                       onClick: (_, props) => {
                         const { datum } = props;
-                        navigate(`/projects/test3/annotate/${datum.index}`);
+                        navigate(`/projects/${projectName}/annotate/${datum.index}`);
                       },
                     },
                   },

@@ -14,7 +14,9 @@ export const CurrentProjectMonitoring: FC = () => {
   const { project, reFetch } = useProject(projectName); // api call
 
   useEffect(() => {
-    setAppContext((prev) => ({ ...prev, currentProject: project }));
+    if (project && !('detail' in project))
+      // fix BUG
+      setAppContext((prev) => ({ ...prev, currentProject: project }));
   }, [project, setAppContext]);
 
   // Effect to poll project data regularly to monitor long lasting server tasks
