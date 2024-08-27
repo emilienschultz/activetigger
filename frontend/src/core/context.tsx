@@ -22,7 +22,13 @@ export const defaultContext: AppContextValue = storedContext
   ? JSON.parse(storedContext)
   : {
       notifications: [],
-      selectionConfig: { mode: 'deterministic', sample: 'untagged', displayPrediction: false },
+      selectionConfig: {
+        mode: 'deterministic',
+        sample: 'untagged',
+        displayPrediction: false,
+        frameSelection: false,
+        frame: null,
+      },
       history: [],
       freqRefreshSimpleModel: 10,
     };

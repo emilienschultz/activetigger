@@ -64,7 +64,7 @@ class NextInModel(BaseModel):
     selection: str = "deterministic"
     sample: str = "untagged"
     tag: str | None = None
-    frame: list[float] | None = None
+    frame: list[Any] | None = None
     history: list = []
     filter: Optional[str] = None
 

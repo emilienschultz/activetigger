@@ -238,6 +238,24 @@ export const ProjectAnnotationPage: FC = () => {
                   }}
                 />
               </div>
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectionConfig.frameSelection}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: {
+                        ...selectionConfig,
+                        frameSelection: !selectionConfig.frameSelection,
+                      },
+                    }));
+                    console.log(selectionConfig.frameSelection);
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                Use zoom frame to select elements
+              </label>
               <div>Current model : {currentModel ? currentModel['model'] : 'No model trained'}</div>
             </details>
           </div>

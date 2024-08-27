@@ -897,8 +897,8 @@ class Project(Server):
                     projection = self.features.projections[user]["data"]
                     f_frame = (
                         (projection[0] > frame[0])
-                        & (projection[0] < frame[2])
-                        & (projection[1] > frame[1])
+                        & (projection[0] < frame[1])
+                        & (projection[1] > frame[2])
                         & (projection[1] < frame[3])
                     )
                     f = f & f_frame

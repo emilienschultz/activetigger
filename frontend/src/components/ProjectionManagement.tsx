@@ -39,7 +39,7 @@ const colormap = [
 export const ProjectionManagement: FC = () => {
   // hook for all the parameters
   const {
-    appContext: { currentProject: project, currentScheme, currentProjection },
+    appContext: { currentProject: project, currentScheme, currentProjection, selectionConfig },
     setAppContext,
   } = useAppContext();
   const navigate = useNavigate();
@@ -156,12 +156,20 @@ export const ProjectionManagement: FC = () => {
     setAppContext,
   ]);
 
-  // manage zoom selection
-  const [_, setZoomDomain] = useState<ZoomDomain | null>(null);
-  // console.log(zoomDomain);
-
+  // manage zoom selection in the context
   const handleZoom = (domain: ZoomDomain) => {
-    setZoomDomain(domain);
+    if (domain.x && domain.y) {
+      setAppContext((prev) => ({
+        ...prev,
+        selectionConfig: {
+          ...selectionConfig,
+          frame: ([] as number[]).concat(
+            Object.values(domain.x || []),
+            Object.values(domain.y || []),
+          ),
+        },
+      }));
+    }
   };
 
   // TODO : add to configuration context

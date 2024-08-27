@@ -79,6 +79,7 @@ export interface SelectionConfig {
   sample: string;
   label?: string;
   frame?: number[];
+  frameSelection?: boolean; // true/false to use frame to select
   displayPrediction?: boolean;
   displayContext?: boolean;
   filter?: string;

@@ -417,6 +417,7 @@ export function useGetNextElementId(projectSlug: string | null, currentScheme: s
             tag: selectionConfig.label,
             filter: selectionConfig.filter,
             history: [],
+            frame: selectionConfig.frameSelection ? selectionConfig.frame : [], // only if frame option selected
           },
         });
         return res.data?.element_id;
