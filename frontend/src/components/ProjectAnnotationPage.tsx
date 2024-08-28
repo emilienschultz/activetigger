@@ -338,7 +338,7 @@ export const ProjectAnnotationPage: FC = () => {
       <div className="row">
         <div className="d-flex flex-wrap gap-2 justify-content-center">
           <Link
-            to={'/projects/test3/annotate/' + history[history.length - 1]}
+            to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
             className="btn btn-outline-secondary"
             onClick={() => {
               setAppContext((prev) => ({ ...prev, history: history.slice(0, -1) }));
@@ -346,8 +346,9 @@ export const ProjectAnnotationPage: FC = () => {
           >
             <IoMdReturnLeft />
           </Link>
-          {availableLabels.map((i) => (
+          {availableLabels.map((i, e) => (
             <button
+              type="button"
               key={i}
               value={i}
               className="btn btn-primary grow-1"
@@ -359,7 +360,7 @@ export const ProjectAnnotationPage: FC = () => {
                 }
               }}
             >
-              {i}
+              {i} <span className="badge text-bg-secondary">{e + 1}</span>
             </button>
           ))}
         </div>
