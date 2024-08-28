@@ -1062,7 +1062,8 @@ class Project(Server):
                 "methods": ["deterministic", "random", "maxprob", "active"],
                 "sample": ["untagged", "all", "tagged"],
             },
-            "schemes": {"available": self.schemes.available()},
+            "schemes": {"available": self.schemes.available(),
+                        "statistics":{}},
             "features": {
                 "options": self.features.options,
                 "available": list(self.features.map.keys()),
@@ -1715,7 +1716,7 @@ class Schemes:
 
     def available(self) -> dict:
         """
-        Available schemes
+        Available schemes {scheme:[labels]}
         """
         conn = sqlite3.connect(self.db)
         cursor = conn.cursor()

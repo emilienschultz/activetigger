@@ -13,7 +13,7 @@ export type UserModel = components['schemas']['UserModel'];
 
 export type ProjectModel = components['schemas']['ProjectModel'];
 export type ProjectDataModel = components['schemas']['ProjectDataModel'];
-export type ProjectStateModel = components['schemas']['StateModel'];
+export type ProjectStateModel = components['schemas']['ProjectStateModel'];
 export type ElementOutModel = components['schemas']['ElementOutModel'];
 
 export type AvailableProjectsModel = {

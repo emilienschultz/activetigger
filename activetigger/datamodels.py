@@ -379,7 +379,7 @@ class AvailableProjectsModel(BaseModel):
     projects: List[ProjectSummaryModel]
 
 
-class StateModel(BaseModel):
+class ProjectStateModel(BaseModel):
     """
     Response for server state
     TODO : have a more precise description of the fields

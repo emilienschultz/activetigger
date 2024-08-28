@@ -45,7 +45,7 @@ from activetigger.datamodels import (
     UserInDBModel,
     UserModel,
     UsersServerModel,
-    StateModel,
+    ProjectStateModel,
     QueueModel,
     ProjectDescriptionModel,
     ProjectAuthsModel,
@@ -475,14 +475,14 @@ async def get_logs(
 )
 async def get_project_state(
     project: Annotated[Project, Depends(get_project)]
-) -> StateModel:
+) -> ProjectStateModel:
     """
     Get the state of a specific project
     """
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     data = project.get_state()
-    return StateModel(**data)
+    return ProjectStateModel(**data)
 
 
 @app.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
