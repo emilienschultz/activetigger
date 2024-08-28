@@ -1,9 +1,7 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
-import { FaGear } from 'react-icons/fa6';
-import { MdOutlineTransform } from 'react-icons/md';
-import { MdModelTraining } from 'react-icons/md';
+import { MdModelTraining, MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
@@ -90,10 +88,13 @@ export const ProjectActionsSidebar: FC<{
         </li>
         {currentComputation && (
           <li className="nav-item ">
-            <div className="nav-link computing">
-              <span className="computing">
-                <FaGear size={20} /> Computing
-              </span>
+            <div className="nav-link">
+              <div className="d-flex justify-content-left align-items-center">
+                <div className="spinner-border spinner-border-sm text-warning" role="status">
+                  <span className="visually-hidden">Computing</span>
+                </div>
+                <span className="computing">Computing</span>
+              </div>
             </div>
           </li>
         )}
