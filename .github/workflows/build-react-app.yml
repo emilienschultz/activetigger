@@ -8,10 +8,10 @@ on:
   # Triggers the workflow on push or pull request events but only for the main branch
 
   push:
-    branches: [prod]
+    branches: [production]
 
   pull_request:
-    branches: [prod]
+    branches: [production]
 
   # Allows you to run this workflow manually from the Actions tab
 
