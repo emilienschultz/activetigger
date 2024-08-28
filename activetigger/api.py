@@ -517,12 +517,23 @@ async def get_projects(
 
 
 @app.get("/queue")
-async def get_queue() -> QueueModel:
+async def get_queue() -> dict:
     """
     Get the state of the server queue
     """
     r = server.queue.state()
-    return QueueModel(**r)
+    print(r)
+    print("COUCOU")
+    return r
+    # return QueueModel(**r)
+
+
+@app.get("/queue/num")
+async def get_nb_queue() -> int:
+    """
+    Get the number of element active in the queue
+    """
+    return server.queue.get_nb_active_processes()
 
 
 @app.get("/projects/description", dependencies=[Depends(verified_user)])

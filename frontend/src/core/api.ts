@@ -1164,3 +1164,23 @@ export function useGetProjectionData(
 
   return { projectionData: getAsyncMemoData(getProjectionData), reFetchProjectionData: reFetch };
 }
+
+/**
+ * Get queue
+ */
+export function useGetQueue() {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getQueueState = useAsyncMemo(async () => {
+    const res = await api.GET('/queue', {});
+    if (!res.error) {
+      if ('data' in res) return res.data;
+      else return null;
+    }
+    return null;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { queueState: getAsyncMemoData(getQueueState), reFetchQueueState: reFetch };
+}

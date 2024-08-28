@@ -5,7 +5,7 @@ import { MdModelTraining, MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
-
+import { useGetQueue } from '../../core/api';
 import { ProjectStateModel } from '../../types';
 import { PossibleProjectActions } from './ProjectPageLayout';
 
@@ -25,6 +25,10 @@ export const ProjectActionsSidebar: FC<{
       currentUser in projectState.simplemodel.training ||
       (projectState.features.training as string[]).length > 0
     : false;
+
+  // display the number of current processes on the server
+  // TODO : find a better place / actualization
+  const { queueState } = useGetQueue();
 
   return (
     <div className="project-sidebar d-flex flex-column flex-shrink-0 p-3 bg-light">
@@ -85,6 +89,13 @@ export const ProjectActionsSidebar: FC<{
           >
             <FaCloudDownloadAlt /> Export
           </Link>
+        </li>
+        <li className="nav-item ">
+          <div className="nav-link">
+            <span className="badge text-bg-info">
+              Load: {Object.values(queueState || []).length}
+            </span>
+          </div>
         </li>
         {currentComputation && (
           <li className="nav-item ">

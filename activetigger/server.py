@@ -133,6 +133,12 @@ class Queue:
             r[f] = {"state": info, "exception": exception}
         return r
 
+    def get_nb_active_processes(self) -> dict:
+        """
+        Number of active processes
+        """
+        return len([f for f in self.current if self.current[f]["future"].running()])
+
 
 class Server:
     """
@@ -1062,8 +1068,7 @@ class Project(Server):
                 "methods": ["deterministic", "random", "maxprob", "active"],
                 "sample": ["untagged", "all", "tagged"],
             },
-            "schemes": {"available": self.schemes.available(),
-                        "statistics":{}},
+            "schemes": {"available": self.schemes.available(), "statistics": {}},
             "features": {
                 "options": self.features.options,
                 "available": list(self.features.map.keys()),
