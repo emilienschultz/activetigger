@@ -496,9 +496,7 @@ async def get_project_statistics(
     """
     r = project.get_description(scheme=scheme, user=current_user.username)
     if "error" in r:
-        print(r)
         raise HTTPException(status_code=500, detail=r["error"])
-    print(r)
     return ProjectDescriptionModel(**r)
 
 

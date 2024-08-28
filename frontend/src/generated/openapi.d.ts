@@ -4,3248 +4,3275 @@
  */
 
 export interface paths {
-  '/': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Welcome
+         * @description Welcome page at the root path for the API
+         */
+        get: operations["welcome__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Welcome
-     * @description Welcome page at the root path for the API
-     */
-    get: operations['welcome__get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/documentation': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/documentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Documentation
+         * @description Path for documentation
+         *     Comments:
+         *         For the moment, a dictionnary
+         */
+        get: operations["get_documentation_documentation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Documentation
-     * @description Path for documentation
-     *     Comments:
-     *         For the moment, a dictionnary
-     */
-    get: operations['get_documentation_documentation_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/token': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login For Access Token
+         * @description Authentificate user and return token
+         */
+        post: operations["login_for_access_token_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Login For Access Token
-     * @description Authentificate user and return token
-     */
-    post: operations['login_for_access_token_token_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/users/disconnect': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disconnect User
+         * @description Revoke user connexion
+         */
+        post: operations["disconnect_user_users_disconnect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Disconnect User
-     * @description Revoke user connexion
-     */
-    post: operations['disconnect_user_users_disconnect_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/users/me': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Users Me
+         * @description Information on current user
+         */
+        get: operations["read_users_me_users_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Read Users Me
-     * @description Information on current user
-     */
-    get: operations['read_users_me_users_me_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/users': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Existing Users
+         * @description Get existing users
+         */
+        get: operations["existing_users_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Existing Users
-     * @description Get existing users
-     */
-    get: operations['existing_users_users_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/users/create': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create User
+         * @description Create user
+         */
+        post: operations["create_user_users_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Create User
-     * @description Create user
-     */
-    post: operations['create_user_users_create_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/users/delete': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete User
+         * @description Delete user
+         */
+        post: operations["delete_user_users_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Delete User
-     * @description Delete user
-     */
-    post: operations['delete_user_users_delete_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/users/auth/{action}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users/auth/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Auth
+         * @description Set user auth
+         */
+        post: operations["set_auth_users_auth__action__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Set Auth
-     * @description Set user auth
-     */
-    post: operations['set_auth_users_auth__action__post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/users/auth': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users/auth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Auth
+         * @description Get all user auth
+         */
+        get: operations["get_auth_users_auth_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Auth
-     * @description Get all user auth
-     */
-    get: operations['get_auth_users_auth_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/logs': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Logs
+         * @description Get all logs for a username/project
+         */
+        get: operations["get_logs_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Logs
-     * @description Get all logs for a username/project
-     */
-    get: operations['get_logs_logs_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/projects/{project_slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/projects/{project_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project State
+         * @description Get the state of a specific project
+         */
+        get: operations["get_project_state_projects__project_slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Project State
-     * @description Get the state of a specific project
-     */
-    get: operations['get_project_state_projects__project_slug__get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/projects/{project_slug}/statistics': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/projects/{project_slug}/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project Statistics
+         * @description Statistics for a scheme and a user
+         */
+        get: operations["get_project_statistics_projects__project_slug__statistics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Project Statistics
-     * @description Statistics for a scheme and a user
-     */
-    get: operations['get_project_statistics_projects__project_slug__statistics_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/projects': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projects
+         * @description Get general informations on the server
+         *     depending of the status of connected user
+         */
+        get: operations["get_projects_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Projects
-     * @description Get general informations on the server
-     *     depending of the status of connected user
-     */
-    get: operations['get_projects_projects_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/queue': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Queue
+         * @description Get the state of the server queue
+         */
+        get: operations["get_queue_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Queue
-     * @description Get the state of the server queue
-     */
-    get: operations['get_queue_queue_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/projects/description': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/queue/num": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Nb Queue
+         * @description Get the number of element active in the queue
+         */
+        get: operations["get_nb_queue_queue_num_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Description
-     * @description Description of a specific element
-     */
-    get: operations['get_description_projects_description_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/auth/project': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/projects/description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Description
+         * @description Description of a specific element
+         */
+        get: operations["get_description_projects_description_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Project Auth
-     * @description Users auth on a project
-     */
-    get: operations['get_project_auth_auth_project_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/projects/testdata': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/auth/project": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project Auth
+         * @description Users auth on a project
+         */
+        get: operations["get_project_auth_auth_project_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Add Testdata
-     * @description Add a dataset for test
-     */
-    post: operations['add_testdata_projects_testdata_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/projects/new': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/projects/testdata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Testdata
+         * @description Add a dataset for test
+         */
+        post: operations["add_testdata_projects_testdata_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * New Project
-     * @description Load new project
-     */
-    post: operations['new_project_projects_new_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/projects/delete': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/projects/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * New Project
+         * @description Load new project
+         */
+        post: operations["new_project_projects_new_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Delete Project
-     * @description Delete a project
-     */
-    post: operations['delete_project_projects_delete_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/next': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/projects/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Project
+         * @description Delete a project
+         */
+        post: operations["delete_project_projects_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Get Next
-     * @description Get next element
-     */
-    post: operations['get_next_elements_next_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/projection': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Next
+         * @description Get next element
+         */
+        post: operations["get_next_elements_next_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Projection
-     * @description Get projection data if computed
-     */
-    get: operations['get_projection_elements_projection_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/projection/current': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projection
+         * @description Get projection data if computed
+         */
+        get: operations["get_projection_elements_projection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Projection
-     * @description Get projection data if computed
-     */
-    get: operations['get_projection_elements_projection_current_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/projection/compute': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/projection/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projection
+         * @description Get projection data if computed
+         */
+        get: operations["get_projection_elements_projection_current_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Compute Projection
-     * @description Start projection computation using futures
-     *     Dedicated process, end with a file on the project
-     *     projection__user.parquet
-     */
-    post: operations['compute_projection_elements_projection_compute_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/table': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/projection/compute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compute Projection
+         * @description Start projection computation using futures
+         *     Dedicated process, end with a file on the project
+         *     projection__user.parquet
+         */
+        post: operations["compute_projection_elements_projection_compute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get List Elements
-     * @description Get table of elements
-     */
-    get: operations['get_list_elements_elements_table_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/annotation/table': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get List Elements
+         * @description Get table of elements
+         */
+        get: operations["get_list_elements_elements_table_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Post List Elements
-     * @description Update a table of annotations
-     */
-    post: operations['post_list_elements_annotation_table_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/reconciliate': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/annotation/table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post List Elements
+         * @description Update a table of annotations
+         */
+        post: operations["post_list_elements_annotation_table_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Reconciliation Table
-     * @description Get the reconciliation table
-     */
-    get: operations['get_reconciliation_table_elements_reconciliate_get'];
-    put?: never;
-    /**
-     * Post Reconciliation
-     * @description Post a label for all user in a list
-     *     TODO : a specific action for reconciliation ?
-     */
-    post: operations['post_reconciliation_elements_reconciliate_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/zeroshot': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/reconciliate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reconciliation Table
+         * @description Get the reconciliation table
+         */
+        get: operations["get_reconciliation_table_elements_reconciliate_get"];
+        put?: never;
+        /**
+         * Post Reconciliation
+         * @description Post a label for all user in a list
+         *     TODO : a specific action for reconciliation ?
+         */
+        post: operations["post_reconciliation_elements_reconciliate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Zeroshot
-     * @description Launch a call to an external API for 0-shot
-     */
-    post: operations['zeroshot_elements_zeroshot_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/elements/{element_id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/zeroshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Zeroshot
+         * @description Launch a call to an external API for 0-shot
+         */
+        post: operations["zeroshot_elements_zeroshot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Element
-     * @description Get specific element
-     */
-    get: operations['get_element_elements__element_id__get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/annotation/{action}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/elements/{element_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Element
+         * @description Get specific element
+         */
+        get: operations["get_element_elements__element_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Post Tag
-     * @description Add, Update, Delete annotations
-     *     Comment :
-     *     - For the moment add == update
-     *     - No information kept of selection process
-     */
-    post: operations['post_tag_annotation__action__post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/stop': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/annotation/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Tag
+         * @description Add, Update, Delete annotations
+         *     Comment :
+         *     - For the moment add == update
+         *     - No information kept of selection process
+         */
+        post: operations["post_tag_annotation__action__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Stop Process
-     * @description Stop user process
-     */
-    post: operations['stop_process_stop_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/schemes/label/add': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Process
+         * @description Stop user process
+         */
+        post: operations["stop_process_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Add Label
-     * @description Add a label to a scheme
-     */
-    post: operations['add_label_schemes_label_add_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/schemes/label/delete': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/schemes/label/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Label
+         * @description Add a label to a scheme
+         */
+        post: operations["add_label_schemes_label_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Delete Label
-     * @description Remove a label from a scheme
-     */
-    post: operations['delete_label_schemes_label_delete_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/schemes/label/rename': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/schemes/label/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Label
+         * @description Remove a label from a scheme
+         */
+        post: operations["delete_label_schemes_label_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Rename Label
-     * @description Add a label to a scheme
-     *     - create new label (the order is important)
-     *     - convert tags (need the label to exist, add a new element for each former)
-     *     - delete former label
-     */
-    post: operations['rename_label_schemes_label_rename_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/schemes/{action}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/schemes/label/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rename Label
+         * @description Add a label to a scheme
+         *     - create new label (the order is important)
+         *     - convert tags (need the label to exist, add a new element for each former)
+         *     - delete former label
+         */
+        post: operations["rename_label_schemes_label_rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Post Schemes
-     * @description Add, Update or Delete scheme
-     */
-    post: operations['post_schemes_schemes__action__post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/features': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/schemes/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Schemes
+         * @description Add, Update or Delete scheme
+         */
+        post: operations["post_schemes_schemes__action__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Features
-     * @description Available scheme of a project
-     */
-    get: operations['get_features_features_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/features/add': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Features
+         * @description Available scheme of a project
+         */
+        get: operations["get_features_features_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Post Embeddings
-     * @description Compute features :
-     *     - same prcess
-     *     - specific process : function + temporary file + update
-     */
-    post: operations['post_embeddings_features_add_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/features/delete': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/features/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Embeddings
+         * @description Compute features :
+         *     - same prcess
+         *     - specific process : function + temporary file + update
+         */
+        post: operations["post_embeddings_features_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Delete Feature
-     * @description Delete a specific feature
-     */
-    post: operations['delete_feature_features_delete_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/simplemodel': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/features/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Feature
+         * @description Delete a specific feature
+         */
+        post: operations["delete_feature_features_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Post Simplemodel
-     * @description Compute simplemodel
-     */
-    post: operations['post_simplemodel_models_simplemodel_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/bert': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/simplemodel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Simplemodel
+         * @description Compute simplemodel
+         */
+        post: operations["post_simplemodel_models_simplemodel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Bert
-     * @description Get Bert parameters and statistics
-     */
-    get: operations['get_bert_models_bert_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/bert/predict': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/bert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bert
+         * @description Get Bert parameters and statistics
+         */
+        get: operations["get_bert_models_bert_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Predict
-     * @description Start prediction with a model
-     */
-    post: operations['predict_models_bert_predict_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/bert/train': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/bert/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict
+         * @description Start prediction with a model
+         */
+        post: operations["predict_models_bert_predict_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Post Bert
-     * @description Compute bertmodel
-     *     TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
-     */
-    post: operations['post_bert_models_bert_train_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/bert/stop': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/bert/train": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Bert
+         * @description Compute bertmodel
+         *     TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
+         */
+        post: operations["post_bert_models_bert_train_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Stop Bert
-     * @description Stop user process
-     */
-    post: operations['stop_bert_models_bert_stop_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/bert/test': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/bert/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Bert
+         * @description Stop user process
+         */
+        post: operations["stop_bert_models_bert_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Start Test
-     * @description Start testing the model on the test set
-     *     TODO : get scheme from bert model name
-     */
-    post: operations['start_test_models_bert_test_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/bert/delete': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/bert/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Test
+         * @description Start testing the model on the test set
+         *     TODO : get scheme from bert model name
+         */
+        post: operations["start_test_models_bert_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Delete Bert
-     * @description Delete trained bert model
-     */
-    post: operations['delete_bert_models_bert_delete_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/models/bert/rename': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/bert/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Bert
+         * @description Delete trained bert model
+         */
+        post: operations["delete_bert_models_bert_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Save Bert
-     * @description Rename bertmodel
-     */
-    post: operations['save_bert_models_bert_rename_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/export/data': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/models/bert/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Bert
+         * @description Rename bertmodel
+         */
+        post: operations["save_bert_models_bert_rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Export Data
-     * @description Export labelled data
-     */
-    get: operations['export_data_export_data_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/export/features': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/export/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Data
+         * @description Export labelled data
+         */
+        get: operations["export_data_export_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Export Features
-     * @description Export features
-     */
-    get: operations['export_features_export_features_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/export/prediction': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/export/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Features
+         * @description Export features
+         */
+        get: operations["export_features_export_features_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Export Prediction
-     * @description Export annotations
-     */
-    get: operations['export_prediction_export_prediction_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/export/bert': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/export/prediction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Prediction
+         * @description Export annotations
+         */
+        get: operations["export_prediction_export_prediction_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Export Bert
-     * @description Export fine-tuned BERT model
-     */
-    get: operations['export_bert_export_bert_get'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/export/bert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Bert
+         * @description Export fine-tuned BERT model
+         */
+        get: operations["export_bert_export_bert_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /**
-     * ActionModel
-     * @description Type of actions available
-     * @enum {string}
-     */
-    ActionModel: 'delete' | 'add' | 'update';
-    /**
-     * AnnotationModel
-     * @description Specific Annotation
-     */
-    AnnotationModel: {
-      /** Project Slug */
-      project_slug: string;
-      /** Scheme */
-      scheme: string;
-      /** Element Id */
-      element_id: string;
-      /** Label */
-      label: string;
+    schemas: {
+        /**
+         * ActionModel
+         * @description Type of actions available
+         * @enum {string}
+         */
+        ActionModel: "delete" | "add" | "update";
+        /**
+         * AnnotationModel
+         * @description Specific Annotation
+         */
+        AnnotationModel: {
+            /** Project Slug */
+            project_slug: string;
+            /** Scheme */
+            scheme: string;
+            /** Element Id */
+            element_id: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * AuthActions
+         * @enum {string}
+         */
+        AuthActions: "add" | "delete";
+        /**
+         * AvailableProjectsModel
+         * @description Response for available projects
+         */
+        AvailableProjectsModel: {
+            /** Projects */
+            projects: components["schemas"]["ProjectSummaryModel"][];
+        };
+        /**
+         * BertModelModel
+         * @description Request Bertmodel
+         *     TODO : model for parameters
+         */
+        BertModelModel: {
+            /** Project Slug */
+            project_slug: string;
+            /** Scheme */
+            scheme: string;
+            /** Name */
+            name: string;
+            /** Base Model */
+            base_model: string;
+            /** Params */
+            params: Record<string, never> | components["schemas"]["BertModelParametersModel"];
+            /** Test Size */
+            test_size: number;
+        };
+        /**
+         * BertModelParametersModel
+         * @description Parameters for bertmodel training
+         */
+        BertModelParametersModel: {
+            /**
+             * Batchsize
+             * @default 4
+             */
+            batchsize: number;
+            /**
+             * Gradacc
+             * @default 1
+             */
+            gradacc: number;
+            /**
+             * Epochs
+             * @default 3
+             */
+            epochs: number;
+            /**
+             * Lrate
+             * @default 0.00005
+             */
+            lrate: number;
+            /**
+             * Wdecay
+             * @default 0.01
+             */
+            wdecay: number;
+            /**
+             * Best
+             * @default true
+             */
+            best: boolean;
+            /**
+             * Eval
+             * @default 10
+             */
+            eval: number;
+            /**
+             * Gpu
+             * @default false
+             */
+            gpu: boolean;
+            /**
+             * Adapt
+             * @default true
+             */
+            adapt: boolean;
+        };
+        /** Body_add_testdata_projects_testdata_post */
+        Body_add_testdata_projects_testdata_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+            /** Col Text */
+            col_text: string;
+            /** Col Id */
+            col_id: string;
+            /** N Test */
+            n_test: number;
+        };
+        /** Body_login_for_access_token_token_post */
+        Body_login_for_access_token_token_post: {
+            /** Grant Type */
+            grant_type?: string | null;
+            /** Username */
+            username: string;
+            /** Password */
+            password: string;
+            /**
+             * Scope
+             * @default
+             */
+            scope: string;
+            /** Client Id */
+            client_id?: string | null;
+            /** Client Secret */
+            client_secret?: string | null;
+        };
+        /**
+         * DocumentationModel
+         * @description Documentation model
+         */
+        DocumentationModel: {
+            /** Credits */
+            credits: string[];
+            /** Page */
+            page: string;
+            /** Documentation */
+            documentation: string;
+            /** Contact */
+            contact: string;
+        };
+        /**
+         * ElementOutModel
+         * @description Posting element to annotate
+         */
+        ElementOutModel: {
+            /** Element Id */
+            element_id: string;
+            /** Text */
+            text: string;
+            /** Context */
+            context: Record<string, never>;
+            /** Selection */
+            selection: string;
+            /** Info */
+            info: string | null;
+            /** Predict */
+            predict: Record<string, never>;
+            /** Frame */
+            frame: unknown[] | null;
+            /** Limit */
+            limit: number | null;
+            /** History */
+            history: unknown[];
+        };
+        /**
+         * FeatureModel
+         * @description Feature model
+         */
+        FeatureModel: {
+            /** Type */
+            type: string;
+            /** Name */
+            name: string;
+            /** Parameters */
+            parameters: {
+                [key: string]: (string | number) | undefined;
+            };
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * NextInModel
+         * @description Requesting next element to annotate
+         */
+        NextInModel: {
+            /** Scheme */
+            scheme: string;
+            /**
+             * Selection
+             * @default deterministic
+             */
+            selection: string;
+            /**
+             * Sample
+             * @default untagged
+             */
+            sample: string;
+            /** Tag */
+            tag?: string | null;
+            /** Frame */
+            frame?: unknown[] | null;
+            /**
+             * History
+             * @default []
+             */
+            history: unknown[];
+            /** Filter */
+            filter?: string | null;
+        };
+        /**
+         * ProjectAuthsModel
+         * @description Auth description for a project
+         */
+        ProjectAuthsModel: {
+            /** Auth */
+            auth: Record<string, never>;
+        };
+        /**
+         * ProjectDataModel
+         * @description To create a new project
+         */
+        ProjectDataModel: {
+            /** Project Name */
+            project_name: string;
+            /** Filename */
+            filename: string;
+            /** Col Text */
+            col_text: string;
+            /** Col Id */
+            col_id: string;
+            /** N Train */
+            n_train: number;
+            /** N Test */
+            n_test: number;
+            /** Dir */
+            dir?: string | null;
+            /**
+             * Embeddings
+             * @default []
+             */
+            embeddings: unknown[];
+            /**
+             * N Skip
+             * @default 0
+             */
+            n_skip: number;
+            /**
+             * Default Scheme
+             * @default []
+             */
+            default_scheme: unknown[];
+            /**
+             * Language
+             * @default fr
+             */
+            language: string;
+            /** Col Label */
+            col_label?: string | null;
+            /**
+             * Cols Context
+             * @default []
+             */
+            cols_context: unknown[];
+            /**
+             * Cols Test
+             * @default []
+             */
+            cols_test: unknown[];
+            /**
+             * Test
+             * @default false
+             */
+            test: boolean;
+            /** Csv */
+            csv: string;
+        };
+        /**
+         * ProjectDescriptionModel
+         * @description Project description
+         */
+        ProjectDescriptionModel: {
+            /** Trainset N */
+            trainset_n: number;
+            /** Annotated N */
+            annotated_n: number;
+            /** Users */
+            users: string[];
+            /** Annotated Distribution */
+            annotated_distribution: Record<string, never>;
+            /** Testset N */
+            testset_n?: number | null;
+            /** Sm 10Cv */
+            sm_10cv?: unknown | null;
+        };
+        /**
+         * ProjectModel
+         * @description Once created
+         */
+        ProjectModel: {
+            /** Project Name */
+            project_name: string;
+            /** Filename */
+            filename: string;
+            /** Col Text */
+            col_text: string;
+            /** Col Id */
+            col_id: string;
+            /** N Train */
+            n_train: number;
+            /** N Test */
+            n_test: number;
+            /** Dir */
+            dir?: string | null;
+            /**
+             * Embeddings
+             * @default []
+             */
+            embeddings: unknown[];
+            /**
+             * N Skip
+             * @default 0
+             */
+            n_skip: number;
+            /**
+             * Default Scheme
+             * @default []
+             */
+            default_scheme: unknown[];
+            /**
+             * Language
+             * @default fr
+             */
+            language: string;
+            /** Col Label */
+            col_label?: string | null;
+            /**
+             * Cols Context
+             * @default []
+             */
+            cols_context: unknown[];
+            /**
+             * Cols Test
+             * @default []
+             */
+            cols_test: unknown[];
+            /**
+             * Test
+             * @default false
+             */
+            test: boolean;
+            /** Project Slug */
+            project_slug: string;
+        };
+        /**
+         * ProjectStateModel
+         * @description Response for server state
+         *     TODO : have a more precise description of the fields
+         */
+        ProjectStateModel: {
+            params: components["schemas"]["ProjectModel"];
+            /** Users */
+            users: Record<string, never>;
+            /** Next */
+            next: Record<string, never>;
+            /** Schemes */
+            schemes: Record<string, never>;
+            /** Features */
+            features: Record<string, never>;
+            /** Simplemodel */
+            simplemodel: Record<string, never>;
+            /** Bertmodels */
+            bertmodels: Record<string, never>;
+            /** Projections */
+            projections: Record<string, never>;
+            /** Zeroshot */
+            zeroshot: Record<string, never>;
+        };
+        /** ProjectSummaryModel */
+        ProjectSummaryModel: {
+            parameters: components["schemas"]["ProjectModel"];
+            /** User Right */
+            user_right: string;
+            /** Created By */
+            created_by: string;
+            /** Created At */
+            created_at: string;
+        };
+        /**
+         * ProjectionInStrictModel
+         * @description Request projection
+         */
+        ProjectionInStrictModel: {
+            /** Method */
+            method: string;
+            /** Features */
+            features: unknown[];
+            /** Params */
+            params: components["schemas"]["TsneModel"] | components["schemas"]["UmapModel"];
+        };
+        /**
+         * ProjectionOutModel
+         * @description Posting projection
+         */
+        ProjectionOutModel: {
+            /** Status */
+            status: string;
+            /** Index */
+            index: unknown[];
+            /** X */
+            x: unknown[];
+            /** Y */
+            y: unknown[];
+            /** Labels */
+            labels: unknown[];
+            /** Texts */
+            texts: unknown[];
+        };
+        /**
+         * SchemeModel
+         * @description Specific scheme
+         */
+        SchemeModel: {
+            /** Project Slug */
+            project_slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: unknown[] | null;
+        };
+        /**
+         * SimpleModelModel
+         * @description Request Simplemodel
+         *     TODO : model for parameters
+         */
+        SimpleModelModel: {
+            /** Features */
+            features: unknown[];
+            /** Model */
+            model: string;
+            /** Params */
+            params: Record<string, never> | {
+                [key: string]: Record<string, never> | undefined;
+            } | null;
+            /** Scheme */
+            scheme: string;
+            /**
+             * Standardize
+             * @default true
+             */
+            standardize: boolean | null;
+        };
+        /**
+         * TableAnnotationsModel
+         * @description Table of annotations
+         */
+        TableAnnotationsModel: {
+            /** Annotations */
+            annotations: components["schemas"]["AnnotationModel"][];
+        };
+        /**
+         * TableLogsModel
+         * @description Response for table of logs
+         */
+        TableLogsModel: {
+            /** Time */
+            time: unknown[];
+            /** User */
+            user: unknown[];
+            /** Project */
+            project: unknown[];
+            /** Action */
+            action: unknown[];
+        };
+        /**
+         * TableOutModel
+         * @description Response for table of elements
+         */
+        TableOutModel: {
+            /** Items */
+            items: unknown[];
+            /** Total */
+            total: number;
+        };
+        /**
+         * TokenModel
+         * @description Auth token
+         */
+        TokenModel: {
+            /** Access Token */
+            access_token: string;
+            /** Token Type */
+            token_type: string;
+            /** Status */
+            status: string | null;
+        };
+        /**
+         * TsneModel
+         * @description Params TsneModel
+         */
+        TsneModel: {
+            /** N Components */
+            n_components: number;
+            /** Learning Rate */
+            learning_rate: string | number;
+            /** Init */
+            init: string;
+            /** Perplexity */
+            perplexity: number;
+        };
+        /**
+         * UmapModel
+         * @description Params UmapModel
+         */
+        UmapModel: {
+            /** N Components */
+            n_components: number;
+            /** N Neighbors */
+            n_neighbors: number;
+            /** Min Dist */
+            min_dist: number;
+            /** Metric */
+            metric: string;
+        };
+        /**
+         * UserModel
+         * @description User definition
+         */
+        UserModel: {
+            /** Username */
+            username: string;
+            /** Status */
+            status: string | null;
+        };
+        /**
+         * UsersServerModel
+         * @description List of users on the server
+         */
+        UsersServerModel: {
+            /** Users */
+            users: string[];
+            /** Auth */
+            auth: string[];
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /**
+         * WaitingModel
+         * @description Response for waiting
+         */
+        WaitingModel: {
+            /** Detail */
+            detail: string;
+            /**
+             * Status
+             * @default waiting
+             */
+            status: string;
+        };
+        /** ZeroShotModel */
+        ZeroShotModel: {
+            /** Scheme */
+            scheme: string;
+            /** Prompt */
+            prompt: string;
+            /** Api */
+            api: string;
+            /** Token */
+            token: string;
+            /**
+             * Number
+             * @default 10
+             */
+            number: number;
+        };
     };
-    /**
-     * AuthActions
-     * @enum {string}
-     */
-    AuthActions: 'add' | 'delete';
-    /**
-     * AvailableProjectsModel
-     * @description Response for available projects
-     */
-    AvailableProjectsModel: {
-      /** Projects */
-      projects: components['schemas']['ProjectSummaryModel'][];
-    };
-    /**
-     * BertModelModel
-     * @description Request Bertmodel
-     *     TODO : model for parameters
-     */
-    BertModelModel: {
-      /** Project Slug */
-      project_slug: string;
-      /** Scheme */
-      scheme: string;
-      /** Name */
-      name: string;
-      /** Base Model */
-      base_model: string;
-      /** Params */
-      params: Record<string, never> | components['schemas']['BertModelParametersModel'];
-      /** Test Size */
-      test_size: number;
-    };
-    /**
-     * BertModelParametersModel
-     * @description Parameters for bertmodel training
-     */
-    BertModelParametersModel: {
-      /**
-       * Batchsize
-       * @default 4
-       */
-      batchsize: number;
-      /**
-       * Gradacc
-       * @default 1
-       */
-      gradacc: number;
-      /**
-       * Epochs
-       * @default 3
-       */
-      epochs: number;
-      /**
-       * Lrate
-       * @default 0.00005
-       */
-      lrate: number;
-      /**
-       * Wdecay
-       * @default 0.01
-       */
-      wdecay: number;
-      /**
-       * Best
-       * @default true
-       */
-      best: boolean;
-      /**
-       * Eval
-       * @default 10
-       */
-      eval: number;
-      /**
-       * Gpu
-       * @default false
-       */
-      gpu: boolean;
-      /**
-       * Adapt
-       * @default true
-       */
-      adapt: boolean;
-    };
-    /** Body_add_testdata_projects_testdata_post */
-    Body_add_testdata_projects_testdata_post: {
-      /**
-       * File
-       * Format: binary
-       */
-      file: string;
-      /** Col Text */
-      col_text: string;
-      /** Col Id */
-      col_id: string;
-      /** N Test */
-      n_test: number;
-    };
-    /** Body_login_for_access_token_token_post */
-    Body_login_for_access_token_token_post: {
-      /** Grant Type */
-      grant_type?: string | null;
-      /** Username */
-      username: string;
-      /** Password */
-      password: string;
-      /**
-       * Scope
-       * @default
-       */
-      scope: string;
-      /** Client Id */
-      client_id?: string | null;
-      /** Client Secret */
-      client_secret?: string | null;
-    };
-    /**
-     * DocumentationModel
-     * @description Documentation model
-     */
-    DocumentationModel: {
-      /** Credits */
-      credits: string[];
-      /** Page */
-      page: string;
-      /** Documentation */
-      documentation: string;
-      /** Contact */
-      contact: string;
-    };
-    /**
-     * ElementOutModel
-     * @description Posting element to annotate
-     */
-    ElementOutModel: {
-      /** Element Id */
-      element_id: string;
-      /** Text */
-      text: string;
-      /** Context */
-      context: Record<string, never>;
-      /** Selection */
-      selection: string;
-      /** Info */
-      info: string | null;
-      /** Predict */
-      predict: Record<string, never>;
-      /** Frame */
-      frame: unknown[] | null;
-      /** Limit */
-      limit: number | null;
-      /** History */
-      history: unknown[];
-    };
-    /**
-     * FeatureModel
-     * @description Feature model
-     */
-    FeatureModel: {
-      /** Type */
-      type: string;
-      /** Name */
-      name: string;
-      /** Parameters */
-      parameters: {
-        [key: string]: (string | number) | undefined;
-      };
-    };
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components['schemas']['ValidationError'][];
-    };
-    /**
-     * NextInModel
-     * @description Requesting next element to annotate
-     */
-    NextInModel: {
-      /** Scheme */
-      scheme: string;
-      /**
-       * Selection
-       * @default deterministic
-       */
-      selection: string;
-      /**
-       * Sample
-       * @default untagged
-       */
-      sample: string;
-      /** Tag */
-      tag?: string | null;
-      /** Frame */
-      frame?: unknown[] | null;
-      /**
-       * History
-       * @default []
-       */
-      history: unknown[];
-      /** Filter */
-      filter?: string | null;
-    };
-    /**
-     * ProjectAuthsModel
-     * @description Auth description for a project
-     */
-    ProjectAuthsModel: {
-      /** Auth */
-      auth: Record<string, never>;
-    };
-    /**
-     * ProjectDataModel
-     * @description To create a new project
-     */
-    ProjectDataModel: {
-      /** Project Name */
-      project_name: string;
-      /** Filename */
-      filename: string;
-      /** Col Text */
-      col_text: string;
-      /** Col Id */
-      col_id: string;
-      /** N Train */
-      n_train: number;
-      /** N Test */
-      n_test: number;
-      /** Dir */
-      dir?: string | null;
-      /**
-       * Embeddings
-       * @default []
-       */
-      embeddings: unknown[];
-      /**
-       * N Skip
-       * @default 0
-       */
-      n_skip: number;
-      /**
-       * Default Scheme
-       * @default []
-       */
-      default_scheme: unknown[];
-      /**
-       * Language
-       * @default fr
-       */
-      language: string;
-      /** Col Label */
-      col_label?: string | null;
-      /**
-       * Cols Context
-       * @default []
-       */
-      cols_context: unknown[];
-      /**
-       * Cols Test
-       * @default []
-       */
-      cols_test: unknown[];
-      /**
-       * Test
-       * @default false
-       */
-      test: boolean;
-      /** Csv */
-      csv: string;
-    };
-    /**
-     * ProjectDescriptionModel
-     * @description Project description
-     */
-    ProjectDescriptionModel: {
-      /** Trainset N */
-      trainset_n: number;
-      /** Annotated N */
-      annotated_n: number;
-      /** Users */
-      users: string[];
-      /** Annotated Distribution */
-      annotated_distribution: Record<string, never>;
-      /** Testset N */
-      testset_n?: number | null;
-      /** Sm 10Cv */
-      sm_10cv?: unknown | null;
-    };
-    /**
-     * ProjectModel
-     * @description Once created
-     */
-    ProjectModel: {
-      /** Project Name */
-      project_name: string;
-      /** Filename */
-      filename: string;
-      /** Col Text */
-      col_text: string;
-      /** Col Id */
-      col_id: string;
-      /** N Train */
-      n_train: number;
-      /** N Test */
-      n_test: number;
-      /** Dir */
-      dir?: string | null;
-      /**
-       * Embeddings
-       * @default []
-       */
-      embeddings: unknown[];
-      /**
-       * N Skip
-       * @default 0
-       */
-      n_skip: number;
-      /**
-       * Default Scheme
-       * @default []
-       */
-      default_scheme: unknown[];
-      /**
-       * Language
-       * @default fr
-       */
-      language: string;
-      /** Col Label */
-      col_label?: string | null;
-      /**
-       * Cols Context
-       * @default []
-       */
-      cols_context: unknown[];
-      /**
-       * Cols Test
-       * @default []
-       */
-      cols_test: unknown[];
-      /**
-       * Test
-       * @default false
-       */
-      test: boolean;
-      /** Project Slug */
-      project_slug: string;
-    };
-    /**
-     * ProjectStateModel
-     * @description Response for server state
-     *     TODO : have a more precise description of the fields
-     */
-    ProjectStateModel: {
-      params: components['schemas']['ProjectModel'];
-      /** Next */
-      next: Record<string, never>;
-      /** Schemes */
-      schemes: Record<string, never>;
-      /** Features */
-      features: Record<string, never>;
-      /** Simplemodel */
-      simplemodel: Record<string, never>;
-      /** Bertmodels */
-      bertmodels: Record<string, never>;
-      /** Projections */
-      projections: Record<string, never>;
-      /** Zeroshot */
-      zeroshot: Record<string, never>;
-    };
-    /** ProjectSummaryModel */
-    ProjectSummaryModel: {
-      parameters: components['schemas']['ProjectModel'];
-      /** User Right */
-      user_right: string;
-      /** Created By */
-      created_by: string;
-      /** Created At */
-      created_at: string;
-    };
-    /**
-     * ProjectionInStrictModel
-     * @description Request projection
-     */
-    ProjectionInStrictModel: {
-      /** Method */
-      method: string;
-      /** Features */
-      features: unknown[];
-      /** Params */
-      params: components['schemas']['TsneModel'] | components['schemas']['UmapModel'];
-    };
-    /**
-     * ProjectionOutModel
-     * @description Posting projection
-     */
-    ProjectionOutModel: {
-      /** Status */
-      status: string;
-      /** Index */
-      index: unknown[];
-      /** X */
-      x: unknown[];
-      /** Y */
-      y: unknown[];
-      /** Labels */
-      labels: unknown[];
-      /** Texts */
-      texts: unknown[];
-    };
-    /**
-     * QueueModel
-     * @description Response for current queue
-     */
-    QueueModel: {
-      /** Content */
-      content: {
-        [key: string]: Record<string, never> | undefined;
-      };
-    };
-    /**
-     * SchemeModel
-     * @description Specific scheme
-     */
-    SchemeModel: {
-      /** Project Slug */
-      project_slug: string;
-      /** Name */
-      name: string;
-      /**
-       * Tags
-       * @default []
-       */
-      tags: unknown[] | null;
-    };
-    /**
-     * SimpleModelModel
-     * @description Request Simplemodel
-     *     TODO : model for parameters
-     */
-    SimpleModelModel: {
-      /** Features */
-      features: unknown[];
-      /** Model */
-      model: string;
-      /** Params */
-      params:
-        | Record<string, never>
-        | {
-            [key: string]: Record<string, never> | undefined;
-          }
-        | null;
-      /** Scheme */
-      scheme: string;
-      /**
-       * Standardize
-       * @default true
-       */
-      standardize: boolean | null;
-    };
-    /**
-     * TableAnnotationsModel
-     * @description Table of annotations
-     */
-    TableAnnotationsModel: {
-      /** Annotations */
-      annotations: components['schemas']['AnnotationModel'][];
-    };
-    /**
-     * TableLogsModel
-     * @description Response for table of logs
-     */
-    TableLogsModel: {
-      /** Time */
-      time: unknown[];
-      /** User */
-      user: unknown[];
-      /** Project */
-      project: unknown[];
-      /** Action */
-      action: unknown[];
-    };
-    /**
-     * TableOutModel
-     * @description Response for table of elements
-     */
-    TableOutModel: {
-      /** Items */
-      items: unknown[];
-      /** Total */
-      total: number;
-    };
-    /**
-     * TokenModel
-     * @description Auth token
-     */
-    TokenModel: {
-      /** Access Token */
-      access_token: string;
-      /** Token Type */
-      token_type: string;
-      /** Status */
-      status: string | null;
-    };
-    /**
-     * TsneModel
-     * @description Params TsneModel
-     */
-    TsneModel: {
-      /** N Components */
-      n_components: number;
-      /** Learning Rate */
-      learning_rate: string | number;
-      /** Init */
-      init: string;
-      /** Perplexity */
-      perplexity: number;
-    };
-    /**
-     * UmapModel
-     * @description Params UmapModel
-     */
-    UmapModel: {
-      /** N Components */
-      n_components: number;
-      /** N Neighbors */
-      n_neighbors: number;
-      /** Min Dist */
-      min_dist: number;
-      /** Metric */
-      metric: string;
-    };
-    /**
-     * UserModel
-     * @description User definition
-     */
-    UserModel: {
-      /** Username */
-      username: string;
-      /** Status */
-      status: string | null;
-    };
-    /**
-     * UsersServerModel
-     * @description List of users on the server
-     */
-    UsersServerModel: {
-      /** Users */
-      users: string[];
-      /** Auth */
-      auth: string[];
-    };
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-    };
-    /**
-     * WaitingModel
-     * @description Response for waiting
-     */
-    WaitingModel: {
-      /** Detail */
-      detail: string;
-      /**
-       * Status
-       * @default waiting
-       */
-      status: string;
-    };
-    /** ZeroShotModel */
-    ZeroShotModel: {
-      /** Scheme */
-      scheme: string;
-      /** Prompt */
-      prompt: string;
-      /** Api */
-      api: string;
-      /** Token */
-      token: string;
-      /**
-       * Number
-       * @default 10
-       */
-      number: number;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  welcome__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'text/html': string;
-        };
-      };
-    };
-  };
-  get_documentation_documentation_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['DocumentationModel'];
-        };
-      };
-    };
-  };
-  login_for_access_token_token_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/x-www-form-urlencoded': components['schemas']['Body_login_for_access_token_token_post'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TokenModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  disconnect_user_users_disconnect_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-    };
-  };
-  read_users_me_users_me_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UserModel'];
-        };
-      };
-    };
-  };
-  existing_users_users_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UsersServerModel'];
-        };
-      };
-    };
-  };
-  create_user_users_create_post: {
-    parameters: {
-      query: {
-        username_to_create: string;
-        password: string;
-        status: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  delete_user_users_delete_post: {
-    parameters: {
-      query: {
-        user_to_delete: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  set_auth_users_auth__action__post: {
-    parameters: {
-      query: {
-        username: string;
-        project_slug: string;
-        status?: string;
-      };
-      header?: never;
-      path: {
-        action: components['schemas']['AuthActions'];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_auth_users_auth_get: {
-    parameters: {
-      query: {
-        username: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown[];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_logs_logs_get: {
-    parameters: {
-      query: {
-        username: string;
-        project_slug?: string;
-        limit?: unknown;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TableLogsModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_project_state_projects__project_slug__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        project_slug: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProjectStateModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_project_statistics_projects__project_slug__statistics_get: {
-    parameters: {
-      query?: {
-        scheme?: string | null;
-      };
-      header?: never;
-      path: {
-        project_slug: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProjectDescriptionModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_projects_projects_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AvailableProjectsModel'];
-        };
-      };
-    };
-  };
-  get_queue_queue_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['QueueModel'];
-        };
-      };
-    };
-  };
-  get_description_projects_description_get: {
-    parameters: {
-      query: {
-        scheme?: string | null;
-        user?: string | null;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProjectDescriptionModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_project_auth_auth_project_get: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProjectAuthsModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  add_testdata_projects_testdata_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'multipart/form-data': components['schemas']['Body_add_testdata_projects_testdata_post'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  new_project_projects_new_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProjectDataModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  delete_project_projects_delete_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_next_elements_next_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NextInModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ElementOutModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_projection_elements_projection_get: {
-    parameters: {
-      query: {
-        scheme: string | null;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProjectionOutModel'] | null;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_projection_elements_projection_current_get: {
-    parameters: {
-      query: {
-        scheme: string | null;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json':
-            | components['schemas']['ProjectionOutModel']
-            | components['schemas']['WaitingModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  compute_projection_elements_projection_compute_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProjectionInStrictModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WaitingModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_list_elements_elements_table_get: {
-    parameters: {
-      query: {
-        scheme: string;
-        min?: number;
-        max?: number;
-        contains?: string | null;
-        mode?: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['TableOutModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  post_list_elements_annotation_table_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TableAnnotationsModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_reconciliation_table_elements_reconciliate_get: {
-    parameters: {
-      query: {
-        scheme: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  post_reconciliation_elements_reconciliate_post: {
-    parameters: {
-      query: {
-        users: unknown[];
-        element_id: string;
-        tag: string;
-        scheme: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  zeroshot_elements_zeroshot_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ZeroShotModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WaitingModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_element_elements__element_id__get: {
-    parameters: {
-      query: {
-        scheme: string;
-        project_slug: string;
-      };
-      header?: never;
-      path: {
-        element_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ElementOutModel'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  post_tag_annotation__action__post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path: {
-        action: components['schemas']['ActionModel'];
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['AnnotationModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  stop_process_stop_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  add_label_schemes_label_add_post: {
-    parameters: {
-      query: {
-        scheme: string;
-        label: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  delete_label_schemes_label_delete_post: {
-    parameters: {
-      query: {
-        scheme: string;
-        label: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  rename_label_schemes_label_rename_post: {
-    parameters: {
-      query: {
-        scheme: string;
-        former_label: string;
-        new_label: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  post_schemes_schemes__action__post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path: {
-        action: components['schemas']['ActionModel'];
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SchemeModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_features_features_get: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': string[];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  post_embeddings_features_add_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FeatureModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WaitingModel'] | null;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  delete_feature_features_delete_post: {
-    parameters: {
-      query: {
-        name: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  post_simplemodel_models_simplemodel_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SimpleModelModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  get_bert_models_bert_get: {
-    parameters: {
-      query: {
-        name: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  predict_models_bert_predict_post: {
-    parameters: {
-      query: {
-        model_name: string;
-        data?: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  post_bert_models_bert_train_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BertModelModel'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  stop_bert_models_bert_stop_post: {
-    parameters: {
-      query: {
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  start_test_models_bert_test_post: {
-    parameters: {
-      query: {
-        scheme: string;
-        model: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  delete_bert_models_bert_delete_post: {
-    parameters: {
-      query: {
-        bert_name: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  save_bert_models_bert_rename_post: {
-    parameters: {
-      query: {
-        former_name: string;
-        new_name: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  export_data_export_data_get: {
-    parameters: {
-      query: {
-        scheme: string;
-        format: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  export_features_export_features_get: {
-    parameters: {
-      query: {
-        features: unknown[];
-        format: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  export_prediction_export_prediction_get: {
-    parameters: {
-      query: {
-        format: string;
-        name: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  export_bert_export_bert_get: {
-    parameters: {
-      query: {
-        name: string;
-        project_slug: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': string;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
+    welcome__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    get_documentation_documentation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentationModel"];
+                };
+            };
+        };
+    };
+    login_for_access_token_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_token_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_user_users_disconnect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    read_users_me_users_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserModel"];
+                };
+            };
+        };
+    };
+    existing_users_users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsersServerModel"];
+                };
+            };
+        };
+    };
+    create_user_users_create_post: {
+        parameters: {
+            query: {
+                username_to_create: string;
+                password: string;
+                status: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_user_users_delete_post: {
+        parameters: {
+            query: {
+                user_to_delete: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_auth_users_auth__action__post: {
+        parameters: {
+            query: {
+                username: string;
+                project_slug: string;
+                status?: string;
+            };
+            header?: never;
+            path: {
+                action: components["schemas"]["AuthActions"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auth_users_auth_get: {
+        parameters: {
+            query: {
+                username: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_logs_logs_get: {
+        parameters: {
+            query: {
+                username: string;
+                project_slug?: string;
+                limit?: unknown;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableLogsModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_state_projects__project_slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectStateModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_statistics_projects__project_slug__statistics_get: {
+        parameters: {
+            query?: {
+                scheme?: string | null;
+            };
+            header?: never;
+            path: {
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectDescriptionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_projects_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailableProjectsModel"];
+                };
+            };
+        };
+    };
+    get_queue_queue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    get_nb_queue_queue_num_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+        };
+    };
+    get_description_projects_description_get: {
+        parameters: {
+            query: {
+                scheme?: string | null;
+                user?: string | null;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectDescriptionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_auth_auth_project_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAuthsModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_testdata_projects_testdata_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_testdata_projects_testdata_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    new_project_projects_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectDataModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_projects_delete_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_next_elements_next_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NextInModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElementOutModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_projection_elements_projection_get: {
+        parameters: {
+            query: {
+                scheme: string | null;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectionOutModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_projection_elements_projection_current_get: {
+        parameters: {
+            query: {
+                scheme: string | null;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectionOutModel"] | components["schemas"]["WaitingModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compute_projection_elements_projection_compute_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectionInStrictModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_list_elements_elements_table_get: {
+        parameters: {
+            query: {
+                scheme: string;
+                min?: number;
+                max?: number;
+                contains?: string | null;
+                mode?: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOutModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_list_elements_annotation_table_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TableAnnotationsModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reconciliation_table_elements_reconciliate_get: {
+        parameters: {
+            query: {
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reconciliation_elements_reconciliate_post: {
+        parameters: {
+            query: {
+                users: unknown[];
+                element_id: string;
+                tag: string;
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    zeroshot_elements_zeroshot_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZeroShotModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_element_elements__element_id__get: {
+        parameters: {
+            query: {
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path: {
+                element_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElementOutModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_tag_annotation__action__post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path: {
+                action: components["schemas"]["ActionModel"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_process_stop_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_label_schemes_label_add_post: {
+        parameters: {
+            query: {
+                scheme: string;
+                label: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_label_schemes_label_delete_post: {
+        parameters: {
+            query: {
+                scheme: string;
+                label: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_label_schemes_label_rename_post: {
+        parameters: {
+            query: {
+                scheme: string;
+                former_label: string;
+                new_label: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_schemes_schemes__action__post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path: {
+                action: components["schemas"]["ActionModel"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchemeModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_features_features_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_embeddings_features_add_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeatureModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_feature_features_delete_post: {
+        parameters: {
+            query: {
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_simplemodel_models_simplemodel_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimpleModelModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bert_models_bert_get: {
+        parameters: {
+            query: {
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predict_models_bert_predict_post: {
+        parameters: {
+            query: {
+                model_name: string;
+                data?: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_bert_models_bert_train_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BertModelModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_bert_models_bert_stop_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_test_models_bert_test_post: {
+        parameters: {
+            query: {
+                scheme: string;
+                model: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bert_models_bert_delete_post: {
+        parameters: {
+            query: {
+                bert_name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_bert_models_bert_rename_post: {
+        parameters: {
+            query: {
+                former_name: string;
+                new_name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_data_export_data_get: {
+        parameters: {
+            query: {
+                scheme: string;
+                format: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_features_export_features_get: {
+        parameters: {
+            query: {
+                features: unknown[];
+                format: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_prediction_export_prediction_get: {
+        parameters: {
+            query: {
+                format: string;
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_bert_export_bert_get: {
+        parameters: {
+            query: {
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
 }

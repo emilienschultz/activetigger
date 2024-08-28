@@ -386,6 +386,7 @@ class ProjectStateModel(BaseModel):
     """
 
     params: ProjectModel
+    users: Dict[str, Any]
     next: Dict[str, Any]
     schemes: Dict[str, Any]
     features: Dict[str, Any]

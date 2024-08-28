@@ -30,6 +30,8 @@ export const ProjectPage: FC = () => {
     }
   };
 
+  const activeUsers = project?.users?.active ? project?.users?.active : [];
+
   return (
     projectName && (
       <ProjectPageLayout projectName={projectName}>
@@ -37,6 +39,14 @@ export const ProjectPage: FC = () => {
           <div className="container-fluid">
             <div className="row">
               <h2 className="subsection">Project panel</h2>
+            </div>
+            <div className="text-muted smal mb-3 font-weight-light">
+              Recent activity{' '}
+              {activeUsers.map((e) => (
+                <span className="badge rounded-pill text-bg-light text-muted me-2" key={e}>
+                  {e}
+                </span>
+              ))}
             </div>
 
             <div className="row">

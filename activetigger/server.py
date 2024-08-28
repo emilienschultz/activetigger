@@ -1063,6 +1063,7 @@ class Project(Server):
         """
         r = {
             "params": self.params,
+            "users": {"active": self.get_active_users()},
             "next": {
                 "methods_min": ["deterministic", "random"],
                 "methods": ["deterministic", "random", "maxprob", "active"],
@@ -1218,6 +1219,25 @@ class Project(Server):
             return {"success": "data computed"}
         else:
             return {"error": "Problem with the number of element"}
+
+    def get_active_users(self, period: int = 300):
+        """
+        Get current active users on the time period
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = "SELECT DISTINCT(user) FROM logs WHERE project = ? AND time > ?"
+        time = datetime.now() - timedelta(seconds=period)
+        cursor.execute(
+            query,
+            (
+                self.name,
+                time.timestamp(),
+            ),
+        )
+        result = cursor.fetchall()
+        conn.close()
+        return [u[0] for u in result]
 
 
 class Features:
