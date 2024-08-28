@@ -11,7 +11,7 @@
 Server/client BERT fine tunning app using active learning
 
 - API in Python
-- Frontend in React
+- Frontend in React + github pages
 
 ## Installation
 
