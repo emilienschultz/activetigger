@@ -148,8 +148,8 @@ export const ProjectAnnotationPage: FC = () => {
       availableLabels.forEach((label, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           if (elementId) {
-            addAnnotation(elementId, label).then(navigateToNextElement);
             setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
+            addAnnotation(elementId, label).then(navigateToNextElement);
             reFetchStatistics();
           }
         }
@@ -382,8 +382,8 @@ export const ProjectAnnotationPage: FC = () => {
               className="btn btn-primary grow-1"
               onClick={(e) => {
                 if (elementId) {
-                  addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
                   setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
+                  addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
                   reFetchStatistics();
                   // TODO manage erreur
                 }
