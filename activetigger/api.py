@@ -658,6 +658,7 @@ async def get_next(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    print(r)
     return ElementOutModel(**r)
 
 

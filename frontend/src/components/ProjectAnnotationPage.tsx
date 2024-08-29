@@ -37,7 +37,11 @@ export const ProjectAnnotationPage: FC = () => {
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
 
   // hooks to manage element
-  const { getNextElementId } = useGetNextElementId(projectName || null, currentScheme || null);
+  const { getNextElementId } = useGetNextElementId(
+    projectName || null,
+    currentScheme || null,
+    history,
+  );
   const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
 
   // hooks to manage annotation
@@ -84,6 +88,7 @@ export const ProjectAnnotationPage: FC = () => {
   }, []);
 
   const navigateToNextElement = useCallback(async () => {
+    console.log(selectionConfig);
     getNextElementId(selectionConfig).then((nextElementId) => {
       if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
       else setElement(elementOutModel);
@@ -132,20 +137,32 @@ export const ProjectAnnotationPage: FC = () => {
     updatedSimpleModel,
   ]);
 
+  // get statistics to display (TODO : try a way to avoid another request ?)
+  const { statistics, reFetchStatistics } = useStatistics(
+    projectName || null,
+    currentScheme || null,
+  );
+
   const handleKeyboardEvents = useCallback(
     (ev: KeyboardEvent) => {
       availableLabels.forEach((label, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           if (elementId) {
-            console.log(label);
             addAnnotation(elementId, label).then(navigateToNextElement);
-            setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
+            setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
             reFetchStatistics();
           }
         }
       });
     },
-    [availableLabels, addAnnotation, setAppContext, elementId, history, navigateToNextElement],
+    [
+      availableLabels,
+      addAnnotation,
+      setAppContext,
+      elementId,
+      navigateToNextElement,
+      reFetchStatistics,
+    ],
   );
 
   useEffect(() => {
@@ -160,12 +177,6 @@ export const ProjectAnnotationPage: FC = () => {
       }
     };
   }, [availableLabels, handleKeyboardEvents]);
-
-  // get statistics to display (TODO : try a way to avoid another request ?)
-  const { statistics, reFetchStatistics } = useStatistics(
-    projectName || null,
-    currentScheme || null,
-  );
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
@@ -358,7 +369,7 @@ export const ProjectAnnotationPage: FC = () => {
             to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
             className="btn btn-outline-secondary"
             onClick={() => {
-              setAppContext((prev) => ({ ...prev, history: history.slice(0, -1) }));
+              setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
             }}
           >
             <IoMdReturnLeft />
@@ -372,7 +383,7 @@ export const ProjectAnnotationPage: FC = () => {
               onClick={(e) => {
                 if (elementId) {
                   addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
-                  setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
+                  setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
                   reFetchStatistics();
                   // TODO manage erreur
                 }

@@ -407,7 +407,11 @@ export function useDeleteFeature(projectSlug: string | null) {
  * @param selectionConfig
  * @returns ElementId
  */
-export function useGetNextElementId(projectSlug: string | null, currentScheme: string | null) {
+export function useGetNextElementId(
+  projectSlug: string | null,
+  currentScheme: string | null,
+  history: string[],
+) {
   const { notify } = useNotifications();
   const getNextElementId = useCallback(
     async (selectionConfig: SelectionConfig) => {
@@ -420,7 +424,7 @@ export function useGetNextElementId(projectSlug: string | null, currentScheme: s
             sample: selectionConfig.sample,
             tag: selectionConfig.label,
             filter: selectionConfig.filter,
-            history: [],
+            history: history,
             frame: selectionConfig.frameSelection ? selectionConfig.frame : [], // only if frame option selected
           },
         });
@@ -430,7 +434,7 @@ export function useGetNextElementId(projectSlug: string | null, currentScheme: s
         return null;
       }
     },
-    [projectSlug, currentScheme, notify],
+    [projectSlug, currentScheme, notify, history],
   );
 
   return { getNextElementId };

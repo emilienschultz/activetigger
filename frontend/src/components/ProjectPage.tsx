@@ -16,7 +16,8 @@ export const ProjectPage: FC = () => {
   const { projectName } = useParams();
 
   const {
-    appContext: { currentScheme, currentProject: project },
+    appContext: { currentScheme, currentProject: project, history },
+    setAppContext,
   } = useAppContext();
 
   const navigate = useNavigate();
@@ -28,6 +29,10 @@ export const ProjectPage: FC = () => {
       deleteProject(projectName);
       navigate(`/projects/`);
     }
+  };
+
+  const actionClearHistory = () => {
+    setAppContext((prev) => ({ ...prev, history: [] }));
   };
 
   const activeUsers = project?.users?.active ? project?.users?.active : [];
@@ -55,17 +60,25 @@ export const ProjectPage: FC = () => {
 
             {currentScheme && (
               <div className="row">
-                {' '}
-                <h4 className="subsection">Statistics of the scheme</h4>
                 <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
               </div>
             )}
             <div className="row mt-4">
               <details className="custom-details">
-                <summary className="custom-summary">Parameters of the project</summary>
+                <summary className="custom-summary">Session</summary>
+                <div>{JSON.stringify(history, null, 2)}</div>
+                <button onClick={actionClearHistory} className="delete-button">
+                  Clear history
+                </button>
+              </details>
+            </div>
+
+            <div className="row">
+              <details className="custom-details">
+                <summary className="custom-summary">Parameters</summary>
                 <div>{JSON.stringify(project.params, null, 2)}</div>
                 <button onClick={actionDelete} className="delete-button">
-                  Delete the project
+                  Delete project
                 </button>
               </details>
             </div>
