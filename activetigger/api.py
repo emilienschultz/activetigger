@@ -1499,4 +1499,4 @@ async def export_bert(
     r = project.bertmodels.export_bert(name=name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    return r["name"]
+    return "/static/" + r["name"]

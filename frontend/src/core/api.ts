@@ -1,7 +1,7 @@
+import { saveAs } from 'file-saver';
 import { toPairs, values } from 'lodash';
 import createClient, { Middleware } from 'openapi-fetch';
 import { useCallback, useState } from 'react';
-
 import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
@@ -932,12 +932,8 @@ export function useGetFeaturesFile(projectSlug: string | null) {
         console.log(res);
 
         if (!res.error) {
-          notify({ type: 'warning', message: 'Exporting the predictions of the model' });
-          const csvURL = window.URL.createObjectURL(res.data);
-          const tempLink = document.createElement('a');
-          tempLink.href = csvURL;
-          tempLink.setAttribute('download', 'features.' + format);
-          tempLink.click();
+          notify({ type: 'success', message: 'Exporting the predictions of the model' });
+          saveAs(res.data, 'features.' + format);
         }
         return true;
       }
@@ -970,12 +966,8 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
         console.log(res);
 
         if (!res.error) {
-          notify({ type: 'warning', message: 'Exporting the annotated data' });
-          const csvURL = window.URL.createObjectURL(res.data);
-          const tempLink = document.createElement('a');
-          tempLink.href = csvURL;
-          tempLink.setAttribute('download', 'annotations.' + format);
-          tempLink.click();
+          notify({ type: 'success', message: 'Exporting the annotated data' });
+          saveAs(res.data, 'annotations.' + format);
         }
         return true;
       }
@@ -1008,12 +1000,8 @@ export function useGetPredictionsFile(projectSlug: string | null) {
         console.log(res);
 
         if (!res.error) {
-          notify({ type: 'warning', message: 'Exporting the predictions data' });
-          const csvURL = window.URL.createObjectURL(res.data);
-          const tempLink = document.createElement('a');
-          tempLink.href = csvURL;
-          tempLink.setAttribute('download', 'predictions.' + format);
-          tempLink.click();
+          notify({ type: 'success', message: 'Exporting the predictions data' });
+          saveAs(res.data, 'predictions.' + format);
         }
         return true;
       }
@@ -1026,38 +1014,28 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 }
 
 /**
- * Get model file (as a static file)
+ * Get model file static url
  */
-export function useGetModelFile(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const getModelFile = useCallback(
-    async (model: string) => {
-      if (projectSlug) {
-        const res = await api.GET('/export/bert', {
-          params: {
-            query: {
-              project_slug: projectSlug,
-              name: model,
-            },
+export function useGetModelUrl(projectSlug: string | null, model: string | null) {
+  const getModelUrl = useAsyncMemo(async () => {
+    if (projectSlug && model) {
+      const res = await api.GET('/export/bert', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+            name: model,
           },
-        });
+        },
+      });
 
-        if (!res.error) {
-          notify({ type: 'success', message: 'Downloading the model' });
-          const link = document.createElement('a');
-          link.href = config.api.url + res.data;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          return res.data;
-        }
+      if (!res.error) {
+        return config.api.url + res.data;
       }
       return null;
-    },
-    [projectSlug, notify],
-  );
-
-  return { getModelFile };
+    }
+    return null;
+  }, [projectSlug, model]);
+  return { modelUrl: getAsyncMemoData(getModelUrl) };
 }
 
 /**

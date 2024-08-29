@@ -1,10 +1,11 @@
 import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { Link } from 'react-router-dom';
 import {
   useGetAnnotationsFile,
   useGetFeaturesFile,
-  useGetModelFile,
+  useGetModelUrl,
   useGetPredictionsFile,
 } from '../core/api';
 import { useAppContext } from '../core/context';
@@ -37,8 +38,8 @@ export const ProjectExportPage: FC = () => {
 
   const { getFeaturesFile } = useGetFeaturesFile(projectName || null);
   const { getAnnotationsFile } = useGetAnnotationsFile(projectName || null);
-  const { getModelFile } = useGetModelFile(projectName || null);
   const { getPredictionsFile } = useGetPredictionsFile(projectName || null);
+  const { modelUrl } = useGetModelUrl(projectName || null, model);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="export">
@@ -110,7 +111,12 @@ export const ProjectExportPage: FC = () => {
                   </select>
                 </div>
                 <div>
-                  <button
+                  {modelUrl && (
+                    <Link to={modelUrl} target="_blank" download className="btn btn-primary mt-3">
+                      Export model
+                    </Link>
+                  )}
+                  {/* <button
                     className="btn btn-primary mt-3"
                     onClick={() => {
                       if (model) {
@@ -119,7 +125,7 @@ export const ProjectExportPage: FC = () => {
                     }}
                   >
                     Export model
-                  </button>
+                  </button> */}
                 </div>
                 <div>
                   {availablePrediction && (
