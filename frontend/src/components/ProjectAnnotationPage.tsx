@@ -135,23 +135,31 @@ export const ProjectAnnotationPage: FC = () => {
     currentScheme || null,
   );
 
+  // generic method to apply a chosen label to an element
+  const applyLabel = useCallback(
+    (label: string, elementId?: string) => {
+      if (elementId) {
+        setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
+        addAnnotation(elementId, label).then(() =>
+          // redirect to next element by redirecting wihout any id
+          // thus the getNextElementId query will be dont after the appcontext is reloaded
+          navigate(`/projects/${projectName}/annotate/`),
+        );
+        // does not do nothing as we remount through navigate reFetchStatistics();
+      }
+    },
+    [setAppContext, addAnnotation, navigate, projectName],
+  );
+
   const handleKeyboardEvents = useCallback(
     (ev: KeyboardEvent) => {
       availableLabels.forEach((label, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
-          if (elementId) {
-            setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-            addAnnotation(elementId, label).then(() =>
-              // redirect to next element by redirecting wihout any id
-              // thus the getNextElementId query will be dont after the appcontext is reloaded
-              navigate(`/projects/${projectName}/annotate/`),
-            );
-            // does not do nothing as we remount through navigate reFetchStatistics();
-          }
+          applyLabel(label, elementId);
         }
       });
     },
-    [availableLabels, addAnnotation, setAppContext, elementId, projectName, navigate],
+    [availableLabels, applyLabel, elementId],
   );
 
   useEffect(() => {
@@ -370,12 +378,7 @@ export const ProjectAnnotationPage: FC = () => {
               value={i}
               className="btn btn-primary grow-1"
               onClick={(e) => {
-                if (elementId) {
-                  setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-                  addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
-                  reFetchStatistics();
-                  // TODO manage erreur
-                }
+                applyLabel(e.currentTarget.value, elementId);
               }}
             >
               {i} <span className="badge text-bg-secondary">{e + 1}</span>
