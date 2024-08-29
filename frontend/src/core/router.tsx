@@ -4,6 +4,7 @@ import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring
 import { HelpPage } from '../components/HelpPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
+import { NotFound } from '../components/NotFoundPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
 import { ProjectExploratePage } from '../components/ProjectExploratePage';
 import { ProjectExportPage } from '../components/ProjectExportPage';
@@ -13,10 +14,15 @@ import { ProjectPage } from '../components/ProjectPage';
 import { ProjectTrainPage } from '../components/ProjectTrainPage';
 import { ProjectsPage } from '../components/ProjectsPage';
 import { UsersPage } from '../components/UsersPage';
+
 import { AuthRequired } from '../components/auth/AuthRequired';
 
 export function getRouter() {
   return createHashRouter([
+    {
+      path: '*',
+      element: <NotFound />,
+    },
     {
       path: '/',
       element: <HomePage />,
