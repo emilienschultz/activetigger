@@ -40,13 +40,23 @@ export const HomePage: FC = () => {
                 </div>
               )}
               <div className="general-info">
-                <div>Frontend v0.2</div>
+                <div>Frontend v0.5</div>
                 <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
-                <div>Credits : Ouestware & Émilien Schultz</div>
+                <div className="text-muted">
+                  Credits : Julien Boelaert & Étienne Ollion & Émilien Schultz & Ouestware
+                </div>
               </div>
             </center>
           </div>
         </div>
+        <footer className="footer mt-auto py-1 bg-primary text-white fixed-bottom">
+          <div className="container text-center">
+            <i className="fas fa-info-circle"></i>
+            <span className="ml-2">
+              CREST / GENES CSS @ IPP © 2024 - <i>under development -</i>
+            </span>
+          </div>
+        </footer>
       </main>
       <Notifications />
     </>
