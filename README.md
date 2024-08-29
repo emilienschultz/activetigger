@@ -1,37 +1,47 @@
-# (py) Active Tigger
-
-🚧 Under development 🚧
+# Active Tigger
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/emilienschultz/pyactivetigger/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/)
 [![PyPI Version](https://img.shields.io/pypi/v/activetigger)](https://pypi.org/project/activetigger/)
+![React](https://img.shields.io/badge/React-18.0.0-blue)
 
-[Python refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+ActiveTigger is an active learning online app for text classification in computational social sciences. It is designed to assist exploration and fine-tuning of BERT models.
 
-Server/client BERT fine tunning app using active learning
+The app is currently 🚧 Under development 🚧.
 
-- API in Python
-- Frontend in React + github pages
+[Python/React refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+
 
 ## Installation
 
-For the moment, it is better to install `activetigger` via Github (be careful to use Python 3.11):
+The application has a client/server architecture :
 
-```bash
-git clone https://github.com/emilienschultz/pyactivetigger.git
-pip install -r pyactivetigger/requirements.txt
-```
+- the server is in Python using FastAPI
+- the client is in [React](https://reactjs.org/)
 
 ## Start the server
 
-Create a config file `config.yaml` in the directory where you want to launch the server (you can use the `config.yaml.sample` as an example):
+Clone the repository
+
+```bash
+git clone https://github.com/emilienschultz/activetigger.git
+```
+
+Create a virtual environnement with Python 3.11 and install requirements
+
+```bash
+pip install -r activetigger/api/requirements.txt
+```
+
+The server configuration is achieved with the `config.yaml` file the api directory (you can use the `config.yaml.sample` as an example):
 
 - `path` : path to store files (for instance `./data`)
-- `secret_key` : to secure tokens. To generate it `openssl rand -hex 32C`
+- `path_models` : path to store the models (for instance `./data/models`)
 
-Then, to launch the server (on 0.0.0.0 port 8000 by default). You can configurate exposed port if needed.
+Then, to launch the server (on 0.0.0.0 port 5000 by default, you can configurate exposed port if needed).
 
-```python
+```bash
+cd api
 python -m activetigger
 ```
 
@@ -43,7 +53,7 @@ uvicorn activetigger.api:app --host 0.0.0.0 --port 80 --reload
 
 ## Users management
 
-You can create a `add_users.yaml` file with the users to add when the server starts :
+You can create a `add_users.yaml` file with the users to add when the server starts (and then delete the file) :
 
 ```
 user1: password1
