@@ -216,9 +216,11 @@ export function useDeleteProject() {
  * @param projectSlug
  * @param currentScheme
  */
-export function useStatistics(projectSlug: string, currentScheme: string | null) {
-  const project = useAsyncMemo(async () => {
-    if (projectSlug) {
+export function useStatistics(projectSlug: string | null, currentScheme: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getStatistics = useAsyncMemo(async () => {
+    if (projectSlug && currentScheme) {
       const res = await api.GET('/projects/{project_slug}/statistics', {
         params: {
           path: { project_slug: projectSlug },
@@ -233,9 +235,11 @@ export function useStatistics(projectSlug: string, currentScheme: string | null)
     return null;
     // in this dependencies list we add projectSlug has a different API call will be made if it changes
     // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
-  }, [projectSlug, currentScheme]);
+  }, [projectSlug, currentScheme, fetchTrigger]);
 
-  return { statistics: getAsyncMemoData(project) };
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { statistics: getAsyncMemoData(getStatistics), reFetchStatistics: reFetch };
 }
 
 /**

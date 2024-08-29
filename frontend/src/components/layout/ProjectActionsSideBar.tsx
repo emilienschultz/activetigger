@@ -93,7 +93,7 @@ export const ProjectActionsSidebar: FC<{
         <li className="nav-item ">
           <div className="nav-link">
             <span className="badge text-bg-info">
-              Load: {Object.values(queueState || []).length}
+              Server load: {Object.values(queueState || []).length}
             </span>
           </div>
         </li>

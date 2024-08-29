@@ -6,6 +6,7 @@ import {
   useAddAnnotation,
   useGetElementById,
   useGetNextElementId,
+  useStatistics,
   useUpdateSimpleModel,
 } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -139,6 +140,7 @@ export const ProjectAnnotationPage: FC = () => {
             console.log(label);
             addAnnotation(elementId, label).then(navigateToNextElement);
             setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
+            reFetchStatistics();
           }
         }
       });
@@ -159,6 +161,12 @@ export const ProjectAnnotationPage: FC = () => {
     };
   }, [availableLabels, handleKeyboardEvents]);
 
+  // get statistics to display (TODO : try a way to avoid another request ?)
+  const { statistics, reFetchStatistics } = useStatistics(
+    projectName || null,
+    currentScheme || null,
+  );
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -169,6 +177,15 @@ export const ProjectAnnotationPage: FC = () => {
         <div className="row">
           <div className="col-6">
             <SelectCurrentScheme />
+            <div>
+              {statistics ? (
+                <span className="badge text-bg-light">
+                  {`${statistics['annotated_n']} / ${statistics['trainset_n']}`}
+                </span>
+              ) : (
+                ''
+              )}
+            </div>
           </div>
         </div>
         <div className="row">
@@ -356,6 +373,7 @@ export const ProjectAnnotationPage: FC = () => {
                 if (elementId) {
                   addAnnotation(elementId, e.currentTarget.value).then(navigateToNextElement);
                   setAppContext((prev) => ({ ...prev, history: [...history, elementId] }));
+                  reFetchStatistics();
                   // TODO manage erreur
                 }
               }}
