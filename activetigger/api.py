@@ -891,7 +891,7 @@ async def post_reconciliation(
     project: Annotated[Project, Depends(get_project)],
     users: list = Query(),
     element_id: str = Query(),
-    tag: str = Query(),
+    label: str = Query(),
     scheme: str = Query(),
 ) -> None:
     """
@@ -901,19 +901,19 @@ async def post_reconciliation(
 
     # for each user
     for u in users:
-        r = project.schemes.push_tag(element_id, tag, scheme, u, "add")
+        r = project.schemes.push_tag(element_id, label, scheme, u, "add")
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
     # add a new tag for the reconciliator
     project.schemes.push_tag(
-        element_id, tag, scheme, current_user.username, "reconciliation"
+        element_id, label, scheme, current_user.username, "reconciliation"
     )
 
     # log
     server.log_action(
         current_user.username,
-        f"reconciliate annotation {element_id} for {users} with {tag}",
+        f"reconciliate annotation {element_id} for {users} with {label}",
         project.name,
     )
     return None

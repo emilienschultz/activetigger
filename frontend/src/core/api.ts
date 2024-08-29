@@ -1186,10 +1186,43 @@ export function useTableDisagreement(project_slug?: string, scheme?: string) {
         },
       });
       if (!res.error && res.data) {
-        return res.data.table;
+        return res.data;
       }
     }
     return null;
   }, [project_slug, scheme]);
-  return { tableDisagreement: getAsyncMemoData(getTable) };
+  const data = getAsyncMemoData(getTable);
+  return { tableDisagreement: data ? data.table : null, users: data ? data.users : null };
+}
+
+/**
+ * Reconciliate annotations
+ */
+export function useReconciliate(projectSlug: string, scheme: string | null) {
+  const { notify } = useNotifications();
+
+  const postReconciliate = useCallback(
+    async (element_id: string, label: string, users: string[]) => {
+      if (scheme && projectSlug) {
+        const res = await api.POST('/elements/reconciliate', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              users: users,
+              scheme: scheme,
+              element_id: element_id,
+              label: label,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Reconciliation done' });
+
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { postReconciliate };
 }

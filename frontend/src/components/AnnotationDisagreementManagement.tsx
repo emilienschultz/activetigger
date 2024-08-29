@@ -1,6 +1,6 @@
 import { FC, useState } from 'react';
 
-import { useTableDisagreement } from '../core/api';
+import { useReconciliate, useTableDisagreement } from '../core/api';
 
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
@@ -17,52 +17,56 @@ export const AnnotationDisagreementManagement: FC<{
     appContext: { currentScheme, currentProject: project },
   } = useAppContext();
 
+  // available labels from context
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
 
   // get disagreement table
-  const { tableDisagreement } = useTableDisagreement(projectSlug, currentScheme);
+  const { tableDisagreement, users } = useTableDisagreement(projectSlug, currentScheme);
+  const { postReconciliate } = useReconciliate(projectSlug, currentScheme || null);
 
   // state elements to validate
   const [changes, setChanges] = useState<{ [key: string]: string }>({});
+
+  // function to validate changes
+  const validateChanges = () => {
+    Object.entries(changes).map(([id, label]) => {
+      postReconciliate(id, label, users || []);
+      setChanges({});
+    });
+  };
 
   return (
     <div className="container-fluid">
       <div className="row">
         <div className="col-3 m-3">
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              console.log(changes);
-              setChanges({});
-            }}
-          >
+          <button className="btn btn-primary" onClick={validateChanges}>
             Validate changes
           </button>
         </div>
       </div>
       {tableDisagreement?.map((element, index) => (
         <div className="alert alert-warning" role="alert" key={index}>
-          <div className="row d-flex align-items-center">
-            <div className="row col-10">
-              <span className="badge bg-light text-dark">{element.id}</span>
-              <span>{element.text}</span>
+          <div className="row">
+            <div>
+              <span className="badge bg-light text-dark">{element.id as string}</span>
+              <span>{element.text as string}</span>
             </div>
-            <div className="row col-2">
-              {element.annotations && (
-                <table>
-                  {Object.entries(element.annotations).map(([key, value], _) => (
-                    <tr key={key}>
-                      <td className="pe-2">{key}</td>
-                      <td className="pe-2">
-                        <span className="badge rounded-pill bg-warning text-dark">{value}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </table>
-              )}
-            </div>
-            <div className="container mt-4">
+
+            {element.annotations && (
+              <div className="d-flex mt-2">
+                {Object.entries(element.annotations).map(([key, value], _) => (
+                  <div key={key}>
+                    <span className="badge bg-warning text-dark me-2">
+                      {value}
+                      <span className="badge rounded-pill bg-light text-dark m-1">{key}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="d-flex align-items-center w-50 mt-2">
+              <label className="me-3">Set</label>
               <select
                 className="form-select"
                 onChange={(event) =>

@@ -1556,7 +1556,6 @@ class Schemes:
         )
         df = df.join(self.content[["text"]], how="left")  # add the text
         df = df[f_multi].reset_index()
-        print(df)
         # return the result
         return df, users
 

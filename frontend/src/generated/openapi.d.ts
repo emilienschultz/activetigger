@@ -1484,7 +1484,9 @@ export interface components {
         ReconciliationModel: {
             /** Table */
             table: {
-                [key: string]: string | undefined;
+                [key: string]: (string | {
+                    [key: string]: string | undefined;
+                }) | undefined;
             }[];
             /** Users */
             users: string[];
@@ -2490,7 +2492,7 @@ export interface operations {
             query: {
                 users: unknown[];
                 element_id: string;
-                tag: string;
+                label: string;
                 scheme: string;
                 project_slug: string;
             };
