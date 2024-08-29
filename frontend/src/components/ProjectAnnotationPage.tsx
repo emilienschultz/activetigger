@@ -104,15 +104,7 @@ export const ProjectAnnotationPage: FC = () => {
       //fetch element information (text and labels)
       getElementById(elementId).then(setElement);
     }
-  }, [
-    elementId,
-    elementOutModel,
-    getNextElementId,
-    getElementById,
-    navigate,
-    selectionConfig,
-    projectName,
-  ]);
+  }, [elementId, getNextElementId, getElementById, navigate, selectionConfig, projectName]);
 
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
@@ -149,20 +141,17 @@ export const ProjectAnnotationPage: FC = () => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           if (elementId) {
             setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-            addAnnotation(elementId, label).then(navigateToNextElement);
-            reFetchStatistics();
+            addAnnotation(elementId, label).then(() =>
+              // redirect to next element by redirecting wihout any id
+              // thus the getNextElementId query will be dont after the appcontext is reloaded
+              navigate(`/projects/${projectName}/annotate/`),
+            );
+            // does not do nothing as we remount through navigate reFetchStatistics();
           }
         }
       });
     },
-    [
-      availableLabels,
-      addAnnotation,
-      setAppContext,
-      elementId,
-      navigateToNextElement,
-      reFetchStatistics,
-    ],
+    [availableLabels, addAnnotation, setAppContext, elementId, projectName, navigate],
   );
 
   useEffect(() => {
