@@ -1170,3 +1170,26 @@ export function useGetQueue() {
 
   return { queueState: getAsyncMemoData(getQueueState), reFetchQueueState: reFetch };
 }
+
+/**
+ * Get table of disagreements
+ */
+export function useTableDisagreement(project_slug?: string, scheme?: string) {
+  const getTable = useAsyncMemo(async () => {
+    if (scheme && project_slug) {
+      const res = await api.GET('/elements/reconciliate', {
+        params: {
+          query: {
+            project_slug: project_slug,
+            scheme: scheme,
+          },
+        },
+      });
+      if (!res.error && res.data) {
+        return res.data.table;
+      }
+    }
+    return null;
+  }, [project_slug, scheme]);
+  return { tableDisagreement: getAsyncMemoData(getTable) };
+}

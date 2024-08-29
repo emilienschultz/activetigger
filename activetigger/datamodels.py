@@ -450,7 +450,8 @@ class ReconciliationModel(BaseModel):
     List of elements to reconciliate
     """
 
-    list_disagreements: List[Dict[str, Any]]
+    table: List[Dict[str, str | Dict[str, str]]]
+    users: List[str]
 
 
 class AuthActions(StrEnum):

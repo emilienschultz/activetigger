@@ -875,14 +875,14 @@ async def post_list_elements(
 @app.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
 async def get_reconciliation_table(
     project: Annotated[Project, Depends(get_project)], scheme: str
-):
+) -> ReconciliationModel:
     """
     Get the reconciliation table
     """
-    df = project.schemes.get_reconciliation_table(scheme)
+    df, users = project.schemes.get_reconciliation_table(scheme)
     if "error" in df:
         raise HTTPException(status_code=500, detail=r["error"])
-    return ReconciliationModel(list_disagreements=df.to_dict(orient="records"))
+    return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
 
 
 @app.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
@@ -901,7 +901,7 @@ async def post_reconciliation(
 
     # for each user
     for u in users:
-        project.schemes.push_tag(element_id, tag, scheme, u, "add")
+        r = project.schemes.push_tag(element_id, tag, scheme, u, "add")
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 

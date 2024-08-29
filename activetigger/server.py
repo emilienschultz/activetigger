@@ -1550,11 +1550,15 @@ class Schemes:
         f_multi = df.apply(
             lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
         )  # filter for disagreement
+        users = list(df.columns)
+        df = pd.DataFrame(
+            df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"]
+        )
         df = df.join(self.content[["text"]], how="left")  # add the text
         df = df[f_multi].reset_index()
-
+        print(df)
         # return the result
-        return df
+        return df, users
 
     def convert_tags(
         self, former_label: str, new_label: str, scheme: str, username: str

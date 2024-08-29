@@ -1478,6 +1478,18 @@ export interface components {
             texts: unknown[];
         };
         /**
+         * ReconciliationModel
+         * @description List of elements to reconciliate
+         */
+        ReconciliationModel: {
+            /** Table */
+            table: {
+                [key: string]: string | undefined;
+            }[];
+            /** Users */
+            users: string[];
+        };
+        /**
          * SchemeModel
          * @description Specific scheme
          */
@@ -2459,7 +2471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReconciliationModel"];
                 };
             };
             /** @description Validation Error */

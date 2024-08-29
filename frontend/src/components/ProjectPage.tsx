@@ -1,13 +1,13 @@
 import { FC } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useDeleteProject } from '../core/api';
+import { useDeleteProject, useTableDisagreement } from '../core/api';
 //import { useUserProjects } from '../core/api';
 import { useAppContext } from '../core/context';
+import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
 import { ProjectStatistics } from './ProjectStatistics';
 import { SchemesManagement } from './SchemesManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
-
 /**
  * Component to display the project page
  */
@@ -22,6 +22,9 @@ export const ProjectPage: FC = () => {
 
   const navigate = useNavigate();
 
+  // get disagreement table
+  const { tableDisagreement } = useTableDisagreement(projectName, currentScheme);
+
   // function to delete project
   const deleteProject = useDeleteProject();
   const actionDelete = () => {
@@ -31,6 +34,7 @@ export const ProjectPage: FC = () => {
     }
   };
 
+  // function to clear history
   const actionClearHistory = () => {
     setAppContext((prev) => ({ ...prev, history: [] }));
   };
@@ -63,24 +67,30 @@ export const ProjectPage: FC = () => {
                 <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
               </div>
             )}
-            <div className="row mt-4">
-              <details className="custom-details">
-                <summary className="custom-summary">Session</summary>
-                <div>{JSON.stringify(history, null, 2)}</div>
-                <button onClick={actionClearHistory} className="delete-button">
-                  Clear history
-                </button>
-              </details>
-            </div>
 
-            <div className="row">
-              <details className="custom-details">
-                <summary className="custom-summary">Parameters</summary>
-                <div>{JSON.stringify(project.params, null, 2)}</div>
-                <button onClick={actionDelete} className="delete-button">
-                  Delete project
-                </button>
-              </details>
+            <div className="row mt-4">
+              <div className="col-12">
+                <details className="custom-details">
+                  <summary className="custom-summary">Monitor annotations</summary>
+                  {currentScheme && <AnnotationDisagreementManagement projectSlug={projectName} />}
+                </details>
+
+                <details className="custom-details">
+                  <summary className="custom-summary">Session</summary>
+                  <div>{JSON.stringify(history, null, 2)}</div>
+                  <button onClick={actionClearHistory} className="delete-button">
+                    Clear history
+                  </button>
+                </details>
+
+                <details className="custom-details">
+                  <summary className="custom-summary">Parameters</summary>
+                  <div>{JSON.stringify(project.params, null, 2)}</div>
+                  <button onClick={actionDelete} className="delete-button">
+                    Delete project
+                  </button>
+                </details>
+              </div>
             </div>
           </div>
         )}
