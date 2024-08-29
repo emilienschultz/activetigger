@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useDeleteProject, useTableDisagreement } from '../core/api';
+import { useDeleteProject } from '../core/api';
 //import { useUserProjects } from '../core/api';
 import { useAppContext } from '../core/context';
 import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
@@ -21,9 +21,6 @@ export const ProjectPage: FC = () => {
   } = useAppContext();
 
   const navigate = useNavigate();
-
-  // get disagreement table
-  const { tableDisagreement } = useTableDisagreement(projectName, currentScheme);
 
   // function to delete project
   const deleteProject = useDeleteProject();

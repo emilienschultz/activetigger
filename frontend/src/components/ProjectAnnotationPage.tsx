@@ -73,27 +73,27 @@ export const ProjectAnnotationPage: FC = () => {
         ? project?.next.methods_min
         : [];
 
-  const elementOutModel = useMemo(() => {
-    return {
-      element_id: '',
-      text: '',
-      context: {},
-      selection: '',
-      info: null,
-      predict: {},
-      frame: [],
-      limit: null,
-      history: [],
-    };
-  }, []);
+  // const elementOutModel = useMemo(() => {
+  //   return {
+  //     element_id: '',
+  //     text: '',
+  //     context: {},
+  //     selection: '',
+  //     info: null,
+  //     predict: {},
+  //     frame: [],
+  //     limit: null,
+  //     history: [],
+  //   };
+  // }, []);
 
-  const navigateToNextElement = useCallback(async () => {
-    console.log(selectionConfig);
-    getNextElementId(selectionConfig).then((nextElementId) => {
-      if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
-      else setElement(elementOutModel);
-    });
-  }, [projectName, navigate, selectionConfig, getNextElementId, elementOutModel]);
+  // const navigateToNextElement = useCallback(async () => {
+  //   console.log(selectionConfig);
+  //   getNextElementId(selectionConfig).then((nextElementId) => {
+  //     if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+  //     else setElement(elementOutModel);
+  //   });
+  // }, [projectName, navigate, selectionConfig, getNextElementId, elementOutModel]);
 
   useEffect(() => {
     if (elementId === undefined) {
@@ -130,10 +130,7 @@ export const ProjectAnnotationPage: FC = () => {
   ]);
 
   // get statistics to display (TODO : try a way to avoid another request ?)
-  const { statistics, reFetchStatistics } = useStatistics(
-    projectName || null,
-    currentScheme || null,
-  );
+  const { statistics } = useStatistics(projectName || null, currentScheme || null);
 
   // generic method to apply a chosen label to an element
   const applyLabel = useCallback(
