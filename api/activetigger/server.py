@@ -31,8 +31,37 @@ import openai
 from typing import Callable
 from multiprocessing import Manager
 import secrets
+import getpass
 
 logger = logging.getLogger("server")
+
+
+def get_root_pwd() -> str:
+    """
+    Function to get the password
+    """
+    print("╔═════════════════════════════════╗")
+    print("║    Define a Root Password       ║")
+    print("╠═════════════════════════════════╣")
+    print("║  Your password must be at least ║")
+    print("║  6 characters long and entered  ║")
+    print("║  twice to confirm.              ║")
+    print("╚═════════════════════════════════╝")
+    while True:
+        root_password = getpass.getpass("Enter a root password : ")
+        if len(root_password) < 6:
+            print("The password need to have 6 character at minimum")
+            continue
+
+        confirm_password = getpass.getpass("Re-enter the root password: ")
+
+        if root_password != confirm_password:
+            print("Error: The passwords do not match. Please try again.")
+
+        else:
+            print("Password confirmed successfully.")
+            print("Creating the entry in the database...")
+            return root_password
 
 
 class Queue:
@@ -177,7 +206,7 @@ class Server:
         if not self.path_models.exists():
             os.makedirs(self.path_models)
 
-        # create the database
+        # create the database & root password
         self.db = self.path / self.db_name
         if not self.db.exists():
             self.create_db()
@@ -307,8 +336,9 @@ class Server:
         cursor.execute(create_table_sql)
 
         # create root user
-        # self.users.add_user(self.default_user, self.default_user, role="root")
-        hash_pwd = functions.get_hash(self.default_user)
+
+        pwd = get_root_pwd()
+        hash_pwd = functions.get_hash(pwd)
         insert_query = (
             "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
         )
