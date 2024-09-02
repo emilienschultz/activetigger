@@ -27,8 +27,7 @@ export const ProjectActionsSidebar: FC<{
     : false;
 
   // display the number of current processes on the server
-  // TODO : find a better place / actualization
-  const { queueState } = useGetQueue();
+  const { queueState } = useGetQueue(projectState || null);
 
   return (
     <div className="project-sidebar d-flex flex-column flex-shrink-0 p-3 bg-light">

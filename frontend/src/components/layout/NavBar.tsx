@@ -6,10 +6,10 @@ import logo from '../../assets/at.png';
 import { useAuth } from '../../core/auth';
 
 const PAGES: { id: string; label: string; href: string }[] = [
-  { id: 'login', label: 'Login', href: '/login' },
   { id: 'projects', label: 'Projects', href: '/projects' },
   { id: 'users', label: 'Users', href: '/users' },
   { id: 'help', label: 'Help', href: '/help' },
+  { id: 'login', label: 'Login', href: '/login' },
 ];
 
 interface NavBarPropsType {

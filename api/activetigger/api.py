@@ -517,7 +517,8 @@ async def get_queue() -> dict:
     Get the state of the server queue
     """
     r = server.queue.state()
-    return r
+    # only running processes for the moment
+    return {i: r[i] for i in r if r[i]["state"] == "running"}
 
 
 @app.get("/queue/num")

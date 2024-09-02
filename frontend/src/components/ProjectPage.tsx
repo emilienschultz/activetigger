@@ -47,7 +47,7 @@ export const ProjectPage: FC = () => {
               <h2 className="subsection">Project panel</h2>
             </div>
             <div className="text-muted smal mb-3 font-weight-light">
-              Recent activity{' '}
+              Recent users{' '}
               {activeUsers.map((e) => (
                 <span className="badge rounded-pill text-bg-light text-muted me-2" key={e}>
                   {e}

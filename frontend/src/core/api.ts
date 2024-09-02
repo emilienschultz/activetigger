@@ -8,6 +8,7 @@ import {
   AvailableProjectsModel,
   LoginParams,
   ProjectDataModel,
+  ProjectStateModel,
   ProjectionInStrictModel,
   SelectionConfig,
   SimpleModelModel,
@@ -1154,7 +1155,7 @@ export function useGetProjectionData(
 /**
  * Get queue
  */
-export function useGetQueue() {
+export function useGetQueue(projectState: ProjectStateModel | null) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getQueueState = useAsyncMemo(async () => {
@@ -1164,7 +1165,7 @@ export function useGetQueue() {
       else return null;
     }
     return null;
-  }, [fetchTrigger]);
+  }, [fetchTrigger, projectState]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
