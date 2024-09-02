@@ -99,17 +99,6 @@ export const ProjectionManagement: FC = () => {
     null,
   );
 
-  // useEffect(() => {
-  //   if (projectionData && !labelColorMapping) {
-  //     const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
-  //     const colors = uniqueLabels.reduce<{ [key: string]: string }>((acc, label) => {
-  //       acc[label as string] = generateRandomColor();
-  //       return acc;
-  //     }, {});
-  //     setLabelColorMapping(colors);
-  //   }
-  // }, [projectionData, labelColorMapping]);
-
   useEffect(() => {
     if (projectionData && !labelColorMapping) {
       const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
@@ -176,7 +165,7 @@ export const ProjectionManagement: FC = () => {
 
   return (
     <div>
-      <details>
+      <details className="custom-details">
         <summary>Configure</summary>
         <form onSubmit={handleSubmit(onSubmit)}>
           <label htmlFor="model">Select a model</label>

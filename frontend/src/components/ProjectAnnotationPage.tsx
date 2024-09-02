@@ -18,6 +18,9 @@ import { SelectCurrentScheme } from './SchemesManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
+import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
+
 export const ProjectAnnotationPage: FC = () => {
   const { projectName, elementId } = useParams();
   const { authenticatedUser } = useAuth();
@@ -177,26 +180,23 @@ export const ProjectAnnotationPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <h2 className="subsection">Annotation</h2>
-          <span className="explanations">Configure selection mode and annotate data</span>
-        </div>
-        <div className="row">
-          <div className="col-6">
-            <SelectCurrentScheme />
-            <div>
-              {statistics ? (
-                <span className="badge text-bg-light">
-                  {`${statistics['annotated_n']} / ${statistics['trainset_n']}`}
-                </span>
-              ) : (
-                ''
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="row">
-          <div className="col-6 ">
-            <details className="custom-details">
-              <summary className="custom-summary">Configure selection mode</summary>
+
+          <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
+            <Tab eventKey="scheme" title="Current scheme">
+              <div className="d-flex">
+                <SelectCurrentScheme />
+              </div>
+              <div>
+                {statistics ? (
+                  <span className="badge text-bg-light">
+                    {`${statistics['annotated_n']} / ${statistics['trainset_n']}`}
+                  </span>
+                ) : (
+                  ''
+                )}
+              </div>
+            </Tab>
+            <Tab eventKey="selection" title="Selection mode">
               <div className="d-flex align-items-center justify-content-between">
                 <label>Selection mode</label>
                 <select
@@ -280,50 +280,44 @@ export const ProjectAnnotationPage: FC = () => {
                 Use zoom frame to select elements
               </label>
               <div>Current model : {currentModel ? currentModel['model'] : 'No model trained'}</div>
-            </details>
-          </div>
-          <div className="col-6 ">
-            {' '}
-            <details className="custom-details">
-              <summary className="custom-summary">Display parameters</summary>
-              <div>
-                <label style={{ display: 'block', marginBottom: '10px' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectionConfig.displayPrediction}
-                    onChange={(_) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        selectionConfig: {
-                          ...selectionConfig,
-                          displayPrediction: !selectionConfig.displayPrediction,
-                        },
-                      }));
-                    }}
-                    style={{ marginRight: '10px' }}
-                  />
-                  Display prediction
-                </label>
-                <label style={{ display: 'block', marginBottom: '10px' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectionConfig.displayContext}
-                    onChange={(_) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        selectionConfig: {
-                          ...selectionConfig,
-                          displayContext: !selectionConfig.displayContext,
-                        },
-                      }));
-                    }}
-                    style={{ marginRight: '10px' }}
-                  />
-                  Display informations
-                </label>
-              </div>
-            </details>
-          </div>
+            </Tab>
+            <Tab eventKey="parameters" title="Display parameters">
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectionConfig.displayPrediction}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: {
+                        ...selectionConfig,
+                        displayPrediction: !selectionConfig.displayPrediction,
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                Display prediction
+              </label>
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectionConfig.displayContext}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: {
+                        ...selectionConfig,
+                        displayContext: !selectionConfig.displayContext,
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                Display informations
+              </label>
+            </Tab>
+          </Tabs>
         </div>
       </div>
 
@@ -335,7 +329,7 @@ export const ProjectAnnotationPage: FC = () => {
         // display content
       }
       <div className="row">
-        <div className="col-10 annotation-frame my-4">
+        <div className="col-11 annotation-frame my-4">
           <span>{element?.text.slice(0, element?.limit as number)}</span>
           <span className="text-out-context">{element?.text.slice(element?.limit as number)}</span>
         </div>
@@ -383,41 +377,30 @@ export const ProjectAnnotationPage: FC = () => {
           ))}
         </div>
       </div>
-      <hr />
-      <details className="custom-details">
-        <summary className="custom-summary">Delete, create or replace labels</summary>
-        <div className="d-flex align-items-center">
+      <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
+        <Tab eventKey="description" title="Parameters">
+          Configure the annotation
+        </Tab>
+        <Tab eventKey="labels" title="Labels">
           <LabelsManagement
             projectName={projectName || null}
             currentScheme={currentScheme || null}
             availableLabels={availableLabels}
             reFetchCurrentProject={reFetchCurrentProject || (() => null)}
           />
-        </div>
-      </details>
-      <details className="custom-details">
-        <summary className="custom-summary">Configure prediction model</summary>
-        <div className="row">
-          <div className="col">
-            <SimpleModelManagement
-              projectName={projectName || null}
-              currentScheme={currentScheme || null}
-              availableSimpleModels={availableSimpleModels}
-              availableFeatures={availableFeatures}
-            />
-          </div>
-        </div>
-      </details>
-      {project && (
-        <details className="custom-details">
-          <summary className="custom-summary">Compute projection</summary>
-          <div className="row">
-            <div className="col">
-              <ProjectionManagement />
-            </div>
-          </div>
-        </details>
-      )}
+        </Tab>
+        <Tab eventKey="prediction" title="Prediction">
+          <SimpleModelManagement
+            projectName={projectName || null}
+            currentScheme={currentScheme || null}
+            availableSimpleModels={availableSimpleModels}
+            availableFeatures={availableFeatures}
+          />
+        </Tab>
+        <Tab eventKey="projection" title="Projection">
+          <ProjectionManagement />
+        </Tab>
+      </Tabs>
     </ProjectPageLayout>
   );
 };

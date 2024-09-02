@@ -1,7 +1,6 @@
 import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { FaRegTrashAlt } from 'react-icons/fa';
-import { FaPlusCircle } from 'react-icons/fa';
+import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
 import { useAddScheme, useDeleteScheme } from '../core/api';
 import { useAppContext } from '../core/context';
@@ -43,8 +42,8 @@ export const SelectCurrentScheme: FC = () => {
 
   return (
     <div className="row">
-      <label htmlFor="scheme-selected">Select current scheme</label>
       <div className="d-flex align-items-center mb-3">
+        <label htmlFor="scheme-selected">Current scheme</label>
         <select
           id="scheme-selected"
           className="form-select"

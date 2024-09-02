@@ -18,12 +18,6 @@ export const PageLayout: FC<PageLayoutProps> = ({ children, currentPage, project
       <NavBar currentPage={currentPage} projectName={projectName || null} />
       <main>{children}</main>
       <Notifications />
-      <footer className="footer mt-auto py-1 bg-primary text-white fixed-bottom">
-        <div className="container text-center">
-          <i className="fas fa-info-circle"></i>
-          <span className="ml-2">CREST / GENES CSS @ IPP © 2024</span>
-        </div>
-      </footer>
     </div>
   );
 };
