@@ -152,11 +152,12 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('col_label')}
                   >
+                    <option key="none"></option>
                     {columns}
                   </select>
 
                   <label className="form-label" htmlFor="cols_context">
-                    Column for contextual information to display
+                    Column for contextual information to display (if needed)
                   </label>
                   <select
                     className="form-control"
