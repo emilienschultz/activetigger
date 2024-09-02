@@ -43,7 +43,9 @@ export const SelectCurrentScheme: FC = () => {
   return (
     <div className="row">
       <div className="d-flex align-items-center mb-3">
-        <label htmlFor="scheme-selected">Current scheme</label>
+        <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
+          Current scheme
+        </label>
         <select
           id="scheme-selected"
           className="form-select"
@@ -106,9 +108,10 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   return (
     <div>
       <div className="row">
-        <div className="d-flex align-items-center mb-3">
-          <SelectCurrentScheme />
-
+        <div className="d-flex align-items-center">
+          <div className="mt-3">
+            <SelectCurrentScheme />
+          </div>
           <button onClick={deleteSelectedScheme} className="btn btn p-0 m-1">
             <FaRegTrashAlt size={20} />
           </button>

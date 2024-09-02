@@ -26,12 +26,10 @@ from activetigger.datamodels import (
     ProjectModel,
     ProjectDataModel,
     ProjectionInStrictModel,
-    TableInModel,
     TableOutModel,
     ActionModel,
     AnnotationModel,
     SchemeModel,
-    ProjectionInModel,
     ProjectionOutModel,
     TokenModel,
     SimpleModelModel,
@@ -46,7 +44,6 @@ from activetigger.datamodels import (
     UserModel,
     UsersServerModel,
     ProjectStateModel,
-    QueueModel,
     ProjectDescriptionModel,
     ProjectAuthsModel,
     WaitingModel,
@@ -344,7 +341,7 @@ async def login_for_access_token(
     if not isinstance(user, UserInDBModel):
         raise HTTPException(status_code=401, detail=user["error"])
     access_token = server.create_access_token(
-        data={"sub": user.username}, expires_min=60
+        data={"sub": user.username}, expires_min=120
     )
     return TokenModel(
         access_token=access_token, token_type="bearer", status=user.status
@@ -651,8 +648,7 @@ async def get_next(
         frame=next.frame,
         filter=next.filter,
     )
-    print("ERROR")
-    print(r)
+
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     r["context"] = {}
@@ -943,7 +939,6 @@ async def get_element(
     r = project.get_element(element_id, scheme=scheme, user=current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    print(r)
     return ElementOutModel(**r)
 
 

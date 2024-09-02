@@ -183,17 +183,19 @@ export const ProjectAnnotationPage: FC = () => {
 
           <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
             <Tab eventKey="scheme" title="Current scheme">
-              <div className="d-flex">
-                <SelectCurrentScheme />
-              </div>
-              <div>
-                {statistics ? (
-                  <span className="badge text-bg-light">
-                    {`${statistics['annotated_n']} / ${statistics['trainset_n']}`}
-                  </span>
-                ) : (
-                  ''
-                )}
+              <div className="row">
+                <div className="col-6">
+                  <SelectCurrentScheme />
+                </div>
+                <div className="col-6">
+                  {statistics ? (
+                    <span className="badge text-bg-light  mt-2">
+                      Count : {`${statistics['annotated_n']} / ${statistics['trainset_n']}`}
+                    </span>
+                  ) : (
+                    ''
+                  )}
+                </div>{' '}
               </div>
             </Tab>
             <Tab eventKey="selection" title="Selection mode">
