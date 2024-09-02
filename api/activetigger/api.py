@@ -185,7 +185,6 @@ async def check_processes(timer, step: int = 1) -> None:
         if len(predictions) > 0:
             for f in predictions:
                 df_num = functions.cat2num(predictions[f])
-                print(df_num)
                 name = f.replace("__", "_")
                 project.features.add(name, df_num)  # avoid __ in the name for features
                 print("Add feature", name)
@@ -202,6 +201,7 @@ async def middleware(request: Request, call_next):
     Executed at each action on the server
     """
     await check_processes(timer)
+    print(request)
     response = await call_next(request)
     return response
 
@@ -520,10 +520,7 @@ async def get_queue() -> dict:
     Get the state of the server queue
     """
     r = server.queue.state()
-    print(r)
-    print("COUCOU")
     return r
-    # return QueueModel(**r)
 
 
 @app.get("/queue/num")
@@ -546,7 +543,6 @@ async def get_description(
     r = project.get_description(scheme=scheme, user=user)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    print(r)
     return ProjectDescriptionModel(**r)
 
 
@@ -645,7 +641,6 @@ async def get_next(
     """
     Get next element
     """
-    print(next)
     r = project.get_next(
         scheme=next.scheme,
         selection=next.selection,
@@ -656,9 +651,11 @@ async def get_next(
         frame=next.frame,
         filter=next.filter,
     )
+    print("ERROR")
+    print(r)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    print(r)
+    r["context"] = {}
     return ElementOutModel(**r)
 
 
@@ -727,7 +724,6 @@ async def get_projection(
         data["labels"] = df["labels"]
         data["texts"] = df["text"]
         data = data.fillna("NA")
-        print(data)
         return ProjectionOutModel(
             index=list(data.index),
             x=list(data[0]),
@@ -751,7 +747,6 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
-    print(projection)
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
 
@@ -839,7 +834,6 @@ async def post_list_elements(
     """
     Update a table of annotations
     """
-    print(table)
     errors = []
     # loop on annotations
     for annotation in table.annotations:
@@ -949,6 +943,7 @@ async def get_element(
     r = project.get_element(element_id, scheme=scheme, user=current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    print(r)
     return ElementOutModel(**r)
 
 
@@ -1257,7 +1252,6 @@ async def post_simplemodel(
     """
     Compute simplemodel
     """
-    print(simplemodel)
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

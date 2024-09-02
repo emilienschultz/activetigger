@@ -120,7 +120,7 @@ export const ProjectCreationForm: FC = () => {
               <div>
                 <div>
                   <label className="form-label" htmlFor="col_id">
-                    Column for id
+                    Column for id (they need to be unique)
                   </label>
                   <select
                     className="form-control"

@@ -565,6 +565,7 @@ class Server:
         if params.dir.exists():
             return {"error": "This name is already used"}
 
+        # create the project directory
         os.makedirs(params.dir)
 
         # copy total dataset as a copy (csv for the moment)
@@ -579,10 +580,23 @@ class Server:
 
         # Step 1 : load all data and index to str and rename
         content = pd.read_csv(params.dir / "data_raw.csv")
+
+        # quick fix to avoid problem with parquet index
+        content = content.drop(
+            columns=[i for i in content.columns if "__index_level" in i]
+        )
+
         if len(content) < params.n_test + params.n_train:
             return {
                 "error": f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
             }
+
+        # check if index is unique otherwise FORCE the index from 0 to N
+        if not content[params.col_id].nunique() == len(content):
+            print("There are duplicate in the column selected for index")
+            content["id"] = range(0, len(content))
+            params.col_id = "id"
+
         content = (
             content.rename(
                 columns={params.col_id: "id", params.col_text: "text"}
@@ -893,7 +907,9 @@ class Project(Server):
                 "element_id": str(element_id),
                 "text": df.loc[element_id, "text"],
                 "selection": "test",
-                "context": dict(df.loc[element_id, self.params.cols_context]),
+                "context": dict(
+                    df.loc[element_id, self.params.cols_context].apply(str)
+                ),
                 "info": "",
                 "predict": {"label": None, "proba": None},
                 "frame": [],
@@ -1007,7 +1023,9 @@ class Project(Server):
             "element_id": element_id,
             "text": self.content.fillna("NA").loc[element_id, "text"],
             "context": dict(
-                self.content.fillna("NA").loc[element_id, self.params.cols_context]
+                self.content.fillna("NA")
+                .loc[element_id, self.params.cols_context]
+                .apply(str)
             ),
             "selection": selection,
             "info": indicator,
@@ -1046,7 +1064,9 @@ class Project(Server):
             "element_id": element_id,
             "text": self.content.loc[element_id, "text"],
             "context": dict(
-                self.content.fillna("NA").loc[element_id, self.params.cols_context]
+                self.content.fillna("NA")
+                .loc[element_id, self.params.cols_context]
+                .apply(str)
             ),
             "selection": "request",
             "predict": predict,
