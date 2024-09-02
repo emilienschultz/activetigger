@@ -68,12 +68,14 @@ export const ProjectPage: FC = () => {
             <div className="row mt-4">
               <div className="col-12">
                 <details className="custom-details">
-                  <summary className="custom-summary">Monitor annotations</summary>
+                  <summary className="custom-summary">Disagreement management</summary>
+                  <span className="explanations">In development</span>
                   {currentScheme && <AnnotationDisagreementManagement projectSlug={projectName} />}
                 </details>
 
                 <details className="custom-details">
                   <summary className="custom-summary">Session</summary>
+                  <span className="explanations">Element annotated during this session</span>
                   <div>{JSON.stringify(history, null, 2)}</div>
                   <button onClick={actionClearHistory} className="delete-button">
                     Clear history
@@ -82,6 +84,7 @@ export const ProjectPage: FC = () => {
 
                 <details className="custom-details">
                   <summary className="custom-summary">Parameters</summary>
+                  <span className="explanations">Parameters of this project</span>
                   <div>{JSON.stringify(project.params, null, 2)}</div>
                   <button onClick={actionDelete} className="delete-button">
                     Delete project
