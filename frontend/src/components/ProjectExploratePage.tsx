@@ -8,7 +8,6 @@ import { useParams } from 'react-router-dom';
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
 import { AnnotationModel } from '../types';
-import { SelectCurrentScheme } from './SchemesManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -141,10 +140,8 @@ export const ProjectExploratePage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName} currentAction="explorate">
       <div className="container-fluid">
-        <div className="row">
+        <div className="row mt-3">
           <div className="col-12">
-            <h2 className="subsection">Data exploration</h2>
-            <SelectCurrentScheme />
             {currentScheme && table && (
               <div>
                 <div className="d-flex align-items-center justify-content-between mb-3">

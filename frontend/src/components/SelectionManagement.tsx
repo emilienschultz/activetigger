@@ -4,6 +4,7 @@ import { useAppContext } from '../core/context';
 
 // define the component to configure selection mode
 export const SelectionManagement: FC = () => {
+  const { authenticatedUser } = useAuth();
   const {
     appContext: { currentScheme, selectionConfig, currentProject: project },
     setAppContext,
@@ -12,8 +13,6 @@ export const SelectionManagement: FC = () => {
   const availableLabels = useMemo(() => {
     return currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
   }, [project, currentScheme]);
-
-  const { authenticatedUser } = useAuth();
 
   const availableModes =
     authenticatedUser &&
@@ -36,6 +35,9 @@ export const SelectionManagement: FC = () => {
 
   return (
     <div>
+      <div className="explanations">
+        Current model : {currentModel ? currentModel['model'] : 'No model trained'}
+      </div>
       <div className="d-flex align-items-center justify-content-between">
         <label>Selection mode</label>
         <select
@@ -53,7 +55,7 @@ export const SelectionManagement: FC = () => {
         </select>
       </div>
       {selectionConfig.mode == 'maxprob' && (
-        <div>
+        <div className="d-flex align-items-center justify-content-between">
           <label>Label</label>
           <select
             onChange={(e) => {
@@ -62,6 +64,7 @@ export const SelectionManagement: FC = () => {
                 selectionConfig: { ...selectionConfig, label: e.target.value },
               }));
             }}
+            className="form-select w-50"
           >
             {availableLabels.map((e, i) => (
               <option key={i}>{e}</option>
@@ -88,7 +91,7 @@ export const SelectionManagement: FC = () => {
       <div className="d-flex align-items-center justify-content-between">
         <label htmlFor="select_regex">Filter</label>
         <input
-          className="form-control w-75"
+          className="form-control w-50"
           type="text"
           id="select_regex"
           placeholder="Enter a regex / CONTEXT= for context"
@@ -116,9 +119,8 @@ export const SelectionManagement: FC = () => {
           }}
           style={{ marginRight: '10px' }}
         />
-        Use zoom frame to select elements
+        Use projection frame to limit element selection
       </label>
-      <div>Current model : {currentModel ? currentModel['model'] : 'No model trained'}</div>
     </div>
   );
 };

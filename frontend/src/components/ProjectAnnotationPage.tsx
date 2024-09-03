@@ -159,9 +159,7 @@ export const ProjectAnnotationPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
-        <div className="row">
-          <h2 className="subsection">Annotation</h2>
-
+        <div className="row mb-3 mt-3">
           <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
             <Tab eventKey="scheme" title="Current scheme">
               <div className="row">
@@ -278,30 +276,32 @@ export const ProjectAnnotationPage: FC = () => {
           ))}
         </div>
       </div>
-      <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
-        <Tab eventKey="description" title="Parameters">
-          Configure the annotation
-        </Tab>
-        <Tab eventKey="labels" title="Labels">
-          <LabelsManagement
-            projectName={projectName || null}
-            currentScheme={currentScheme || null}
-            availableLabels={availableLabels}
-            reFetchCurrentProject={reFetchCurrentProject || (() => null)}
-          />
-        </Tab>
-        <Tab eventKey="prediction" title="Prediction">
-          <SimpleModelManagement
-            projectName={projectName || null}
-            currentScheme={currentScheme || null}
-            availableSimpleModels={availableSimpleModels}
-            availableFeatures={availableFeatures}
-          />
-        </Tab>
-        <Tab eventKey="projection" title="Projection">
-          <ProjectionManagement />
-        </Tab>
-      </Tabs>
+      <div className="mt-5">
+        <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
+          <Tab eventKey="description" title="Parameters">
+            Configure the annotation
+          </Tab>
+          <Tab eventKey="labels" title="Labels">
+            <LabelsManagement
+              projectName={projectName || null}
+              currentScheme={currentScheme || null}
+              availableLabels={availableLabels}
+              reFetchCurrentProject={reFetchCurrentProject || (() => null)}
+            />
+          </Tab>
+          <Tab eventKey="prediction" title="Prediction">
+            <SimpleModelManagement
+              projectName={projectName || null}
+              currentScheme={currentScheme || null}
+              availableSimpleModels={availableSimpleModels}
+              availableFeatures={availableFeatures}
+            />
+          </Tab>
+          <Tab eventKey="projection" title="Projection">
+            <ProjectionManagement />
+          </Tab>
+        </Tabs>
+      </div>
     </ProjectPageLayout>
   );
 };

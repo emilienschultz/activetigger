@@ -69,7 +69,6 @@ export const ProjectFeaturesPage: FC = () => {
         <div className="container-fluid">
           <div className="row">
             <div className="col-8">
-              <h2 className="subsection">Managing features</h2>
               <span className="explanations">Features are computed from the textual data</span>
 
               {/*Display button to add features*/}
