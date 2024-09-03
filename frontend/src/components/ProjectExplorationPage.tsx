@@ -31,7 +31,10 @@ export const ProjectExplorationPage: FC = () => {
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
   const [page, setPage] = useState<number | null>(0);
   const [search, setSearch] = useState<string | null>(null);
+  const [sample, setSample] = useState<string>('all');
   const [pageSize, setPageSize] = useState(20);
+
+  console.log(sample);
 
   // data modification management
   const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
@@ -41,7 +44,7 @@ export const ProjectExplorationPage: FC = () => {
     table,
     getPage,
     total: totalElement,
-  } = useTableElements(projectName, currentScheme, page, pageSize, search);
+  } = useTableElements(projectName, currentScheme, page, pageSize, search, sample);
 
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -94,7 +97,7 @@ export const ProjectExplorationPage: FC = () => {
         >
           <Highlighter
             highlightClassName="Search"
-            searchWords={[search]}
+            searchWords={search ? [search] : []}
             autoEscape={true}
             textToHighlight={props.row.text}
           />
@@ -191,6 +194,13 @@ export const ProjectExplorationPage: FC = () => {
                   </select>
                 </div>
                 <div className="d-flex align-items-center justify-content-between mb-3">
+                  <label>Filter</label>
+
+                  <select className="form-control w-25" onChange={(e) => setSample(e.target.value)}>
+                    {['tagged', 'untagged', 'all', 'recent'].map((e) => (
+                      <option key={e}>{e}</option>
+                    ))}
+                  </select>
                   <input
                     className="form-control"
                     placeholder="You can use a regex search to filter"

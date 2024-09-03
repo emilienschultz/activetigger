@@ -1060,6 +1060,7 @@ export function useTableElements(
   initialPage?: number | null,
   initialPageSize?: number | null,
   search?: string | null,
+  sample?: string,
 ) {
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     pageIndex: initialPage || 1,
@@ -1077,6 +1078,7 @@ export function useTableElements(
             min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
             max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
             contains: search,
+            mode: sample ? sample : 'all',
           },
         },
       });
@@ -1086,7 +1088,7 @@ export function useTableElements(
       }
     }
     return null;
-  }, [scheme, pageInfo, search]);
+  }, [scheme, pageInfo, search, sample]);
 
   return { table: getAsyncMemoData(getTableElements), total, getPage: setPageInfo };
 }
