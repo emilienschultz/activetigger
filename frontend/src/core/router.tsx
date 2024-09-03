@@ -6,7 +6,7 @@ import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { NotFound } from '../components/NotFoundPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
-import { ProjectExploratePage } from '../components/ProjectExploratePage';
+import { ProjectExplorationPage } from '../components/ProjectExplorationPage';
 import { ProjectExportPage } from '../components/ProjectExportPage';
 import { ProjectFeaturesPage } from '../components/ProjectFeaturesPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
@@ -83,7 +83,7 @@ export function getRouter() {
         },
         {
           path: '/projects/:projectName/explorate',
-          element: <ProjectExploratePage />,
+          element: <ProjectExplorationPage />,
         },
         {
           path: '/projects/:projectName/annotate/',

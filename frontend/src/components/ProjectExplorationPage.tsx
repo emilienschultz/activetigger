@@ -21,7 +21,7 @@ interface Row {
   text: string;
 }
 
-export const ProjectExploratePage: FC = () => {
+export const ProjectExplorationPage: FC = () => {
   const { projectName } = useParams();
   const {
     appContext: { currentScheme, currentProject: project },
@@ -30,6 +30,7 @@ export const ProjectExploratePage: FC = () => {
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
   const [page, setPage] = useState<number | null>(0);
+  const [search, setSearch] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState(20);
 
   // data modification management
@@ -40,7 +41,7 @@ export const ProjectExploratePage: FC = () => {
     table,
     getPage,
     total: totalElement,
-  } = useTableElements(projectName, currentScheme, page, pageSize);
+  } = useTableElements(projectName, currentScheme, page, pageSize, search);
 
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -70,7 +71,13 @@ export const ProjectExploratePage: FC = () => {
         ),
     },
     { key: 'timestamp', name: 'Timestamp', resizable: true, width: 100 },
-    { key: 'labels', name: 'Label', resizable: true, renderEditCell: renderDropdown, width: 100 },
+    {
+      key: 'labels',
+      name: 'Label ✎',
+      resizable: true,
+      renderEditCell: renderDropdown,
+      width: 100,
+    },
     {
       key: 'text',
       name: 'Text',
@@ -177,6 +184,13 @@ export const ProjectExploratePage: FC = () => {
                       ),
                     )}
                   </select>
+                </div>
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <input
+                    className="form-control"
+                    placeholder="You can use a regex search to filter"
+                    onChange={(e) => setSearch(e.target.value)}
+                  ></input>
                 </div>
 
                 <DataGrid

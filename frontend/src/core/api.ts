@@ -1059,6 +1059,7 @@ export function useTableElements(
   scheme?: string,
   initialPage?: number | null,
   initialPageSize?: number | null,
+  search?: string | null,
 ) {
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     pageIndex: initialPage || 1,
@@ -1075,6 +1076,7 @@ export function useTableElements(
             scheme: scheme,
             min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
             max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
+            contains: search,
           },
         },
       });
@@ -1084,7 +1086,7 @@ export function useTableElements(
       }
     }
     return null;
-  }, [scheme, pageInfo]);
+  }, [scheme, pageInfo, search]);
 
   return { table: getAsyncMemoData(getTableElements), total, getPage: setPageInfo };
 }
