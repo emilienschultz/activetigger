@@ -198,7 +198,6 @@ async def middleware(request: Request, call_next):
     Executed at each action on the server
     """
     await check_processes(timer)
-    print(request)
     response = await call_next(request)
     return response
 

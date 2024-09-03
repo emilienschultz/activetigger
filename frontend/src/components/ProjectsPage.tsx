@@ -11,19 +11,19 @@ export const ProjectsPage: FC = () => {
 
   return (
     <PageLayout currentPage="projects">
-      <div className="container justify-content-center align-items-center">
+      <div className="container-fluid">
         {
           <div className="row">
-            <div className="col-12 col-md-8 mx-auto">
-              <Link
-                to="/projects/new"
-                className="btn btn-primary m-3 d-flex justify-content-center align-items-center"
-              >
-                <IoIosAddCircle className="m-2" size={30} />
-                Create new project
-              </Link>
+            <div className="col-0 col-lg-3" />
+            <div className="col-12 col-lg-6">
+              <div className="w-100 d-flex align-items-center justify-content-center">
+                <Link to="/projects/new" className="btn btn-warning w-75 mt-3">
+                  <IoIosAddCircle className="m-1" size={30} />
+                  Create new project
+                </Link>
+              </div>
 
-              <ul className="list-unstyled">
+              <ul className="list-unstyled mt-3">
                 {(projects || []).map((project) => (
                   <li key={project.parameters.project_name} className="projects-list">
                     <Link
