@@ -50,7 +50,7 @@ export const ProjectActionsSidebar: FC<{
             className={classNames('nav-link', currentProjectAction === 'features' && 'active')}
             aria-current="page"
           >
-            <MdOutlineTransform /> Features
+            <MdOutlineTransform /> Embeddings
           </Link>
         </li>
         <li className="nav-item">
@@ -59,7 +59,7 @@ export const ProjectActionsSidebar: FC<{
             className={classNames('nav-link', currentProjectAction === 'explorate' && 'active')}
             aria-current="page"
           >
-            <TbListSearch /> Explorate
+            <TbListSearch /> Exploration
           </Link>
         </li>
         <li className="nav-item">
@@ -68,7 +68,7 @@ export const ProjectActionsSidebar: FC<{
             className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
             aria-current="page"
           >
-            <PiTagDuotone /> Annotate
+            <PiTagDuotone /> Annotation
           </Link>
         </li>
         <li className="nav-item">
@@ -77,7 +77,7 @@ export const ProjectActionsSidebar: FC<{
             className={classNames('nav-link', currentProjectAction === 'train' && 'active')}
             aria-current="page"
           >
-            <MdModelTraining /> Train model
+            <MdModelTraining /> Training
           </Link>
         </li>
         <li className="nav-item">
