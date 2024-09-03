@@ -5,11 +5,11 @@ import DataGrid, { Column, RenderEditCellProps } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import { useParams } from 'react-router-dom';
 
+import Highlighter from 'react-highlight-words';
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
 import { AnnotationModel } from '../types';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
-
 /**
  * Component to display the exploratory page
  */
@@ -92,7 +92,12 @@ export const ProjectExplorationPage: FC = () => {
             overflowY: 'auto',
           }}
         >
-          {props.row.text}
+          <Highlighter
+            highlightClassName="Search"
+            searchWords={[search]}
+            autoEscape={true}
+            textToHighlight={props.row.text}
+          />
         </div>
       ),
     },
