@@ -597,31 +597,27 @@ class Server:
             content["id"] = range(0, len(content))
             params.col_id = "id"
 
+        # rename columns that are going to be used & remove NA texts
         content = (
-            content.rename(
-                columns={params.col_id: "id", params.col_text: "text"}
-            )  # rename to normalize
+            content.rename(columns={params.col_id: "id", params.col_text: "text"})
             .set_index("id")  # set id as index
             .dropna(subset=["text"])
-        )  # remove NA texts
+        )
+        if params.col_label:
+            content.rename(columns={params.col_label: "label"}, inplace=True)
+        else:
+            content["label"] = None
 
         # drop duplicated index and assure it is string
         content = content[~content.index.duplicated(keep="first")]
         content.index = [str(i) for i in list(content.index)]  # sure to be str
 
-        if params.col_label:
-            content.rename(columns={params.col_label: "label"}, inplace=True)
-        # TODO : also rename context columns ?
-
-        # Information of the limit of usable text
+        # Information of the limit of usable text (in the futur, will be defined by the number of token)
+        # but it depends of the tokenizer
         def limit(text):
             return 1200
 
         content["limit"] = content["text"].apply(limit)
-
-        # if no label column, add dummy to act as if a column without
-        if not params.col_label:
-            content["label"] = None
 
         # Step 2 : test dataset, no already labelled data, random + stratification
         rows_test = []

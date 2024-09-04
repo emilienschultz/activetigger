@@ -141,6 +141,8 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('col_text')}
                   >
+                    <option key="none"></option>
+
                     {columns}
                   </select>
                   <label className="form-label" htmlFor="col_label">

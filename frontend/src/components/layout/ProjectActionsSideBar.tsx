@@ -50,7 +50,7 @@ export const ProjectActionsSidebar: FC<{
             className={classNames('nav-link', currentProjectAction === 'features' && 'active')}
             aria-current="page"
           >
-            <MdOutlineTransform /> Embeddings
+            <MdOutlineTransform /> Features
           </Link>
         </li>
         <li className="nav-item">

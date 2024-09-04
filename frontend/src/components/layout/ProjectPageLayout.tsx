@@ -11,6 +11,7 @@ export type PossibleProjectActions =
   | 'parameters'
   | 'features'
   | 'explorate'
+  | 'test'
   | 'export';
 
 type ProjectPageLayoutProps = PropsWithChildren<{

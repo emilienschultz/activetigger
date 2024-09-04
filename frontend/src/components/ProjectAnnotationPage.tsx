@@ -261,19 +261,23 @@ export const ProjectAnnotationPage: FC = () => {
           >
             <IoMdReturnLeft />
           </Link>
-          {availableLabels.map((i, e) => (
-            <button
-              type="button"
-              key={i}
-              value={i}
-              className="btn btn-primary grow-1"
-              onClick={(e) => {
-                applyLabel(e.currentTarget.value, elementId);
-              }}
-            >
-              {i} <span className="badge text-bg-secondary">{e + 1}</span>
-            </button>
-          ))}
+
+          {
+            // display buttons for label
+            availableLabels.map((i, e) => (
+              <button
+                type="button"
+                key={i}
+                value={i}
+                className="btn btn-primary grow-1"
+                onClick={(e) => {
+                  applyLabel(e.currentTarget.value, elementId);
+                }}
+              >
+                {i} <span className="badge text-bg-secondary">{e + 1}</span>
+              </button>
+            ))
+          }
         </div>
       </div>
       <div className="mt-5">

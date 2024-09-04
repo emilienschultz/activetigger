@@ -27,7 +27,7 @@ export const defaultContext: AppContextValue = storedContext
         sample: 'untagged',
         displayPrediction: false,
         frameSelection: false,
-        frame: null,
+        frame: [],
       },
       history: [],
       freqRefreshSimpleModel: 10,

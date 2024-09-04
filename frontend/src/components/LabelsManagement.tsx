@@ -30,6 +30,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   const createLabel = () => {
     addLabel(createLabelValue);
     if (reFetchCurrentProject) reFetchCurrentProject();
+    setCreateLabelValue('');
   };
 
   // manage label deletion
