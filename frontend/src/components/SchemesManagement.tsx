@@ -70,8 +70,11 @@ export const SelectCurrentScheme: FC = () => {
 export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) => {
   // get element from the context
   const {
-    appContext: { currentScheme, reFetchCurrentProject },
+    appContext: { currentProject, currentScheme, reFetchCurrentProject },
+    setAppContext,
   } = useAppContext();
+
+  const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
 
   // hooks to use the objets
   const { register, handleSubmit } = useForm<SchemeModel>({});
@@ -103,6 +106,15 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   const deleteSelectedScheme = async () => {
     //TODO: try catch and throw
     await deleteScheme();
+
+    // set another scheme
+    const otherSchemes = availableSchemes.filter((element) => element !== currentScheme);
+    setAppContext((state) => ({
+      ...state,
+      currentScheme: otherSchemes[0],
+    }));
+    notify({ type: 'success', message: 'Scheme changed to ' + otherSchemes[0] });
+
     if (reFetchCurrentProject) reFetchCurrentProject();
   };
   return (
@@ -127,14 +139,12 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
             <div className="row">
               <form onSubmit={handleSubmit(createNewScheme)}>
                 <div className="secondary-panel col-4">
-                  <label className="form-label" htmlFor="scheme_name">
-                    New scheme
-                  </label>
                   <input
                     className="form-control"
                     id="scheme_name"
                     type="text"
                     {...register('name')}
+                    placeholder="Enter new scheme name"
                   />
                   <button className="btn btn-primary btn-validation">Create</button>
                 </div>

@@ -1,13 +1,16 @@
 import { FC } from 'react';
+import Tab from 'react-bootstrap/Tab';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useDeleteProject } from '../core/api';
 //import { useUserProjects } from '../core/api';
+import Tabs from 'react-bootstrap/Tabs';
 import { useAppContext } from '../core/context';
 import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
 import { ProjectStatistics } from './ProjectStatistics';
 import { SchemesManagement } from './SchemesManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
+
 /**
  * Component to display the project page
  */
@@ -46,52 +49,46 @@ export const ProjectPage: FC = () => {
             <div className="row">
               <h2 className="subsection">Project panel</h2>
             </div>
-            <div className="text-muted smalfont-weight-light">
-              Recent users{' '}
-              {activeUsers.map((e) => (
-                <span className="badge rounded-pill text-bg-light text-muted me-2" key={e}>
-                  {e}
-                </span>
-              ))}
-            </div>
 
             <div className="row">
               <SchemesManagement projectSlug={projectName} />
             </div>
 
-            {currentScheme && (
-              <div className="row">
-                <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
-              </div>
-            )}
+            <Tabs id="panel" className="mb-3" defaultActiveKey="statistics">
+              <Tab eventKey="statistics" title="Statistics">
+                {currentScheme && (
+                  <div className="row">
+                    <div className="text-muted smalfont-weight-light">
+                      Recent users{' '}
+                      {activeUsers.map((e) => (
+                        <span className="badge rounded-pill text-bg-light text-muted me-2" key={e}>
+                          {e}
+                        </span>
+                      ))}
+                    </div>
 
-            <div className="row mt-4">
-              <div className="col-12">
-                <details className="custom-details">
-                  <summary className="custom-summary">Disagreement management</summary>
-                  <span className="explanations">In development</span>
-                  {currentScheme && <AnnotationDisagreementManagement projectSlug={projectName} />}
-                </details>
-
-                <details className="custom-details">
-                  <summary className="custom-summary">Session</summary>
-                  <span className="explanations">Element annotated during this session</span>
-                  <div>{JSON.stringify(history, null, 2)}</div>
-                  <button onClick={actionClearHistory} className="delete-button">
-                    Clear history
-                  </button>
-                </details>
-
-                <details className="custom-details">
-                  <summary className="custom-summary">Parameters</summary>
-                  <span className="explanations">Parameters of this project</span>
-                  <div>{JSON.stringify(project.params, null, 2)}</div>
-                  <button onClick={actionDelete} className="delete-button">
-                    Delete project
-                  </button>
-                </details>
-              </div>
-            </div>
+                    <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
+                  </div>
+                )}
+              </Tab>
+              <Tab eventKey="disagreement" title="Disagreements">
+                {currentScheme && <AnnotationDisagreementManagement projectSlug={projectName} />}
+              </Tab>
+              <Tab eventKey="session" title="History session">
+                <span className="explanations">Element annotated during this session</span>
+                <div>{JSON.stringify(history, null, 2)}</div>
+                <button onClick={actionClearHistory} className="delete-button">
+                  Clear history
+                </button>
+              </Tab>
+              <Tab eventKey="parameters" title="Parameters">
+                <span className="explanations">Parameters of this project</span>
+                <div>{JSON.stringify(project.params, null, 2)}</div>
+                <button onClick={actionDelete} className="delete-button">
+                  Delete project
+                </button>
+              </Tab>
+            </Tabs>
           </div>
         )}
       </ProjectPageLayout>
