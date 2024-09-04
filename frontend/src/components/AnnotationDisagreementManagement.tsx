@@ -54,7 +54,7 @@ export const AnnotationDisagreementManagement: FC<{
             </div>
 
             {element.annotations && (
-              <div className="d-flex mt-2">
+              <div className="d-inline-flex align-items-center  mt-2">
                 {Object.entries(element.annotations).map(([key, value], _) => (
                   <div key={key}>
                     <span className="badge bg-warning text-dark me-2">
@@ -63,22 +63,20 @@ export const AnnotationDisagreementManagement: FC<{
                     </span>
                   </div>
                 ))}
+
+                <select
+                  className="form-select w-25"
+                  onChange={(event) =>
+                    setChanges({ ...changes, [element.id as string]: event.target.value })
+                  }
+                >
+                  <option>Select a label to arbitrage</option>
+                  {availableLabels.map((e) => (
+                    <option key={e}>{e}</option>
+                  ))}
+                </select>
               </div>
             )}
-            <div className="d-flex align-items-center w-50 mt-2">
-              <label className="me-3">Set</label>
-              <select
-                className="form-select"
-                onChange={(event) =>
-                  setChanges({ ...changes, [element.id as string]: event.target.value })
-                }
-              >
-                <option></option>
-                {availableLabels.map((e) => (
-                  <option key={e}>{e}</option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
       ))}

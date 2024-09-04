@@ -17,7 +17,6 @@ export const CurrentProjectMonitoring: FC = () => {
     if (project && !('detail' in project)) {
       // fix BUG
       setAppContext((prev) => ({ ...prev, currentProject: project }));
-      console.log('test');
     }
   }, [project, setAppContext]);
 

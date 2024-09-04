@@ -33,6 +33,8 @@ export const SelectionManagement: FC = () => {
       : null;
   }, [project, currentScheme, authenticatedUser]);
 
+  console.log(selectionConfig);
+
   return (
     <div>
       <div className="explanations">
@@ -48,6 +50,7 @@ export const SelectionManagement: FC = () => {
               selectionConfig: { ...selectionConfig, mode: e.target.value },
             }));
           }}
+          value={selectionConfig.mode}
         >
           {availableModes.map((e, i) => (
             <option key={i}>{e}</option>
@@ -65,6 +68,7 @@ export const SelectionManagement: FC = () => {
               }));
             }}
             className="form-select w-50"
+            value={selectionConfig.label}
           >
             {availableLabels.map((e, i) => (
               <option key={i}>{e}</option>
@@ -82,6 +86,7 @@ export const SelectionManagement: FC = () => {
               selectionConfig: { ...selectionConfig, sample: e.target.value },
             }));
           }}
+          value={selectionConfig.sample}
         >
           {availableSamples.map((e, i) => (
             <option key={i}>{e}</option>
@@ -101,6 +106,7 @@ export const SelectionManagement: FC = () => {
               selectionConfig: { ...selectionConfig, filter: e.target.value },
             }));
           }}
+          value={selectionConfig.filter}
         />
       </div>
       <label style={{ display: 'block', marginBottom: '10px' }}>
