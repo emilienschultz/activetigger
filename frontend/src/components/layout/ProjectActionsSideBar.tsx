@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 import { FC } from 'react';
-import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
 import { MdModelTraining, MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { TbListSearch } from 'react-icons/tb';
@@ -78,6 +78,15 @@ export const ProjectActionsSidebar: FC<{
             aria-current="page"
           >
             <MdModelTraining /> Training
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
+            to={`/projects/${projectName}/test`}
+            className={classNames('nav-link', currentProjectAction === 'test' && 'active')}
+            aria-current="page"
+          >
+            <FaClipboardCheck /> Test
           </Link>
         </li>
         <li className="nav-item">
