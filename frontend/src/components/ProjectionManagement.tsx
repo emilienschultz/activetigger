@@ -12,10 +12,10 @@ import {
   VictoryZoomContainer,
 } from 'victory';
 
-import { useGetProjectionData, useUpdateProjection } from '../core/api';
+import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
-import { ProjectionInStrictModel, ProjectionModelParams } from '../types';
+import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
 
 interface ZoomDomain {
   x?: DomainTuple;
@@ -44,6 +44,10 @@ export const ProjectionManagement: FC = () => {
   } = useAppContext();
   const navigate = useNavigate();
   const { authenticatedUser } = useAuth();
+  const { getElementById } = useGetElementById(
+    project?.params.project_slug || null,
+    currentScheme || null,
+  );
 
   const projectName = project?.params.project_slug ? project?.params.project_slug : null;
 
@@ -161,71 +165,99 @@ export const ProjectionManagement: FC = () => {
     }
   };
 
+  // element to display
+  const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
+  console.log(selectedElement);
+
   // TODO : add to configuration context
 
   return (
     <div>
       {projectionData && labelColorMapping && (
-        <div style={{ height: 500, padding: 30 }}>
-          {
-            <VictoryChart
-              theme={VictoryTheme.material}
-              containerComponent={<VictoryZoomContainer onZoomDomainChange={handleZoom} />}
-              height={300}
-              width={300}
-            >
-              <VictoryScatter
-                style={{
-                  data: {
-                    fill: ({ datum }) => labelColorMapping[datum.labels],
-                    opacity: 0.7,
-                  },
-                }}
-                size={2}
-                labels={({ datum }) => datum.index}
-                labelComponent={
-                  <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />
-                }
-                data={projectionData.x.map((value, index) => {
-                  return {
-                    x: value,
-                    y: projectionData.y[index],
-                    labels: projectionData.labels[index],
-                    texts: projectionData.texts[index],
-                    index: projectionData.index[index],
-                  };
-                })}
-                events={[
-                  {
-                    target: 'data',
-                    eventHandlers: {
-                      onClick: (_, props) => {
-                        const { datum } = props;
-                        navigate(`/projects/${projectName}/annotate/${datum.index}`);
+        <div className="row">
+          <div className="col-6" style={{ height: 500, padding: 30 }}>
+            {
+              <VictoryChart
+                theme={VictoryTheme.material}
+                containerComponent={<VictoryZoomContainer onZoomDomainChange={handleZoom} />}
+                height={300}
+                width={300}
+              >
+                <VictoryScatter
+                  style={{
+                    data: {
+                      fill: ({ datum }) => labelColorMapping[datum.labels],
+                      opacity: 0.7,
+                      cursor: 'pointer',
+                    },
+                  }}
+                  size={2}
+                  labels={({ datum }) => datum.index}
+                  labelComponent={
+                    <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />
+                  }
+                  data={projectionData.x.map((value, index) => {
+                    return {
+                      x: value,
+                      y: projectionData.y[index],
+                      labels: projectionData.labels[index],
+                      texts: projectionData.texts[index],
+                      index: projectionData.index[index],
+                    };
+                  })}
+                  events={[
+                    {
+                      target: 'data',
+                      eventHandlers: {
+                        onClick: (_, props) => {
+                          const { datum } = props;
+                          getElementById(datum.index).then(setSelectedElement);
+                          //navigate(`/projects/${projectName}/annotate/${datum.index}`);
+                        },
                       },
                     },
-                  },
-                ]}
-              />
-              <VictoryLegend
-                x={125}
-                y={0}
-                title="Legend"
-                centerTitle
-                orientation="horizontal"
-                gutter={10}
-                style={{
-                  border: { stroke: 'black' },
-                  title: { fontSize: 5 },
-                  labels: { fontSize: 5 },
-                }}
-                data={Object.keys(labelColorMapping).map((label) => ({
-                  name: label,
-                  symbol: { fill: labelColorMapping[label] },
-                }))}
-              />
-            </VictoryChart>
-          }
+                  ]}
+                />
+                <VictoryLegend
+                  x={125}
+                  y={0}
+                  title="Legend"
+                  centerTitle
+                  orientation="horizontal"
+                  gutter={10}
+                  style={{
+                    border: { stroke: 'black' },
+                    title: { fontSize: 5 },
+                    labels: { fontSize: 5 },
+                  }}
+                  data={Object.keys(labelColorMapping).map((label) => ({
+                    name: label,
+                    symbol: { fill: labelColorMapping[label] },
+                  }))}
+                />
+              </VictoryChart>
+            }
+          </div>
+          <div className="col-6">
+            {selectedElement && (
+              <div className="mt-5">
+                Element:{' '}
+                <div className="badge bg-light text-dark">{selectedElement.element_id}</div>
+                <div className="mt-2">{selectedElement.text}</div>
+                <div className="mt-2">
+                  Previous annotations : {JSON.stringify(selectedElement.history)}
+                </div>
+                <button
+                  className="btn btn-primary mt-3"
+                  onClick={() =>
+                    navigate(`/projects/${projectName}/annotate/${selectedElement.element_id}`)
+                  }
+                >
+                  Annotate
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
       <form onSubmit={handleSubmit(onSubmit)}>
