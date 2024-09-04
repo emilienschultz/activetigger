@@ -1,6 +1,5 @@
 import { FC, useState } from 'react';
-import { FaRegTrashAlt } from 'react-icons/fa';
-import { FaPlusCircle } from 'react-icons/fa';
+import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { RiFindReplaceLine } from 'react-icons/ri';
 
 import { useAddLabel, useDeleteLabel, useRenameLabel } from '../core/api';
@@ -52,9 +51,12 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 
   return (
     <div>
-      <label htmlFor="select-label">Available labels</label>
+      <span className="explanations">Create, delete or rename labels</span>
+      <label htmlFor="select-label" className="form-label">
+        Available labels
+      </label>
       <div className="d-flex align-items-center w-100">
-        <select id="select-label" onChange={handleDeleteLabelChange} className="form-select">
+        <select id="select-label" onChange={handleDeleteLabelChange} className="form-select w-50">
           {availableLabels.map((e, i) => (
             <option key={i}>{e}</option>
           ))}{' '}
@@ -63,6 +65,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           <FaRegTrashAlt size={20} className="m-2" />
         </button>
       </div>
+      <label htmlFor="select-label" className="form-label">
+        New label
+      </label>
       <div className="d-flex align-items-center w-100 mt-2">
         <input
           type="text"
@@ -70,12 +75,15 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           value={createLabelValue}
           onChange={handleCreateLabelChange}
           placeholder="Enter new label"
-          className="form-control"
+          className="form-control w-50"
         />
         <button onClick={createLabel} className="btn btn p-0">
           <FaPlusCircle size={20} className="m-2" />
         </button>
       </div>
+      <label htmlFor="select-label" className="form-label">
+        Convert label
+      </label>
       <div className="d-flex align-items-center">
         Replace selected label to the new one
         <button onClick={replaceLabel} className="btn btn p-0">

@@ -165,86 +165,6 @@ export const ProjectionManagement: FC = () => {
 
   return (
     <div>
-      <details className="custom-details">
-        <summary>Configure</summary>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <label htmlFor="model">Select a model</label>
-          <select id="model" {...register('method')}>
-            <option value=""></option>
-            {Object.keys(availableProjections ? availableProjections : []).map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}{' '}
-          </select>
-          <div>
-            <label htmlFor="features">Select features</label>
-            <select id="features" {...register('features')} multiple>
-              {Object.values(availableFeatures).map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}{' '}
-            </select>
-          </div>
-          {availableProjections && selectedMethod == 'tsne' && (
-            <div>
-              <label htmlFor="perplexity">perplexity</label>
-              <input
-                type="number"
-                step="1"
-                id="perplexity"
-                {...register('params.perplexity', { valueAsNumber: true })}
-              ></input>
-              <label>Learning rate</label>
-              <select {...register('params.learning_rate')}>
-                <option key="auto" value="auto">
-                  auto
-                </option>
-              </select>
-              <label>Init</label>
-              <select {...register('params.init')}>
-                <option key="random" value="random">
-                  random
-                </option>
-              </select>
-            </div>
-          )}
-          {availableProjections && selectedMethod == 'umap' && (
-            <div>
-              <label htmlFor="n_neighbors">n_neighbors</label>
-              <input
-                type="number"
-                step="1"
-                id="n_neighbors"
-                {...register('params.n_neighbors', { valueAsNumber: true })}
-              ></input>
-              <label htmlFor="min_dist">min_dist</label>
-              <input
-                type="number"
-                id="min_dist"
-                step="0.01"
-                {...register('params.min_dist', { valueAsNumber: true })}
-              ></input>
-              <label htmlFor="metric">Metric</label>
-              <select {...register('params.metric')}>
-                <option key="euclidean" value="euclidean">
-                  euclidean
-                </option>
-              </select>
-            </div>
-          )}
-          <label htmlFor="n_components">n_components</label>
-          <input
-            type="number"
-            id="n_components"
-            step="1"
-            {...register('params.n_components', { valueAsNumber: true, required: true })}
-          ></input>
-
-          <button className="btn btn-primary btn-validation">Compute</button>
-        </form>
-      </details>
       {projectionData && labelColorMapping && (
         <div style={{ height: 500, padding: 30 }}>
           {
@@ -308,6 +228,83 @@ export const ProjectionManagement: FC = () => {
           }
         </div>
       )}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <label htmlFor="model">Select a model</label>
+        <select id="model" {...register('method')}>
+          <option value=""></option>
+          {Object.keys(availableProjections ? availableProjections : []).map((e) => (
+            <option key={e} value={e}>
+              {e}
+            </option>
+          ))}{' '}
+        </select>
+        <div>
+          <label htmlFor="features">Select features</label>
+          <select id="features" {...register('features')} multiple>
+            {Object.values(availableFeatures).map((e) => (
+              <option key={e} value={e}>
+                {e}
+              </option>
+            ))}{' '}
+          </select>
+        </div>
+        {availableProjections && selectedMethod == 'tsne' && (
+          <div>
+            <label htmlFor="perplexity">perplexity</label>
+            <input
+              type="number"
+              step="1"
+              id="perplexity"
+              {...register('params.perplexity', { valueAsNumber: true })}
+            ></input>
+            <label>Learning rate</label>
+            <select {...register('params.learning_rate')}>
+              <option key="auto" value="auto">
+                auto
+              </option>
+            </select>
+            <label>Init</label>
+            <select {...register('params.init')}>
+              <option key="random" value="random">
+                random
+              </option>
+            </select>
+          </div>
+        )}
+        {availableProjections && selectedMethod == 'umap' && (
+          <div>
+            <label htmlFor="n_neighbors">n_neighbors</label>
+            <input
+              type="number"
+              step="1"
+              id="n_neighbors"
+              {...register('params.n_neighbors', { valueAsNumber: true })}
+            ></input>
+            <label htmlFor="min_dist">min_dist</label>
+            <input
+              type="number"
+              id="min_dist"
+              step="0.01"
+              {...register('params.min_dist', { valueAsNumber: true })}
+            ></input>
+            <label htmlFor="metric">Metric</label>
+            <select {...register('params.metric')}>
+              <option key="euclidean" value="euclidean">
+                euclidean
+              </option>
+            </select>
+          </div>
+        )}
+        <label htmlFor="n_components">n_components</label>
+        <input
+          type="number"
+          id="n_components"
+          step="1"
+          {...register('params.n_components', { valueAsNumber: true, required: true })}
+        ></input>
+
+        <button className="btn btn-primary btn-validation">Compute</button>
+      </form>
     </div>
   );
 };

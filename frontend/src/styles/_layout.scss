@@ -12,7 +12,8 @@
   padding: 30px;
 }
 
-form label {
+form label,
+.form-label {
   margin-top: 5px;
   padding: 5px;
   display: block;
@@ -21,6 +22,7 @@ form label {
   color: #607d8b;
 
 }
+
 
 form input[type="number"],
 form select {

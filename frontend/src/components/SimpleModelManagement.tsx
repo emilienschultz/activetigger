@@ -145,46 +145,49 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <label htmlFor="model">Select a model</label>
-      <select
-        id="model"
-        {...register('model')}
-        onChange={(e) => {
-          setSelectedSimpleModel(e.currentTarget.value);
-        }}
-      >
-        {Object.keys(availableSimpleModels).map((e) => (
-          <option key={e}>{e}</option>
-        ))}{' '}
-      </select>
-      {generate_config(selectedSimpleModel)}
-      <div>
-        <label htmlFor="features">Select features</label>
-        <select id="features" {...register('features')} multiple>
-          {Object.values(availableFeatures).map((e) => (
+    <div>
+      <span className="explanations">Train a prediction model on the current annotated data</span>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <label htmlFor="model">Select a model</label>
+        <select
+          id="model"
+          {...register('model')}
+          onChange={(e) => {
+            setSelectedSimpleModel(e.currentTarget.value);
+          }}
+        >
+          {Object.keys(availableSimpleModels).map((e) => (
             <option key={e}>{e}</option>
           ))}{' '}
         </select>
-      </div>
-      <button className="btn btn-primary btn-validation">Train</button>
-      <div>
-        <label htmlFor="frequencySlider">
-          Refresh the model every {freqRefreshSimpleModel} annotations
-        </label>
-        <span>5</span>
-        <input
-          type="range"
-          id="frequencySlider"
-          min="5"
-          max="500"
-          onChange={(e) => {
-            refreshFreq(Number(e.currentTarget.value));
-          }}
-          step="1"
-        />
-        <span>500</span>
-      </div>
-    </form>
+        {generate_config(selectedSimpleModel)}
+        <div>
+          <label htmlFor="features">Select features</label>
+          <select id="features" {...register('features')} multiple>
+            {Object.values(availableFeatures).map((e) => (
+              <option key={e}>{e}</option>
+            ))}{' '}
+          </select>
+        </div>
+        <button className="btn btn-primary btn-validation">Train</button>
+        <div>
+          <label htmlFor="frequencySlider">
+            Refresh the model every {freqRefreshSimpleModel} annotations
+          </label>
+          <span>5</span>
+          <input
+            type="range"
+            id="frequencySlider"
+            min="5"
+            max="500"
+            onChange={(e) => {
+              refreshFreq(Number(e.currentTarget.value));
+            }}
+            step="1"
+          />
+          <span>500</span>
+        </div>
+      </form>
+    </div>
   );
 };

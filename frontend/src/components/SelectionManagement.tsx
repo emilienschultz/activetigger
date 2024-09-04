@@ -33,8 +33,6 @@ export const SelectionManagement: FC = () => {
       : null;
   }, [project, currentScheme, authenticatedUser]);
 
-  console.log(selectionConfig);
-
   return (
     <div>
       <div className="explanations">

@@ -278,8 +278,10 @@ export const ProjectAnnotationPage: FC = () => {
       </div>
       <div className="mt-5">
         <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
-          <Tab eventKey="description" title="Parameters">
-            Configure the annotation
+          <Tab eventKey="description" title="Annotations">
+            <span className="explanations">
+              Configure the selection mode, train prediction model to enable active learning
+            </span>
           </Tab>
           <Tab eventKey="labels" title="Labels">
             <LabelsManagement
