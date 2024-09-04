@@ -4,7 +4,6 @@ import Tabs from 'react-bootstrap/Tabs';
 
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAddAnnotation, useGetElementById, useGetNextElementId } from '../core/api';
-import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
@@ -15,15 +14,9 @@ import { SelectCurrentScheme } from './SchemesManagement';
  */
 export const ProjectTestPage: FC = () => {
   const { projectName, elementId } = useParams();
-  const { authenticatedUser } = useAuth();
+  //const { authenticatedUser } = useAuth();
   const {
-    appContext: {
-      currentScheme,
-      reFetchCurrentProject,
-      currentProject: project,
-      freqRefreshSimpleModel,
-      history,
-    },
+    appContext: { currentScheme, currentProject: project, history },
     setAppContext,
   } = useAppContext();
 
