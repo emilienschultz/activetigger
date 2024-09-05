@@ -130,7 +130,7 @@ class AnnotationModel(BaseModel):
     scheme: str
     element_id: str
     label: str
-    mode: Optional[str] = "train"
+    dataset: Optional[str] = "train"
 
 
 class TableAnnotationsModel(BaseModel):
@@ -139,7 +139,7 @@ class TableAnnotationsModel(BaseModel):
     """
 
     annotations: List[AnnotationModel]
-    set: Optional[str] = "train"
+    dataset: Optional[str] = "train"
 
 
 class SchemeModel(BaseModel):

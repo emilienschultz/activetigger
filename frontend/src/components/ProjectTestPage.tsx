@@ -3,23 +3,25 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 
 import { useParams } from 'react-router-dom';
+import { useStatistics } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { SelectCurrentScheme } from './SchemesManagement';
 
 /**
- * Test component page
+ * Component test page
+ * - Allow to swich the interface to test mode
+ * - Compute prediction & statistics on the testset
  */
 export const ProjectTestPage: FC = () => {
   const { projectName } = useParams();
-  //const { authenticatedUser } = useAuth();
   const {
-    appContext: { selectionConfig },
+    appContext: { selectionConfig, currentScheme, currentProject },
     setAppContext,
   } = useAppContext();
 
-  console.log(selectionConfig);
-
+  // get statistics to display (TODO : try a way to avoid another request ?)
+  const { statistics } = useStatistics(projectName || null, currentScheme || null);
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
       <div className="container-fluid">
@@ -27,40 +29,51 @@ export const ProjectTestPage: FC = () => {
         <span className="explanations">
           Switch to the test mode to annotate the testset for the selected scheme
         </span>
-        <div className="row">
-          <div className="col-6">
-            <SelectCurrentScheme />
-          </div>
-          <div className="col-6">X/N of the test dataset annotated</div>
-        </div>
-        <Tabs id="panel" className="mb-3" defaultActiveKey="annotation">
-          <Tab eventKey="annotation" title="1. Annotate">
-            <span>- Status of the testset</span>
-
-            <div className="form-check form-switch">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                role="switch"
-                id="flexSwitchCheckDefault"
-                onChange={(e) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      mode: e.target.checked ? 'test' : 'random',
-                    },
-                  }));
-                }}
-                checked={selectionConfig.mode == 'test' ? true : false}
-              />
-              <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
-                Activate test mode
-              </label>
+        {
+          // possibility to switch to test mode only if test dataset available
+        }
+        {currentProject?.params.test && (
+          <div>
+            <div className="row">
+              <div className="col-6">
+                <SelectCurrentScheme />
+              </div>
+              <div className="col-6">X/N of the test dataset annotated</div>
             </div>
-          </Tab>
-          <Tab eventKey="compute" title="2. Compute"></Tab>
-        </Tabs>
+            <Tabs id="panel" className="mb-3" defaultActiveKey="annotation">
+              <Tab eventKey="annotation" title="1. Annotate">
+                {statistics && (
+                  <span className="badge text-bg-light  m-3">
+                    Count : {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
+                  </span>
+                )}
+
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="flexSwitchCheckDefault"
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: {
+                          ...selectionConfig,
+                          mode: e.target.checked ? 'test' : 'random',
+                        },
+                      }));
+                    }}
+                    checked={selectionConfig.mode == 'test' ? true : false}
+                  />
+                  <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
+                    Activate test mode
+                  </label>
+                </div>
+              </Tab>
+              <Tab eventKey="compute" title="2. Compute"></Tab>
+            </Tabs>
+          </div>
+        )}
       </div>
     </ProjectPageLayout>
   );

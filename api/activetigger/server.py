@@ -909,16 +909,13 @@ class Project(Server):
                 "element_id": str(element_id),
                 "text": df.loc[element_id, "text"],
                 "selection": "test",
-                "context": dict(
-                    df.loc[element_id, self.params.cols_context].apply(str)
-                ),
+                "context": {},
                 "info": "",
                 "predict": {"label": None, "proba": None},
                 "frame": [],
                 "limit": 1200,
                 "history": [],
             }
-            print(element)
             return element
 
         # select the current state of annotation
@@ -965,16 +962,22 @@ class Project(Server):
 
         # test if there is at least one element available
         if sum(f) == 0:
-            return {"error": "No element available"}
+            return {"error": "No element available with this selection mode."}
 
         # select type of selection
         if selection == "deterministic":  # next row
-            element_id = df[f].drop(history, errors="ignore").index[0]
+
+            ss = df[f].drop(history, errors="ignore").index[0]
+            if len(ss) == 0:
+                return {"error": "No element available with this selection mode."}
+            element_id = ss.index[0]
             indicator = None
+
         if selection == "random":  # random row
-            element_id = (
-                df[f].drop(history, errors="ignore").sample(random_state=42).index[0]
-            )
+            ss = df[f].drop(history, errors="ignore").sample(random_state=42)
+            if len(ss) == 0:
+                return {"error": "No element available with this selection mode."}
+            element_id = ss.index[0]
             indicator = None
 
         # higher prob, only possible if the model has been trained
@@ -1041,45 +1044,68 @@ class Project(Server):
         return element
 
     def get_element(
-        self, element_id: str, scheme: str | None = None, user: str | None = None
+        self,
+        element_id: str,
+        scheme: str | None = None,
+        user: str | None = None,
+        dataset: str = "train",
     ):
         """
         Get an element of the database
         TODO: better homogeneise with get_next ?
         TODO: test if element exists
         """
-        if not element_id in self.content.index:
-            return {"error": "Element does not exist"}
+        if dataset == "test":
+            if not element_id in self.schemes.test.index:
+                return {"error": "Element does not exist !!"}
+            data = {
+                "element_id": element_id,
+                "text": self.schemes.test.loc[element_id, "text"],
+                "context": {},
+                "selection": "test",
+                "predict": {"label": None, "proba": None},
+                "info": "",
+                "frame": None,
+                "limit": 1200,
+                "history": [],
+            }
+            return data
+        if dataset == "train":
+            if not element_id in self.content.index:
+                return {"error": "Element does not exist"}
 
-        # get prediction if it exists
-        predict = {"label": None, "proba": None}
-        if (user is not None) & (scheme is not None):
-            if self.simplemodels.exists(user, scheme):
-                sm = self.simplemodels.get_model(user, scheme)
-                predicted_label = sm.proba.loc[element_id, "prediction"]
-                predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
-                predict = {"label": predicted_label, "proba": predicted_proba}
+            # get prediction if it exists
+            predict = {"label": None, "proba": None}
+            if (user is not None) & (scheme is not None):
+                if self.simplemodels.exists(user, scheme):
+                    sm = self.simplemodels.get_model(user, scheme)
+                    predicted_label = sm.proba.loc[element_id, "prediction"]
+                    predicted_proba = round(
+                        sm.proba.loc[element_id, predicted_label], 2
+                    )
+                    predict = {"label": predicted_label, "proba": predicted_proba}
 
-        # get element tags
-        history = self.schemes.get_element_tags(element_id, scheme)
+            # get element tags
+            history = self.schemes.get_element_tags(element_id, scheme)
 
-        data = {
-            "element_id": element_id,
-            "text": self.content.loc[element_id, "text"],
-            "context": dict(
-                self.content.fillna("NA")
-                .loc[element_id, self.params.cols_context]
-                .apply(str)
-            ),
-            "selection": "request",
-            "predict": predict,
-            "info": "get specific",
-            "frame": None,
-            "limit": int(self.content.loc[element_id, "limit"]),
-            "history": history,
-        }
+            data = {
+                "element_id": element_id,
+                "text": self.content.loc[element_id, "text"],
+                "context": dict(
+                    self.content.fillna("NA")
+                    .loc[element_id, self.params.cols_context]
+                    .apply(str)
+                ),
+                "selection": "request",
+                "predict": predict,
+                "info": "get specific",
+                "frame": None,
+                "limit": int(self.content.loc[element_id, "limit"]),
+                "history": history,
+            }
 
-        return data
+            return data
+        return {"error": "wrong set"}
 
     def get_params(self) -> ProjectModel:
         """
@@ -1379,10 +1405,6 @@ class Features:
         """
         Add feature(s) and save
         """
-
-        # print(len(self.content),len(content))
-        # print(self.content)
-
         # test length
         if len(content) != len(self.content):
             raise ValueError("Features don't have the right shape")
@@ -1637,11 +1659,11 @@ class Schemes:
             self.push_tag(i, new_label, scheme, username, "add")
         return {"success": "All tags recoded"}
 
-    def get_total(self, set="train"):
+    def get_total(self, dataset="train"):
         """
         Number of element in the dataset
         """
-        if set == "test":
+        if dataset == "test":
             return len(self.test)
         return len(self.content)
 
@@ -1688,8 +1710,6 @@ class Schemes:
                 return {"error": "min value too high"}
 
             return df.sort_index().iloc[min:max].reset_index()
-
-        print("probleme")
 
         df = self.get_scheme_data(scheme, complete=True)
 

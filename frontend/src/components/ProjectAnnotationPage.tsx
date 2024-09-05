@@ -85,7 +85,7 @@ export const ProjectAnnotationPage: FC = () => {
       });
     } else {
       //fetch element information (text and labels)
-      getElementById(elementId).then(setElement);
+      getElementById(elementId, selectionConfig.mode == 'test' ? 'test' : 'train').then(setElement);
       reFetchStatistics();
     }
   }, [
@@ -169,63 +169,66 @@ export const ProjectAnnotationPage: FC = () => {
               Test mode activated - you are annotating test set
             </div>
           )}
-          <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
-            <Tab eventKey="scheme" title="Current scheme">
-              <div className="row">
-                <div className="col-6">
-                  <SelectCurrentScheme />
+          {selectionConfig.mode != 'test' && (
+            <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
+              <Tab eventKey="scheme" title="Current scheme">
+                <div className="row">
+                  <div className="col-6">
+                    <SelectCurrentScheme />
+                  </div>
+                  <div className="col-6">
+                    {statistics ? (
+                      <span className="badge text-bg-light  mt-2">
+                        Count :{' '}
+                        {`${statistics[selectionConfig.mode == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[selectionConfig.mode == 'test' ? 'test_set_n' : 'train_set_n']}`}
+                      </span>
+                    ) : (
+                      ''
+                    )}
+                  </div>{' '}
                 </div>
-                <div className="col-6">
-                  {statistics ? (
-                    <span className="badge text-bg-light  mt-2">
-                      Count : {`${statistics['train_annotated_n']} / ${statistics['train_set_n']}`}
-                    </span>
-                  ) : (
-                    ''
-                  )}
-                </div>{' '}
-              </div>
-            </Tab>
-            <Tab eventKey="selection" title="Selection mode">
-              <SelectionManagement />
-            </Tab>
-            <Tab eventKey="parameters" title="Display parameters">
-              <label style={{ display: 'block', marginBottom: '10px' }}>
-                <input
-                  type="checkbox"
-                  checked={selectionConfig.displayPrediction}
-                  onChange={(_) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      selectionConfig: {
-                        ...selectionConfig,
-                        displayPrediction: !selectionConfig.displayPrediction,
-                      },
-                    }));
-                  }}
-                  style={{ marginRight: '10px' }}
-                />
-                Display prediction
-              </label>
-              <label style={{ display: 'block', marginBottom: '10px' }}>
-                <input
-                  type="checkbox"
-                  checked={selectionConfig.displayContext}
-                  onChange={(_) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      selectionConfig: {
-                        ...selectionConfig,
-                        displayContext: !selectionConfig.displayContext,
-                      },
-                    }));
-                  }}
-                  style={{ marginRight: '10px' }}
-                />
-                Display informations
-              </label>
-            </Tab>
-          </Tabs>
+              </Tab>
+              <Tab eventKey="selection" title="Selection mode">
+                <SelectionManagement />
+              </Tab>
+              <Tab eventKey="parameters" title="Display parameters">
+                <label style={{ display: 'block', marginBottom: '10px' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectionConfig.displayPrediction}
+                    onChange={(_) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: {
+                          ...selectionConfig,
+                          displayPrediction: !selectionConfig.displayPrediction,
+                        },
+                      }));
+                    }}
+                    style={{ marginRight: '10px' }}
+                  />
+                  Display prediction
+                </label>
+                <label style={{ display: 'block', marginBottom: '10px' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectionConfig.displayContext}
+                    onChange={(_) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: {
+                          ...selectionConfig,
+                          displayContext: !selectionConfig.displayContext,
+                        },
+                      }));
+                    }}
+                    style={{ marginRight: '10px' }}
+                  />
+                  Display informations
+                </label>
+              </Tab>
+            </Tabs>
+          )}
         </div>
       </div>
 
@@ -237,10 +240,14 @@ export const ProjectAnnotationPage: FC = () => {
         // display content
       }
       <div className="row">
-        <div className="col-11 annotation-frame my-4">
-          <span>{element?.text.slice(0, element?.limit as number)}</span>
-          <span className="text-out-context">{element?.text.slice(element?.limit as number)}</span>
-        </div>
+        {element?.text && (
+          <div className="col-11 annotation-frame my-4">
+            <span>{element?.text.slice(0, element?.limit as number)}</span>
+            <span className="text-out-context">
+              {element?.text.slice(element?.limit as number)}
+            </span>
+          </div>
+        )}
 
         {
           //display proba
@@ -290,32 +297,34 @@ export const ProjectAnnotationPage: FC = () => {
         </div>
       </div>
       <div className="mt-5">
-        <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
-          <Tab eventKey="description" title="Annotations">
-            <span className="explanations">
-              Configure the selection mode, train prediction model to enable active learning
-            </span>
-          </Tab>
-          <Tab eventKey="labels" title="Labels">
-            <LabelsManagement
-              projectName={projectName || null}
-              currentScheme={currentScheme || null}
-              availableLabels={availableLabels}
-              reFetchCurrentProject={reFetchCurrentProject || (() => null)}
-            />
-          </Tab>
-          <Tab eventKey="prediction" title="Prediction">
-            <SimpleModelManagement
-              projectName={projectName || null}
-              currentScheme={currentScheme || null}
-              availableSimpleModels={availableSimpleModels}
-              availableFeatures={availableFeatures}
-            />
-          </Tab>
-          <Tab eventKey="projection" title="Projection">
-            <ProjectionManagement />
-          </Tab>
-        </Tabs>
+        {selectionConfig.mode != 'test' && (
+          <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
+            <Tab eventKey="description" title="Annotations">
+              <span className="explanations">
+                Configure the selection mode, train prediction model to enable active learning
+              </span>
+            </Tab>
+            <Tab eventKey="labels" title="Labels">
+              <LabelsManagement
+                projectName={projectName || null}
+                currentScheme={currentScheme || null}
+                availableLabels={availableLabels}
+                reFetchCurrentProject={reFetchCurrentProject || (() => null)}
+              />
+            </Tab>
+            <Tab eventKey="prediction" title="Prediction">
+              <SimpleModelManagement
+                projectName={projectName || null}
+                currentScheme={currentScheme || null}
+                availableSimpleModels={availableSimpleModels}
+                availableFeatures={availableFeatures}
+              />
+            </Tab>
+            <Tab eventKey="projection" title="Projection">
+              <ProjectionManagement />
+            </Tab>
+          </Tabs>
+        )}
       </div>
     </ProjectPageLayout>
   );

@@ -450,12 +450,12 @@ export function useGetNextElementId(
  */
 export function useGetElementById(projectSlug: string | null, currentScheme: string | null) {
   const getElementById = useCallback(
-    async (elementId: string) => {
+    async (elementId: string, dataset: string) => {
       if (projectSlug && currentScheme) {
         const res = await api.GET('/elements/{element_id}', {
           params: {
             path: { element_id: elementId },
-            query: { project_slug: projectSlug, scheme: currentScheme },
+            query: { project_slug: projectSlug, scheme: currentScheme, dataset: dataset },
           },
         });
         if (!res.error) return res.data;
@@ -471,7 +471,11 @@ export function useGetElementById(projectSlug: string | null, currentScheme: str
 /**
  * add an annotation
  */
-export function useAddAnnotation(projectSlug: string | null, scheme: string | null, mode: string) {
+export function useAddAnnotation(
+  projectSlug: string | null,
+  scheme: string | null,
+  dataset: string,
+) {
   const addAnnotation = useCallback(
     async (element_id: string, label: string) => {
       // do the new projects POST call
@@ -486,7 +490,7 @@ export function useAddAnnotation(projectSlug: string | null, scheme: string | nu
             element_id: element_id,
             label: label,
             scheme: scheme,
-            mode: mode,
+            dataset: dataset,
           },
         });
         //if (!res.error) notify({ type: 'success', message: 'Annotation added' });
@@ -495,7 +499,7 @@ export function useAddAnnotation(projectSlug: string | null, scheme: string | nu
       }
       return false;
     },
-    [projectSlug, scheme],
+    [projectSlug, scheme, dataset],
   );
 
   return { addAnnotation };
@@ -507,7 +511,7 @@ export function useAddAnnotation(projectSlug: string | null, scheme: string | nu
 export function useAddTableAnnotations(
   projectSlug: string | null,
   scheme: string | null,
-  set: string | null,
+  dataset: string | null,
 ) {
   const { notify } = useNotifications();
 
@@ -520,7 +524,7 @@ export function useAddTableAnnotations(
           },
           body: {
             annotations: table,
-            set: set ? set : 'train',
+            dataset: dataset ? dataset : 'train',
           },
         });
         if (!res.error) notify({ type: 'success', message: 'Annotations added' });
@@ -529,7 +533,7 @@ export function useAddTableAnnotations(
       }
       return false;
     },
-    [projectSlug, scheme, notify],
+    [projectSlug, scheme, notify, dataset],
   );
 
   return { addTableAnnotations };
@@ -1067,7 +1071,7 @@ export function useTableElements(
   initialPageSize?: number | null,
   search?: string | null,
   sample?: string,
-  set?: string,
+  dataset?: string,
 ) {
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     pageIndex: initialPage || 1,
@@ -1086,7 +1090,7 @@ export function useTableElements(
             max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
             contains: search,
             mode: sample ? sample : 'all',
-            set: set ? set : 'train',
+            dataset: dataset ? dataset : 'train',
           },
         },
       });

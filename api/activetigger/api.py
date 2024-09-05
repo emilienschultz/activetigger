@@ -790,18 +790,20 @@ async def get_list_elements(
     max: int = 0,
     contains: str | None = None,
     mode: str = "all",
-    set: str = "train",
+    dataset: str = "train",
 ) -> TableOutModel:
     """
     Get table of elements
     """
-    df = project.schemes.get_table(scheme, min, max, mode, contains, set).fillna("NA")
+    df = project.schemes.get_table(scheme, min, max, mode, contains, dataset).fillna(
+        "NA"
+    )
     if "error" in df:
         raise HTTPException(status_code=500, detail=df["error"])
     table = (df[["index", "timestamp", "labels", "text"]]).to_dict(orient="records")
     return TableOutModel(
         items=table,
-        total=project.schemes.get_total(set),
+        total=project.schemes.get_total(dataset),
     )
 
 
@@ -916,11 +918,14 @@ async def get_element(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     element_id: str,
     scheme: str,
+    dataset: str,
 ) -> ElementOutModel:
     """
     Get specific element
     """
-    r = project.get_element(element_id, scheme=scheme, user=current_user.username)
+    r = project.get_element(
+        element_id, scheme=scheme, user=current_user.username, dataset=dataset
+    )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return ElementOutModel(**r)
@@ -945,7 +950,7 @@ async def post_tag(
             annotation.label,
             annotation.scheme,
             current_user.username,
-            annotation.mode,
+            annotation.dataset,
         )
 
         if "error" in r:
@@ -953,7 +958,7 @@ async def post_tag(
 
         server.log_action(
             current_user.username,
-            f"push annotation {annotation.element_id} with the method {annotation.mode}",
+            f"push annotation {annotation.element_id} with the method {annotation.dataset}",
             project.name,
         )
         return None
