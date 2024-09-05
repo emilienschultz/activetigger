@@ -167,7 +167,6 @@ export const ProjectionManagement: FC = () => {
 
   // element to display
   const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
-  console.log(selectedElement);
 
   // TODO : add to configuration context
 

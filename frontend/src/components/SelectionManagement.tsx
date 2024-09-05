@@ -33,7 +33,9 @@ export const SelectionManagement: FC = () => {
       : null;
   }, [project, currentScheme, authenticatedUser]);
 
-  return (
+  return selectionConfig.mode == 'test' ? (
+    <div>Test mode activated - deactivate first before annotating train set</div>
+  ) : (
     <div>
       <div className="explanations">
         Current model : {currentModel ? currentModel['model'] : 'No model trained'}

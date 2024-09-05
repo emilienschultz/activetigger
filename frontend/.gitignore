@@ -23,5 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-api/activetigger/__pycache__/*
-api/tests/__pycache__/*
+api/activetigger/__pycache__/
+api/tests/__pycache__/

@@ -1341,16 +1341,20 @@ export interface components {
          * @description Project description
          */
         ProjectDescriptionModel: {
-            /** Trainset N */
-            trainset_n: number;
-            /** Annotated N */
-            annotated_n: number;
             /** Users */
             users: string[];
-            /** Annotated Distribution */
-            annotated_distribution: Record<string, never>;
-            /** Testset N */
-            testset_n?: number | null;
+            /** Train Set N */
+            train_set_n: number;
+            /** Train Annotated N */
+            train_annotated_n: number;
+            /** Train Annotated Distribution */
+            train_annotated_distribution: Record<string, never>;
+            /** Test Set N */
+            test_set_n?: number | null;
+            /** Test Annotated N */
+            test_annotated_n: number;
+            /** Test Annotated Distribution */
+            test_annotated_distribution: Record<string, never>;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };

@@ -471,7 +471,7 @@ export function useGetElementById(projectSlug: string | null, currentScheme: str
 /**
  * add an annotation
  */
-export function useAddAnnotation(projectSlug: string | null, scheme: string | null) {
+export function useAddAnnotation(projectSlug: string | null, scheme: string | null, mode: string) {
   const addAnnotation = useCallback(
     async (element_id: string, label: string) => {
       // do the new projects POST call
@@ -486,6 +486,7 @@ export function useAddAnnotation(projectSlug: string | null, scheme: string | nu
             element_id: element_id,
             label: label,
             scheme: scheme,
+            mode: mode,
           },
         });
         //if (!res.error) notify({ type: 'success', message: 'Annotation added' });
@@ -503,7 +504,11 @@ export function useAddAnnotation(projectSlug: string | null, scheme: string | nu
 /**
  * add a table of annotations
  */
-export function useAddTableAnnotations(projectSlug: string | null, scheme: string | null) {
+export function useAddTableAnnotations(
+  projectSlug: string | null,
+  scheme: string | null,
+  set: string | null,
+) {
   const { notify } = useNotifications();
 
   const addTableAnnotations = useCallback(
@@ -515,6 +520,7 @@ export function useAddTableAnnotations(projectSlug: string | null, scheme: strin
           },
           body: {
             annotations: table,
+            set: set ? set : 'train',
           },
         });
         if (!res.error) notify({ type: 'success', message: 'Annotations added' });
@@ -1061,6 +1067,7 @@ export function useTableElements(
   initialPageSize?: number | null,
   search?: string | null,
   sample?: string,
+  set?: string,
 ) {
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     pageIndex: initialPage || 1,
@@ -1079,6 +1086,7 @@ export function useTableElements(
             max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
             contains: search,
             mode: sample ? sample : 'all',
+            set: set ? set : 'train',
           },
         },
       });

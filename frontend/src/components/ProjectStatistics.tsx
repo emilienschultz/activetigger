@@ -25,20 +25,21 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                   <td></td>
                 </tr>
                 <tr>
-                  <td>Total</td>
-                  <td>{statistics['trainset_n']}</td>
-                </tr>
-                <tr>
-                  <td>Annotated</td>
-                  <td>{statistics['annotated_n']}</td>
-                </tr>
-                <tr>
                   <td>Users involved</td>
                   <td>{statistics['users']}</td>
                 </tr>
                 <tr>
+                  <td>Total</td>
+                  <td>{statistics['train_set_n']}</td>
+                </tr>
+                <tr>
+                  <td>Annotated</td>
+                  <td>{statistics['train_annotated_n']}</td>
+                </tr>
+
+                <tr>
                   <td>Distribution</td>
-                  <td>{JSON.stringify(statistics['annotated_distribution'])}</td>
+                  <td>{JSON.stringify(statistics['train_annotated_distribution'])}</td>
                 </tr>
                 <tr className="table-delimiter">
                   <td>Testset</td>
@@ -46,7 +47,15 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                 </tr>
                 <tr>
                   <td>Total</td>
-                  <td>{statistics['testset_n']}</td>
+                  <td>{statistics['test_set_n']}</td>
+                </tr>
+                <tr>
+                  <td>Annotated</td>
+                  <td>{statistics['test_annotated_n']}</td>
+                </tr>
+                <tr>
+                  <td>Distribution</td>
+                  <td>{JSON.stringify(statistics['test_annotated_distribution'])}</td>
                 </tr>
               </tbody>
             </table>

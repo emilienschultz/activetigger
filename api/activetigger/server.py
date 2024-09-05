@@ -916,6 +916,7 @@ class Project(Server):
                 "predict": {"label": None, "proba": None},
                 "frame": [],
                 "limit": 1200,
+                "history": [],
             }
             print(element)
             return element
@@ -1096,15 +1097,21 @@ class Project(Server):
             return {"error": "Scheme not defined"}
 
         # part train
-        r = {"trainset_n": len(self.content)}
-        df = self.schemes.get_scheme_data(scheme, kind=["add", "predict"])
-        r["annotated_n"] = len(df)
+        r = {"train_set_n": len(self.schemes.content)}
         r["users"] = [i[0] for i in self.schemes.get_distinct_users(scheme)]
-        r["annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+        df = self.schemes.get_scheme_data(scheme, kind=["add", "predict"])
+        r["train_annotated_n"] = len(df)
+        r["train_annotated_distribution"] = json.loads(
+            df["labels"].value_counts().to_json()
+        )
 
         # part test
         df = self.schemes.get_scheme_data(scheme, kind=["test"])
-        r["testset_n"] = len(df)
+        r["test_set_n"] = len(self.schemes.test)
+        r["test_annotated_n"] = len(df)
+        r["test_annotated_distribution"] = json.loads(
+            df["labels"].value_counts().to_json()
+        )
 
         if self.simplemodels.exists(user, scheme):
             sm = self.simplemodels.get_model(user, scheme)  # get model
@@ -1553,6 +1560,7 @@ class Schemes:
             ORDER BY time DESC;
         """
         cursor.execute(query, (scheme, self.project_slug) + tuple(kind))
+
         results = cursor.fetchall()
         conn.close()
         df = pd.DataFrame(
@@ -1560,9 +1568,10 @@ class Schemes:
         ).set_index("id")
         df.index = [str(i) for i in df.index]
         if complete:  # all the elements
-            if kind == "test":
+            if "test" in kind:
                 # case if the test, join the text data
-                return self.test[["text"]].join(df)
+                t = self.test[["text"]].join(df)
+                return t
             else:
                 return self.content.join(df)
         return df
@@ -1628,10 +1637,12 @@ class Schemes:
             self.push_tag(i, new_label, scheme, username, "add")
         return {"success": "All tags recoded"}
 
-    def get_total(self):
+    def get_total(self, set="train"):
         """
         Number of element in the dataset
         """
+        if set == "test":
+            return len(self.test)
         return len(self.content)
 
     def get_table(
@@ -1641,21 +1652,45 @@ class Schemes:
         max: int,
         mode: str,
         contains: str | None = None,
+        set: str = "train",
         user: str = "all",
     ) -> DataFrame:
         """
         Get data table
-        - either recent
-        - or subsample of data with contains
+        scheme : the annotations
+        min, max: the range
+        mode: sample
+        contains: search
+        user: select by user
+        set: train or test
 
         Choice to order by index.
         """
+        # check for errors
         if not mode in ["tagged", "untagged", "all", "recent"]:
             mode = "all"
         if not scheme in self.available():
             return {"error": "scheme not available"}
 
-        # data of the scheme
+        # case of the test set, no fancy stuff
+        if set == "test":
+            print("test mode")
+            df = self.get_scheme_data(scheme, complete=True, kind="test")
+            print("df", df.shape)
+
+            # normalize size
+            if max == 0:
+                max = len(df)
+            if max > len(df):
+                max = len(df)
+
+            if min > len(df):
+                return {"error": "min value too high"}
+
+            return df.sort_index().iloc[min:max].reset_index()
+
+        print("probleme")
+
         df = self.get_scheme_data(scheme, complete=True)
 
         # case of recent annotations (no filter possible)
@@ -1664,7 +1699,6 @@ class Schemes:
             return df.loc[list_ids]
 
         # filter for contains
-
         if contains:
             f_contains = df["text"].str.contains(contains)
             df = df[f_contains]
@@ -1846,12 +1880,16 @@ class Schemes:
         tag: str | None,
         scheme: str,
         user: str = "server",
-        action: str = "add",
+        mode: str = "train",
     ):
         """
         Record a tag in the database
-        action : add, test, predict
+        mode : train, predict, test
         """
+
+        # TO FIX IN THE FUTURE
+        if mode == "train":
+            mode = "add"
 
         # test if the action is possible
         a = self.available()
@@ -1870,13 +1908,10 @@ class Schemes:
             INSERT INTO annotations (action, user, project, element_id, scheme, tag)
             VALUES (?,?,?,?,?,?);
         """
-        print("push tag")
-        print((action, user, self.project_slug, element_id, scheme, tag))
-        cursor.execute(
-            query, (action, user, self.project_slug, element_id, scheme, tag)
-        )
+        cursor.execute(query, (mode, user, self.project_slug, element_id, scheme, tag))
         conn.commit()
         conn.close()
+        print(("push tag", mode, user, self.project_slug, element_id, scheme, tag))
         return {"success": "tag added"}
 
     def push_table(self, table, user: str, action: str = "add") -> bool:

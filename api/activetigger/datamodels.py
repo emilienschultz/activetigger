@@ -130,6 +130,7 @@ class AnnotationModel(BaseModel):
     scheme: str
     element_id: str
     label: str
+    mode: Optional[str] = "train"
 
 
 class TableAnnotationsModel(BaseModel):
@@ -138,6 +139,7 @@ class TableAnnotationsModel(BaseModel):
     """
 
     annotations: List[AnnotationModel]
+    set: Optional[str] = "train"
 
 
 class SchemeModel(BaseModel):
@@ -409,11 +411,13 @@ class ProjectDescriptionModel(BaseModel):
     Project description
     """
 
-    trainset_n: int
-    annotated_n: int
     users: List[str]
-    annotated_distribution: Dict[str, Any]
-    testset_n: Optional[int] = None
+    train_set_n: int
+    train_annotated_n: int
+    train_annotated_distribution: Dict[str, Any]
+    test_set_n: Optional[int] = None
+    test_annotated_n: Optional[int] = None
+    test_annotated_distribution: Optional[Dict[str, Any]] = None
     sm_10cv: Optional[Any] = None
 
 

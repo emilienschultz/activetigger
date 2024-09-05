@@ -24,17 +24,17 @@ interface Row {
 export const ProjectExplorationPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project },
+    appContext: { currentScheme, currentProject: project, selectionConfig },
   } = useAppContext();
 
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+
+  // selection elements
   const [page, setPage] = useState<number | null>(0);
   const [search, setSearch] = useState<string | null>(null);
   const [sample, setSample] = useState<string>('all');
   const [pageSize, setPageSize] = useState(20);
-
-  console.log(sample);
 
   // data modification management
   const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
@@ -44,7 +44,15 @@ export const ProjectExplorationPage: FC = () => {
     table,
     getPage,
     total: totalElement,
-  } = useTableElements(projectName, currentScheme, page, pageSize, search, sample);
+  } = useTableElements(
+    projectName,
+    currentScheme,
+    page,
+    pageSize,
+    search,
+    sample,
+    selectionConfig.mode,
+  );
 
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -126,6 +134,7 @@ export const ProjectExplorationPage: FC = () => {
         }}
         autoFocus
       >
+        <option></option>
         {availableLabels.map((l) => (
           <option key={l} value={l}>
             {l}
@@ -139,6 +148,7 @@ export const ProjectExplorationPage: FC = () => {
   const { addTableAnnotations } = useAddTableAnnotations(
     projectName || null,
     currentScheme || null,
+    selectionConfig.mode,
   );
   function validateChanges() {
     addTableAnnotations(Object.values(modifiedRows)); // send the modifications
@@ -156,6 +166,11 @@ export const ProjectExplorationPage: FC = () => {
     <ProjectPageLayout projectName={projectName} currentAction="explorate">
       <div className="container-fluid">
         <div className="row mt-3">
+          {selectionConfig.mode == 'test' && (
+            <div className="alert alert-warning">
+              Test mode activated - you are annotating test set
+            </div>
+          )}
           <div className="col-12">
             {currentScheme && table && (
               <div>

@@ -50,7 +50,11 @@ export const ProjectAnnotationPage: FC = () => {
   const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
 
   // hooks to manage annotation
-  const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null);
+  const { addAnnotation } = useAddAnnotation(
+    projectName || null,
+    currentScheme || null,
+    selectionConfig.mode == 'test' ? 'test' : 'train',
+  );
 
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];
@@ -160,6 +164,11 @@ export const ProjectAnnotationPage: FC = () => {
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
         <div className="row mb-3 mt-3">
+          {selectionConfig.mode == 'test' && (
+            <div className="alert alert-warning">
+              Test mode activated - you are annotating test set
+            </div>
+          )}
           <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
             <Tab eventKey="scheme" title="Current scheme">
               <div className="row">
@@ -169,7 +178,7 @@ export const ProjectAnnotationPage: FC = () => {
                 <div className="col-6">
                   {statistics ? (
                     <span className="badge text-bg-light  mt-2">
-                      Count : {`${statistics['annotated_n']} / ${statistics['trainset_n']}`}
+                      Count : {`${statistics['train_annotated_n']} / ${statistics['train_set_n']}`}
                     </span>
                   ) : (
                     ''

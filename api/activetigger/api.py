@@ -493,6 +493,7 @@ async def get_project_statistics(
     r = project.get_description(scheme=scheme, user=current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    print(r)
     return ProjectDescriptionModel(**r)
 
 
@@ -789,36 +790,19 @@ async def get_list_elements(
     max: int = 0,
     contains: str | None = None,
     mode: str = "all",
+    set: str = "train",
 ) -> TableOutModel:
     """
     Get table of elements
     """
-    df = project.schemes.get_table(scheme, min, max, mode, contains).fillna("NA")
+    df = project.schemes.get_table(scheme, min, max, mode, contains, set).fillna("NA")
     if "error" in df:
         raise HTTPException(status_code=500, detail=df["error"])
     table = (df[["index", "timestamp", "labels", "text"]]).to_dict(orient="records")
     return TableOutModel(
         items=table,
-        total=project.schemes.get_total(),
+        total=project.schemes.get_total(set),
     )
-
-
-# @app.post("/annotation/table", dependencies=[Depends(verified_user)])
-# async def post_list_elements(
-#     project: Annotated[Project, Depends(get_project)],
-#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-#     table: TableInModel,
-# ) -> None:
-#     """
-#     Post a table of annotations
-#     """
-#     r = project.schemes.push_table(
-#         table=table, user=current_user.username, action=table.action
-#     )
-#     server.log_action(current_user.username, "update data table", project.name)
-#     if "error" in r:
-#         raise HTTPException(status_code=500, detail=r["error"])
-#     return None
 
 
 @app.post("/annotation/table", dependencies=[Depends(verified_user)])
@@ -842,7 +826,7 @@ async def post_list_elements(
             annotation.label,
             annotation.scheme,
             current_user.username,
-            "add",
+            table.set,
         )
         if "error" in r:
             errors.append(annotation)
@@ -956,21 +940,20 @@ async def post_tag(
     - No information kept of selection process
     """
     if action in ["add", "update"]:
-        if annotation.label is None:
-            raise HTTPException(status_code=422, detail="Missing a tag")
         r = project.schemes.push_tag(
             annotation.element_id,
             annotation.label,
             annotation.scheme,
             current_user.username,
-            "add",
+            annotation.mode,
         )
+
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
         server.log_action(
             current_user.username,
-            f"push annotation {annotation.element_id}",
+            f"push annotation {annotation.element_id} with the method {annotation.mode}",
             project.name,
         )
         return None
@@ -1460,21 +1443,6 @@ async def export_prediction(
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return FileResponse(r["path"], filename=r["name"])
-
-
-# @app.get("/export/bert", dependencies=[Depends(verified_user)])
-# async def export_bert(
-#     project: Annotated[Project, Depends(get_project)],
-#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-#     name: str = Query(),
-# ) -> FileResponse:
-#     """
-#     Export fine-tuned BERT model
-#     """
-#     r = project.bertmodels.export_bert(name=name)
-#     if "error" in r:
-#         raise HTTPException(status_code=500, detail=r["error"])
-#     return FileResponse(r["path"], filename=r["name"])
 
 
 @app.get("/export/bert", dependencies=[Depends(verified_user)])
