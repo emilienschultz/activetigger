@@ -190,25 +190,25 @@ class Server:
     n_workers = 2
     starting_time = None
 
-    def __init__(self) -> None:
+    def __init__(self, path=".", path_models="./models") -> None:
         """
         Start the server
         """
         self.time_start: datetime = datetime.now()
-
-        # YAML configuration file
-        with open("config.yaml") as f:
-            config = yaml.safe_load(f)
-        self.path = Path(config["path"])
         self.SECRET_KEY = secrets.token_hex(32)
 
-        if config["path_models"] is not None:
-            self.path_models = Path(config["path_models"])
-        else:
-            self.path_models = Path("./models")
+        # Define path
+        self.path = Path(path)
+        self.path_models = Path(path_models)
 
-        if not self.path_models.exists():
-            os.makedirs(self.path_models)
+        # if a YAML configuration file exists, overwrite
+        if Path("config.yaml").exists():
+            with open("config.yaml") as f:
+                config = yaml.safe_load(f)
+            if "path" in config:
+                self.path = Path(config["path"])
+            if "path_models" in config:
+                self.path_models = Path(config["path_models"])
 
         # create the database & root password
         self.db = self.path / self.db_name
@@ -218,6 +218,10 @@ class Server:
         # create the static repertory
         if not (self.path / "static").exists():
             os.mkdir((self.path / "static"))
+
+        # create the models repertory
+        if not self.path_models.exists():
+            os.makedirs(self.path_models)
 
         # activity of the server
         self.projects: dict = {}
@@ -346,11 +350,9 @@ class Server:
         insert_query = (
             "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
         )
-        print((self.default_user, hash_pwd, "root", "system"))
         cursor.execute(insert_query, (self.default_user, hash_pwd, "root", "system"))
         conn.commit()
         conn.close()
-
         logger.error("Create database")
 
     def log_action(
