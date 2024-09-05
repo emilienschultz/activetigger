@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+api/activetigger/__pycache__/*
+api/tests/__pycache__/*
