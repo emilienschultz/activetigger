@@ -48,12 +48,16 @@ def get_root_pwd() -> str:
     print("║  twice to confirm.              ║")
     print("╚═════════════════════════════════╝")
     while True:
-        root_password = getpass.getpass("Enter a root password : ")
+
+        func = input
+        if os.getenv("TESTING"):
+            func = input
+
+        root_password = func("Enter a root password : ")
         if len(root_password) < 6:
             print("The password need to have 6 character at minimum")
             continue
-
-        confirm_password = getpass.getpass("Re-enter the root password: ")
+        confirm_password = func("Re-enter the root password: ")
 
         if root_password != confirm_password:
             print("Error: The passwords do not match. Please try again.")
