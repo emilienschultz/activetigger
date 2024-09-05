@@ -82,6 +82,7 @@ export const ProjectAnnotationPage: FC = () => {
     if (elementId === undefined) {
       getNextElementId(selectionConfig).then((nextElementId) => {
         if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+        else navigate(`/projects/${projectName}/annotate/noelement`);
       });
     } else {
       //fetch element information (text and labels)
