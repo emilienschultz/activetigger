@@ -25,7 +25,7 @@ export const ProjectTestPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
       <div className="container-fluid">
-        <div className="alert alert-danger m-5">This page is on construction</div>
+        <div className="alert alert-danger m-5">This page is under construction</div>
         <span className="explanations">
           Switch to the test mode to annotate the testset for the selected scheme
         </span>
@@ -38,16 +38,17 @@ export const ProjectTestPage: FC = () => {
               <div className="col-6">
                 <SelectCurrentScheme />
               </div>
-              <div className="col-6">X/N of the test dataset annotated</div>
+              <div className="col-6">
+                {statistics && (
+                  <span className="badge text-bg-light  m-3">
+                    Number of annotations :{' '}
+                    {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
+                  </span>
+                )}
+              </div>
             </div>
             <Tabs id="panel" className="mb-3" defaultActiveKey="annotation">
               <Tab eventKey="annotation" title="1. Annotate">
-                {statistics && (
-                  <span className="badge text-bg-light  m-3">
-                    Count : {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
-                  </span>
-                )}
-
                 <div className="form-check form-switch">
                   <input
                     className="form-check-input"
