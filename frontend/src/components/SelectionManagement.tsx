@@ -1,4 +1,5 @@
-import { ChangeEvent, FC, useMemo } from 'react';
+import { useDebounce } from '@uidotdev/usehooks';
+import { ChangeEvent, FC, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 
@@ -32,6 +33,17 @@ export const SelectionManagement: FC = () => {
       ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
       : null;
   }, [project, currentScheme, authenticatedUser]);
+
+  // manage regex input with a debounce
+  const [filter, setFilter] = useState<string | null>(null);
+  const debouncedFilter = useDebounce(filter, 1000);
+  useEffect(() => {
+    if (debouncedFilter && debouncedFilter != selectionConfig.filter)
+      setAppContext((prev) => ({
+        ...prev,
+        selectionConfig: { ...selectionConfig, filter: debouncedFilter },
+      }));
+  }, [debouncedFilter, selectionConfig, setAppContext]);
 
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
@@ -101,12 +113,9 @@ export const SelectionManagement: FC = () => {
           id="select_regex"
           placeholder="Enter a regex / CONTEXT= for context"
           onChange={(e) => {
-            setAppContext((prev) => ({
-              ...prev,
-              selectionConfig: { ...selectionConfig, filter: e.target.value },
-            }));
+            setFilter(e.target.value);
           }}
-          value={selectionConfig.filter}
+          value={filter || ''}
         />
       </div>
       <label style={{ display: 'block', marginBottom: '10px' }}>

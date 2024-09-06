@@ -24,6 +24,7 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
  * Annotation page
  */
 export const ProjectAnnotationPage: FC = () => {
+  // parameters
   const { projectName, elementId } = useParams();
   const { authenticatedUser } = useAuth();
   const {
@@ -87,7 +88,6 @@ export const ProjectAnnotationPage: FC = () => {
       });
     } else {
       //fetch element information (text and labels)
-      // renamed test mode in a separate in context
       getElementById(elementId, phase).then(setElement);
       reFetchStatistics();
     }
@@ -96,13 +96,18 @@ export const ProjectAnnotationPage: FC = () => {
     getNextElementId,
     getElementById,
     navigate,
-    // remove selectionConfig
     phase,
     projectName,
     reFetchStatistics,
   ]);
 
   // hook to fetch a next element when selectionConfig changes
+  useEffect(() => {
+    getNextElementId().then((nextElementId) => {
+      if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+      else navigate(`/projects/${projectName}/annotate/noelement`);
+    });
+  }, [selectionConfig, elementId, getNextElementId, projectName, navigate]);
 
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
