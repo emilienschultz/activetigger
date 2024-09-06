@@ -10,6 +10,7 @@ export function useNotifications() {
   const notify = useCallback(
     (notif: NotificationData) => {
       const id = ++INCREMENTAL_ID;
+      const now = new Date();
       setAppContext(
         // in a setter we can use a state modification method
         (state) =>
@@ -17,7 +18,12 @@ export function useNotifications() {
           ({
             ...state, // here we want to keep the current state object untouched so we spread it
             // but we update the notifications key with it's new value
-            notifications: [{ id, createdAt: new Date(), ...notif }, ...state.notifications],
+            notifications: [
+              { id, createdAt: now, ...notif },
+              ...state.notifications.filter((e) => {
+                (Number(now) - Number(e.createdAt)) / 1000 <= 30;
+              }),
+            ],
           }),
       );
     },
