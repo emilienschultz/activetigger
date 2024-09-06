@@ -38,12 +38,14 @@ export const SelectionManagement: FC = () => {
   const [filter, setFilter] = useState<string | null>(null);
   const debouncedFilter = useDebounce(filter, 1000);
   useEffect(() => {
-    if (debouncedFilter && debouncedFilter != selectionConfig.filter)
+    if (debouncedFilter != selectionConfig.filter)
       setAppContext((prev) => ({
         ...prev,
-        selectionConfig: { ...selectionConfig, filter: debouncedFilter },
+        selectionConfig: { ...selectionConfig, filter: debouncedFilter || '' },
       }));
   }, [debouncedFilter, selectionConfig, setAppContext]);
+
+  console.log(selectionConfig);
 
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
