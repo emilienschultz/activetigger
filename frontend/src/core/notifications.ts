@@ -21,7 +21,7 @@ export function useNotifications() {
             notifications: [
               { id, createdAt: now, ...notif },
               ...state.notifications.filter((e) => {
-                (Number(now) - Number(e.createdAt)) / 1000 <= 30;
+                return (Number(now) - Number(e.createdAt)) / 1000 <= 20;
               }),
             ],
           }),
