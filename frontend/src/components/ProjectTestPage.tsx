@@ -5,6 +5,7 @@ import Tabs from 'react-bootstrap/Tabs';
 import { useParams } from 'react-router-dom';
 import { useStatistics } from '../core/api';
 import { useAppContext } from '../core/context';
+import { TestSetCreationForm } from './forms/TestSetCreationForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { SelectCurrentScheme } from './SchemesManagement';
 
@@ -73,6 +74,13 @@ export const ProjectTestPage: FC = () => {
               </Tab>
               <Tab eventKey="compute" title="2. Compute"></Tab>
             </Tabs>
+          </div>
+        )}
+        {!currentProject?.params.test && (
+          <div className="row">
+            <div className="col-12">
+              <TestSetCreationForm />
+            </div>
           </div>
         )}
       </div>

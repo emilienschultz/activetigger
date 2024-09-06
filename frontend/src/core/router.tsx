@@ -1,7 +1,7 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
-import { HelpPage } from '../components/HelpPage';
+import { DocPage } from '../components/DocPage';
 import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { NotFound } from '../components/NotFoundPage';
@@ -35,7 +35,7 @@ export function getRouter() {
     },
     {
       path: '/help',
-      element: <HelpPage />,
+      element: <DocPage />,
     },
     {
       path: '/users',
