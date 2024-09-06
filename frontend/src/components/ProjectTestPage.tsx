@@ -17,7 +17,7 @@ import { SelectCurrentScheme } from './SchemesManagement';
 export const ProjectTestPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { selectionConfig, currentScheme, currentProject },
+    appContext: { phase, currentScheme, currentProject },
     setAppContext,
   } = useAppContext();
 
@@ -59,13 +59,10 @@ export const ProjectTestPage: FC = () => {
                     onChange={(e) => {
                       setAppContext((prev) => ({
                         ...prev,
-                        selectionConfig: {
-                          ...selectionConfig,
-                          mode: e.target.checked ? 'test' : 'random',
-                        },
+                        phase: e.target.checked ? 'test' : 'train',
                       }));
                     }}
-                    checked={selectionConfig.mode == 'test' ? true : false}
+                    checked={phase == 'test' ? true : false}
                   />
                   <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
                     Activate test mode

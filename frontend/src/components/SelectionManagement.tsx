@@ -6,7 +6,7 @@ import { useAppContext } from '../core/context';
 export const SelectionManagement: FC = () => {
   const { authenticatedUser } = useAuth();
   const {
-    appContext: { currentScheme, selectionConfig, currentProject: project },
+    appContext: { currentScheme, selectionConfig, currentProject: project, phase },
     setAppContext,
   } = useAppContext();
 
@@ -33,7 +33,7 @@ export const SelectionManagement: FC = () => {
       : null;
   }, [project, currentScheme, authenticatedUser]);
 
-  return selectionConfig.mode == 'test' ? (
+  return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
   ) : (
     <div>

@@ -12,6 +12,7 @@ export type AppContextValue = {
   freqRefreshSimpleModel: number; // freq to refresh active learning model
   history: string[]; // element annotated
   reFetchCurrentProject?: () => void; // update the state of the project
+  phase: string;
 };
 
 const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
@@ -31,6 +32,7 @@ export const defaultContext: AppContextValue = storedContext
       },
       history: [],
       freqRefreshSimpleModel: 10,
+      phase: 'train',
     };
 
 export type AppContextType = {

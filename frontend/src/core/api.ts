@@ -10,7 +10,6 @@ import {
   ProjectDataModel,
   ProjectStateModel,
   ProjectionInStrictModel,
-  SelectionConfig,
   SimpleModelModel,
   newBertModel,
 } from '../types';
@@ -411,42 +410,44 @@ export function useDeleteFeature(projectSlug: string | null) {
 export function useGetNextElementId(
   projectSlug: string | null,
   currentScheme: string | null,
+  selectionConfig: {
+    mode: string;
+    sample: string;
+    label?: string;
+    filter?: string;
+    frameSelection?: boolean;
+    frame?: number[];
+  },
   history: string[],
+  phase: string,
 ) {
   const { notify } = useNotifications();
-  const getNextElementId = useCallback(
-    async (selectionConfig: SelectionConfig) => {
-      if (projectSlug && currentScheme) {
-        const res = await api.POST('/elements/next', {
-          params: { query: { project_slug: projectSlug } },
-          body: {
-            scheme: currentScheme,
-            selection: selectionConfig.mode,
-            sample: selectionConfig.sample,
-            tag: selectionConfig.label,
-            filter: selectionConfig.filter,
-            history: history,
-            frame: selectionConfig.frameSelection ? selectionConfig.frame : [], // only if frame option selected
-          },
-        });
-        return res.data?.element_id;
-      } else {
-        notify({ type: 'error', message: 'Select a project/scheme to get elements' });
-        return null;
-      }
-    },
-    [projectSlug, currentScheme, notify, history],
-  );
+  const getNextElementId = useCallback(async () => {
+    if (projectSlug && currentScheme) {
+      const res = await api.POST('/elements/next', {
+        params: { query: { project_slug: projectSlug } },
+        body: {
+          scheme: currentScheme,
+          selection: phase == 'test' ? 'test' : selectionConfig.mode,
+          sample: selectionConfig.sample,
+          tag: selectionConfig.label,
+          filter: selectionConfig.filter,
+          history: history,
+          frame: selectionConfig.frameSelection ? selectionConfig.frame : [], // only if frame option selected
+        },
+      });
+      return res.data?.element_id;
+    } else {
+      notify({ type: 'error', message: 'Select a project/scheme to get elements' });
+      return null;
+    }
+  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase]);
 
   return { getNextElementId };
 }
 
 /**
  * Get element content by specific id
- * @param projectSlug
- * @param currentScheme
- * @param elementId
- * @returns
  */
 export function useGetElementById(projectSlug: string | null, currentScheme: string | null) {
   const getElementById = useCallback(

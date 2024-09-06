@@ -24,7 +24,7 @@ interface Row {
 export const ProjectExplorationPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, selectionConfig },
+    appContext: { currentScheme, currentProject: project, selectionConfig, phase },
   } = useAppContext();
 
   const availableLabels =
@@ -166,7 +166,7 @@ export const ProjectExplorationPage: FC = () => {
     <ProjectPageLayout projectName={projectName} currentAction="explorate">
       <div className="container-fluid">
         <div className="row mt-3">
-          {selectionConfig.mode == 'test' && (
+          {phase == 'test' && (
             <div className="alert alert-warning">
               Test mode activated - you are annotating test set
             </div>

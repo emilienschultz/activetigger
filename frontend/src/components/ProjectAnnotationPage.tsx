@@ -34,6 +34,7 @@ export const ProjectAnnotationPage: FC = () => {
       selectionConfig,
       freqRefreshSimpleModel,
       history,
+      phase,
     },
     setAppContext,
   } = useAppContext();
@@ -45,16 +46,14 @@ export const ProjectAnnotationPage: FC = () => {
   const { getNextElementId } = useGetNextElementId(
     projectName || null,
     currentScheme || null,
+    selectionConfig,
     history,
+    phase,
   );
   const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
 
   // hooks to manage annotation
-  const { addAnnotation } = useAddAnnotation(
-    projectName || null,
-    currentScheme || null,
-    selectionConfig.mode == 'test' ? 'test' : 'train',
-  );
+  const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);
 
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];
@@ -82,14 +81,14 @@ export const ProjectAnnotationPage: FC = () => {
   useEffect(() => {
     if (elementId === undefined) {
       // add fetch current selectionConfig in the hook code
-      getNextElementId(selectionConfig).then((nextElementId) => {
+      getNextElementId().then((nextElementId) => {
         if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
         else navigate(`/projects/${projectName}/annotate/noelement`);
       });
     } else {
       //fetch element information (text and labels)
       // renamed test mode in a separate in context
-      getElementById(elementId, selectionConfig.mode == 'test' ? 'test' : 'train').then(setElement);
+      getElementById(elementId, phase).then(setElement);
       reFetchStatistics();
     }
   }, [
@@ -98,7 +97,7 @@ export const ProjectAnnotationPage: FC = () => {
     getElementById,
     navigate,
     // remove selectionConfig
-    selectionConfig,
+    phase,
     projectName,
     reFetchStatistics,
   ]);
@@ -171,12 +170,12 @@ export const ProjectAnnotationPage: FC = () => {
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
         <div className="row mb-3 mt-3">
-          {selectionConfig.mode == 'test' && (
+          {phase == 'test' && (
             <div className="alert alert-warning">
               Test mode activated - you are annotating test set
             </div>
           )}
-          {selectionConfig.mode != 'test' && (
+          {phase != 'test' && (
             <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
               <Tab eventKey="scheme" title="Current scheme">
                 <div className="row">
@@ -187,7 +186,7 @@ export const ProjectAnnotationPage: FC = () => {
                     {statistics ? (
                       <span className="badge text-bg-light  mt-2">
                         Count :{' '}
-                        {`${statistics[selectionConfig.mode == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[selectionConfig.mode == 'test' ? 'test_set_n' : 'train_set_n']}`}
+                        {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
                       </span>
                     ) : (
                       ''
@@ -304,7 +303,7 @@ export const ProjectAnnotationPage: FC = () => {
         </div>
       </div>
       <div className="mt-5">
-        {selectionConfig.mode != 'test' && (
+        {phase != 'test' && (
           <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
             <Tab eventKey="description" title="Annotations">
               <span className="explanations">

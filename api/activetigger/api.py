@@ -918,7 +918,7 @@ async def get_element(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     element_id: str,
     scheme: str,
-    dataset: str,
+    dataset: str = "train",
 ) -> ElementOutModel:
     """
     Get specific element
