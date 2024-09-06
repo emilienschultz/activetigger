@@ -78,14 +78,17 @@ export const ProjectAnnotationPage: FC = () => {
     currentScheme || null,
   );
 
+  // react to URL param change
   useEffect(() => {
     if (elementId === undefined) {
+      // add fetch current selectionConfig in the hook code
       getNextElementId(selectionConfig).then((nextElementId) => {
         if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
         else navigate(`/projects/${projectName}/annotate/noelement`);
       });
     } else {
       //fetch element information (text and labels)
+      // renamed test mode in a separate in context
       getElementById(elementId, selectionConfig.mode == 'test' ? 'test' : 'train').then(setElement);
       reFetchStatistics();
     }
@@ -94,10 +97,13 @@ export const ProjectAnnotationPage: FC = () => {
     getNextElementId,
     getElementById,
     navigate,
+    // remove selectionConfig
     selectionConfig,
     projectName,
     reFetchStatistics,
   ]);
+
+  // hook to fetch a next element when selectionConfig changes
 
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
