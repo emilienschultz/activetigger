@@ -1,9 +1,26 @@
 // project sidebar
 .project-sidebar {
   //height: calc(100vh - $navbar-brand-height - $navbar-brand-padding-y);
+  .nav {
+    .nav-item {
+      .nav-link {
+        span {
+          display: none;
+          @include media-breakpoint-up(md) {
+            display: inline;
+            // className="d-none dmd-inline"
+          }
+        }
+        @include media-breakpoint-down(md) {
+          padding: 0.5em 0;
+          text-align: center;
+        }
+      }
+    }
+  }
 }
 
-.secondary-panel{
+.secondary-panel {
   padding: 10px;
   border-left: 2px solid #000;
 }
@@ -20,11 +37,9 @@ form label,
   font-weight: bold;
   margin-bottom: 5px;
   color: #607d8b;
-
 }
 
-
-form input[type="number"],
+form input[type='number'],
 form select {
   width: 100%;
   padding: 8px;

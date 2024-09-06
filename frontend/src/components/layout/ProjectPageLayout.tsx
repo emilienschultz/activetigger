@@ -38,7 +38,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
     <PageLayout currentPage="projects" projectName={projectName || null}>
       <div className="container-fluid">
         <div className="row">
-          <div className="col-3">
+          <div className="col-1 col-md-3">
             <ProjectActionsSidebar
               projectState={project || null}
               currentProjectAction={currentAction}
@@ -46,7 +46,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
               currentUser={authenticatedUser.username}
             />
           </div>
-          <div className="col-9">{children}</div>
+          <div className="col-11 col-md-9">{children}</div>
         </div>
       </div>
     </PageLayout>
