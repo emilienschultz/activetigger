@@ -80,9 +80,12 @@ export interface SelectionConfig {
   label?: string;
   frame?: number[];
   frameSelection?: boolean; // true/false to use frame to select
+  filter?: string;
+}
+export interface DisplayConfig {
   displayPrediction?: boolean;
   displayContext?: boolean;
-  filter?: string;
+  frameSize: number;
 }
 
 export interface newBertModel {

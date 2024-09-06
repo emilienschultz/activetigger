@@ -33,6 +33,7 @@ export const ProjectAnnotationPage: FC = () => {
       reFetchCurrentProject,
       currentProject: project,
       selectionConfig,
+      displayConfig,
       freqRefreshSimpleModel,
       history,
       phase,
@@ -206,13 +207,13 @@ export const ProjectAnnotationPage: FC = () => {
                 <label style={{ display: 'block', marginBottom: '10px' }}>
                   <input
                     type="checkbox"
-                    checked={selectionConfig.displayPrediction}
+                    checked={displayConfig.displayPrediction}
                     onChange={(_) => {
                       setAppContext((prev) => ({
                         ...prev,
-                        selectionConfig: {
-                          ...selectionConfig,
-                          displayPrediction: !selectionConfig.displayPrediction,
+                        displayConfig: {
+                          ...displayConfig,
+                          displayPrediction: !displayConfig.displayPrediction,
                         },
                       }));
                     }}
@@ -223,19 +224,41 @@ export const ProjectAnnotationPage: FC = () => {
                 <label style={{ display: 'block', marginBottom: '10px' }}>
                   <input
                     type="checkbox"
-                    checked={selectionConfig.displayContext}
+                    checked={displayConfig.displayContext}
                     onChange={(_) => {
                       setAppContext((prev) => ({
                         ...prev,
-                        selectionConfig: {
-                          ...selectionConfig,
-                          displayContext: !selectionConfig.displayContext,
+                        displayConfig: {
+                          ...displayConfig,
+                          displayContext: !displayConfig.displayContext,
                         },
                       }));
                     }}
                     style={{ marginRight: '10px' }}
                   />
                   Display informations
+                </label>
+                <label style={{ display: 'block', marginBottom: '10px' }}>
+                  Text frame size
+                  <span>Min: 25%</span>
+                  <input
+                    type="range"
+                    min="25"
+                    max="100"
+                    className="form-input"
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        displayConfig: {
+                          ...displayConfig,
+                          frameSize: Number(e.target.value),
+                        },
+                      }));
+                      console.log(displayConfig.frameSize);
+                    }}
+                    style={{ marginRight: '10px' }}
+                  />
+                  <span>Max: 100%</span>
                 </label>
               </Tab>
             </Tabs>
@@ -252,7 +275,10 @@ export const ProjectAnnotationPage: FC = () => {
       }
       <div className="row">
         {element?.text && (
-          <div className="col-11 annotation-frame my-4">
+          <div
+            className="col-11 annotation-frame my-4"
+            style={{ height: `${displayConfig.frameSize}vh` }}
+          >
             <span>{element?.text.slice(0, element?.limit as number)}</span>
             <span className="text-out-context">
               {element?.text.slice(element?.limit as number)}
@@ -262,7 +288,7 @@ export const ProjectAnnotationPage: FC = () => {
 
         {
           //display proba
-          selectionConfig.displayPrediction && (
+          displayConfig.displayPrediction && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
             </div>
@@ -270,7 +296,7 @@ export const ProjectAnnotationPage: FC = () => {
         }
         {
           //display informations
-          selectionConfig.displayContext && (
+          displayConfig.displayContext && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Context : {JSON.stringify(element?.context)}
             </div>

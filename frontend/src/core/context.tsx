@@ -1,11 +1,12 @@
 import { FC, PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
 
-import { NotificationType, ProjectStateModel, SelectionConfig } from '../types';
+import { DisplayConfig, NotificationType, ProjectStateModel, SelectionConfig } from '../types';
 
 // Context content
 export type AppContextValue = {
   notifications: NotificationType[]; // manage notification
   selectionConfig: SelectionConfig; // selection for the next element
+  displayConfig: DisplayConfig; // config for the visual
   currentProject?: ProjectStateModel | null; // current project selected
   currentScheme?: string; // scheme selected to annotate
   currentProjection?: string;
@@ -23,10 +24,14 @@ export const defaultContext: AppContextValue = storedContext
   ? JSON.parse(storedContext)
   : {
       notifications: [],
+      displayConfig: {
+        displayContext: false,
+        displayPrediction: false,
+        frameSize: 50,
+      },
       selectionConfig: {
         mode: 'deterministic',
         sample: 'untagged',
-        displayPrediction: false,
         frameSelection: false,
         frame: [],
       },
