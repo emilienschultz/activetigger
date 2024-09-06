@@ -53,6 +53,7 @@ from activetigger.datamodels import (
     AuthActions,
     AvailableProjectsModel,
     TableAnnotationsModel,
+    TestSetDataModel,
 )
 
 
@@ -493,7 +494,6 @@ async def get_project_statistics(
     r = project.get_description(scheme=scheme, user=current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    print(r)
     return ProjectDescriptionModel(**r)
 
 
@@ -557,19 +557,16 @@ async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
     return ProjectAuthsModel(auth=r)
 
 
-@app.post("/projects/testdata", dependencies=[Depends(verified_user)])
+@app.post("/projects/testset", dependencies=[Depends(verified_user)])
 async def add_testdata(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    file: Annotated[UploadFile, File()],
-    col_text: str = Form(),
-    col_id: str = Form(),
-    n_test: int = Form(),
+    testset: TestSetDataModel,
 ) -> None:
     """
     Add a dataset for test
     """
-    r = project.add_testdata(file, col_text, col_id, n_test)
+    r = project.add_testdata(testset)
 
     # log action
     if "error" in r:
@@ -1037,7 +1034,6 @@ async def delete_label(
 
     r = project.schemes.delete_label(label, scheme, current_user.username)
     if "error" in r:
-        print(r["error"])
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
         current_user.username, f"delete label {label} to {scheme}", project.name

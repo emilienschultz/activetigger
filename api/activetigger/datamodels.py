@@ -45,6 +45,14 @@ class ProjectDataModel(BaseProjectModel):
     csv: str
 
 
+class TestSetDataModel(BaseModel):
+    col_text: str
+    col_id: str
+    n_test: int
+    filename: str
+    csv: str
+
+
 class ActionModel(str, Enum):
     """
     Type of actions available

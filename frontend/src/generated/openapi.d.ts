@@ -367,7 +367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/testdata": {
+    "/projects/testset": {
         parameters: {
             query?: never;
             header?: never;
@@ -380,7 +380,7 @@ export interface paths {
          * Add Testdata
          * @description Add a dataset for test
          */
-        post: operations["add_testdata_projects_testdata_post"];
+        post: operations["add_testdata_projects_testset_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1067,6 +1067,11 @@ export interface components {
             element_id: string;
             /** Label */
             label: string;
+            /**
+             * Dataset
+             * @default train
+             */
+            dataset: string | null;
         };
         /**
          * AuthActions
@@ -1150,20 +1155,6 @@ export interface components {
              * @default true
              */
             adapt: boolean;
-        };
-        /** Body_add_testdata_projects_testdata_post */
-        Body_add_testdata_projects_testdata_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-            /** Col Text */
-            col_text: string;
-            /** Col Id */
-            col_id: string;
-            /** N Test */
-            n_test: number;
         };
         /** Body_login_for_access_token_token_post */
         Body_login_for_access_token_token_post: {
@@ -1352,9 +1343,9 @@ export interface components {
             /** Test Set N */
             test_set_n?: number | null;
             /** Test Annotated N */
-            test_annotated_n: number;
+            test_annotated_n?: number | null;
             /** Test Annotated Distribution */
-            test_annotated_distribution: Record<string, never>;
+            test_annotated_distribution?: Record<string, never> | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -1539,6 +1530,11 @@ export interface components {
         TableAnnotationsModel: {
             /** Annotations */
             annotations: components["schemas"]["AnnotationModel"][];
+            /**
+             * Dataset
+             * @default train
+             */
+            dataset: string | null;
         };
         /**
          * TableLogsModel
@@ -1563,6 +1559,19 @@ export interface components {
             items: unknown[];
             /** Total */
             total: number;
+        };
+        /** TestSetDataModel */
+        TestSetDataModel: {
+            /** Col Text */
+            col_text: string;
+            /** Col Id */
+            col_id: string;
+            /** N Test */
+            n_test: number;
+            /** Filename */
+            filename: string;
+            /** Csv */
+            csv: string;
         };
         /**
          * TokenModel
@@ -2155,7 +2164,7 @@ export interface operations {
             };
         };
     };
-    add_testdata_projects_testdata_post: {
+    add_testdata_projects_testset_post: {
         parameters: {
             query: {
                 project_slug: string;
@@ -2166,7 +2175,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_add_testdata_projects_testdata_post"];
+                "application/json": components["schemas"]["TestSetDataModel"];
             };
         };
         responses: {
@@ -2396,6 +2405,7 @@ export interface operations {
                 max?: number;
                 contains?: string | null;
                 mode?: string;
+                dataset?: string;
                 project_slug: string;
             };
             header?: never;
@@ -2565,6 +2575,7 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string;
+                dataset?: string;
                 project_slug: string;
             };
             header?: never;

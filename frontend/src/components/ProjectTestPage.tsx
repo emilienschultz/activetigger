@@ -23,6 +23,7 @@ export const ProjectTestPage: FC = () => {
 
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics } = useStatistics(projectName || null, currentScheme || null);
+  if (!projectName) return null;
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
       <div className="container-fluid">
@@ -76,7 +77,7 @@ export const ProjectTestPage: FC = () => {
         {!currentProject?.params.test && (
           <div className="row">
             <div className="col-12">
-              <TestSetCreationForm />
+              <TestSetCreationForm projectSlug={projectName} />
             </div>
           </div>
         )}

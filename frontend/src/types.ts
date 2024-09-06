@@ -49,6 +49,8 @@ export type UsersServerModel = components['schemas']['UsersServerModel'];
 
 export type BertModelParametersModel = components['schemas']['BertModelParametersModel'];
 
+export type TestSetDataModel = components['schemas']['TestSetDataModel'];
+
 export type ProjectionInStrictModel = components['schemas']['ProjectionInStrictModel'];
 export type ProjectionModelParams =
   | components['schemas']['TsneModel']
@@ -92,4 +94,10 @@ export interface newBertModel {
   name?: string;
   base: string;
   parameters: BertModelParametersModel;
+}
+
+export interface TestSetModel {
+  col_id: string;
+  col_text: string;
+  n_test: number;
 }

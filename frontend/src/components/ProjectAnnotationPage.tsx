@@ -85,11 +85,16 @@ export const ProjectAnnotationPage: FC = () => {
       // add fetch current selectionConfig in the hook code
       getNextElementId().then((nextElementId) => {
         if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
-        else navigate(`/projects/${projectName}/annotate/noelement`);
+        else {
+          navigate(`/projects/${projectName}/annotate/noelement`);
+        }
       });
     } else {
       //fetch element information (text and labels)
-      getElementById(elementId, phase).then(setElement);
+      getElementById(elementId, phase).then((element) => {
+        if (element) setElement(element);
+        else setTimeout(() => {}, 1000);
+      });
       reFetchStatistics();
     }
   }, [
@@ -207,13 +212,15 @@ export const ProjectAnnotationPage: FC = () => {
                 <label style={{ display: 'block', marginBottom: '10px' }}>
                   <input
                     type="checkbox"
-                    checked={displayConfig.displayPrediction}
+                    checked={displayConfig.displayPrediction || false}
                     onChange={(_) => {
                       setAppContext((prev) => ({
                         ...prev,
                         displayConfig: {
                           ...displayConfig,
-                          displayPrediction: !displayConfig.displayPrediction,
+                          displayPrediction: displayConfig.displayPrediction
+                            ? !displayConfig.displayPrediction
+                            : true,
                         },
                       }));
                     }}
@@ -288,7 +295,7 @@ export const ProjectAnnotationPage: FC = () => {
 
         {
           //display proba
-          displayConfig.displayPrediction && (
+          (displayConfig.displayPrediction || false) && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
             </div>

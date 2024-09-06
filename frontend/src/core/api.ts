@@ -11,6 +11,7 @@ import {
   ProjectStateModel,
   ProjectionInStrictModel,
   SimpleModelModel,
+  TestSetDataModel,
   newBertModel,
 } from '../types';
 import { HttpError } from './HTTPError';
@@ -185,6 +186,32 @@ export function useCreateProject() {
   );
   // this POST hook returns a function ready to be used by a component
   return createProject;
+}
+
+/**
+ * Create test set
+ */
+export function useCreateTestSet() {
+  const { notify } = useNotifications();
+  const createTestSet = useCallback(
+    async (projectSlug: string, testset: TestSetDataModel) => {
+      // do the new projects POST call
+      const res = await api.POST('/projects/testset', {
+        // POST has a body
+        params: {
+          query: { project_slug: projectSlug },
+        },
+        body: testset,
+      });
+      if (!res.error) notify({ type: 'success', message: 'Test data set uploaded' });
+      else
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+    },
+    [notify],
+  );
+  return createTestSet;
 }
 
 /**
@@ -459,6 +486,7 @@ export function useGetElementById(projectSlug: string | null, currentScheme: str
             query: { project_slug: projectSlug, scheme: currentScheme, dataset: dataset },
           },
         });
+        console.log(res.error);
         if (!res.error) return res.data;
       }
       return null;

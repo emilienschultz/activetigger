@@ -24,6 +24,7 @@ from activetigger.datamodels import (
     SimpleModelModel,
     UserInDBModel,
     ProjectSummaryModel,
+    TestSetDataModel,
 )
 from pydantic import ValidationError
 import logging
@@ -803,7 +804,7 @@ class Project(Server):
         else:
             raise NameError(f"{project_slug} does not exist.")
 
-    def add_testdata(self, file, col_text, col_id, n_test):
+    def add_testdata(self, testset: TestSetDataModel):
         """
         Add a test dataset
         TODO: implement
@@ -811,15 +812,26 @@ class Project(Server):
         if self.schemes.test is not None:
             return {"error": "Already a test dataset"}
 
-        if not file.filename.endswith(".csv"):
-            return {"error": "Only CSV file for the moment"}
+        # write the buffer send by the frontend
+        with open(self.params.dir / "test_set_raw.csv", "w") as f:
+            f.write(testset.csv)
 
-        df = pd.read_csv(file.file, dtype={col_id: str, col_text: str}, nrows=n_test)
+        # load it
+        df = pd.read_csv(
+            self.params.dir / "test_set_raw.csv",
+            dtype={testset.col_id: str, testset.col_text: str},
+            nrows=testset.n_test,
+        )
+
+        # change names
+        df = df.rename(
+            columns={testset.col_id: "id", testset.col_text: "text"}
+        ).set_index("id")
 
         # write the dataset
-        df[[col_text]].to_parquet(self.params.dir / self.test_file)
+        df[[testset.col_text]].to_parquet(self.params.dir / self.test_file)
         # load the data
-        self.schemes.test = df[[col_text]]
+        self.schemes.test = df[[testset.col_text]]
         # update parameters
         self.params.test = True
 
@@ -930,7 +942,6 @@ class Project(Server):
 
         # add a regex condition to the selection
         if filter:
-            print(filter)
             if "CONTEXT=" in filter:  # case to search in the context
                 f_regex = (
                     df[self.params.cols_context]
@@ -1132,12 +1143,17 @@ class Project(Server):
         )
 
         # part test
-        df = self.schemes.get_scheme_data(scheme, kind=["test"])
-        r["test_set_n"] = len(self.schemes.test)
-        r["test_annotated_n"] = len(df)
-        r["test_annotated_distribution"] = json.loads(
-            df["labels"].value_counts().to_json()
-        )
+        if self.params.test:
+            df = self.schemes.get_scheme_data(scheme, kind=["test"])
+            r["test_set_n"] = len(self.schemes.test)
+            r["test_annotated_n"] = len(df)
+            r["test_annotated_distribution"] = json.loads(
+                df["labels"].value_counts().to_json()
+            )
+        else:
+            r["test_set_n"] = None
+            r["test_annotated_n"] = None
+            r["test_annotated_distribution"] = None
 
         if self.simplemodels.exists(user, scheme):
             sm = self.simplemodels.get_model(user, scheme)  # get model

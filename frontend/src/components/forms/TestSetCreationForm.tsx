@@ -3,7 +3,11 @@ import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 
+import { omit } from 'lodash';
+import { unparse } from 'papaparse';
+import { useCreateTestSet } from '../../core/api';
 import { loadParquetFile } from '../../core/utils';
+import { TestSetModel } from '../../types';
 
 // format of the data table
 export interface DataType {
@@ -12,18 +16,13 @@ export interface DataType {
   filename: string;
 }
 
-interface TestSetModel {
-  col_id: string;
-  col_text: string;
-  col_label: string;
-}
-
 // component
-export const TestSetCreationForm: FC = () => {
+export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }) => {
   // form management
   const { register, control, handleSubmit } = useForm<TestSetModel & { files: FileList }>({
     defaultValues: {},
   });
+  const createTestSet = useCreateTestSet(); // API call
 
   const [data, setData] = useState<DataType | null>(null);
   //const createTestSet = useCreateTestSet();
@@ -51,11 +50,14 @@ export const TestSetCreationForm: FC = () => {
   }, [files]);
 
   // action when form validated
-  const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async () => {
+  const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async (formData) => {
     if (data) {
-      //formData
-      //const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
-      //await createTestSet({ ...omit(formData, 'files'), csv, filename: data.filename });
+      const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+      await createTestSet(projectSlug, {
+        ...omit(formData, 'files'),
+        csv,
+        filename: data.filename,
+      });
     }
   };
 
@@ -124,18 +126,15 @@ export const TestSetCreationForm: FC = () => {
 
                     {columns}
                   </select>
-                  <label className="form-label" htmlFor="col_label">
-                    Column for label (if exists)
+                  <label className="form-label" htmlFor="n_test">
+                    Number of elements
                   </label>
-                  <select
+                  <input
                     className="form-control"
-                    id="col_label"
-                    disabled={data === null}
-                    {...register('col_label')}
-                  >
-                    <option key="none"></option>
-                    {columns}
-                  </select>
+                    id="n_test"
+                    type="number"
+                    {...register('n_test')}
+                  />
                 </div>
                 <button type="submit" className="btn btn-primary form-button">
                   Create
