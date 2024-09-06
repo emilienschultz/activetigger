@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
-import { IoMdReturnLeft } from 'react-icons/io';
+import { IoMdSkipBackward } from 'react-icons/io';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   useAddAnnotation,
@@ -282,7 +282,7 @@ export const ProjectAnnotationPage: FC = () => {
               setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
             }}
           >
-            <IoMdReturnLeft />
+            <IoMdSkipBackward />
           </Link>
 
           {

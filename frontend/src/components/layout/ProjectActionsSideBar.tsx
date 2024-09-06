@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
-import { MdModelTraining, MdOutlineTransform } from 'react-icons/md';
+import { MdModelTraining, MdOutlineHomeMax, MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
@@ -37,10 +37,10 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}`}
             className={classNames('nav-link', !currentProjectAction && 'active')}
             aria-current="page"
+            title="Project"
           >
-            <span>
-              Project <b>{projectName}</b>
-            </span>
+            <MdOutlineHomeMax className="m-2" />
+            <span>Project {projectName}</span>
           </Link>
         </li>
         <li className="nav-item">
@@ -48,6 +48,7 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}/features`}
             className={classNames('nav-link', currentProjectAction === 'features' && 'active')}
             aria-current="page"
+            title="Features"
           >
             <MdOutlineTransform />
             <span> Features</span>
@@ -58,6 +59,7 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}/explorate`}
             className={classNames('nav-link', currentProjectAction === 'explorate' && 'active')}
             aria-current="page"
+            title="Exploration"
           >
             <TbListSearch />
             <span> Exploration</span>
@@ -68,6 +70,7 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}/annotate`}
             className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
             aria-current="page"
+            title="Annotation"
           >
             <PiTagDuotone />
             <span> Annotation</span>
@@ -78,6 +81,7 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}/train`}
             className={classNames('nav-link', currentProjectAction === 'train' && 'active')}
             aria-current="page"
+            title="Training"
           >
             <MdModelTraining />
             <span> Training</span>
@@ -88,6 +92,7 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}/test`}
             className={classNames('nav-link', currentProjectAction === 'test' && 'active')}
             aria-current="page"
+            title="Test"
           >
             <FaClipboardCheck />
             <span> Test</span>
@@ -98,6 +103,7 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}/export`}
             className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
             aria-current="page"
+            title="Export"
           >
             <FaCloudDownloadAlt />
             <span> Export</span>
