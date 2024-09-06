@@ -1,5 +1,4 @@
 //import { omit } from 'lodash';
-import { unparse } from 'papaparse';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
@@ -52,9 +51,10 @@ export const TestSetCreationForm: FC = () => {
   }, [files]);
 
   // action when form validated
-  const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async (formData) => {
+  const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async () => {
     if (data) {
-      const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+      //formData
+      //const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
       //await createTestSet({ ...omit(formData, 'files'), csv, filename: data.filename });
     }
   };

@@ -210,7 +210,7 @@ export const ProjectionManagement: FC = () => {
                       eventHandlers: {
                         onClick: (_, props) => {
                           const { datum } = props;
-                          getElementById(datum.index).then(setSelectedElement);
+                          getElementById(datum.index, 'train').then(setSelectedElement);
                           //navigate(`/projects/${projectName}/annotate/${datum.index}`);
                         },
                       },
