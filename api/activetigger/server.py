@@ -967,7 +967,7 @@ class Project(Server):
         # select type of selection
         if selection == "deterministic":  # next row
 
-            ss = df[f].drop(history, errors="ignore").index[0]
+            ss = df[f].drop(history, errors="ignore")
             if len(ss) == 0:
                 return {"error": "No element available with this selection mode."}
             element_id = ss.index[0]
