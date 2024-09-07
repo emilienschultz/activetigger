@@ -976,20 +976,16 @@ class Project(Server):
             return {"error": "No element available with this selection mode."}
 
         # select type of selection
-        if selection == "deterministic":  # next row
+        ss = df[f].drop(history, errors="ignore")
+        if len(ss) == 0:
+            return {"error": "No element available with this selection mode."}
+        indicator = None
 
-            ss = df[f].drop(history, errors="ignore")
-            if len(ss) == 0:
-                return {"error": "No element available with this selection mode."}
+        if selection == "deterministic":  # next row
             element_id = ss.index[0]
-            indicator = None
 
         if selection == "random":  # random row
-            ss = df[f].drop(history, errors="ignore").sample(random_state=42)
-            if len(ss) == 0:
-                return {"error": "No element available with this selection mode."}
-            element_id = ss.index[0]
-            indicator = None
+            element_id = ss.sample(frac=1, random_state=42).index[0]
 
         # higher prob, only possible if the model has been trained
         if selection == "maxprob":

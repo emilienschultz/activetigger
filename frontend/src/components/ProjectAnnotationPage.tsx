@@ -86,11 +86,16 @@ export const ProjectAnnotationPage: FC = () => {
         if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
         else {
           navigate(`/projects/${projectName}/annotate/noelement`);
+          setElement(null);
         }
       });
     } else {
       getElementById(elementId, phase).then((element) => {
         if (element) setElement(element);
+        else {
+          navigate(`/projects/${projectName}/annotate/noelement`);
+          setElement(null);
+        }
       });
       reFetchStatistics();
     }
@@ -105,12 +110,13 @@ export const ProjectAnnotationPage: FC = () => {
   ]);
 
   // hook to fetch a next element when selectionConfig changes
-  useEffect(() => {
-    getNextElementId().then((nextElementId) => {
-      if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
-      else navigate(`/projects/${projectName}/annotate/noelement`);
-    });
-  }, [selectionConfig, elementId, getNextElementId, projectName, navigate]);
+  // NOT A GOOD IDEA SINCE IT PREVENTS TO GO TO ANOTHER ELEMENT
+  // useEffect(() => {
+  //   getNextElementId().then((nextElementId) => {
+  //     if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+  //     else navigate(`/projects/${projectName}/annotate/noelement`);
+  //   });
+  // }, [selectionConfig, elementId, getNextElementId, projectName, navigate]);
 
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
@@ -269,9 +275,24 @@ export const ProjectAnnotationPage: FC = () => {
         </div>
       </div>
 
-      {
-        // back button
-      }
+      {elementId === 'noelement' && (
+        <div className="alert alert-warning text-center">
+          <div className="m-2">No element available</div>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              getNextElementId().then((nextElementId) => {
+                if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+                else {
+                  navigate(`/projects/${projectName}/annotate/noelement`);
+                }
+              });
+            }}
+          >
+            Refetch with current selection mode
+          </button>
+        </div>
+      )}
 
       {
         // display content
