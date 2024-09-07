@@ -486,8 +486,10 @@ export function useGetElementById(projectSlug: string | null, currentScheme: str
             query: { project_slug: projectSlug, scheme: currentScheme, dataset: dataset },
           },
         });
-        console.log(res.error);
-        if (!res.error) return res.data;
+        console.log('GET');
+        console.log(res);
+        if (res.response.status === 200) return res.data;
+        else return null;
       }
       return null;
     },

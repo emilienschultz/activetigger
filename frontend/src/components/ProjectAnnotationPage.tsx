@@ -82,7 +82,6 @@ export const ProjectAnnotationPage: FC = () => {
   // react to URL param change
   useEffect(() => {
     if (elementId === undefined) {
-      // add fetch current selectionConfig in the hook code
       getNextElementId().then((nextElementId) => {
         if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
         else {
@@ -90,10 +89,8 @@ export const ProjectAnnotationPage: FC = () => {
         }
       });
     } else {
-      //fetch element information (text and labels)
       getElementById(elementId, phase).then((element) => {
         if (element) setElement(element);
-        else setTimeout(() => {}, 1000);
       });
       reFetchStatistics();
     }
@@ -261,7 +258,6 @@ export const ProjectAnnotationPage: FC = () => {
                           frameSize: Number(e.target.value),
                         },
                       }));
-                      console.log(displayConfig.frameSize);
                     }}
                     style={{ marginRight: '10px' }}
                   />

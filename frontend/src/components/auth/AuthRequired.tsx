@@ -52,8 +52,9 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
               message:
                 'detail' in message ? JSON.stringify(message.detail) : JSON.stringify(message),
             });
+
             // STILL AN ERROR TO FIX TODO
-            //return new Response(body, resOptions);
+            return new Response(body, { ...resOptions, status: 500 });
           }
         }
         return clonedResponse;
