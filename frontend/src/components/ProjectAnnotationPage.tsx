@@ -2,6 +2,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import { IoMdSkipBackward } from 'react-icons/io';
+import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   useAddAnnotation,
@@ -218,6 +219,22 @@ export const ProjectAnnotationPage: FC = () => {
               </Tab>
               <Tab eventKey="selection" title="Selection mode">
                 <SelectionManagement />
+                <div className="col-12 text-center">
+                  <button
+                    className="btn"
+                    onClick={() => {
+                      getNextElementId().then((nextElementId) => {
+                        if (nextElementId)
+                          navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+                        else {
+                          navigate(`/projects/${projectName}/annotate/noelement`);
+                        }
+                      });
+                    }}
+                  >
+                    <LuRefreshCw size={20} />
+                  </button>
+                </div>
               </Tab>
               <Tab eventKey="parameters" title="Display parameters">
                 <label style={{ display: 'block', marginBottom: '10px' }}>
