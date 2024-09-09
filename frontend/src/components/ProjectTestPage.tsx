@@ -42,7 +42,7 @@ export const ProjectTestPage: FC = () => {
   if (!projectName) return null;
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
-      <div className="container">
+      <div className="container-fluid">
         <div className="explanations">
           Select a scheme and a model, switch to the test mode to annotate the testset, and compute
           test statistics
