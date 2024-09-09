@@ -128,6 +128,7 @@ export const ProjectExplorationPage: FC = () => {
               label: event.target.value,
               scheme: currentScheme as string,
               project_slug: projectName as string,
+              dataset: phase,
             },
           }));
           console.log(modifiedRows);
