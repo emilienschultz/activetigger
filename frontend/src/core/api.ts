@@ -1272,3 +1272,34 @@ export function useReconciliate(projectSlug: string, scheme: string | null) {
 
   return { postReconciliate };
 }
+
+/**
+ * Launch test
+ */
+export function useTestModel(
+  projectSlug: string | null,
+  scheme: string | null,
+  model: string | null,
+) {
+  const { notify } = useNotifications();
+
+  const testModel = useCallback(async () => {
+    if (scheme && projectSlug && model) {
+      const res = await api.POST('/models/bert/test', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+            scheme: scheme,
+            model: model,
+          },
+        },
+      });
+      if (!res.error) notify({ type: 'warning', message: 'Starting test computation' });
+
+      return true;
+    }
+    return null;
+  }, [projectSlug, scheme, notify, model]);
+
+  return { testModel };
+}

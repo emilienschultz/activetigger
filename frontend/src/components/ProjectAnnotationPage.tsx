@@ -187,6 +187,14 @@ export const ProjectAnnotationPage: FC = () => {
           {phase == 'test' && (
             <div className="alert alert-warning">
               Test mode activated - you are annotating test set
+              <div className="col-6">
+                {statistics && (
+                  <span className="badge text-bg-light  m-3">
+                    Number of annotations :{' '}
+                    {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
+                  </span>
+                )}
+              </div>
             </div>
           )}
           {phase != 'test' && (
