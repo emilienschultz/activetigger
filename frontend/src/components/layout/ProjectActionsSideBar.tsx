@@ -111,10 +111,10 @@ export const ProjectActionsSidebar: FC<{
         </li>
         <li className="nav-item ">
           <div className="nav-link">
-            <span className="badge text-bg-info">
+            <div className="badge text-bg-info">
               <span className="d-none d-md-inline">Server load: </span>
               {Object.values(queueState || []).length}
-            </span>
+            </div>
           </div>
         </li>
         {currentComputation && (
