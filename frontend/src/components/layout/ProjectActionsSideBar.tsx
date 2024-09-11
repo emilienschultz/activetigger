@@ -3,6 +3,7 @@ import { FC } from 'react';
 import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
 import { MdModelTraining, MdOutlineHomeMax, MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
+import { RiAiGenerate } from 'react-icons/ri';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
 import { useGetQueue } from '../../core/api';
@@ -32,7 +33,7 @@ export const ProjectActionsSidebar: FC<{
   return (
     <div className="project-sidebar d-flex flex-column flex-shrink-0 bg-light">
       <ul className="nav nav-pills flex-column mb-auto">
-        <li className="nav-item">
+        <li className="nav-item mt-3">
           <Link
             to={`/projects/${projectName}`}
             className={classNames('nav-link', !currentProjectAction && 'active')}
@@ -74,6 +75,17 @@ export const ProjectActionsSidebar: FC<{
           >
             <PiTagDuotone />
             <span> Annotation</span>
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
+            to={`/projects/${projectName}/generate`}
+            className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
+            aria-current="page"
+            title="Generate"
+          >
+            <RiAiGenerate />
+            <span> Generate</span>
           </Link>
         </li>
         <li className="nav-item">

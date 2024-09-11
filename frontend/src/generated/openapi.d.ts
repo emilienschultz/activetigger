@@ -574,7 +574,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/elements/zeroshot": {
+    "/elements/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -585,9 +585,9 @@ export interface paths {
         put?: never;
         /**
          * Zeroshot
-         * @description Launch a call to an external API for 0-shot
+         * @description Launch a call to generate from a prompt
          */
-        post: operations["zeroshot_elements_zeroshot_post"];
+        post: operations["zeroshot_elements_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1226,6 +1226,20 @@ export interface components {
                 [key: string]: (string | number) | undefined;
             };
         };
+        /** GenerateModel */
+        GenerateModel: {
+            /** Prompt */
+            prompt: string;
+            /** Endpoint */
+            endpoint: string;
+            /**
+             * Batch
+             * @default 1
+             */
+            batch: number;
+            /** Token */
+            token?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1654,22 +1668,6 @@ export interface components {
              * @default waiting
              */
             status: string;
-        };
-        /** ZeroShotModel */
-        ZeroShotModel: {
-            /** Scheme */
-            scheme: string;
-            /** Prompt */
-            prompt: string;
-            /** Api */
-            api: string;
-            /** Token */
-            token: string;
-            /**
-             * Number
-             * @default 10
-             */
-            number: number;
         };
     };
     responses: never;
@@ -2536,7 +2534,7 @@ export interface operations {
             };
         };
     };
-    zeroshot_elements_zeroshot_post: {
+    zeroshot_elements_generate_post: {
         parameters: {
             query: {
                 project_slug: string;
@@ -2547,7 +2545,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ZeroShotModel"];
+                "application/json": components["schemas"]["GenerateModel"];
             };
         };
         responses: {
@@ -2557,7 +2555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WaitingModel"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

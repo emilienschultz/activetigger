@@ -17,6 +17,7 @@ import { ProjectTrainPage } from '../components/ProjectTrainPage';
 import { ProjectsPage } from '../components/ProjectsPage';
 import { UsersPage } from '../components/UsersPage';
 
+import { GenPage } from '../components/GenPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 
 export function getRouter() {
@@ -90,6 +91,10 @@ export function getRouter() {
         {
           path: '/projects/:projectName/annotate/',
           element: <ProjectAnnotationPage />,
+        },
+        {
+          path: '/projects/:projectName/generate/',
+          element: <GenPage />,
         },
         {
           path: '/projects/:projectName/train/',

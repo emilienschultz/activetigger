@@ -1,11 +1,18 @@
 import { FC, PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
 
-import { DisplayConfig, NotificationType, ProjectStateModel, SelectionConfig } from '../types';
+import {
+  DisplayConfig,
+  GenerateConfig,
+  NotificationType,
+  ProjectStateModel,
+  SelectionConfig,
+} from '../types';
 
 // Context content
 export type AppContextValue = {
   notifications: NotificationType[]; // manage notification
   selectionConfig: SelectionConfig; // selection for the next element
+  generateConfig: GenerateConfig;
   displayConfig: DisplayConfig; // config for the visual
   currentProject?: ProjectStateModel | null; // current project selected
   currentScheme?: string; // scheme selected to annotate
@@ -35,6 +42,7 @@ export const defaultContext: AppContextValue = storedContext
         frameSelection: false,
         frame: [],
       },
+      generateConfig: { batch: 1 },
       history: [],
       freqRefreshSimpleModel: 10,
       phase: 'train',

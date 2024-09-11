@@ -1303,3 +1303,40 @@ export function useTestModel(
 
   return { testModel };
 }
+
+/**
+ * Post generate data
+ */
+export function useGenerate(
+  projectSlug: string | null,
+  select_api: string | null,
+  endpoint: string | null,
+  batch: number | null,
+  prompt: string | null,
+  token?: string,
+) {
+  const { notify } = useNotifications();
+  const generate = useCallback(async () => {
+    if (projectSlug && select_api && endpoint && prompt && batch) {
+      const res = await api.POST('/elements/generate', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+          },
+        },
+        body: {
+          prompt: prompt,
+          endpoint: endpoint,
+          batch: batch,
+          token: token,
+        },
+      });
+      if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
+
+      return true;
+    }
+    return null;
+  }, [projectSlug, notify, batch, token, endpoint, prompt, select_api]);
+
+  return { generate };
+}

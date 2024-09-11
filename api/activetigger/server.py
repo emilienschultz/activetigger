@@ -344,6 +344,21 @@ class Server:
         """
         cursor.execute(create_table_sql)
 
+        # Prediction table
+        create_table_sql = """
+            CREATE TABLE IF NOT EXISTS predictions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user TEXT,
+                project TEXT,
+                element_id TEXT,
+                endpoint TEXT,
+                prompt TEXT,
+                answer TEXT
+            )
+        """
+        cursor.execute(create_table_sql)
+
         # create root user
 
         pwd = get_root_pwd()

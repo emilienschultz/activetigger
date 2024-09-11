@@ -84,6 +84,15 @@ export interface SelectionConfig {
   frameSelection?: boolean; // true/false to use frame to select
   filter?: string;
 }
+
+export interface GenerateConfig {
+  api?: string;
+  endpoint?: string;
+  token?: string;
+  prompt?: string;
+  batch?: number;
+}
+
 export interface DisplayConfig {
   displayPrediction?: boolean;
   displayContext?: boolean;

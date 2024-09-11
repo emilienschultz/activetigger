@@ -39,7 +39,7 @@ from activetigger.datamodels import (
     TsneModel,
     NextInModel,
     ElementOutModel,
-    ZeroShotModel,
+    GenerateModel,
     UserInDBModel,
     UserModel,
     UsersServerModel,
@@ -892,21 +892,23 @@ async def post_reconciliation(
     return None
 
 
-@app.post("/elements/zeroshot", dependencies=[Depends(verified_user)])
+@app.post("/elements/generate", dependencies=[Depends(verified_user)])
 async def zeroshot(
     project: Annotated[Project, Depends(get_project)],
-    zshot: ZeroShotModel,
-) -> WaitingModel:
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    request: GenerateModel,
+) -> None:
     """
-    Launch a call to an external API for 0-shot
+    Launch a call to generate from a prompt
     """
+    print(request)
     # get subset of unlabelled elements
-    df = project.schemes.get_table(zshot.scheme, 0, zshot.number, "untagged")
+    #    df = project.schemes.get_table(zshot.scheme, 0, zshot.number, "untagged")
     # make the call
-    r = await project.compute_zeroshot(df, zshot)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return WaitingModel(detail="Annotation in progress")
+    #    r = await project.compute_zeroshot(df, zshot)
+    #    if "error" in r:
+    #        raise HTTPException(status_code=500, detail=r["error"])
+    return None
 
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])

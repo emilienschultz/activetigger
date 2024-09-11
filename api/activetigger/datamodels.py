@@ -314,24 +314,11 @@ class BertParams(BaseModel):
     adapt: bool
 
 
-class ZeroShotModel(BaseModel):
-    scheme: str
+class GenerateModel(BaseModel):
     prompt: str
-    api: str
-    token: str
-    number: int = 10
-
-
-# class TableOutModel(BaseModel):
-#     """
-#     Response for table of elements
-#     """
-
-#     id: List[str]
-#     timestamp: List[str]
-#     label: List[str]
-#     text: List[str]
-#     total: int
+    endpoint: str
+    batch: int = 1
+    token: Optional[str] = None
 
 
 class TableOutModel(BaseModel):
