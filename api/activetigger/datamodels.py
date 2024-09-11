@@ -315,10 +315,17 @@ class BertParams(BaseModel):
 
 
 class GenerateModel(BaseModel):
-    prompt: str
+    """
+    To start a generating prompt
+    """
+
+    api: str
     endpoint: str
-    batch: int = 1
     token: Optional[str] = None
+    prompt: str
+    n_batch: int = 1
+    scheme: str
+    mode: str = "all"
 
 
 class TableOutModel(BaseModel):

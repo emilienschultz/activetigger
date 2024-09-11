@@ -893,7 +893,7 @@ async def post_reconciliation(
 
 
 @app.post("/elements/generate", dependencies=[Depends(verified_user)])
-async def zeroshot(
+async def postgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     request: GenerateModel,
@@ -901,14 +901,27 @@ async def zeroshot(
     """
     Launch a call to generate from a prompt
     """
-    print(request)
     # get subset of unlabelled elements
-    #    df = project.schemes.get_table(zshot.scheme, 0, zshot.number, "untagged")
+    df = project.schemes.get_table(request.scheme, 0, request.n_batch, request.mode)
     # make the call
-    #    r = await project.compute_zeroshot(df, zshot)
-    #    if "error" in r:
-    #        raise HTTPException(status_code=500, detail=r["error"])
+    r = await project.generate(current_user.username, project.name, df, request)
+    # if call success, added in the database
     return None
+
+
+@app.get("/elements/generate", dependencies=[Depends(verified_user)])
+async def getgenerate(
+    project: Annotated[Project, Depends(get_project)], n_elements: int
+) -> TableOutModel:
+    """
+    Get last predictions
+    """
+    try:
+        table = project.get_generated(project.name, n_elements)
+    except:
+        raise HTTPException(status_code=500, detail="Error in loading generated data")
+    r = table.to_dict(orient="records")
+    return TableOutModel(items=r, total=len(r))
 
 
 @app.get("/elements/{element_id}", dependencies=[Depends(verified_user)])

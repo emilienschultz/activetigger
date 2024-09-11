@@ -581,13 +581,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Getgenerate
+         * @description Get last predictions
+         */
+        get: operations["getgenerate_elements_generate_get"];
         put?: never;
         /**
-         * Zeroshot
+         * Postgenerate
          * @description Launch a call to generate from a prompt
          */
-        post: operations["zeroshot_elements_generate_post"];
+        post: operations["postgenerate_elements_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1226,19 +1230,31 @@ export interface components {
                 [key: string]: (string | number) | undefined;
             };
         };
-        /** GenerateModel */
+        /**
+         * GenerateModel
+         * @description To start a generating prompt
+         */
         GenerateModel: {
-            /** Prompt */
-            prompt: string;
+            /** Api */
+            api: string;
             /** Endpoint */
             endpoint: string;
-            /**
-             * Batch
-             * @default 1
-             */
-            batch: number;
             /** Token */
             token?: string | null;
+            /** Prompt */
+            prompt: string;
+            /**
+             * N Batch
+             * @default 1
+             */
+            n_batch: number;
+            /** Scheme */
+            scheme: string;
+            /**
+             * Mode
+             * @default all
+             */
+            mode: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2534,7 +2550,39 @@ export interface operations {
             };
         };
     };
-    zeroshot_elements_generate_post: {
+    getgenerate_elements_generate_get: {
+        parameters: {
+            query: {
+                n_elements: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    postgenerate_elements_generate_post: {
         parameters: {
             query: {
                 project_slug: string;

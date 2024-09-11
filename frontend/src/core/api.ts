@@ -1309,15 +1309,18 @@ export function useTestModel(
  */
 export function useGenerate(
   projectSlug: string | null,
-  select_api: string | null,
+  currentScheme: string | null,
+  api_name: string | null,
   endpoint: string | null,
-  batch: number | null,
+  n_batch: number | null,
   prompt: string | null,
+  mode: string | null,
   token?: string,
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
-    if (projectSlug && select_api && endpoint && prompt && batch) {
+    console.log(projectSlug, api_name, endpoint, prompt, n_batch, currentScheme, mode);
+    if (projectSlug && api_name && endpoint && prompt && n_batch && currentScheme && mode) {
       const res = await api.POST('/elements/generate', {
         params: {
           query: {
@@ -1325,10 +1328,13 @@ export function useGenerate(
           },
         },
         body: {
+          api: api_name,
           prompt: prompt,
           endpoint: endpoint,
-          batch: batch,
+          n_batch: n_batch,
           token: token,
+          scheme: currentScheme,
+          mode: mode,
         },
       });
       if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
@@ -1336,7 +1342,30 @@ export function useGenerate(
       return true;
     }
     return null;
-  }, [projectSlug, notify, batch, token, endpoint, prompt, select_api]);
+  }, [projectSlug, notify, n_batch, token, endpoint, prompt, api_name, mode, currentScheme]);
 
   return { generate };
+}
+
+/**
+ * Get generated elements
+ */
+export function useGeneratedElements(project_slug: string | null, n_elements: number) {
+  const getGeneratedElements = useAsyncMemo(async () => {
+    if (n_elements && project_slug) {
+      const res = await api.GET('/elements/generate', {
+        params: {
+          query: {
+            project_slug: project_slug,
+            n_elements: n_elements,
+          },
+        },
+      });
+      if (!res.error && res.data && 'items' in res.data) {
+        return res.data.items;
+      }
+    }
+    return null;
+  }, [project_slug, n_elements]);
+  return { generated: getAsyncMemoData(getGeneratedElements) };
 }

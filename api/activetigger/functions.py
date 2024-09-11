@@ -27,6 +27,7 @@ from transformers import (
 from transformers import Trainer, TrainingArguments, TrainerCallback
 import json
 import shutil
+import requests
 
 
 def get_hash(text: str):
@@ -533,3 +534,18 @@ def cat2num(df):
     encoded = pd.DataFrame(encoded, index=df.index)
     encoded.columns = ["col" + str(i) for i in encoded.columns]
     return encoded
+
+
+async def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
+    """
+    Make a request to ollama
+    """
+    data = {"model": model, "prompt": request, "stream": False}
+    response = requests.post(endpoint, json=data)
+    if response.status_code == 200:
+        try:
+            return {"success": response.json()["response"]}
+        except:
+            return {"error": "Error in the content"}
+    else:
+        return {"error": "Error in the API call"}

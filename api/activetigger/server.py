@@ -25,6 +25,7 @@ from activetigger.datamodels import (
     UserInDBModel,
     ProjectSummaryModel,
     TestSetDataModel,
+    GenerateModel,
 )
 from pydantic import ValidationError
 import logging
@@ -346,7 +347,7 @@ class Server:
 
         # Prediction table
         create_table_sql = """
-            CREATE TABLE IF NOT EXISTS predictions (
+            CREATE TABLE IF NOT EXISTS generations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 user TEXT,
@@ -1273,6 +1274,93 @@ class Project(Server):
 
         r = {"name": file_name, "path": path / file_name}
         return r
+
+    def add_generation(
+        self,
+        user: str,
+        project_name: str,
+        endpoint: str,
+        element_id: str,
+        prompt: str,
+        result: str,
+    ):
+        """
+        Add a generated element in the database
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        insert_query = "INSERT INTO generations (user, project, element_id, endpoint, prompt, answer) VALUES (?, ?, ?, ?, ?, ?)"
+        cursor.execute(
+            insert_query, (user, project_name, element_id, endpoint, prompt, result)
+        )
+        conn.commit()
+        conn.close()
+        print("Added generation", element_id)
+        return None
+
+    def get_generated(self, project_name, n_elements):
+        """
+        Get generated elements from the database
+        """
+        conn = sqlite3.connect(self.db)
+        cursor = conn.cursor()
+        query = """SELECT element_id, prompt, answer, endpoint FROM generations WHERE project = ?  
+                ORDER BY time DESC
+                LIMIT ?"""
+        cursor.execute(
+            query,
+            (
+                project_name,
+                n_elements,
+            ),
+        )
+        result = cursor.fetchall()
+        conn.close()
+        df = pd.DataFrame(result, columns=["index", "prompt", "answer", "endpoint"])
+        return df
+
+    async def generate(
+        self, user: str, project_name: str, df: DataFrame, params: GenerateModel
+    ) -> None:
+        """
+        Manage generation request
+        """
+        # errors
+        errors = []
+
+        # loop on all elements
+        for index, row in df.iterrows():
+
+            # insert the content in the prompt
+            if not "#INSERTTEXT" in params.prompt:
+                errors.append("Problem with the prompt")
+                continue
+            prompt = params.prompt.replace("#INSERTTEXT", row["text"])
+
+            # make request to the client
+            if params.api == "ollama":
+                response = await functions.request_ollama(params.endpoint, prompt)
+            else:
+                errors.append("Model does not exist")
+                continue
+
+            if "error" in response:
+                errors.append("Error in the request")
+
+            if "success" in response:
+                self.add_generation(
+                    user,
+                    project_name,
+                    params.endpoint,
+                    row["index"],
+                    prompt,
+                    response["success"],
+                )
+
+            print(prompt, response)
+
+        print(errors)
+        return None
 
     async def compute_zeroshot(self, df, params):
         """

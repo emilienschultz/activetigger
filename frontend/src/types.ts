@@ -90,7 +90,8 @@ export interface GenerateConfig {
   endpoint?: string;
   token?: string;
   prompt?: string;
-  batch?: number;
+  n_batch?: number;
+  selection_mode?: string;
 }
 
 export interface DisplayConfig {

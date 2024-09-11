@@ -42,7 +42,7 @@ export const defaultContext: AppContextValue = storedContext
         frameSelection: false,
         frame: [],
       },
-      generateConfig: { batch: 1 },
+      generateConfig: { n_batch: 1, selection_mode: 'all' },
       history: [],
       freqRefreshSimpleModel: 10,
       phase: 'train',
