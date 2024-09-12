@@ -11,7 +11,6 @@ import json
 import shutil
 import pandas as pd
 from pandas import DataFrame, Series
-from fastapi import UploadFile
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
 from jose import jwt
@@ -38,44 +37,10 @@ import getpass
 logger = logging.getLogger("server")
 
 
-def get_root_pwd() -> str:
-    """
-    Function to get the password
-    """
-    print("╔═════════════════════════════════╗")
-    print("║    Define a Root Password       ║")
-    print("╠═════════════════════════════════╣")
-    print("║  Your password must be at least ║")
-    print("║  6 characters long and entered  ║")
-    print("║  twice to confirm.              ║")
-    print("╚═════════════════════════════════╝")
-    while True:
-
-        func = input
-        if os.getenv("TESTING"):
-            func = input
-
-        root_password = func("Enter a root password : ")
-        if len(root_password) < 6:
-            print("The password need to have 6 character at minimum")
-            continue
-        confirm_password = func("Re-enter the root password: ")
-
-        if root_password != confirm_password:
-            print("Error: The passwords do not match. Please try again.")
-
-        else:
-            print("Password confirmed successfully.")
-            print("Creating the entry in the database...")
-            return root_password
-
-
 class Queue:
     """
-    Managining parallel processes
-    For the moment : jobs in  concurrent.futures.ProcessPoolExecutor
-    Comments:
-        In the future, other solution ?
+    Managining parallel processes for computation
+    Jobs with  concurrent.futures.ProcessPoolExecutor
     """
 
     def __init__(self, nb_workers: int = 2):
@@ -85,9 +50,9 @@ class Queue:
         self.nb_workers = nb_workers
         self.executor = concurrent.futures.ProcessPoolExecutor(
             max_workers=self.nb_workers
-        )
-        self.manager = Manager()
-        self.current = {}  # stack
+        )  # manage parallel processes
+        self.manager = Manager()  # communicate within processes
+        self.current = {}  # keep track of the current stack
         logger.info("Init Queue")
 
     def close(self):
@@ -96,8 +61,8 @@ class Queue:
         """
         self.executor.shutdown(cancel_futures=True, wait=False)
         self.manager.shutdown()
-        logger.info("Close Queue")
-        print("Executor closed, current processes:", self.state())
+        logger.info("Close queue")
+        print("Queue closes")
 
     def check(self):
         """
@@ -127,7 +92,12 @@ class Queue:
         event = self.manager.Event()
         args["event"] = event
         # send the process
-        future = self.executor.submit(func, **args)
+        try:
+            future = self.executor.submit(func, **args)
+        except Exception as e:
+            logger.error(f"Error submitting task: {e}")
+            return "error"
+
         # save in the stack
         self.current[unique_id] = {"kind": kind, "future": future, "event": event}
         return unique_id
@@ -362,7 +332,7 @@ class Server:
 
         # create root user
 
-        pwd = get_root_pwd()
+        pwd = functions.get_root_pwd()
         hash_pwd = functions.get_hash(pwd)
         insert_query = (
             "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"

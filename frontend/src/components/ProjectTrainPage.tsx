@@ -1,5 +1,4 @@
 import { FC, useState } from 'react';
-//import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';

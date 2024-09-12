@@ -10,7 +10,8 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 // TODO
 // - asynchron problem
 // - better table
-// - how to merge the results
+// - how to merge the results in the database
+// --- button to validate the automatic mergin + rule to force the labels in the scheme
 
 interface Row {
   index: string;

@@ -38,6 +38,43 @@ def start_server(monkeypatch, root_pwd, create_and_change_directory):
     yield s
 
 
+#############
+# Test Queue#
+#############
+
+
+def test_create_queue():
+    from server import Queue
+    import concurrent.futures
+
+    queue = Queue(2)
+
+    assert isinstance(queue.executor, concurrent.futures.ProcessPoolExecutor)
+    assert len(queue.current) == 0
+
+    queue.recreate_executor()
+
+
+def test_add_job_queue():
+    from server import Queue
+
+    def dummy_func(x):
+        return x * 2
+
+    queue = Queue(2)
+
+    num = queue.add("test", dummy_func, {"x": 2})
+
+    assert isinstance(num, str)
+
+
+def test_shutdown_queue():
+    from server import Queue
+
+    queue = Queue(2)
+    queue.close()
+
+
 # @pytest.fixture
 # def project_params():
 #     """

@@ -755,6 +755,8 @@ async def compute_projection(
 
         args = {"features": features, "params": e.__dict__}
         unique_id = server.queue.add("projection", functions.compute_umap, args)
+        if unique_id == "error":
+            raise HTTPException(status_code=500, detail="Error in adding in the queue")
         project.features.projections[current_user.username] = {
             "params": projection,
             "method": "umap",
@@ -770,6 +772,8 @@ async def compute_projection(
             raise HTTPException(status_code=500, detail=str(e))
         args = {"features": features, "params": e.__dict__}
         unique_id = server.queue.add("projection", functions.compute_tsne, args)
+        if unique_id == "error":
+            raise HTTPException(status_code=500, detail="Error in adding in the queue")
         project.features.projections[current_user.username] = {
             "params": projection,
             "method": "tsne",
@@ -1209,6 +1213,8 @@ async def post_embeddings(
 
     # add the computation to queue
     unique_id = server.queue.add("feature", func, args)
+    if unique_id == "error":
+        raise HTTPException(status_code=500, detail="Error in adding in the queue")
     project.features.training[feature.name] = unique_id
 
     server.log_action(current_user.username, f"Compute feature dfm", project.name)

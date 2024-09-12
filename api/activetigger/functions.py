@@ -30,6 +30,36 @@ import shutil
 import requests
 
 
+def get_root_pwd() -> str:
+    """
+    Function to get the password in the CLI start
+    """
+    print("╔═════════════════════════════════╗")
+    print("║    Define a Root Password       ║")
+    print("╠═════════════════════════════════╣")
+    print("║  Your password must be at least ║")
+    print("║  6 characters long and entered  ║")
+    print("║  twice to confirm.              ║")
+    print("╚═════════════════════════════════╝")
+    while True:
+        func = input
+
+        root_password = func("Enter a root password : ")
+
+        if len(root_password) < 6:
+            print("The password need to have 6 character at minimum")
+            continue
+        confirm_password = func("Re-enter the root password: ")
+
+        if root_password != confirm_password:
+            print("Error: The passwords do not match. Please try again.")
+
+        else:
+            print("Password confirmed successfully.")
+            print("Creating the entry in the database...")
+            return root_password
+
+
 def get_hash(text: str):
     """
     Hash string
