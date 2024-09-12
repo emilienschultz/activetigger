@@ -32,7 +32,6 @@ import openai
 from typing import Callable
 from multiprocessing import Manager
 import secrets
-import getpass
 
 logger = logging.getLogger("server")
 
@@ -41,11 +40,13 @@ class Queue:
     """
     Managining parallel processes for computation
     Jobs with  concurrent.futures.ProcessPoolExecutor
+
+    TODO : better management of failed processes
     """
 
-    def __init__(self, nb_workers: int = 2):
+    def __init__(self, nb_workers: int = 2) -> None:
         """
-        Initiating the executor
+        Initiating the queue
         """
         self.nb_workers = nb_workers
         self.executor = concurrent.futures.ProcessPoolExecutor(
@@ -55,7 +56,7 @@ class Queue:
         self.current = {}  # keep track of the current stack
         logger.info("Init Queue")
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the executor
         """
@@ -64,23 +65,29 @@ class Queue:
         logger.info("Close queue")
         print("Queue closes")
 
-    def check(self):
+    # def check_failed_processes(self, future):
+    #     """
+    #     Check if a future failed.
+    #     """
+    #     try:
+    #         result = future.result()  # Will raise if the task failed
+    #         return False
+    #     except Exception as e:
+    #         return True
+
+    def check(self) -> None:
         """
         Check if the exector still works, if not recreate it
         """
-        if self.executor._broken:
-            self.executor.recreate_executor()
+        try:
+            self.executor.submit(lambda: None)
+        except Exception:
+            self.executor.shutdown(cancel_futures=True)
+            self.executor = concurrent.futures.ProcessPoolExecutor(
+                max_workers=self.nb_workers
+            )
             logger.error("Restart executor")
             print("Problem with executor ; restart")
-
-    def recreate_executor(self):
-        """
-        Recreate executor
-        """
-        del self.executor
-        self.executor = concurrent.futures.ProcessPoolExecutor(
-            max_workers=self.nb_workers
-        )
 
     def add(self, kind: str, func: Callable, args: dict) -> str:
         """
@@ -88,10 +95,12 @@ class Queue:
         """
         # generate a unique id
         unique_id = str(uuid.uuid4())
-        # create an event to control the function
+
+        # create an event to control the process
         event = self.manager.Event()
         args["event"] = event
-        # send the process
+
+        # send the process to the executor
         try:
             future = self.executor.submit(func, **args)
         except Exception as e:
@@ -102,9 +111,9 @@ class Queue:
         self.current[unique_id] = {"kind": kind, "future": future, "event": event}
         return unique_id
 
-    def kill(self, unique_id: str):
+    def kill(self, unique_id: str) -> dict:
         """
-        Send a kill process
+        Send a kill process with the event manager
         """
         if not unique_id in self.current:
             return {"error": "Id does not exist"}
@@ -112,9 +121,9 @@ class Queue:
         self.delete(unique_id)
         return {"success": "Process killed"}
 
-    def delete(self, ids: str | list):
+    def delete(self, ids: str | list) -> None:
         """
-        Delete completed element ou multiple elements from the queue
+        Delete completed elements from the stack
         """
         if type(ids) is str:
             ids = [ids]
@@ -126,7 +135,6 @@ class Queue:
     def state(self) -> dict:
         """
         Return state of the queue
-        List the stack and give the status/exception
         """
         r = {}
         for f in self.current:
@@ -139,7 +147,7 @@ class Queue:
             r[f] = {"state": info, "exception": exception}
         return r
 
-    def get_nb_active_processes(self) -> dict:
+    def get_nb_active_processes(self) -> int:
         """
         Number of active processes
         """
@@ -166,7 +174,7 @@ class Server:
         """
         Start the server
         """
-        self.time_start: datetime = datetime.now()
+        self.starting_time = time.time()
         self.SECRET_KEY = secrets.token_hex(32)
 
         # Define path
@@ -200,9 +208,6 @@ class Server:
         self.queue = Queue(self.n_workers)
         self.users = Users(self.db)
 
-        # starting time
-        self.starting_time = time.time()
-
     def __del__(self):
         """
         Close the server
@@ -210,11 +215,21 @@ class Server:
         print("Ending the server")
         logger.error("Disconnect server")
         self.queue.executor.shutdown()
+        self.queue.close()
         print("Server off")
 
     def create_db(self) -> None:
         """
         Initialize the database
+        Tables:
+        - projects
+        - schemes
+        - annotations
+        - users
+        - auth
+        - logs
+        - tokens
+        - generations
         """
 
         # create the repertory if needed
