@@ -232,7 +232,7 @@ class Server:
         self.db_manager.add_log(user, action, project, connect)
         logger.info(f"{action} from {user} in project {project}")
 
-    def get_logs(self, username: str, project_slug: str, limit: int):
+    def get_logs(self, username: str, project_slug: str, limit: int) -> pd.DataFrame:
         """
         Get logs for a user/project
         """
@@ -244,23 +244,12 @@ class Server:
         print(df)
         return df
 
-    def get_session_info(self, username: str):
-        """
-        Get information of a username session
-        """
-        projects = self.users.get_auth(username)
-        data = {
-            "projects": [i[0] for i in projects],
-            "auth": ["manager", "annotator"],
-        }
-        return data
-
     def get_projects(self, username: str) -> dict[dict]:
         """
         Get projects authorized for the user
         """
 
-        projects_auth = self.users.get_auth_user(username)
+        projects_auth = self.users.get_auth_projects(username)
         return [
             ProjectSummaryModel(
                 user_right=i[1],
@@ -271,25 +260,17 @@ class Server:
             for i in projects_auth
         ]
 
-    def db_get_project(self, project_slug: str) -> ProjectModel | None:
+    def get_project_params(self, project_slug: str) -> ProjectModel | None:
         """
         Get project from database
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM projects WHERE project_slug = ?"
-        cursor.execute(query, (project_slug,))
-        existing_project = cursor.fetchone()
-        conn.commit()
-        conn.close()
-
+        existing_project = self.db_manager.get_project(project_slug)
         if existing_project:
-            p = ProjectModel(**json.loads(existing_project[2]))
-            return p
+            return ProjectModel(**json.loads(existing_project["parameters"]))
         else:
             return None
 
-    def exists(self, project_name) -> bool:
+    def exists(self, project_name:str) -> bool:
         """
         Test if a project exists in the database
         with a sluggified form (to be able to use it in URL)
@@ -300,13 +281,8 @@ class Server:
         """
         Get existing projects
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT project_slug FROM projects"
-        cursor.execute(query)
-        existing_project = cursor.fetchall()
-        conn.close()
-        return [i[0] for i in existing_project]
+        existing_projects = self.db_manager.existing_projects()
+        return existing_projects
 
     def create_access_token(self, data: dict, expires_min: int = 60):
         """
@@ -318,42 +294,27 @@ class Server:
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
 
-        # add it in the database
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "INSERT INTO tokens (time_created, token, status) VALUES (CURRENT_TIMESTAMP, ?, ?)"
-        cursor.execute(query, (encoded_jwt, "active"))
-        conn.commit()
-        conn.close()
+        # add it in the database as active
+        self.db_manager.add_token(encoded_jwt, "active")
 
+        # return it
         return encoded_jwt
 
     def revoke_access_token(self, token) -> None:
         """
         Revoke existing access token
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "UPDATE tokens SET status = ?, time_revoked=CURRENT_TIMESTAMP WHERE token = ?"
-        cursor.execute(query, ("revoked", token))
-        conn.commit()
-        conn.close()
+        self.db_manager.revoke_token(token)
         return None
 
     def decode_access_token(self, token: str):
         """
         Decode access token
         """
-        # check if token is not revoked
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM tokens WHERE token = ? AND status = ?"
-        cursor.execute(query, (token, "active"))
-        el = cursor.fetchall()
-        if len(el) == 0:
-            return {"error": "This token is not active"}
-        conn.commit()
-        conn.close()
+        # get status
+        status = self.db_manager.get_token_status(token)
+        if status != "active":
+            return {"error":"Token not valid"}
 
         # decode payload
         payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
@@ -373,29 +334,18 @@ class Server:
         """
         Update project parameters in the DB
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM projects WHERE project_slug = ?"
-        cursor.execute(query, (project.project_slug,))
-        existing_project = cursor.fetchone()
+
+        # get project
+        existing_project = self.db_manager.get_project(project.project_slug)
 
         if existing_project:
             # Update the existing project
-            update_query = "UPDATE projects SET parameters = ?, time_modified = CURRENT_TIMESTAMP WHERE project_slug = ?"
-            cursor.execute(
-                update_query,
-                (json.dumps(jsonable_encoder(project)), project.project_slug),
-            )
+            self.db_manager.update_project(project.project_slug, jsonable_encoder(project))
+            return {"success": "project updated"}
         else:
             # Insert a new project
-            insert_query = "INSERT INTO projects (project_slug, parameters, time_modified, user) VALUES (?, ?, CURRENT_TIMESTAMP, ?)"
-            cursor.execute(
-                insert_query,
-                (project.project_slug, json.dumps(jsonable_encoder(project)), username),
-            )
-        conn.commit()
-        conn.close()
-        return {"success": "project updated"}
+            self.db_manager.add_project(project.project_slug, jsonable_encoder(project), username)
+            return {"success": "project added"}
 
     def create_project(self, params: ProjectDataModel, username: str) -> dict:
         """
@@ -415,12 +365,10 @@ class Server:
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
 
+        # create dedicated directory
         params.dir = self.path / project_slug
-
         if params.dir.exists():
             return {"error": "This name is already used"}
-
-        # create the project directory
         os.makedirs(params.dir)
 
         # copy total dataset as a copy (csv for the moment)
@@ -517,50 +465,25 @@ class Server:
 
         # if the case, add labels in the database
         if (not params.col_label is None) and ("label" in trainset.columns):
-            print("label case")
+
+            print("Add scheme/labels from file")
+
             df = trainset["label"].dropna()
             params.default_scheme = list(df.unique())
+
             # add the scheme in the database
-            conn = sqlite3.connect(self.db)
-            cursor = conn.cursor()
-            query = """
-                    INSERT INTO schemes (project, name, params) 
-                    VALUES (?, ?, ?)
-                    """
-            cursor.execute(
-                query,
-                (project_slug, "default", json.dumps(params.default_scheme)),
-            )
-            conn.commit()
+            self.db_manager.add_scheme(project_slug, "default", json.dumps(params.default_scheme), "file")
+            
             # add the labels in the database
-            query = """
-            INSERT INTO annotations (action, user, project, element_id, scheme, tag)
-            VALUES (?,?,?,?,?,?);
-            """
             for element_id, label in df.items():
-                print(
-                    (
-                        "add",
-                        username,
-                        project_slug,
-                        element_id,
-                        "default",
-                        label,
-                    )
-                )
-                cursor.execute(
-                    query,
-                    (
-                        "add",
-                        username,
-                        project_slug,
-                        element_id,
-                        "default",
-                        label,
-                    ),
-                )
-                conn.commit()
-            conn.close()
+                self.db_manager.add_annotation(action="add", 
+                                               user=username, 
+                                               project_slug=project_slug, 
+                                               element_id=element_id, 
+                                               scheme="default", 
+                                               tag=label)
+                print("add annotations ",element_id)
+
 
         # add user right on the project + root
         self.users.set_auth(username, project_slug, "manager")
@@ -582,19 +505,12 @@ class Server:
         if not self.exists(project_slug):
             return {"error": "Project doesn't exist"}
 
-        # remove files
-        params = self.db_get_project(project_slug)
+        # remove directory
+        params = self.get_project_params(project_slug)
         shutil.rmtree(params.dir)
 
         # clean database
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM projects WHERE project_slug = ?", (project_slug,))
-        cursor.execute(f"DELETE FROM schemes WHERE project = ?", (project_slug,))
-        cursor.execute(f"DELETE FROM annotations WHERE project = ?", (project_slug,))
-        cursor.execute(f"DELETE FROM auth WHERE project = ?", (project_slug,))
-        conn.commit()
-        conn.close()
+        self.db_manager.delete_project(project_slug)
         return {"success": "Project deleted"}
 
 
@@ -2032,7 +1948,7 @@ class Users:
         conn.close()
         return {"success": "Auth deleted"}
 
-    def get_auth_user(self, username: str) -> list:
+    def get_auth_projects(self, username: str) -> list:
         """
         Get user auth
         Comments:

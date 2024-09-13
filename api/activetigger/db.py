@@ -3,6 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 from activetigger.functions import get_root_pwd, get_hash
+import datetime
+import json
 
 Base = declarative_base()
 
@@ -151,3 +153,83 @@ class DatabaseManager:
         }
         for log in logs
     ]
+
+    def get_project(self, project_slug: str):
+        session = self.Session()
+        project = session.query(Project).filter_by(project_slug=project_slug).first()
+        session.close()
+        if project:
+            return project.__dict__
+        else:
+            return None
+        
+    def add_project(self, project_slug: str, parameters: dict, username: str):
+        session = self.Session()
+        project = Project(project_slug=project_slug, parameters=json.dumps(parameters), time_modified=datetime.datetime.now(), user=username)
+        session.add(project)
+        session.commit()
+        session.close()
+
+    def update_project(self, project_slug: str, parameters: dict):
+        session = self.Session()
+        project = session.query(Project).filter_by(project_slug=project_slug).first()
+        project.time_modified = datetime.datetime.now()
+        project.parameters = json.dumps(parameters)
+        session.commit()
+        session.close()
+        
+    def existing_projects(self) -> list:
+        session = self.Session()
+        projects = session.query(Project).all()
+        session.close()
+        return [project.project_slug for project in projects]
+    
+    def add_token(self, token:str, status:str):
+        session = self.Session()
+        token = Token(token=token, status=status)
+        session.add(token)
+        session.commit()
+        session.close()
+
+    def get_token_status(self, token:str):
+        session = self.Session()
+        token = session.query(Token).filter_by(token=token).first()
+        session.close()
+        if token:
+            return token.status
+        else:
+            return None
+
+    def revoke_token(self, token:str):
+        session = self.Session()
+        token = session.query(Token).filter_by(token=token).first()
+        token.time_revoked = datetime.datetime.now()
+        token.status = "revoked"
+        session.commit()
+        session.close()
+
+    def add_scheme(self, project_slug: str, name: str, params: dict, username: str):
+        session = self.Session()
+        scheme = Scheme(project=project_slug, name=name, params=params, user=username)
+        session.add(scheme)
+        session.commit()
+        session.close()
+
+    def add_annotation(self, action: str, user: str, project_slug: str, element_id: str, scheme:str, tag:str):
+        session = self.Session()
+        annotation = Annotation(action=action, user=user, project=project_slug, element_id=element_id, scheme=scheme, tag=tag)
+        session.add(annotation)
+        session.commit()
+        session.close()
+
+    def delete_project(self, project_slug: str):
+        session = self.Session()
+        session.query(Project).filter(Project.project_slug == project_slug).delete()
+        session.query(Scheme).filter(Scheme.project == project_slug).delete()
+        session.query(Annotation).filter(Annotation.project == project_slug).delete()
+        session.query(Auth).filter(Auth.project == project_slug).delete()
+        session.query(Generation).filter(Generation.project == project_slug).delete()
+        session.query(Log).filter(Log.project == project_slug).delete()
+        session.commit()
+        session.close()
+
