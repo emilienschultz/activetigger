@@ -87,7 +87,7 @@ class DatabaseManager:
     """
     Database management with SQLAlchemy
     """
-    def __init__(self, path_db):
+    def __init__(self, path_db:str):
         self.db_url = f"sqlite:///{path_db}"
 
         # test if the db exists, else create it
@@ -110,14 +110,34 @@ class DatabaseManager:
         self.engine = create_engine(self.db_url)
         Base.metadata.create_all(self.engine)
 
-    def add_user(self, user, key, description, created_by):
+    def create_root_session(self) -> None:
+        """
+        Create root session
+        :return: None
+        """
+        pwd: str = get_root_pwd()
+        hash_pwd: bytes = get_hash(pwd)
+        self.add_user("root", hash_pwd, "root", "system")
+
+    def add_user(self, user:str, key:str, description:str, created_by:str):
         session = self.Session()
         user = User(user=user, key=key, description=description, created_by=created_by)
         session.add(user)
         session.commit()
         session.close()
 
-    def create_root_session(self):
-        pwd = get_root_pwd()
-        hash_pwd = get_hash(pwd)
-        self.add_user("root", hash_pwd, "root", "system")
+    def add_log(self, user:str, action:str, project_slug:str, connect:str):
+        session = self.Session()
+        log = Log(user=user, project=project_slug, action=action, connect=connect)
+        session.add(log)
+        session.commit()
+        session.close()
+
+    def get_logs(self, username: str, project_slug: str, limit: int):
+        session = self.Session()
+        if project_slug == "all":
+            logs = session.query(Log).filter_by(user=username).order_by(Log.time.desc()).limit(limit).all()
+        else:
+            logs = session.query(Log).filter_by(user=username, project=project_slug).order_by(Log.time.desc()).limit(limit).all()
+        session.close()
+        return logs

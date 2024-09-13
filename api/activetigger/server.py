@@ -229,31 +229,15 @@ class Server:
         """
         Log action in the database
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "INSERT INTO logs (user, project, action, connect) VALUES (?, ?, ?, ?)"
-        cursor.execute(query, (user, project, action, connect))
-        conn.commit()
-        conn.close()
+        self.db_manager.add_log(user, action, project, connect)
         logger.info(f"{action} from {user} in project {project}")
 
     def get_logs(self, username: str, project_slug: str, limit: int):
         """
         Get logs for a user/project
-
-        TODO : timezone for the timestamp
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        if project_slug == "all":
-            query = """SELECT * FROM logs WHERE user = ? ORDER BY time DESC"""
-            cursor.execute(query, (username,))
-        else:
-            query = """SELECT * FROM logs WHERE user = ? AND project = ? ORDER BY time DESC LIMIT ?"""
-            cursor.execute(query, (username, project_slug, limit))
-        logs = cursor.fetchall()
-        conn.commit()
-        conn.close()
+        logs = self.db_manager.get_logs(username, project_slug, limit)
+        print(logs)
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )
