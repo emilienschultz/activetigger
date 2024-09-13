@@ -33,8 +33,7 @@ import openai
 from typing import Callable
 from multiprocessing import Manager
 import secrets
-from sqlalchemy import create_engine, Table, Column, String, Text, DateTime, MetaData
-from sqlalchemy.sql import func
+from activetigger.db import DatabaseManager 
 
 logger = logging.getLogger("server")
 
@@ -206,7 +205,7 @@ class Server:
         self.projects: dict = {}
         self.db_manager = DatabaseManager(self.db)
         self.queue = Queue(self.n_workers)
-        self.users = Users(self.db)
+        self.users = Users(self.db,  self.db_manager)
 
     def __del__(self):
         """
@@ -255,7 +254,7 @@ class Server:
                 user_right=i[1],
                 parameters=ProjectModel(**json.loads(i[2])),
                 created_by=i[3],
-                created_at=i[4],
+                created_at=i[4].strftime('%Y-%m-%d %H:%M:%S'),
             )
             for i in projects_auth
         ]
@@ -327,7 +326,7 @@ class Server:
         if not self.exists(project_slug):
             return {"error": "Project does not exist"}
 
-        self.projects[project_slug] = Project(project_slug, self.db, self.queue)
+        self.projects[project_slug] = Project(project_slug, self.db, self.queue, self.db_manager)
         return {"success": "Project loaded"}
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
@@ -519,7 +518,7 @@ class Project(Server):
     Project object
     """
 
-    def __init__(self, project_slug: str, path_db: Path, queue) -> None:
+    def __init__(self, project_slug: str, path_db: Path, queue: Queue, db_manager: DatabaseManager) -> None:
         """
         Load existing project
         """
@@ -527,7 +526,10 @@ class Project(Server):
         self.name: str = project_slug
         self.db = path_db
         self.queue = queue
+        self.db_manager = db_manager
         self.params: ProjectModel = self.load_params(project_slug)
+
+        # check if directory exists
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
 
@@ -542,7 +544,7 @@ class Project(Server):
             self.db,
         )
         self.features: Features = Features(
-            project_slug, self.params.dir / self.features_file, self.db, self.queue
+            project_slug, self.params.dir / self.features_file, self.queue
         )
         self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
@@ -555,23 +557,15 @@ class Project(Server):
         """
         Load params from database
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM projects WHERE project_slug = ?"
-        cursor.execute(query, (project_slug,))
-        existing_project = cursor.fetchone()
-        conn.commit()
-        conn.close()
-
+        existing_project = self.db_manager.get_project(project_slug)
         if existing_project:
-            return ProjectModel(**json.loads(existing_project[2]))
+            return ProjectModel(**json.loads(existing_project["parameters"]))
         else:
             raise NameError(f"{project_slug} does not exist.")
 
     def add_testdata(self, testset: TestSetDataModel):
         """
         Add a test dataset
-        TODO: implement
         """
         if self.schemes.test is not None:
             return {"error": "Already a test dataset"}
@@ -1030,40 +1024,25 @@ class Project(Server):
         endpoint: str,
         element_id: str,
         prompt: str,
-        result: str,
+        answer: str,
     ):
         """
         Add a generated element in the database
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        insert_query = "INSERT INTO generations (user, project, element_id, endpoint, prompt, answer) VALUES (?, ?, ?, ?, ?, ?)"
-        cursor.execute(
-            insert_query, (user, project_name, element_id, endpoint, prompt, result)
-        )
-        conn.commit()
-        conn.close()
+        self.db_manager.add_generated(user=user, 
+                                       project_slug=project_name, 
+                                       element_id=element_id, 
+                                       endpoint=endpoint, 
+                                       prompt=prompt, 
+                                       answer=answer)
         print("Added generation", element_id)
         return None
 
-    def get_generated(self, project_name, n_elements):
+    def get_generated(self, project_slug: str, n_elements: str) -> DataFrame:
         """
         Get generated elements from the database
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """SELECT element_id, prompt, answer, endpoint FROM generations WHERE project = ?  
-                ORDER BY time DESC
-                LIMIT ?"""
-        cursor.execute(
-            query,
-            (
-                project_name,
-                n_elements,
-            ),
-        )
-        result = cursor.fetchall()
-        conn.close()
+        result = self.db_manager.get_generated(project_slug=project_slug, n_elements=n_elements)
         df = pd.DataFrame(result, columns=["index", "prompt", "answer", "endpoint"])
         return df
 
@@ -1110,85 +1089,73 @@ class Project(Server):
         print(errors)
         return None
 
-    async def compute_zeroshot(self, df, params):
-        """
-        Zero-shot beta version
-        # TODO : chunk & control the context size
-        """
-        r_error = ["error"] * len(df)
+    # async def compute_zeroshot(self, df, params):
+    #     """
+    #     Zero-shot beta version
+    #     # TODO : chunk & control the context size
+    #     """
+    #     r_error = ["error"] * len(df)
 
-        # create the chunks
-        # FOR THE MOMENT, ONLY 10 elements for DEMO
-        if len(df) > 10:
-            df = df[0:10]
+    #     # create the chunks
+    #     # FOR THE MOMENT, ONLY 10 elements for DEMO
+    #     if len(df) > 10:
+    #         df = df[0:10]
 
-        # create prompt
-        list_texts = "\nTexts to annotate:\n"
-        for i, t in enumerate(list(df["text"])):
-            list_texts += f"{i}. {t}\n"
-        prompt = (
-            params.prompt
-            + list_texts
-            + '\nResponse format:\n{"annotations": [{"text": "Text 1", "label": "Label1"}, {"text": "Text 2", "label": "Label2"}, ...]}'
-        )
+    #     # create prompt
+    #     list_texts = "\nTexts to annotate:\n"
+    #     for i, t in enumerate(list(df["text"])):
+    #         list_texts += f"{i}. {t}\n"
+    #     prompt = (
+    #         params.prompt
+    #         + list_texts
+    #         + '\nResponse format:\n{"annotations": [{"text": "Text 1", "label": "Label1"}, {"text": "Text 2", "label": "Label2"}, ...]}'
+    #     )
 
-        # make request to client
-        # client = openai.OpenAI(api_key=params.token)
-        try:
-            self.zeroshot = "computing"
-            client = openai.AsyncOpenAI(api_key=params.token)
-            print("Make openai call")
-            chat_completion = await client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": """Your are a careful assistant who annotates texts for a research project. 
-                    You follow precisely the guidelines, which can be in different languages.
-                    """,
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },
-                ],
-                model="gpt-3.5-turbo",
-                response_format={"type": "json_object"},
-            )
-            print("OpenAI call done")
-        except:
-            self.zeroshot = None
-            return {"error": "API connexion failed. Check the token."}
-        # extracting results
-        try:
-            r = json.loads(chat_completion.choices[0].message.content)["annotations"]
-            r = [i["label"] for i in r]
-        except:
-            return {"error": "Format problem"}
-        if len(r) == len(df):
-            df["zero_shot"] = r
-            self.zeroshot = df[["text", "zero_shot"]].reset_index().to_json()
-            return {"success": "data computed"}
-        else:
-            return {"error": "Problem with the number of element"}
+    #     # make request to client
+    #     # client = openai.OpenAI(api_key=params.token)
+    #     try:
+    #         self.zeroshot = "computing"
+    #         client = openai.AsyncOpenAI(api_key=params.token)
+    #         print("Make openai call")
+    #         chat_completion = await client.chat.completions.create(
+    #             messages=[
+    #                 {
+    #                     "role": "system",
+    #                     "content": """Your are a careful assistant who annotates texts for a research project. 
+    #                 You follow precisely the guidelines, which can be in different languages.
+    #                 """,
+    #                 },
+    #                 {
+    #                     "role": "user",
+    #                     "content": prompt,
+    #                 },
+    #             ],
+    #             model="gpt-3.5-turbo",
+    #             response_format={"type": "json_object"},
+    #         )
+    #         print("OpenAI call done")
+    #     except:
+    #         self.zeroshot = None
+    #         return {"error": "API connexion failed. Check the token."}
+    #     # extracting results
+    #     try:
+    #         r = json.loads(chat_completion.choices[0].message.content)["annotations"]
+    #         r = [i["label"] for i in r]
+    #     except:
+    #         return {"error": "Format problem"}
+    #     if len(r) == len(df):
+    #         df["zero_shot"] = r
+    #         self.zeroshot = df[["text", "zero_shot"]].reset_index().to_json()
+    #         return {"success": "data computed"}
+    #     else:
+    #         return {"error": "Problem with the number of element"}
 
     def get_active_users(self, period: int = 300):
         """
         Get current active users on the time period
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT DISTINCT(user) FROM logs WHERE project = ? AND time > ?"
-        time = datetime.now() - timedelta(seconds=period)
-        cursor.execute(
-            query,
-            (
-                self.name,
-                time.timestamp(),
-            ),
-        )
-        result = cursor.fetchall()
-        conn.close()
-        return [u[0] for u in result]
+        users = self.db_manager.get_distinct_users(self.name, period)
+        return users
 
 
 class Features:
@@ -1200,14 +1167,13 @@ class Features:
     """
 
     def __init__(
-        self, project_slug: str, data_path: Path, db_path: Path, queue
+        self, project_slug: str, data_path: Path, queue
     ) -> None:
         """
         Initit features
         """
         self.project_slug = project_slug
         self.path = data_path
-        self.db = db_path
         self.queue = queue
         self.informations = {}
         content, map = self.load()
@@ -1389,12 +1355,14 @@ class Schemes:
         path_content: Path,  # training data
         path_test: Path,  # test data
         db_path: Path,
+        db_manager: DatabaseManager,
     ) -> None:
         """
         Init empty
         """
         self.project_slug = project_slug
         self.db = db_path
+        self.db_manager = db_manager
         self.content = pd.read_parquet(path_content)  # text + context
         self.test = None
         if path_test.exists():
@@ -1433,21 +1401,25 @@ class Schemes:
         # - last element for each id
         # - for a specific scheme
 
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        action = "(" + " OR ".join([f"action = ?" for i in kind]) + ")"
+        results = self.db_manager.get_scheme_elements(self.project_slug, scheme, kind)
 
-        query = f"""
-            SELECT element_id, tag, user, MAX(time)
-            FROM annotations
-            WHERE scheme = ? AND project = ? AND {action}
-            GROUP BY element_id
-            ORDER BY time DESC;
-        """
-        cursor.execute(query, (scheme, self.project_slug) + tuple(kind))
+        # conn = sqlite3.connect(self.db)
+        # cursor = conn.cursor()
+        # action = "(" + " OR ".join([f"action = ?" for i in kind]) + ")"
 
-        results = cursor.fetchall()
-        conn.close()
+        # query = f"""
+        #     SELECT element_id, tag, user, MAX(time)
+        #     FROM annotations
+        #     WHERE scheme = ? AND project = ? AND {action}
+        #     GROUP BY element_id
+        #     ORDER BY time DESC;
+        # """
+        # cursor.execute(query, (scheme, self.project_slug) + tuple(kind))
+
+        # results = cursor.fetchall()
+        # conn.close()
+
+
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "timestamp"]
         ).set_index("id")
@@ -1885,11 +1857,12 @@ class Users:
     Managers users
     """
 
-    def __init__(self, db_path: Path, file_users: str = "add_users.yaml"):
+    def __init__(self, db_path: Path,  db_manager: DatabaseManager, file_users: str = "add_users.yaml"):
         """
         Init users references
         """
         self.db = db_path
+        self.db_manager = db_manager
 
         # add users if add_users.yaml exists
         if Path(file_users).exists():
@@ -1908,64 +1881,28 @@ class Users:
         """
         Get user auth for a project
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """SELECT user, status FROM auth WHERE project = ?"""
-        cursor.execute(query, (project_slug,))
-        auth = cursor.fetchall()
-        conn.commit()
-        conn.close()
-        return {i[0]: i[1] for i in auth}
+        auth = self.db_manager.get_project_auth(project_slug)
+        return auth
 
     def set_auth(self, username: str, project_slug: str, status: str):
         """
         Set user auth for a project
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-
-        # Attempt to update the entry
-        update_query = "UPDATE auth SET status = ? WHERE project = ? AND user = ?"
-        cursor.execute(update_query, (status, project_slug, username))
-
-        if cursor.rowcount == 0:
-            # If no rows were updated, insert a new entry
-            insert_query = "INSERT INTO auth (project, user, status) VALUES (?, ?, ?)"
-            cursor.execute(insert_query, (project_slug, username, status))
-        conn.commit()
-        conn.close()
+        self.db_manager.add_auth(project_slug, username, status)
         return {"success": "Auth added to database"}
 
     def delete_auth(self, username: str, project_slug: str):
         """
         Delete user auth
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        insert_query = "DELETE FROM auth WHERE project=? AND user = ?"
-        cursor.execute(insert_query, (project_slug, username))
-        conn.commit()
-        conn.close()
+        self.db_manager.delete_auth(project_slug, username)
         return {"success": "Auth deleted"}
 
     def get_auth_projects(self, username: str) -> list:
         """
         Get user auth
-        Comments:
-        - Either for all projects
-        - Or one project
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """SELECT auth.project, auth.status, projects.parameters, projects.user, projects.time_created
-        FROM auth
-        JOIN projects ON auth.project = projects.project_slug
-        WHERE auth.user = ?"""
-        #        query = """SELECT project, status FROM auth WHERE user = ?"""
-        cursor.execute(query, (username,))
-        auth = cursor.fetchall()
-        conn.commit()
-        conn.close()
+        auth = self.db_manager.get_user_projects(username)
         return auth
 
     def get_auth(self, username: str, project_slug: str = "all") -> list:
@@ -1975,17 +1912,10 @@ class Users:
         - Either for all projects
         - Or one project
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
         if project_slug == "all":
-            query = """SELECT project, status FROM auth WHERE user = ?"""
-            cursor.execute(query, (username,))
+            auth = self.db_manager.get_user_auth(username)
         else:
-            query = """SELECT status FROM auth WHERE user = ? AND project = ?"""
-            cursor.execute(query, (username, project_slug))
-        auth = cursor.fetchall()
-        conn.commit()
-        conn.close()
+            auth = self.db_manager.get_user_auth(username, project_slug)
         return auth
 
     def existing_users(self) -> list:
@@ -1993,13 +1923,9 @@ class Users:
         Get existing users
         (except root which can't be modified)
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT user FROM users"
-        cursor.execute(query)
-        existing_users = cursor.fetchall()
-        conn.close()
-        return [i[0] for i in existing_users]
+        users = self.db_manager.get_users()
+        print("Existing users", users)
+        return users
 
     def add_user(
         self, name: str, password: str, role: str = "manager", created_by: str = "NA"
@@ -2013,15 +1939,8 @@ class Users:
         if name in self.existing_users():
             return {"error": "Username already exists"}
         hash_pwd = functions.get_hash(password)
-        # add user
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        insert_query = (
-            "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
-        )
-        cursor.execute(insert_query, (name, hash_pwd, role, created_by))
-        conn.commit()
-        conn.close()
+        self.db_manager.add_user(name, hash_pwd, role, created_by)
+
         return {"success": "User added to the database"}
 
     def delete_user(self, name: str) -> dict:
@@ -2035,12 +1954,7 @@ class Users:
             return {"error": "Can't delete root user"}
 
         # delete the user
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "DELETE FROM users WHERE user = ?"
-        cursor.execute(query, (name,))
-        conn.commit()
-        conn.close()
+        self.db_manager.delete_user(name)
 
         return {"success": "User deleted"}
 
@@ -2050,14 +1964,8 @@ class Users:
         """
         if not name in self.existing_users():
             return {"error": "Username doesn't exist"}
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM users WHERE user = ?"
-        cursor.execute(query, (name,))
-        user = cursor.fetchone()
-        u = UserInDBModel(username=name, hashed_password=user[3], status=user[4])
-        conn.close()
-        return u
+        user = self.db_manager.get_user(name)
+        return UserInDBModel(username=name, hashed_password=user["key"], status=user["description"])
 
     def authenticate_user(
         self, username: str, password: str
@@ -2079,4 +1987,4 @@ class Users:
         user_auth = self.get_auth(username, project_slug)
         if len(user_auth) == 0:  # not associated
             return None
-        return user_auth[0][0]
+        return user_auth[0][1]

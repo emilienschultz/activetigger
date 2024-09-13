@@ -233,3 +233,123 @@ class DatabaseManager:
         session.commit()
         session.close()
 
+    def add_generated(self, user: str, project_slug: str, element_id: str, endpoint: str, prompt: str, answer: str):
+        session = self.Session()
+        generation = Generation(user=user, project=project_slug,  element_id=element_id, endpoint=endpoint, prompt=prompt, answer=answer)
+        session.add(generation)
+        session.commit()
+        session.close()
+
+    def get_generated(self, project_slug: str, n_elements: int):
+        session = self.Session()
+        generated = session.query(Generation).filter(Generation.project == project_slug).order_by(Generation.time.desc()).limit(n_elements).all()
+        session.close()
+        return [[el.element_id, el.prompt, el.answer, el.endpoint] for el in generated]
+    
+    def get_distinct_users(self, project_slug: str, timespan: int | None):
+        session = self.Session()
+        if timespan:
+            time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
+            users = session.query(Generation.user).filter(Generation.project == project_slug, Generation.time > time_threshold).distinct().all()
+
+        else:
+            users = session.query(Generation.user).filter(Generation.project == project_slug).distinct().all()
+        session.close()
+        return [u.user for u in users]
+
+    def get_project_auth(self, project_slug: str):
+        session = self.Session()
+        auth = session.query(Auth).filter(Auth.project == project_slug).all()
+        session.close()
+        return {el.user:el.status for el in auth}
+    
+    def add_auth(self, project_slug: str, user: str, status: str):
+        session = self.Session()
+        auth = session.query(Auth).filter(Auth.project == project_slug, Auth.user == user).first()
+        if auth:
+            auth.status = status
+        else:
+            auth = Auth(project=project_slug, user=user, status=status)
+            session.add(auth)
+        session.commit()
+        session.close()
+
+    def delete_auth(self, project_slug: str, user: str):
+        session = self.Session()
+        session.query(Auth).filter(Auth.project == project_slug, Auth.user == user).delete()
+        session.commit()
+        session.close()
+
+    def get_user_projects(self, username: str):
+        session = self.Session()
+        result = session.query(
+                    Auth.project,
+                    Auth.status,
+                    Project.parameters,
+                    Project.user,
+                    Project.time_created
+                ).join(Project, Auth.project == Project.project_slug).filter(Auth.user == username).all()
+        session.close()
+        return [row for row in result]
+    
+    def get_user_auth(self, username: str, project_slug: str = None):
+        session = self.Session()
+        if project_slug is None:
+            result = session.query(
+                    Auth.user,
+                    Auth.status
+                ).filter(Auth.user == username).all()
+        else:
+            result = session.query(
+                    Auth.user,
+                    Auth.status
+                ).filter(Auth.user == username, Auth.project == project_slug).all()
+        session.close()
+        return [[row[0], row[1]] for row in result]
+    
+    def get_users(self):
+        session = self.Session()
+        result = session.query(User.user).distinct().all()
+        session.close()
+        return [row.user for row in result]
+
+    def add_user(self, username: str, password: str, role: str, created_by: str):
+        session = self.Session()
+        user = User(user=username, key=password, description=role, created_by=created_by)
+        session.add(user)
+        session.commit()
+        session.close()
+
+    def delete_user(self, username: str):
+        session = self.Session()
+        session.query(User).filter(User.user == username).delete()
+        session.commit()
+        session.close()
+
+    def get_user(self, username: str):
+        session = self.Session()
+        user = session.query(User).filter(User.user == username).first()
+        session.close()
+        return {"key":user.key, "description":user.description}
+    
+    def get_scheme_elements(self, project_slug: str, scheme: str, actions: list[str]):
+        """
+        Get last annotation for each element id for a project/scheme
+        """
+        session = self.Session()
+        query = session.query(
+            Annotation.element_id,
+            Annotation.tag,
+            Annotation.user,
+            Annotation.time,
+            func.max(Annotation.time)
+        ).filter(
+            Annotation.scheme == scheme,
+            Annotation.project == project_slug,
+            Annotation.action.in_(actions)
+        ).group_by(Annotation.element_id).order_by(func.max(Annotation.time).desc())
+
+        # Execute the query and fetch all results
+        results = query.all()
+        session.close()
+        return [[row.element_id, row.tag, row.user, row.time] for row in results]

@@ -901,8 +901,10 @@ async def postgenerate(
     """
     Launch a call to generate from a prompt
     """
+    print("Start generation", request)
     # get subset of unlabelled elements
     df = project.schemes.get_table(request.scheme, 0, request.n_batch, request.mode)
+    print(df)
     # make the call
     r = await project.generate(current_user.username, project.name, df, request)
     # if call success, added in the database
