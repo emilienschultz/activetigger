@@ -48,7 +48,6 @@ from activetigger.datamodels import (
     ProjectAuthsModel,
     WaitingModel,
     DocumentationModel,
-    TableLogsModel,
     ReconciliationModel,
     AuthActions,
     AvailableProjectsModel,
@@ -448,19 +447,16 @@ async def get_auth(username: str) -> List:
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(
-    username: str, project_slug: str = "all", limit=100
-) -> TableLogsModel:
+    username: str, project_slug: str = "all", limit:int  =100
+) -> TableOutModel:
     """
     Get all logs for a username/project
     """
     df = server.get_logs(username, project_slug, limit)
-    return TableLogsModel(
-        time=list(df["time"]),
-        user=list(df["user"]),
-        project=list(df["project"]),
-        action=list(df["action"]),
+    return TableOutModel(
+        items= df.to_dict(orient="records"),
+        total=limit,
     )
-
 
 # Projects management
 # --------------------

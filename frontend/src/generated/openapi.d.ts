@@ -1567,20 +1567,6 @@ export interface components {
             dataset: string | null;
         };
         /**
-         * TableLogsModel
-         * @description Response for table of logs
-         */
-        TableLogsModel: {
-            /** Time */
-            time: unknown[];
-            /** User */
-            user: unknown[];
-            /** Project */
-            project: unknown[];
-            /** Action */
-            action: unknown[];
-        };
-        /**
          * TableOutModel
          * @description Response for table of elements
          */
@@ -1962,7 +1948,7 @@ export interface operations {
             query: {
                 username: string;
                 project_slug?: string;
-                limit?: unknown;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -1976,7 +1962,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TableLogsModel"];
+                    "application/json": components["schemas"]["TableOutModel"];
                 };
             };
             /** @description Validation Error */
@@ -2568,7 +2554,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json": components["schemas"]["TableOutModel"];
                 };
             };
             /** @description Validation Error */

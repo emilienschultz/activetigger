@@ -140,4 +140,14 @@ class DatabaseManager:
         else:
             logs = session.query(Log).filter_by(user=username, project=project_slug).order_by(Log.time.desc()).limit(limit).all()
         session.close()
-        return logs
+        return [
+        {
+            'id': log.id,
+            'time': log.time,
+            'user': log.user,
+            'project': log.project,
+            'action': log.action,
+            'connect': log.connect
+        }
+        for log in logs
+    ]

@@ -337,16 +337,6 @@ class TableOutModel(BaseModel):
     total: int
 
 
-class TableLogsModel(BaseModel):
-    """
-    Response for table of logs
-    """
-
-    time: List
-    user: List
-    project: List
-    action: List
-
 
 class TableInModel(BaseModel):
     """

@@ -579,4 +579,4 @@ async def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b
         except:
             return {"error": "Error in the content"}
     else:
-        return {"error": "Error in the API call "+response.content}
+        return {"error": "Error in the API call " + response.content}

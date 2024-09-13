@@ -1369,3 +1369,27 @@ export function useGeneratedElements(project_slug: string | null, n_elements: nu
   }, [project_slug, n_elements]);
   return { generated: getAsyncMemoData(getGeneratedElements) };
 }
+
+/**
+ * Get logs
+ */
+export function useGetLogs(project_slug: string | null, username: string | null, limit: number) {
+  const getLogs = useAsyncMemo(async () => {
+    if (limit && project_slug && username) {
+      const res = await api.GET('/logs', {
+        params: {
+          query: {
+            username: username,
+            project_slug: project_slug,
+            limit: limit,
+          },
+        },
+      });
+      if (!res.error && res.data) {
+        return res.data.items;
+      }
+    }
+    return null;
+  }, [project_slug, username, limit]);
+  return { logs: getAsyncMemoData(getLogs) };
+}

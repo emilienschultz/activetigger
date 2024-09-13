@@ -2,9 +2,11 @@ import { FC } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useDeleteProject } from '../core/api';
+import { useDeleteProject, useGetLogs } from '../core/api';
 //import { useUserProjects } from '../core/api';
 import Tabs from 'react-bootstrap/Tabs';
+import DataGrid, { Column } from 'react-data-grid';
+import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
 import { ProjectStatistics } from './ProjectStatistics';
@@ -15,6 +17,12 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
  * Component to display the project page
  */
 
+interface Row {
+  time: string;
+  user: string;
+  action: string;
+}
+
 export const ProjectPage: FC = () => {
   const { projectName } = useParams();
 
@@ -24,6 +32,11 @@ export const ProjectPage: FC = () => {
   } = useAppContext();
 
   const navigate = useNavigate();
+
+  const { authenticatedUser } = useAuth();
+
+  // get logs
+  const { logs } = useGetLogs(projectName || null, authenticatedUser?.username || null, 100);
 
   // function to delete project
   const deleteProject = useDeleteProject();
@@ -40,6 +53,23 @@ export const ProjectPage: FC = () => {
   };
 
   const activeUsers = project?.users?.active ? project?.users?.active : [];
+
+  const columns: readonly Column<Row>[] = [
+    {
+      name: 'Time',
+      key: 'time',
+      resizable: true,
+    },
+    {
+      name: 'User',
+      key: 'user',
+      resizable: true,
+    },
+    {
+      name: 'Action',
+      key: 'action',
+    },
+  ];
 
   return (
     projectName && (
@@ -80,6 +110,11 @@ export const ProjectPage: FC = () => {
                 <button onClick={actionClearHistory} className="delete-button">
                   Clear history
                 </button>
+                <DataGrid<Row>
+                  className="fill-grid mt-5"
+                  columns={columns}
+                  rows={(logs as unknown as Row[]) || []}
+                />
               </Tab>
               <Tab eventKey="parameters" title="Parameters">
                 <span className="explanations">Parameters of this project</span>

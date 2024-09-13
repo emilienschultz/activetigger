@@ -241,6 +241,7 @@ class Server:
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )
+        print(df)
         return df
 
     def get_session_info(self, username: str):
