@@ -15,6 +15,7 @@ from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 import activetigger.functions as functions
+from activetigger.db import DatabaseManager
 from activetigger.models import BertModels, SimpleModels
 from activetigger.datamodels import (
     ProjectDataModel,
@@ -32,6 +33,8 @@ import openai
 from typing import Callable
 from multiprocessing import Manager
 import secrets
+from sqlalchemy import create_engine, Table, Column, String, Text, DateTime, MetaData
+from sqlalchemy.sql import func
 
 logger = logging.getLogger("server")
 
@@ -180,7 +183,6 @@ class Server:
         # Define path
         self.path = Path(path)
         self.path_models = Path(path_models)
-
         # if a YAML configuration file exists, overwrite
         if Path("config.yaml").exists():
             with open("config.yaml") as f:
@@ -190,21 +192,19 @@ class Server:
             if "path_models" in config:
                 self.path_models = Path(config["path_models"])
 
-        # create the database & root password
         self.db = self.path / self.db_name
-        if not self.db.exists():
-            self.create_db()
 
-        # create the static repertory
+        # create directories
+        if not self.path.exists():
+            os.makedirs(self.path)
         if not (self.path / "static").exists():
             os.mkdir((self.path / "static"))
-
-        # create the models repertory
         if not self.path_models.exists():
             os.makedirs(self.path_models)
 
-        # activity of the server
+        # attributes of the server
         self.projects: dict = {}
+        self.db_manager = DatabaseManager(self.db)
         self.queue = Queue(self.n_workers)
         self.users = Users(self.db)
 
@@ -218,144 +218,6 @@ class Server:
         self.queue.close()
         print("Server off")
 
-    def create_db(self) -> None:
-        """
-        Initialize the database
-        Tables:
-        - projects
-        - schemes
-        - annotations
-        - users
-        - auth
-        - logs
-        - tokens
-        - generations
-        """
-
-        # create the repertory if needed
-        if not self.path.exists():
-            os.makedirs(self.path)
-
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-
-        # Projects table
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS projects (
-                project_slug TEXT PRIMARY KEY,
-                time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                parameters TEXT,
-                time_modified TIMESTAMP,
-                user TEXT
-            )
-        """
-        cursor.execute(create_table_sql)
-
-        # Schemes table
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS schemes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                time_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user TEXT,
-                project TEXT,
-                name TEXT,
-                params TEXT
-            )
-        """
-        cursor.execute(create_table_sql)
-
-        # Annotation history table
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS annotations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                action TEXT,
-                user TEXT,
-                project TEXT,
-                element_id TEXT,
-                scheme TEXT,
-                tag TEXT
-            )
-        """
-        cursor.execute(create_table_sql)
-
-        # User table
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user TEXT,
-                key TEXT,
-                description TEXT,
-                created_by TEXT
-                )
-        """
-        cursor.execute(create_table_sql)
-
-        # Authorizations
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS auth (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user TEXT,
-                project TEXT,
-                status TEXT,
-                created_by TEXT
-                )
-        """
-        cursor.execute(create_table_sql)
-
-        # Logs
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user TEXT,
-                project TEXT,
-                action TEXT,
-                connect TEXT
-                )
-        """
-        cursor.execute(create_table_sql)
-
-        # Token revoked
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS tokens (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                token TEXT,
-                status TEXT,
-                time_revoked TIMESTAMP
-                )
-        """
-        cursor.execute(create_table_sql)
-
-        # Prediction table
-        create_table_sql = """
-            CREATE TABLE IF NOT EXISTS generations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user TEXT,
-                project TEXT,
-                element_id TEXT,
-                endpoint TEXT,
-                prompt TEXT,
-                answer TEXT
-            )
-        """
-        cursor.execute(create_table_sql)
-
-        # create root user
-
-        pwd = functions.get_root_pwd()
-        hash_pwd = functions.get_hash(pwd)
-        insert_query = (
-            "INSERT INTO users (user, key, description, created_by) VALUES (?, ?, ?, ?)"
-        )
-        cursor.execute(insert_query, (self.default_user, hash_pwd, "root", "system"))
-        conn.commit()
-        conn.close()
-        logger.error("Create database")
 
     def log_action(
         self,
@@ -1330,7 +1192,7 @@ class Project(Server):
                 continue
 
             if "error" in response:
-                errors.append("Error in the request")
+                errors.append("Error in the request "+response["error"])
 
             if "success" in response:
                 self.add_generation(

@@ -29,6 +29,7 @@ streamlit_option_menu
 streamlit-pydantic
 python-multipart
 openai
+sqlalchemy
 python-slugify
 mlflow
 fasttext @ git+https://github.com/facebookresearch/fastText.git@main
