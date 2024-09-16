@@ -1,4 +1,13 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    Text,
+    TIMESTAMP,
+    func,
+    select,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
@@ -240,6 +249,16 @@ class DatabaseManager:
         session = self.Session()
         scheme = Scheme(project=project_slug, name=name, params=params, user=username)
         session.add(scheme)
+        session.commit()
+        session.close()
+
+    def update_scheme(self, project_slug: str, name: str, params: str):
+        session = self.Session()
+        scheme = (
+            session.query(Scheme).filter_by(project=project_slug, name=name).first()
+        )
+        scheme.params = params
+        scheme.time_modified = datetime.datetime.now()
         session.commit()
         session.close()
 
@@ -556,3 +575,23 @@ class DatabaseManager:
         ).delete()
         session.commit()
         session.close()
+
+    def get_table_annotations_users(self, project_slug: str, scheme: str):
+        session = self.Session()
+        subquery = (
+            select(
+                Annotation.id,
+                Annotation.user,
+                func.max(Annotation.time).label("last_timestamp"),
+            )
+            .where(Annotation.project == project_slug, Annotation.scheme == scheme)
+            .group_by(Annotation.element_id, Annotation.user)
+            .subquery()
+        )
+        query = select(
+            Annotation.element_id, Annotation.tag, Annotation.user, Annotation.time
+        ).join(subquery, Annotation.id == subquery.c.id)
+
+        results = session.execute(query).fetchall()
+        session.close()
+        return [[row.element_id, row.tag, row.user, row.time] for row in results]

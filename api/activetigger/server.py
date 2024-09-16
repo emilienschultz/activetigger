@@ -1463,24 +1463,25 @@ class Schemes:
             return {"error": "Scheme doesn't exist"}
 
         # get the last tag for each id and each user
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
+        # conn = sqlite3.connect(self.db)
+        # cursor = conn.cursor()
 
-        query = f"""
-            SELECT e.element_id, e.tag, e.user, e.time
-            FROM annotations AS e
-            INNER JOIN (
-                SELECT id, user, MAX(time) AS last_timestamp
-                FROM annotations
-                WHERE project = ? AND scheme = ? 
-                GROUP BY element_id, user
-            ) AS last_entries
-            ON e.id = last_entries.id;
-        """
-        cursor.execute(query, (self.project_slug, scheme))
-        results = cursor.fetchall()
-        conn.close()
+        # query = f"""
+        #     SELECT e.element_id, e.tag, e.user, e.time
+        #     FROM annotations AS e
+        #     INNER JOIN (
+        #         SELECT id, user, MAX(time) AS last_timestamp
+        #         FROM annotations
+        #         WHERE project = ? AND scheme = ?
+        #         GROUP BY element_id, user
+        #     ) AS last_entries
+        #     ON e.id = last_entries.id;
+        # """
+        # cursor.execute(query, (self.project_slug, scheme))
+        # results = cursor.fetchall()
+        # conn.close()
 
+        results = self.db_manager.get_table_annotations_users(self.project_slug, scheme)
         # Shape the data
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "time"]
@@ -1605,16 +1606,10 @@ class Schemes:
         if self.exists(scheme.name):
             return {"error": "scheme name already exists"}
 
-        # add it if in database
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """
-                INSERT INTO schemes (project, name, params) 
-                VALUES (?, ?, ?)
-                """
-        cursor.execute(query, (self.project_slug, scheme.name, json.dumps(scheme.tags)))
-        conn.commit()
-        conn.close()
+        self.db_manager.add_scheme(
+            self.project_slug, scheme.name, json.dumps(scheme.tags), None
+        )
+
         return {"success": "scheme created"}
 
     def add_label(self, label: str, scheme: str, user: str):
@@ -1668,18 +1663,11 @@ class Schemes:
         self.update_scheme(scheme, labels, user)
         return {"success": "scheme updated removing a label"}
 
-    def update_scheme(self, scheme: str, labels: list, username: str):
+    def update_scheme(self, scheme: str, labels: list):
         """
         Update existing schemes from database
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "UPDATE schemes SET params = ?, time_modified = ? WHERE project = ? AND name = ?"
-        cursor.execute(
-            query, (json.dumps(labels), datetime.now(), self.project_slug, scheme)
-        )
-        conn.commit()
-        conn.close()
+        self.db_manager.update_scheme(self.project_slug, scheme, json.dumps(labels))
         return {"success": "scheme updated"}
 
     def delete_scheme(self, scheme: SchemeModel, username: str) -> dict:
