@@ -9,7 +9,6 @@ Réflexions.md
 .ipynb_checkpoints/
 .s3cfg
 activetigger/.ipynb_checkpoints/
-activetigger/__pycache__/
 dist/
 tests/__pycache__/
 activetigger/img/active_tigger2.png
@@ -18,3 +17,5 @@ log_server.log
 config.yaml
 add_users_processed.yaml
 activetigger/frontend_deprecated.py
+api/activetigger/__pycache__/
+api/tests/__pycache__/
