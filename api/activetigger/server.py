@@ -5,7 +5,6 @@ import yaml
 import concurrent.futures
 from slugify import slugify
 from pathlib import Path
-import sqlite3
 import re
 import json
 import shutil
@@ -205,7 +204,7 @@ class Server:
         self.projects: dict = {}
         self.db_manager = DatabaseManager(self.db)
         self.queue = Queue(self.n_workers)
-        self.users = Users(self.db, self.db_manager)
+        self.users = Users(self.db_manager)
 
     def __del__(self):
         """
@@ -323,9 +322,7 @@ class Server:
         if not self.exists(project_slug):
             return {"error": "Project does not exist"}
 
-        self.projects[project_slug] = Project(
-            project_slug, self.db, self.queue, self.db_manager
-        )
+        self.projects[project_slug] = Project(project_slug, self.queue, self.db_manager)
         return {"success": "Project loaded"}
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
@@ -536,7 +533,6 @@ class Project(Server):
         """
         self.starting_time = time.time()
         self.name: str = project_slug
-        self.db = path_db
         self.queue = queue
         self.db_manager = db_manager
         self.params: ProjectModel = self.load_params(project_slug)
@@ -553,7 +549,6 @@ class Project(Server):
             project_slug,
             self.params.dir / self.labels_file,
             self.params.dir / self.test_file,
-            self.db,
             self.db_manager,
         )
         self.features: Features = Features(
@@ -1383,7 +1378,6 @@ class Schemes:
         Init empty
         """
         self.project_slug = project_slug
-        self.db = db_path
         self.db_manager = db_manager
         self.content = pd.read_parquet(path_content)  # text + context
         self.test = None
@@ -1775,14 +1769,12 @@ class Users:
 
     def __init__(
         self,
-        db_path: Path,
         db_manager: DatabaseManager,
         file_users: str = "add_users.yaml",
     ):
         """
         Init users references
         """
-        self.db = db_path
         self.db_manager = db_manager
 
         # add users if add_users.yaml exists

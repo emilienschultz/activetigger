@@ -4,7 +4,6 @@ from fastapi import (
     Depends,
     HTTPException,
     Header,
-    UploadFile,
     File,
     Query,
     Form,
@@ -447,16 +446,17 @@ async def get_auth(username: str) -> List:
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(
-    username: str, project_slug: str = "all", limit:int  =100
+    username: str, project_slug: str = "all", limit: int = 100
 ) -> TableOutModel:
     """
     Get all logs for a username/project
     """
     df = server.get_logs(username, project_slug, limit)
     return TableOutModel(
-        items= df.to_dict(orient="records"),
+        items=df.to_dict(orient="records"),
         total=limit,
     )
+
 
 # Projects management
 # --------------------
