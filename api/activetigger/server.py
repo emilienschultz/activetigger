@@ -524,7 +524,6 @@ class Project(Server):
     def __init__(
         self,
         project_slug: str,
-        path_db: Path,
         queue: Queue,
         db_manager: DatabaseManager,
     ) -> None:
@@ -1371,7 +1370,6 @@ class Schemes:
         project_slug: str,
         path_content: Path,  # training data
         path_test: Path,  # test data
-        db_path: Path,
         db_manager: DatabaseManager,
     ) -> None:
         """
