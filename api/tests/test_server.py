@@ -1,9 +1,10 @@
 import pytest
 from pathlib import Path
 from fastapi import UploadFile
-import server
+from activetigger.server import Server, Queue, Users
 import os
 import shutil
+import sqlalchemy
 
 
 @pytest.fixture
@@ -34,7 +35,7 @@ def start_server(monkeypatch, root_pwd, create_and_change_directory):
     monkeypatch.setattr("builtins.input", lambda _: root_pwd)
 
     # start a session
-    s = server.Server()
+    s = Server()
     yield s
 
 
@@ -44,7 +45,6 @@ def start_server(monkeypatch, root_pwd, create_and_change_directory):
 
 
 def test_create_queue():
-    from server import Queue
     import concurrent.futures
 
     queue = Queue(2)
@@ -54,7 +54,6 @@ def test_create_queue():
 
 
 def test_shutdown_queue():
-    from server import Queue
 
     queue = Queue(2)
     queue.close()
@@ -71,7 +70,6 @@ def dummy_func(x):
 
 
 def test_add_kill_job_queue():
-    from server import Queue
 
     queue = Queue(2)
 
@@ -88,7 +86,6 @@ def test_add_kill_job_queue():
 
 
 def test_state_queue():
-    from server import Queue
     import time
 
     queue = Queue(2)
@@ -112,7 +109,6 @@ def test_state_queue():
 def test_server(start_server):
     from pathlib import Path
     from datetime import datetime
-    from server import Queue, Users
 
     assert isinstance(start_server.path, Path)
     assert isinstance(start_server.path_models, Path)
@@ -126,8 +122,9 @@ def test_server(start_server):
     assert (start_server.path / "static").exists()
 
 
-def test_db(start_server):
-    import sqlite3
+def test_db_existing(start_server):
+
+    engine = sqlalchemy.create_engine(f"sqlite:///{str(start_server.db)}")
 
     # Test existing tables
     expected_tables = [
@@ -141,22 +138,22 @@ def test_db(start_server):
         "generations",
     ]
 
-    conn = sqlite3.connect(start_server.db)
-    cursor = conn.cursor()
+    inspector = sqlalchemy.inspect(engine)
+    actual_tables = inspector.get_table_names()
 
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables = cursor.fetchall()
+    missing_tables = [table for table in expected_tables if table not in actual_tables]
 
-    existing_tables = [table[0] for table in tables]
+    if len(missing_tables) > 0:
+        raise AssertionError(f"Les tables suivantes sont manquantes : {missing_tables}")
 
-    for table in expected_tables:
-        assert table in existing_tables, f"La table {table} est absente."
+    # Test if root access
+    from activetigger.db import User
 
-    # Test root access
-    query = "SELECT * FROM users WHERE user=?"
-    cursor.execute(query, (start_server.default_user,))
-    users = cursor.fetchall()
-    conn.close()
+    Session = sqlalchemy.orm.sessionmaker(bind=engine)
+    session = Session()
+    users = session.query(User).filter(User.user == "root").all()
+    session.commit()
+    session.close()
 
     assert len(users) == 1
 
