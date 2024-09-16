@@ -26,7 +26,13 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                 </tr>
                 <tr>
                   <td>Users involved</td>
-                  <td>{statistics['users']}</td>
+                  <td>
+                    {statistics['users'].map((e) => (
+                      <span key={e} className="m-2">
+                        {e}
+                      </span>
+                    ))}
+                  </td>
                 </tr>
                 <tr>
                   <td>Total</td>

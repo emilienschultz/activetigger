@@ -33,7 +33,7 @@ import openai
 from typing import Callable
 from multiprocessing import Manager
 import secrets
-from activetigger.db import DatabaseManager 
+from activetigger.db import DatabaseManager
 
 logger = logging.getLogger("server")
 
@@ -205,7 +205,7 @@ class Server:
         self.projects: dict = {}
         self.db_manager = DatabaseManager(self.db)
         self.queue = Queue(self.n_workers)
-        self.users = Users(self.db,  self.db_manager)
+        self.users = Users(self.db, self.db_manager)
 
     def __del__(self):
         """
@@ -216,7 +216,6 @@ class Server:
         self.queue.executor.shutdown()
         self.queue.close()
         print("Server off")
-
 
     def log_action(
         self,
@@ -236,11 +235,9 @@ class Server:
         Get logs for a user/project
         """
         logs = self.db_manager.get_logs(username, project_slug, limit)
-        print(logs)
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )
-        print(df)
         return df
 
     def get_projects(self, username: str) -> dict[dict]:
@@ -254,7 +251,7 @@ class Server:
                 user_right=i[1],
                 parameters=ProjectModel(**json.loads(i[2])),
                 created_by=i[3],
-                created_at=i[4].strftime('%Y-%m-%d %H:%M:%S'),
+                created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
             )
             for i in projects_auth
         ]
@@ -269,7 +266,7 @@ class Server:
         else:
             return None
 
-    def exists(self, project_name:str) -> bool:
+    def exists(self, project_name: str) -> bool:
         """
         Test if a project exists in the database
         with a sluggified form (to be able to use it in URL)
@@ -313,7 +310,7 @@ class Server:
         # get status
         status = self.db_manager.get_token_status(token)
         if status != "active":
-            return {"error":"Token not valid"}
+            return {"error": "Token not valid"}
 
         # decode payload
         payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
@@ -326,7 +323,9 @@ class Server:
         if not self.exists(project_slug):
             return {"error": "Project does not exist"}
 
-        self.projects[project_slug] = Project(project_slug, self.db, self.queue, self.db_manager)
+        self.projects[project_slug] = Project(
+            project_slug, self.db, self.queue, self.db_manager
+        )
         return {"success": "Project loaded"}
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
@@ -339,11 +338,15 @@ class Server:
 
         if existing_project:
             # Update the existing project
-            self.db_manager.update_project(project.project_slug, jsonable_encoder(project))
+            self.db_manager.update_project(
+                project.project_slug, jsonable_encoder(project)
+            )
             return {"success": "project updated"}
         else:
             # Insert a new project
-            self.db_manager.add_project(project.project_slug, jsonable_encoder(project), username)
+            self.db_manager.add_project(
+                project.project_slug, jsonable_encoder(project), username
+            )
             return {"success": "project added"}
 
     def create_project(self, params: ProjectDataModel, username: str) -> dict:
@@ -471,18 +474,21 @@ class Server:
             params.default_scheme = list(df.unique())
 
             # add the scheme in the database
-            self.db_manager.add_scheme(project_slug, "default", json.dumps(params.default_scheme), "file")
-            
+            self.db_manager.add_scheme(
+                project_slug, "default", json.dumps(params.default_scheme), "file"
+            )
+
             # add the labels in the database
             for element_id, label in df.items():
-                self.db_manager.add_annotation(action="add", 
-                                               user=username, 
-                                               project_slug=project_slug, 
-                                               element_id=element_id, 
-                                               scheme="default", 
-                                               tag=label)
-                print("add annotations ",element_id)
-
+                self.db_manager.add_annotation(
+                    action="add",
+                    user=username,
+                    project_slug=project_slug,
+                    element_id=element_id,
+                    scheme="default",
+                    tag=label,
+                )
+                print("add annotations ", element_id)
 
         # add user right on the project + root
         self.users.set_auth(username, project_slug, "manager")
@@ -518,7 +524,13 @@ class Project(Server):
     Project object
     """
 
-    def __init__(self, project_slug: str, path_db: Path, queue: Queue, db_manager: DatabaseManager) -> None:
+    def __init__(
+        self,
+        project_slug: str,
+        path_db: Path,
+        queue: Queue,
+        db_manager: DatabaseManager,
+    ) -> None:
         """
         Load existing project
         """
@@ -542,6 +554,7 @@ class Project(Server):
             self.params.dir / self.labels_file,
             self.params.dir / self.test_file,
             self.db,
+            self.db_manager,
         )
         self.features: Features = Features(
             project_slug, self.params.dir / self.features_file, self.queue
@@ -788,7 +801,9 @@ class Project(Server):
             predict = {"label": predicted_label, "proba": predicted_proba}
 
         # get all tags already existing for the element
-        history = self.schemes.get_element_tags(element_id, scheme)
+        history = self.schemes.db_manager.get_annotations_by_element(
+            self.params.project_slug, scheme, element_id
+        )
 
         element = {
             "element_id": element_id,
@@ -851,7 +866,9 @@ class Project(Server):
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
-            history = self.schemes.get_element_tags(element_id, scheme)
+            history = self.schemes.db_manager.get_annotations_by_element(
+                self.params.project_slug, scheme, element_id
+            )
 
             data = {
                 "element_id": element_id,
@@ -889,7 +906,10 @@ class Project(Server):
 
         # part train
         r = {"train_set_n": len(self.schemes.content)}
-        r["users"] = [i[0] for i in self.schemes.get_distinct_users(scheme)]
+        r["users"] = [
+            i[0]
+            for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
+        ]
         df = self.schemes.get_scheme_data(scheme, kind=["add", "predict"])
         r["train_annotated_n"] = len(df)
         r["train_annotated_distribution"] = json.loads(
@@ -1029,12 +1049,14 @@ class Project(Server):
         """
         Add a generated element in the database
         """
-        self.db_manager.add_generated(user=user, 
-                                       project_slug=project_name, 
-                                       element_id=element_id, 
-                                       endpoint=endpoint, 
-                                       prompt=prompt, 
-                                       answer=answer)
+        self.db_manager.add_generated(
+            user=user,
+            project_slug=project_name,
+            element_id=element_id,
+            endpoint=endpoint,
+            prompt=prompt,
+            answer=answer,
+        )
         print("Added generation", element_id)
         return None
 
@@ -1042,7 +1064,9 @@ class Project(Server):
         """
         Get generated elements from the database
         """
-        result = self.db_manager.get_generated(project_slug=project_slug, n_elements=n_elements)
+        result = self.db_manager.get_generated(
+            project_slug=project_slug, n_elements=n_elements
+        )
         df = pd.DataFrame(result, columns=["index", "prompt", "answer", "endpoint"])
         return df
 
@@ -1072,7 +1096,7 @@ class Project(Server):
                 continue
 
             if "error" in response:
-                errors.append("Error in the request "+response["error"])
+                errors.append("Error in the request " + response["error"])
 
             if "success" in response:
                 self.add_generation(
@@ -1121,7 +1145,7 @@ class Project(Server):
     #             messages=[
     #                 {
     #                     "role": "system",
-    #                     "content": """Your are a careful assistant who annotates texts for a research project. 
+    #                     "content": """Your are a careful assistant who annotates texts for a research project.
     #                 You follow precisely the guidelines, which can be in different languages.
     #                 """,
     #                 },
@@ -1166,9 +1190,7 @@ class Features:
     - use "__" as separator
     """
 
-    def __init__(
-        self, project_slug: str, data_path: Path, queue
-    ) -> None:
+    def __init__(self, project_slug: str, data_path: Path, queue) -> None:
         """
         Initit features
         """
@@ -1419,7 +1441,6 @@ class Schemes:
         # results = cursor.fetchall()
         # conn.close()
 
-
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "timestamp"]
         ).set_index("id")
@@ -1550,7 +1571,9 @@ class Schemes:
 
         # case of recent annotations (no filter possible)
         if mode == "recent":
-            list_ids = self.get_recent_tags(user, scheme, max - min)
+            list_ids = self.db_manager.get_recent_annotations(
+                self.project_slug, user, scheme, max - min
+            )
             return df.loc[list_ids]
 
         # filter for contains
@@ -1663,41 +1686,23 @@ class Schemes:
         """
         Delete a scheme
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "DELETE FROM schemes WHERE project = ? AND name = ?"
-        cursor.execute(query, (self.project_slug, scheme.name))
-        conn.commit()
-        conn.close()
+        self.db_manager.delete_scheme(self.project_slug, scheme.name)
         return {"success": "scheme deleted"}
 
     def exists(self, name: str) -> bool:
         """
         Test if scheme exist
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT * FROM schemes WHERE project = ? AND name = ?"
-        cursor.execute(query, (self.project_slug, name))
-        result = cursor.fetchone()
-        conn.close()
-        if result is None:
-            return False
-        else:
+        if name in self.available():
             return True
+        return False
 
     def available(self) -> dict:
         """
         Available schemes {scheme:[labels]}
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = "SELECT name, params FROM schemes WHERE project = ?"
-        cursor.execute(query, (self.project_slug,))
-        results = cursor.fetchall()
-        conn.commit()
-        conn.close()
-        return {i[0]: json.loads(i[1]) for i in results}
+        r = self.db_manager.available_schemes(self.project_slug)
+        return {i[0]: json.loads(i[1]) for i in r}
 
     def get(self) -> dict:
         """
@@ -1712,21 +1717,12 @@ class Schemes:
         i.e. : add empty label
         """
 
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """
-            INSERT INTO annotations (action, user, project, element_id, scheme, tag)
-            VALUES (?,?,?,?,?,?);
-        """
-        # add delete action and then add void action
-        cursor.execute(
-            query, ("delete", user, self.project_slug, element_id, scheme, None)
+        self.db_manager.post_annotation(
+            self.project_slug, scheme, element_id, None, user, "delete"
         )
-        cursor.execute(
-            query, ("add", user, self.project_slug, element_id, scheme, None)
+        self.db_manager.post_annotation(
+            self.project_slug, scheme, element_id, None, user, "add"
         )
-        conn.commit()
-        conn.close()
         return True
 
     def push_tag(
@@ -1757,15 +1753,9 @@ class Schemes:
         # if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """
-            INSERT INTO annotations (action, user, project, element_id, scheme, tag)
-            VALUES (?,?,?,?,?,?);
-        """
-        cursor.execute(query, (mode, user, self.project_slug, element_id, scheme, tag))
-        conn.commit()
-        conn.close()
+        self.db_manager.post_annotation(
+            self.project_slug, scheme, element_id, tag, user, mode
+        )
         print(("push tag", mode, user, self.project_slug, element_id, scheme, tag))
         return {"success": "tag added"}
 
@@ -1782,73 +1772,11 @@ class Schemes:
                 return {"error": "Something happened when recording."}
         return {"success": "table pushed"}
 
-    def get_element_tags(self, element_id: str, scheme: str, n_max: int = 10):
-        """
-        Get all tags for a specific element/scheme in the database
-        """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """
-                SELECT tag, action, user, time
-                FROM annotations
-                WHERE  project = ? AND scheme = ? AND element_id = ?
-                ORDER BY time DESC
-                LIMIT ?
-                """
-        cursor.execute(query, (self.project_slug, scheme, element_id, n_max))
-        results = cursor.fetchall()
-        conn.commit()
-        conn.close()
-        return results
-
-    def get_recent_tags(self, user: str, scheme: str, n: int) -> list:
-        """
-        Get the id of the n last tags added/updated
-        by a user for a scheme of a project
-        """
-        print("get recent tags for ", user)
-        # add case for all users
-
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        if user == "all":  # all users
-            query = """
-                    SELECT DISTINCT element_id 
-                    FROM annotations
-                    WHERE project = ? AND scheme = ? AND action = ?
-                    ORDER BY time DESC
-                    LIMIT ?
-                    """
-            cursor.execute(query, (self.project_slug, scheme, "add", n))
-        else:  # only one user
-            query = """
-                    SELECT DISTINCT element_id 
-                    FROM annotations
-                    WHERE project = ? AND user = ? AND scheme = ? AND action = ?
-                    ORDER BY time DESC
-                    LIMIT ?
-                    """
-            cursor.execute(query, (self.project_slug, user, scheme, "add", n))
-        results = cursor.fetchall()
-        conn.commit()
-        conn.close()
-        return [i[0] for i in results]
-
-    def get_distinct_users(self, scheme: str):
+    def get_coding_users(self, scheme: str):
         """
         Get users action for a scheme
         """
-        conn = sqlite3.connect(self.db)
-        cursor = conn.cursor()
-        query = """
-                SELECT DISTINCT user 
-                FROM annotations
-                WHERE project = ? AND scheme = ? AND action = ?
-                """
-        cursor.execute(query, (self.project_slug, scheme, "add"))
-        results = cursor.fetchall()
-        conn.commit()
-        conn.close()
+        results = self.db_manager.get_coding_users(scheme, self.project_slug)
         return results
 
 
@@ -1857,7 +1785,12 @@ class Users:
     Managers users
     """
 
-    def __init__(self, db_path: Path,  db_manager: DatabaseManager, file_users: str = "add_users.yaml"):
+    def __init__(
+        self,
+        db_path: Path,
+        db_manager: DatabaseManager,
+        file_users: str = "add_users.yaml",
+    ):
         """
         Init users references
         """
@@ -1924,7 +1857,6 @@ class Users:
         (except root which can't be modified)
         """
         users = self.db_manager.get_users()
-        print("Existing users", users)
         return users
 
     def add_user(
@@ -1965,7 +1897,9 @@ class Users:
         if not name in self.existing_users():
             return {"error": "Username doesn't exist"}
         user = self.db_manager.get_user(name)
-        return UserInDBModel(username=name, hashed_password=user["key"], status=user["description"])
+        return UserInDBModel(
+            username=name, hashed_password=user["key"], status=user["description"]
+        )
 
     def authenticate_user(
         self, username: str, password: str
