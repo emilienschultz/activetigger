@@ -1221,6 +1221,8 @@ export function useGetQueue(projectState: ProjectStateModel | null) {
  * Get table of disagreements
  */
 export function useTableDisagreement(project_slug?: string, scheme?: string) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
   const getTable = useAsyncMemo(async () => {
     if (scheme && project_slug) {
       const res = await api.GET('/elements/reconciliate', {
@@ -1236,9 +1238,14 @@ export function useTableDisagreement(project_slug?: string, scheme?: string) {
       }
     }
     return null;
-  }, [project_slug, scheme]);
+  }, [project_slug, scheme, fetchTrigger]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
   const data = getAsyncMemoData(getTable);
-  return { tableDisagreement: data ? data.table : null, users: data ? data.users : null };
+  return {
+    tableDisagreement: data ? data.table : null,
+    users: data ? data.users : null,
+    reFetchTable: reFetch,
+  };
 }
 
 /**

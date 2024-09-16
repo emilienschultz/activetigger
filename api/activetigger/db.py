@@ -8,8 +8,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 from pathlib import Path
 from activetigger.functions import get_root_pwd, get_hash
 import datetime

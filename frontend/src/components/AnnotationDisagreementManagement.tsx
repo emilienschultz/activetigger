@@ -22,7 +22,10 @@ export const AnnotationDisagreementManagement: FC<{
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
 
   // get disagreement table
-  const { tableDisagreement, users } = useTableDisagreement(projectSlug, currentScheme);
+  const { tableDisagreement, users, reFetchTable } = useTableDisagreement(
+    projectSlug,
+    currentScheme,
+  );
   const { postReconciliate } = useReconciliate(projectSlug, currentScheme || null);
 
   // state elements to validate
@@ -34,6 +37,7 @@ export const AnnotationDisagreementManagement: FC<{
       postReconciliate(id, label, users || []);
       setChanges({});
     });
+    reFetchTable();
   };
 
   return (
