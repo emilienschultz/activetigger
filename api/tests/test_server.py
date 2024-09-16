@@ -5,6 +5,7 @@ from activetigger.server import Server, Queue, Users
 import os
 import shutil
 import sqlalchemy
+import time
 
 
 @pytest.fixture
@@ -57,11 +58,6 @@ def test_shutdown_queue():
 
     queue = Queue(2)
     queue.close()
-
-
-# @pytest.fixture
-
-import time
 
 
 def dummy_func(x):
@@ -156,6 +152,16 @@ def test_db_existing(start_server):
     session.close()
 
     assert len(users) == 1
+
+
+def test_log(start_server):
+    # log action
+    start_server.log_action("test", "test", "test", "test")
+
+    # get element
+    r = start_server.get_logs("test", "test", 10)
+
+    assert len(r) > 0
 
 
 # def project_params():
