@@ -1117,7 +1117,7 @@ async def post_schemes(
     test_rights("modify project element", current_user.username, project.name)
 
     if action == "add":
-        r = project.schemes.add_scheme(scheme)
+        r = project.schemes.add_scheme(scheme.name, scheme.tags)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(
@@ -1125,7 +1125,7 @@ async def post_schemes(
         )
         return None
     if action == "delete":
-        r = project.schemes.delete_scheme(scheme, current_user.username)
+        r = project.schemes.delete_scheme(scheme.name)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(

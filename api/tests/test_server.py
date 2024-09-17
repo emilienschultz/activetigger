@@ -1,11 +1,12 @@
 import pytest
 from pathlib import Path
-from fastapi import UploadFile
 from activetigger.server import Server, Queue, Users
 import os
 import shutil
 import sqlalchemy
 import time
+
+from activetigger.datamodels import ProjectDataModel
 
 
 @pytest.fixture
@@ -143,11 +144,11 @@ def test_db_existing(start_server):
         raise AssertionError(f"Les tables suivantes sont manquantes : {missing_tables}")
 
     # Test if root access
-    from activetigger.db import User
+    from activetigger.db import Users
 
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
     session = Session()
-    users = session.query(User).filter(User.user == "root").all()
+    users = session.query(Users).filter(Users.user == "root").all()
     session.commit()
     session.close()
 
@@ -164,41 +165,54 @@ def test_log(start_server):
     assert len(r) > 0
 
 
-# def project_params():
-#     """
-#     Parameters for a project
-#     """
-#     return ProjectModel(
-#         project_name="pytest",
-#     )
+@pytest.fixture
+def data_file_csv():
+    """
+    Upload file for a project
+    """
+    with open("../data/synth_data.csv", "rb") as f:
+        c = f.read()
+    return c
 
 
-# @pytest.fixture
-# def project_file():
-#     """
-#     Upload file for a project
-#     """
-#     f = UploadFile(open("../data/synth_data.csv", "rb"))
-#     return f
+@pytest.fixture
+def new_project(data_file_csv):
+    """
+    Parameters for a project
+    """
+    p = ProjectDataModel(
+        project_name="test",
+        filename="synth_data.csv",
+        col_text="text",
+        col_id="index",
+        col_label="label",
+        n_train=100,
+        n_test=100,
+        language="fr",
+        cols_context=["info"],
+        csv=data_file_csv,
+    )
+    return p
 
 
-# def test_create_delete_project(start_server, project_params, project_file):
-#     """
-#     Create and delete a project
-#     """
-#     assert start_server.create_project(project_params, project_file)
-#     assert start_server.delete_project(project_params.project_name)
+def test_create_delete_project(start_server, new_project):
+    """
+    Create and delete a project
+    """
+    # create project
+    r = start_server.create_project(new_project, "test")
+    assert not "error" in r
 
+    # start & get project
+    start_server.start_project("test")
+    project = start_server.projects["test"]
 
-# def test_get_next(open_project):
+    # test properties of the project
+    assert project.params.project_slug == "test"
+    assert Path(project.params.dir).exists()
 
-#     r = open_project.get_next("default")
-#     assert r["element_id"]
+    # delete project
+    r = start_server.delete_project(project.params.project_slug)
+    assert not "error" in r
 
-#     # add different ways to get next
-
-
-# def test_annotate(open_project):
-#     r = open_project.get_next("default")
-#     r = open_project.schemes.push_tag(r["element_id"], "test", "default", "test")
-#     assert r["success"]
+    # TODO : ADD STRATIFICATION

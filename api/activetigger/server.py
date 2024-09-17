@@ -483,7 +483,7 @@ class Server:
                     project_slug=project_slug,
                     element_id=element_id,
                     scheme="default",
-                    tag=label,
+                    annotation=label,
                 )
                 print("add annotations ", element_id)
 
@@ -1386,9 +1386,7 @@ class Schemes:
 
         # create a default scheme if not available
         if len(available) == 0:
-            self.add_scheme(
-                SchemeModel(project_slug=project_slug, name="default", tags=[])
-            )
+            self.add_scheme(name="default", labels=[])
 
     def __repr__(self) -> str:
         return f"Coding schemes available {self.available()}"
@@ -1591,16 +1589,14 @@ class Schemes:
 
         return df.sort_index().iloc[min:max].reset_index()
 
-    def add_scheme(self, scheme: SchemeModel):
+    def add_scheme(self, name: str, labels: list):
         """
         Add new scheme
         """
-        if self.exists(scheme.name):
+        if self.exists(name):
             return {"error": "scheme name already exists"}
 
-        self.db_manager.add_scheme(
-            self.project_slug, scheme.name, json.dumps(scheme.tags), None
-        )
+        self.db_manager.add_scheme(self.project_slug, name, json.dumps(labels), None)
 
         return {"success": "scheme created"}
 
@@ -1662,11 +1658,11 @@ class Schemes:
         self.db_manager.update_scheme(self.project_slug, scheme, json.dumps(labels))
         return {"success": "scheme updated"}
 
-    def delete_scheme(self, scheme: SchemeModel, username: str) -> dict:
+    def delete_scheme(self, name) -> dict:
         """
         Delete a scheme
         """
-        self.db_manager.delete_scheme(self.project_slug, scheme.name)
+        self.db_manager.delete_scheme(self.project_slug, name)
         return {"success": "scheme deleted"}
 
     def exists(self, name: str) -> bool:
