@@ -1,12 +1,4 @@
-import {
-  FC,
-  PropsWithChildren,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { FC, PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
 
 import {
   DisplayConfig,
@@ -33,28 +25,25 @@ export type AppContextValue = {
 
 export const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
 
+export const DEFAULT_CONTEXT: AppContextValue = {
+  notifications: [],
+  displayConfig: {
+    displayContext: false,
+    displayPrediction: false,
+    frameSize: 50,
+  },
+  selectionConfig: {
+    mode: 'deterministic',
+    sample: 'untagged',
+    frameSelection: false,
+    frame: [],
+  },
+  generateConfig: { n_batch: 1, selection_mode: 'all' },
+  history: [],
+  freqRefreshSimpleModel: 10,
+  phase: 'train',
+};
 const storedContext = localStorage.getItem(CONTEXT_LOCAL_STORAGE_KEY);
-
-export const defaultContext: AppContextValue = storedContext
-  ? JSON.parse(storedContext)
-  : {
-      notifications: [],
-      displayConfig: {
-        displayContext: false,
-        displayPrediction: false,
-        frameSize: 50,
-      },
-      selectionConfig: {
-        mode: 'deterministic',
-        sample: 'untagged',
-        frameSelection: false,
-        frame: [],
-      },
-      generateConfig: { n_batch: 1, selection_mode: 'all' },
-      history: [],
-      freqRefreshSimpleModel: 10,
-      phase: 'train',
-    };
 
 export type AppContextType = {
   appContext: AppContextValue;
@@ -64,7 +53,9 @@ export type AppContextType = {
 export const AppContext = createContext<AppContextType>(null as unknown as AppContextType);
 
 const _useAppContext = () => {
-  const [appContext, setAppContext] = useState<AppContextValue>(defaultContext);
+  const [appContext, setAppContext] = useState<AppContextValue>(
+    storedContext ? (JSON.parse(storedContext) as AppContextValue) : DEFAULT_CONTEXT,
+  );
 
   //store context in localstorage
   useEffect(() => {
@@ -75,17 +66,6 @@ const _useAppContext = () => {
     appContext,
     setAppContext,
   };
-};
-
-// method to reset context
-export const useResetContext = () => {
-  const { setAppContext } = useAppContext();
-
-  const resetContext = useCallback(() => {
-    setAppContext(defaultContext);
-  }, [setAppContext]);
-
-  return { resetContext };
 };
 
 export function useAppContext() {

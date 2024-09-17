@@ -3,7 +3,7 @@ import { FC, PropsWithChildren, createContext, useCallback, useContext, useState
 import { LoginParams, UserModel } from '../types';
 import { HttpError } from './HTTPError';
 import { login, logout, me } from './api';
-import { useResetContext } from './context';
+import { DEFAULT_CONTEXT, useAppContext } from './context';
 import { useNotifications } from './notifications';
 
 // Information about the current authenticated user
@@ -30,7 +30,7 @@ const _useAuth = (): AuthContext => {
   const storedAuth = localStorage.getItem('activeTigger.auth');
   // TODO check for session deprecation
 
-  const { resetContext } = useResetContext();
+  const { setAppContext } = useAppContext();
 
   // internal state to store the current authenticated user
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | undefined>(
@@ -56,9 +56,14 @@ const _useAuth = (): AuthContext => {
           if (user !== undefined) {
             const authUser = { ...user, access_token: response.access_token };
             localStorage.setItem('activeTigger.auth', JSON.stringify(authUser));
-            resetContext();
-
-            setAuthenticatedUser(authUser);
+            setAuthenticatedUser((previousAuthUser) => {
+              // before setting new user, if app had previously another user reset the app context
+              if (previousAuthUser && previousAuthUser.username !== user.username) {
+                //reset context
+                setAppContext(DEFAULT_CONTEXT);
+              }
+              return authUser;
+            });
             notify({ type: 'success', message: `Logged in as ${user.username}` });
           } else {
             throw new Error('Good token but no user?');
@@ -67,12 +72,11 @@ const _useAuth = (): AuthContext => {
       } catch (error) {
         notify({ type: 'warning', message: 'could not authenticate. Please retry.' });
         localStorage.removeItem('activeTigger.auth');
-        resetContext();
         setAuthenticatedUser(undefined);
       }
     },
     // the method code will change if setAuthenticatedUser changes which happens only at init
-    [setAuthenticatedUser, notify],
+    [setAuthenticatedUser, notify, setAppContext],
   );
 
   const _logout = useCallback(
@@ -82,7 +86,8 @@ const _useAuth = (): AuthContext => {
           const success = await logout(authenticatedUser.access_token);
           if (success) {
             localStorage.removeItem('activeTigger.auth');
-            resetContext();
+            //Reset context
+            setAppContext(DEFAULT_CONTEXT);
             setAuthenticatedUser(undefined);
             return success;
           }
@@ -101,7 +106,7 @@ const _useAuth = (): AuthContext => {
       }
     },
     // the method code will change if setAuthenticatedUser changes which happens only at init
-    [setAuthenticatedUser, notify, authenticatedUser],
+    [setAuthenticatedUser, notify, authenticatedUser, setAppContext],
   );
 
   // returns the AuthContext new value each time the authenticatedUser changes
