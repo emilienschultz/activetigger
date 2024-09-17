@@ -722,7 +722,7 @@ class Project(Server):
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
-        try:
+        if frame and len(frame) == 4:
             if user in self.features.projections:
                 if "data" in self.features.projections[user]:
                     projection = self.features.projections[user]["data"]
@@ -733,8 +733,10 @@ class Project(Server):
                         & (projection[1] < frame[3])
                     )
                     f = f & f_frame
-        except:
-            print("Problem on frame")
+                else:
+                    return {"error": "Data projection doesn't exist for this user"}
+            else:
+                return {"error": "Projection model doesn't exist for this user"}
 
         # test if there is at least one element available
         if sum(f) == 0:
@@ -1617,7 +1619,7 @@ class Schemes:
             return {"error": "label already exist"}
         labels = available[scheme]
         labels.append(label)
-        self.update_scheme(scheme, labels, user)
+        self.update_scheme(scheme, labels)
         return {"success": "scheme updated with a new label"}
 
     def exists_label(self, scheme: str, label: str):
@@ -1648,7 +1650,7 @@ class Schemes:
         for i in elements:
             print(i)
             self.push_tag(i, None, scheme, user, "add")
-        self.update_scheme(scheme, labels, user)
+        self.update_scheme(scheme, labels)
         return {"success": "scheme updated removing a label"}
 
     def update_scheme(self, scheme: str, labels: list):

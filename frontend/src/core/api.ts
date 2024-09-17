@@ -460,7 +460,7 @@ export function useGetNextElementId(
           tag: selectionConfig.label,
           filter: selectionConfig.filter,
           history: history,
-          frame: selectionConfig.frameSelection ? selectionConfig.frame : [], // only if frame option selected
+          frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
         },
       });
       return res.data?.element_id;

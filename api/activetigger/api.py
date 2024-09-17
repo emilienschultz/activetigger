@@ -630,6 +630,7 @@ async def get_next(
     """
     Get next element
     """
+    print(next)
     r = project.get_next(
         scheme=next.scheme,
         selection=next.selection,
@@ -1131,9 +1132,7 @@ async def post_schemes(
         )
         return None
     if action == "update":
-        r = project.schemes.update_scheme(
-            scheme.name, scheme.tags, current_user.username
-        )
+        r = project.schemes.update_scheme(scheme.name, scheme.tags)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(
