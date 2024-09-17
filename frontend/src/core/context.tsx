@@ -1,4 +1,12 @@
-import { FC, PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
+import {
+  FC,
+  PropsWithChildren,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 import {
   DisplayConfig,
@@ -23,7 +31,7 @@ export type AppContextValue = {
   phase: string;
 };
 
-const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
+export const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
 
 const storedContext = localStorage.getItem(CONTEXT_LOCAL_STORAGE_KEY);
 
@@ -67,6 +75,17 @@ const _useAppContext = () => {
     appContext,
     setAppContext,
   };
+};
+
+// method to reset context
+export const useResetContext = () => {
+  const { setAppContext } = useAppContext();
+
+  const resetContext = useCallback(() => {
+    setAppContext(defaultContext);
+  }, [setAppContext]);
+
+  return { resetContext };
 };
 
 export function useAppContext() {

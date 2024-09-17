@@ -3,6 +3,7 @@ import { FC, PropsWithChildren, createContext, useCallback, useContext, useState
 import { LoginParams, UserModel } from '../types';
 import { HttpError } from './HTTPError';
 import { login, logout, me } from './api';
+import { useResetContext } from './context';
 import { useNotifications } from './notifications';
 
 // Information about the current authenticated user
@@ -28,6 +29,8 @@ const _useAuth = (): AuthContext => {
   // we use localstorage to persist session
   const storedAuth = localStorage.getItem('activeTigger.auth');
   // TODO check for session deprecation
+
+  const { resetContext } = useResetContext();
 
   // internal state to store the current authenticated user
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | undefined>(
@@ -62,6 +65,7 @@ const _useAuth = (): AuthContext => {
       } catch (error) {
         notify({ type: 'warning', message: 'could not authenticate. Please retry.' });
         localStorage.removeItem('activeTigger.auth');
+        resetContext();
         setAuthenticatedUser(undefined);
       }
     },
@@ -76,6 +80,7 @@ const _useAuth = (): AuthContext => {
           const success = await logout(authenticatedUser.access_token);
           if (success) {
             localStorage.removeItem('activeTigger.auth');
+            resetContext();
             setAuthenticatedUser(undefined);
             return success;
           }
