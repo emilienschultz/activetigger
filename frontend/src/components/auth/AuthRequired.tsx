@@ -40,7 +40,7 @@ export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
         const clonedResponse = response.clone();
 
         // if session is expired or invalid we catch the 401 and redirect to login page
-        if ([401].includes(response.status)) {
+        if ([401, 403].includes(response.status)) {
           redirectToLogin('Invalid user session: redirecting you to login page...');
         } else {
           if (response.status !== 200) {
