@@ -56,6 +56,8 @@ const _useAuth = (): AuthContext => {
           if (user !== undefined) {
             const authUser = { ...user, access_token: response.access_token };
             localStorage.setItem('activeTigger.auth', JSON.stringify(authUser));
+            resetContext();
+
             setAuthenticatedUser(authUser);
             notify({ type: 'success', message: `Logged in as ${user.username}` });
           } else {
