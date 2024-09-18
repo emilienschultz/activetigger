@@ -1,38 +1,38 @@
+import concurrent.futures
+import json
+import logging
 import os
+import re
+import secrets
+import shutil
 import time
 import uuid
-import yaml
-import concurrent.futures
-from slugify import slugify
-from pathlib import Path
-import re
-import json
-import shutil
-import pandas as pd
-from pandas import DataFrame, Series
-from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta, timezone
+from multiprocessing import Manager
+from multiprocessing.managers import SyncManager
+from pathlib import Path
+from typing import Callable
+
+import pandas as pd
+import yaml
+from fastapi.encoders import jsonable_encoder
 from jose import jwt
+from pandas import DataFrame, Series
+from pydantic import ValidationError
+from slugify import slugify
+
 import activetigger.functions as functions
-from activetigger.db import DatabaseManager
-from activetigger.models import BertModels, SimpleModels
 from activetigger.datamodels import (
+    GenerateModel,
     ProjectDataModel,
     ProjectModel,
-    SchemeModel,
-    SimpleModelModel,
-    UserInDBModel,
     ProjectSummaryModel,
+    SimpleModelModel,
     TestSetDataModel,
-    GenerateModel,
+    UserInDBModel,
 )
-from pydantic import ValidationError
-import logging
-import openai
-from typing import Callable
-from multiprocessing import Manager
-import secrets
 from activetigger.db import DatabaseManager
+from activetigger.models import BertModels, SimpleModels
 
 logger = logging.getLogger("server")
 
@@ -45,6 +45,11 @@ class Queue:
     TODO : better management of failed processes
     """
 
+    nb_workers: int
+    executor: concurrent.futures.ProcessPoolExecutor
+    manager: SyncManager
+    current: dict
+
     def __init__(self, nb_workers: int = 2) -> None:
         """
         Initiating the queue
@@ -55,6 +60,7 @@ class Queue:
         )  # manage parallel processes
         self.manager = Manager()  # communicate within processes
         self.current = {}  # keep track of the current stack
+
         logger.info("Init Queue")
 
     def close(self) -> None:
@@ -155,26 +161,184 @@ class Queue:
         return len([f for f in self.current if self.current[f]["future"].running()])
 
 
+class Users:
+    """
+    Managers users
+    """
+
+    db_manager: DatabaseManager
+
+    def __init__(
+        self,
+        db_manager: DatabaseManager,
+        file_users: str = "add_users.yaml",
+    ):
+        """
+        Init users references
+        """
+        self.db_manager = db_manager
+
+        # add users if add_users.yaml exists
+        if Path(file_users).exists():
+            existing = self.existing_users()
+            with open("add_users.yaml") as f:
+                add_users = yaml.safe_load(f)
+            for user, password in add_users.items():
+                if not user in existing:
+                    self.add_user(user, password, "manager", "system")
+                else:
+                    print(f"Not possible to add {user}, already exists")
+            # rename the file
+            os.rename("add_users.yaml", "add_users_processed.yaml")
+
+    def get_project_auth(self, project_slug: str):
+        """
+        Get user auth for a project
+        """
+        auth = self.db_manager.get_project_auth(project_slug)
+        return auth
+
+    def set_auth(self, username: str, project_slug: str, status: str):
+        """
+        Set user auth for a project
+        """
+        self.db_manager.add_auth(project_slug, username, status)
+        return {"success": "Auth added to database"}
+
+    def delete_auth(self, username: str, project_slug: str):
+        """
+        Delete user auth
+        """
+        self.db_manager.delete_auth(project_slug, username)
+        return {"success": "Auth deleted"}
+
+    def get_auth_projects(self, username: str) -> list:
+        """
+        Get user auth
+        """
+        auth = self.db_manager.get_user_projects(username)
+        return auth
+
+    def get_auth(self, username: str, project_slug: str = "all") -> list:
+        """
+        Get user auth
+        Comments:
+        - Either for all projects
+        - Or one project
+        """
+        if project_slug == "all":
+            auth = self.db_manager.get_user_auth(username)
+        else:
+            auth = self.db_manager.get_user_auth(username, project_slug)
+        return auth
+
+    def existing_users(self) -> list:
+        """
+        Get existing users
+        (except root which can't be modified)
+        """
+        users = self.db_manager.get_users()
+        return users
+
+    def add_user(
+        self, name: str, password: str, role: str = "manager", created_by: str = "NA"
+    ) -> bool:
+        """
+        Add user to database
+        Comments:
+            Default, users are managers
+        """
+        # test if the user doesn't exist
+        if name in self.existing_users():
+            return {"error": "Username already exists"}
+        hash_pwd = functions.get_hash(password)
+        self.db_manager.add_user(name, hash_pwd, role, created_by)
+
+        return {"success": "User added to the database"}
+
+    def delete_user(self, name: str) -> dict:
+        """
+        Deleting user
+        """
+        # specific cases
+        if not name in self.existing_users():
+            return {"error": "Username does not exist"}
+        if name == "root":
+            return {"error": "Can't delete root user"}
+
+        # delete the user
+        self.db_manager.delete_user(name)
+
+        return {"success": "User deleted"}
+
+    def get_user(self, name) -> UserInDBModel | dict:
+        """
+        Get user from database
+        """
+        if not name in self.existing_users():
+            return {"error": "Username doesn't exist"}
+        user = self.db_manager.get_user(name)
+        return UserInDBModel(
+            username=name, hashed_password=user["key"], status=user["description"]
+        )
+
+    def authenticate_user(
+        self, username: str, password: str
+    ) -> UserInDBModel | dict[str, str]:
+        """
+        User authentification
+        """
+        user = self.get_user(username)
+        if not isinstance(user, UserInDBModel):
+            return user
+        if not functions.compare_to_hash(password, user.hashed_password):
+            return {"error": "Wrong password"}
+        return user
+
+    def auth(self, username: str, project_slug: str):
+        """
+        Check auth for a specific project
+        """
+        user_auth = self.get_auth(username, project_slug)
+        if len(user_auth) == 0:  # not associated
+            return None
+        return user_auth[0][1]
+
+
 class Server:
     """
     Server to manage backend
     """
-
-    # declare files name
-    db_name: str = "activetigger.db"
-    features_file: str = "features.parquet"
-    labels_file: str = "labels.parquet"
-    data_file: str = "data.parquet"
-    test_file: str = "test.parquet"
-    default_user: str = "root"
-    ALGORITHM = "HS256"
-    n_workers = 2
-    starting_time = None
+    db_name: str
+    features_file: str
+    labels_file: str
+    data_file: str
+    test_file: str
+    default_user: str
+    ALGORITHM: str
+    n_workers: int = 2
+    starting_time: float = None
+    SECRET_KEY: str
+    path: Path
+    path_models : Path
+    db: Path
+    projects: dict
+    db_manager: DatabaseManager
+    queue: Queue
+    users: Users
 
     def __init__(self, path=".", path_models="./models") -> None:
         """
         Start the server
         """
+        self.db_name = "activetigger.db"
+        self.features_file = "features.parquet"
+        self.labels_file = "labels.parquet"
+        self.data_file = "data.parquet"
+        self.test_file = "test.parquet"
+        self.default_user = "root"
+        self.ALGORITHM = "HS256"
+
         self.starting_time = time.time()
         self.SECRET_KEY = secrets.token_hex(32)
 
@@ -516,10 +680,619 @@ class Server:
         return {"success": "Project deleted"}
 
 
+
+
+class Features:
+    """
+    Manage project features
+    Comment :
+    - as a file
+    - use "__" as separator
+    """
+
+    project_slug: str
+    path: Path
+    queue: Queue
+    informations: dict
+    content: DataFrame
+    map: dict
+    training: dict
+    projections: dict
+    possible_projections: dict
+    options: dict
+
+    def __init__(self, project_slug: str, data_path: Path, queue) -> None:
+        """
+        Initit features
+        """
+        self.project_slug = project_slug
+        self.path = data_path
+        self.queue = queue
+        self.informations = {}
+        content, map = self.load()
+        self.content = content
+        self.map = map
+        self.training: dict = {}
+
+        # managing projections
+        self.projections: dict = {}
+        self.possible_projections: dict = {
+            "umap": {
+                "n_neighbors": 15,
+                "min_dist": 0.1,
+                "n_components": 2,
+                "metric": "euclidean",
+            },
+            "tsne": {
+                "n_components": 2,
+                "learning_rate": "auto",
+                "init": "random",
+                "perplexity": 3,
+            },
+        }
+
+        # options
+        self.options: dict = {
+            "sbert": {},
+            "fasttext": {},
+            "dfm": {
+                "tfidf": False,
+                "ngrams": 1,
+                "min_term_freq": 5,
+                "max_term_freq": 100,
+                "norm": None,
+                "log": None,
+            },
+            "regex": {"formula": None},
+        }
+
+    def __repr__(self) -> str:
+        return f"Available features : {self.map}"
+
+    def load(self):
+        """
+        Load file and agregate columns
+        """
+
+        def find_strings_with_pattern(strings, pattern):
+            matching_strings = [s for s in strings if re.match(pattern, s)]
+            return matching_strings
+
+        data = pd.read_parquet(self.path)
+        var = set([i.split("__")[0] for i in data.columns])
+        dic = {i: find_strings_with_pattern(data.columns, i) for i in var}
+        return data, dic
+
+    def add(self, name: str, content: DataFrame | Series) -> dict:
+        """
+        Add feature(s) and save
+        """
+        # test length
+        if len(content) != len(self.content):
+            raise ValueError("Features don't have the right shape")
+
+        if name in self.map:
+            return {"error": "feature name already exists"}
+
+        # change type
+        if type(content) == Series:
+            content = pd.DataFrame(content)
+
+        # add to the table & dictionnary
+        content.columns = [f"{name}__{i}" for i in content.columns]
+        self.map[name] = list(content.columns)
+
+        self.content = pd.concat([self.content, content], axis=1)
+        # save
+        self.content.to_parquet(self.path)
+
+        return {"success": "feature added"}
+
+    def delete(self, name: str):
+        """
+        Delete feature
+        """
+        if not name in self.map:
+            return {"error": "feature doesn't exist"}
+
+        col = self.get([name])
+        del self.map[name]
+        self.content = self.content.drop(columns=col)
+        self.content.to_parquet(self.path)
+        return {"success": "feature deleted"}
+
+    def get(self, features: list | str = "all"):
+        """
+        Get content for specific features
+        """
+        if features == "all":
+            features = list(self.map.keys())
+        if type(features) is str:
+            features = [features]
+
+        cols = []
+        missing = []
+        for i in features:
+            if i in self.map:
+                cols += self.map[i]
+            else:
+                missing.append(i)
+
+        if len(i) > 0:
+            print("Missing features:", missing)
+        return self.content[cols]
+
+    def update_processes(self):
+        """
+        Check for computing processing completed
+        and clean them for the queue
+        """
+        # for features
+        for name in self.training.copy():
+            unique_id = self.training[name]
+            # case the process have been canceled, clean
+            if not unique_id in self.queue.current:
+                del self.training[name]
+                continue
+            # else check its state
+            if self.queue.current[unique_id]["future"].done():
+                r = self.queue.current[unique_id]["future"].result()
+                if "error" in r:
+                    print("Error in the feature processing", unique_id)
+                else:
+                    df = r["success"]
+                    self.add(name, df)
+                    self.queue.delete(unique_id)
+                    del self.training[name]
+                    print("Add feature", name)
+
+        # for projections
+        training = [u for u in self.projections if "queue" in self.projections[u]]
+        for u in training:
+            unique_id = self.projections[u]["queue"]
+            if self.queue.current[unique_id]["future"].done():
+                df = self.queue.current[unique_id]["future"].result()
+                self.projections[u]["data"] = df
+                self.projections[u]["id"] = self.projections[u]["queue"]
+                del self.projections[u]["queue"]
+                self.queue.delete(unique_id)
+
+    def get_info(self):
+        """
+        Informations on features + update
+        Comments:
+            Maybe not the best solution
+            Database ? How to avoid a loop ...
+        """
+        # update if new elements added in features
+        for f in self.map:
+            if ("regex_" in f) and (not f in self.informations):
+                df = self.get(f)
+                if len(df.columns) > 0:
+                    self.informations[f] = int(df[df.columns[0]].sum())
+        return dict(self.informations)
+
+
+class Schemes:
+    """
+    Manage project schemes & tags
+
+    Tables :
+    - schemes
+    - annotations
+    """
+
+    project_slug: str
+    db_manager: DatabaseManager
+    content: DataFrame
+    test: DataFrame | None
+
+    def __init__(
+        self,
+        project_slug: str,
+        path_content: Path,  # training data
+        path_test: Path,  # test data
+        db_manager: DatabaseManager,
+    ) -> None:
+        """
+        Init empty
+        """
+        self.project_slug = project_slug
+        self.db_manager = db_manager
+        self.content = pd.read_parquet(path_content)  # text + context
+        self.test = None
+        if path_test.exists():
+            self.test = pd.read_parquet(path_test)
+
+        available = self.available()
+
+        # create a default scheme if not available
+        if len(available) == 0:
+            self.add_scheme(name="default", labels=[])
+
+    def __repr__(self) -> str:
+        return f"Coding schemes available {self.available()}"
+
+    def get_scheme_data(
+        self, scheme: str, complete: bool = False, kind: list | str = ["add"]
+    ) -> DataFrame:
+        """
+        Get data from a scheme : id, text, context, labels
+        Join with text data in separate file (train or test)
+
+        Comments:
+            For the moment tags can be add, test, predict, reconciliation
+
+        TODO : replace all "add" with "train" in the code
+        """
+        if not scheme in self.available():
+            return {"error": "Scheme doesn't exist"}
+
+        if isinstance(kind, str):
+            kind = [kind]
+
+        # get all elements from the db
+        # - last element for each id
+        # - for a specific scheme
+
+        results = self.db_manager.get_scheme_elements(self.project_slug, scheme, kind)
+
+        # conn = sqlite3.connect(self.db)
+        # cursor = conn.cursor()
+        # action = "(" + " OR ".join([f"action = ?" for i in kind]) + ")"
+
+        # query = f"""
+        #     SELECT element_id, tag, user, MAX(time)
+        #     FROM annotations
+        #     WHERE scheme = ? AND project = ? AND {action}
+        #     GROUP BY element_id
+        #     ORDER BY time DESC;
+        # """
+        # cursor.execute(query, (scheme, self.project_slug) + tuple(kind))
+
+        # results = cursor.fetchall()
+        # conn.close()
+
+        df = pd.DataFrame(
+            results, columns=["id", "labels", "user", "timestamp"]
+        ).set_index("id")
+        df.index = [str(i) for i in df.index]
+        if complete:  # all the elements
+            if "test" in kind:
+                # case if the test, join the text data
+                t = self.test[["text"]].join(df)
+                return t
+            else:
+                return self.content.join(df)
+        return df
+
+    def get_reconciliation_table(self, scheme: str):
+        """
+        Get reconciliation table
+        TODO : add the filter on action
+        """
+        if not scheme in self.available():
+            return {"error": "Scheme doesn't exist"}
+
+        # get the last tag for each id and each user
+        # conn = sqlite3.connect(self.db)
+        # cursor = conn.cursor()
+
+        # query = f"""
+        #     SELECT e.element_id, e.tag, e.user, e.time
+        #     FROM annotations AS e
+        #     INNER JOIN (
+        #         SELECT id, user, MAX(time) AS last_timestamp
+        #         FROM annotations
+        #         WHERE project = ? AND scheme = ?
+        #         GROUP BY element_id, user
+        #     ) AS last_entries
+        #     ON e.id = last_entries.id;
+        # """
+        # cursor.execute(query, (self.project_slug, scheme))
+        # results = cursor.fetchall()
+        # conn.close()
+
+        results = self.db_manager.get_table_annotations_users(self.project_slug, scheme)
+        # Shape the data
+        df = pd.DataFrame(
+            results, columns=["id", "labels", "user", "time"]
+        )  # shape as a dataframe
+        agg = lambda x: list(x)[0] if len(x) > 0 else None  # take the label else None
+        df = df.pivot_table(
+            index="id", columns="user", values="labels", aggfunc=agg
+        )  # pivot and keep the label
+        f_multi = df.apply(
+            lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
+        )  # filter for disagreement
+        users = list(df.columns)
+        df = pd.DataFrame(
+            df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"]
+        )
+        df = df.join(self.content[["text"]], how="left")  # add the text
+        df = df[f_multi].reset_index()
+        # return the result
+        return df, users
+
+    def convert_tags(
+        self, former_label: str, new_label: str, scheme: str, username: str
+    ):
+        """
+        Convert tags from a specific label to another
+        """
+        # get id with the current tag
+        df = self.get_scheme_data(scheme)
+        to_recode = df[df["labels"] == former_label].index
+        # for each of them, push the new tag
+        for i in to_recode:
+            self.push_tag(i, new_label, scheme, username, "add")
+        return {"success": "All tags recoded"}
+
+    def get_total(self, dataset="train"):
+        """
+        Number of element in the dataset
+        """
+        if dataset == "test":
+            return len(self.test)
+        return len(self.content)
+
+    def get_table(
+        self,
+        scheme: str,
+        min: int,
+        max: int,
+        mode: str,
+        contains: str | None = None,
+        set: str = "train",
+        user: str = "all",
+    ) -> DataFrame:
+        """
+        Get data table
+        scheme : the annotations
+        min, max: the range
+        mode: sample
+        contains: search
+        user: select by user
+        set: train or test
+
+        Choice to order by index.
+        """
+        # check for errors
+        if not mode in ["tagged", "untagged", "all", "recent"]:
+            mode = "all"
+        if not scheme in self.available():
+            return {"error": "scheme not available"}
+
+        # case of the test set, no fancy stuff
+        if set == "test":
+            print("test mode")
+            df = self.get_scheme_data(scheme, complete=True, kind="test")
+            print("df", df.shape)
+
+            # normalize size
+            if max == 0:
+                max = len(df)
+            if max > len(df):
+                max = len(df)
+
+            if min > len(df):
+                return {"error": "min value too high"}
+
+            return df.sort_index().iloc[min:max].reset_index()
+
+        df = self.get_scheme_data(scheme, complete=True)
+
+        # case of recent annotations (no filter possible)
+        if mode == "recent":
+            list_ids = self.db_manager.get_recent_annotations(
+                self.project_slug, user, scheme, max - min
+            )
+            return df.loc[list_ids]
+
+        # filter for contains
+        if contains:
+            f_contains = df["text"].str.contains(contains)
+            df = df[f_contains]
+
+        # build dataset
+        if mode == "tagged":
+            df = df[df["labels"].notnull()]
+        if mode == "untagged":
+            df = df[df["labels"].isnull()]
+
+        # normalize size
+        if max == 0:
+            max = len(df)
+        if max > len(df):
+            max = len(df)
+
+        if min > len(df):
+            return {"error": "min value too high"}
+
+        return df.sort_index().iloc[min:max].reset_index()
+
+    def add_scheme(self, name: str, labels: list):
+        """
+        Add new scheme
+        """
+        if self.exists(name):
+            return {"error": "scheme name already exists"}
+
+        self.db_manager.add_scheme(self.project_slug, name, json.dumps(labels), None)
+
+        return {"success": "scheme created"}
+
+    def add_label(self, label: str, scheme: str, user: str):
+        """
+        Add label in a scheme
+        """
+        available = self.available()
+        print("AVAILABLE", available)
+
+        if (label is None) or (label == ""):
+            return {"error": "the name is void"}
+        if not scheme in available:
+            return {"error": "scheme doesn't exist"}
+        if available[scheme] is None:
+            available[scheme] = []
+        if label in available[scheme]:
+            return {"error": "label already exist"}
+        labels = available[scheme]
+        labels.append(label)
+        self.update_scheme(scheme, labels)
+        return {"success": "scheme updated with a new label"}
+
+    def exists_label(self, scheme: str, label: str):
+        """
+        Test if a label exist in a scheme
+        """
+        available = self.available()
+        if not scheme in available:
+            return {"error": "scheme doesn't exist"}
+        if label in available[scheme]:
+            return True
+        return False
+
+    def delete_label(self, label: str, scheme: str, user: str):
+        """
+        Delete a label in a scheme
+        """
+        available = self.available()
+        if not scheme in available:
+            return {"error": "scheme doesn't exist"}
+        if not label in available[scheme]:
+            return {"error": "label does not exist"}
+        labels = available[scheme]
+        labels.remove(label)
+        # push empty entry for tagged elements
+        df = self.get_scheme_data(scheme)
+        elements = list(df[df["labels"] == label].index)
+        for i in elements:
+            print(i)
+            self.push_tag(i, None, scheme, user, "add")
+        self.update_scheme(scheme, labels)
+        return {"success": "scheme updated removing a label"}
+
+    def update_scheme(self, scheme: str, labels: list):
+        """
+        Update existing schemes from database
+        """
+        self.db_manager.update_scheme(self.project_slug, scheme, json.dumps(labels))
+        return {"success": "scheme updated"}
+
+    def delete_scheme(self, name) -> dict:
+        """
+        Delete a scheme
+        """
+        self.db_manager.delete_scheme(self.project_slug, name)
+        return {"success": "scheme deleted"}
+
+    def exists(self, name: str) -> bool:
+        """
+        Test if scheme exist
+        """
+        if name in self.available():
+            return True
+        return False
+
+    def available(self) -> dict:
+        """
+        Available schemes {scheme:[labels]}
+        """
+        r = self.db_manager.available_schemes(self.project_slug)
+        return {i[0]: json.loads(i[1]) for i in r}
+
+    def get(self) -> dict:
+        """
+        state of the schemes
+        """
+        r = {"project_slug": self.project_slug, "availables": self.available()}
+        return r
+
+    def delete_tag(self, element_id: str, scheme: str, user: str = "server") -> bool:
+        """
+        Delete a recorded tag
+        i.e. : add empty label
+        """
+
+        self.db_manager.post_annotation(
+            self.project_slug, scheme, element_id, None, user, "delete"
+        )
+        self.db_manager.post_annotation(
+            self.project_slug, scheme, element_id, None, user, "add"
+        )
+        return True
+
+    def push_tag(
+        self,
+        element_id: str,
+        tag: str | None,
+        scheme: str,
+        user: str = "server",
+        mode: str = "train",
+    ):
+        """
+        Record a tag in the database
+        mode : train, predict, test
+        """
+
+        # TO FIX IN THE FUTURE
+        if mode == "train":
+            mode = "add"
+
+        # test if the action is possible
+        a = self.available()
+        if not scheme in a:
+            return {"error": "scheme unavailable"}
+        if (not tag is None) and (not tag in a[scheme]):
+            return {"error": "this tag doesn't belong to this scheme"}
+
+        # TODO : add a test also for testing
+        # if (not element_id in self.content.index):
+        #    return {"error":"element doesn't exist"}
+
+        self.db_manager.post_annotation(
+            self.project_slug, scheme, element_id, tag, user, mode
+        )
+        print(("push tag", mode, user, self.project_slug, element_id, scheme, tag))
+        return {"success": "tag added"}
+
+    def push_table(self, table, user: str, action: str = "add") -> bool:
+        """
+        Push table index/tags to update
+        Comments:
+        - only update modified labels
+        """
+        data = {i: j for i, j in zip(table.list_ids, table.list_labels)}
+        for i in data:
+            r = self.push_tag(i, data[i], table.scheme, user, action)
+            if "error" in r:
+                return {"error": "Something happened when recording."}
+        return {"success": "table pushed"}
+
+    def get_coding_users(self, scheme: str):
+        """
+        Get users action for a scheme
+        """
+        results = self.db_manager.get_coding_users(scheme, self.project_slug)
+        return results
+
+
 class Project(Server):
     """
     Project object
     """
+
+    starting_time: float
+    name: str
+    queue: Queue
+    db_manager: DatabaseManager
+    params: ProjectModel
+    content: DataFrame
+    schemes: Schemes
+    features: Features
+    bertmodels: BertModels
+    simplemodels: SimpleModels
 
     def __init__(
         self,
@@ -531,10 +1304,10 @@ class Project(Server):
         Load existing project
         """
         self.starting_time = time.time()
-        self.name: str = project_slug
+        self.name = project_slug
         self.queue = queue
         self.db_manager = db_manager
-        self.params: ProjectModel = self.load_params(project_slug)
+        self.params = self.load_params(project_slug)
 
         # check if directory exists
         if self.params.dir is None:
@@ -555,7 +1328,6 @@ class Project(Server):
         )
         self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
-        self.zeroshot = None
 
     def __del__(self):
         pass
@@ -1176,725 +1948,3 @@ class Project(Server):
         """
         users = self.db_manager.get_distinct_users(self.name, period)
         return users
-
-
-class Features:
-    """
-    Manage project features
-    Comment :
-    - as a file
-    - use "__" as separator
-    """
-
-    def __init__(self, project_slug: str, data_path: Path, queue) -> None:
-        """
-        Initit features
-        """
-        self.project_slug = project_slug
-        self.path = data_path
-        self.queue = queue
-        self.informations = {}
-        content, map = self.load()
-        self.content: DataFrame = content
-        self.map: dict = map
-        self.training: dict = {}
-
-        # managing projections
-        self.projections: dict = {}
-        self.possible_projections: dict = {
-            "umap": {
-                "n_neighbors": 15,
-                "min_dist": 0.1,
-                "n_components": 2,
-                "metric": "euclidean",
-            },
-            "tsne": {
-                "n_components": 2,
-                "learning_rate": "auto",
-                "init": "random",
-                "perplexity": 3,
-            },
-        }
-
-        # options
-        self.options: dict = {
-            "sbert": {},
-            "fasttext": {},
-            "dfm": {
-                "tfidf": False,
-                "ngrams": 1,
-                "min_term_freq": 5,
-                "max_term_freq": 100,
-                "norm": None,
-                "log": None,
-            },
-            "regex": {"formula": None},
-        }
-
-    def __repr__(self) -> str:
-        return f"Available features : {self.map}"
-
-    def load(self):
-        """
-        Load file and agregate columns
-        """
-
-        def find_strings_with_pattern(strings, pattern):
-            matching_strings = [s for s in strings if re.match(pattern, s)]
-            return matching_strings
-
-        data = pd.read_parquet(self.path)
-        var = set([i.split("__")[0] for i in data.columns])
-        dic = {i: find_strings_with_pattern(data.columns, i) for i in var}
-        return data, dic
-
-    def add(self, name: str, content: DataFrame | Series) -> dict:
-        """
-        Add feature(s) and save
-        """
-        # test length
-        if len(content) != len(self.content):
-            raise ValueError("Features don't have the right shape")
-
-        if name in self.map:
-            return {"error": "feature name already exists"}
-
-        # change type
-        if type(content) == Series:
-            content = pd.DataFrame(content)
-
-        # add to the table & dictionnary
-        content.columns = [f"{name}__{i}" for i in content.columns]
-        self.map[name] = list(content.columns)
-
-        self.content = pd.concat([self.content, content], axis=1)
-        # save
-        self.content.to_parquet(self.path)
-
-        return {"success": "feature added"}
-
-    def delete(self, name: str):
-        """
-        Delete feature
-        """
-        if not name in self.map:
-            return {"error": "feature doesn't exist"}
-
-        col = self.get([name])
-        del self.map[name]
-        self.content = self.content.drop(columns=col)
-        self.content.to_parquet(self.path)
-        return {"success": "feature deleted"}
-
-    def get(self, features: list | str = "all"):
-        """
-        Get content for specific features
-        """
-        if features == "all":
-            features = list(self.map.keys())
-        if type(features) is str:
-            features = [features]
-
-        cols = []
-        missing = []
-        for i in features:
-            if i in self.map:
-                cols += self.map[i]
-            else:
-                missing.append(i)
-
-        if len(i) > 0:
-            print("Missing features:", missing)
-        return self.content[cols]
-
-    def update_processes(self):
-        """
-        Check for computing processing completed
-        and clean them for the queue
-        """
-        # for features
-        for name in self.training.copy():
-            unique_id = self.training[name]
-            # case the process have been canceled, clean
-            if not unique_id in self.queue.current:
-                del self.training[name]
-                continue
-            # else check its state
-            if self.queue.current[unique_id]["future"].done():
-                r = self.queue.current[unique_id]["future"].result()
-                if "error" in r:
-                    print("Error in the feature processing", unique_id)
-                else:
-                    df = r["success"]
-                    self.add(name, df)
-                    self.queue.delete(unique_id)
-                    del self.training[name]
-                    print("Add feature", name)
-
-        # for projections
-        training = [u for u in self.projections if "queue" in self.projections[u]]
-        for u in training:
-            unique_id = self.projections[u]["queue"]
-            if self.queue.current[unique_id]["future"].done():
-                df = self.queue.current[unique_id]["future"].result()
-                self.projections[u]["data"] = df
-                self.projections[u]["id"] = self.projections[u]["queue"]
-                del self.projections[u]["queue"]
-                self.queue.delete(unique_id)
-
-    def get_info(self):
-        """
-        Informations on features + update
-        Comments:
-            Maybe not the best solution
-            Database ? How to avoid a loop ...
-        """
-        # update if new elements added in features
-        for f in self.map:
-            if ("regex_" in f) and (not f in self.informations):
-                df = self.get(f)
-                if len(df.columns) > 0:
-                    self.informations[f] = int(df[df.columns[0]].sum())
-        return dict(self.informations)
-
-
-class Schemes:
-    """
-    Manage project schemes & tags
-
-    Tables :
-    - schemes
-    - annotations
-    """
-
-    def __init__(
-        self,
-        project_slug: str,
-        path_content: Path,  # training data
-        path_test: Path,  # test data
-        db_manager: DatabaseManager,
-    ) -> None:
-        """
-        Init empty
-        """
-        self.project_slug = project_slug
-        self.db_manager = db_manager
-        self.content = pd.read_parquet(path_content)  # text + context
-        self.test = None
-        if path_test.exists():
-            self.test = pd.read_parquet(path_test)
-
-        available = self.available()
-
-        # create a default scheme if not available
-        if len(available) == 0:
-            self.add_scheme(name="default", labels=[])
-
-    def __repr__(self) -> str:
-        return f"Coding schemes available {self.available()}"
-
-    def get_scheme_data(
-        self, scheme: str, complete: bool = False, kind: list | str = ["add"]
-    ) -> DataFrame:
-        """
-        Get data from a scheme : id, text, context, labels
-        Join with text data in separate file (train or test)
-
-        Comments:
-            For the moment tags can be add, test, predict, reconciliation
-
-        TODO : replace all "add" with "train" in the code
-        """
-        if not scheme in self.available():
-            return {"error": "Scheme doesn't exist"}
-
-        if isinstance(kind, str):
-            kind = [kind]
-
-        # get all elements from the db
-        # - last element for each id
-        # - for a specific scheme
-
-        results = self.db_manager.get_scheme_elements(self.project_slug, scheme, kind)
-
-        # conn = sqlite3.connect(self.db)
-        # cursor = conn.cursor()
-        # action = "(" + " OR ".join([f"action = ?" for i in kind]) + ")"
-
-        # query = f"""
-        #     SELECT element_id, tag, user, MAX(time)
-        #     FROM annotations
-        #     WHERE scheme = ? AND project = ? AND {action}
-        #     GROUP BY element_id
-        #     ORDER BY time DESC;
-        # """
-        # cursor.execute(query, (scheme, self.project_slug) + tuple(kind))
-
-        # results = cursor.fetchall()
-        # conn.close()
-
-        df = pd.DataFrame(
-            results, columns=["id", "labels", "user", "timestamp"]
-        ).set_index("id")
-        df.index = [str(i) for i in df.index]
-        if complete:  # all the elements
-            if "test" in kind:
-                # case if the test, join the text data
-                t = self.test[["text"]].join(df)
-                return t
-            else:
-                return self.content.join(df)
-        return df
-
-    def get_reconciliation_table(self, scheme: str):
-        """
-        Get reconciliation table
-        TODO : add the filter on action
-        """
-        if not scheme in self.available():
-            return {"error": "Scheme doesn't exist"}
-
-        # get the last tag for each id and each user
-        # conn = sqlite3.connect(self.db)
-        # cursor = conn.cursor()
-
-        # query = f"""
-        #     SELECT e.element_id, e.tag, e.user, e.time
-        #     FROM annotations AS e
-        #     INNER JOIN (
-        #         SELECT id, user, MAX(time) AS last_timestamp
-        #         FROM annotations
-        #         WHERE project = ? AND scheme = ?
-        #         GROUP BY element_id, user
-        #     ) AS last_entries
-        #     ON e.id = last_entries.id;
-        # """
-        # cursor.execute(query, (self.project_slug, scheme))
-        # results = cursor.fetchall()
-        # conn.close()
-
-        results = self.db_manager.get_table_annotations_users(self.project_slug, scheme)
-        # Shape the data
-        df = pd.DataFrame(
-            results, columns=["id", "labels", "user", "time"]
-        )  # shape as a dataframe
-        agg = lambda x: list(x)[0] if len(x) > 0 else None  # take the label else None
-        df = df.pivot_table(
-            index="id", columns="user", values="labels", aggfunc=agg
-        )  # pivot and keep the label
-        f_multi = df.apply(
-            lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
-        )  # filter for disagreement
-        users = list(df.columns)
-        df = pd.DataFrame(
-            df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"]
-        )
-        df = df.join(self.content[["text"]], how="left")  # add the text
-        df = df[f_multi].reset_index()
-        # return the result
-        return df, users
-
-    def convert_tags(
-        self, former_label: str, new_label: str, scheme: str, username: str
-    ):
-        """
-        Convert tags from a specific label to another
-        """
-        # get id with the current tag
-        df = self.get_scheme_data(scheme)
-        to_recode = df[df["labels"] == former_label].index
-        # for each of them, push the new tag
-        for i in to_recode:
-            self.push_tag(i, new_label, scheme, username, "add")
-        return {"success": "All tags recoded"}
-
-    def get_total(self, dataset="train"):
-        """
-        Number of element in the dataset
-        """
-        if dataset == "test":
-            return len(self.test)
-        return len(self.content)
-
-    def get_table(
-        self,
-        scheme: str,
-        min: int,
-        max: int,
-        mode: str,
-        contains: str | None = None,
-        set: str = "train",
-        user: str = "all",
-    ) -> DataFrame:
-        """
-        Get data table
-        scheme : the annotations
-        min, max: the range
-        mode: sample
-        contains: search
-        user: select by user
-        set: train or test
-
-        Choice to order by index.
-        """
-        # check for errors
-        if not mode in ["tagged", "untagged", "all", "recent"]:
-            mode = "all"
-        if not scheme in self.available():
-            return {"error": "scheme not available"}
-
-        # case of the test set, no fancy stuff
-        if set == "test":
-            print("test mode")
-            df = self.get_scheme_data(scheme, complete=True, kind="test")
-            print("df", df.shape)
-
-            # normalize size
-            if max == 0:
-                max = len(df)
-            if max > len(df):
-                max = len(df)
-
-            if min > len(df):
-                return {"error": "min value too high"}
-
-            return df.sort_index().iloc[min:max].reset_index()
-
-        df = self.get_scheme_data(scheme, complete=True)
-
-        # case of recent annotations (no filter possible)
-        if mode == "recent":
-            list_ids = self.db_manager.get_recent_annotations(
-                self.project_slug, user, scheme, max - min
-            )
-            return df.loc[list_ids]
-
-        # filter for contains
-        if contains:
-            f_contains = df["text"].str.contains(contains)
-            df = df[f_contains]
-
-        # build dataset
-        if mode == "tagged":
-            df = df[df["labels"].notnull()]
-        if mode == "untagged":
-            df = df[df["labels"].isnull()]
-
-        # normalize size
-        if max == 0:
-            max = len(df)
-        if max > len(df):
-            max = len(df)
-
-        if min > len(df):
-            return {"error": "min value too high"}
-
-        return df.sort_index().iloc[min:max].reset_index()
-
-    def add_scheme(self, name: str, labels: list):
-        """
-        Add new scheme
-        """
-        if self.exists(name):
-            return {"error": "scheme name already exists"}
-
-        self.db_manager.add_scheme(self.project_slug, name, json.dumps(labels), None)
-
-        return {"success": "scheme created"}
-
-    def add_label(self, label: str, scheme: str, user: str):
-        """
-        Add label in a scheme
-        """
-        available = self.available()
-        print("AVAILABLE", available)
-
-        if (label is None) or (label == ""):
-            return {"error": "the name is void"}
-        if not scheme in available:
-            return {"error": "scheme doesn't exist"}
-        if available[scheme] is None:
-            available[scheme] = []
-        if label in available[scheme]:
-            return {"error": "label already exist"}
-        labels = available[scheme]
-        labels.append(label)
-        self.update_scheme(scheme, labels)
-        return {"success": "scheme updated with a new label"}
-
-    def exists_label(self, scheme: str, label: str):
-        """
-        Test if a label exist in a scheme
-        """
-        available = self.available()
-        if not scheme in available:
-            return {"error": "scheme doesn't exist"}
-        if label in available[scheme]:
-            return True
-        return False
-
-    def delete_label(self, label: str, scheme: str, user: str):
-        """
-        Delete a label in a scheme
-        """
-        available = self.available()
-        if not scheme in available:
-            return {"error": "scheme doesn't exist"}
-        if not label in available[scheme]:
-            return {"error": "label does not exist"}
-        labels = available[scheme]
-        labels.remove(label)
-        # push empty entry for tagged elements
-        df = self.get_scheme_data(scheme)
-        elements = list(df[df["labels"] == label].index)
-        for i in elements:
-            print(i)
-            self.push_tag(i, None, scheme, user, "add")
-        self.update_scheme(scheme, labels)
-        return {"success": "scheme updated removing a label"}
-
-    def update_scheme(self, scheme: str, labels: list):
-        """
-        Update existing schemes from database
-        """
-        self.db_manager.update_scheme(self.project_slug, scheme, json.dumps(labels))
-        return {"success": "scheme updated"}
-
-    def delete_scheme(self, name) -> dict:
-        """
-        Delete a scheme
-        """
-        self.db_manager.delete_scheme(self.project_slug, name)
-        return {"success": "scheme deleted"}
-
-    def exists(self, name: str) -> bool:
-        """
-        Test if scheme exist
-        """
-        if name in self.available():
-            return True
-        return False
-
-    def available(self) -> dict:
-        """
-        Available schemes {scheme:[labels]}
-        """
-        r = self.db_manager.available_schemes(self.project_slug)
-        return {i[0]: json.loads(i[1]) for i in r}
-
-    def get(self) -> dict:
-        """
-        state of the schemes
-        """
-        r = {"project_slug": self.project_slug, "availables": self.available()}
-        return r
-
-    def delete_tag(self, element_id: str, scheme: str, user: str = "server") -> bool:
-        """
-        Delete a recorded tag
-        i.e. : add empty label
-        """
-
-        self.db_manager.post_annotation(
-            self.project_slug, scheme, element_id, None, user, "delete"
-        )
-        self.db_manager.post_annotation(
-            self.project_slug, scheme, element_id, None, user, "add"
-        )
-        return True
-
-    def push_tag(
-        self,
-        element_id: str,
-        tag: str | None,
-        scheme: str,
-        user: str = "server",
-        mode: str = "train",
-    ):
-        """
-        Record a tag in the database
-        mode : train, predict, test
-        """
-
-        # TO FIX IN THE FUTURE
-        if mode == "train":
-            mode = "add"
-
-        # test if the action is possible
-        a = self.available()
-        if not scheme in a:
-            return {"error": "scheme unavailable"}
-        if (not tag is None) and (not tag in a[scheme]):
-            return {"error": "this tag doesn't belong to this scheme"}
-
-        # TODO : add a test also for testing
-        # if (not element_id in self.content.index):
-        #    return {"error":"element doesn't exist"}
-
-        self.db_manager.post_annotation(
-            self.project_slug, scheme, element_id, tag, user, mode
-        )
-        print(("push tag", mode, user, self.project_slug, element_id, scheme, tag))
-        return {"success": "tag added"}
-
-    def push_table(self, table, user: str, action: str = "add") -> bool:
-        """
-        Push table index/tags to update
-        Comments:
-        - only update modified labels
-        """
-        data = {i: j for i, j in zip(table.list_ids, table.list_labels)}
-        for i in data:
-            r = self.push_tag(i, data[i], table.scheme, user, action)
-            if "error" in r:
-                return {"error": "Something happened when recording."}
-        return {"success": "table pushed"}
-
-    def get_coding_users(self, scheme: str):
-        """
-        Get users action for a scheme
-        """
-        results = self.db_manager.get_coding_users(scheme, self.project_slug)
-        return results
-
-
-class Users:
-    """
-    Managers users
-    """
-
-    def __init__(
-        self,
-        db_manager: DatabaseManager,
-        file_users: str = "add_users.yaml",
-    ):
-        """
-        Init users references
-        """
-        self.db_manager = db_manager
-
-        # add users if add_users.yaml exists
-        if Path(file_users).exists():
-            existing = self.existing_users()
-            with open("add_users.yaml") as f:
-                add_users = yaml.safe_load(f)
-            for user, password in add_users.items():
-                if not user in existing:
-                    self.add_user(user, password, "manager", "system")
-                else:
-                    print(f"Not possible to add {user}, already exists")
-            # rename the file
-            os.rename("add_users.yaml", "add_users_processed.yaml")
-
-    def get_project_auth(self, project_slug: str):
-        """
-        Get user auth for a project
-        """
-        auth = self.db_manager.get_project_auth(project_slug)
-        return auth
-
-    def set_auth(self, username: str, project_slug: str, status: str):
-        """
-        Set user auth for a project
-        """
-        self.db_manager.add_auth(project_slug, username, status)
-        return {"success": "Auth added to database"}
-
-    def delete_auth(self, username: str, project_slug: str):
-        """
-        Delete user auth
-        """
-        self.db_manager.delete_auth(project_slug, username)
-        return {"success": "Auth deleted"}
-
-    def get_auth_projects(self, username: str) -> list:
-        """
-        Get user auth
-        """
-        auth = self.db_manager.get_user_projects(username)
-        return auth
-
-    def get_auth(self, username: str, project_slug: str = "all") -> list:
-        """
-        Get user auth
-        Comments:
-        - Either for all projects
-        - Or one project
-        """
-        if project_slug == "all":
-            auth = self.db_manager.get_user_auth(username)
-        else:
-            auth = self.db_manager.get_user_auth(username, project_slug)
-        return auth
-
-    def existing_users(self) -> list:
-        """
-        Get existing users
-        (except root which can't be modified)
-        """
-        users = self.db_manager.get_users()
-        return users
-
-    def add_user(
-        self, name: str, password: str, role: str = "manager", created_by: str = "NA"
-    ) -> bool:
-        """
-        Add user to database
-        Comments:
-            Default, users are managers
-        """
-        # test if the user doesn't exist
-        if name in self.existing_users():
-            return {"error": "Username already exists"}
-        hash_pwd = functions.get_hash(password)
-        self.db_manager.add_user(name, hash_pwd, role, created_by)
-
-        return {"success": "User added to the database"}
-
-    def delete_user(self, name: str) -> dict:
-        """
-        Deleting user
-        """
-        # specific cases
-        if not name in self.existing_users():
-            return {"error": "Username does not exist"}
-        if name == "root":
-            return {"error": "Can't delete root user"}
-
-        # delete the user
-        self.db_manager.delete_user(name)
-
-        return {"success": "User deleted"}
-
-    def get_user(self, name) -> UserInDBModel | dict:
-        """
-        Get user from database
-        """
-        if not name in self.existing_users():
-            return {"error": "Username doesn't exist"}
-        user = self.db_manager.get_user(name)
-        return UserInDBModel(
-            username=name, hashed_password=user["key"], status=user["description"]
-        )
-
-    def authenticate_user(
-        self, username: str, password: str
-    ) -> UserInDBModel | dict[str, str]:
-        """
-        User authentification
-        """
-        user = self.get_user(username)
-        if not isinstance(user, UserInDBModel):
-            return user
-        if not functions.compare_to_hash(password, user.hashed_password):
-            return {"error": "Wrong password"}
-        return user
-
-    def auth(self, username: str, project_slug: str):
-        """
-        Check auth for a specific project
-        """
-        user_auth = self.get_auth(username, project_slug)
-        if len(user_auth) == 0:  # not associated
-            return None
-        return user_auth[0][1]

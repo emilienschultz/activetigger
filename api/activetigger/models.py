@@ -1,30 +1,33 @@
-import pandas as pd
-from pandas import DataFrame
 import json
 import os
-from pathlib import Path
-import numpy as np
-import shutil
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import precision_score, f1_score, accuracy_score, recall_score
-from sklearn.model_selection import KFold, cross_val_predict
-from multiprocessing import Process
-from datetime import datetime
 import pickle
+import shutil
+from datetime import datetime
+from multiprocessing import Process
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
+from pandas import DataFrame
 from pydantic import ValidationError
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.model_selection import KFold, cross_val_predict
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
 import activetigger.functions as functions
 from activetigger.datamodels import (
-    LiblinearParams,
-    KnnParams,
-    RandomforestParams,
-    LassoParams,
-    Multi_naivebayesParams,
     BertParams,
+    KnnParams,
+    LassoParams,
+    LiblinearParams,
+    Multi_naivebayesParams,
+    RandomforestParams,
 )
 
 
@@ -32,6 +35,18 @@ class BertModel:
     """
     Manage one bertmodel
     """
+
+    name: str
+    path: Path
+    params: dict | None
+    base_model: str | None
+    tokenizer = None
+    model = None
+    log_history = None
+    status: str
+    pred: DataFrame | None
+    data: DataFrame | None
+    timestamp: datetime
 
     def __init__(
         self,
@@ -43,17 +58,17 @@ class BertModel:
         """
         Init a bert model
         """
-        self.name: str = name
-        self.path: Path = path
-        self.params: dict | None = params
-        self.base_model: str | None = base_model
+        self.name = name
+        self.path = path
+        self.params = params
+        self.base_model = base_model
         self.tokenizer = None
         self.model = None
         self.log_history = None
-        self.status: str = "initializing"
-        self.pred: DataFrame | None = None
-        self.data: DataFrame | None = None
-        self.timestamp: datetime = datetime.now()
+        self.status = "initializing"
+        self.pred = None
+        self.data = None
+        self.timestamp = datetime.now()
 
     def __repr__(self) -> str:
         return f"{self.name} - {self.base_model}"
@@ -179,6 +194,8 @@ class BertModel:
         return r
 
 
+
+
 class BertModels:
     """
     Managing bertmodel training
@@ -189,7 +206,11 @@ class BertModels:
     TODO : std.err in the logs for processes
     """
 
-    def __init__(self, path: Path, queue) -> None:
+    queue: Any
+    path: Path
+    computing: dict
+
+    def __init__(self, path: Path, queue: Any) -> None:
         self.params_default = {
             "batchsize": 4,
             "gradacc": 1,
@@ -532,28 +553,35 @@ class SimpleModels:
     - train simplemodels
     """
 
-    # Models and default parameters
-    available_models = {
-        "liblinear": {"cost": 1},
-        "knn": {"n_neighbors": 3},
-        "randomforest": {"n_estimators": 500, "max_features": None},
-        "lasso": {"C": 32},
-        "multi_naivebayes": {"alpha": 1, "fit_prior": True, "class_prior": None},
-    }
-
-    # To validate JSON
-    validation = {
-        "liblinear": LiblinearParams,
-        "knn": KnnParams,
-        "randomforest": RandomforestParams,
-        "lasso": LassoParams,
-        "multi_naivebayes": Multi_naivebayesParams,
-    }
+    available_models:dict
+    validation:dict
+    existing:dict
+    computing:dict
+    path:Path
+    queue:Any
+    save_file:str
 
     def __init__(self, path: Path, queue):
         """
         Init Simplemodels class
         """
+            # Models and default parameters
+        self.available_models = {
+            "liblinear": {"cost": 1},
+            "knn": {"n_neighbors": 3},
+            "randomforest": {"n_estimators": 500, "max_features": None},
+            "lasso": {"C": 32},
+            "multi_naivebayes": {"alpha": 1, "fit_prior": True, "class_prior": None},
+        }
+
+        # To validate JSON
+        self.validation = {
+            "liblinear": LiblinearParams,
+            "knn": KnnParams,
+            "randomforest": RandomforestParams,
+            "lasso": LassoParams,
+            "multi_naivebayes": Multi_naivebayesParams,
+        }
         self.existing: dict = {}  # computed simplemodels
         self.computing: dict = {}  # curently under computation
         self.path: Path = path  # path to operate
@@ -755,6 +783,20 @@ class SimpleModels:
 
 
 class SimpleModel:
+
+    name: str
+    user: str
+    features: list
+    X: DataFrame
+    Y: DataFrame
+    labels: list
+    model_params: dict
+    standardize: bool
+    proba: DataFrame
+    statistics: dict
+    cv10: DataFrame
+    # model
+
     def __init__(
         self,
         name: str,

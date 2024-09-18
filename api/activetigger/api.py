@@ -1,57 +1,58 @@
+import importlib
+import logging
 import time
+from contextlib import asynccontextmanager
+from typing import Annotated, Any, Dict, List
+
 from fastapi import (
-    FastAPI,
     Depends,
-    HTTPException,
+    FastAPI,
     Header,
+    HTTPException,
     Query,
     Request,
 )
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
-from typing import Annotated, List, Dict, Any
+from fastapi.staticfiles import StaticFiles
 from jose import JWTError
-import importlib
 from pydantic import ValidationError
-from activetigger.server import Server, Project
+
 import activetigger.functions as functions
 from activetigger.datamodels import (
-    ProjectModel,
-    ProjectDataModel,
-    ProjectionInStrictModel,
-    TableOutModel,
     ActionModel,
     AnnotationModel,
-    SchemeModel,
-    ProjectionOutModel,
-    TokenModel,
-    SimpleModelModel,
+    AuthActions,
+    AvailableProjectsModel,
     BertModelModel,
-    FeatureModel,
-    UmapModel,
-    TsneModel,
-    NextInModel,
+    DocumentationModel,
     ElementOutModel,
+    FeatureModel,
     GenerateModel,
+    NextInModel,
+    ProjectAuthsModel,
+    ProjectDataModel,
+    ProjectDescriptionModel,
+    ProjectionInStrictModel,
+    ProjectionOutModel,
+    ProjectModel,
+    ProjectStateModel,
+    ReconciliationModel,
+    SchemeModel,
+    SimpleModelModel,
+    TableAnnotationsModel,
+    TableOutModel,
+    TestSetDataModel,
+    TokenModel,
+    TsneModel,
+    UmapModel,
     UserInDBModel,
     UserModel,
     UsersServerModel,
-    ProjectStateModel,
-    ProjectDescriptionModel,
-    ProjectAuthsModel,
     WaitingModel,
-    DocumentationModel,
-    ReconciliationModel,
-    AuthActions,
-    AvailableProjectsModel,
-    TableAnnotationsModel,
-    TestSetDataModel,
 )
-
+from activetigger.server import Project, Server
 
 # General comments
 # - all post are logged
@@ -328,7 +329,7 @@ async def get_documentation() -> DocumentationModel:
 
 @app.post("/token")
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> TokenModel:
     """
     Authentificate user and return token
@@ -355,7 +356,7 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
 
 @app.get("/users/me")
 async def read_users_me(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)]
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> UserModel:
     """
     Information on current user
@@ -465,7 +466,7 @@ async def get_logs(
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
 async def get_project_state(
-    project: Annotated[Project, Depends(get_project)]
+    project: Annotated[Project, Depends(get_project)],
 ) -> ProjectStateModel:
     """
     Get the state of a specific project
@@ -493,7 +494,7 @@ async def get_project_statistics(
 
 @app.get("/projects")
 async def get_projects(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)]
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> AvailableProjectsModel:
     """
     Get general informations on the server
@@ -853,7 +854,7 @@ async def get_reconciliation_table(
     """
     df, users = project.schemes.get_reconciliation_table(scheme)
     if "error" in df:
-        raise HTTPException(status_code=500, detail=r["error"])
+        raise HTTPException(status_code=500, detail=df["error"])
     return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
 
 
