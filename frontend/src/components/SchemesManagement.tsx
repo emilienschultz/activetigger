@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
@@ -22,14 +22,24 @@ export const SelectCurrentScheme: FC = () => {
 
   const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
 
-  // select a default scheme if not
-  if (!currentScheme && availableSchemes.length > 0) {
-    setAppContext((state) => ({
-      ...state,
-      currentScheme: availableSchemes[0],
-    }));
-    notify({ type: 'success', message: `Scheme ${currentScheme} selected by default` });
-  }
+  // manage scheme selection
+  useEffect(() => {
+    // case of there is no selected scheme and schemes are available
+    if (!currentScheme && availableSchemes.length > 0) {
+      setAppContext((state) => ({
+        ...state,
+        currentScheme: availableSchemes[0],
+      }));
+      notify({ type: 'success', message: `Scheme ${currentScheme} selected by default` });
+    }
+    // case of the scheme have been deleted
+    if (availableSchemes[0] && currentScheme && !availableSchemes.includes(currentScheme)) {
+      setAppContext((state) => ({
+        ...state,
+        currentScheme: availableSchemes[0],
+      }));
+    }
+  }, [currentScheme, availableSchemes, setAppContext, notify]);
 
   // put the current scheme in the context on change
   const handleSelectScheme = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -39,8 +49,6 @@ export const SelectCurrentScheme: FC = () => {
     }));
     notify({ type: 'success', message: 'Scheme selected' });
   };
-
-  console.log(currentScheme);
 
   return (
     <div className="row">
