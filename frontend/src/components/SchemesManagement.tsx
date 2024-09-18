@@ -40,6 +40,8 @@ export const SelectCurrentScheme: FC = () => {
     notify({ type: 'success', message: 'Scheme selected' });
   };
 
+  console.log(currentScheme);
+
   return (
     <div className="row">
       <div className="d-flex align-items-center mb-3">
@@ -53,10 +55,11 @@ export const SelectCurrentScheme: FC = () => {
           value={currentScheme ? currentScheme : availableSchemes[0]}
         >
           {availableSchemes.map((element) => (
-            <option key={element} value={element} selected={element === currentScheme}>
+            <option key={element} value={element}>
               {element}
             </option>
           ))}{' '}
+          <option key={'null'}></option>
         </select>
       </div>
     </div>

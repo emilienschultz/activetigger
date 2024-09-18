@@ -36,6 +36,13 @@ from activetigger.models import BertModels, SimpleModels
 
 logger = logging.getLogger("server")
 
+db_name = "activetigger.db"
+features_file = "features.parquet"
+labels_file = "labels.parquet"
+data_file = "data.parquet"
+test_file = "test.parquet"
+default_user = "root"
+ALGORITHM = "HS256"
 
 class Queue:
     """
@@ -331,13 +338,13 @@ class Server:
         """
         Start the server
         """
-        self.db_name = "activetigger.db"
-        self.features_file = "features.parquet"
-        self.labels_file = "labels.parquet"
-        self.data_file = "data.parquet"
-        self.test_file = "test.parquet"
-        self.default_user = "root"
-        self.ALGORITHM = "HS256"
+        self.db_name = db_name
+        self.features_file = features_file
+        self.labels_file = labels_file
+        self.data_file = data_file
+        self.test_file = test_file
+        self.default_user = default_user
+        self.ALGORITHM = ALGORITHM
 
         self.starting_time = time.time()
         self.SECRET_KEY = secrets.token_hex(32)
@@ -1314,17 +1321,17 @@ class Project(Server):
             raise ValueError("No directory exists for this project")
 
         # loading data
-        self.content: DataFrame = pd.read_parquet(self.params.dir / self.data_file)
+        self.content: DataFrame = pd.read_parquet(self.params.dir / data_file)
 
         # create specific management objets
         self.schemes: Schemes = Schemes(
             project_slug,
-            self.params.dir / self.labels_file,
-            self.params.dir / self.test_file,
+            self.params.dir / labels_file,
+            self.params.dir / test_file,
             self.db_manager,
         )
         self.features: Features = Features(
-            project_slug, self.params.dir / self.features_file, self.queue
+            project_slug, self.params.dir / features_file, self.queue
         )
         self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
         self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
@@ -1448,6 +1455,9 @@ class Project(Server):
 
         filter is a regex to use on the corpus
         """
+
+        if scheme not in self.schemes.available():
+            return {"error": "Scheme doesn't exist"}
 
         # specific case of test, random element
         if selection == "test":
@@ -1671,6 +1681,9 @@ class Project(Server):
         """
         if scheme is None:
             return {"error": "Scheme not defined"}
+        
+        if scheme not in self.schemes.available():
+            return {"error": "Scheme does not exist"}
 
         # part train
         r = {"train_set_n": len(self.schemes.content)}
@@ -1743,7 +1756,7 @@ class Project(Server):
                     if "data" in self.features.projections[u]
                 },
             },
-            "zeroshot": {"data": self.zeroshot},
+            "zeroshot": {"data": None},
         }
         return r
 

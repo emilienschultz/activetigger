@@ -631,7 +631,6 @@ async def get_next(
     """
     Get next element
     """
-    print(next)
     r = project.get_next(
         scheme=next.scheme,
         selection=next.selection,
@@ -852,7 +851,10 @@ async def get_reconciliation_table(
     """
     Get the reconciliation table
     """
-    df, users = project.schemes.get_reconciliation_table(scheme)
+    try:
+        df, users = project.schemes.get_reconciliation_table(scheme)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Problem with the reconciliation")
     if "error" in df:
         raise HTTPException(status_code=500, detail=df["error"])
     return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
