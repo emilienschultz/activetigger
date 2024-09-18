@@ -28,7 +28,7 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                   <td>Users involved</td>
                   <td>
                     {statistics['users'].map((e) => (
-                      <span key={e} className="m-2">
+                      <span key={e} className="ml-2">
                         {e}
                       </span>
                     ))}

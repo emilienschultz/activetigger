@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useEffect } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import DataGrid, { Column } from 'react-data-grid';
@@ -40,11 +40,13 @@ export const GenPage: FC = () => {
 
   const { generated } = useGeneratedElements(projectName || null, 10);
 
-  if (!generateConfig.api)
-    setAppContext((prev) => ({
-      ...prev,
-      generateConfig: { ...generateConfig, api: 'ollama' },
-    }));
+  useEffect(() => {
+    if (!generateConfig.api)
+      setAppContext((prev) => ({
+        ...prev,
+        generateConfig: { ...generateConfig, api: 'ollama' },
+      }));
+  }, [generateConfig, setAppContext]);
 
   console.log(generateConfig);
 

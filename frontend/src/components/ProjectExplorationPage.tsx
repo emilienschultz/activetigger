@@ -187,11 +187,10 @@ export const ProjectExplorationPage: FC = () => {
                       setPageSize(Number(e.target.value));
                     }}
                     className="form-select w-25"
+                    value={pageSize}
                   >
                     {[10, 20, 50, 100].map((e) => (
-                      <option key={e} selected={e === pageSize}>
-                        {e}
-                      </option>
+                      <option key={e}>{e}</option>
                     ))}
                   </select>
                   <label>Page</label>

@@ -76,7 +76,6 @@ export const ProjectExportPage: FC = () => {
                   }}
                   multiple
                 >
-                  <option></option>
                   {(availableFeatures || []).map((e) => (
                     <option key={e}>{e}</option>
                   ))}

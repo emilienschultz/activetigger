@@ -824,7 +824,7 @@ async def post_list_elements(
             annotation.label,
             annotation.scheme,
             current_user.username,
-            table.set,
+            table.dataset,
         )
         if "error" in r:
             errors.append(annotation)
