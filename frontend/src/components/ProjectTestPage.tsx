@@ -17,7 +17,7 @@ import { SelectCurrentScheme } from './SchemesManagement';
 export const ProjectTestPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { phase, currentScheme, currentProject },
+    appContext: { phase, currentScheme, currentProject, isComputing },
     setAppContext,
   } = useAppContext();
 
@@ -26,6 +26,7 @@ export const ProjectTestPage: FC = () => {
     currentScheme && currentProject?.bertmodels.available[currentScheme]
       ? Object.keys(currentProject?.bertmodels.available[currentScheme])
       : [];
+
   // state forthe model
   const [currentModel, setCurrentModel] = useState<string | null>(null);
 
@@ -40,6 +41,7 @@ export const ProjectTestPage: FC = () => {
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics } = useStatistics(projectName || null, currentScheme || null);
   if (!projectName) return null;
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
       <div className="container-fluid">
@@ -69,7 +71,11 @@ export const ProjectTestPage: FC = () => {
                     <select
                       id="model-selected"
                       className="form-select"
-                      onChange={(e) => setCurrentModel(e.target.value)}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setCurrentModel(e.target.value);
+                        }
+                      }}
                     >
                       <option></option>
                       {availableModels.map((e) => (
@@ -110,9 +116,16 @@ export const ProjectTestPage: FC = () => {
                 </div>
               </Tab>
               <Tab eventKey="compute" title="2. Compute">
+                {isComputing && (
+                  <div>You already have a process launched. Wait for it to complete.</div>
+                )}
                 {currentModel && currentScheme ? (
                   <div className="col-12">
-                    <button className="btn btn-primary m-3" onClick={() => testModel()}>
+                    <button
+                      className="btn btn-primary m-3"
+                      onClick={() => testModel()}
+                      disabled={isComputing}
+                    >
                       Compute the test
                     </button>
                     {
@@ -124,7 +137,7 @@ export const ProjectTestPage: FC = () => {
                 )}
               </Tab>
               <Tab eventKey="statistics" title="3. Statistics">
-                {model ? (
+                {model && model['test_scores'] ? (
                   <div>
                     <table className="table">
                       <thead>

@@ -1691,6 +1691,7 @@ class Project(Server):
             i[0]
             for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
         ]
+        
         df = self.schemes.get_scheme_data(scheme, kind=["add", "predict"])
         r["train_annotated_n"] = len(df)
         r["train_annotated_distribution"] = json.loads(

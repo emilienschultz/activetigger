@@ -2,6 +2,7 @@ import { FC, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useProject } from '../core/api';
+import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 
 /**
@@ -10,6 +11,7 @@ import { useAppContext } from '../core/context';
 export const CurrentProjectMonitoring: FC = () => {
   const { projectName } = useParams();
   const { setAppContext } = useAppContext();
+  const { authenticatedUser } = useAuth();
 
   const { project, reFetch } = useProject(projectName); // api call
 
@@ -18,7 +20,16 @@ export const CurrentProjectMonitoring: FC = () => {
       // fix BUG
       setAppContext((prev) => ({ ...prev, currentProject: project }));
     }
-  }, [project, setAppContext]);
+
+    // check if training process, and refresh the value
+    const isComputing =
+      project &&
+      authenticatedUser &&
+      Object.keys(project.bertmodels.training).includes(authenticatedUser.username);
+
+    if (typeof isComputing === 'boolean')
+      setAppContext((prev) => ({ ...prev, isComputing: isComputing }));
+  }, [project, setAppContext, authenticatedUser]);
 
   // Effect to poll project data regularly to monitor long lasting server tasks
   // each time reFetch change
