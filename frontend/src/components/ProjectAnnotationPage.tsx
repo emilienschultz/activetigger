@@ -215,6 +215,18 @@ export const ProjectAnnotationPage: FC = () => {
                       ''
                     )}
                   </div>{' '}
+                  <div>
+                    The current selection mode is{' '}
+                    <span className="badge text-bg-light  mt-2">{selectionConfig.mode}</span> on the
+                    sample{' '}
+                    <span className="badge text-bg-light  mt-2">{selectionConfig.sample}</span>{' '}
+                    {selectionConfig.filter
+                      ? `with the regex ${selectionConfig.filter}`
+                      : 'without regex'}
+                    {selectionConfig.frameSelection
+                      ? ` and with a frame selection`
+                      : ' and without frame selection'}
+                  </div>
                 </div>
               </Tab>
               <Tab eventKey="selection" title="Selection mode">

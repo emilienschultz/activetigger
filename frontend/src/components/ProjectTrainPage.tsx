@@ -40,7 +40,7 @@ export const ProjectTrainPage: FC = () => {
 
   const { notify } = useNotifications();
   const {
-    appContext: { currentScheme, currentProject: project },
+    appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
@@ -369,7 +369,9 @@ export const ProjectTrainPage: FC = () => {
                     <input type="checkbox" {...registerNewModel('parameters.adapt')} />
                   </div>
 
-                  <button className="btn btn-primary me-2 mt-2">Train</button>
+                  <button className="btn btn-primary me-2 mt-2" disabled={isComputing}>
+                    Train
+                  </button>
                 </form>
               </Tab>
             </Tabs>
