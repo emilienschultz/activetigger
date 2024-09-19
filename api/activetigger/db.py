@@ -1,18 +1,20 @@
+import datetime
+import json
+from pathlib import Path
+
 from sqlalchemy import (
-    create_engine,
+    TIMESTAMP,
     Column,
     Integer,
     String,
     Text,
-    TIMESTAMP,
+    create_engine,
     func,
     select,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
-from pathlib import Path
-from activetigger.functions import get_root_pwd, get_hash
-import datetime
-import json
+
+from activetigger.functions import get_hash, get_root_pwd
 
 Base = declarative_base()
 
@@ -335,19 +337,18 @@ class DatabaseManager:
                 seconds=timespan
             )
             users = (
-                session.query(Generations.user)
+                session.query(Annotations.user)
                 .filter(
-                    Generations.project == project_slug,
-                    Generations.time > time_threshold,
+                    Annotations.project == project_slug,
+                    Annotations.time > time_threshold.timestamp()
                 )
                 .distinct()
                 .all()
             )
-
         else:
             users = (
-                session.query(Generations.user)
-                .filter(Generations.project == project_slug)
+                session.query(Annotations.user)
+                .filter(Annotations.project == project_slug)
                 .distinct()
                 .all()
             )

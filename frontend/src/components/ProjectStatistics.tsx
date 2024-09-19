@@ -67,7 +67,13 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                   </tr>
                   <tr>
                     <td>Users involved</td>
-                    <td>{statistics['users']}</td>
+                    <td>
+                      <ul>
+                        {statistics['users'].map((e) => (
+                          <li key={e}>{e}</li>
+                        ))}
+                      </ul>
+                    </td>
                   </tr>
                   <tr>
                     <td>Total</td>
