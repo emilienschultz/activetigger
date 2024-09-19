@@ -237,27 +237,25 @@ export const ProjectTrainPage: FC = () => {
                             Compute prediction
                           </button>
                         )}
-                        <details>
-                          <summary>Parameters of the model</summary>
-                          <table className="table">
-                            <thead>
-                              <tr>
-                                <th scope="col">Key</th>
-                                <th scope="col">Value</th>
+                        <table className="table">
+                          <thead>
+                            <tr>
+                              <th scope="col">Key</th>
+                              <th scope="col">Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.entries(model.training['parameters']).map(([key, value]) => (
+                              <tr key={key}>
+                                <td>{key}</td>
+                                <td>{JSON.stringify(value)}</td>
                               </tr>
-                            </thead>
-                            <tbody>
-                              {Object.entries(model.training['parameters']).map(([key, value]) => (
-                                <tr key={key}>
-                                  <td>{key}</td>
-                                  <td>{JSON.stringify(value)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-
-                          <LossChart></LossChart>
-                        </details>
+                            ))}
+                          </tbody>
+                        </table>
+                        <div className="col-6 col-lg-4">
+                          <LossChart />
+                        </div>
                         <details>
                           <summary>Scores</summary>
                           {model.train_scores && (
