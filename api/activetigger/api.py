@@ -173,6 +173,7 @@ async def check_processes(timer, step: int = 1) -> None:
         # update pending processes
         project.features.update_processes()
         project.simplemodels.update_processes()
+        project.generations.update_generations()
         predictions = project.bertmodels.update_processes()
 
         # if predictions completed, add them as features
@@ -906,11 +907,32 @@ async def postgenerate(
     print("Start generation", request)
     # get subset of unlabelled elements
     df = project.schemes.get_table(request.scheme, 0, request.n_batch, request.mode)
-    print(df)
-    # make the call
-    r = await project.generate(current_user.username, project.name, df, request)
-    # if call success, added in the database
+
+    # create the independant process to manage the generation
+    args = {
+        "user": current_user.username,
+        "project_name": project.name,
+        "df": df,
+        "api": request.api,
+        "endpoint": request.endpoint,
+        "prompt": request.prompt,
+    }
+
+    unique_id = server.queue.add("generation", functions.generate, args)
+
+    if unique_id == "error":
+        raise HTTPException(
+            status_code=500, detail="Error in adding the generation call in the queue"
+        )
+    project.generations.generating[current_user.username] = unique_id
     return None
+    # await project.generate(current_user.username, project.name, df, request)
+    # if call success, added in the database
+
+    # unique_id = server.queue.add("generate", project.generate, args)
+    # if unique_id == "error":
+    #     raise HTTPException(status_code=500, detail="Error in adding in the queue")
+    # project.features.training[feature.name] = unique_id
 
 
 @app.get("/elements/generate", dependencies=[Depends(verified_user)])

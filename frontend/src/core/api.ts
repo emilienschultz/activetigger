@@ -1345,7 +1345,6 @@ export function useGenerate(
         },
       });
       if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
-
       return true;
     }
     return null;

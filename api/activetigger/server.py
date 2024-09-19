@@ -44,6 +44,7 @@ test_file = "test.parquet"
 default_user = "root"
 ALGORITHM = "HS256"
 
+
 class Queue:
     """
     Managining parallel processes for computation
@@ -316,6 +317,7 @@ class Server:
     """
     Server to manage backend
     """
+
     db_name: str
     features_file: str
     labels_file: str
@@ -327,7 +329,7 @@ class Server:
     starting_time: float = None
     SECRET_KEY: str
     path: Path
-    path_models : Path
+    path_models: Path
     db: Path
     projects: dict
     db_manager: DatabaseManager
@@ -635,7 +637,6 @@ class Server:
 
         # if the case, add labels in the database
         if (not params.col_label is None) and ("label" in trainset.columns):
-
             print("Add scheme/labels from file")
 
             df = trainset["label"].dropna()
@@ -685,8 +686,6 @@ class Server:
         # clean database
         self.db_manager.delete_project(project_slug)
         return {"success": "Project deleted"}
-
-
 
 
 class Features:
@@ -838,7 +837,7 @@ class Features:
         for name in self.training.copy():
             unique_id = self.training[name]
             # case the process have been canceled, clean
-            if not unique_id in self.queue.current:
+            if unique_id not in self.queue.current:
                 del self.training[name]
                 continue
             # else check its state
@@ -1285,6 +1284,74 @@ class Schemes:
         return results
 
 
+class Generations:
+    """
+    Class to manage generation data
+    """
+
+    queue: Queue
+    generating: dict
+    db_manager: DatabaseManager
+
+    def __init__(self, queue: Queue, db_manager: DatabaseManager) -> None:
+        self.queue = queue
+        self.db_manager = db_manager
+        self.generating = {}
+
+    def update_generations(self):
+        """
+        Manage the process launched by the class
+        """
+        for name in self.generating.copy():
+            unique_id = self.generating[name]
+
+            # case the process have been canceled, clean
+            if unique_id not in self.queue.current:
+                del self.generating[name]
+                continue
+
+            # else check its state
+            if self.queue.current[unique_id]["future"].done():
+                r = self.queue.current[unique_id]["future"].result()
+                if "error" in r:
+                    print("Error in the generating process", unique_id)
+                else:
+                    results = r["success"]
+                    for row in results:
+                        self.add(
+                            user=row["user"],
+                            project_slug=row["project_slug"],
+                            element_id=row["element_id"],
+                            endpoint=row["endpoint"],
+                            prompt=row["prompt"],
+                            answer=row["answer"],
+                        )
+                    self.queue.delete(unique_id)
+                    del self.generating[name]
+
+    def add(
+        self,
+        user: str,
+        project_slug: str,
+        element_id: str,
+        endpoint: str,
+        prompt: str,
+        answer: str,
+    ) -> None:
+        """
+        Add a generated element in the database
+        """
+        self.db_manager.add_generated(
+            user=user,
+            project_slug=project_slug,
+            element_id=element_id,
+            endpoint=endpoint,
+            prompt=prompt,
+            answer=answer,
+        )
+        return None
+
+
 class Project(Server):
     """
     Project object
@@ -1300,6 +1367,7 @@ class Project(Server):
     features: Features
     bertmodels: BertModels
     simplemodels: SimpleModels
+    generations: Generations
 
     def __init__(
         self,
@@ -1321,20 +1389,21 @@ class Project(Server):
             raise ValueError("No directory exists for this project")
 
         # loading data
-        self.content: DataFrame = pd.read_parquet(self.params.dir / data_file)
+        self.content = pd.read_parquet(self.params.dir / data_file)
 
         # create specific management objets
-        self.schemes: Schemes = Schemes(
+        self.schemes = Schemes(
             project_slug,
             self.params.dir / labels_file,
             self.params.dir / test_file,
             self.db_manager,
         )
-        self.features: Features = Features(
+        self.features = Features(
             project_slug, self.params.dir / features_file, self.queue
         )
-        self.bertmodels: BertModels = BertModels(self.params.dir, self.queue)
-        self.simplemodels: SimpleModels = SimpleModels(self.params.dir, self.queue)
+        self.bertmodels = BertModels(self.params.dir, self.queue)
+        self.simplemodels = SimpleModels(self.params.dir, self.queue)
+        self.generations = Generations(self.queue, self.db_manager)
 
     def __del__(self):
         pass
@@ -1614,7 +1683,7 @@ class Project(Server):
         TODO: test if element exists
         """
         if dataset == "test":
-            if not element_id in self.schemes.test.index:
+            if element_id not in self.schemes.test.index:
                 return {"error": "Element does not exist !!"}
             data = {
                 "element_id": element_id,
@@ -1629,7 +1698,7 @@ class Project(Server):
             }
             return data
         if dataset == "train":
-            if not element_id in self.content.index:
+            if element_id not in self.content.index:
                 return {"error": "Element does not exist"}
 
             # get prediction if it exists
@@ -1681,7 +1750,7 @@ class Project(Server):
         """
         if scheme is None:
             return {"error": "Scheme not defined"}
-        
+
         if scheme not in self.schemes.available():
             return {"error": "Scheme does not exist"}
 
@@ -1691,7 +1760,7 @@ class Project(Server):
             i[0]
             for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
         ]
-        
+
         df = self.schemes.get_scheme_data(scheme, kind=["add", "predict"])
         r["train_annotated_n"] = len(df)
         r["train_annotated_distribution"] = json.loads(
@@ -1857,15 +1926,16 @@ class Project(Server):
     ) -> None:
         """
         Manage generation request
+        TODO : parallelize
+        TODO : add other endpoint
         """
         # errors
         errors = []
 
         # loop on all elements
         for index, row in df.iterrows():
-
             # insert the content in the prompt
-            if not "#INSERTTEXT" in params.prompt:
+            if "#INSERTTEXT" not in params.prompt:
                 errors.append("Problem with the prompt")
                 continue
             prompt = params.prompt.replace("#INSERTTEXT", row["text"])
@@ -1890,7 +1960,7 @@ class Project(Server):
                     response["success"],
                 )
 
-            print(prompt, response)
+            print("element generated ", index)
 
         print(errors)
         return None

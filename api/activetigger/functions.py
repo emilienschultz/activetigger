@@ -1,33 +1,36 @@
-import pandas as pd
-from typing import Optional
+import json
+import logging
 import multiprocessing
-from pandas import DataFrame, Series
-import fasttext
-from fasttext.util import download_model
-import spacy
-from pathlib import Path
-from sentence_transformers import SentenceTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.metrics import precision_score, f1_score, accuracy_score
-from sklearn.model_selection import KFold, cross_val_predict
-from sklearn.manifold import TSNE
-import datasets
 import os
+import shutil
+from pathlib import Path
+from typing import Optional
+
+import bcrypt
+import datasets
+import fasttext
+import numpy as np
+import pandas as pd
+import requests
+import spacy
 import torch
 import umap
-import bcrypt
-import numpy as np
-import logging
+from fasttext.util import download_model
+from pandas import DataFrame, Series
+from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.manifold import TSNE
+from sklearn.metrics import accuracy_score, f1_score, precision_score
+from sklearn.model_selection import KFold, cross_val_predict
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     BertTokenizer,
+    Trainer,
+    TrainerCallback,
+    TrainingArguments,
 )
-from transformers import Trainer, TrainingArguments, TrainerCallback
-import json
-import shutil
-import requests
 
 
 def get_root_pwd() -> str:
@@ -566,7 +569,7 @@ def cat2num(df):
     return encoded
 
 
-async def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
+def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
     """
     Make a request to ollama
     """
@@ -580,3 +583,57 @@ async def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b
             return {"error": "Error in the content"}
     else:
         return {"error": "Error in the API call " + response.content}
+
+
+def generate(
+    user: str,
+    project_name: str,
+    df: DataFrame,
+    api: str,
+    endpoint: str,
+    prompt: str,
+    event: Optional[multiprocessing.Event] = None,
+) -> None:
+    """
+    Manage batch generation request
+    Return table of results
+    """
+    # errors
+    errors = []
+    results = []
+
+    print(df)
+    # loop on all elements
+    for index, row in df.iterrows():
+        # insert the content in the prompt
+        if "#INSERTTEXT" not in prompt:
+            errors.append("Problem with the prompt")
+            continue
+        prompt_with_text = prompt.replace("#INSERTTEXT", row["text"])
+
+        # make request to the client
+        if api == "ollama":
+            response = request_ollama(endpoint, prompt_with_text)
+        else:
+            errors.append("Model does not exist")
+            continue
+
+        if "error" in response:
+            errors.append("Error in the request " + response["error"])
+
+        if "success" in response:
+            results.append(
+                {
+                    "user": user,
+                    "project_slug": project_name,
+                    "endpoint": endpoint,
+                    "element_id": row["index"],
+                    "prompt": prompt_with_text,
+                    "answer": response["success"],
+                }
+            )
+        print("element generated ", row["index"], response["success"])
+
+    print(results)
+    print(errors)
+    return {"success": results}
