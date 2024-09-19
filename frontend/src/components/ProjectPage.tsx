@@ -105,8 +105,12 @@ export const ProjectPage: FC = () => {
                 {currentScheme && <AnnotationDisagreementManagement projectSlug={projectName} />}
               </Tab>
               <Tab eventKey="session" title="History session">
-                <span className="explanations">Element annotated during this session</span>
-                <div>{JSON.stringify(history, null, 2)}</div>
+                <span className="explanations">
+                  Element annotated during this session. If you annotate already annotated data, it
+                  prevents you to see an element twice. Clear it if you want to be able to
+                  re-annotate again.
+                </span>
+                <div>Number of element in history : {history.length}</div>
                 <button onClick={actionClearHistory} className="delete-button">
                   Clear history
                 </button>
@@ -118,8 +122,36 @@ export const ProjectPage: FC = () => {
               </Tab>
               <Tab eventKey="parameters" title="Parameters">
                 <span className="explanations">Parameters of this project</span>
-                <div>{JSON.stringify(project.params, null, 2)}</div>
-                <button onClick={actionDelete} className="delete-button">
+                <table className="table-statistics">
+                  <tbody>
+                    <tr className="table-delimiter">
+                      <td>Parameters</td>
+                      <td>Value</td>
+                    </tr>
+                    <tr>
+                      <td>Project name</td>
+                      <td>{project.params.project_name}</td>
+                    </tr>
+                    <tr>
+                      <td>Project slug</td>
+                      <td>{project.params.project_slug}</td>
+                    </tr>
+                    <tr>
+                      <td>Filename</td>
+                      <td>{project.params.filename}</td>
+                    </tr>
+                    <tr>
+                      <td>Colums context</td>
+                      <td>{JSON.stringify(project.params.cols_context)}</td>
+                    </tr>
+                    <tr>
+                      <td>Is test dataset</td>
+                      <td>{JSON.stringify(project.params.test)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                {/* <div>{JSON.stringify(project.params, null, 2)}</div> */}
+                <button onClick={actionDelete} className="delete-button mt-5">
                   Delete project
                 </button>
               </Tab>
