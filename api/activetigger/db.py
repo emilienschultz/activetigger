@@ -318,17 +318,23 @@ class DatabaseManager:
         session.commit()
         session.close()
 
-    def get_generated(self, project_slug: str, n_elements: int):
+    def get_generated(self, project_slug: str, username: str, n_elements: int = 10):
+        """
+        Get elements from generated table by order desc
+        """
         session = self.Session()
         generated = (
             session.query(Generations)
-            .filter(Generations.project == project_slug)
+            .filter(Generations.project == project_slug, Generations.user == username)
             .order_by(Generations.time.desc())
             .limit(n_elements)
             .all()
         )
         session.close()
-        return [[el.element_id, el.prompt, el.answer, el.endpoint] for el in generated]
+        return [
+            [el.time, el.element_id, el.prompt, el.answer, el.endpoint]
+            for el in generated
+        ]
 
     def get_distinct_users(self, project_slug: str, timespan: int | None):
         session = self.Session()
@@ -340,7 +346,7 @@ class DatabaseManager:
                 session.query(Annotations.user)
                 .filter(
                     Annotations.project == project_slug,
-                    Annotations.time > time_threshold.timestamp()
+                    Annotations.time > time_threshold.timestamp(),
                 )
                 .distinct()
                 .all()

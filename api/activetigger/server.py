@@ -1301,9 +1301,10 @@ class Generations:
     def update_generations(self):
         """
         Manage the process launched by the class
+        Only one possible by user
         """
         for name in self.generating.copy():
-            unique_id = self.generating[name]
+            unique_id = self.generating[name]["unique_id"]
 
             # case the process have been canceled, clean
             if unique_id not in self.queue.current:
@@ -1350,6 +1351,26 @@ class Generations:
             answer=answer,
         )
         return None
+
+    def get_generated(
+        self,
+        project_slug: str,
+        username: str,
+        n_elements: str,
+    ) -> DataFrame:
+        """
+        Get generated elements from the database
+        """
+        result = self.db_manager.get_generated(
+            project_slug=project_slug, username=username, n_elements=n_elements
+        )
+        df = pd.DataFrame(
+            result, columns=["time", "index", "prompt", "answer", "endpoint"]
+        )
+        df["time"] = pd.to_datetime(df["time"])
+        df["time"] = df["time"].dt.tz_localize("UTC")
+        df["time"] = df["time"].dt.tz_convert("Europe/Paris")
+        return df
 
 
 class Project(Server):
@@ -1461,9 +1482,9 @@ class Project(Server):
         """
         if simplemodel.features is None or len(simplemodel.features) == 0:
             return {"error": "Empty features"}
-        if not simplemodel.model in list(self.simplemodels.available_models.keys()):
+        if simplemodel.model not in list(self.simplemodels.available_models.keys()):
             return {"error": "Model doesn't exist"}
-        if not simplemodel.scheme in self.schemes.available():
+        if simplemodel.scheme not in self.schemes.available():
             return {"error": "Scheme doesn't exist"}
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
             return {"error": "2 different labels needed"}
@@ -1826,7 +1847,7 @@ class Project(Server):
                     if "data" in self.features.projections[u]
                 },
             },
-            "zeroshot": {"data": None},
+            "generations": {"training": self.generations.generating},
         }
         return r
 
@@ -1888,82 +1909,72 @@ class Project(Server):
         r = {"name": file_name, "path": path / file_name}
         return r
 
-    def add_generation(
-        self,
-        user: str,
-        project_name: str,
-        endpoint: str,
-        element_id: str,
-        prompt: str,
-        answer: str,
-    ):
-        """
-        Add a generated element in the database
-        """
-        self.db_manager.add_generated(
-            user=user,
-            project_slug=project_name,
-            element_id=element_id,
-            endpoint=endpoint,
-            prompt=prompt,
-            answer=answer,
-        )
-        print("Added generation", element_id)
-        return None
+    # def add_generation(
+    #     self,
+    #     user: str,
+    #     project_name: str,
+    #     endpoint: str,
+    #     element_id: str,
+    #     prompt: str,
+    #     answer: str,
+    # ):
+    #     """
+    #     Add a generated element in the database
+    #     """
+    #     self.db_manager.add_generated(
+    #         user=user,
+    #         project_slug=project_name,
+    #         element_id=element_id,
+    #         endpoint=endpoint,
+    #         prompt=prompt,
+    #         answer=answer,
+    #     )
+    #     print("Added generation", element_id)
+    #     return None
 
-    def get_generated(self, project_slug: str, n_elements: str) -> DataFrame:
-        """
-        Get generated elements from the database
-        """
-        result = self.db_manager.get_generated(
-            project_slug=project_slug, n_elements=n_elements
-        )
-        df = pd.DataFrame(result, columns=["index", "prompt", "answer", "endpoint"])
-        return df
+    # async def generate(
+    #     self, user: str, project_name: str, df: DataFrame, params: GenerateModel
+    # ) -> None:
+    #     """
+    #     Manage generation request
+    #     TODO : parallelize
+    #     TODO : add other endpoint
+    #     """
+    #     # errors
+    #     errors = []
 
-    async def generate(
-        self, user: str, project_name: str, df: DataFrame, params: GenerateModel
-    ) -> None:
-        """
-        Manage generation request
-        TODO : parallelize
-        TODO : add other endpoint
-        """
-        # errors
-        errors = []
+    #     # loop on all elements
+    #     for index, row in df.iterrows():
+    #         # insert the content in the prompt
+    #         if "#INSERTTEXT" not in params.prompt:
+    #             errors.append("Problem with the prompt")
+    #             continue
+    #         prompt = params.prompt.replace("#INSERTTEXT", row["text"])
 
-        # loop on all elements
-        for index, row in df.iterrows():
-            # insert the content in the prompt
-            if "#INSERTTEXT" not in params.prompt:
-                errors.append("Problem with the prompt")
-                continue
-            prompt = params.prompt.replace("#INSERTTEXT", row["text"])
+    #         # make request to the client
+    #         if params.api == "ollama":
+    #             response = await functions.request_ollama(params.endpoint, prompt)
+    #         else:
+    #             errors.append("Model does not exist")
+    #             continue
 
-            # make request to the client
-            if params.api == "ollama":
-                response = await functions.request_ollama(params.endpoint, prompt)
-            else:
-                errors.append("Model does not exist")
-                continue
+    #         if "error" in response:
+    #             errors.append("Error in the request " + response["error"])
 
-            if "error" in response:
-                errors.append("Error in the request " + response["error"])
+    #         if "success" in response:
+    #             self.add_generation(
+    #                 user,
+    #                 project_name,
+    #                 params.endpoint,
+    #                 row["index"],
+    #                 prompt,
+    #                 response["success"],
+    #             )
 
-            if "success" in response:
-                self.add_generation(
-                    user,
-                    project_name,
-                    params.endpoint,
-                    row["index"],
-                    prompt,
-                    response["success"],
-                )
+    #         print("element generated ", index)
 
-            print("element generated ", index)
-
-        print(errors)
-        return None
+    #     print(errors)
+    #     return None
 
     # async def compute_zeroshot(self, df, params):
     #     """

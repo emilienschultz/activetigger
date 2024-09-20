@@ -1062,6 +1062,39 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 }
 
 /**
+ * Get file generations
+ */
+export function useGetGenerationsFile(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const getGenerationsFile = useCallback(
+    async (n_elements: number) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/generations', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              number: n_elements,
+            },
+          },
+          parseAs: 'blob',
+        });
+        console.log(res);
+
+        if (!res.error) {
+          notify({ type: 'success', message: 'Exporting the generations data' });
+          saveAs(res.data, 'generations.csv');
+        }
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { getGenerationsFile };
+}
+
+/**
  * Get model file static url
  */
 export function useGetModelUrl(projectSlug: string | null, model: string | null) {
@@ -1356,7 +1389,11 @@ export function useGenerate(
 /**
  * Get generated elements
  */
-export function useGeneratedElements(project_slug: string | null, n_elements: number) {
+export function useGeneratedElements(
+  project_slug: string | null,
+  n_elements: number,
+  isGenerating: boolean, // state for the user for refertching
+) {
   const getGeneratedElements = useAsyncMemo(async () => {
     if (n_elements && project_slug) {
       const res = await api.GET('/elements/generate', {
@@ -1372,7 +1409,7 @@ export function useGeneratedElements(project_slug: string | null, n_elements: nu
       }
     }
     return null;
-  }, [project_slug, n_elements]);
+  }, [project_slug, n_elements, isGenerating]);
   return { generated: getAsyncMemoData(getGeneratedElements) };
 }
 

@@ -590,6 +590,7 @@ export interface paths {
         /**
          * Postgenerate
          * @description Launch a call to generate from a prompt
+         *     Only one possible by user
          */
         post: operations["postgenerate_elements_generate_post"];
         delete?: never;
@@ -1048,6 +1049,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/export/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Generations
+         * @description Export annotations
+         */
+        get: operations["export_generations_export_generations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1459,8 +1480,8 @@ export interface components {
             bertmodels: Record<string, never>;
             /** Projections */
             projections: Record<string, never>;
-            /** Zeroshot */
-            zeroshot: Record<string, never>;
+            /** Generations */
+            generations: Record<string, never>;
         };
         /** ProjectSummaryModel */
         ProjectSummaryModel: {
@@ -3323,6 +3344,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_generations_export_generations_get: {
+        parameters: {
+            query: {
+                number: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

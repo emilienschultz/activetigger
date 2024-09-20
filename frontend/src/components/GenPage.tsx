@@ -1,19 +1,22 @@
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import DataGrid, { Column } from 'react-data-grid';
 import { useParams } from 'react-router-dom';
-import { useGenerate, useGeneratedElements } from '../core/api';
+import PulseLoader from 'react-spinners/PulseLoader';
+import { useGenerate, useGeneratedElements, useGetGenerationsFile } from '../core/api';
+import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 // TODO
-// - asynchron problem
+// interrupt button using event
 // - better table
 // - how to merge the results in the database
 // --- button to validate the automatic mergin + rule to force the labels in the scheme
 
 interface Row {
+  time: string;
   index: string;
   prompt: string;
   answer: string;
@@ -22,11 +25,19 @@ interface Row {
 
 export const GenPage: FC = () => {
   const { projectName } = useParams();
+  const { authenticatedUser } = useAuth();
   const {
-    appContext: { generateConfig, currentScheme },
+    appContext: { generateConfig, currentScheme, currentProject },
     setAppContext,
   } = useAppContext();
 
+  // currently generating for the user
+  const isGenerating =
+    authenticatedUser?.username &&
+    currentProject?.generations.training &&
+    Object.keys(currentProject?.generations.training).includes(authenticatedUser?.username);
+
+  // call api to post generation
   const { generate } = useGenerate(
     projectName || null,
     currentScheme || null,
@@ -38,7 +49,12 @@ export const GenPage: FC = () => {
     generateConfig.token,
   );
 
-  const { generated } = useGeneratedElements(projectName || null, 10);
+  // call api to get a sample of elements
+  const { generated } = useGeneratedElements(projectName || null, 10, isGenerating || false);
+
+  // call api to download a batch of elements
+  const { getGenerationsFile } = useGetGenerationsFile(projectName || null);
+  const [numberElements, setNumberElements] = useState<number>(10);
 
   useEffect(() => {
     if (!generateConfig.api)
@@ -52,13 +68,13 @@ export const GenPage: FC = () => {
 
   const columns: readonly Column<Row>[] = [
     {
-      name: 'Id',
-      key: 'index',
+      name: 'Time',
+      key: 'time',
       resizable: true,
     },
     {
-      name: 'Prompt',
-      key: 'prompt',
+      name: 'Id',
+      key: 'index',
       resizable: true,
     },
     {
@@ -67,17 +83,25 @@ export const GenPage: FC = () => {
       resizable: true,
     },
     {
+      name: 'Prompt',
+      key: 'prompt',
+      resizable: true,
+    },
+
+    {
       name: 'Endpoint',
       key: 'endpoint',
       resizable: true,
     },
   ];
 
+  console.log(currentProject);
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="generate">
       <div className="container-fluid mt-3">
         <div className="row">
-          <div className="alert alert-danger" role="alert">
+          <div className="alert alert-warning" role="alert">
             This page is under developement
           </div>{' '}
           <Tabs id="panel" className="mb-1" defaultActiveKey="api">
@@ -150,6 +174,7 @@ export const GenPage: FC = () => {
               rows={5}
               placeholder="Enter your prompt"
               className="form-control"
+              style={{ height: '200px' }}
               value={generateConfig.prompt || undefined}
               onChange={(e) => {
                 setAppContext((prev) => ({
@@ -160,12 +185,29 @@ export const GenPage: FC = () => {
             />
             <label htmlFor="prompt">Prompt </label>
           </div>
-          <button className="btn btn-primary  mt-3" onClick={() => generate()}>
-            Generate
-          </button>
+          <div className="col-12 text-center">
+            {!!isGenerating && <PulseLoader />}
+            <button className="btn btn-primary  mt-3" onClick={generate} disabled={!!isGenerating}>
+              Generate
+            </button>
+          </div>
         </div>
         <hr />
-        <div className="explanations">Generated content</div>
+        <div className="col-12 d-flex align-items-center justify-content-center">
+          <span>Number of last generated elements to download</span>
+          <input
+            type="number"
+            placeholder="Number of last generated elements to download"
+            className="form-control m-4"
+            style={{ width: '100px' }}
+            value={numberElements}
+            onChange={(e) => setNumberElements(Number(e.target.value))}
+          />
+          <button className="btn btn-secondary" onClick={() => getGenerationsFile(numberElements)}>
+            Download
+          </button>
+        </div>
+        <div className="explanations">Last generated content for the current user</div>
         <DataGrid
           className="fill-grid"
           columns={columns}

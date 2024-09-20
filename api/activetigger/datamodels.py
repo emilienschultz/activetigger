@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from enum import Enum, StrEnum
 from pathlib import Path
-from enum import Enum
-from typing import Optional, List, Dict, Any, Union
-from enum import StrEnum
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel
 
 # Data model to use of the API
 
@@ -337,7 +337,6 @@ class TableOutModel(BaseModel):
     total: int
 
 
-
 class TableInModel(BaseModel):
     """
     Requesting a table of elements
@@ -387,7 +386,7 @@ class ProjectStateModel(BaseModel):
     simplemodel: Dict[str, Any]
     bertmodels: Dict[str, Any]
     projections: Dict[str, Any]
-    zeroshot: Dict[str, Any]
+    generations: Dict[str, Any]
 
 
 class QueueModel(BaseModel):

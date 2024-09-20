@@ -605,6 +605,11 @@ def generate(
     print(df)
     # loop on all elements
     for index, row in df.iterrows():
+        # test for interruption
+        if event is not None:
+            if event.is_set():
+                return {"error": "process interrupted", "results": results}
+
         # insert the content in the prompt
         if "#INSERTTEXT" not in prompt:
             errors.append("Problem with the prompt")

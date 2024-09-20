@@ -2,8 +2,10 @@ import importlib
 import logging
 import time
 from contextlib import asynccontextmanager
+from io import StringIO
 from typing import Annotated, Any, Dict, List
 
+import pandas as pd
 from fastapi import (
     Depends,
     FastAPI,
@@ -11,6 +13,7 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    Response,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -903,6 +906,7 @@ async def postgenerate(
 ) -> None:
     """
     Launch a call to generate from a prompt
+    Only one possible by user
     """
     print("Start generation", request)
     # get subset of unlabelled elements
@@ -924,27 +928,29 @@ async def postgenerate(
         raise HTTPException(
             status_code=500, detail="Error in adding the generation call in the queue"
         )
-    project.generations.generating[current_user.username] = unique_id
+    project.generations.generating[current_user.username] = {
+        "unique_id": unique_id,
+        "number": request.n_batch,
+        "api": request.api,
+    }
     return None
-    # await project.generate(current_user.username, project.name, df, request)
-    # if call success, added in the database
-
-    # unique_id = server.queue.add("generate", project.generate, args)
-    # if unique_id == "error":
-    #     raise HTTPException(status_code=500, detail="Error in adding in the queue")
-    # project.features.training[feature.name] = unique_id
 
 
 @app.get("/elements/generate", dependencies=[Depends(verified_user)])
 async def getgenerate(
-    project: Annotated[Project, Depends(get_project)], n_elements: int
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    n_elements: int,
 ) -> TableOutModel:
     """
     Get last predictions
     """
     try:
-        table = project.get_generated(project.name, n_elements)
-    except:
+        table = project.generations.get_generated(
+            project.name, current_user.username, n_elements
+        )
+        print(table.dtypes)
+    except Exception:
         raise HTTPException(status_code=500, detail="Error in loading generated data")
     r = table.to_dict(orient="records")
     return TableOutModel(items=r, total=len(r))
@@ -1500,3 +1506,34 @@ async def export_bert(
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return "/static/" + r["name"]
+
+
+@app.get("/export/generations", dependencies=[Depends(verified_user)])
+async def export_generations(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    number: int = Query(),
+) -> FileResponse:
+    """
+    Export annotations
+    """
+    table = project.generations.get_generated(
+        project_slug=project.name,
+        username=current_user.username,
+        n_elements=number,
+    )
+
+    if "error" in table:
+        raise HTTPException(status_code=500, detail=table["error"])
+
+    output = StringIO()
+    pd.DataFrame(table).to_csv(output, index=False)
+    csv_data = output.getvalue()
+    output.close()
+
+    headers = {
+        "Content-Disposition": 'attachment; filename="data.csv"',
+        "Content-Type": "text/csv",
+    }
+
+    return Response(content=csv_data, media_type="text/csv", headers=headers)
