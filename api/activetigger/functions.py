@@ -3,6 +3,7 @@ import logging
 import multiprocessing
 import os
 import shutil
+from multiprocessing import Event
 from pathlib import Path
 from typing import Optional
 
@@ -270,7 +271,8 @@ def train_bert(
     base_model: str,
     params: dict,
     test_size: float,
-    event: Optional[multiprocessing.Event] = None,
+    event: Optional[Event] = None,
+    **kwargs,
 ) -> bool:
     """
     Train a bert model and write it
@@ -462,6 +464,7 @@ def predict_bert(
     col_labels: str | None = None,
     batch: int = 128,
     file_name: str = "predict.parquet",
+    **kwargs,
 ) -> DataFrame | bool:
     """
     Predict from a model
@@ -593,6 +596,8 @@ def generate(
     endpoint: str,
     prompt: str,
     event: Optional[multiprocessing.Event] = None,
+    unique_id: Optional[str] = None,
+    **kwargs,
 ) -> None:
     """
     Manage batch generation request
@@ -602,7 +607,6 @@ def generate(
     errors = []
     results = []
 
-    print(df)
     # loop on all elements
     for index, row in df.iterrows():
         # test for interruption
@@ -639,6 +643,4 @@ def generate(
             )
         print("element generated ", row["index"], response["success"])
 
-    print(results)
-    print(errors)
     return {"success": results}

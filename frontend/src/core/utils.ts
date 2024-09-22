@@ -1,5 +1,6 @@
 import { parquetMetadataAsync, parquetRead } from 'hyparquet';
 import { fromPairs, zip } from 'lodash';
+import Papa from 'papaparse';
 
 import { DataType } from '../components/forms/ProjectCreationForm';
 
@@ -35,6 +36,45 @@ export async function loadParquetFile(file: File): Promise<DataType> {
       },
     }),
   );
+}
+
+/**
+ * loadCSVFile
+ * parses a csv file in memory
+ * @param file: uploaded file
+ * @returns a DataType object storing the data, fieldnames and original filename
+ */
+export async function loadCSVFile(file: File): Promise<DataType> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const csvContent = e.target?.result;
+
+      if (typeof csvContent === 'string') {
+        Papa.parse(csvContent, {
+          header: true,
+          dynamicTyping: true,
+          complete: (results) => {
+            const headers = results.meta.fields || [];
+            const data = results.data.map((row) =>
+              fromPairs(zip(headers, Object.values(row as Record<string, unknown>))),
+            );
+            resolve({ data, headers, filename: file.name });
+          },
+        });
+      } else {
+        reject(new Error('Failed to read the CSV file as text.'));
+      }
+    };
+
+    // Define the onerror callback for any file reading errors
+    reader.onerror = () => {
+      reject(new Error('Error reading the CSV file.'));
+    };
+
+    // Start reading the file as text
+    reader.readAsText(file);
+  });
 }
 
 /**

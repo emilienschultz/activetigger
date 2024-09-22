@@ -6,7 +6,7 @@ import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { useCreateProject } from '../../core/api';
-import { loadParquetFile } from '../../core/utils';
+import { loadCSVFile, loadParquetFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
 
 // format of the data table
@@ -51,6 +51,13 @@ export const ProjectCreationForm: FC = () => {
       if (file.name.includes('parquet')) {
         console.log('parquet');
         loadParquetFile(file).then((data) => {
+          console.log(data);
+          setData(data);
+        });
+      }
+      if (file.name.includes('csv')) {
+        console.log('csv');
+        loadCSVFile(file).then((data) => {
           console.log(data);
           setData(data);
         });

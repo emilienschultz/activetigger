@@ -114,6 +114,7 @@ class Queue:
         # create an event to control the process
         event = self.manager.Event()
         args["event"] = event
+        args["unique_id"] = unique_id
 
         # send the process to the executor
         try:

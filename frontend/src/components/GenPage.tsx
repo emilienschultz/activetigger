@@ -190,6 +190,7 @@ export const GenPage: FC = () => {
             <button className="btn btn-primary  mt-3" onClick={generate} disabled={!!isGenerating}>
               Generate
             </button>
+            <div className="explanations"> It can take some time if you have a large batch</div>
           </div>
         </div>
         <hr />
