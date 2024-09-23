@@ -51,15 +51,11 @@ export async function loadCSVFile(file: File): Promise<DataType> {
       const csvContent = e.target?.result;
 
       if (typeof csvContent === 'string') {
-        Papa.parse(csvContent, {
+        Papa.parse<Record<string, string>>(csvContent, {
           header: true,
-          dynamicTyping: true,
           complete: (results) => {
             const headers = results.meta.fields || [];
-            const data = results.data.map((row) =>
-              fromPairs(zip(headers, Object.values(row as Record<string, unknown>))),
-            );
-            resolve({ data, headers, filename: file.name });
+            resolve({ data: results.data, headers, filename: file.name });
           },
         });
       } else {
