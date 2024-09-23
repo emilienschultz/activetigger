@@ -4,6 +4,7 @@ import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import PulseLoader from 'react-spinners/PulseLoader';
 
 import { useCreateProject } from '../../core/api';
 import { loadCSVFile, loadParquetFile } from '../../core/utils';
@@ -27,6 +28,7 @@ export const ProjectCreationForm: FC = () => {
     },
   });
 
+  const [spinner, setSpinner] = useState<boolean>(false); // state for the data
   const [data, setData] = useState<DataType | null>(null); // state for the data
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
@@ -68,9 +70,11 @@ export const ProjectCreationForm: FC = () => {
   // action when form validated
   const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {
     if (data) {
+      setSpinner(true);
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
       console.log('new project payload to send to API', { ...omit(formData, 'files'), csv });
       await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
+      setSpinner(false);
       navigate(`/projects/`);
     }
   };
@@ -79,8 +83,8 @@ export const ProjectCreationForm: FC = () => {
     <div className="container-fluid">
       <div className="row">
         <div className="explanations">
-          Create a new project. First, upload a file. Then you will be able to describe the columns
-          and validate.
+          Create a new project. First, upload a file (csv or parquet). Then you will be able to
+          indicate the columns needed and validate.
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>
@@ -215,9 +219,14 @@ export const ProjectCreationForm: FC = () => {
                     {columns}
                   </select>
                 </div>
-                <button type="submit" className="btn btn-primary form-button">
+                <button type="submit" className="btn btn-primary form-button" disabled={spinner}>
                   Create
                 </button>
+                {spinner && (
+                  <div className="col-12 text-center">
+                    <PulseLoader />
+                  </div>
+                )}
               </div>
             )
           }
