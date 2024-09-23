@@ -699,7 +699,7 @@ async def get_projection(
     if not current_user.username in project.features.projections:
         raise HTTPException(
             status_code=404,
-            detail="There is no projection available or under computation",
+            detail="There is no projection available or computing",
         )
 
     if not "data" in project.features.projections[current_user.username]:
@@ -761,7 +761,7 @@ async def compute_projection(
             "method": "umap",
             "queue": unique_id,
         }
-        return WaitingModel(detail="Projection umap under computation")
+        return WaitingModel(detail="Projection umap is computing")
 
     if projection.method == "tsne":
         try:
@@ -778,7 +778,7 @@ async def compute_projection(
             "method": "tsne",
             "queue": unique_id,
         }
-        return WaitingModel(detail="Projection tsne under computation")
+        return WaitingModel(detail="Projection tsne is computing")
     raise HTTPException(status_code=400, detail="Projection not available")
 
 

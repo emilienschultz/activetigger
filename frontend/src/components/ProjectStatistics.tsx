@@ -37,7 +37,7 @@ export const BarChart: FC<BarChartProps> = ({ dataDict }) => {
             tickLabels: { fontSize: 12, padding: 5 },
           }}
         />
-        <VictoryBar data={data} style={{ data: { fill: '#4a90e2' } }} barWidth={30} />
+        <VictoryBar data={data} style={{ data: { fill: '#4a90e2' } }} barWidth={30} horizontal />
       </VictoryChart>
     </div>
   );

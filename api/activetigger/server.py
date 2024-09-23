@@ -535,6 +535,9 @@ class Server:
         if self.exists(params.project_name):
             return {"error": "Project name already exist"}
 
+        if params.col_id is None or params.col_id == "":
+            return {"error": "Probleme with the id column"}
+
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
 

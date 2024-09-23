@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
 
 import { useCreateProject } from '../../core/api';
+import { useNotifications } from '../../core/notifications';
 import { loadCSVFile, loadParquetFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
 
@@ -27,6 +28,7 @@ export const ProjectCreationForm: FC = () => {
       n_test: 0,
     },
   });
+  const { notify } = useNotifications();
 
   const [spinner, setSpinner] = useState<boolean>(false); // state for the data
   const [data, setData] = useState<DataType | null>(null); // state for the data
@@ -34,11 +36,15 @@ export const ProjectCreationForm: FC = () => {
   const createProject = useCreateProject(); // API call
   const files = useWatch({ control, name: 'files' }); // watch the files entry
   // available columns
-  const columns = data?.headers.map((h) => (
-    <option key={h} value={h}>
-      {h}
-    </option>
-  ));
+  console.log('DATA');
+  console.log(data?.headers);
+  const columns = data?.headers
+    .filter((h) => h !== '')
+    .map((h) => (
+      <option key={h} value={h}>
+        {h}
+      </option>
+    ));
   // select the text on input on click
   const handleClickOnText = (event: React.MouseEvent<HTMLInputElement>) => {
     const target = event.target as HTMLInputElement;
@@ -70,6 +76,14 @@ export const ProjectCreationForm: FC = () => {
   // action when form validated
   const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {
     if (data) {
+      if (formData.col_id == '') {
+        notify({ type: 'error', message: 'Please select a id column' });
+        return;
+      }
+      if (formData.col_text == '') {
+        notify({ type: 'error', message: 'Please select a text column' });
+        return;
+      }
       setSpinner(true);
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
       console.log('new project payload to send to API', { ...omit(formData, 'files'), csv });
