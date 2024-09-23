@@ -11,6 +11,7 @@ import {
   useUsers,
   useUsersAuth,
 } from '../core/api';
+import { useNotifications } from '../core/notifications';
 import { PageLayout } from './layout/PageLayout';
 
 interface newUser {
@@ -22,6 +23,7 @@ interface newUser {
 export const UsersPage: FC = () => {
   const projects = useUserProjects();
   const [currentProjectSlug, setCurrentProjectSlug] = useState<string | null>(null);
+  const { notify } = useNotifications();
 
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [currentAuth, setCurrentAuth] = useState<string | null>(null);
@@ -47,12 +49,8 @@ export const UsersPage: FC = () => {
         <div className="row">
           <div className="col-1"></div>
           <div className="col-8">
-            <h2 className="subsection">Manage users and auth</h2>
-            <span className="explanations">
-              Create or delete users and authorization to projects
-            </span>
-            <h4 className="subsection">Users</h4>
-            <div className="explanations">Select a user to act on it</div>
+            <h2 className="subsection">Manage users and rights</h2>
+            <div className="explanations">Select a user</div>
 
             <div className="d-flex align-items-center">
               <select
@@ -77,7 +75,7 @@ export const UsersPage: FC = () => {
               </button>
             </div>
             <details className="custom-details">
-              <summary>Create user</summary>
+              <summary>Add user</summary>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <input
                   className="form-control me-2 mt-2"
@@ -95,11 +93,10 @@ export const UsersPage: FC = () => {
                   <option>manager</option>
                   <option>annotator</option>
                 </select>
-                <button className="btn btn-primary me-2 mt-2">Create user</button>
+                <button className="btn btn-primary me-2 mt-2">Add user</button>
               </form>
             </details>
-            <h4 className="subsection">Rights</h4>
-            <span className="explanations">Select the project to see authorizations</span>
+            <span className="explanations">Select the project</span>
 
             <br></br>
             {
@@ -166,7 +163,11 @@ export const UsersPage: FC = () => {
                   console.log(currentAuth);
                   if (currentUser && currentAuth) {
                     addUserAuth(currentUser, currentAuth);
-                  }
+                  } else
+                    notify({
+                      type: 'error',
+                      message: 'Please select a user, a project and a right',
+                    });
                   reFetchUsers();
                 }}
                 className="btn btn-primary me-2 mt-2"

@@ -614,11 +614,11 @@ def generate(
             if event.is_set():
                 return {"error": "process interrupted", "results": results}
 
-        # insert the content in the prompt
-        if "#INSERTTEXT" not in prompt:
-            errors.append("Problem with the prompt")
-            continue
-        prompt_with_text = prompt.replace("#INSERTTEXT", row["text"])
+        # insert the content in the prompt (either at the end or where it is indicated)
+        if "#INSERTTEXT" in prompt:
+            prompt_with_text = prompt.replace("#INSERTTEXT", row["text"])
+        else:
+            prompt_with_text = prompt + "\n\n" + row["text"]
 
         # make request to the client
         if api == "ollama":
