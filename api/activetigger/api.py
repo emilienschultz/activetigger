@@ -795,15 +795,14 @@ async def get_list_elements(
     """
     Get table of elements
     """
-    df = project.schemes.get_table(scheme, min, max, mode, contains, dataset).fillna(
-        "NA"
-    )
-    if "error" in df:
-        raise HTTPException(status_code=500, detail=df["error"])
+    extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
+    if "error" in extract:
+        raise HTTPException(status_code=500, detail=extract["error"])
+    df = extract["batch"].fillna("NA")
     table = (df[["index", "timestamp", "labels", "text"]]).to_dict(orient="records")
     return TableOutModel(
         items=table,
-        total=project.schemes.get_total(dataset),
+        total=extract["total"],
     )
 
 
@@ -910,13 +909,18 @@ async def postgenerate(
     """
     print("Start generation", request)
     # get subset of unlabelled elements
-    df = project.schemes.get_table(request.scheme, 0, request.n_batch, request.mode)
+    extract = project.schemes.get_table(
+        request.scheme, 0, request.n_batch, request.mode
+    )
+
+    if "error" in extract:
+        raise HTTPException(status_code=500, detail=extract["error"])
 
     # create the independant process to manage the generation
     args = {
         "user": current_user.username,
         "project_name": project.name,
-        "df": df,
+        "df": extract["batch"],
         "api": request.api,
         "endpoint": request.endpoint,
         "prompt": request.prompt,

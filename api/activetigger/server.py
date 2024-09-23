@@ -23,11 +23,11 @@ from slugify import slugify
 
 import activetigger.functions as functions
 from activetigger.datamodels import (
-    GenerateModel,
     ProjectDataModel,
     ProjectModel,
     ProjectSummaryModel,
     SimpleModelModel,
+    TableBatch,
     TestSetDataModel,
     UserInDBModel,
 )
@@ -1064,7 +1064,7 @@ class Schemes:
         contains: str | None = None,
         set: str = "train",
         user: str = "all",
-    ) -> DataFrame:
+    ) -> TableBatch:
         """
         Get data table
         scheme : the annotations
@@ -1077,9 +1077,9 @@ class Schemes:
         Choice to order by index.
         """
         # check for errors
-        if not mode in ["tagged", "untagged", "all", "recent"]:
+        if mode not in ["tagged", "untagged", "all", "recent"]:
             mode = "all"
-        if not scheme in self.available():
+        if scheme not in self.available():
             return {"error": "scheme not available"}
 
         # case of the test set, no fancy stuff
@@ -1128,7 +1128,13 @@ class Schemes:
         if min > len(df):
             return {"error": "min value too high"}
 
-        return df.sort_index().iloc[min:max].reset_index()
+        return {
+            "batch": df.sort_index().iloc[min:max].reset_index(),
+            "total": len(df),
+            "min": min,
+            "max": max,
+            "filter": contains,
+        }
 
     def add_scheme(self, name: str, labels: list):
         """

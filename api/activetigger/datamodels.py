@@ -2,6 +2,7 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from pandas import DataFrame
 from pydantic import BaseModel
 
 # Data model to use of the API
@@ -452,3 +453,11 @@ class ReconciliationModel(BaseModel):
 class AuthActions(StrEnum):
     add = "add"
     delete = "delete"
+
+
+class TableBatch(BaseModel):
+    batch: Any
+    total: int
+    min: int
+    max: int
+    filter: str
