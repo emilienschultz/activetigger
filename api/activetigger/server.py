@@ -555,7 +555,7 @@ class Server:
         # stratified if possible by cols_test
 
         # Step 1 : load all data and index to str and rename
-        content = pd.read_csv(params.dir / "data_raw.csv")
+        content = pd.read_csv(params.dir / "data_raw.csv", dtype=str)
 
         # quick fix to avoid problem with parquet index
         content = content.drop(
@@ -579,6 +579,7 @@ class Server:
             .set_index("id")  # set id as index
             .dropna(subset=["text"])
         )
+
         if params.col_label:
             content.rename(columns={params.col_label: "label"}, inplace=True)
         else:
@@ -620,6 +621,7 @@ class Server:
         content = content.drop(rows_test)
         f_notna = content["label"].notna()
         f_na = content["label"].isna()
+
         if (
             f_notna.sum() > params.n_train
         ):  # case where there is more labelled data than needed
@@ -630,6 +632,11 @@ class Server:
                 [content[f_notna], content[f_na].sample(n_train_random)]
             )
 
+        print(content.head())
+        print(content.dtypes)
+        print(content.shape)
+        print(type(content.index[0]))
+
         trainset.to_parquet(params.dir / self.data_file, index=True)
         trainset[["text"] + params.cols_context].to_parquet(
             params.dir / self.labels_file, index=True
@@ -637,7 +644,7 @@ class Server:
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
         # if the case, add labels in the database
-        if (not params.col_label is None) and ("label" in trainset.columns):
+        if (params.col_label is not None) and ("label" in trainset.columns):
             print("Add scheme/labels from file")
 
             df = trainset["label"].dropna()

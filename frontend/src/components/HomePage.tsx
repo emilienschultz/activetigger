@@ -15,8 +15,8 @@ export const HomePage: FC = () => {
           <div className="col-0 col-lg-3" />
           <div className="col-12 col-lg-6">
             <center>
-              <h1>Active tigger</h1>
-              <h3>Explore & Annotate textual data</h3>
+              <h1>Active Tigger</h1>
+              <h3>Explore, Classify & Analyze Text</h3>
               <img
                 src={logo}
                 alt="ActiveTigger"
@@ -53,7 +53,7 @@ export const HomePage: FC = () => {
           <div className="container text-center">
             <i className="fas fa-info-circle"></i>
             <span className="ml-2">
-              CREST / GENES CSS @ IPP © 2024 - <i>under development -</i>
+              CREST / CSS @ IPP © 2024 - <i>under development -</i>
             </span>
           </div>
         </footer>

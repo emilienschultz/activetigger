@@ -78,6 +78,10 @@ export const ProjectCreationForm: FC = () => {
   return (
     <div className="container-fluid">
       <div className="row">
+        <div className="explanations">
+          Create a new project. First, upload a file. Then you will be able to describe the columns
+          and validate.
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>
             <label className="form-label" htmlFor="project_name">
