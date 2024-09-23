@@ -80,7 +80,7 @@ export const ProjectCreationForm: FC = () => {
         notify({ type: 'error', message: 'Please select a id column' });
         return;
       }
-      if (formData.col_text == '') {
+      if (formData.col_text.length == 0) {
         notify({ type: 'error', message: 'Please select a text column' });
         return;
       }
@@ -162,16 +162,15 @@ export const ProjectCreationForm: FC = () => {
                 </div>
                 <div>
                   <label className="form-label" htmlFor="col_text">
-                    Column for text
+                    Column for text (all the selected fields will be concactenated)
                   </label>
                   <select
                     className="form-control"
                     id="col_text"
                     disabled={data === null}
                     {...register('col_text')}
+                    multiple
                   >
-                    <option key="none"></option>
-
                     {columns}
                   </select>
                   <label className="form-label" htmlFor="col_label">

@@ -576,13 +576,21 @@ class Server:
             content["id"] = range(0, len(content))
             params.col_id = "id"
 
-        # rename columns that are going to be used & remove NA texts
-        content = (
-            content.rename(columns={params.col_id: "id", params.col_text: "text"})
-            .set_index("id")  # set id as index
-            .dropna(subset=["text"])
-        )
+        # set the index
+        content = content.rename(columns={params.col_id: "id"}).set_index("id")
 
+        # create the text column, merging different columns
+        if isinstance(params.col_text, list):
+            content["text"] = content[params.col_text].apply(
+                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
+            )
+        else:
+            content["text"] = content[params.col_text]
+
+        # drop NA
+        content.dropna(subset=["text"], inplace=True)
+
+        # manage the label column
         if params.col_label:
             content.rename(columns={params.col_label: "label"}, inplace=True)
         else:
@@ -592,8 +600,7 @@ class Server:
         content = content[~content.index.duplicated(keep="first")]
         content.index = [str(i) for i in list(content.index)]  # sure to be str
 
-        # Information of the limit of usable text (in the futur, will be defined by the number of token)
-        # but it depends of the tokenizer
+        # limit of usable text (in the futur, will be defined by the number of token)
         def limit(text):
             return 1200
 
@@ -634,11 +641,6 @@ class Server:
             trainset = pd.concat(
                 [content[f_notna], content[f_na].sample(n_train_random)]
             )
-
-        print(content.head())
-        print(content.dtypes)
-        print(content.shape)
-        print(type(content.index[0]))
 
         trainset.to_parquet(params.dir / self.data_file, index=True)
         trainset[["text"] + params.cols_context].to_parquet(

@@ -1329,7 +1329,7 @@ export interface components {
             /** Filename */
             filename: string;
             /** Col Text */
-            col_text: string;
+            col_text: string | string[];
             /** Col Id */
             col_id: string;
             /** N Train */
@@ -1410,7 +1410,7 @@ export interface components {
             /** Filename */
             filename: string;
             /** Col Text */
-            col_text: string;
+            col_text: string | string[];
             /** Col Id */
             col_id: string;
             /** N Train */

@@ -14,7 +14,7 @@ class BaseProjectModel(BaseModel):
 
     project_name: str
     filename: str
-    col_text: str
+    col_text: str | List[str]
     col_id: str
     n_train: int
     n_test: int
