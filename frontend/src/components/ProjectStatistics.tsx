@@ -3,6 +3,31 @@ import { VictoryAxis, VictoryBar, VictoryChart, VictoryTheme } from 'victory';
 
 import { useStatistics } from '../core/api';
 
+interface TableProps {
+  dataDict: Record<string, number>;
+}
+
+export const DataTable: FC<TableProps> = ({ dataDict }) => {
+  if (!dataDict) {
+    return null;
+  }
+
+  return (
+    <div>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <tbody>
+          {Object.entries(dataDict).map(([key, value]) => (
+            <tr key={key}>
+              <td>{key}</td>
+              <td>{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 interface StatisticsProps {
   projectSlug: string;
   scheme: string;
@@ -87,7 +112,7 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                   <tr>
                     <td>Distribution</td>
                     <td>
-                      <BarChart dataDict={statistics['train_annotated_distribution']} />
+                      <DataTable dataDict={statistics['train_annotated_distribution']} />
                     </td>
                   </tr>
                   <tr className="table-delimiter">
@@ -106,7 +131,7 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                     <td>Distribution</td>
                     <td>
                       {' '}
-                      <BarChart dataDict={statistics['test_annotated_distribution'] || null} />
+                      <DataTable dataDict={statistics['test_annotated_distribution'] || null} />
                     </td>
                   </tr>
                 </tbody>
