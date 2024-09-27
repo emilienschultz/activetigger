@@ -953,9 +953,12 @@ async def getgenerate(
         table = project.generations.get_generated(
             project.name, current_user.username, n_elements
         )
-        print(table.dtypes)
     except Exception:
         raise HTTPException(status_code=500, detail="Error in loading generated data")
+
+    # join with the text
+    # table = table.join(project.content["text"], on="index")
+
     r = table.to_dict(orient="records")
     return TableOutModel(items=r, total=len(r))
 
@@ -1529,6 +1532,9 @@ async def export_generations(
 
     if "error" in table:
         raise HTTPException(status_code=500, detail=table["error"])
+
+    # join the text
+    table = table.join(project.content["text"], on="index")
 
     output = StringIO()
     pd.DataFrame(table).to_csv(output, index=False)

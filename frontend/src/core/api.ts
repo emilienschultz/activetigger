@@ -387,7 +387,7 @@ export function useAddFeature(projectSlug: string | null) {
           },
           body: { name: featureName, type: featureType, parameters: featureParameters },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Features are under computation...' });
+        if (!res.error) notify({ type: 'warning', message: 'Features are computing' });
         return true;
       }
       return false;

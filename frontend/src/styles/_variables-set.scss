@@ -248,3 +248,9 @@ $tertiary: #8f8d8d;
   font-weight: bold;
 
 }
+
+.noselect {
+  -ms-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

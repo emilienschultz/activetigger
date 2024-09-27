@@ -1,6 +1,4 @@
 import { FC, useEffect, useState } from 'react';
-import Tab from 'react-bootstrap/Tab';
-import Tabs from 'react-bootstrap/Tabs';
 import DataGrid, { Column } from 'react-data-grid';
 import { useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
@@ -103,69 +101,70 @@ export const GenPage: FC = () => {
         <div className="row">
           <div className="alert alert-warning" role="alert">
             This page is under developement
-          </div>{' '}
-          <Tabs id="panel" className="mb-1" defaultActiveKey="api">
-            <Tab eventKey="api" title="API config">
-              {' '}
-              <div className="form-floating mt-3">
-                <select className="form-control" id="api">
-                  <option key="ollama">Ollama</option>
-                </select>
-                <label htmlFor="api">API </label>
-              </div>
-              <div className="form-floating mt-3">
-                <input
-                  type="text"
-                  id="endpoint"
-                  className="form-control  mt-3"
-                  placeholder="enter the url of the endpoint"
-                  value={generateConfig.endpoint || undefined}
-                  onChange={(e) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      generateConfig: { ...generateConfig, endpoint: e.target.value },
-                    }));
-                  }}
-                />
-                <label htmlFor="endpoint">Endpoint </label>
-              </div>
-            </Tab>
-            <Tab eventKey="selection" title="Selection mode">
-              Current scheme : {currentScheme}
-              <div className="form-floating mt-3">
-                <select
-                  id="mode"
-                  className="form-control mt-3"
-                  onChange={(e) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      generateConfig: { ...generateConfig, selection_mode: e.target.value },
-                    }));
-                  }}
-                >
-                  <option key="all">all</option>
-                  <option key="untagged">untagged</option>
-                </select>
-                <label htmlFor="mode">Sample </label>
-              </div>
-              <div className="form-floating mt-3">
-                <input
-                  type="number"
-                  id="batch"
-                  className="form-control mt-3"
-                  value={generateConfig.n_batch}
-                  onChange={(e) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      generateConfig: { ...generateConfig, n_batch: Number(e.target.value) },
-                    }));
-                  }}
-                />
-                <label htmlFor="batch">N elements to annotate </label>
-              </div>
-            </Tab>
-          </Tabs>
-          <div className="explanations mt-5">
+          </div>
+          <div className="row"> Current scheme : {currentScheme}</div>
+        </div>
+
+        <div className="row">
+          <div className="col-6">
+            <div className="form-floating mt-3">
+              <select className="form-control" id="api">
+                <option key="ollama">Ollama</option>
+              </select>
+              <label htmlFor="api">API </label>
+            </div>
+            <div className="form-floating mt-3">
+              <input
+                type="text"
+                id="endpoint"
+                className="form-control  mt-3"
+                placeholder="enter the url of the endpoint"
+                value={generateConfig.endpoint || undefined}
+                onChange={(e) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    generateConfig: { ...generateConfig, endpoint: e.target.value },
+                  }));
+                }}
+              />
+              <label htmlFor="endpoint">Endpoint </label>
+            </div>
+          </div>
+          <div className="col-6">
+            <div className="form-floating mt-3">
+              <select
+                id="mode"
+                className="form-control mt-3"
+                onChange={(e) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    generateConfig: { ...generateConfig, selection_mode: e.target.value },
+                  }));
+                }}
+              >
+                <option key="all">all</option>
+                <option key="untagged">untagged</option>
+              </select>
+              <label htmlFor="mode">Sample </label>
+            </div>
+            <div className="form-floating mt-3">
+              <input
+                type="number"
+                id="batch"
+                className="form-control mt-3"
+                value={generateConfig.n_batch}
+                onChange={(e) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    generateConfig: { ...generateConfig, n_batch: Number(e.target.value) },
+                  }));
+                }}
+              />
+              <label htmlFor="batch">N elements to annotate </label>
+            </div>
+          </div>
+          <hr className="mt-3" />
+          <div className="explanations mt-3">
             Craft your prompt with the element #INSERTTEXT to insert text
           </div>
           <div className="form-floating mt-2">

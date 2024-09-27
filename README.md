@@ -5,21 +5,20 @@
 [![PyPI Version](https://img.shields.io/pypi/v/activetigger)](https://pypi.org/project/activetigger/)
 ![React](https://img.shields.io/badge/React-18.0.0-blue)
 
-ActiveTigger is an active learning online app for text classification in computational social sciences. It is designed to assist exploration and fine-tuning of BERT models.
+ActiveTigger is an text annotation web tool dedicated for computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to annotate text dataset relying on active learning.
 
-The app is currently 🚧 Under development 🚧.
+The app is currently 🚧 under development 🚧.
 
-[Python/React refactoring of R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
 
+## Install the app
 
-## Installation
+The app is built on a client/API architecture :
 
-The application has a client/server architecture :
-
-- the server is in Python using FastAPI
+- the server runs an API with FastAPI
 - the client is in [React](https://reactjs.org/)
 
-## Start the server
+### Install the Python API
 
 Clone the repository
 
@@ -33,23 +32,19 @@ Create a virtual environnement with Python 3.11 and install requirements
 pip install -r activetigger/api/requirements.txt
 ```
 
-The server configuration is achieved with the `config.yaml` file the api directory (you can use the `config.yaml.sample` as an example):
+Add a specific `config.yaml` file in the api directory if you want to specify the path of the static files and database (you can modify and rename the `config.yaml.sample` or use the default config):
 
 - `path` : path to store files (for instance `./data`)
 - `path_models` : path to store the models (for instance `./data/models`)
 
-Then, to launch the server (on 0.0.0.0 port 5000 by default, you can configurate exposed port if needed).
+Launch the server (on 0.0.0.0 port 5000 by default, you can configurate exposed port if needed with -p PORTNUM).
 
 ```bash
 cd api
 python -m activetigger
 ```
 
-Otherwise, you can launch only the API with `uvicorn`:
-
-```
-uvicorn activetigger.api:app --host 0.0.0.0 --port 80 --reload
-```
+### Install the React frontend
 
 ## Users management
 

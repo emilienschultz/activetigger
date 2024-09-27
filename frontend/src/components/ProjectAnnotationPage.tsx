@@ -199,115 +199,116 @@ export const ProjectAnnotationPage: FC = () => {
             </div>
           )}
           {phase != 'test' && (
-            <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
-              <Tab eventKey="scheme" title="Current scheme">
-                <div className="row">
-                  <div className="col-6">
-                    <SelectCurrentScheme />
+            <div>
+              <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
+                <Tab eventKey="scheme" title="Current scheme">
+                  <div className="row">
+                    <div className="col-6">
+                      <SelectCurrentScheme />
+                    </div>
+                    <div className="col-6">
+                      {statistics ? (
+                        <span className="badge text-bg-light  mt-2">
+                          Count :{' '}
+                          {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
+                        </span>
+                      ) : (
+                        ''
+                      )}
+                    </div>{' '}
+                    <div>
+                      The current selection mode is{' '}
+                      <span className="badge text-bg-light  mt-2">{selectionConfig.mode}</span> on
+                      the sample{' '}
+                      <span className="badge text-bg-light  mt-2">{selectionConfig.sample}</span>{' '}
+                      {selectionConfig.filter
+                        ? `with the regex ${selectionConfig.filter}`
+                        : 'without regex'}
+                      {selectionConfig.frameSelection
+                        ? ` and with a frame selection`
+                        : ' and without frame selection'}
+                    </div>
                   </div>
-                  <div className="col-6">
-                    {statistics ? (
-                      <span className="badge text-bg-light  mt-2">
-                        Count :{' '}
-                        {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
-                      </span>
-                    ) : (
-                      ''
-                    )}
-                  </div>{' '}
-                  <div>
-                    The current selection mode is{' '}
-                    <span className="badge text-bg-light  mt-2">{selectionConfig.mode}</span> on the
-                    sample{' '}
-                    <span className="badge text-bg-light  mt-2">{selectionConfig.sample}</span>{' '}
-                    {selectionConfig.filter
-                      ? `with the regex ${selectionConfig.filter}`
-                      : 'without regex'}
-                    {selectionConfig.frameSelection
-                      ? ` and with a frame selection`
-                      : ' and without frame selection'}
+                </Tab>
+                <Tab eventKey="selection" title="Selection mode">
+                  <SelectionManagement />
+                  <div className="col-12 text-center">
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        getNextElementId().then((nextElementId) => {
+                          if (nextElementId)
+                            navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+                          else {
+                            navigate(`/projects/${projectName}/annotate/noelement`);
+                          }
+                        });
+                      }}
+                    >
+                      <LuRefreshCw size={20} />
+                    </button>
                   </div>
-                </div>
-              </Tab>
-              <Tab eventKey="selection" title="Selection mode">
-                <SelectionManagement />
-                <div className="col-12 text-center">
-                  <button
-                    className="btn"
-                    onClick={() => {
-                      getNextElementId().then((nextElementId) => {
-                        if (nextElementId)
-                          navigate(`/projects/${projectName}/annotate/${nextElementId}`);
-                        else {
-                          navigate(`/projects/${projectName}/annotate/noelement`);
-                        }
-                      });
-                    }}
-                  >
-                    <LuRefreshCw size={20} />
-                  </button>
-                </div>
-              </Tab>
-              <Tab eventKey="parameters" title="Display parameters">
-                <label style={{ display: 'block', marginBottom: '10px' }}>
-                  <input
-                    type="checkbox"
-                    checked={displayConfig.displayPrediction || false}
-                    onChange={(_) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        displayConfig: {
-                          ...displayConfig,
-                          displayPrediction: displayConfig.displayPrediction
-                            ? !displayConfig.displayPrediction
-                            : true,
-                        },
-                      }));
-                    }}
-                    style={{ marginRight: '10px' }}
-                  />
-                  Display prediction
-                </label>
-                <label style={{ display: 'block', marginBottom: '10px' }}>
-                  <input
-                    type="checkbox"
-                    checked={displayConfig.displayContext}
-                    onChange={(_) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        displayConfig: {
-                          ...displayConfig,
-                          displayContext: !displayConfig.displayContext,
-                        },
-                      }));
-                    }}
-                    style={{ marginRight: '10px' }}
-                  />
-                  Display informations
-                </label>
-                <label style={{ display: 'block', marginBottom: '10px' }}>
-                  Text frame size
-                  <span>Min: 25%</span>
-                  <input
-                    type="range"
-                    min="25"
-                    max="100"
-                    className="form-input"
-                    onChange={(e) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        displayConfig: {
-                          ...displayConfig,
-                          frameSize: Number(e.target.value),
-                        },
-                      }));
-                    }}
-                    style={{ marginRight: '10px' }}
-                  />
-                  <span>Max: 100%</span>
-                </label>
-              </Tab>
-            </Tabs>
+                </Tab>
+                <Tab eventKey="parameters" title="Display parameters">
+                  <label style={{ display: 'block', marginBottom: '10px' }}>
+                    <input
+                      type="checkbox"
+                      checked={displayConfig.displayPrediction}
+                      onChange={(_) => {
+                        setAppContext((prev) => ({
+                          ...prev,
+                          displayConfig: {
+                            ...displayConfig,
+                            displayPrediction: !displayConfig.displayPrediction,
+                          },
+                        }));
+                      }}
+                      style={{ marginRight: '10px' }}
+                    />
+                    Display prediction
+                  </label>
+                  <label style={{ display: 'block', marginBottom: '10px' }}>
+                    <input
+                      type="checkbox"
+                      checked={displayConfig.displayContext}
+                      onChange={(_) => {
+                        setAppContext((prev) => ({
+                          ...prev,
+                          displayConfig: {
+                            ...displayConfig,
+                            displayContext: !displayConfig.displayContext,
+                          },
+                        }));
+                      }}
+                      style={{ marginRight: '10px' }}
+                    />
+                    Display informations
+                  </label>
+                  <label style={{ display: 'block', marginBottom: '10px' }}>
+                    Text frame size
+                    <span>Min: 25%</span>
+                    <input
+                      type="range"
+                      min="25"
+                      max="100"
+                      className="form-input"
+                      onChange={(e) => {
+                        setAppContext((prev) => ({
+                          ...prev,
+                          displayConfig: {
+                            ...displayConfig,
+                            frameSize: Number(e.target.value),
+                          },
+                        }));
+                      }}
+                      style={{ marginRight: '10px' }}
+                    />
+                    <span>Max: 100%</span>
+                  </label>
+                </Tab>
+              </Tabs>
+              <hr />
+            </div>
           )}
         </div>
       </div>
@@ -349,7 +350,7 @@ export const ProjectAnnotationPage: FC = () => {
 
         {
           //display proba
-          (displayConfig.displayPrediction || false) && (
+          displayConfig.displayPrediction && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
             </div>

@@ -101,6 +101,7 @@ export const ProjectExplorationPage: FC = () => {
             width: '100%',
             whiteSpace: 'wrap',
             overflowY: 'auto',
+            userSelect: 'none',
           }}
         >
           <Highlighter
@@ -211,7 +212,11 @@ export const ProjectExplorationPage: FC = () => {
                 <div className="d-flex align-items-center justify-content-between mb-3">
                   <label>Filter</label>
 
-                  <select className="form-control w-25" onChange={(e) => setSample(e.target.value)}>
+                  <select
+                    className="form-control w-25"
+                    onChange={(e) => setSample(e.target.value)}
+                    value={sample}
+                  >
                     {['tagged', 'untagged', 'all', 'recent'].map((e) => (
                       <option key={e}>{e}</option>
                     ))}
