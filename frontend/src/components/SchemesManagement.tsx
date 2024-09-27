@@ -67,7 +67,6 @@ export const SelectCurrentScheme: FC = () => {
               {element}
             </option>
           ))}{' '}
-          <option key={'null'}></option>
         </select>
       </div>
     </div>

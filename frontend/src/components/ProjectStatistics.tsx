@@ -131,7 +131,9 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                     <td>Distribution</td>
                     <td>
                       {' '}
-                      <DataTable dataDict={statistics['test_annotated_distribution'] || null} />
+                      {statistics['test_annotated_distribution'] && (
+                        <DataTable dataDict={statistics['test_annotated_distribution']} />
+                      )}
                     </td>
                   </tr>
                 </tbody>
