@@ -40,30 +40,58 @@ Add a specific `config.yaml` file in the api directory if you want to specify th
 Launch the server (on 0.0.0.0 port 5000 by default, you can configurate exposed port if needed with -p PORTNUM).
 
 ```bash
-cd api
+cd activetigger/api
 python -m activetigger
+```
+
+You can also install the last stable version of the API from PyPi with
+
+```bash
+pip install activetigger
 ```
 
 ### Install the React frontend
 
-## Users management
+The frontend is written in React/Typescript. To run the dev version and to build the app, you need first to install node.js and npm (version > 20).
 
-You can create a `add_users.yaml` file with the users to add when the server starts (and then delete the file) :
-
-```
-user1: password1
-user2: password2
+```bash
+sudo apt-get install nodejs npm
 ```
 
-## Technical specifications
+Then you can install the npm packages
 
-- REST-like client/server architecture
-  - Moslty stateless
-  - Client-side parameters
-- Mixed data storage : sqlite + files
-- Backend Python
-  - FastAPI
-  - Multiprocessing for CPU-bound tasts
-- Frontend
-  - React/Typescript
-- Role-Based Access Control (manager/annotator)
+```bash
+cd frontend
+npm i
+```
+
+You can then run the dev version
+
+```bash
+npm run dev
+```
+
+To compile
+
+```bash
+npm run compile
+```
+
+To build
+
+```bash
+npm run build
+```
+
+## Documentation
+
+🚧 to write 🚧
+
+## How to contribute
+
+🚧 to write 🚧
+
+## How to cite
+
+🚧 to write 🚧
+

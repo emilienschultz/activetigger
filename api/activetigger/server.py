@@ -1500,7 +1500,7 @@ class Project(Server):
         n_min: minimal number of elements annotated
         """
         if simplemodel.features is None or len(simplemodel.features) == 0:
-            return {"error": "Empty features"}
+            return {"error": "No feature selected"}
         if simplemodel.model not in list(self.simplemodels.available_models.keys()):
             return {"error": "Model doesn't exist"}
         if simplemodel.scheme not in self.schemes.available():

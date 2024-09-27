@@ -419,7 +419,7 @@ export const ProjectAnnotationPage: FC = () => {
                 availableFeatures={availableFeatures}
               />
             </Tab>
-            <Tab eventKey="projection" title="Projection">
+            <Tab eventKey="visualization" title="Visualization">
               <ProjectionManagement />
             </Tab>
           </Tabs>
