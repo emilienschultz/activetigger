@@ -535,8 +535,11 @@ class Server:
         if self.exists(params.project_name):
             return {"error": "Project name already exist"}
 
+        # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
-            return {"error": "Probleme with the id column"}
+            return {"error": "Probleme with the id column: empty name"}
+        if params.col_id is None or params.col_text == "":
+            return {"error": "Probleme with the id column: empty name"}
 
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
@@ -559,12 +562,13 @@ class Server:
 
         # Step 1 : load all data and index to str and rename
         content = pd.read_csv(params.dir / "data_raw.csv", dtype=str)
-
         # quick fix to avoid problem with parquet index
         content = content.drop(
             columns=[i for i in content.columns if "__index_level" in i]
         )
+        all_columns = list(content.columns)
 
+        # test if the size of the sample requested is possible
         if len(content) < params.n_test + params.n_train:
             return {
                 "error": f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
@@ -576,7 +580,7 @@ class Server:
             content["id"] = range(0, len(content))
             params.col_id = "id"
 
-        # set the index
+        # rename the index
         content = content.rename(columns={params.col_id: "id"}).set_index("id")
 
         # create the text column, merging different columns
@@ -587,7 +591,7 @@ class Server:
         else:
             content["text"] = content[params.col_text]
 
-        # drop NA
+        # drop NA texts
         content.dropna(subset=["text"], inplace=True)
 
         # manage the label column
@@ -679,7 +683,12 @@ class Server:
         # save parameters (without the data)
         params.col_label = None  # reverse dummy
         project = params.model_dump()
+
+        # add elements for the parameters
         project["project_slug"] = project_slug
+        project["all_columns"] = all_columns
+
+        # save the parameters
         self.set_project_parameters(ProjectModel(**project), username)
 
         return {"success": "Project created"}
@@ -763,6 +772,7 @@ class Features:
                 "log": None,
             },
             "regex": {"formula": None},
+            "dataset": {},
         }
 
     def __repr__(self) -> str:

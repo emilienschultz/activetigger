@@ -1,10 +1,10 @@
 import { FC } from 'react';
-import Tab from 'react-bootstrap/Tab';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useDeleteProject, useGetLogs } from '../core/api';
-//import { useUserProjects } from '../core/api';
+import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
+import { useDeleteProject, useGetLogs } from '../core/api';
+
 import DataGrid, { Column } from 'react-data-grid';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -53,8 +53,7 @@ export const ProjectPage: FC = () => {
   };
 
   const activeUsers = project?.users?.active ? project?.users?.active : [];
-  console.log(activeUsers);
-  console.log(project?.users);
+  console.log(project?.params);
 
   const columns: readonly Column<Row>[] = [
     {

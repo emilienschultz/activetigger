@@ -1,6 +1,7 @@
-import { FC, useState } from 'react';
+import { FC } from 'react';
+import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { IoIosAddCircle } from 'react-icons/io';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 
@@ -34,9 +35,6 @@ export const ProjectFeaturesPage: FC = () => {
   const addFeature = useAddFeature(projectName || null);
   const deleteFeature = useDeleteFeature(projectName || null);
 
-  // state for displaying the new scheme menu
-  const [showCreateNewFeature, setShowCreateNewFeature] = useState(false);
-
   // state for the type of feature to create
   // const [selectedFeatureToCreate, setFeatureToCreate] = useState('');
   const selectedFeatureToCreate = watch('type');
@@ -52,7 +50,6 @@ export const ProjectFeaturesPage: FC = () => {
     } catch (error) {
       notify({ type: 'error', message: error + '' });
     }
-    setShowCreateNewFeature(!showCreateNewFeature);
     reset();
   };
 
@@ -68,28 +65,32 @@ export const ProjectFeaturesPage: FC = () => {
       {project && (
         <div className="container-fluid">
           <div className="row">
-            <div className="col-8">
-              <span className="explanations">Features are computed from textual data</span>
-
-              {/*Display button to add features*/}
-              <div className="row">
-                <button
-                  className="btn btn-primary btn-validation mt-4"
-                  onClick={() => {
-                    setShowCreateNewFeature(!showCreateNewFeature);
-                  }}
-                >
-                  <IoIosAddCircle size={20} /> Add feature{' '}
-                </button>
-              </div>
-              {
-                /*Display the menu to add features*/
-                showCreateNewFeature && (
+            <div className="col-12">
+              <Tabs id="panel" className="mt-3" defaultActiveKey="existing">
+                <Tab eventKey="existing" title="Existing">
+                  <span className="explanations">Features allows to train models</span>
+                  {availableFeatures.map((element) => (
+                    <div className="card text-bg-light mt-4" key={element as string}>
+                      <div className="card-body d-flex justify-content-between align-items-center">
+                        <span>{element as string}</span>
+                        <button
+                          className="btn btn p-0"
+                          onClick={() => {
+                            deleteSelectedFeature(element as string);
+                          }}
+                        >
+                          <MdOutlineDeleteOutline size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}{' '}
+                </Tab>
+                <Tab eventKey="create" title="Create">
                   <div className="row">
                     <form onSubmit={handleSubmit(createNewFeature)}>
-                      <div className="col-4 secondary-panel">
+                      <div className="col-4">
                         <label className="form-label" htmlFor="newFeature">
-                          Select feature to add
+                          Feature to create
                         </label>
                         <select className="form-control" id="newFeature" {...register('type')}>
                           <option key="empty"></option>
@@ -101,14 +102,12 @@ export const ProjectFeaturesPage: FC = () => {
                         </select>
 
                         {selectedFeatureToCreate === 'regex' && (
-                          <label htmlFor="regex">
-                            Regex
-                            <input
-                              type="text"
-                              placeholder="Enter the regex"
-                              {...register('parameters.value')}
-                            />
-                          </label>
+                          <input
+                            type="text"
+                            className="form-control mt-3"
+                            placeholder="Enter the regex"
+                            {...register('parameters.value')}
+                          />
                         )}
 
                         {selectedFeatureToCreate === 'dfm' && (
@@ -163,31 +162,31 @@ export const ProjectFeaturesPage: FC = () => {
                             </div>
                           </div>
                         )}
+
+                        {selectedFeatureToCreate === 'dataset' && (
+                          <div>
+                            <label htmlFor="dataset_col">Column to use</label>
+                            <select id="dataset_col" {...register('parameters.dataset_col')}>
+                              {(project?.params.all_columns || []).map((element) => (
+                                <option key={element as string} value={element as string}>
+                                  {element as string}
+                                </option>
+                              ))}
+                            </select>
+                            <label htmlFor="dataset_type">Type of the feature</label>
+                            <select id="dataset_type" {...register('parameters.dataset_type')}>
+                              <option key="numeric">Numeric</option>
+                              <option key="categorical">Categorical</option>
+                            </select>
+                          </div>
+                        )}
+
                         <button className="btn btn-primary btn-validation">Create</button>
                       </div>
                     </form>
                   </div>
-                )
-              }
-
-              {/* Display cards for each feature*/}
-              <div className="row">
-                {availableFeatures.map((element) => (
-                  <div className="card text-bg-light mt-4" key={element as string}>
-                    <div className="card-body d-flex justify-content-between align-items-center">
-                      <span>{element as string}</span>
-                      <button
-                        className="btn btn p-0"
-                        onClick={() => {
-                          deleteSelectedFeature(element as string);
-                        }}
-                      >
-                        <MdOutlineDeleteOutline size={20} />
-                      </button>
-                    </div>
-                  </div>
-                ))}{' '}
-              </div>
+                </Tab>
+              </Tabs>
             </div>
           </div>
           <div></div>

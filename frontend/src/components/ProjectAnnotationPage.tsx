@@ -350,7 +350,7 @@ export const ProjectAnnotationPage: FC = () => {
             />
 
             {/* text out of frame */}
-            <span className="text-out-context">
+            <span className="text-out-context" title="Outside 512 token window ">
               <Highlighter
                 highlightClassName="Search"
                 searchWords={selectionConfig.filter ? [selectionConfig.filter] : []}

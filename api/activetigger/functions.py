@@ -175,9 +175,13 @@ def to_sbert(
     Returns:
         pandas.DataFrame: embeddings
     """
+
+    # manage GPU
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     sbert = SentenceTransformer(model)
+    sbert = sbert.to(device)
     sbert.max_seq_length = 512
-    emb = sbert.encode(list(texts))
+    emb = sbert.encode(list(texts), device=device)
     emb = pd.DataFrame(emb, index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
     return {"success": emb}

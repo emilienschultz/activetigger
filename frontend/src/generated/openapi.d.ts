@@ -1458,6 +1458,8 @@ export interface components {
             test: boolean;
             /** Project Slug */
             project_slug: string;
+            /** All Columns */
+            all_columns?: unknown[] | null;
         };
         /**
          * ProjectStateModel

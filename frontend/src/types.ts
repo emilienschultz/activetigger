@@ -70,10 +70,15 @@ export interface FeatureRegexParameters {
   value: string;
 }
 
+export interface FeatureDatasetParameters {
+  dataset_type: string;
+  dataset_col: string;
+}
+
 export interface FeatureModelExtended {
   name: string;
   type: string;
-  parameters: null | FeatureDfmParameters | FeatureRegexParameters;
+  parameters: null | FeatureDfmParameters | FeatureRegexParameters | FeatureDatasetParameters;
 }
 
 export interface SelectionConfig {

@@ -36,6 +36,7 @@ class ProjectModel(BaseProjectModel):
     """
 
     project_slug: str
+    all_columns: Optional[List] = None
 
 
 class ProjectDataModel(BaseProjectModel):
