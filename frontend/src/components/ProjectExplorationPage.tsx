@@ -107,7 +107,7 @@ export const ProjectExplorationPage: FC = () => {
           <Highlighter
             highlightClassName="Search"
             searchWords={search ? [search] : []}
-            autoEscape={true}
+            autoEscape={false}
             textToHighlight={props.row.text}
           />
         </div>

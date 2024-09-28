@@ -41,7 +41,9 @@ export const ProjectActionsSidebar: FC<{
             title="Project"
           >
             <MdOutlineHomeMax className="m-2" />
-            <span>Project {projectName}</span>
+            <span>
+              <b>{projectName}</b>
+            </span>
           </Link>
         </li>
         <li className="nav-item">

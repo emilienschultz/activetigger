@@ -163,9 +163,16 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         {generate_config(selectedSimpleModel)}
         <div>
           <label htmlFor="features">Select features</label>
-          <select id="features" {...register('features')} multiple>
+          <select
+            id="features"
+            {...register('features')}
+            multiple
+            defaultValue={Object.values(availableFeatures)}
+          >
             {Object.values(availableFeatures).map((e) => (
-              <option key={e}>{e}</option>
+              <option key={e} value={e}>
+                {e}
+              </option>
             ))}{' '}
           </select>
         </div>

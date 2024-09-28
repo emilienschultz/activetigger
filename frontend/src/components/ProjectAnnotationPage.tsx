@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
+import Highlighter from 'react-highlight-words';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -110,15 +111,6 @@ export const ProjectAnnotationPage: FC = () => {
     reFetchStatistics,
   ]);
 
-  // hook to fetch a next element when selectionConfig changes
-  // NOT A GOOD IDEA SINCE IT PREVENTS TO GO TO ANOTHER ELEMENT
-  // useEffect(() => {
-  //   getNextElementId().then((nextElementId) => {
-  //     if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
-  //     else navigate(`/projects/${projectName}/annotate/noelement`);
-  //   });
-  // }, [selectionConfig, elementId, getNextElementId, projectName, navigate]);
-
   // hooks to update simplemodel
   const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
 
@@ -126,7 +118,12 @@ export const ProjectAnnotationPage: FC = () => {
   const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
 
   useEffect(() => {
-    if (!updatedSimpleModel && currentModel && history.length % freqRefreshSimpleModel == 0) {
+    if (
+      !updatedSimpleModel &&
+      currentModel &&
+      history.length > 0 &&
+      history.length % freqRefreshSimpleModel == 0
+    ) {
       setUpdatedSimpleModel(true);
       updateSimpleModel(currentModel);
     }
@@ -180,6 +177,10 @@ export const ProjectAnnotationPage: FC = () => {
       }
     };
   }, [availableLabels, handleKeyboardEvents]);
+
+  // separate the text in two parts
+  const textInFrame = element?.text.slice(0, element?.limit as number) || '';
+  const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
@@ -341,9 +342,21 @@ export const ProjectAnnotationPage: FC = () => {
             className="col-11 annotation-frame my-4"
             style={{ height: `${displayConfig.frameSize}vh` }}
           >
-            <span>{element?.text.slice(0, element?.limit as number)}</span>
+            <Highlighter
+              highlightClassName="Search"
+              searchWords={selectionConfig.filter ? [selectionConfig.filter] : []}
+              autoEscape={false}
+              textToHighlight={textInFrame}
+            />
+
+            {/* text out of frame */}
             <span className="text-out-context">
-              {element?.text.slice(element?.limit as number)}
+              <Highlighter
+                highlightClassName="Search"
+                searchWords={selectionConfig.filter ? [selectionConfig.filter] : []}
+                autoEscape={false}
+                textToHighlight={textOutFrame}
+              />
             </span>
           </div>
         )}

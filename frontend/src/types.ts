@@ -95,8 +95,8 @@ export interface GenerateConfig {
 }
 
 export interface DisplayConfig {
-  displayPrediction?: boolean;
-  displayContext?: boolean;
+  displayPrediction: boolean;
+  displayContext: boolean;
   frameSize: number;
 }
 
