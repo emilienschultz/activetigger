@@ -17,7 +17,6 @@ import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
 import { LabelsManagement } from './LabelsManagement';
 import { ProjectionManagement } from './ProjectionManagement';
-import { SelectCurrentScheme } from './SchemesManagement';
 import { SelectionManagement } from './SelectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
@@ -186,54 +185,36 @@ export const ProjectAnnotationPage: FC = () => {
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
         <div className="row mb-3 mt-3">
-          {phase == 'test' && (
-            <div className="alert alert-warning">
-              Test mode activated - you are annotating test set
-              <div className="col-6">
-                {statistics && (
-                  <span className="badge text-bg-light  m-3">
-                    Number of annotations :{' '}
-                    {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
-                  </span>
-                )}
+          {
+            // test mode
+            phase == 'test' && (
+              <div className="alert alert-warning">
+                Test mode activated - you are annotating test set
+                <div className="col-6">
+                  {statistics && (
+                    <span className="badge text-bg-light  m-3">
+                      Number of annotations :{' '}
+                      {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          {phase != 'test' && (
-            <div>
-              <Tabs id="panel2" className="mb-3" defaultActiveKey="scheme">
-                <Tab eventKey="scheme" title="Current scheme">
-                  <div className="row">
-                    <div className="col-6">
-                      <SelectCurrentScheme />
-                    </div>
-                    <div className="col-6">
-                      {statistics ? (
-                        <span className="badge text-bg-light  mt-2">
-                          Count :{' '}
-                          {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
-                        </span>
-                      ) : (
-                        ''
-                      )}
-                    </div>{' '}
-                    <div>
-                      The current selection mode is{' '}
-                      <span className="badge text-bg-light  mt-2">{selectionConfig.mode}</span> on
-                      the sample{' '}
-                      <span className="badge text-bg-light  mt-2">{selectionConfig.sample}</span>{' '}
-                      {selectionConfig.filter
-                        ? `with the regex ${selectionConfig.filter}`
-                        : 'without regex'}
-                      {selectionConfig.frameSelection
-                        ? ` and with a frame selection`
-                        : ' and without frame selection'}
-                    </div>
-                  </div>
-                </Tab>
-                <Tab eventKey="selection" title="Selection mode">
-                  <SelectionManagement />
-                  <div className="col-12 text-center">
+            )
+          }
+          {
+            // annotation mode
+            phase != 'test' && (
+              <div>
+                <div className="d-flex align-items-center mb-3">
+                  {statistics ? (
+                    <span className="badge text-bg-light">
+                      Annotated :{' '}
+                      {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
+                    </span>
+                  ) : (
+                    ''
+                  )}
+                  <div>
                     <button
                       className="btn"
                       onClick={() => {
@@ -246,71 +227,16 @@ export const ProjectAnnotationPage: FC = () => {
                         });
                       }}
                     >
-                      <LuRefreshCw size={20} />
+                      <LuRefreshCw size={20} /> Refetch element
                     </button>
                   </div>
-                </Tab>
-                <Tab eventKey="parameters" title="Display parameters">
-                  <label style={{ display: 'block', marginBottom: '10px' }}>
-                    <input
-                      type="checkbox"
-                      checked={displayConfig.displayPrediction}
-                      onChange={(_) => {
-                        setAppContext((prev) => ({
-                          ...prev,
-                          displayConfig: {
-                            ...displayConfig,
-                            displayPrediction: !displayConfig.displayPrediction,
-                          },
-                        }));
-                      }}
-                      style={{ marginRight: '10px' }}
-                    />
-                    Display prediction
-                  </label>
-                  <label style={{ display: 'block', marginBottom: '10px' }}>
-                    <input
-                      type="checkbox"
-                      checked={displayConfig.displayContext}
-                      onChange={(_) => {
-                        setAppContext((prev) => ({
-                          ...prev,
-                          displayConfig: {
-                            ...displayConfig,
-                            displayContext: !displayConfig.displayContext,
-                          },
-                        }));
-                      }}
-                      style={{ marginRight: '10px' }}
-                    />
-                    Display informations
-                  </label>
-                  <label style={{ display: 'block', marginBottom: '10px' }}>
-                    Text frame size
-                    <span>Min: 25%</span>
-                    <input
-                      type="range"
-                      min="25"
-                      max="100"
-                      className="form-input"
-                      onChange={(e) => {
-                        setAppContext((prev) => ({
-                          ...prev,
-                          displayConfig: {
-                            ...displayConfig,
-                            frameSize: Number(e.target.value),
-                          },
-                        }));
-                      }}
-                      style={{ marginRight: '10px' }}
-                    />
-                    <span>Max: 100%</span>
-                  </label>
-                </Tab>
-              </Tabs>
-              <hr />
-            </div>
-          )}
+                </div>
+                <div>
+                  <SelectionManagement />
+                </div>
+              </div>
+            )
+          }
         </div>
       </div>
 
@@ -408,14 +334,10 @@ export const ProjectAnnotationPage: FC = () => {
           }
         </div>
       </div>
+
       <div className="mt-5">
         {phase != 'test' && (
-          <Tabs id="panel2" className="mb-3" defaultActiveKey="description">
-            <Tab eventKey="description" title="Annotations">
-              <span className="explanations">
-                Configure the selection mode, train prediction model to enable active learning
-              </span>
-            </Tab>
+          <Tabs id="panel2" className="mb-3">
             <Tab eventKey="labels" title="Labels">
               <LabelsManagement
                 projectName={projectName || null}
@@ -434,6 +356,64 @@ export const ProjectAnnotationPage: FC = () => {
             </Tab>
             <Tab eventKey="visualization" title="Visualization">
               <ProjectionManagement />
+            </Tab>
+
+            <Tab eventKey="parameters" title="Display parameters">
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={displayConfig.displayPrediction}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      displayConfig: {
+                        ...displayConfig,
+                        displayPrediction: !displayConfig.displayPrediction,
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                Display prediction
+              </label>
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={displayConfig.displayContext}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      displayConfig: {
+                        ...displayConfig,
+                        displayContext: !displayConfig.displayContext,
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                Display informations
+              </label>
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                Text frame size
+                <span>Min: 25%</span>
+                <input
+                  type="range"
+                  min="25"
+                  max="100"
+                  className="form-input"
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      displayConfig: {
+                        ...displayConfig,
+                        frameSize: Number(e.target.value),
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                <span>Max: 100%</span>
+              </label>
             </Tab>
           </Tabs>
         )}

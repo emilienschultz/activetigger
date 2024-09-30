@@ -36,100 +36,106 @@ export const SelectionManagement: FC = () => {
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
   ) : (
-    <div>
-      <div className="explanations">
-        Current model : {currentModel ? currentModel['model'] : 'No model trained'}
-      </div>
-      <div className="d-flex align-items-center justify-content-between">
-        <label>Selection mode</label>
-        <select
-          className="form-select w-50"
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-            setAppContext((prev) => ({
-              ...prev,
-              selectionConfig: { ...selectionConfig, mode: e.target.value },
-            }));
-          }}
-          value={selectionConfig.mode}
-        >
-          {availableModes.map((e, i) => (
-            <option key={i}>{e}</option>
-          ))}
-        </select>
-      </div>
-      {selectionConfig.mode == 'maxprob' && (
-        <div className="d-flex align-items-center justify-content-between">
-          <label>Label</label>
+    <div className="w-100">
+      <div className="d-flex align-items-center">
+        <div className="mx-2">
+          <label>Selection</label>
           <select
+            className="form-select"
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              setAppContext((prev) => ({
+                ...prev,
+                selectionConfig: { ...selectionConfig, mode: e.target.value },
+              }));
+            }}
+            value={selectionConfig.mode}
+          >
+            {availableModes.map((e, i) => (
+              <option key={i}>{e}</option>
+            ))}
+          </select>
+        </div>
+        {selectionConfig.mode == 'maxprob' && (
+          <div className="mx-2 w-25">
+            <label>Label</label>
+            <select
+              onChange={(e) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: { ...selectionConfig, label: e.target.value },
+                }));
+              }}
+              className="form-select"
+              value={selectionConfig.label}
+            >
+              {availableLabels.map((e, i) => (
+                <option key={i}>{e}</option>
+              ))}{' '}
+            </select>
+          </div>
+        )}
+        <div className="mx-2 w-25">
+          <label>On</label>
+          <select
+            className="form-select"
             onChange={(e) => {
               setAppContext((prev) => ({
                 ...prev,
-                selectionConfig: { ...selectionConfig, label: e.target.value },
+                selectionConfig: { ...selectionConfig, sample: e.target.value },
               }));
             }}
-            className="form-select w-50"
-            value={selectionConfig.label}
+            value={selectionConfig.sample}
           >
-            {availableLabels.map((e, i) => (
+            {availableSamples.map((e, i) => (
               <option key={i}>{e}</option>
             ))}{' '}
           </select>
         </div>
-      )}
-      <div className="d-flex align-items-center justify-content-between">
-        <label>On</label>
-        <select
-          className="form-select w-50"
-          onChange={(e) => {
-            setAppContext((prev) => ({
-              ...prev,
-              selectionConfig: { ...selectionConfig, sample: e.target.value },
-            }));
-          }}
-          value={selectionConfig.sample}
-        >
-          {availableSamples.map((e, i) => (
-            <option key={i}>{e}</option>
-          ))}{' '}
-        </select>
+        {
+          // input validated on deselect
+        }
+        <div className="w-50">
+          <label htmlFor="select_regex">Filter</label>
+          <input
+            className="form-control"
+            type="text"
+            id="select_regex"
+            placeholder="Enter a regex / CONTEXT= for context"
+            value={selectionConfig.filter}
+            onChange={(e) => {
+              setAppContext((prev) => ({
+                ...prev,
+                selectionConfig: { ...selectionConfig, filter: e.target.value },
+              }));
+            }}
+          />
+        </div>
       </div>
-      {
-        // input validated on deselect
-      }
-      <div className="d-flex align-items-center justify-content-between">
-        <label htmlFor="select_regex">Filter</label>
-        <input
-          className="form-control w-50"
-          type="text"
-          id="select_regex"
-          placeholder="Enter a regex / CONTEXT= for context"
-          value={selectionConfig.filter}
-          onChange={(e) => {
-            setAppContext((prev) => ({
-              ...prev,
-              selectionConfig: { ...selectionConfig, filter: e.target.value },
-            }));
-          }}
-        />
+      <div className="d-flex align-items-center">
+        <div className="explanations mx-3">
+          Active selection : {currentModel ? currentModel['model'] : 'No model trained'}
+        </div>
+        <details>
+          <summary>Advanced options</summary>
+          <label className="mx-4" style={{ display: 'block' }}>
+            <input
+              type="checkbox"
+              checked={selectionConfig.frameSelection}
+              onChange={(_) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: {
+                    ...selectionConfig,
+                    frameSelection: !selectionConfig.frameSelection,
+                  },
+                }));
+                console.log(selectionConfig.frameSelection);
+              }}
+            />
+            Use visualisation frame
+          </label>
+        </details>
       </div>
-      <label style={{ display: 'block', marginBottom: '10px' }}>
-        <input
-          type="checkbox"
-          checked={selectionConfig.frameSelection}
-          onChange={(_) => {
-            setAppContext((prev) => ({
-              ...prev,
-              selectionConfig: {
-                ...selectionConfig,
-                frameSelection: !selectionConfig.frameSelection,
-              },
-            }));
-            console.log(selectionConfig.frameSelection);
-          }}
-          style={{ marginRight: '10px' }}
-        />
-        Use projection frame to limit element selection
-      </label>
     </div>
   );
 };
