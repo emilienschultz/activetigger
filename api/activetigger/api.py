@@ -1204,16 +1204,18 @@ async def post_embeddings(
     - specific process : function + temporary file + update
     """
     test_rights("modify project", current_user.username, project.name)
+
+    # Error management
     if feature.name in project.features.training:
         raise HTTPException(
             status_code=400, detail="This feature is already in training"
         )
-    if not feature.type in {"sbert", "fasttext", "dfm", "regex"}:
+    if feature.type not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
         raise HTTPException(status_code=400, detail="Not implemented")
 
-    # specific case of regex that is not parallelized yet
+    # Add a regex
     if feature.type == "regex":
-        if not "value" in feature.parameters:
+        if "value" not in feature.parameters:
             raise HTTPException(
                 status_code=400, detail="Parameters missing for the regex"
             )
@@ -1227,11 +1229,42 @@ async def post_embeddings(
             project.name,
         )
         return None
-    # case for computation on specific processes
+
+    # Add a feature from the dataset
+    if feature.type == "dataset":
+        args = feature.parameters
+        # get the raw column for the train set
+        r = project.get_column_raw(args["dataset_col"])
+        if "error" in r:
+            raise HTTPException(status_code=500, detail=r["error"])
+        column = r["success"]
+
+        # convert the column to a specific format
+        if len(column.dropna()) != len(column):
+            return {"error": "Column contains null values"}
+        if args["dataset_type"] == "Numeric":
+            try:
+                column = column.apply(float)
+            except Exception:
+                return {"error": "The column can't be transform into numerical feature"}
+        else:
+            column = column.apply(str)
+
+        # add the feature to the project
+        project.features.add(
+            f"dataset_{args['dataset_col']}_{args['dataset_type']}".lower(), column
+        )
+        return None
+
+    # Features necessitating computation on the text
     df = project.content["text"]
+
+    # Add SBERT transformation
     if feature.type == "sbert":
         args = {"texts": df, "model": "distiluse-base-multilingual-cased-v1"}
         func = functions.to_sbert
+
+    # Add fasttext transformation
     if feature.type == "fasttext":
         args = {
             "texts": df,
@@ -1239,6 +1272,8 @@ async def post_embeddings(
             "path_models": server.path_models,
         }
         func = functions.to_fasttext
+
+    # Add Data Frequency Matrice
     if feature.type == "dfm":
         args = feature.parameters
         args["texts"] = df
@@ -1250,7 +1285,8 @@ async def post_embeddings(
         raise HTTPException(status_code=500, detail="Error in adding in the queue")
     project.features.training[feature.name] = unique_id
 
-    server.log_action(current_user.username, f"Compute feature dfm", project.name)
+    # Log and return
+    server.log_action(current_user.username, "Compute feature dfm", project.name)
     return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
 

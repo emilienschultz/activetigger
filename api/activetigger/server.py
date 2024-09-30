@@ -36,7 +36,9 @@ from activetigger.models import BertModels, SimpleModels
 
 logger = logging.getLogger("server")
 
+# Define server parameters
 db_name = "activetigger.db"
+data_raw = "data_raw.parquet"
 features_file = "features.parquet"
 labels_file = "labels.parquet"
 data_file = "data.parquet"
@@ -131,7 +133,7 @@ class Queue:
         """
         Send a kill process with the event manager
         """
-        if not unique_id in self.current:
+        if unique_id not in self.current:
             return {"error": "Id does not exist"}
         self.current[unique_id]["event"].set()
         self.delete(unique_id)
@@ -322,6 +324,7 @@ class Server:
     db_name: str
     features_file: str
     labels_file: str
+    data_raw: str
     data_file: str
     test_file: str
     default_user: str
@@ -342,6 +345,7 @@ class Server:
         Start the server
         """
         self.db_name = db_name
+        self.data_raw = data_raw
         self.features_file = features_file
         self.labels_file = labels_file
         self.data_file = data_file
@@ -583,6 +587,9 @@ class Server:
         # rename the index
         content = content.rename(columns={params.col_id: "id"}).set_index("id")
 
+        # save a raw copy of the content
+        content.to_parquet(params.dir / self.data_raw, index=True)
+
         # create the text column, merging different columns
         if isinstance(params.col_text, list):
             content["text"] = content[params.col_text].apply(
@@ -690,6 +697,9 @@ class Server:
 
         # save the parameters
         self.set_project_parameters(ProjectModel(**project), username)
+
+        # clean
+        os.remove(params.dir / "data_raw.csv")
 
         return {"success": "Project created"}
 
@@ -821,7 +831,7 @@ class Features:
         """
         Delete feature
         """
-        if not name in self.map:
+        if name not in self.map:
             return {"error": "feature doesn't exist"}
 
         col = self.get([name])
@@ -2072,3 +2082,13 @@ class Project(Server):
         """
         users = self.db_manager.get_distinct_users(self.name, period)
         return users
+
+    def get_column_raw(self, column_name: str) -> dict:
+        """
+        Get column raw dataset
+        """
+        df = pd.read_parquet(self.params.dir / data_raw)
+        if column_name not in list(df.columns):
+            return {"error": "Column doesn't exist"}
+        # filter only train id
+        return {"success": df.loc[self.content.index][column_name]}
