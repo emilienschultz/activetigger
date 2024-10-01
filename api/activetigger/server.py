@@ -574,6 +574,7 @@ class Server:
 
         # test if the size of the sample requested is possible
         if len(content) < params.n_test + params.n_train:
+            shutil.rmtree(params.dir)
             return {
                 "error": f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
             }
@@ -624,6 +625,7 @@ class Server:
             # only on non labelled data
             f = content["label"].isna()
             if (f.sum()) < params.n_test:
+                shutil.rmtree(params.dir)
                 return {"error": "Not enought data for creating the test dataset"}
             if len(params.cols_test) == 0:  # if no stratification
                 testset = content[f].sample(params.n_test)

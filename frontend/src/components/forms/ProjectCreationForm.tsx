@@ -87,9 +87,13 @@ export const ProjectCreationForm: FC = () => {
       setSpinner(true);
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
       console.log('new project payload to send to API', { ...omit(formData, 'files'), csv });
-      await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
-      setSpinner(false);
-      navigate(`/projects/`);
+      try {
+        await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
+        setSpinner(false);
+        navigate(`/projects/`);
+      } catch (error) {
+        setSpinner(false);
+      }
     }
   };
 

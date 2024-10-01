@@ -598,7 +598,11 @@ async def new_project(
         )
 
     # create the project
-    server.create_project(project, current_user.username)
+    r = server.create_project(project, current_user.username)
+
+    # raise error if needed
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
 
     # log action
     server.log_action(current_user.username, "create project", project.project_name)

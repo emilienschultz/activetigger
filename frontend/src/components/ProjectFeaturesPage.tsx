@@ -68,7 +68,7 @@ export const ProjectFeaturesPage: FC = () => {
             <div className="col-12">
               <Tabs id="panel" className="mt-3" defaultActiveKey="existing">
                 <Tab eventKey="existing" title="Existing">
-                  <span className="explanations">Features allows to train models</span>
+                  <span className="explanations">Features allows to train models.</span>
                   {availableFeatures.map((element) => (
                     <div className="card text-bg-light mt-4" key={element as string}>
                       <div className="card-body d-flex justify-content-between align-items-center">
@@ -90,8 +90,12 @@ export const ProjectFeaturesPage: FC = () => {
                     <form onSubmit={handleSubmit(createNewFeature)}>
                       <div className="col-4">
                         <label className="form-label" htmlFor="newFeature">
-                          Feature to create
+                          Select the type of feature
                         </label>
+                        <span className="explanations">
+                          Regarding the number of elements in the corpus, some computation can takes
+                          time (dozen of minutes).
+                        </span>
                         <select className="form-control" id="newFeature" {...register('type')}>
                           <option key="empty"></option>
                           {Object.keys(project.features.options).map((element) => (
