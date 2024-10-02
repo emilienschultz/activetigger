@@ -1,3 +1,4 @@
+import { toPairs } from 'lodash';
 import { FC, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
@@ -22,18 +23,23 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 }) => {
   // element from the context
   const {
-    appContext: { freqRefreshSimpleModel, currentProject: project },
+    appContext: { freqRefreshSimpleModel },
     setAppContext,
   } = useAppContext();
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
-  // API call to get the current model (refresh with project)
+  // API call to get the current model with a set intervall
   const { currentModel, reFetchSimpleModel } = useGetSimpleModel(projectName, currentScheme);
-  useEffect(() => {
-    reFetchSimpleModel();
-  }, [project, reFetchSimpleModel]);
+
+  // useEffect(() => {
+  //   const intervalId = setInterval(reFetchSimpleModel, 3000);
+  //   reFetchSimpleModel();
+  //   return () => {
+  //     clearInterval(intervalId);
+  //   };
+  // }, [reFetchSimpleModel]);
 
   // function to change refresh frequency
   const refreshFreq = (newValue: number) => {
@@ -41,17 +47,24 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   };
 
   // create form
-  const { register, handleSubmit, control, reset, watch } = useForm<SimpleModelModel>({
+  const { register, handleSubmit, control, watch, setValue } = useForm<SimpleModelModel>({
     defaultValues: {
-      model: currentModel ? currentModel.model : 'liblinear',
+      model: 'liblinear',
       features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
-      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500, max_features: null },
+      params: { cost: 13, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500, max_features: null },
     },
   });
 
   // state for the model selected to modify parameters
   const selectedModel = watch('model');
+
+  useEffect(() => {
+    if (currentModel && currentModel.params) {
+      setValue('model', currentModel.model);
+      toPairs(currentModel.params).map(([key, value]) => setValue(`params.${key}`, value));
+    }
+  }, [currentModel, setValue]);
 
   // hooks to update
   const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
@@ -59,13 +72,20 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   // action when form validated
   const onSubmit: SubmitHandler<SimpleModelModel> = async (formData) => {
     await updateSimpleModel(formData);
-    reset();
-    // SET THE VALUE FROM THE STATE
+    //reset();
   };
 
   return (
     <div>
       <span className="explanations">Train a prediction model on the current annotated data</span>
+
+      {/* {currentModel && (
+        <div>
+          Current model : {currentModel.model} - Parameters : {JSON.stringify(currentModel.params)}{' '}
+          - Statistics {JSON.stringify(currentModel.statistics)}
+        </div>
+      )} */}
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <label htmlFor="model">Select a model</label>
         <select id="model" {...register('model')}>
@@ -76,7 +96,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         {
           //generate_config(selectedSimpleModel)
           (selectedModel == 'liblinear' && (
-            <div>
+            <div key="liblinear">
               <label htmlFor="cost">Cost</label>
               <input
                 type="number"
@@ -87,7 +107,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             </div>
           )) ||
             (selectedModel == 'knn' && (
-              <div>
+              <div key="knn">
                 <label htmlFor="n_neighbors">Number of neighbors</label>
                 <input
                   type="number"
@@ -98,7 +118,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
               </div>
             )) ||
             (selectedModel == 'lasso' && (
-              <div>
+              <div key="lasso">
                 <label htmlFor="c">C</label>
                 <input
                   type="number"
@@ -109,7 +129,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
               </div>
             )) ||
             (selectedModel == 'multi_naivebayes' && (
-              <div>
+              <div key="multi_naivebayes">
                 <label htmlFor="alpha">Alpha</label>
                 <input
                   type="number"
@@ -130,7 +150,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
               </div>
             )) ||
             (selectedModel == 'randomforest' && (
-              <div>
+              <div key="randomforest">
                 <label htmlFor="n_estimators">Number of estimators</label>
                 <input
                   type="number"

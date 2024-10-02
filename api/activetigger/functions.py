@@ -243,7 +243,7 @@ def fit_model(model, X, Y, labels, **kwargs):
     macro_f1 = f1_score(Yf, Y_pred, average="macro")
     statistics = {
         "f1": list(f1),
-        "weighted_f1": weighted_f1,
+        "weighted_f1": round(weighted_f1, 4),
         "macro_f1": macro_f1,
         "accuracy": accuracy,
         "precision": precision,

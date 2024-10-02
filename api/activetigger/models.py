@@ -848,7 +848,7 @@ class SimpleModel:
         self.proba = None
         self.statistics = None
         self.cv10 = None
-        if not type(model) is str:  # TODO : tester si c'est un modèle
+        if type(model) is not str:  # TODO : tester si c'est un modèle
             self.proba = self.compute_proba(model, X)
             self.statistics = self.compute_statistics(model, X, Y, labels)
             self.cv10 = self.compute_10cv(model, X, Y)
@@ -917,11 +917,11 @@ class SimpleModel:
         )
         macro_f1 = f1_score(Y, Y_pred, average="macro")
         statistics = {
-            "f1": list(f1),
-            "weighted_f1": weighted_f1,
-            "macro_f1": macro_f1,
-            "accuracy": accuracy,
-            "precision": precision,
+            "f1": [round(i, 3) for i in list(f1)],
+            "weighted_f1": round(weighted_f1, 3),
+            "macro_f1": round(macro_f1, 3),
+            "accuracy": round(accuracy, 3),
+            "precision": round(precision, 3),
         }
         return statistics
 

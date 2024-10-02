@@ -1,4 +1,5 @@
-import { ChangeEvent, FC, useMemo } from 'react';
+import { ChangeEvent, FC, useEffect, useMemo } from 'react';
+import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 
@@ -25,13 +26,22 @@ export const SelectionManagement: FC = () => {
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 
-  const currentModel = useMemo(() => {
-    return authenticatedUser &&
-      currentScheme &&
-      project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
-      ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-      : null;
-  }, [project, currentScheme, authenticatedUser]);
+  // const currentModel = useMemo(() => {
+  //   return authenticatedUser &&
+  //     currentScheme &&
+  //     project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
+  //     ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
+  //     : null;
+  // }, [project, currentScheme, authenticatedUser]);
+
+  // API call to get the current model & refetch
+  const { currentModel, reFetchSimpleModel } = useGetSimpleModel(
+    project ? project.params.project_slug : null,
+    currentScheme || null,
+  );
+  useEffect(() => {
+    reFetchSimpleModel();
+  }, [reFetchSimpleModel, project]);
 
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
@@ -121,6 +131,7 @@ export const SelectionManagement: FC = () => {
             <input
               type="checkbox"
               checked={selectionConfig.frameSelection}
+              className="mx-2"
               onChange={(_) => {
                 setAppContext((prev) => ({
                   ...prev,
@@ -134,6 +145,13 @@ export const SelectionManagement: FC = () => {
             />
             Use visualisation frame
           </label>
+          {currentModel && (
+            <div>
+              Model parameters : {JSON.stringify(currentModel.params)}
+              <br />
+              Statistics: {JSON.stringify(currentModel.statistics)}
+            </div>
+          )}
         </details>
       </div>
     </div>
