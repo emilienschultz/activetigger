@@ -122,11 +122,20 @@ export const SelectionManagement: FC = () => {
         </div>
       </div>
       <div className="d-flex align-items-center">
-        <div className="explanations mx-3">
-          Active selection : {currentModel ? currentModel['model'] : 'No model trained'}
-        </div>
-        <details>
-          <summary>Advanced options</summary>
+        <details className="mx-2">
+          <summary className="explanations">
+            Active selection : {currentModel ? currentModel['model'] : 'No model trained'}
+          </summary>
+          {currentModel && (
+            <div>
+              Model parameters : {JSON.stringify(currentModel.params)}
+              <br />
+              Statistics: {JSON.stringify(currentModel.statistics)}
+            </div>
+          )}
+        </details>
+        <details className="mx-2">
+          <summary className="explanations">Advanced options</summary>
           <label className="mx-4" style={{ display: 'block' }}>
             <input
               type="checkbox"
@@ -145,13 +154,6 @@ export const SelectionManagement: FC = () => {
             />
             Use visualisation frame
           </label>
-          {currentModel && (
-            <div>
-              Model parameters : {JSON.stringify(currentModel.params)}
-              <br />
-              Statistics: {JSON.stringify(currentModel.statistics)}
-            </div>
-          )}
         </details>
       </div>
     </div>

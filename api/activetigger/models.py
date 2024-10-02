@@ -923,6 +923,7 @@ class SimpleModel:
             "accuracy": round(accuracy, 3),
             "precision": round(precision, 3),
         }
+        print("statistics", statistics)
         return statistics
 
     def compute_10cv(self, model, X, Y):

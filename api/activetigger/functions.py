@@ -242,11 +242,11 @@ def fit_model(model, X, Y, labels, **kwargs):
     )
     macro_f1 = f1_score(Yf, Y_pred, average="macro")
     statistics = {
-        "f1": list(f1),
-        "weighted_f1": round(weighted_f1, 4),
-        "macro_f1": macro_f1,
-        "accuracy": accuracy,
-        "precision": precision,
+        "f1": [round(i, 3) for i in list(f1)],
+        "weighted_f1": round(weighted_f1, 3),
+        "macro_f1": round(macro_f1, 3),
+        "accuracy": round(accuracy),
+        "precision": round(precision),
     }
 
     # compute 10-crossvalidation
