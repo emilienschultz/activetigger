@@ -181,7 +181,9 @@ class SimpleModelModel(BaseModel):
 
     features: list
     model: str
-    params: Dict[str, Any] | Dict[str, Dict[str, Any]] | None
+    params: (
+        Dict[str, str | float | bool] | Dict[str, Dict[str, str | float | bool]] | None
+    )
     scheme: str
     standardize: Optional[bool] = True
 
@@ -302,7 +304,7 @@ class LassoParams(BaseModel):
 class Multi_naivebayesParams(BaseModel):
     alpha: float
     fit_prior: bool
-    class_prior: bool
+    class_prior: bool | None
 
 
 class BertParams(BaseModel):

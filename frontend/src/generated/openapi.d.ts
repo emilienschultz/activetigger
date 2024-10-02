@@ -1565,8 +1565,12 @@ export interface components {
             /** Model */
             model: string;
             /** Params */
-            params: Record<string, never> | {
-                [key: string]: Record<string, never> | undefined;
+            params: {
+                [key: string]: (string | number | boolean) | undefined;
+            } | {
+                [key: string]: {
+                    [key: string]: (string | number | boolean) | undefined;
+                } | undefined;
             } | null;
             /** Scheme */
             scheme: string;

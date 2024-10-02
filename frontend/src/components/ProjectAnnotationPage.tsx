@@ -155,6 +155,14 @@ export const ProjectAnnotationPage: FC = () => {
 
   const handleKeyboardEvents = useCallback(
     (ev: KeyboardEvent) => {
+      // prevent shortkey to perturb the inputs
+      // const activeElement = document.activeElement;
+      // const isFormField =
+      //   activeElement?.tagName === 'INPUT' ||
+      //   activeElement?.tagName === 'TEXTAREA' ||
+      //   activeElement?.tagName === 'SELECT';
+      // if (isFormField) return;
+
       availableLabels.forEach((label, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           applyLabel(label, elementId);

@@ -966,7 +966,7 @@ class Schemes:
 
         TODO : replace all "add" with "train" in the code
         """
-        if not scheme in self.available():
+        if scheme not in self.available():
             return {"error": "Scheme doesn't exist"}
 
         if isinstance(kind, str):
@@ -1512,9 +1512,7 @@ class Project(Server):
 
         return {"success": "test dataset added"}
 
-    def update_simplemodel(
-        self, simplemodel: SimpleModelModel, username: str, n_min: int = 10
-    ) -> dict:
+    def update_simplemodel(self, simplemodel: SimpleModelModel, username: str) -> dict:
         """
         Update simplemodel on the base of an already existing
         simplemodel object
@@ -1530,7 +1528,7 @@ class Project(Server):
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
             return {"error": "2 different labels needed"}
 
-        # force dfm for multi_naivebayes
+        # only dfm feature for multi_naivebayes (FORCE IT)
         if simplemodel.model == "multi_naivebayes":
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
@@ -1538,16 +1536,21 @@ class Project(Server):
         # test if the parameters have the correct format
         try:
             validation = self.simplemodels.validation[simplemodel.model]
-            r = validation(**simplemodel.params)
+            validation(**simplemodel.params)
         except ValidationError as e:
             return {"error": e.json()}
 
+        # get data
         df_features = self.features.get(simplemodel.features)
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
 
         # test for a minimum of annotated elements
-        if len(df_scheme) < n_min:
-            return {"error": f"there are less than {n_min} annotated rows"}
+        counts = df_scheme["labels"].value_counts()
+        valid_categories = counts[counts >= 3]
+        if len(valid_categories) < 2:
+            return {
+                "error": "there are less than 2 categories with 3 annotated elements"
+            }
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)

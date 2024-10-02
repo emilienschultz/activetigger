@@ -53,7 +53,6 @@ export const ProjectPage: FC = () => {
   };
 
   const activeUsers = project?.users?.active ? project?.users?.active : [];
-  console.log(project?.params);
 
   const columns: readonly Column<Row>[] = [
     {

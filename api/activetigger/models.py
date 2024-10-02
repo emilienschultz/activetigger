@@ -194,8 +194,6 @@ class BertModel:
         return r
 
 
-
-
 class BertModels:
     """
     Managing bertmodel training
@@ -420,7 +418,6 @@ class BertModels:
             "path": b.path,
             "file_name": "predict.parquet",
         }
-        print(args)
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = "predicting"
         self.computing[user] = [b, unique_id]
@@ -553,19 +550,19 @@ class SimpleModels:
     - train simplemodels
     """
 
-    available_models:dict
-    validation:dict
-    existing:dict
-    computing:dict
-    path:Path
-    queue:Any
-    save_file:str
+    available_models: dict
+    validation: dict
+    existing: dict
+    computing: dict
+    path: Path
+    queue: Any
+    save_file: str
 
     def __init__(self, path: Path, queue):
         """
         Init Simplemodels class
         """
-            # Models and default parameters
+        # Models and default parameters
         self.available_models = {
             "liblinear": {"cost": 1},
             "knn": {"n_neighbors": 3},
@@ -631,9 +628,9 @@ class SimpleModels:
         """
         Select a specific model in the repo
         """
-        if not user in self.existing:
+        if user not in self.existing:
             return "This user has no model"
-        if not scheme in self.existing[user]:
+        if scheme not in self.existing[user]:
             return "The model for this scheme does not exist"
         return self.existing[user][scheme]
 
@@ -692,7 +689,7 @@ class SimpleModels:
 
         # Select model
         if name == "knn":
-            model = KNeighborsClassifier(n_neighbors=model_params["n_neighbors"])
+            model = KNeighborsClassifier(n_neighbors=int(model_params["n_neighbors"]))
 
         if name == "lasso":
             model = LogisticRegression(
@@ -728,12 +725,13 @@ class SimpleModels:
         # launch the compuation (model + statistics) as a future process
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
+        print(args)
         unique_id = self.queue.add("simplemodel", functions.fit_model, args)
         # future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
         sm = SimpleModel(
             name, user, X, Y, labels, "computing", features, standardize, model_params
         )
-        if not user in self.computing:
+        if user not in self.computing:
             self.computing[user] = {}
         self.computing[user][scheme] = {"queue": unique_id, "sm": sm}
 
@@ -770,20 +768,20 @@ class SimpleModels:
                     sm.proba = results["proba"]
                     sm.cv10 = results["cv10"]
                     sm.statistics = results["statistics"]
-                    if not u in self.existing:
+                    if u not in self.existing:
                         self.existing[u] = {}
                     self.existing[u][s] = sm
                     del self.computing[u]
                     self.queue.delete(unique_id)
                     self.dumps()
-                except:
+                except Exception as e:
                     print("Simplemodel failed")
+                    print(e)
                     del self.computing[u]
                     self.queue.delete(unique_id)
 
 
 class SimpleModel:
-
     name: str
     user: str
     features: list

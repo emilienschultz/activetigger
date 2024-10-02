@@ -1,7 +1,8 @@
-import { FC, useState } from 'react';
-import { SubmitHandler, useForm } from 'react-hook-form';
-
+import { FC, useMemo } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import Select from 'react-select';
 import { useUpdateSimpleModel } from '../core/api';
+import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { SimpleModelModel } from '../types';
 
@@ -12,6 +13,14 @@ interface SimpleModelManagementProps {
   availableFeatures: string[];
 }
 
+// TODO : SWITCH TO DEDICATED TYPED API
+interface SimpleModelParams {
+  model: string;
+  features: string[];
+  params: Record<string, Record<string, number>>;
+  statistics: Record<string, Record<string, number>>;
+}
+
 export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   projectName,
   currentScheme,
@@ -20,25 +29,39 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 }) => {
   // element from the context to refresh parameter of the model
   const {
-    appContext: { freqRefreshSimpleModel },
+    appContext: { freqRefreshSimpleModel, currentProject: project },
     setAppContext,
   } = useAppContext();
+
+  // get current model
+  const { authenticatedUser } = useAuth();
+  const currentModel = useMemo(() => {
+    return authenticatedUser &&
+      currentScheme &&
+      project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
+      ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
+      : null;
+  }, [project, currentScheme, authenticatedUser]) as SimpleModelParams | null;
 
   const refreshFreq = (newValue: number) => {
     setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
   };
 
+  // available features
+  const features = availableFeatures.map((e) => ({ value: e, label: e }));
+
   // form management
-  const { register, handleSubmit, reset } = useForm<SimpleModelModel>({
+  const { register, handleSubmit, control, reset, watch } = useForm<SimpleModelModel>({
     defaultValues: {
-      features: [],
-      model: '',
+      model: currentModel ? currentModel.model : 'liblinear',
+      features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
+      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, fit_prior: 'True', n_estimators: 500 },
     },
   });
 
-  // state for the model selected
-  const [selectedSimpleModel, setSelectedSimpleModel] = useState('');
+  // state for the model selected to modify parameters
+  const selectedModel = watch('model');
 
   // hooks to update
   const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
@@ -51,130 +74,105 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     // SET THE VALUE FROM THE STATE
   };
 
-  // define config elements
-  const generate_config = (model_name: string): JSX.Element => {
-    if (model_name == 'liblinear')
-      return (
-        <div>
-          <label htmlFor="cost">Cost</label>
-          <input
-            type="number"
-            step="1"
-            id="cost"
-            value={availableSimpleModels.liblinear.cost}
-            {...register('params.cost', { valueAsNumber: true })}
-          ></input>
-        </div>
-      );
-    if (model_name == 'knn')
-      return (
-        <div>
-          <label htmlFor="n_neighbors">Number of neighbors</label>
-          <input
-            type="number"
-            step="1"
-            id="n_neighbors"
-            value={availableSimpleModels.knn.n_neighbors}
-            {...register('params.n_neighbors', { valueAsNumber: true })}
-          ></input>
-        </div>
-      );
-    if (model_name == 'lasso')
-      return (
-        <div>
-          <label htmlFor="c">C</label>
-          <input
-            type="number"
-            step="1"
-            id="c"
-            value={availableSimpleModels.lasso.c}
-            {...register('params.c', { valueAsNumber: true })}
-          ></input>
-        </div>
-      );
-    if (model_name == 'multi_naivebayes')
-      return (
-        <div>
-          <label htmlFor="alpha">Alpha</label>
-          <input
-            type="number"
-            id="alpha"
-            value={availableSimpleModels.multi_naivebayes.alpha}
-            {...register('params.alpha', { valueAsNumber: true })}
-          ></input>
-          <label htmlFor="fit_prior">Fit prior</label>
-          <select
-            id="fit_prior"
-            value={availableSimpleModels.multi_naivebayes.fit_prior}
-            {...register('params.fit_prior')}
-          >
-            <option>False</option>
-            <option>True</option>
-          </select>
-          <label htmlFor="class_prior">Class prior</label>
-          <input
-            type="number"
-            id="class_prior"
-            value={availableSimpleModels.multi_naivebayes.class_prior}
-            {...register('params.class_prior')}
-          ></input>
-        </div>
-      );
-    if (model_name == 'randomforest')
-      return (
-        <div>
-          <label htmlFor="n_estimators">Number of estimators</label>
-          <input
-            type="number"
-            step="1"
-            id="n_estimators"
-            value={availableSimpleModels.randomforest.n_estimators}
-            {...register('params.n_estimators', { valueAsNumber: true })}
-          ></input>
-          <label htmlFor="max_features">Max features</label>
-          <input
-            type="number"
-            step="1"
-            id="max_features"
-            value={availableSimpleModels.randomforest.max_features}
-            {...register('params.max_features', { valueAsNumber: true })}
-          ></input>
-        </div>
-      );
-    return <div></div>;
-  };
-
   return (
     <div>
       <span className="explanations">Train a prediction model on the current annotated data</span>
       <form onSubmit={handleSubmit(onSubmit)}>
         <label htmlFor="model">Select a model</label>
-        <select
-          id="model"
-          {...register('model')}
-          onChange={(e) => {
-            setSelectedSimpleModel(e.currentTarget.value);
-          }}
-        >
+        <select id="model" {...register('model')}>
           {Object.keys(availableSimpleModels).map((e) => (
             <option key={e}>{e}</option>
           ))}{' '}
         </select>
-        {generate_config(selectedSimpleModel)}
+        {
+          //generate_config(selectedSimpleModel)
+          (selectedModel == 'liblinear' && (
+            <div>
+              <label htmlFor="cost">Cost</label>
+              <input
+                type="number"
+                step="1"
+                id="cost"
+                {...register('params.cost', { valueAsNumber: true })}
+              ></input>
+            </div>
+          )) ||
+            (selectedModel == 'knn' && (
+              <div>
+                <label htmlFor="n_neighbors">Number of neighbors</label>
+                <input
+                  type="number"
+                  step="1"
+                  id="n_neighbors"
+                  {...register('params.n_neighbors', { valueAsNumber: true })}
+                ></input>
+              </div>
+            )) ||
+            (selectedModel == 'lasso' && (
+              <div>
+                <label htmlFor="c">C</label>
+                <input
+                  type="number"
+                  step="1"
+                  id="C"
+                  {...register('params.C', { valueAsNumber: true })}
+                ></input>
+              </div>
+            )) ||
+            (selectedModel == 'multi_naivebayes' && (
+              <div>
+                <label htmlFor="alpha">Alpha</label>
+                <input
+                  type="number"
+                  id="alpha"
+                  {...register('params.alpha', { valueAsNumber: true })}
+                ></input>
+                <label htmlFor="fit_prior">Fit prior</label>
+                <select id="fit_prior" {...register('params.fit_prior')}>
+                  <option>False</option>
+                  <option>True</option>
+                </select>
+                <label htmlFor="class_prior">Class prior</label>
+                <input type="number" id="class_prior" {...register('params.class_prior')}></input>
+              </div>
+            )) ||
+            (selectedModel == 'randomforest' && (
+              <div>
+                <label htmlFor="n_estimators">Number of estimators</label>
+                <input
+                  type="number"
+                  step="1"
+                  id="n_estimators"
+                  {...register('params.n_estimators', { valueAsNumber: true })}
+                ></input>
+                <label htmlFor="max_features">Max features</label>
+                <input
+                  type="number"
+                  step="1"
+                  id="max_features"
+                  {...register('params.max_features', { valueAsNumber: true })}
+                ></input>
+              </div>
+            ))
+        }
         <div>
           <label htmlFor="features">Select features</label>
-          <select
-            id="features"
-            {...register('features')}
-            multiple
-            defaultValue={Object.values(availableFeatures)}
-          >
-            {Object.values(availableFeatures).map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}{' '}
-          </select>
+          {/* Specific management of the component with the react-form controller */}
+          <Controller
+            name="features"
+            control={control}
+            render={({ field: { value, onChange } }) => (
+              <Select
+                options={features}
+                isMulti
+                value={features.filter((feature) => value?.includes(feature.value))}
+                onChange={(selectedOptions) => {
+                  onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+                }}
+              />
+            )}
+            rules={{ required: true }}
+          />
         </div>
         <button className="btn btn-primary btn-validation">Train</button>
         <div>
