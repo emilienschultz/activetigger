@@ -814,7 +814,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Simplemodel
+         * @description Get available simplemodel for the project/user/scheme if any
+         */
+        get: operations["get_simplemodel_models_simplemodel_get"];
         put?: never;
         /**
          * Post Simplemodel
@@ -1579,6 +1583,30 @@ export interface components {
              * @default true
              */
             standardize: boolean | null;
+        };
+        /**
+         * SimpleModelOutModel
+         * @description Trained simplemodel
+         */
+        SimpleModelOutModel: {
+            /** Features */
+            features: unknown[];
+            /** Model */
+            model: string;
+            /** Params */
+            params: {
+                [key: string]: (string | number | boolean) | undefined;
+            } | {
+                [key: string]: {
+                    [key: string]: (string | number | boolean) | undefined;
+                } | undefined;
+            } | null;
+            /** Scheme */
+            scheme: string;
+            /** Username */
+            username: string;
+            /** Statistics */
+            statistics: Record<string, never>;
         };
         /**
          * TableAnnotationsModel
@@ -2955,6 +2983,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_simplemodel_models_simplemodel_get: {
+        parameters: {
+            query: {
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimpleModelOutModel"];
                 };
             };
             /** @description Validation Error */

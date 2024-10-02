@@ -188,6 +188,21 @@ class SimpleModelModel(BaseModel):
     standardize: Optional[bool] = True
 
 
+class SimpleModelOutModel(BaseModel):
+    """
+    Trained simplemodel
+    """
+
+    features: list
+    model: str
+    params: (
+        Dict[str, str | float | bool] | Dict[str, Dict[str, str | float | bool]] | None
+    )
+    scheme: str
+    username: str
+    statistics: dict
+
+
 class BertModelParametersModel(BaseModel):
     """
     Parameters for bertmodel training
@@ -303,8 +318,8 @@ class LassoParams(BaseModel):
 
 class Multi_naivebayesParams(BaseModel):
     alpha: float
-    fit_prior: bool
-    class_prior: bool | None
+    fit_prior: bool = True
+    class_prior: Optional[str] | None = None
 
 
 class BertParams(BaseModel):

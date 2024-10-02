@@ -683,6 +683,34 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
 }
 
 /**
+ * Get trained simplemodel for a user/scheme
+ */
+export function useGetSimpleModel(project_slug: string | null, scheme: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getSimpleModel = useAsyncMemo(async () => {
+    if (scheme && project_slug) {
+      const res = await api.GET('/models/simplemodel', {
+        params: {
+          query: {
+            project_slug: project_slug,
+            scheme: scheme,
+          },
+        },
+      });
+      if (!res.error && res.data) {
+        return res.data;
+      }
+    }
+    return null;
+  }, [project_slug, scheme, fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { currentModel: getAsyncMemoData(getSimpleModel), reFetchSimpleModel: reFetch };
+}
+
+/**
  * Get users for a project
  */
 export function useUsersAuth(projectSlug: string | null) {

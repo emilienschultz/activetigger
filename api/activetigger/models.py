@@ -606,6 +606,25 @@ class SimpleModels:
                 }
         return r
 
+    def get(self, scheme: str, username: str):
+        """
+        Get a specific simplemodel
+        """
+        if username in self.existing:
+            if scheme in self.existing[username]:
+                sm = self.existing[username][scheme]
+                return {
+                    "success": {
+                        "model": sm.name,
+                        "params": sm.model_params,
+                        "features": sm.features,
+                        "statistics": sm.statistics,
+                        "scheme": scheme,
+                        "username": username,
+                    }
+                }
+        return {"error": "No model for this user and scheme"}
+
     def training(self):
         """
         Training simplemodels
@@ -718,14 +737,17 @@ class SimpleModels:
             # TODO: calculate class prior for docfreq & termfreq
             model = MultinomialNB(
                 alpha=model_params["alpha"],
-                fit_prior=model_params["fit_prior"],
-                class_prior=model_params["class_prior"],
+                fit_prior=-model_params["fit_prior"]
+                if "fit_prior" in model_params
+                else False,
+                class_prior=model_params["class_prior"]
+                if "class_prior" in model_params
+                else None,
             )
 
         # launch the compuation (model + statistics) as a future process
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
-        print(args)
         unique_id = self.queue.add("simplemodel", functions.fit_model, args)
         # future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
         sm = SimpleModel(

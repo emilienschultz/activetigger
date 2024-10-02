@@ -44,6 +44,7 @@ from activetigger.datamodels import (
     ReconciliationModel,
     SchemeModel,
     SimpleModelModel,
+    SimpleModelOutModel,
     TableAnnotationsModel,
     TableOutModel,
     TestSetDataModel,
@@ -1325,11 +1326,25 @@ async def post_simplemodel(
     """
     Compute simplemodel
     """
-    print(simplemodel)
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
+
+
+@app.get("/models/simplemodel", dependencies=[Depends(verified_user)])
+async def get_simplemodel(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    scheme: str,
+) -> SimpleModelOutModel:
+    """
+    Get available simplemodel for the project/user/scheme if any
+    """
+    r = project.simplemodels.get(scheme, current_user.username)
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
+    return SimpleModelOutModel(**r["success"])
 
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])

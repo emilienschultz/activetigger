@@ -1,8 +1,7 @@
-import { FC, useMemo } from 'react';
+import { FC, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
-import { useUpdateSimpleModel } from '../core/api';
-import { useAuth } from '../core/auth';
+import { useGetSimpleModel, useUpdateSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
 import { SimpleModelModel } from '../types';
 
@@ -11,14 +10,6 @@ interface SimpleModelManagementProps {
   currentScheme: string | null;
   availableSimpleModels: Record<string, Record<string, number>>;
   availableFeatures: string[];
-}
-
-// TODO : SWITCH TO DEDICATED TYPED API
-interface SimpleModelParams {
-  model: string;
-  features: string[];
-  params: Record<string, Record<string, number>>;
-  statistics: Record<string, Record<string, number>>;
 }
 
 export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
@@ -33,15 +24,11 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     setAppContext,
   } = useAppContext();
 
-  // get current model
-  const { authenticatedUser } = useAuth();
-  const currentModel = useMemo(() => {
-    return authenticatedUser &&
-      currentScheme &&
-      project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
-      ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-      : null;
-  }, [project, currentScheme, authenticatedUser]) as SimpleModelParams | null;
+  // get the current model
+  const { currentModel, reFetchSimpleModel } = useGetSimpleModel(projectName, currentScheme);
+  useEffect(() => {
+    reFetchSimpleModel();
+  }, [project, reFetchSimpleModel]);
 
   const refreshFreq = (newValue: number) => {
     setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
@@ -50,13 +37,12 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
-  // form management
   const { register, handleSubmit, control, reset, watch } = useForm<SimpleModelModel>({
     defaultValues: {
       model: currentModel ? currentModel.model : 'liblinear',
       features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
-      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, fit_prior: 'True', n_estimators: 500 },
+      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500 },
     },
   });
 
@@ -68,7 +54,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   // action when form validated
   const onSubmit: SubmitHandler<SimpleModelModel> = async (formData) => {
-    console.log(formData);
     await updateSimpleModel(formData);
     reset();
     // SET THE VALUE FROM THE STATE
@@ -127,13 +112,17 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
                   id="alpha"
                   {...register('params.alpha', { valueAsNumber: true })}
                 ></input>
-                <label htmlFor="fit_prior">Fit prior</label>
-                <select id="fit_prior" {...register('params.fit_prior')}>
-                  <option>False</option>
-                  <option>True</option>
-                </select>
+                {/* <label htmlFor="fit_prior">
+                  Fit prior
+                  <input
+                    type="checkbox"
+                    id="fit_prior"
+                    {...register('params.fit_prior')}
+                    className="mx-3"
+                  />
+                </label>
                 <label htmlFor="class_prior">Class prior</label>
-                <input type="number" id="class_prior" {...register('params.class_prior')}></input>
+                <input type="number" id="class_prior" {...register('params.class_prior')}></input> */}
               </div>
             )) ||
             (selectedModel == 'randomforest' && (

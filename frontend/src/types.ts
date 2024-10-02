@@ -52,6 +52,7 @@ export type BertModelParametersModel = components['schemas']['BertModelParameter
 export type TestSetDataModel = components['schemas']['TestSetDataModel'];
 
 export type ProjectionInStrictModel = components['schemas']['ProjectionInStrictModel'];
+
 export type ProjectionModelParams =
   | components['schemas']['TsneModel']
   | components['schemas']['UmapModel'];
