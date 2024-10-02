@@ -727,9 +727,11 @@ class SimpleModels:
             # it is “mtry” in R and it is “max_features” Python
             #  The sample.fraction parameter specifies the fraction of observations to be used in each tree
             model = RandomForestClassifier(
-                n_estimators=model_params["n_estimators"],
+                n_estimators=int(model_params["n_estimators"]),
                 random_state=42,
-                max_features=model_params["max_features"],
+                max_features=int(model_params["max_features"])
+                if model_params["max_features"]
+                else None,
             )
 
         if name == "multi_naivebayes":

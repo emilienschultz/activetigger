@@ -1536,7 +1536,7 @@ class Project(Server):
         # test if the parameters have the correct format
         try:
             validation = self.simplemodels.validation[simplemodel.model]
-            validation(**simplemodel.params)
+            params = validation(**simplemodel.params).dict()
         except ValidationError as e:
             return {"error": e.json()}
 
@@ -1562,7 +1562,7 @@ class Project(Server):
             df=data,
             col_labels="labels",
             col_features=col_features,
-            model_params=simplemodel.params,
+            model_params=params,
             standardize=simplemodel.standardize,
         )
 

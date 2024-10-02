@@ -5,6 +5,8 @@ import { useGetSimpleModel, useUpdateSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
 import { SimpleModelModel } from '../types';
 
+// TODO: default values + avoid generic parameters
+
 interface SimpleModelManagementProps {
   projectName: string | null;
   currentScheme: string | null;
@@ -18,31 +20,33 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   availableSimpleModels,
   availableFeatures,
 }) => {
-  // element from the context to refresh parameter of the model
+  // element from the context
   const {
     appContext: { freqRefreshSimpleModel, currentProject: project },
     setAppContext,
   } = useAppContext();
 
-  // get the current model
+  // available features
+  const features = availableFeatures.map((e) => ({ value: e, label: e }));
+
+  // API call to get the current model (refresh with project)
   const { currentModel, reFetchSimpleModel } = useGetSimpleModel(projectName, currentScheme);
   useEffect(() => {
     reFetchSimpleModel();
   }, [project, reFetchSimpleModel]);
 
+  // function to change refresh frequency
   const refreshFreq = (newValue: number) => {
     setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
   };
 
-  // available features
-  const features = availableFeatures.map((e) => ({ value: e, label: e }));
-
+  // create form
   const { register, handleSubmit, control, reset, watch } = useForm<SimpleModelModel>({
     defaultValues: {
       model: currentModel ? currentModel.model : 'liblinear',
       features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
-      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500 },
+      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500, max_features: null },
     },
   });
 

@@ -1570,10 +1570,10 @@ export interface components {
             model: string;
             /** Params */
             params: {
-                [key: string]: (string | number | boolean) | undefined;
+                [key: string]: (string | number | boolean | null) | undefined;
             } | {
                 [key: string]: {
-                    [key: string]: (string | number | boolean) | undefined;
+                    [key: string]: (string | number | boolean | null) | undefined;
                 } | undefined;
             } | null;
             /** Scheme */

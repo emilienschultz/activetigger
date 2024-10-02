@@ -182,8 +182,11 @@ class SimpleModelModel(BaseModel):
     features: list
     model: str
     params: (
-        Dict[str, str | float | bool] | Dict[str, Dict[str, str | float | bool]] | None
+        Dict[str, str | float | bool | int | None]
+        | Dict[str, Dict[str, str | float | bool | int | None]]
+        | None
     )
+    # TODO CAN BE BETTER
     scheme: str
     standardize: Optional[bool] = True
 
