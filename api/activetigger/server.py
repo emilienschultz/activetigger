@@ -1528,8 +1528,10 @@ class Project(Server):
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
             return {"error": "2 different labels needed"}
 
-        # only dfm feature for multi_naivebayes (FORCE IT)
+        # only dfm feature for multi_naivebayes (FORCE IT if available else error)
         if simplemodel.model == "multi_naivebayes":
+            if "dfm" not in self.features.map:
+                return {"error": "dfm feature not available for multi_naivebayes"}
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
 

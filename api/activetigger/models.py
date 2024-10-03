@@ -739,7 +739,7 @@ class SimpleModels:
             # TODO: calculate class prior for docfreq & termfreq
             model = MultinomialNB(
                 alpha=model_params["alpha"],
-                fit_prior=-model_params["fit_prior"]
+                fit_prior=model_params["fit_prior"]
                 if "fit_prior" in model_params
                 else False,
                 class_prior=model_params["class_prior"]

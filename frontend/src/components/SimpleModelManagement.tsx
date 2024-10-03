@@ -52,7 +52,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
       model: 'liblinear',
       features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
-      params: { cost: 13, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500, max_features: null },
+      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500, max_features: null },
     },
   });
 

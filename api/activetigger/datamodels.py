@@ -199,7 +199,9 @@ class SimpleModelOutModel(BaseModel):
     features: list
     model: str
     params: (
-        Dict[str, str | float | bool] | Dict[str, Dict[str, str | float | bool]] | None
+        Dict[str, str | float | bool | None]
+        | Dict[str, Dict[str, str | float | bool | None]]
+        | None
     )
     scheme: str
     username: str
