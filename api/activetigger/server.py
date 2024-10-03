@@ -344,6 +344,7 @@ class Server:
         """
         Start the server
         """
+
         self.db_name = db_name
         self.data_raw = data_raw
         self.features_file = features_file
@@ -383,6 +384,13 @@ class Server:
         self.db_manager = DatabaseManager(self.db)
         self.queue = Queue(self.n_workers)
         self.users = Users(self.db_manager)
+
+        # logging
+        logging.basicConfig(
+            filename=self.path / "log_server.log",
+            level=logging.DEBUG,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        )
 
     def __del__(self):
         """
@@ -1556,6 +1564,9 @@ class Project(Server):
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
+
+        logger_simplemodel = logging.getLogger("simplemodel")
+        logger_simplemodel.info("Building the simplemodel request")
         self.simplemodels.add_simplemodel(
             user=username,
             scheme=simplemodel.scheme,

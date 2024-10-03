@@ -128,9 +128,28 @@ export const SelectionManagement: FC = () => {
           </summary>
           {currentModel && (
             <div>
-              Model parameters : {JSON.stringify(currentModel.params)}
-              <br />
-              Statistics: {JSON.stringify(currentModel.statistics)}
+              Model parameters :
+              <ul>
+                {currentModel.params &&
+                  (currentModel.params && Object.entries(currentModel.params)).map(
+                    ([key, value], i) => (
+                      <li key={i}>
+                        {key} - {value}
+                      </li>
+                    ),
+                  )}
+              </ul>
+              Statistics:
+              <ul>
+                {currentModel.params &&
+                  (currentModel.statistics && Object.entries(currentModel.statistics)).map(
+                    ([key, value], i) => (
+                      <li key={i}>
+                        {key} - {JSON.stringify(value)}
+                      </li>
+                    ),
+                  )}
+              </ul>
             </div>
           )}
         </details>

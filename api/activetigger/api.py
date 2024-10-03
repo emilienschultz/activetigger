@@ -121,15 +121,10 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
 #######
 
 # to log specific events from api
-logging.basicConfig(
-    filename="log_server.log",
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 logger = logging.getLogger("api")
+logger_simplemodel = logging.getLogger("simplemodel")
 
 # start the backend server
-logger.info("Start API")
 server = Server()
 timer = time.time()
 
@@ -1329,6 +1324,8 @@ async def post_simplemodel(
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    server.log_action(current_user.username, "Compute simplemodel", project.name)
+    logger_simplemodel.info("Start computing simplemodel")
     return None
 
 

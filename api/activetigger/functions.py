@@ -215,7 +215,6 @@ def fit_model(model, X, Y, labels, **kwargs):
     """
     Fit simplemodel and calculate statistics
     """
-
     # drop NA values
     f = Y.notnull()
     Xf = X[f]
@@ -232,7 +231,7 @@ def fit_model(model, X, Y, labels, **kwargs):
 
     # compute statistics
     Y_pred = model.predict(Xf)
-    f1 = f1_score(Yf, Y_pred, average=None)
+    f1 = f1_score(Yf.values, Y_pred, average=None)
     weighted_f1 = f1_score(Yf, Y_pred, average="weighted")
     accuracy = accuracy_score(Yf, Y_pred)
     precision = precision_score(
@@ -245,8 +244,8 @@ def fit_model(model, X, Y, labels, **kwargs):
         "f1": [round(i, 3) for i in list(f1)],
         "weighted_f1": round(weighted_f1, 3),
         "macro_f1": round(macro_f1, 3),
-        "accuracy": round(accuracy),
-        "precision": round(precision),
+        "accuracy": round(accuracy, 3),
+        "precision": round(precision, 3),
     }
 
     # compute 10-crossvalidation

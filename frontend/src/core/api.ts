@@ -668,7 +668,7 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
             scheme: scheme,
             model: formData.model,
             params: formData.params,
-            standardize: true,
+            standardize: false,
           },
         });
 

@@ -52,7 +52,14 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
       model: 'liblinear',
       features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
-      params: { cost: 1, C: 32, n_neighbors: 3, alpha: 1, n_estimators: 500, max_features: null },
+      params: {
+        cost: 1,
+        C: 32,
+        n_neighbors: 3,
+        alpha: 1,
+        n_estimators: 500,
+        max_features: null,
+      },
     },
   });
 
@@ -136,16 +143,17 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
                   id="alpha"
                   {...register('params.alpha', { valueAsNumber: true })}
                 ></input>
-                {/* <label htmlFor="fit_prior">
+                <label htmlFor="fit_prior">
                   Fit prior
                   <input
                     type="checkbox"
                     id="fit_prior"
                     {...register('params.fit_prior')}
                     className="mx-3"
+                    checked
                   />
                 </label>
-                <label htmlFor="class_prior">Class prior</label>
+                {/* <label htmlFor="class_prior">Class prior</label>
                 <input type="number" id="class_prior" {...register('params.class_prior')}></input> */}
               </div>
             )) ||

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pickle
 import shutil
@@ -623,7 +624,7 @@ class SimpleModels:
                         "username": username,
                     }
                 }
-        return {"error": "No model for this user and scheme"}
+        return {"success": "No model for this user and scheme"}
 
     def training(self):
         """
@@ -700,6 +701,8 @@ class SimpleModels:
         """
         A a new simplemodel for a user and a scheme
         """
+        logger_simplemodel = logging.getLogger("simplemodel")
+        logger_simplemodel.info("Intiating the computation process for the simplemodel")
         X, Y, labels = self.load_data(df, col_labels, col_features, standardize)
 
         # default parameters
@@ -717,6 +720,7 @@ class SimpleModels:
 
         if name == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
+            print("MODEL PARAM", model_params["cost"])
             model = LogisticRegression(
                 penalty="l2", solver="lbfgs", C=model_params["cost"]
             )
@@ -735,23 +739,23 @@ class SimpleModels:
             )
 
         if name == "multi_naivebayes":
+            # small workaround for parameters
+            if "class_prior" in model_params and model_params["class_prior"]:
+                class_prior = model_params["class_prior"]
+            else:
+                class_prior = None
             # Only with dtf or tfidf for features
             # TODO: calculate class prior for docfreq & termfreq
             model = MultinomialNB(
                 alpha=model_params["alpha"],
-                fit_prior=model_params["fit_prior"]
-                if "fit_prior" in model_params
-                else False,
-                class_prior=model_params["class_prior"]
-                if "class_prior" in model_params
-                else None,
+                fit_prior=model_params["fit_prior"],
+                class_prior=class_prior,
             )
 
         # launch the compuation (model + statistics) as a future process
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
         unique_id = self.queue.add("simplemodel", functions.fit_model, args)
-        # future_result = self.executor.submit(functions.fit_model, model=model, X=X, Y=Y, labels=labels)
         sm = SimpleModel(
             name, user, X, Y, labels, "computing", features, standardize, model_params
         )
