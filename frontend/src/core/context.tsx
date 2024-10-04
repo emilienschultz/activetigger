@@ -31,6 +31,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   displayConfig: {
     displayContext: false,
     displayPrediction: false,
+    displayHistory: false,
     frameSize: 50,
   },
   selectionConfig: {

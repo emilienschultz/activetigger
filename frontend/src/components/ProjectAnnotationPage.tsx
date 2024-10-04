@@ -189,6 +189,8 @@ export const ProjectAnnotationPage: FC = () => {
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
+  console.log(element);
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -311,6 +313,14 @@ export const ProjectAnnotationPage: FC = () => {
             </div>
           )
         }
+        {
+          //display informations
+          displayConfig.displayHistory && (
+            <div className="d-flex mb-2 justify-content-center display-prediction">
+              History : {JSON.stringify(element?.history)}
+            </div>
+          )
+        }
       </div>
       <div className="row">
         <div className="d-flex flex-wrap gap-2 justify-content-center">
@@ -400,6 +410,23 @@ export const ProjectAnnotationPage: FC = () => {
                   style={{ marginRight: '10px' }}
                 />
                 Display informations
+              </label>
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={displayConfig.displayHistory}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      displayConfig: {
+                        ...displayConfig,
+                        displayHistory: !displayConfig.displayHistory,
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                Display annotation history
               </label>
               <label style={{ display: 'block', marginBottom: '10px' }}>
                 Text frame size

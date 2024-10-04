@@ -103,6 +103,7 @@ export interface GenerateConfig {
 export interface DisplayConfig {
   displayPrediction: boolean;
   displayContext: boolean;
+  displayHistory: boolean;
   frameSize: number;
 }
 
