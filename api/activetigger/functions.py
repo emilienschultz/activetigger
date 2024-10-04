@@ -191,13 +191,10 @@ def compute_umap(features: DataFrame, params: dict, **kwargs):
     """
     Compute UMAP
     """
-    try:
-        scaled_features = StandardScaler().fit_transform(features)
-        reducer = umap.UMAP(**params)
-        reduced_features = reducer.fit_transform(scaled_features)
-        df = pd.DataFrame(reduced_features, index=features.index)
-    except:
-        df = DataFrame()
+    scaled_features = StandardScaler().fit_transform(features)
+    reducer = umap.UMAP(**params)
+    reduced_features = reducer.fit_transform(scaled_features)
+    df = pd.DataFrame(reduced_features, index=features.index)
     return df
 
 

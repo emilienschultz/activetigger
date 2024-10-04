@@ -196,22 +196,23 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           />
         </div>
         <button className="btn btn-primary btn-validation">Train</button>
-        <div>
-          <label htmlFor="frequencySlider">
-            Refresh the model every {freqRefreshSimpleModel} annotations
-          </label>
-          <span>5</span>
+        <div className="d-flex align-items-center">
+          <label htmlFor="frequencySlider">Refresh</label>
+          Every
           <input
-            type="range"
+            type="number"
             id="frequencySlider"
-            min="5"
+            min="0"
             max="500"
+            value={freqRefreshSimpleModel}
             onChange={(e) => {
               refreshFreq(Number(e.currentTarget.value));
+              console.log(e.currentTarget.value);
             }}
             step="1"
+            style={{ width: '80px', margin: '10px' }}
           />
-          <span>500</span>
+          annotations (0 for no refreshing)
         </div>
       </form>
     </div>

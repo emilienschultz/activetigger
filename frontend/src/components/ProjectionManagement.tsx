@@ -1,9 +1,11 @@
 import { pick } from 'lodash';
 import { FC, useEffect, useState } from 'react';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 import {
   DomainTuple,
+  VictoryAxis,
   VictoryChart,
   VictoryLegend,
   VictoryScatter,
@@ -61,9 +63,9 @@ export const ProjectionManagement: FC = () => {
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableProjections = project?.projections.options ? project?.projections.options : null;
 
-  const { register, handleSubmit, watch } = useForm<ProjectionInStrictModel>({
+  const { register, handleSubmit, watch, control } = useForm<ProjectionInStrictModel>({
     defaultValues: {
-      method: '',
+      method: 'umap',
       features: [],
       params: {
         //common
@@ -73,13 +75,16 @@ export const ProjectionManagement: FC = () => {
         learning_rate: 'auto',
         init: 'random',
         // UMAP
-        metric: 'euclidean',
+        metric: 'cosine',
         n_neighbors: 15,
         min_dist: 0.1,
       },
     },
   });
   const selectedMethod = watch('method'); // state for the model selected to modify parameters
+
+  // available features
+  const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // action when form validated
   const { updateProjection } = useUpdateProjection(projectName, currentScheme);
@@ -174,7 +179,7 @@ export const ProjectionManagement: FC = () => {
     <div>
       {projectionData && labelColorMapping && (
         <div className="row">
-          <div className="col-6" style={{ height: 500, padding: 30 }}>
+          <div className="col-8">
             {
               <VictoryChart
                 theme={VictoryTheme.material}
@@ -182,6 +187,13 @@ export const ProjectionManagement: FC = () => {
                 height={300}
                 width={300}
               >
+                <VictoryAxis
+                  style={{
+                    axis: { stroke: 'transparent' },
+                    ticks: { stroke: 'transparent' },
+                    tickLabels: { fill: 'transparent' },
+                  }}
+                />
                 <VictoryScatter
                   style={{
                     data: {
@@ -219,6 +231,7 @@ export const ProjectionManagement: FC = () => {
                     },
                   ]}
                 />
+
                 <VictoryLegend
                   x={125}
                   y={0}
@@ -273,13 +286,21 @@ export const ProjectionManagement: FC = () => {
         </select>
         <div>
           <label htmlFor="features">Select features</label>
-          <select id="features" {...register('features')} multiple>
-            {Object.values(availableFeatures).map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}{' '}
-          </select>
+          <Controller
+            name="features"
+            control={control}
+            render={({ field: { value, onChange } }) => (
+              <Select
+                options={features}
+                isMulti
+                value={features.filter((feature) => value?.includes(feature.value))}
+                onChange={(selectedOptions) => {
+                  onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+                }}
+              />
+            )}
+            rules={{ required: true }}
+          />
         </div>
         {availableProjections && selectedMethod == 'tsne' && (
           <div>
@@ -322,6 +343,9 @@ export const ProjectionManagement: FC = () => {
             ></input>
             <label htmlFor="metric">Metric</label>
             <select {...register('params.metric')}>
+              <option key="cosine" value="cosine">
+                cosine
+              </option>
               <option key="euclidean" value="euclidean">
                 euclidean
               </option>

@@ -1334,7 +1334,7 @@ async def get_simplemodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
-) -> SimpleModelOutModel:
+) -> SimpleModelOutModel | None:
     """
     Get available simplemodel for the project/user/scheme if any
     """
@@ -1419,13 +1419,13 @@ async def stop_bert(
     """
     Stop user process
     """
-    if not current_user.username in project.bertmodels.computing:
+    if current_user.username not in project.bertmodels.computing:
         raise HTTPException(status_code=400, detail="No process found")
     unique_id = project.bertmodels.computing[current_user.username][1]
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"stop bert training", project.name)
+    server.log_action(current_user.username, "stop bert training", project.name)
     return None
 
 

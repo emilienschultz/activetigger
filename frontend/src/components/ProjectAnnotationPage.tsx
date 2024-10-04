@@ -189,8 +189,6 @@ export const ProjectAnnotationPage: FC = () => {
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
-  console.log(element);
-
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">

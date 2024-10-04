@@ -2,8 +2,9 @@ import { omit } from 'lodash';
 import { unparse } from 'papaparse';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
-import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
+import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 
 import { useCreateProject } from '../../core/api';
@@ -45,6 +46,9 @@ export const ProjectCreationForm: FC = () => {
         {h}
       </option>
     ));
+  const columnsSelect =
+    data?.headers.filter((h) => h !== '').map((e) => ({ value: e, label: e })) || [];
+
   // select the text on input on click
   const handleClickOnText = (event: React.MouseEvent<HTMLInputElement>) => {
     const target = event.target as HTMLInputElement;
@@ -168,15 +172,23 @@ export const ProjectCreationForm: FC = () => {
                   <label className="form-label" htmlFor="col_text">
                     Column for text (all the selected fields will be concactenated)
                   </label>
-                  <select
-                    className="form-control"
-                    id="col_text"
-                    disabled={data === null}
-                    {...register('col_text')}
-                    multiple
-                  >
-                    {columns}
-                  </select>
+
+                  <Controller
+                    name="col_text"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={columnsSelect}
+                        isMulti
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                    rules={{ required: true }}
+                  />
                   <label className="form-label" htmlFor="col_label">
                     Column for label (if exists)
                   </label>
@@ -193,15 +205,21 @@ export const ProjectCreationForm: FC = () => {
                   <label className="form-label" htmlFor="cols_context">
                     Column for contextual information to display (if needed)
                   </label>
-                  <select
-                    className="form-control"
-                    id="cols_context"
-                    disabled={data === null}
-                    {...register('cols_context')}
-                    multiple
-                  >
-                    {columns}
-                  </select>
+                  <Controller
+                    name="cols_context"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={columnsSelect}
+                        isMulti
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                  />
 
                   <label className="form-label" htmlFor="n_train">
                     Number of elements in the train set
@@ -226,15 +244,21 @@ export const ProjectCreationForm: FC = () => {
                   <label className="form-label" htmlFor="cols_test">
                     Stratify the test set by
                   </label>
-                  <select
-                    className="form-control"
-                    id="cols_test"
-                    disabled={data === null}
-                    {...register('cols_test')}
-                    multiple
-                  >
-                    {columns}
-                  </select>
+                  <Controller
+                    name="cols_test"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={columnsSelect}
+                        isMulti
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                  />
                 </div>
                 <button type="submit" className="btn btn-primary form-button" disabled={spinner}>
                   Create
