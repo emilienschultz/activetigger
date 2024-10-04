@@ -624,7 +624,7 @@ class SimpleModels:
                         "username": username,
                     }
                 }
-        return {"success": "No model for this user and scheme"}
+        return {"error": "No model for this user and scheme"}
 
     def training(self):
         """

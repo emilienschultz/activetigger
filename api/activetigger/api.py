@@ -1339,8 +1339,8 @@ async def get_simplemodel(
     Get available simplemodel for the project/user/scheme if any
     """
     r = project.simplemodels.get(scheme, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    if "error" in r:  # case where there is no model
+        return None
     return SimpleModelOutModel(**r["success"])
 
 
