@@ -31,7 +31,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // API call to get the current model with a set intervall
-  const { currentModel, reFetchSimpleModel } = useGetSimpleModel(projectName, currentScheme);
+  const { currentModel } = useGetSimpleModel(projectName, currentScheme);
 
   // useEffect(() => {
   //   const intervalId = setInterval(reFetchSimpleModel, 3000);
