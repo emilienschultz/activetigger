@@ -2,7 +2,12 @@ import { FC, useEffect, useState } from 'react';
 import DataGrid, { Column } from 'react-data-grid';
 import { useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
-import { useGenerate, useGeneratedElements, useGetGenerationsFile } from '../core/api';
+import {
+  useGenerate,
+  useGeneratedElements,
+  useGetGenerationsFile,
+  useStopGenerate,
+} from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
@@ -46,6 +51,8 @@ export const GenPage: FC = () => {
     generateConfig.selection_mode || null,
     generateConfig.token,
   );
+
+  const { stopGenerate } = useStopGenerate(projectName || null);
 
   // call api to get a sample of elements
   const { generated } = useGeneratedElements(projectName || null, 10, isGenerating || false);
@@ -185,10 +192,18 @@ export const GenPage: FC = () => {
             <label htmlFor="prompt">Prompt </label>
           </div>
           <div className="col-12 text-center">
-            {!!isGenerating && <PulseLoader />}
-            <button className="btn btn-primary  mt-3" onClick={generate} disabled={!!isGenerating}>
-              Generate
-            </button>
+            {isGenerating ? (
+              <div>
+                <PulseLoader />
+                <button className="btn btn-primary mt-3" onClick={stopGenerate}>
+                  Stop
+                </button>
+              </div>
+            ) : (
+              <button className="btn btn-primary mt-3" onClick={generate} disabled={!!isGenerating}>
+                Generate
+              </button>
+            )}
             <div className="explanations"> It can take some time if you have a large batch</div>
           </div>
         </div>

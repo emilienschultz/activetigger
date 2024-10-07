@@ -897,7 +897,7 @@ async def post_reconciliation(
     return None
 
 
-@app.post("/elements/generate", dependencies=[Depends(verified_user)])
+@app.post("/elements/generate/start", dependencies=[Depends(verified_user)])
 async def postgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -940,14 +940,32 @@ async def postgenerate(
     return None
 
 
-@app.get("/elements/generate", dependencies=[Depends(verified_user)])
+@app.post("/elements/generate/stop", dependencies=[Depends(verified_user)])
+async def stop_generation(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> None:
+    """
+    Stop current generation
+    """
+    if current_user.username not in project.generations.generating:
+        raise HTTPException(status_code=400, detail="No process found for this user")
+    unique_id = project.generations.generating[current_user.username]["unique_id"]
+    r = server.queue.kill(unique_id)
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
+    server.log_action(current_user.username, "stop generation", project.name)
+    return None
+
+
+@app.get("/elements/generate/elements", dependencies=[Depends(verified_user)])
 async def getgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     n_elements: int,
 ) -> TableOutModel:
     """
-    Get last predictions
+    Get elements from prediction
     """
     try:
         table = project.generations.get_generated(
@@ -1029,24 +1047,6 @@ async def post_tag(
         return None
 
     raise HTTPException(status_code=400, detail="Wrong action")
-
-
-@app.post("/stop", dependencies=[Depends(verified_user)])
-async def stop_process(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> None:
-    """
-    Stop user process
-    """
-    if not current_user.username in project.bertmodels.computing:
-        raise HTTPException(status_code=400, detail="Process missing")
-    unique_id = project.bertmodels.computing[current_user.username][1]
-    r = server.queue.kill(unique_id)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"stop process", project.name)
-    return None
 
 
 # Schemes management

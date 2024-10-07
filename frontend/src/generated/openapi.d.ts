@@ -574,7 +574,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/elements/generate": {
+    "/elements/generate/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Postgenerate
+         * @description Launch a call to generate from a prompt
+         *     Only one possible by user
+         */
+        post: operations["postgenerate_elements_generate_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elements/generate/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Generation
+         * @description Stop current generation
+         */
+        post: operations["stop_generation_elements_generate_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elements/generate/elements": {
         parameters: {
             query?: never;
             header?: never;
@@ -583,16 +624,11 @@ export interface paths {
         };
         /**
          * Getgenerate
-         * @description Get last predictions
+         * @description Get elements from prediction
          */
-        get: operations["getgenerate_elements_generate_get"];
+        get: operations["getgenerate_elements_generate_elements_get"];
         put?: never;
-        /**
-         * Postgenerate
-         * @description Launch a call to generate from a prompt
-         *     Only one possible by user
-         */
-        post: operations["postgenerate_elements_generate_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1595,10 +1631,10 @@ export interface components {
             model: string;
             /** Params */
             params: {
-                [key: string]: (string | number | boolean) | undefined;
+                [key: string]: (string | number | boolean | null) | undefined;
             } | {
                 [key: string]: {
-                    [key: string]: (string | number | boolean) | undefined;
+                    [key: string]: (string | number | boolean | null) | undefined;
                 } | undefined;
             } | null;
             /** Scheme */
@@ -2591,39 +2627,7 @@ export interface operations {
             };
         };
     };
-    getgenerate_elements_generate_get: {
-        parameters: {
-            query: {
-                n_elements: number;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableOutModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    postgenerate_elements_generate_post: {
+    postgenerate_elements_generate_start_post: {
         parameters: {
             query: {
                 project_slug: string;
@@ -2645,6 +2649,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_generation_elements_generate_stop_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getgenerate_elements_generate_elements_get: {
+        parameters: {
+            query: {
+                n_elements: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOutModel"];
                 };
             };
             /** @description Validation Error */
@@ -3014,7 +3081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SimpleModelOutModel"];
+                    "application/json": components["schemas"]["SimpleModelOutModel"] | null;
                 };
             };
             /** @description Validation Error */

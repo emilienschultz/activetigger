@@ -720,7 +720,6 @@ class SimpleModels:
 
         if name == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
-            print("MODEL PARAM", model_params["cost"])
             model = LogisticRegression(
                 penalty="l2", solver="lbfgs", C=model_params["cost"]
             )

@@ -17,7 +17,7 @@ import { ProjectTrainPage } from '../components/ProjectTrainPage';
 import { ProjectsPage } from '../components/ProjectsPage';
 import { UsersPage } from '../components/UsersPage';
 
-import { GenPage } from '../components/GenPage';
+import { GenPage } from '../components/ProjectGenPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 
 export function getRouter() {

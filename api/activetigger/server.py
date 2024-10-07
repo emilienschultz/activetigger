@@ -1345,7 +1345,7 @@ class Generations:
     def __init__(self, queue: Queue, db_manager: DatabaseManager) -> None:
         self.queue = queue
         self.db_manager = db_manager
-        self.generating = {}
+        self.generating = {}  # user:{"unique_id", "number","api"}
 
     def update_generations(self):
         """

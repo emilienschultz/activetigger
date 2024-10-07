@@ -111,12 +111,11 @@ export const ProjectAnnotationPage: FC = () => {
   ]);
 
   // hooks to update simplemodel
-  const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
-
-  // use a memory to only update once
+  const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false); // use a memory to only update once
   const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
 
   useEffect(() => {
+    // conditions to update the model
     if (
       !updatedSimpleModel &&
       currentModel &&
@@ -156,12 +155,12 @@ export const ProjectAnnotationPage: FC = () => {
   const handleKeyboardEvents = useCallback(
     (ev: KeyboardEvent) => {
       // prevent shortkey to perturb the inputs
-      // const activeElement = document.activeElement;
-      // const isFormField =
-      //   activeElement?.tagName === 'INPUT' ||
-      //   activeElement?.tagName === 'TEXTAREA' ||
-      //   activeElement?.tagName === 'SELECT';
-      // if (isFormField) return;
+      const activeElement = document.activeElement;
+      const isFormField =
+        activeElement?.tagName === 'INPUT' ||
+        activeElement?.tagName === 'TEXTAREA' ||
+        activeElement?.tagName === 'SELECT';
+      if (isFormField) return;
 
       availableLabels.forEach((label, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {

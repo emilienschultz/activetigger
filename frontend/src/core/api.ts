@@ -884,6 +884,29 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
 }
 
 /**
+ * Stop training process for the user
+ */
+export function useStopTrainBertModel(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const stopTraining = useCallback(async () => {
+    if (projectSlug) {
+      const res = await api.POST('/models/bert/stop', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+          },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Training stopped' });
+      return true;
+    }
+    return null;
+  }, [projectSlug, notify]);
+
+  return { stopTraining };
+}
+
+/**
  * Rename bert model
  */
 export function useRenameBertModel(projectSlug: string | null) {
@@ -1389,7 +1412,7 @@ export function useGenerate(
   const generate = useCallback(async () => {
     console.log(projectSlug, api_name, endpoint, prompt, n_batch, currentScheme, mode);
     if (projectSlug && api_name && endpoint && prompt && n_batch && currentScheme && mode) {
-      const res = await api.POST('/elements/generate', {
+      const res = await api.POST('/elements/generate/start', {
         params: {
           query: {
             project_slug: projectSlug,
@@ -1415,6 +1438,29 @@ export function useGenerate(
 }
 
 /**
+ * Stop generation process for the user
+ */
+export function useStopGenerate(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const stopGenerate = useCallback(async () => {
+    if (projectSlug) {
+      const res = await api.POST('/elements/generate/stop', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+          },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Generation stopped' });
+      return true;
+    }
+    return null;
+  }, [projectSlug, notify]);
+
+  return { stopGenerate };
+}
+
+/**
  * Get generated elements
  */
 export function useGeneratedElements(
@@ -1424,7 +1470,7 @@ export function useGeneratedElements(
 ) {
   const getGeneratedElements = useAsyncMemo(async () => {
     if (n_elements && project_slug) {
-      const res = await api.GET('/elements/generate', {
+      const res = await api.GET('/elements/generate/elements', {
         params: {
           query: {
             project_slug: project_slug,

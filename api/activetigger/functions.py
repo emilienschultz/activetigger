@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import os
 import shutil
-from multiprocessing import Event
 from pathlib import Path
 from typing import Optional
 
@@ -271,7 +270,7 @@ def train_bert(
     base_model: str,
     params: dict,
     test_size: float,
-    event: Optional[Event] = None,
+    event: Optional[multiprocessing.synchronize.Event] = None,
     **kwargs,
 ) -> bool:
     """
@@ -359,14 +358,14 @@ def train_bert(
 
     # Build test dataset
     df = df.train_test_split(test_size=test_size)  # stratify_by_column="label"
-    logger.info(f"Train/test dataset created")
+    logger.info("Train/test dataset created")
 
     # Model
     bert = AutoModelForSequenceClassification.from_pretrained(
         base_model, num_labels=len(labels), id2label=id2label, label2id=label2id
     )
 
-    logger.info(f"Model loaded")
+    logger.info("Model loaded")
 
     if gpu:
         bert.cuda()
@@ -404,7 +403,7 @@ def train_bert(
         def on_step_end(self, args, state, control, **kwargs):
             logger.info(f"Step {state.global_step}")
             # end if event set
-            if event != None:
+            if event is not None:
                 if event.is_set():
                     logger.info("Event set, stopping training.")
                     control.should_training_stop = True
@@ -460,7 +459,7 @@ def predict_bert(
     path: Path,
     df: DataFrame,
     col_text: str,
-    event: multiprocessing.Event,
+    event: multiprocessing.synchronize.Event,
     col_labels: str | None = None,
     batch: int = 128,
     file_name: str = "predict.parquet",
@@ -595,7 +594,7 @@ def generate(
     api: str,
     endpoint: str,
     prompt: str,
-    event: Optional[multiprocessing.Event] = None,
+    event: Optional[multiprocessing.synchronize.Event] = None,
     unique_id: Optional[str] = None,
     **kwargs,
 ) -> None:

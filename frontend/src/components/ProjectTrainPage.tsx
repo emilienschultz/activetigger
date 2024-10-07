@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
+import PulseLoader from 'react-spinners/PulseLoader';
 import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
 
 import 'ag-grid-community/styles/ag-grid.css';
@@ -14,6 +15,7 @@ import {
   useDeleteBertModel,
   useModelInformations,
   useRenameBertModel,
+  useStopTrainBertModel,
   useTrainBertModel,
 } from '../core/api';
 import { useAppContext } from '../core/context';
@@ -74,6 +76,7 @@ export const ProjectTrainPage: FC = () => {
 
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
+  const { stopTraining } = useStopTrainBertModel(projectSlug || null);
   const {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
@@ -366,11 +369,20 @@ export const ProjectTrainPage: FC = () => {
                     <label>Adapt:</label>
                     <input type="checkbox" {...registerNewModel('parameters.adapt')} />
                   </div>
-
-                  <button className="btn btn-primary me-2 mt-2" disabled={isComputing}>
-                    Train
-                  </button>
+                  {!isComputing && (
+                    <button key="start" className="btn btn-primary me-2 mt-2">
+                      Train the model
+                    </button>
+                  )}
                 </form>
+                {isComputing && (
+                  <div>
+                    <PulseLoader />
+                    <button key="stop" className="btn btn-primary mt-3" onClick={stopTraining}>
+                      Stop current training
+                    </button>
+                  </div>
+                )}
               </Tab>
             </Tabs>
           </div>
