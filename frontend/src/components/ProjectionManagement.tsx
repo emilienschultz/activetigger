@@ -1,7 +1,9 @@
 import { pick } from 'lodash';
 import { FC, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { FaLock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+
 import Select from 'react-select';
 import {
   DomainTuple,
@@ -38,7 +40,9 @@ const colormap = [
 ];
 
 // define the component
-export const ProjectionManagement: FC = () => {
+export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
+  currentElementId,
+}) => {
   // hook for all the parameters
   const {
     appContext: { currentProject: project, currentScheme, currentProjection, selectionConfig },
@@ -173,12 +177,33 @@ export const ProjectionManagement: FC = () => {
   // element to display
   const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
 
+  console.log(project);
+
   // TODO : add to configuration context
 
   return (
     <div>
       {projectionData && labelColorMapping && (
         <div className="row">
+          <label className="d-flex align-items-center mx-4" style={{ display: 'block' }}>
+            <input
+              type="checkbox"
+              checked={selectionConfig.frameSelection}
+              className="mx-2"
+              onChange={(_) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: {
+                    ...selectionConfig,
+                    frameSelection: !selectionConfig.frameSelection,
+                  },
+                }));
+                console.log(selectionConfig.frameSelection);
+              }}
+            />
+            <FaLock />
+            Use visualisation frame to lock the selection
+          </label>
           <div className="col-8">
             {
               <VictoryChart
@@ -197,12 +222,15 @@ export const ProjectionManagement: FC = () => {
                 <VictoryScatter
                   style={{
                     data: {
-                      fill: ({ datum }) => labelColorMapping[datum.labels],
-                      opacity: 0.7,
+                      fill: ({ datum }) =>
+                        datum.index === currentElementId
+                          ? 'black'
+                          : labelColorMapping[datum.labels],
+                      opacity: ({ datum }) => (datum.index === currentElementId ? 1 : 0.5),
                       cursor: 'pointer',
                     },
                   }}
-                  size={2}
+                  size={({ datum }) => (datum.index === currentElementId ? 5 : 2)}
                   labels={({ datum }) => datum.index}
                   labelComponent={
                     <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />
@@ -252,7 +280,7 @@ export const ProjectionManagement: FC = () => {
               </VictoryChart>
             }
           </div>
-          <div className="col-6">
+          <div className="col-4">
             {selectedElement && (
               <div className="mt-5">
                 Element:{' '}

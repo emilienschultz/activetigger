@@ -397,7 +397,7 @@ def train_bert(
         metric_for_best_model="eval_loss",
     )
 
-    logger.info(f"Start training")
+    logger.info("Start training")
 
     class CustomLoggingCallback(TrainerCallback):
         def on_step_end(self, args, state, control, **kwargs):

@@ -370,7 +370,7 @@ export const ProjectAnnotationPage: FC = () => {
               />
             </Tab>
             <Tab eventKey="visualization" title="Visualization">
-              <ProjectionManagement />
+              <ProjectionManagement currentElementId={elementId || null} />
             </Tab>
 
             <Tab eventKey="parameters" title="Display parameters">
