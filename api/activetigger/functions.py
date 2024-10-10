@@ -194,7 +194,8 @@ def compute_umap(features: DataFrame, params: dict, **kwargs):
     reducer = umap.UMAP(**params)
     reduced_features = reducer.fit_transform(scaled_features)
     df = pd.DataFrame(reduced_features, index=features.index)
-    return df
+    df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
+    return df_scaled
 
 
 def compute_tsne(features: DataFrame, params: dict, **kwargs):
@@ -204,7 +205,8 @@ def compute_tsne(features: DataFrame, params: dict, **kwargs):
     scaled_features = StandardScaler().fit_transform(features)
     reduced_features = TSNE(**params).fit_transform(scaled_features)
     df = pd.DataFrame(reduced_features, index=features.index)
-    return df
+    df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
+    return df_scaled
 
 
 def fit_model(model, X, Y, labels, **kwargs):

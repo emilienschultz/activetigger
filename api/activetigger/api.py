@@ -661,7 +661,7 @@ async def get_projection(
     """
     Get projection data if computed
     """
-    if not current_user.username in project.features.projections:
+    if current_user.username not in project.features.projections:
         return None
 
     if scheme is None:  # only the projection without specific annotations

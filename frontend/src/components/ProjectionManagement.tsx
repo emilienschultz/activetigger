@@ -16,6 +16,7 @@ import {
   VictoryZoomContainer,
 } from 'victory';
 
+import { LuZoomIn } from 'react-icons/lu';
 import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -158,8 +159,20 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     setAppContext,
   ]);
 
-  // manage zoom selection in the context
+  // zoom management
+  const initialZoomDomain = {
+    x: [-1, 1] as DomainTuple,
+    y: [-1, 1] as DomainTuple,
+  };
+  const step = 0.3;
+
+  const [zoomDomain, setZoomDomain] = useState<{ x?: DomainTuple; y?: DomainTuple } | null>(
+    initialZoomDomain,
+  );
   const handleZoom = (domain: ZoomDomain) => {
+    if (!zoomDomain) setZoomDomain(initialZoomDomain);
+    setZoomDomain(domain);
+
     if (domain.x && domain.y) {
       setAppContext((prev) => ({
         ...prev,
@@ -173,42 +186,60 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
       }));
     }
   };
+  const handleZoomIn = () => {
+    if (zoomDomain && zoomDomain.x && zoomDomain.y) {
+      setZoomDomain({
+        x: [Number(zoomDomain.x[0]) + step, Number(zoomDomain.x[1]) - step],
+        y: [Number(zoomDomain.y[0]) + step, Number(zoomDomain.y[1]) - step],
+      });
+    }
+  };
+  const resetZoom = () => {
+    setZoomDomain(initialZoomDomain);
+  };
 
   // element to display
   const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
-
-  console.log(project);
-
-  // TODO : add to configuration context
 
   return (
     <div>
       {projectionData && labelColorMapping && (
         <div className="row">
-          <label className="d-flex align-items-center mx-4" style={{ display: 'block' }}>
-            <input
-              type="checkbox"
-              checked={selectionConfig.frameSelection}
-              className="mx-2"
-              onChange={(_) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frameSelection: !selectionConfig.frameSelection,
-                  },
-                }));
-                console.log(selectionConfig.frameSelection);
-              }}
-            />
-            <FaLock />
-            Use visualisation frame to lock the selection
-          </label>
           <div className="col-8">
+            <div className="d-flex align-items-center justify-content-center">
+              <label className="d-flex align-items-center mx-4" style={{ display: 'block' }}>
+                <input
+                  type="checkbox"
+                  checked={selectionConfig.frameSelection}
+                  className="mx-2"
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: {
+                        ...selectionConfig,
+                        frameSelection: !selectionConfig.frameSelection,
+                      },
+                    }));
+                    console.log(selectionConfig.frameSelection);
+                  }}
+                />
+                <FaLock />
+                {/* Use visualisation frame to lock the selection */}
+              </label>
+              <button onClick={handleZoomIn} className="btn">
+                <LuZoomIn />
+              </button>
+              <button onClick={resetZoom}>Reset zoom</button>
+            </div>
             {
               <VictoryChart
                 theme={VictoryTheme.material}
-                containerComponent={<VictoryZoomContainer onZoomDomainChange={handleZoom} />}
+                containerComponent={
+                  <VictoryZoomContainer
+                    zoomDomain={zoomDomain || initialZoomDomain}
+                    onZoomDomainChange={handleZoom}
+                  />
+                }
                 height={300}
                 width={300}
               >
