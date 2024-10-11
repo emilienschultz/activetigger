@@ -508,7 +508,9 @@ class Server:
         if not self.exists(project_slug):
             return {"error": "Project does not exist"}
 
-        self.projects[project_slug] = Project(project_slug, self.queue, self.db_manager)
+        self.projects[project_slug] = Project(
+            project_slug, self.queue, self.db_manager, path_models=self.path_models
+        )
         return {"success": "Project loaded"}
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
@@ -740,6 +742,7 @@ class Features:
 
     project_slug: str
     path: Path
+    path_model: Path
     queue: Queue
     informations: dict
     content: DataFrame
@@ -748,13 +751,17 @@ class Features:
     projections: dict
     possible_projections: dict
     options: dict
+    lang: str
 
-    def __init__(self, project_slug: str, data_path: Path, queue) -> None:
+    def __init__(
+        self, project_slug: str, data_path: Path, models_path: Path, queue, lang: str
+    ) -> None:
         """
         Initit features
         """
         self.project_slug = project_slug
         self.path = data_path
+        self.path_models = models_path
         self.queue = queue
         self.informations = {}
         content, map = self.load()
@@ -824,7 +831,7 @@ class Features:
             return {"error": "feature name already exists"}
 
         # change type
-        if type(content) == Series:
+        if type(content) is Series:
             content = pd.DataFrame(content)
 
         # add to the table & dictionnary
@@ -915,11 +922,106 @@ class Features:
         """
         # update if new elements added in features
         for f in self.map:
-            if ("regex_" in f) and (not f in self.informations):
+            if ("regex_" in f) and (f not in self.informations):
                 df = self.get(f)
                 if len(df.columns) > 0:
                     self.informations[f] = int(df[df.columns[0]].sum())
         return dict(self.informations)
+
+    def add_regex(self, name: str, value: str, column: pd.Series) -> dict:
+        """
+        Add regex to features
+        """
+        if name in self.map:
+            return {"error": "a feature already has this name"}
+
+        pattern = re.compile(value)
+        print(self.content)
+        f = column.apply(lambda x: bool(pattern.search(x)))
+        self.add(name, f)
+        return {"success": "regex added"}
+
+    def get_column_raw(self, column_name: str) -> dict:
+        """
+        Get column raw dataset
+        """
+        df = pd.read_parquet(self.path / data_raw)
+        if column_name not in list(df.columns):
+            return {"error": "Column doesn't exist"}
+        # filter only train id
+        return {"success": df.loc[self.content.index][column_name]}
+
+    def compute(
+        self, df: pd.Series, name: str, kind: str, parameters: dict, username: str
+    ):
+        """
+        Compute new feature
+        """
+        print(name, kind, parameters, username)
+        if name in self.training:
+            return {"error": "feature already in training"}
+
+        if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
+            return {"error": "Not implemented"}
+
+        # different types of features
+        if kind == "regex":
+            if "value" not in parameters:
+                return {"error": "Parameters missing for the regex"}
+
+            regex_name = f"regex_[{parameters['value']}]_by_{username}"
+            regex_value = parameters["value"]
+            r = self.add_regex(regex_name, regex_value, df)
+            return r
+        elif kind == "dataset":
+            # get the raw column for the train set
+            r = self.get_column_raw(parameters["dataset_col"], df)
+            if "error" in r:
+                return r
+            column = r["success"]
+
+            # convert the column to a specific format
+            if len(column.dropna()) != len(column):
+                return {"error": "Column contains null values"}
+            if parameters["dataset_type"] == "Numeric":
+                try:
+                    column = column.apply(float)
+                except Exception:
+                    return {
+                        "error": "The column can't be transform into numerical feature"
+                    }
+            else:
+                column = column.apply(str)
+
+            # add the feature to the project
+            self.add(
+                f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower(),
+                column,
+            )
+            return None
+        else:
+            if kind == "sbert":
+                args = {"texts": df, "model": "distiluse-base-multilingual-cased-v1"}
+                func = functions.to_sbert
+            elif kind == "fasttext":
+                args = {
+                    "texts": df,
+                    "language": self.lang,
+                    "path_models": self.path_models,
+                }
+                func = functions.to_fasttext
+            elif kind == "dfm":
+                args = parameters
+                args["texts"] = df
+                func = functions.to_dtm
+
+            # add the computation to queue
+            unique_id = self.queue.add("feature", func, args)
+            if unique_id == "error":
+                return unique_id
+            self.training[name] = unique_id
+
+        return {"success": "Feature in training"}
 
 
 class Schemes:
@@ -1438,12 +1540,14 @@ class Project(Server):
     bertmodels: BertModels
     simplemodels: SimpleModels
     generations: Generations
+    path_models: Path
 
     def __init__(
         self,
         project_slug: str,
         queue: Queue,
         db_manager: DatabaseManager,
+        path_models: Path,
     ) -> None:
         """
         Load existing project
@@ -1453,6 +1557,7 @@ class Project(Server):
         self.queue = queue
         self.db_manager = db_manager
         self.params = self.load_params(project_slug)
+        self.path_models = path_models
 
         # check if directory exists
         if self.params.dir is None:
@@ -1469,7 +1574,11 @@ class Project(Server):
             self.db_manager,
         )
         self.features = Features(
-            project_slug, self.params.dir / features_file, self.queue
+            project_slug,
+            self.params.dir / features_file,
+            self.params.dir / self.path_models,
+            self.queue,
+            self.params.language,
         )
         self.bertmodels = BertModels(self.params.dir, self.queue)
         self.simplemodels = SimpleModels(self.params.dir, self.queue)
@@ -1908,18 +2017,6 @@ class Project(Server):
         }
         return r
 
-    def add_regex(self, name: str, value: str) -> dict:
-        """
-        Add regex to features
-        """
-        if name in self.features.map:
-            return {"error": "a feature already has this name"}
-
-        pattern = re.compile(value)
-        f = self.content["text"].apply(lambda x: bool(pattern.search(x)))
-        self.features.add(name, f)
-        return {"success": "regex added"}
-
     def export_features(self, features: list, format: str = "parquet"):
         """
         Export features data in different formats
@@ -2100,13 +2197,3 @@ class Project(Server):
         """
         users = self.db_manager.get_distinct_users(self.name, period)
         return users
-
-    def get_column_raw(self, column_name: str) -> dict:
-        """
-        Get column raw dataset
-        """
-        df = pd.read_parquet(self.params.dir / data_raw)
-        if column_name not in list(df.columns):
-            return {"error": "Column doesn't exist"}
-        # filter only train id
-        return {"success": df.loc[self.content.index][column_name]}

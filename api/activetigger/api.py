@@ -754,7 +754,7 @@ async def get_list_elements(
     dataset: str = "train",
 ) -> TableOutModel:
     """
-    Get table of elements
+    Get a table of elements
     """
     extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
     if "error" in extract:
@@ -868,7 +868,7 @@ async def postgenerate(
     Launch a call to generate from a prompt
     Only one possible by user
     """
-    print("Start generation", request)
+
     # get subset of unlabelled elements
     extract = project.schemes.get_table(
         request.scheme, 0, request.n_batch, request.mode
@@ -893,11 +893,19 @@ async def postgenerate(
         raise HTTPException(
             status_code=500, detail="Error in adding the generation call in the queue"
         )
+
     project.generations.generating[current_user.username] = {
         "unique_id": unique_id,
         "number": request.n_batch,
         "api": request.api,
     }
+
+    server.log_action(
+        current_user.username,
+        "Start generating process",
+        project.params.project_slug,
+    )
+
     return None
 
 
@@ -915,7 +923,9 @@ async def stop_generation(
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "stop generation", project.name)
+    server.log_action(
+        current_user.username, "stop generation", project.params.project_slug
+    )
     return None
 
 
@@ -996,7 +1006,7 @@ async def post_tag(
     if action == "delete":
         r = project.schemes.delete_tag(
             annotation.element_id, annotation.scheme, current_user.username
-        )  # add user deletion
+        )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
@@ -1014,10 +1024,11 @@ async def post_tag(
 # -------------------
 
 
-@app.post("/schemes/label/add", dependencies=[Depends(verified_user)])
+@app.post("/schemes/label/{action}", dependencies=[Depends(verified_user)])
 async def add_label(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    action: ActionModel,
     scheme: str,
     label: str,
 ) -> None:
@@ -1026,34 +1037,25 @@ async def add_label(
     """
     test_rights("modify project element", current_user.username, project.name)
 
-    r = project.schemes.add_label(label, scheme, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=400, detail=r["error"])
-    server.log_action(
-        current_user.username, f"add label {label} to {scheme}", project.name
-    )
-    return None
+    if action == "add":
+        r = project.schemes.add_label(label, scheme, current_user.username)
+        if "error" in r:
+            raise HTTPException(status_code=400, detail=r["error"])
+        server.log_action(
+            current_user.username, f"add label {label} to {scheme}", project.name
+        )
+        return None
 
+    if action == "delete":
+        r = project.schemes.delete_label(label, scheme, current_user.username)
+        if "error" in r:
+            raise HTTPException(status_code=500, detail=r["error"])
+        server.log_action(
+            current_user.username, f"delete label {label} to {scheme}", project.name
+        )
+        return None
 
-@app.post("/schemes/label/delete", dependencies=[Depends(verified_user)])
-async def delete_label(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str,
-    label: str,
-) -> None:
-    """
-    Remove a label from a scheme
-    """
-    test_rights("modify project element", current_user.username, project.name)
-
-    r = project.schemes.delete_label(label, scheme, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
-        current_user.username, f"delete label {label} to {scheme}", project.name
-    )
-    return None
+    raise HTTPException(status_code=500, detail="Wrong action")
 
 
 @app.post("/schemes/label/rename", dependencies=[Depends(verified_user)])
@@ -1065,17 +1067,15 @@ async def rename_label(
     new_label: str,
 ) -> None:
     """
-    Add a label to a scheme
+    Rename a a label
     - create new label (the order is important)
-    - convert tags (need the label to exist, add a new element for each former)
+    - convert existing annotations (need the label to exist, add a new element for each former)
     - delete former label
     """
     test_rights("modify project element", current_user.username, project.name)
 
     # test if the new label exist, either create it
-
     exists = project.schemes.exists_label(scheme, new_label)
-
     if not exists:
         r = project.schemes.add_label(new_label, scheme, current_user.username)
         if "error" in r:
@@ -1164,90 +1164,25 @@ async def post_embeddings(
     - same prcess
     - specific process : function + temporary file + update
     """
+    # manage rights
     test_rights("modify project", current_user.username, project.name)
 
-    # Error management
-    if feature.name in project.features.training:
-        raise HTTPException(
-            status_code=400, detail="This feature is already in training"
-        )
-    if feature.type not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
-        raise HTTPException(status_code=400, detail="Not implemented")
-
-    # Add a regex
-    if feature.type == "regex":
-        if "value" not in feature.parameters:
-            raise HTTPException(
-                status_code=400, detail="Parameters missing for the regex"
-            )
-        regex_name = f"regex_[{feature.parameters['value']}]_by_{current_user.username}"
-        regex_value = feature.parameters["value"]
-        r = project.add_regex(regex_name, regex_value)
-        if "error" in r:
-            raise HTTPException(status_code=400, detail=r["error"])
-        server.log_action(
-            f"add regex {regex_name}",
-            project.name,
-        )
-        return None
-
-    # Add a feature from the dataset
-    if feature.type == "dataset":
-        args = feature.parameters
-        # get the raw column for the train set
-        r = project.get_column_raw(args["dataset_col"])
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-        column = r["success"]
-
-        # convert the column to a specific format
-        if len(column.dropna()) != len(column):
-            return {"error": "Column contains null values"}
-        if args["dataset_type"] == "Numeric":
-            try:
-                column = column.apply(float)
-            except Exception:
-                return {"error": "The column can't be transform into numerical feature"}
-        else:
-            column = column.apply(str)
-
-        # add the feature to the project
-        project.features.add(
-            f"dataset_{args['dataset_col']}_{args['dataset_type']}".lower(), column
-        )
-        return None
-
-    # Features necessitating computation on the text
+    # get the data (for the moment, Features has no access to the data)
     df = project.content["text"]
 
-    # Add SBERT transformation
-    if feature.type == "sbert":
-        args = {"texts": df, "model": "distiluse-base-multilingual-cased-v1"}
-        func = functions.to_sbert
+    # compute the feature
+    r = project.features.compute(
+        df, feature.name, feature.type, feature.parameters, current_user.username
+    )
 
-    # Add fasttext transformation
-    if feature.type == "fasttext":
-        args = {
-            "texts": df,
-            "language": project.params.language,
-            "path_models": server.path_models,
-        }
-        func = functions.to_fasttext
-
-    # Add Data Frequency Matrice
-    if feature.type == "dfm":
-        args = feature.parameters
-        args["texts"] = df
-        func = functions.to_dtm
-
-    # add the computation to queue
-    unique_id = server.queue.add("feature", func, args)
-    if unique_id == "error":
-        raise HTTPException(status_code=500, detail="Error in adding in the queue")
-    project.features.training[feature.name] = unique_id
+    # manage error
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
 
     # Log and return
-    server.log_action(current_user.username, "Compute feature dfm", project.name)
+    server.log_action(
+        current_user.username, f"Compute feature {feature.type}", project.name
+    )
     return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
 
