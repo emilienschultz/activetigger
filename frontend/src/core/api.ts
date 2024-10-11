@@ -426,6 +426,29 @@ export function useDeleteFeature(projectSlug: string | null) {
 }
 
 /**
+ * Get feature infro
+ */
+export function useGetFeatureInfo(project_slug: string | null, project: unknown) {
+  const getFeatureInfo = useAsyncMemo(async () => {
+    if (project_slug) {
+      const res = await api.GET('/features/info', {
+        params: {
+          query: {
+            project_slug: project_slug,
+          },
+        },
+      });
+      if (!res.error && res.data) {
+        return res.data;
+      }
+    }
+    return null;
+  }, [project_slug, project]);
+
+  return { featuresInfo: getAsyncMemoData(getFeatureInfo) };
+}
+
+/**
  * Get the id of the next element
  * with a specific configuration of selection
  *
@@ -577,8 +600,9 @@ export function useAddLabel(projectSlug: string | null, scheme: string | null) {
   const addLabel = useCallback(
     async (label: string) => {
       if (projectSlug && scheme) {
-        const res = await api.POST('/schemes/label/add', {
+        const res = await api.POST('/schemes/label/{action}', {
           params: {
+            path: { action: 'add' },
             query: { project_slug: projectSlug, scheme: scheme, label: label },
           },
         });
@@ -603,8 +627,9 @@ export function useDeleteLabel(projectSlug: string | null, scheme: string | null
   const deleteLabel = useCallback(
     async (label: string) => {
       if (projectSlug && scheme) {
-        const res = await api.POST('/schemes/label/delete', {
+        const res = await api.POST('/schemes/label/{action}', {
           params: {
+            path: { action: 'delete' },
             query: { project_slug: projectSlug, scheme: scheme, label: label },
           },
         });

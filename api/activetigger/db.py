@@ -105,6 +105,18 @@ class Generations(Base):
     answer = Column(Text)
 
 
+class Features(Base):
+    __tablename__ = "features"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    time = Column(TIMESTAMP, server_default=func.current_timestamp())
+    user = Column(String)
+    project = Column(String)
+    name = Column(String)
+    kind = Column(String)
+    parameters = Column(Text)
+    data = Column(String)
+
+
 class DatabaseManager:
     """
     Database management with SQLAlchemy
@@ -293,6 +305,7 @@ class DatabaseManager:
         session.query(Auths).filter(Auths.project == project_slug).delete()
         session.query(Generations).filter(Generations.project == project_slug).delete()
         session.query(Logs).filter(Logs.project == project_slug).delete()
+        session.query(Features).filter(Features.project == project_slug).delete()
         session.commit()
         session.close()
 
@@ -608,3 +621,61 @@ class DatabaseManager:
         results = session.execute(query).fetchall()
         session.close()
         return [[row.element_id, row.annotation, row.user, row.time] for row in results]
+
+    # feature management
+
+    def add_feature(
+        self,
+        project: str,
+        kind: str,
+        name: str,
+        parameters: dict,
+        user: str,
+        data: str = None,
+    ):
+        session = self.Session()
+        feature = Features(
+            project=project,
+            kind=kind,
+            name=name,
+            parameters=parameters,
+            user=user,
+            data=data,
+        )
+        session.add(feature)
+        session.commit()
+        session.close()
+
+    def delete_feature(self, project: str, name: str):
+        session = self.Session()
+        session.query(Features).filter(
+            Features.name == name, Features.project == project
+        ).delete()
+        session.commit()
+        session.close()
+
+    def get_feature(self, project: str, name: str):
+        session = self.Session()
+        feature = (
+            session.query(Features)
+            .filter(Features.name == name, Features.project == project)
+            .first()
+        )
+        session.close()
+        return feature
+
+    def get_project_features(self, project: str):
+        session = self.Session()
+        features = session.query(Features).filter(Features.project == project).all()
+        session.close()
+        print(features)
+        return {
+            i.name: {
+                "time": i.time,
+                "kind": i.kind,
+                "parameters": json.loads(i.parameters),
+                "user": i.user,
+                "data": json.loads(i.data),
+            }
+            for i in features
+        }

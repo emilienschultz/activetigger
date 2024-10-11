@@ -272,7 +272,7 @@ class Users:
         Deleting user
         """
         # specific cases
-        if not name in self.existing_users():
+        if name not in self.existing_users():
             return {"error": "Username does not exist"}
         if name == "root":
             return {"error": "Can't delete root user"}
@@ -286,7 +286,7 @@ class Users:
         """
         Get user from database
         """
-        if not name in self.existing_users():
+        if name not in self.existing_users():
             return {"error": "Username doesn't exist"}
         user = self.db_manager.get_user(name)
         return UserInDBModel(
@@ -736,7 +736,8 @@ class Features:
     """
     Manage project features
     Comment :
-    - as a file
+    - for the moment as a file
+    - database for informations
     - use "__" as separator
     """
 
@@ -752,14 +753,22 @@ class Features:
     possible_projections: dict
     options: dict
     lang: str
+    db_manager: DatabaseManager
 
     def __init__(
-        self, project_slug: str, data_path: Path, models_path: Path, queue, lang: str
+        self,
+        project_slug: str,
+        data_path: Path,
+        models_path: Path,
+        queue,
+        db_manager,
+        lang: str,
     ) -> None:
         """
         Initit features
         """
         self.project_slug = project_slug
+        self.db_manager = db_manager
         self.path = data_path
         self.path_models = models_path
         self.queue = queue
@@ -768,6 +777,7 @@ class Features:
         self.content = content
         self.map = map
         self.training: dict = {}
+        self.lang = lang
 
         # managing projections
         self.projections: dict = {}
@@ -819,29 +829,48 @@ class Features:
         dic = {i: find_strings_with_pattern(data.columns, i) for i in var}
         return data, dic
 
-    def add(self, name: str, content: DataFrame | Series) -> dict:
+    def add(
+        self,
+        name: str,
+        kind: str,
+        username: str,
+        parameters: dict,
+        content: DataFrame | Series,
+    ) -> dict:
         """
         Add feature(s) and save
         """
+        # test name
+        if name in self.map:
+            return {"error": "feature name already exists for this project"}
+
         # test length
         if len(content) != len(self.content):
             raise ValueError("Features don't have the right shape")
 
-        if name in self.map:
-            return {"error": "feature name already exists"}
-
-        # change type
+        # change type for series
         if type(content) is Series:
             content = pd.DataFrame(content)
 
-        # add to the table & dictionnary
+        # change column name with a prefix
         content.columns = [f"{name}__{i}" for i in content.columns]
+
+        # add the mapping
         self.map[name] = list(content.columns)
 
+        # add the feature to the dataset and save
         self.content = pd.concat([self.content, content], axis=1)
-        # save
         self.content.to_parquet(self.path)
 
+        # add informations to database
+        self.db_manager.add_feature(
+            self.project_slug,
+            kind,
+            name,
+            json.dumps(parameters),
+            username,
+            json.dumps(list(content.columns)),
+        )
         return {"success": "feature added"}
 
     def delete(self, name: str):
@@ -849,12 +878,16 @@ class Features:
         Delete feature
         """
         if name not in self.map:
-            return {"error": "feature doesn't exist"}
+            return {"error": "feature doesn't exist in mapping"}
+
+        if self.db_manager.get_feature(self.project_slug, name) is None:
+            return {"error": "feature doesn't exist in database"}
 
         col = self.get([name])
         del self.map[name]
         self.content = self.content.drop(columns=col)
         self.content.to_parquet(self.path)
+        self.db_manager.delete_feature(self.project_slug, name)
         return {"success": "feature deleted"}
 
     def get(self, features: list | str = "all"):
@@ -878,6 +911,19 @@ class Features:
             print("Missing features:", missing)
         return self.content[cols]
 
+    def info(self, name: str):
+        feature = self.db_manager.get_feature(self.project_slug, name)
+        if feature is None:
+            return {"error": "feature doesn't exist in database"}
+        return {
+            "time": feature.time,
+            "name": name,
+            "kind": feature.kind,
+            "username": feature.user,
+            "parameters": json.loads(feature.parameters),
+            "columns": json.loads(feature.data),
+        }
+
     def update_processes(self):
         """
         Check for computing processing completed
@@ -885,7 +931,8 @@ class Features:
         """
         # for features
         for name in self.training.copy():
-            unique_id = self.training[name]
+            unique_id = self.training[name]["unique_id"]
+
             # case the process have been canceled, clean
             if unique_id not in self.queue.current:
                 del self.training[name]
@@ -897,7 +944,10 @@ class Features:
                     print("Error in the feature processing", unique_id)
                 else:
                     df = r["success"]
-                    self.add(name, df)
+                    kind = self.training[name]["kind"]
+                    parameters = self.training[name]["parameters"]
+                    username = self.training[name]["username"]
+                    self.add(name, kind, username, parameters, df)
                     self.queue.delete(unique_id)
                     del self.training[name]
                     print("Add feature", name)
@@ -920,26 +970,15 @@ class Features:
             Maybe not the best solution
             Database ? How to avoid a loop ...
         """
-        # update if new elements added in features
-        for f in self.map:
-            if ("regex_" in f) and (f not in self.informations):
-                df = self.get(f)
-                if len(df.columns) > 0:
-                    self.informations[f] = int(df[df.columns[0]].sum())
-        return dict(self.informations)
-
-    def add_regex(self, name: str, value: str, column: pd.Series) -> dict:
-        """
-        Add regex to features
-        """
-        if name in self.map:
-            return {"error": "a feature already has this name"}
-
-        pattern = re.compile(value)
-        print(self.content)
-        f = column.apply(lambda x: bool(pattern.search(x)))
-        self.add(name, f)
-        return {"success": "regex added"}
+        features = self.db_manager.get_project_features(self.project_slug)
+        return features
+        # # update if new elements added in features
+        # for f in self.map:
+        #     if ("regex_" in f) and (f not in self.informations):
+        #         df = self.get(f)
+        #         if len(df.columns) > 0:
+        #             self.informations[f] = int(df[df.columns[0]].sum())
+        # return dict(self.informations)
 
     def get_column_raw(self, column_name: str) -> dict:
         """
@@ -957,7 +996,6 @@ class Features:
         """
         Compute new feature
         """
-        print(name, kind, parameters, username)
         if name in self.training:
             return {"error": "feature already in training"}
 
@@ -970,9 +1008,12 @@ class Features:
                 return {"error": "Parameters missing for the regex"}
 
             regex_name = f"regex_[{parameters['value']}]_by_{username}"
-            regex_value = parameters["value"]
-            r = self.add_regex(regex_name, regex_value, df)
-            return r
+            pattern = re.compile(parameters["value"])
+            f = df.apply(lambda x: bool(pattern.search(x)))
+            parameters["count"] = int(f.sum())
+            self.add(regex_name, kind, username, parameters, f)
+            return {"success": "regex added"}
+
         elif kind == "dataset":
             # get the raw column for the train set
             r = self.get_column_raw(parameters["dataset_col"], df)
@@ -994,10 +1035,8 @@ class Features:
                 column = column.apply(str)
 
             # add the feature to the project
-            self.add(
-                f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower(),
-                column,
-            )
+            dataset_name = f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
+            self.add(dataset_name, kind, username, parameters, column)
             return None
         else:
             if kind == "sbert":
@@ -1019,7 +1058,13 @@ class Features:
             unique_id = self.queue.add("feature", func, args)
             if unique_id == "error":
                 return unique_id
-            self.training[name] = unique_id
+            self.training[name] = {
+                "unique_id": unique_id,
+                "kind": kind,
+                "parameters": parameters,
+                "name": name,
+                "username": username,
+            }
 
         return {"success": "Feature in training"}
 
@@ -1578,6 +1623,7 @@ class Project(Server):
             self.params.dir / features_file,
             self.params.dir / self.path_models,
             self.queue,
+            self.db_manager,
             self.params.language,
         )
         self.bertmodels = BertModels(self.params.dir, self.queue)
@@ -1977,6 +2023,7 @@ class Project(Server):
         """
         Send state of the project
         """
+        # start_time = time.time()
         r = {
             "params": self.params,
             "users": {"active": self.get_active_users()},
@@ -1990,7 +2037,7 @@ class Project(Server):
                 "options": self.features.options,
                 "available": list(self.features.map.keys()),
                 "training": list(self.features.training.keys()),
-                "infos": self.features.get_info(),
+                # "infos": self.features.get_info(),
             },
             "simplemodel": {
                 "options": self.simplemodels.available_models,
@@ -2015,6 +2062,9 @@ class Project(Server):
             },
             "generations": {"training": self.generations.generating},
         }
+        # end_time = time.time()
+        # execution_time = end_time - start_time
+        # print(f"Execution time: {execution_time:.5f} seconds")
         return r
 
     def export_features(self, features: list, format: str = "parquet"):

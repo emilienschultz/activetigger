@@ -5,7 +5,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 
-import { useAddFeature, useDeleteFeature } from '../core/api';
+import { useAddFeature, useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { FeatureModelExtended } from '../types';
@@ -22,6 +22,8 @@ export const ProjectFeaturesPage: FC = () => {
   const {
     appContext: { currentProject: project },
   } = useAppContext();
+
+  const { featuresInfo } = useGetFeatureInfo(projectName || null, project);
 
   const availableFeatures = project ? Object.values(project.features.available) : [];
 
@@ -69,10 +71,18 @@ export const ProjectFeaturesPage: FC = () => {
               <Tabs id="panel" className="mt-3" defaultActiveKey="existing">
                 <Tab eventKey="existing" title="Existing">
                   <span className="explanations">Features allows to train models.</span>
-                  {availableFeatures.map((element) => (
+                  {Object.keys(featuresInfo || {}).map((element) => (
                     <div className="card text-bg-light mt-4" key={element as string}>
                       <div className="card-body d-flex justify-content-between align-items-center">
                         <span>{element as string}</span>
+                        <span>{featuresInfo?.[element as string]['kind']}</span>
+                        <span>{featuresInfo?.[element as string]['time']}</span>
+                        <span>{featuresInfo?.[element as string]['user']}</span>
+                        {featuresInfo?.[element as string]['kind'] === 'regex' && (
+                          <div>N: {featuresInfo?.[element as string]['parameters']['count']}</div>
+                        )}
+
+                        {/* <span>{JSON.stringify(featuresInfo?.[element as string])}</span> */}
                         <button
                           className="btn btn p-0"
                           onClick={() => {

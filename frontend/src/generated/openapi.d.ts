@@ -57,7 +57,7 @@ export interface paths {
         put?: never;
         /**
          * Login For Access Token
-         * @description Authentificate user and return token
+         * @description Authentificate user from username/passwordand return token
          */
         post: operations["login_for_access_token_token_post"];
         delete?: never;
@@ -327,26 +327,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/description": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Description
-         * @description Description of a specific element
-         */
-        get: operations["get_description_projects_description_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/project": {
         parameters: {
             query?: never;
@@ -467,26 +447,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/elements/projection/current": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Projection
-         * @description Get projection data if computed
-         */
-        get: operations["get_projection_elements_projection_current_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/elements/projection/compute": {
         parameters: {
             query?: never;
@@ -518,7 +478,7 @@ export interface paths {
         };
         /**
          * Get List Elements
-         * @description Get table of elements
+         * @description Get a table of elements
          */
         get: operations["get_list_elements_elements_table_get"];
         put?: never;
@@ -678,27 +638,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Process
-         * @description Stop user process
-         */
-        post: operations["stop_process_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schemes/label/add": {
+    "/schemes/label/{action}": {
         parameters: {
             query?: never;
             header?: never;
@@ -711,27 +651,7 @@ export interface paths {
          * Add Label
          * @description Add a label to a scheme
          */
-        post: operations["add_label_schemes_label_add_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schemes/label/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Label
-         * @description Remove a label from a scheme
-         */
-        post: operations["delete_label_schemes_label_delete_post"];
+        post: operations["add_label_schemes_label__action__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -749,9 +669,9 @@ export interface paths {
         put?: never;
         /**
          * Rename Label
-         * @description Add a label to a scheme
+         * @description Rename a a label
          *     - create new label (the order is important)
-         *     - convert tags (need the label to exist, add a new element for each former)
+         *     - convert existing annotations (need the label to exist, add a new element for each former)
          *     - delete former label
          */
         post: operations["rename_label_schemes_label_rename_post"];
@@ -837,6 +757,26 @@ export interface paths {
          * @description Delete a specific feature
          */
         post: operations["delete_feature_features_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/features/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Feature Info
+         * @description Get feature info
+         */
+        get: operations["get_feature_info_features_info_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2191,39 +2131,6 @@ export interface operations {
             };
         };
     };
-    get_description_projects_description_get: {
-        parameters: {
-            query: {
-                scheme?: string | null;
-                user?: string | null;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectDescriptionModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_project_auth_auth_project_get: {
         parameters: {
             query: {
@@ -2408,38 +2315,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectionOutModel"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_projection_elements_projection_current_get: {
-        parameters: {
-            query: {
-                scheme: string | null;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectionOutModel"] | components["schemas"]["WaitingModel"];
                 };
             };
             /** @description Validation Error */
@@ -2797,38 +2672,7 @@ export interface operations {
             };
         };
     };
-    stop_process_stop_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_label_schemes_label_add_post: {
+    add_label_schemes_label__action__post: {
         parameters: {
             query: {
                 scheme: string;
@@ -2836,40 +2680,9 @@ export interface operations {
                 project_slug: string;
             };
             header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
+            path: {
+                action: components["schemas"]["ActionModel"];
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_label_schemes_label_delete_post: {
-        parameters: {
-            query: {
-                scheme: string;
-                label: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -3050,6 +2863,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_feature_info_features_info_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
                 };
             };
             /** @description Validation Error */

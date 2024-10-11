@@ -183,7 +183,9 @@ async def check_processes(timer, step: int = 1) -> None:
             for f in predictions:
                 df_num = functions.cat2num(predictions[f])
                 name = f.replace("__", "_")
-                project.features.add(name, df_num)  # avoid __ in the name for features
+                project.features.add(
+                    name, "prediction", {}, "current", df_num
+                )  # avoid __ in the name for features
                 print("Add feature", name)
 
     # delete old project (they will be loaded if needed)
@@ -1152,11 +1154,10 @@ async def get_features(project: Annotated[Project, Depends(get_project)]) -> Lis
     return list(project.features.map.keys())
 
 
-@app.post("/features/{action}", dependencies=[Depends(verified_user)])
+@app.post("/features/add", dependencies=[Depends(verified_user)])
 async def post_embeddings(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    action: ActionModel,
     feature: FeatureModel,
 ) -> WaitingModel | None:
     """
@@ -1190,7 +1191,7 @@ async def post_embeddings(
 async def delete_feature(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    name: str,
+    name: str = Query(),
 ) -> None:
     """
     Delete a specific feature
@@ -1201,6 +1202,20 @@ async def delete_feature(
         raise HTTPException(status_code=400, detail=r["error"])
     server.log_action(current_user.username, f"delete feature {name}", project.name)
     return None
+
+
+@app.get("/features/info", dependencies=[Depends(verified_user)])
+async def get_feature_info(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> Dict[str, Any]:
+    """
+    Get feature info
+    """
+    r = project.features.get_info()
+    if "error" in r:
+        raise HTTPException(status_code=400, detail=r["error"])
+    return r
 
 
 # Models management
