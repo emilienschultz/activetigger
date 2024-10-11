@@ -9,7 +9,6 @@ import pandas as pd
 from fastapi import (
     Depends,
     FastAPI,
-    Header,
     HTTPException,
     Query,
     Request,
@@ -1153,10 +1152,11 @@ async def get_features(project: Annotated[Project, Depends(get_project)]) -> Lis
     return list(project.features.map.keys())
 
 
-@app.post("/features/add", dependencies=[Depends(verified_user)])
+@app.post("/features/{action}", dependencies=[Depends(verified_user)])
 async def post_embeddings(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    action: ActionModel,
     feature: FeatureModel,
 ) -> WaitingModel | None:
     """
@@ -1196,7 +1196,6 @@ async def delete_feature(
     Delete a specific feature
     """
     test_rights("modify project", current_user.username, project.name)
-
     r = project.features.delete(name)
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
@@ -1355,7 +1354,7 @@ async def start_test(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"predict bert for testing", project.name)
+    server.log_action(current_user.username, "predict bert for testing", project.name)
     return None
 
 
@@ -1485,6 +1484,7 @@ async def export_generations(
     # join the text
     table = table.join(project.content["text"], on="index")
 
+    # convert to payload
     output = StringIO()
     pd.DataFrame(table).to_csv(output, index=False)
     csv_data = output.getvalue()
