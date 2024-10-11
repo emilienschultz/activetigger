@@ -73,24 +73,23 @@ export const ProjectFeaturesPage: FC = () => {
                   <span className="explanations">Features allows to train models.</span>
                   {Object.keys(featuresInfo || {}).map((element) => (
                     <div className="card text-bg-light mt-4" key={element as string}>
-                      <div className="card-body d-flex justify-content-between align-items-center">
-                        <span>{element as string}</span>
-                        <span>{featuresInfo?.[element as string]['kind']}</span>
-                        <span>{featuresInfo?.[element as string]['time']}</span>
-                        <span>{featuresInfo?.[element as string]['user']}</span>
-                        {featuresInfo?.[element as string]['kind'] === 'regex' && (
-                          <div>N: {featuresInfo?.[element as string]['parameters']['count']}</div>
-                        )}
-
-                        {/* <span>{JSON.stringify(featuresInfo?.[element as string])}</span> */}
+                      <div className="card-body d-flex  align-items-center">
                         <button
-                          className="btn btn p-0"
+                          className="btn btn p-0 mx-4"
                           onClick={() => {
                             deleteSelectedFeature(element as string);
                           }}
                         >
                           <MdOutlineDeleteOutline size={20} />
                         </button>
+                        <span className="w-50">{element as string}</span>
+                        <span className="mx-2">{featuresInfo?.[element as string]['time']}</span>
+                        <span className="mx-2">{featuresInfo?.[element as string]['user']}</span>
+                        {featuresInfo?.[element as string]['kind'] === 'regex' && (
+                          <div>N={featuresInfo?.[element as string]['parameters']['count']}</div>
+                        )}
+
+                        {/* <span>{JSON.stringify(featuresInfo?.[element as string])}</span> */}
                       </div>
                     </div>
                   ))}{' '}
