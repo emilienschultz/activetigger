@@ -1820,7 +1820,7 @@ class Project(Server):
         """
         return self.params
 
-    def get_description(self, scheme: str | None, user: str | None):
+    def get_statistics(self, scheme: str | None, user: str | None):
         """
         Generate a description of a current project/scheme/user
         Return:

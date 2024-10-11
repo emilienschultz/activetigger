@@ -67,7 +67,7 @@ from activetigger.server import Project, Server
 def test_rights(action: str, username: str, project_slug: str | None = None) -> bool:
     """
     Management of rights on the routes
-    Different levels:
+    Different types of action:
     - create project (only user status)
     - modify user (only user status)
     - modify project (user - project)
@@ -124,7 +124,7 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
 logger = logging.getLogger("api")
 logger_simplemodel = logging.getLogger("simplemodel")
 
-# start the backend server
+# starting the server
 server = Server()
 timer = time.time()
 
@@ -140,7 +140,8 @@ async def lifespan(app: FastAPI):
     server.queue.close()
 
 
-app = FastAPI(lifespan=lifespan)  # defining the fastapi app
+# starting the app
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=server.path / "static"), name="static")
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -150,26 +151,28 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 async def check_processes(timer, step: int = 1) -> None:
     """
-    Function called to update app state
+    Function to update server state
     (i.e. joining parallel processes)
     Limited to once per time interval
     """
-    # max one update per second to avoid excessive action
+    # max one update alllwoed per step
     if (time.time() - timer) < step:
         return None
+
+    # update last update
     timer = time.time()
 
     # check the queue to see if process are completed
     server.queue.check()
 
-    # update processes for active projects
+    # update processes for each active projects
     to_del = []
     for p, project in server.projects.items():
         # if project existing since one day, remove it from memory
         if (timer - project.starting_time) > 86400:
             to_del.append(p)
 
-        # update pending processes
+        # update different pending processes
         project.features.update_processes()
         project.simplemodels.update_processes()
         project.generations.update_generations()
@@ -200,6 +203,7 @@ async def middleware(request: Request, call_next):
     return response
 
 
+# allow multiple servers (avoir CORS error)
 app.add_middleware(
     CORSMiddleware,
     # TODO: move origins in config
@@ -216,7 +220,7 @@ app.add_middleware(
 
 async def get_project(project_slug: str) -> ProjectModel:
     """
-    Dependencie to get existing project
+    Dependency to get existing project
     - if already loaded, return it
     - if not loaded, load it first
     """
@@ -229,8 +233,10 @@ async def get_project(project_slug: str) -> ProjectModel:
     if project_slug in server.projects:
         return server.projects[project_slug]
 
-    # load it
+    # load the project
     server.start_project(project_slug)
+
+    # return loaded project
     return server.projects[project_slug]
 
 
@@ -251,7 +257,7 @@ async def verified_user(
     except JWTError:
         raise HTTPException(status_code=401, detail="Problem with token")
 
-    # authentification
+    # get user caracteristics
     user = server.users.get_user(name=username)
 
     if "error" in user:
@@ -270,23 +276,7 @@ async def check_auth_exists(
     """
     # print("route", request.url.path, request.method)
     auth = server.users.auth(current_user.username, project_slug)
-    if not auth:
-        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
-    return None
-
-
-async def check_auth_manager(
-    request: Request,
-    username: Annotated[str, Header()],
-    project_slug: str | None = None,
-) -> None:
-    """
-    Check if a user has auth to a project
-    """
-    if username == "root":  # root have complete power
-        return None
-    auth = server.users.auth(username, project_slug)
-    if not auth == "manager":
+    if not auth or "error" in auth:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
     return None
 
@@ -332,11 +322,16 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> TokenModel:
     """
-    Authentificate user and return token
+    Authentificate user from username/passwordand return token
     """
+    # authentificate the user
     user = server.users.authenticate_user(form_data.username, form_data.password)
+
+    # manage error
     if not isinstance(user, UserInDBModel):
         raise HTTPException(status_code=401, detail=user["error"])
+
+    # create new token for the user
     access_token = server.create_access_token(
         data={"sub": user.username}, expires_min=120
     )
@@ -423,6 +418,11 @@ async def set_auth(
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")
         r = server.users.set_auth(username, project_slug, status)
+        if "error" in r:
+            raise HTTPException(status_code=500, detail=r["error"])
+        # log action
+        server.log_action(current_user.username, f"add user {username}", "all")
+
         return None
 
     if action == "delete":
@@ -430,6 +430,10 @@ async def set_auth(
         if username == "root":
             raise HTTPException(status_code=403, detail="Forbidden to delete root auth")
         r = server.users.delete_auth(username, project_slug)
+        if "error" in r:
+            raise HTTPException(status_code=500, detail=r["error"])
+        # log action
+        server.log_action(current_user.username, f"delete user {username}", "all")
         return None
 
     raise HTTPException(status_code=400, detail="Action not found")
@@ -486,7 +490,7 @@ async def get_project_statistics(
     """
     Statistics for a scheme and a user
     """
-    r = project.get_description(scheme=scheme, user=current_user.username)
+    r = project.get_statistics(scheme=scheme, user=current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return ProjectDescriptionModel(**r)
@@ -522,21 +526,6 @@ async def get_nb_queue() -> int:
     Get the number of element active in the queue
     """
     return server.queue.get_nb_active_processes()
-
-
-@app.get("/projects/description", dependencies=[Depends(verified_user)])
-async def get_description(
-    project: Annotated[Project, Depends(get_project)],
-    scheme: str | None = None,
-    user: str | None = None,
-) -> ProjectDescriptionModel:
-    """
-    Description of a specific element
-    """
-    r = project.get_description(scheme=scheme, user=user)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return ProjectDescriptionModel(**r)
 
 
 @app.get("/auth/project", dependencies=[Depends(verified_user)])
@@ -618,11 +607,10 @@ async def delete_project(
     Delete a project
     """
     test_rights("modify project", current_user.username, project_slug)
-
     r = server.delete_project(project_slug)
-    server.log_action(current_user.username, "delete project", project_slug)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    server.log_action(current_user.username, "delete project", project_slug)
     return None
 
 
@@ -661,72 +649,33 @@ async def get_projection(
     """
     Get projection data if computed
     """
+
+    if scheme is None:
+        raise HTTPException(status_code=400, detail="Please specify a scheme")
+
+    # check if a projection is available
     if current_user.username not in project.features.projections:
         return None
 
-    if scheme is None:  # only the projection without specific annotations
-        data = (
-            project.features.projections[current_user.username]["data"]
-            .fillna("NA")
-            .to_dict()
-        )
-    else:  # add existing annotations in the data
-        data = project.features.projections[current_user.username]["data"]
-        df = project.schemes.get_scheme_data(scheme, complete=True)
-        data["labels"] = df["labels"]
-        data["texts"] = df["text"]
-        data = data.fillna("NA")
-        return ProjectionOutModel(
-            index=list(data.index),
-            x=list(data[0]),
-            y=list(data[1]),
-            labels=list(data["labels"]),
-            texts=list(data["texts"]),
-            status=project.features.projections[current_user.username]["id"],
-        )
-    raise HTTPException(status_code=400, detail="Projection problem")
+    # data not yet computed
+    if "data" not in project.features.projections[current_user.username]:
+        return None
 
+    # add existing annotations in the data
+    data = project.features.projections[current_user.username]["data"]
+    df = project.schemes.get_scheme_data(scheme, complete=True)
+    data["labels"] = df["labels"]
+    data["texts"] = df["text"]
+    data = data.fillna("NA")
 
-@app.get("/elements/projection/current", dependencies=[Depends(verified_user)])
-async def get_projection(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str | None,
-) -> ProjectionOutModel | WaitingModel:
-    """
-    Get projection data if computed
-    """
-    if not current_user.username in project.features.projections:
-        raise HTTPException(
-            status_code=404,
-            detail="There is no projection available or computing",
-        )
-
-    if not "data" in project.features.projections[current_user.username]:
-        return WaitingModel(status="computing", detail="Computing projection")
-
-    if scheme is None:  # only the projection without specific annotations
-        data = (
-            project.features.projections[current_user.username]["data"]
-            .fillna("NA")
-            .to_dict()
-        )
-    else:  # add existing annotations in the data
-        data = project.features.projections[current_user.username]["data"]
-        df = project.schemes.get_scheme_data(scheme, complete=True)
-        data["labels"] = df["labels"]
-        data["texts"] = df["text"]
-        data = data.fillna("NA")
-        return ProjectionOutModel(
-            index=list(data.index),
-            x=list(data[0]),
-            y=list(data[1]),
-            labels=list(data["labels"]),
-            texts=list(data["texts"]),
-            status="computed",
-        )
-
-    raise HTTPException(status_code=400, detail="No computation possible")
+    return ProjectionOutModel(
+        index=list(data.index),
+        x=list(data[0]),
+        y=list(data[1]),
+        labels=list(data["labels"]),
+        texts=list(data["texts"]),
+        status=project.features.projections[current_user.username]["id"],
+    )
 
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
@@ -761,6 +710,11 @@ async def compute_projection(
             "method": "umap",
             "queue": unique_id,
         }
+        server.log_action(
+            current_user.username,
+            "compute projection umap",
+            project.params.project_slug,
+        )
         return WaitingModel(detail="Projection umap is computing")
 
     if projection.method == "tsne":
@@ -778,7 +732,14 @@ async def compute_projection(
             "method": "tsne",
             "queue": unique_id,
         }
+
+        server.log_action(
+            current_user.username,
+            "compute projection tsne",
+            project.params.project_slug,
+        )
         return WaitingModel(detail="Projection tsne is computing")
+
     raise HTTPException(status_code=400, detail="Projection not available")
 
 
