@@ -15,9 +15,10 @@ with the project & the current action*/
 export const ProjectActionsSidebar: FC<{
   projectState: ProjectStateModel | null;
   currentProjectAction?: PossibleProjectActions;
+  currentMode?: string;
   currentScheme?: string;
   currentUser: string;
-}> = ({ currentProjectAction, projectState, currentUser }) => {
+}> = ({ currentProjectAction, projectState, currentUser, currentMode }) => {
   const projectName = projectState ? projectState.params.project_slug : null;
 
   // test if computation is currently undergoing
@@ -30,8 +31,12 @@ export const ProjectActionsSidebar: FC<{
   // display the number of current processes on the server
   const { queueState } = useGetQueue(projectState || null);
 
+  console.log(currentMode);
+
   return (
-    <div className="project-sidebar d-flex flex-column flex-shrink-0 bg-light">
+    <div
+      className={`project-sidebar d-flex flex-column flex-shrink-0 ${currentMode == 'train' ? 'bg-light' : 'bg-warning'}`}
+    >
       <ul className="nav nav-pills flex-column mb-auto">
         <li className="nav-item mt-3">
           <Link
