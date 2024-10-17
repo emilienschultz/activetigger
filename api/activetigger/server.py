@@ -962,7 +962,7 @@ class Features:
                 del self.projections[u]["queue"]
                 self.queue.delete(unique_id)
 
-    def get_info(self):
+    def get_available(self):
         """
         Informations on features + update
         Comments:
@@ -971,19 +971,12 @@ class Features:
         """
         features = self.db_manager.get_project_features(self.project_slug)
         return features
-        # # update if new elements added in features
-        # for f in self.map:
-        #     if ("regex_" in f) and (f not in self.informations):
-        #         df = self.get(f)
-        #         if len(df.columns) > 0:
-        #             self.informations[f] = int(df[df.columns[0]].sum())
-        # return dict(self.informations)
 
     def get_column_raw(self, column_name: str) -> dict:
         """
         Get column raw dataset
         """
-        df = pd.read_parquet(self.path / data_raw)
+        df = pd.read_parquet((self.path / ".." / data_raw).resolve())
         if column_name not in list(df.columns):
             return {"error": "Column doesn't exist"}
         # filter only train id
@@ -1015,7 +1008,7 @@ class Features:
 
         elif kind == "dataset":
             # get the raw column for the train set
-            r = self.get_column_raw(parameters["dataset_col"], df)
+            r = self.get_column_raw(parameters["dataset_col"])
             if "error" in r:
                 return r
             column = r["success"]
@@ -1036,7 +1029,7 @@ class Features:
             # add the feature to the project
             dataset_name = f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
             self.add(dataset_name, kind, username, parameters, column)
-            return None
+            return {"success": "Feature added"}
         else:
             if kind == "sbert":
                 args = {"texts": df, "model": "distiluse-base-multilingual-cased-v1"}

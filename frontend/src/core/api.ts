@@ -431,7 +431,7 @@ export function useDeleteFeature(projectSlug: string | null) {
 export function useGetFeatureInfo(project_slug: string | null, project: unknown) {
   const getFeatureInfo = useAsyncMemo(async () => {
     if (project_slug) {
-      const res = await api.GET('/features/info', {
+      const res = await api.GET('/features/available', {
         params: {
           query: {
             project_slug: project_slug,

@@ -667,7 +667,7 @@ class DatabaseManager:
         session.close()
         return {
             i.name: {
-                "time": i.time,
+                "time": i.time.strftime("%Y-%m-%d %H:%M:%S"),
                 "kind": i.kind,
                 "parameters": json.loads(i.parameters),
                 "user": i.user,

@@ -171,7 +171,7 @@ export const SelectionManagement: FC = () => {
                 console.log(selectionConfig.frameSelection);
               }}
             />
-            Use visualisation frame
+            Use visualisation frame to lock the selection
           </label>
         </details>
       </div>

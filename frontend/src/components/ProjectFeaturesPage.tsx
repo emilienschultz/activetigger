@@ -23,9 +23,12 @@ export const ProjectFeaturesPage: FC = () => {
     appContext: { currentProject: project },
   } = useAppContext();
 
-  const { featuresInfo } = useGetFeatureInfo(projectName || null, project);
+  console.log(project?.features.training);
 
-  const availableFeatures = project ? Object.values(project.features.available) : [];
+  // API calls
+  const { featuresInfo } = useGetFeatureInfo(projectName || null, project);
+  const addFeature = useAddFeature(projectName || null);
+  const deleteFeature = useDeleteFeature(projectName || null);
 
   // hooks to use the objets
   const { register, handleSubmit, watch, reset } = useForm<FeatureModelExtended>({
@@ -33,12 +36,7 @@ export const ProjectFeaturesPage: FC = () => {
   });
   const { notify } = useNotifications();
 
-  // hook to get the api call
-  const addFeature = useAddFeature(projectName || null);
-  const deleteFeature = useDeleteFeature(projectName || null);
-
   // state for the type of feature to create
-  // const [selectedFeatureToCreate, setFeatureToCreate] = useState('');
   const selectedFeatureToCreate = watch('type');
 
   // action to create the new scheme
@@ -70,10 +68,10 @@ export const ProjectFeaturesPage: FC = () => {
             <div className="col-12">
               <Tabs id="panel" className="mt-3" defaultActiveKey="existing">
                 <Tab eventKey="existing" title="Existing">
-                  <span className="explanations">Features allows to train models.</span>
+                  <span className="explanations m-2">Features allow to train models.</span>
                   {Object.keys(featuresInfo || {}).map((element) => (
-                    <div className="card text-bg-light mt-4" key={element as string}>
-                      <div className="card-body d-flex  align-items-center">
+                    <div className="card text-bg-light mt-3" key={element as string}>
+                      <div className="d-flex m-2 align-items-center">
                         <button
                           className="btn btn p-0 mx-4"
                           onClick={() => {
@@ -82,17 +80,24 @@ export const ProjectFeaturesPage: FC = () => {
                         >
                           <MdOutlineDeleteOutline size={20} />
                         </button>
-                        <span className="w-50">{element as string}</span>
+                        <span className="w-25">{element as string}</span>
                         <span className="mx-2">{featuresInfo?.[element as string]['time']}</span>
-                        <span className="mx-2">{featuresInfo?.[element as string]['user']}</span>
+                        <span className="mx-2">by {featuresInfo?.[element as string]['user']}</span>
                         {featuresInfo?.[element as string]['kind'] === 'regex' && (
-                          <div>N={featuresInfo?.[element as string]['parameters']['count']}</div>
+                          <span>N={featuresInfo?.[element as string]['parameters']['count']}</span>
                         )}
 
                         {/* <span>{JSON.stringify(featuresInfo?.[element as string])}</span> */}
                       </div>
                     </div>
                   ))}{' '}
+                  {Object.values(project?.features.training).map((element) => (
+                    <div className="card text-bg-light mt-3 bg-warning" key={element as string}>
+                      <div className="d-flex m-2 align-items-center">
+                        <span className="w-25">Currently computing {element as string}</span>
+                      </div>
+                    </div>
+                  ))}
                 </Tab>
                 <Tab eventKey="create" title="Create">
                   <div className="row">

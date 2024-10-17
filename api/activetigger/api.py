@@ -1205,7 +1205,7 @@ async def delete_feature(
     return None
 
 
-@app.get("/features/info", dependencies=[Depends(verified_user)])
+@app.get("/features/available", dependencies=[Depends(verified_user)])
 async def get_feature_info(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -1213,7 +1213,7 @@ async def get_feature_info(
     """
     Get feature info
     """
-    r = project.features.get_info()
+    r = project.features.get_available()
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
     return r

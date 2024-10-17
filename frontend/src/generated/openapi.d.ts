@@ -763,7 +763,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/features/info": {
+    "/features/available": {
         parameters: {
             query?: never;
             header?: never;
@@ -774,7 +774,7 @@ export interface paths {
          * Get Feature Info
          * @description Get feature info
          */
-        get: operations["get_feature_info_features_info_get"];
+        get: operations["get_feature_info_features_available_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2876,7 +2876,7 @@ export interface operations {
             };
         };
     };
-    get_feature_info_features_info_get: {
+    get_feature_info_features_available_get: {
         parameters: {
             query: {
                 project_slug: string;
