@@ -6,10 +6,13 @@ import 'react-data-grid/lib/styles.css';
 import { useParams } from 'react-router-dom';
 
 import Highlighter from 'react-highlight-words';
+import { MdSkipNext, MdSkipPrevious } from 'react-icons/md';
+
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
 import { AnnotationModel } from '../types';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
+
 /**
  * Component to display the exploratory page
  */
@@ -81,7 +84,6 @@ export const ProjectExplorationPage: FC = () => {
           <div>{props.row.index}</div>
         ),
     },
-    { key: 'timestamp', name: 'Timestamp', resizable: true, width: 100 },
     {
       key: 'labels',
       name: 'Label ✎',
@@ -113,6 +115,7 @@ export const ProjectExplorationPage: FC = () => {
         </div>
       ),
     },
+    { key: 'timestamp', name: 'Changed', resizable: true, width: 100 },
   ];
 
   // specific function to have a select component
@@ -239,6 +242,18 @@ export const ProjectExplorationPage: FC = () => {
                 />
               </div>
             )}
+            <div className="d-flex justify-content-center mt-3 align-items-center">
+              <button
+                className="btn"
+                onClick={() => (page && page > 1 ? setPage(page - 1) : setPage(1))}
+              >
+                <MdSkipPrevious size={30} />
+              </button>{' '}
+              Change page{' '}
+              <button className="btn" onClick={() => (page ? setPage(page + 1) : setPage(1))}>
+                <MdSkipNext size={30} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

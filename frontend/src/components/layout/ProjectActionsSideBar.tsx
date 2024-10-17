@@ -31,8 +31,6 @@ export const ProjectActionsSidebar: FC<{
   // display the number of current processes on the server
   const { queueState } = useGetQueue(projectState || null);
 
-  console.log(currentMode);
-
   return (
     <div
       className={`project-sidebar d-flex flex-column flex-shrink-0 ${currentMode == 'train' ? 'bg-light' : 'bg-warning'}`}
