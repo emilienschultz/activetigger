@@ -1,10 +1,11 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import { useDeleteProject, useGetLogs } from '../core/api';
 
+import Modal from 'react-bootstrap/Modal';
 import DataGrid, { Column } from 'react-data-grid';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -70,6 +71,11 @@ export const ProjectPage: FC = () => {
       key: 'action',
     },
   ];
+
+  // modals to delete
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
   return (
     projectName && (
@@ -151,9 +157,19 @@ export const ProjectPage: FC = () => {
                   </tbody>
                 </table>
                 {/* <div>{JSON.stringify(project.params, null, 2)}</div> */}
-                <button onClick={actionDelete} className="delete-button mt-5">
-                  Delete project
+                <button onClick={handleShow} className="delete-button mt-5">
+                  Delete project now
                 </button>
+                <Modal show={show} onHide={actionDelete}>
+                  <Modal.Header>
+                    <Modal.Title>Delete the project</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>Do you really want to delete this project</Modal.Body>
+                  <Modal.Footer>
+                    <button onClick={handleClose}>No</button>
+                    <button onClick={actionDelete}>Delete</button>
+                  </Modal.Footer>
+                </Modal>
               </Tab>
             </Tabs>
           </div>
