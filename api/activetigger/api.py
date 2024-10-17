@@ -162,10 +162,6 @@ async def check_processes(timer, step: int = 1) -> None:
     # update last update
     timer = time.time()
 
-    t = datetime.datetime.now()
-    print(t)
-    print(t.timestamp())
-
     # check the queue to see if process are completed
     server.queue.check()
 

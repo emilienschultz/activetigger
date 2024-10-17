@@ -173,7 +173,13 @@ class DatabaseManager:
 
     def add_log(self, user: str, action: str, project_slug: str, connect: str):
         session = self.Session()
-        log = Logs(user=user, project=project_slug, action=action, connect=connect)
+        log = Logs(
+            user=user,
+            project=project_slug,
+            action=action,
+            connect=connect,
+            time=datetime.datetime.now(),
+        )
         session.add(log)
         session.commit()
         session.close()
@@ -248,7 +254,7 @@ class DatabaseManager:
 
     def add_token(self, token: str, status: str):
         session = self.Session()
-        token = Tokens(token=token, status=status)
+        token = Tokens(token=token, status=status, time_created=datetime.datetime.now())
         session.add(token)
         session.commit()
         session.close()
@@ -294,29 +300,6 @@ class DatabaseManager:
         session.commit()
         session.close()
 
-    def add_annotation(
-        self,
-        action: str,
-        user: str,
-        project_slug: str,
-        element_id: str,
-        scheme: str,
-        annotation: str,
-    ):
-        session = self.Session()
-        annotation = Annotations(
-            time=datetime.datetime.now(),
-            action=action,
-            user=user,
-            project=project_slug,
-            element_id=element_id,
-            scheme=scheme,
-            annotation=annotation,
-        )
-        session.add(annotation)
-        session.commit()
-        session.close()
-
     def delete_project(self, project_slug: str):
         session = self.Session()
         session.query(Projects).filter(Projects.project_slug == project_slug).delete()
@@ -341,6 +324,7 @@ class DatabaseManager:
         session = self.Session()
         generation = Generations(
             user=user,
+            time=datetime.datetime.now(),
             project=project_slug,
             element_id=element_id,
             endpoint=endpoint,
@@ -569,17 +553,18 @@ class DatabaseManager:
         )
         return [[a.annotation, a.action, a.user, a.time] for a in annotations]
 
-    def post_annotation(
+    def add_annotation(
         self,
-        project_slug: str,
-        scheme: str,
-        element_id: str,
-        annotation: str,
-        user: str,
         action: str,
+        user: str,
+        project_slug: str,
+        element_id: str,
+        scheme: str,
+        annotation: str,
     ):
         session = self.Session()
         annotation = Annotations(
+            time=datetime.datetime.now(),
             action=action,
             user=user,
             project=project_slug,
@@ -647,6 +632,7 @@ class DatabaseManager:
         session = self.Session()
         feature = Features(
             project=project,
+            time=datetime.datetime.now(),
             kind=kind,
             name=name,
             parameters=parameters,
@@ -679,7 +665,6 @@ class DatabaseManager:
         session = self.Session()
         features = session.query(Features).filter(Features.project == project).all()
         session.close()
-        print(features)
         return {
             i.name: {
                 "time": i.time,

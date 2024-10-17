@@ -1132,22 +1132,6 @@ class Schemes:
 
         results = self.db_manager.get_scheme_elements(self.project_slug, scheme, kind)
 
-        # conn = sqlite3.connect(self.db)
-        # cursor = conn.cursor()
-        # action = "(" + " OR ".join([f"action = ?" for i in kind]) + ")"
-
-        # query = f"""
-        #     SELECT element_id, tag, user, MAX(time)
-        #     FROM annotations
-        #     WHERE scheme = ? AND project = ? AND {action}
-        #     GROUP BY element_id
-        #     ORDER BY time DESC;
-        # """
-        # cursor.execute(query, (scheme, self.project_slug) + tuple(kind))
-
-        # results = cursor.fetchall()
-        # conn.close()
-
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "timestamp"]
         ).set_index("id")
@@ -1166,27 +1150,8 @@ class Schemes:
         Get reconciliation table
         TODO : add the filter on action
         """
-        if not scheme in self.available():
+        if scheme not in self.available():
             return {"error": "Scheme doesn't exist"}
-
-        # get the last tag for each id and each user
-        # conn = sqlite3.connect(self.db)
-        # cursor = conn.cursor()
-
-        # query = f"""
-        #     SELECT e.element_id, e.tag, e.user, e.time
-        #     FROM annotations AS e
-        #     INNER JOIN (
-        #         SELECT id, user, MAX(time) AS last_timestamp
-        #         FROM annotations
-        #         WHERE project = ? AND scheme = ?
-        #         GROUP BY element_id, user
-        #     ) AS last_entries
-        #     ON e.id = last_entries.id;
-        # """
-        # cursor.execute(query, (self.project_slug, scheme))
-        # results = cursor.fetchall()
-        # conn.close()
 
         results = self.db_manager.get_table_annotations_users(self.project_slug, scheme)
         # Shape the data
@@ -1332,7 +1297,7 @@ class Schemes:
 
         if (label is None) or (label == ""):
             return {"error": "the name is void"}
-        if not scheme in available:
+        if scheme not in available:
             return {"error": "scheme doesn't exist"}
         if available[scheme] is None:
             available[scheme] = []
@@ -1348,7 +1313,7 @@ class Schemes:
         Test if a label exist in a scheme
         """
         available = self.available()
-        if not scheme in available:
+        if scheme not in available:
             return {"error": "scheme doesn't exist"}
         if label in available[scheme]:
             return True
@@ -1359,9 +1324,9 @@ class Schemes:
         Delete a label in a scheme
         """
         available = self.available()
-        if not scheme in available:
+        if scheme not in available:
             return {"error": "scheme doesn't exist"}
-        if not label in available[scheme]:
+        if label not in available[scheme]:
             return {"error": "label does not exist"}
         labels = available[scheme]
         labels.remove(label)
@@ -1416,12 +1381,23 @@ class Schemes:
         i.e. : add empty label
         """
 
-        self.db_manager.post_annotation(
-            self.project_slug, scheme, element_id, None, user, "delete"
+        self.db_manager.add_annotation(
+            action="delete",
+            user=user,
+            project_slug=self.project_slug,
+            element_id=element_id,
+            scheme=scheme,
+            annotation=None,
         )
-        self.db_manager.post_annotation(
-            self.project_slug, scheme, element_id, None, user, "add"
+        self.db_manager.add_annotation(
+            action="add",
+            user=user,
+            project_slug=self.project_slug,
+            element_id=element_id,
+            scheme=scheme,
+            annotation=None,
         )
+
         return True
 
     def push_tag(
@@ -1452,8 +1428,13 @@ class Schemes:
         # if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 
-        self.db_manager.post_annotation(
-            self.project_slug, scheme, element_id, tag, user, mode
+        self.db_manager.add_annotation(
+            action=mode,
+            user=user,
+            project_slug=self.project_slug,
+            element_id=element_id,
+            scheme=scheme,
+            annotation=tag,
         )
         print(("push tag", mode, user, self.project_slug, element_id, scheme, tag))
         return {"success": "tag added"}
