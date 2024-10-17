@@ -37,7 +37,6 @@ export const ProjectCreationForm: FC = () => {
   const createProject = useCreateProject(); // API call
   const files = useWatch({ control, name: 'files' }); // watch the files entry
   // available columns
-  console.log('DATA');
   console.log(data?.headers);
   const columns = data?.headers
     .filter((h) => h !== '')
@@ -84,7 +83,7 @@ export const ProjectCreationForm: FC = () => {
         notify({ type: 'error', message: 'Please select a id column' });
         return;
       }
-      if (formData.col_text.length == 0) {
+      if (!formData.col_text) {
         notify({ type: 'error', message: 'Please select a text column' });
         return;
       }
@@ -187,7 +186,6 @@ export const ProjectCreationForm: FC = () => {
                         }}
                       />
                     )}
-                    rules={{ required: true }}
                   />
                   <label className="form-label" htmlFor="col_label">
                     Column for label (if exists)

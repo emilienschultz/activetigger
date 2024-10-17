@@ -22,18 +22,20 @@ Base = declarative_base()
 class Projects(Base):
     __tablename__ = "projects"
     project_slug = Column(String, primary_key=True)
-    time_created = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time_created = Column(TIMESTAMP(timezone=True), server_default=func.now())
     parameters = Column(Text)
-    time_modified = Column(TIMESTAMP)
+    time_modified = Column(TIMESTAMP(timezone=True))
     user = Column(String)
 
 
 class Schemes(Base):
     __tablename__ = "schemes"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time_created = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time_created = Column(
+        TIMESTAMP(timezone=True), server_default=func.current_timestamp()
+    )
     time_modified = Column(
-        TIMESTAMP,
+        TIMESTAMP(timezone=True),
         server_default=func.current_timestamp(),
         onupdate=func.current_timestamp(),
     )
@@ -46,7 +48,7 @@ class Schemes(Base):
 class Annotations(Base):
     __tablename__ = "annotations"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
     action = Column(String)
     user = Column(String)
     project = Column(String)
@@ -58,7 +60,7 @@ class Annotations(Base):
 class Users(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
     user = Column(String)
     key = Column(Text)
     description = Column(Text)
@@ -77,7 +79,7 @@ class Auths(Base):
 class Logs(Base):
     __tablename__ = "logs"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
     user = Column(String)
     project = Column(String)
     action = Column(String)
@@ -87,16 +89,18 @@ class Logs(Base):
 class Tokens(Base):
     __tablename__ = "tokens"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time_created = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time_created = Column(
+        TIMESTAMP(timezone=True), server_default=func.current_timestamp()
+    )
     token = Column(Text)
     status = Column(String)
-    time_revoked = Column(TIMESTAMP)
+    time_revoked = Column(TIMESTAMP(timezone=True))
 
 
 class Generations(Base):
     __tablename__ = "generations"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
     user = Column(String)
     project = Column(String)
     element_id = Column(String)
@@ -108,7 +112,7 @@ class Generations(Base):
 class Features(Base):
     __tablename__ = "features"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP, server_default=func.current_timestamp())
+    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
     user = Column(String)
     project = Column(String)
     name = Column(String)
@@ -154,9 +158,15 @@ class DatabaseManager:
         hash_pwd: bytes = get_hash(pwd)
         self.add_user("root", hash_pwd, "root", "system")
 
-    def add_user(self, user: str, key: str, description: str, created_by: str):
+    def add_user(self, username: str, password: str, role: str, created_by: str):
         session = self.Session()
-        user = Users(user=user, key=key, description=description, created_by=created_by)
+        user = Users(
+            user=username,
+            key=password,
+            description=role,
+            created_by=created_by,
+            time=datetime.datetime.now(),
+        )
         session.add(user)
         session.commit()
         session.close()
@@ -213,12 +223,14 @@ class DatabaseManager:
         project = Projects(
             project_slug=project_slug,
             parameters=json.dumps(parameters),
+            time_created=datetime.datetime.now(),
             time_modified=datetime.datetime.now(),
             user=username,
         )
         session.add(project)
         session.commit()
         session.close()
+        print("CREATE PROJECT", datetime.datetime.now())
 
     def update_project(self, project_slug: str, parameters: dict):
         session = self.Session()
@@ -260,7 +272,14 @@ class DatabaseManager:
 
     def add_scheme(self, project_slug: str, name: str, params: dict, username: str):
         session = self.Session()
-        scheme = Schemes(project=project_slug, name=name, params=params, user=username)
+        scheme = Schemes(
+            project=project_slug,
+            name=name,
+            params=params,
+            user=username,
+            time_created=datetime.datetime.now(),
+            time_modified=datetime.datetime.now(),
+        )
         session.add(scheme)
         session.commit()
         session.close()
@@ -286,6 +305,7 @@ class DatabaseManager:
     ):
         session = self.Session()
         annotation = Annotations(
+            time=datetime.datetime.now(),
             action=action,
             user=user,
             project=project_slug,
@@ -442,15 +462,6 @@ class DatabaseManager:
         result = session.query(Users.user).distinct().all()
         session.close()
         return [row.user for row in result]
-
-    def add_user(self, username: str, password: str, role: str, created_by: str):
-        session = self.Session()
-        user = Users(
-            user=username, key=password, description=role, created_by=created_by
-        )
-        session.add(user)
-        session.commit()
-        session.close()
 
     def delete_user(self, username: str):
         session = self.Session()
