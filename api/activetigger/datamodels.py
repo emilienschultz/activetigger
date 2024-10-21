@@ -2,7 +2,6 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from pandas import DataFrame
 from pydantic import BaseModel
 
 # Data model to use of the API

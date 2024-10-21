@@ -1,6 +1,7 @@
 import { parquetMetadataAsync, parquetRead } from 'hyparquet';
 import { fromPairs, zip } from 'lodash';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 import { DataType } from '../components/forms/ProjectCreationForm';
 
@@ -72,6 +73,54 @@ export async function loadCSVFile(file: File): Promise<DataType> {
     reader.readAsText(file);
   });
 }
+
+export async function loadExcelFile(file: File): Promise<DataType> {
+  // Read the uploaded file as an arrayBuffer
+  const arrayBuffer = await file.arrayBuffer();
+
+  // Use XLSX to read the file as a workbook
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+  // Assuming we want the first sheet
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+
+  // Convert the sheet to JSON format with headers
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+  // Extract headers (first row)
+  const headers = jsonData[0] as string[];
+
+  // Extract data (subsequent rows)
+  const data = jsonData.slice(1).map((row) => fromPairs(zip(headers, row as string[])));
+
+  // Return a DataType object with the data, headers, and filename
+  return { data, headers, filename: file.name };
+}
+
+// export async function loadFeatherFile(file: File): Promise<DataType> {
+//   // Read the uploaded file as an arrayBuffer
+//   const arrayBuffer = await file.arrayBuffer();
+
+//   // Use the Apache Arrow library to read the Feather file
+//   const table = tableFromIPC(new Uint8Array(arrayBuffer));
+
+//   // Extract headers (column names)
+//   const headers = table.schema.fields.map((field) => field.name);
+
+//   // Extract the data as an array of objects
+//   const data = [];
+//   for (let i = 0; i < table.numRows; i++) {
+//     const row = {};
+//     headers.forEach((header, colIndex) => {
+//       row[header] = table.getColumnAt(colIndex).get(i);
+//     });
+//     data.push(row);
+//   }
+
+//   // Resolve the promise with a DataType object
+//   return { data, headers, filename: file.name };
+// }
 
 /**
  * Display the date to the "from ago" format.

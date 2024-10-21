@@ -9,7 +9,7 @@ import PulseLoader from 'react-spinners/PulseLoader';
 
 import { useCreateProject } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
-import { loadCSVFile, loadParquetFile } from '../../core/utils';
+import { loadCSVFile, loadExcelFile, loadParquetFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
 
 // format of the data table
@@ -22,6 +22,8 @@ export interface DataType {
 // component
 export const ProjectCreationForm: FC = () => {
   // form management
+  const maxSizeMo = 100;
+  const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
   const { register, control, handleSubmit } = useForm<ProjectModel & { files: FileList }>({
     defaultValues: {
       project_name: 'New project',
@@ -59,22 +61,37 @@ export const ProjectCreationForm: FC = () => {
     console.log('checking file', files);
     if (files && files.length > 0) {
       const file = files[0];
+      if (file.size > maxSize) {
+        notify({
+          type: 'error',
+          message: `File is too big (only file less than ${maxSizeMo} are allowed)`,
+        });
+        return;
+      }
       if (file.name.includes('parquet')) {
         console.log('parquet');
         loadParquetFile(file).then((data) => {
           console.log(data);
           setData(data);
         });
-      }
-      if (file.name.includes('csv')) {
+      } else if (file.name.includes('csv')) {
         console.log('csv');
         loadCSVFile(file).then((data) => {
           console.log(data);
           setData(data);
         });
+      } else if (file.name.includes('xlsx')) {
+        console.log('csv');
+        loadExcelFile(file).then((data) => {
+          console.log(data);
+          setData(data);
+        });
+      } else {
+        notify({ type: 'error', message: 'Only csv or parquet files are allowed for now' });
+        return;
       }
     }
-  }, [files]);
+  }, [files, maxSize, notify]);
 
   // action when form validated
   const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {
@@ -104,8 +121,8 @@ export const ProjectCreationForm: FC = () => {
     <div className="container-fluid">
       <div className="row">
         <div className="explanations">
-          Create a new project. First, upload a file (csv or parquet). Then you will be able to
-          indicate the columns needed and validate.
+          Create a new project. First, upload a file (csv or parquet, less than {maxSizeMo} Mo).
+          Then you will be able to indicate the columns needed and validate.
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>

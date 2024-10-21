@@ -129,7 +129,7 @@ class BertModel:
             return r
 
         # add training informations
-        if not "training" in r:
+        if "training" not in r:
             log = self.log_history
             loss = pd.DataFrame(
                 [
@@ -149,7 +149,7 @@ class BertModel:
             flag_modification = True
 
         # add train scores
-        if (not "train_scores" in r) and (self.path / "predict.parquet").exists():
+        if ("train_scores" not in r) and (self.path / "predict.parquet").exists():
             df = self.data.copy()
             df["prediction"] = self.pred["prediction"]
             Y_pred = df["prediction"]
@@ -170,7 +170,7 @@ class BertModel:
             flag_modification = True
 
         # add test scores
-        if (not "test_scores" in r) and (self.path / "predict_test.parquet").exists():
+        if ("test_scores" not in r) and (self.path / "predict_test.parquet").exists():
             df = pd.read_parquet(self.path / "predict_test.parquet")[
                 ["prediction", "labels"]
             ].dropna()
@@ -272,7 +272,7 @@ class BertModels:
                 else:
                     self.start_compression(i)
                 scheme = i.split("__")[-1]  # scheme after __
-                if not scheme in r:
+                if scheme not in r:
                     r[scheme] = {}
                 r[scheme][i] = {"predicted": predict, "compressed": compressed}
         return r
@@ -294,7 +294,7 @@ class BertModels:
             shutil.rmtree(self.path / bert_name)
             os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
             return {"success": "Bert model deleted"}
-        except:
+        except Exception:
             return {"error": "An error occured in deleting bert model"}
 
     def start_training_process(
@@ -439,7 +439,7 @@ class BertModels:
         """
         Stop the process of an user
         """
-        if not user in self.computing:
+        if user not in self.computing:
             return {"error": "no current processes"}
         self.computing[user][1].terminate()  # end process
 
@@ -462,7 +462,7 @@ class BertModels:
             return {"error": "model not trained completly"}
 
         # keep the scheme information
-        if not "__" in new_name:
+        if "__" not in new_name:
             new_name = new_name + "__" + former_name.split("__")[-1]
 
         os.rename(self.path / former_name, self.path / new_name)
@@ -490,7 +490,7 @@ class BertModels:
         for u in self.computing.copy():
             unique_id = self.computing[u][1]
             # case the process have been canceled, clean
-            if not unique_id in self.queue.current:
+            if unique_id not in self.queue.current:
                 del self.computing[u]
                 continue
 
@@ -514,14 +514,14 @@ class BertModels:
         """
         Export predict file if exists
         """
-        file_name = f"predict.parquet"
+        file_name = "predict.parquet"
         path = self.path / name / file_name
 
         # change format if needed
         if format == "csv":
             df = pd.read_parquet(path)
             print(df)
-            file_name = f"predict.csv"
+            file_name = "predict.csv"
             path = self.path / name / file_name
             df.to_csv(path)
 
@@ -939,7 +939,7 @@ class SimpleModel:
         Y = Y[f]
         num_folds = 10
         kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
-        predicted_labels = cross_val_predict(model, X, Y, cv=kf)
+        # predicted_labels = cross_val_predict(model, X, Y, cv=kf)
         Y_pred = cross_val_predict(model, X, Y, cv=kf)
         weighted_f1 = f1_score(Y, Y_pred, average="weighted")
         accuracy = accuracy_score(Y, Y_pred)
