@@ -94,7 +94,8 @@ class Queue:
 
     def check(self) -> None:
         """
-        Check if the exector still works, if not recreate it
+        Check if the exector still works
+        if not, recreate it
         """
         try:
             self.executor.submit(lambda: None)
@@ -109,6 +110,8 @@ class Queue:
     def add(self, kind: str, func: Callable, args: dict) -> str:
         """
         Add new element to queue
+        - launch the function func and args as a subprocess
+        - push the process in the queue
         """
         # generate a unique id
         unique_id = str(uuid.uuid4())
@@ -195,7 +198,7 @@ class Users:
             with open("add_users.yaml") as f:
                 add_users = yaml.safe_load(f)
             for user, password in add_users.items():
-                if not user in existing:
+                if user not in existing:
                     self.add_user(user, password, "manager", "system")
                 else:
                     print(f"Not possible to add {user}, already exists")
