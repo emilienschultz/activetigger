@@ -43,6 +43,16 @@ export const SelectionManagement: FC = () => {
     reFetchSimpleModel();
   }, [reFetchSimpleModel, project]);
 
+  // force a default label
+  if (!selectionConfig.label) {
+    setAppContext((prev) => ({
+      ...prev,
+      selectionConfig: { ...selectionConfig, label: availableLabels[0] || '' },
+    }));
+  }
+
+  console.log(selectionConfig);
+
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
   ) : (

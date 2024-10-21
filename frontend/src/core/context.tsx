@@ -42,7 +42,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   },
   generateConfig: { n_batch: 1, selection_mode: 'all' },
   history: [],
-  freqRefreshSimpleModel: 10,
+  freqRefreshSimpleModel: 0,
   phase: 'train',
   isComputing: false,
 };
