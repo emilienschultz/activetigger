@@ -280,6 +280,10 @@ export const ProjectAnnotationPage: FC = () => {
               searchWords={selectionConfig.filter ? [selectionConfig.filter] : []}
               autoEscape={false}
               textToHighlight={textInFrame}
+              highlightStyle={{
+                backgroundColor: 'yellow',
+                margin: '-3px',
+              }}
             />
 
             {/* text out of frame */}
