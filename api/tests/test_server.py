@@ -1,12 +1,12 @@
-import pytest
-from pathlib import Path
-from activetigger.server import Server, Queue, Users
 import os
 import shutil
-import sqlalchemy
 import time
+from pathlib import Path
 
+import pytest
+import sqlalchemy
 from activetigger.datamodels import ProjectDataModel
+from activetigger.server import Queue, Server, Users
 
 
 @pytest.fixture
@@ -56,7 +56,6 @@ def test_create_queue():
 
 
 def test_shutdown_queue():
-
     queue = Queue(2)
     queue.close()
 
@@ -67,7 +66,6 @@ def dummy_func(x):
 
 
 def test_add_kill_job_queue():
-
     queue = Queue(2)
 
     num = queue.add("test", dummy_func, {"x": 2})
@@ -104,8 +102,8 @@ def test_state_queue():
 
 
 def test_server(start_server):
-    from pathlib import Path
     from datetime import datetime
+    from pathlib import Path
 
     assert isinstance(start_server.path, Path)
     assert isinstance(start_server.path_models, Path)
@@ -120,7 +118,6 @@ def test_server(start_server):
 
 
 def test_db_existing(start_server):
-
     engine = sqlalchemy.create_engine(f"sqlite:///{str(start_server.db)}")
 
     # Test existing tables
