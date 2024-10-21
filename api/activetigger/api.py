@@ -630,7 +630,7 @@ async def get_next(
         selection=next.selection,
         sample=next.sample,
         user=current_user.username,
-        tag=next.tag,
+        label=next.tag,
         history=next.history,
         frame=next.frame,
         filter=next.filter,
@@ -762,7 +762,6 @@ async def get_list_elements(
     if "error" in extract:
         raise HTTPException(status_code=500, detail=extract["error"])
     df = extract["batch"].fillna(" ")
-    print(df)
     table = (df[["index", "timestamp", "labels", "text"]]).to_dict(orient="records")
     return TableOutModel(
         items=table,

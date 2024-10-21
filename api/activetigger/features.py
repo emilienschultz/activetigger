@@ -3,11 +3,15 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
 from pandas import DataFrame, Series
 
 from activetigger.db import DatabaseManager
 from activetigger.functions import to_dtm, to_fasttext, to_sbert
 from activetigger.queue import Queue
+
+# Use parquet files to save features
+# In the future : database ?
 
 
 class Features:
@@ -33,6 +37,7 @@ class Features:
     options: dict
     lang: str
     db_manager: DatabaseManager
+    n: int
 
     def __init__(
         self,
@@ -54,9 +59,7 @@ class Features:
         self.path_models = models_path
         self.queue = queue
         self.informations = {}
-        content, map = self.load()
-        self.content = content
-        self.map = map
+        self.map, self.n = self.get_map()
         self.training: dict = {}
         self.lang = lang
 
@@ -93,22 +96,23 @@ class Features:
             "dataset": {},
         }
 
+        self.get_map()
+
     def __repr__(self) -> str:
         return f"Available features : {self.map}"
 
-    def load(self):
-        """
-        Load file and agregate columns
-        """
+    def get_map(self) -> tuple[dict, int]:
+        parquet_file = pq.ParquetFile(self.path)
+        column_names = parquet_file.schema.names
 
         def find_strings_with_pattern(strings, pattern):
             matching_strings = [s for s in strings if re.match(pattern, s)]
             return matching_strings
 
-        data = pd.read_parquet(self.path)
-        var = set([i.split("__")[0] for i in data.columns])
-        dic = {i: find_strings_with_pattern(data.columns, i) for i in var}
-        return data, dic
+        var = set([i.split("__")[0] for i in column_names if "__index" not in i])
+        dic = {i: find_strings_with_pattern(column_names, i) for i in var}
+        num_rows = parquet_file.metadata.num_rows
+        return dic, num_rows
 
     def add(
         self,
@@ -116,7 +120,7 @@ class Features:
         kind: str,
         username: str,
         parameters: dict,
-        content: DataFrame | Series,
+        new_content: DataFrame | Series,
     ) -> dict:
         """
         Add feature(s) and save
@@ -126,22 +130,21 @@ class Features:
             return {"error": "feature name already exists for this project"}
 
         # test length
-        if len(content) != len(self.content):
+        if len(new_content) != self.n:
             raise ValueError("Features don't have the right shape")
 
         # change type for series
-        if type(content) is Series:
-            content = pd.DataFrame(content)
+        if type(new_content) is Series:
+            new_content = pd.DataFrame(new_content)
 
         # change column name with a prefix
-        content.columns = [f"{name}__{i}" for i in content.columns]
+        new_content.columns = [f"{name}__{i}" for i in new_content.columns]
 
-        # add the mapping
-        self.map[name] = list(content.columns)
-
-        # add the feature to the dataset and save
-        self.content = pd.concat([self.content, content], axis=1)
-        self.content.to_parquet(self.path)
+        # read data, add the feature to the dataset and save
+        content = pd.read_parquet(self.path)
+        content = pd.concat([content, new_content], axis=1)
+        content.to_parquet(self.path)
+        del content
 
         # add informations to database
         self.db_manager.add_feature(
@@ -150,8 +153,12 @@ class Features:
             name,
             json.dumps(parameters),
             username,
-            json.dumps(list(content.columns)),
+            json.dumps(list(new_content.columns)),
         )
+
+        # refresh the map
+        self.map = self.get_map()[0]
+
         return {"success": "feature added"}
 
     def delete(self, name: str):
@@ -165,10 +172,17 @@ class Features:
             return {"error": "feature doesn't exist in database"}
 
         col = self.get([name])
-        del self.map[name]
-        self.content = self.content.drop(columns=col)
-        self.content.to_parquet(self.path)
+        # read data, delete columns and save
+        content = pd.read_parquet(self.path)
+        content[[i for i in content.columns if i not in col]].to_parquet(self.path)
+        del content
+
+        # delete from database
         self.db_manager.delete_feature(self.project_slug, name)
+
+        # refresh the map
+        self.map = self.get_map()[0]
+
         return {"success": "feature deleted"}
 
     def get(self, features: list | str = "all"):
@@ -190,7 +204,11 @@ class Features:
 
         if len(i) > 0:
             print("Missing features:", missing)
-        return self.content[cols]
+
+        # load only needed data from file
+        data = pd.read_parquet(self.path, columns=cols)
+
+        return data
 
     def info(self, name: str):
         feature = self.db_manager.get_feature(self.project_slug, name)
@@ -259,10 +277,11 @@ class Features:
         Get column raw dataset
         """
         df = pd.read_parquet(self.path_raw)
+        df_train = pd.read_parquet(self.path, columns=[])  # only the index
         if column_name not in list(df.columns):
             return {"error": "Column doesn't exist"}
         # filter only train id
-        return {"success": df.loc[self.content.index][column_name]}
+        return {"success": df.loc[df_train.index][column_name]}
 
     def compute(
         self, df: pd.Series, name: str, kind: str, parameters: dict, username: str
