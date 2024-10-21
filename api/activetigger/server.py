@@ -36,8 +36,8 @@ logger = logging.getLogger("server")
 db_name = "activetigger.db"
 data_raw = "data_raw.parquet"
 features_file = "features.parquet"
-labels_file = "labels.parquet"
-data_file = "data.parquet"
+annotations_file = "annotations.parquet"
+train_file = "train.parquet"
 test_file = "test.parquet"
 default_user = "root"
 ALGORITHM = "HS256"
@@ -50,9 +50,9 @@ class Server:
 
     db_name: str
     features_file: str
-    labels_file: str
+    annotations_file: str
     data_raw: str
-    data_file: str
+    train_file: str
     test_file: str
     default_user: str
     ALGORITHM: str
@@ -75,8 +75,8 @@ class Server:
         self.db_name = db_name
         self.data_raw = data_raw
         self.features_file = features_file
-        self.labels_file = labels_file
-        self.data_file = data_file
+        self.annotations_file = annotations_file
+        self.train_file = train_file
         self.test_file = test_file
         self.default_user = default_user
         self.ALGORITHM = ALGORITHM
@@ -87,6 +87,7 @@ class Server:
         # Define path
         self.path = Path(path)
         self.path_models = Path(path_models)
+
         # if a YAML configuration file exists, overwrite
         if Path("config.yaml").exists():
             with open("config.yaml") as f:
@@ -152,7 +153,7 @@ class Server:
         )
         return df
 
-    def get_projects(self, username: str) -> dict[dict]:
+    def get_auth_projects(self, username: str) -> dict[dict]:
         """
         Get projects authorized for the user
         """
@@ -169,7 +170,7 @@ class Server:
 
     def get_project_params(self, project_slug: str) -> ProjectModel | None:
         """
-        Get project from database
+        Get project params from database
         """
         existing_project = self.db_manager.get_project(project_slug)
         if existing_project:
@@ -183,13 +184,6 @@ class Server:
         with a sluggified form (to be able to use it in URL)
         """
         return slugify(project_name) in self.existing_projects()
-
-    def existing_projects(self) -> list:
-        """
-        Get existing projects
-        """
-        existing_projects = self.db_manager.existing_projects()
-        return existing_projects
 
     def create_access_token(self, data: dict, expires_min: int = 60):
         """
@@ -259,6 +253,13 @@ class Server:
                 project.project_slug, jsonable_encoder(project), username
             )
             return {"success": "project added"}
+
+    def existing_projects(self) -> list:
+        """
+        Get existing projects
+        """
+        existing_projects = self.db_manager.existing_projects()
+        return existing_projects
 
     def create_project(self, params: ProjectDataModel, username: str) -> dict:
         """
@@ -391,9 +392,9 @@ class Server:
                 [content[f_notna], content[f_na].sample(n_train_random)]
             )
 
-        trainset.to_parquet(params.dir / self.data_file, index=True)
+        trainset.to_parquet(params.dir / self.train_file, index=True)
         trainset[["text"] + params.cols_context].to_parquet(
-            params.dir / self.labels_file, index=True
+            params.dir / self.annotations_file, index=True
         )
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
@@ -466,6 +467,7 @@ class Project(Server):
     starting_time: float
     name: str
     queue: Queue
+    path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
     content: DataFrame
@@ -474,7 +476,6 @@ class Project(Server):
     bertmodels: BertModels
     simplemodels: SimpleModels
     generations: Generations
-    path_models: Path
 
     def __init__(
         self,
@@ -498,12 +499,12 @@ class Project(Server):
             raise ValueError("No directory exists for this project")
 
         # loading data
-        self.content = pd.read_parquet(self.params.dir / data_file)
+        self.content = pd.read_parquet(self.params.dir / train_file)
 
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
-            self.params.dir / labels_file,
+            self.params.dir / annotations_file,
             self.params.dir / test_file,
             self.db_manager,
         )
@@ -632,19 +633,21 @@ class Project(Server):
         selection: str = "deterministic",
         sample: str = "untagged",
         user: str = "user",
-        tag: None | str = None,
+        label: None | str = None,
         history: list = [],
         frame: None | list = None,
         filter: str | None = None,
     ) -> dict:
         """
-        Get next item for a specific scheme with a specific method
+        Get next item for a specific scheme with a specific selection method
         - deterministic
         - random
         - active
         - maxprob
         - test
 
+        history : previous selected elements
+        frame is the use of projection coordinates to limit the selection
         filter is a regex to use on the corpus
         """
 
@@ -732,18 +735,18 @@ class Project(Server):
         if selection == "maxprob":
             if not self.simplemodels.exists(user, scheme):
                 return {"error": "Simplemodel doesn't exist"}
-            if tag is None:  # default label to first
+            if label is None:  # default label to first
                 return {"error": "Select a tag"}
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             element_id = (
-                proba[f][tag]
+                proba[f][label]
                 .drop(history, errors="ignore")
                 .sort_values(ascending=False)
                 .index[0]
             )  # get max proba id
-            indicator = f"probability: {round(proba.loc[element_id,tag],2)}"
+            indicator = f"probability: {round(proba.loc[element_id,label],2)}"
 
         # higher entropy, only possible if the model has been trained
         if selection == "active":
@@ -802,12 +805,12 @@ class Project(Server):
     ):
         """
         Get an element of the database
+        Separate train/test dataset
         TODO: better homogeneise with get_next ?
-        TODO: test if element exists
         """
         if dataset == "test":
             if element_id not in self.schemes.test.index:
-                return {"error": "Element does not exist !!"}
+                return {"error": "Element does not exist."}
             data = {
                 "element_id": element_id,
                 "text": self.schemes.test.loc[element_id, "text"],
@@ -822,7 +825,7 @@ class Project(Server):
             return data
         if dataset == "train":
             if element_id not in self.content.index:
-                return {"error": "Element does not exist"}
+                return {"error": "Element does not exist."}
 
             # get prediction if it exists
             predict = {"label": None, "proba": None}
@@ -927,7 +930,6 @@ class Project(Server):
                 "options": self.features.options,
                 "available": list(self.features.map.keys()),
                 "training": list(self.features.training.keys()),
-                # "infos": self.features.get_info(),
             },
             "simplemodel": {
                 "options": self.simplemodels.available_models,
@@ -1002,134 +1004,6 @@ class Project(Server):
 
         r = {"name": file_name, "path": path / file_name}
         return r
-
-    # def add_generation(
-    #     self,
-    #     user: str,
-    #     project_name: str,
-    #     endpoint: str,
-    #     element_id: str,
-    #     prompt: str,
-    #     answer: str,
-    # ):
-    #     """
-    #     Add a generated element in the database
-    #     """
-    #     self.db_manager.add_generated(
-    #         user=user,
-    #         project_slug=project_name,
-    #         element_id=element_id,
-    #         endpoint=endpoint,
-    #         prompt=prompt,
-    #         answer=answer,
-    #     )
-    #     print("Added generation", element_id)
-    #     return None
-
-    # async def generate(
-    #     self, user: str, project_name: str, df: DataFrame, params: GenerateModel
-    # ) -> None:
-    #     """
-    #     Manage generation request
-    #     TODO : parallelize
-    #     TODO : add other endpoint
-    #     """
-    #     # errors
-    #     errors = []
-
-    #     # loop on all elements
-    #     for index, row in df.iterrows():
-    #         # insert the content in the prompt
-    #         if "#INSERTTEXT" not in params.prompt:
-    #             errors.append("Problem with the prompt")
-    #             continue
-    #         prompt = params.prompt.replace("#INSERTTEXT", row["text"])
-
-    #         # make request to the client
-    #         if params.api == "ollama":
-    #             response = await functions.request_ollama(params.endpoint, prompt)
-    #         else:
-    #             errors.append("Model does not exist")
-    #             continue
-
-    #         if "error" in response:
-    #             errors.append("Error in the request " + response["error"])
-
-    #         if "success" in response:
-    #             self.add_generation(
-    #                 user,
-    #                 project_name,
-    #                 params.endpoint,
-    #                 row["index"],
-    #                 prompt,
-    #                 response["success"],
-    #             )
-
-    #         print("element generated ", index)
-
-    #     print(errors)
-    #     return None
-
-    # async def compute_zeroshot(self, df, params):
-    #     """
-    #     Zero-shot beta version
-    #     # TODO : chunk & control the context size
-    #     """
-    #     r_error = ["error"] * len(df)
-
-    #     # create the chunks
-    #     # FOR THE MOMENT, ONLY 10 elements for DEMO
-    #     if len(df) > 10:
-    #         df = df[0:10]
-
-    #     # create prompt
-    #     list_texts = "\nTexts to annotate:\n"
-    #     for i, t in enumerate(list(df["text"])):
-    #         list_texts += f"{i}. {t}\n"
-    #     prompt = (
-    #         params.prompt
-    #         + list_texts
-    #         + '\nResponse format:\n{"annotations": [{"text": "Text 1", "label": "Label1"}, {"text": "Text 2", "label": "Label2"}, ...]}'
-    #     )
-
-    #     # make request to client
-    #     # client = openai.OpenAI(api_key=params.token)
-    #     try:
-    #         self.zeroshot = "computing"
-    #         client = openai.AsyncOpenAI(api_key=params.token)
-    #         print("Make openai call")
-    #         chat_completion = await client.chat.completions.create(
-    #             messages=[
-    #                 {
-    #                     "role": "system",
-    #                     "content": """Your are a careful assistant who annotates texts for a research project.
-    #                 You follow precisely the guidelines, which can be in different languages.
-    #                 """,
-    #                 },
-    #                 {
-    #                     "role": "user",
-    #                     "content": prompt,
-    #                 },
-    #             ],
-    #             model="gpt-3.5-turbo",
-    #             response_format={"type": "json_object"},
-    #         )
-    #         print("OpenAI call done")
-    #     except:
-    #         self.zeroshot = None
-    #         return {"error": "API connexion failed. Check the token."}
-    #     # extracting results
-    #     try:
-    #         r = json.loads(chat_completion.choices[0].message.content)["annotations"]
-    #         r = [i["label"] for i in r]
-    #     except:
-    #         return {"error": "Format problem"}
-    #     if len(r) == len(df):
-    #         df["zero_shot"] = r
-    #         self.zeroshot = df[["text", "zero_shot"]].reset_index().to_json()
-    #         return {"success": "data computed"}
-    #     else:
-    #         return {"error": "Problem with the number of element"}
 
     def get_active_users(self, period: int = 300):
         """

@@ -506,7 +506,7 @@ async def get_projects(
     Get general informations on the server
     depending of the status of connected user
     """
-    r = server.get_projects(current_user.username)
+    r = server.get_auth_projects(current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return AvailableProjectsModel(projects=r)
