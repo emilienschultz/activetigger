@@ -246,7 +246,7 @@ class Features:
                     kind = self.training[name]["kind"]
                     parameters = self.training[name]["parameters"]
                     username = self.training[name]["username"]
-                    self.add(name, kind, username, parameters, df)
+                    r = self.add(name, kind, username, parameters, df)
                     self.queue.delete(unique_id)
                     del self.training[name]
                     print("Add feature", name)
@@ -304,7 +304,7 @@ class Features:
             pattern = re.compile(parameters["value"])
             f = df.apply(lambda x: bool(pattern.search(x)))
             parameters["count"] = int(f.sum())
-            self.add(regex_name, kind, username, parameters, f)
+            r = self.add(regex_name, kind, username, parameters, f)
             return {"success": "regex added"}
 
         elif kind == "dataset":
@@ -343,7 +343,7 @@ class Features:
                 }
                 func = to_fasttext
             elif kind == "dfm":
-                args = parameters
+                args = parameters.copy()
                 args["texts"] = df
                 func = to_dtm
 

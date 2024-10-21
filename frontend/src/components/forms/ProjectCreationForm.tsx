@@ -121,8 +121,8 @@ export const ProjectCreationForm: FC = () => {
     <div className="container-fluid">
       <div className="row">
         <div className="explanations">
-          Create a new project. First, upload a file (csv or parquet, less than {maxSizeMo} Mo).
-          Then you will be able to indicate the columns needed and validate.
+          Create a new project. First, upload a file (format : csv, xlsx or parquet, size limit{' '}
+          {maxSizeMo} Mo). Then you will be able to indicate the columns needed and validate.
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>
