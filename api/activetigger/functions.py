@@ -307,6 +307,8 @@ def train_bert(
     # TODO : memory use
     """
 
+    print("PARAMS BERT", params, params["batchsize"])
+
     # clear memory
     torch.cuda.empty_cache()
 
@@ -385,8 +387,8 @@ def train_bert(
     if gpu:
         bert.cuda()
 
-    total_steps = (params["epochs"] * len(df["train"])) // (
-        params["batchsize"] * params["gradacc"]
+    total_steps = (float(params["epochs"]) * len(df["train"])) // (
+        int(params["batchsize"]) * float(params["gradacc"])
     )
     warmup_steps = (total_steps) // 10
     eval_steps = total_steps // params["eval"]
@@ -394,13 +396,13 @@ def train_bert(
     training_args = TrainingArguments(
         output_dir=current_path / "train",
         logging_dir=current_path / "logs",
-        learning_rate=params["lrate"],
-        weight_decay=params["wdecay"],
-        num_train_epochs=params["epochs"],
-        gradient_accumulation_steps=params["gradacc"],
-        per_device_train_batch_size=params["batchsize"],
+        learning_rate=float(params["lrate"]),
+        weight_decay=float(params["wdecay"]),
+        num_train_epochs=float(params["epochs"]),
+        gradient_accumulation_steps=float(params["gradacc"]),
+        per_device_train_batch_size=int(params["batchsize"]),
         per_device_eval_batch_size=32,
-        warmup_steps=warmup_steps,
+        warmup_steps=float(warmup_steps),
         eval_steps=eval_steps,
         evaluation_strategy="steps",
         save_strategy="steps",

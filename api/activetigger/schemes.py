@@ -356,7 +356,7 @@ class Schemes:
         mode : train, predict, test
         """
 
-        # TO FIX IN THE FUTURE
+        # TODO : FIX IN THE FUTURE
         if mode == "train":
             mode = "add"
 
@@ -371,6 +371,7 @@ class Schemes:
         # if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 
+        print("PUSH TAG", mode, user, self.project_slug, element_id, scheme, tag)
         self.db_manager.add_annotation(
             action=mode,
             user=user,

@@ -111,6 +111,10 @@ export const ProjectExplorationPage: FC = () => {
             searchWords={search ? [search] : []}
             autoEscape={false}
             textToHighlight={props.row.text}
+            highlightStyle={{
+              backgroundColor: 'yellow',
+              margin: '-3px',
+            }}
           />
         </div>
       ),
@@ -153,7 +157,7 @@ export const ProjectExplorationPage: FC = () => {
   const { addTableAnnotations } = useAddTableAnnotations(
     projectName || null,
     currentScheme || null,
-    selectionConfig.mode,
+    phase || null,
   );
   function validateChanges() {
     addTableAnnotations(Object.values(modifiedRows)); // send the modifications
