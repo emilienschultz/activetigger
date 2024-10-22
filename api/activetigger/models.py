@@ -711,17 +711,19 @@ class SimpleModels:
 
         # Select model
         if name == "knn":
-            model = KNeighborsClassifier(n_neighbors=int(model_params["n_neighbors"]))
+            model = KNeighborsClassifier(
+                n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1
+            )
 
         if name == "lasso":
             model = LogisticRegression(
-                penalty="l1", solver="liblinear", C=model_params["C"]
+                penalty="l1", solver="liblinear", C=model_params["C"], n_jobs=-1
             )
 
         if name == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
             model = LogisticRegression(
-                penalty="l2", solver="lbfgs", C=model_params["cost"]
+                penalty="l2", solver="lbfgs", C=model_params["cost"], n_jobs=-1
             )
 
         if name == "randomforest":
@@ -735,6 +737,7 @@ class SimpleModels:
                 max_features=int(model_params["max_features"])
                 if model_params["max_features"]
                 else None,
+                n_jobs=-1,
             )
 
         if name == "multi_naivebayes":

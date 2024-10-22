@@ -23,6 +23,7 @@ from sklearn.manifold import TSNE
 from sklearn.metrics import accuracy_score, f1_score, precision_score
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from torch.cuda.amp import autocast
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -65,7 +66,7 @@ def get_root_pwd() -> str:
 
 def get_hash(text: str):
     """
-    Hash string
+    Build a hash string from text
     """
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(text.encode(), salt)
@@ -74,7 +75,7 @@ def get_hash(text: str):
 
 def compare_to_hash(text: str, hash: str | bytes):
     """
-    Compare string to hash
+    Compare string to its hash
     """
     if type(text) is str:
         text = text.encode()
@@ -95,7 +96,7 @@ def to_dtm(
     **kwargs,
 ):
     """
-    Compute DFM embedding
+    Compute Document Term Matrix
 
     Norm :  None, l1, l2
     sublinear_tf : log
@@ -122,19 +123,26 @@ def to_dtm(
     return {"success": dtm}
 
 
-def tokenize(texts: Series, model: str = "fr_core_news_sm") -> Series:
+def tokenize(texts: Series, language: str = "fr") -> Series:
     """
     Clean texts with tokenization to facilitate word count
     TODO : faster tokenization ?
     """
+    if language == "en":
+        model = "en_core_web_sm"
+    elif language == "fr":
+        model = "fr_core_news_sm"
+    else:
+        return {"error": "Language not supported"}
 
-    nlp = spacy.load(model)
+    nlp = spacy.load(model, disable=["ner", "tagger"])
+    docs = nlp.pipe(texts, batch_size=1000)
+    textes_tk = [" ".join([str(token) for token in doc]) for doc in docs]
+    # def tokenize(t, nlp):
+    #     return " ".join([str(token) for token in nlp.tokenizer(t)])
 
-    def tokenize(t, nlp):
-        return " ".join([str(token) for token in nlp.tokenizer(t)])
-
-    textes_tk = texts.apply(lambda x: tokenize(x, nlp))
-    return textes_tk
+    # textes_tk = texts.apply(lambda x: tokenize(x, nlp))
+    return pd.Series(textes_tk, index=texts.index)
 
 
 def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> DataFrame:
@@ -164,7 +172,10 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
 
 
 def to_sbert(
-    texts: Series, model: str = "distiluse-base-multilingual-cased-v1", **kwargs
+    texts: Series,
+    model: str = "distiluse-base-multilingual-cased-v1",
+    batch_size: int = 32,
+    **kwargs,
 ) -> DataFrame:
     """
     Compute sbert embedding
@@ -180,7 +191,8 @@ def to_sbert(
     sbert = SentenceTransformer(model)
     sbert = sbert.to(device)
     sbert.max_seq_length = 512
-    emb = sbert.encode(list(texts), device=device)
+    with autocast():
+        emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
     emb = pd.DataFrame(emb, index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
     return {"success": emb}
@@ -188,7 +200,8 @@ def to_sbert(
 
 def compute_umap(features: DataFrame, params: dict, **kwargs):
     """
-    Compute UMAP
+    Compute UMAP projection
+    TODO : test the cuml implementation UMAP with GPU
     """
     scaled_features = StandardScaler().fit_transform(features)
     reducer = umap.UMAP(**params)
