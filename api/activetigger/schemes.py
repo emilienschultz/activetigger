@@ -53,7 +53,7 @@ class Schemes:
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
-        Join with text data in separate file (train or test)
+        Join with text data in separate file (train or test, in this case it is a XOR)
 
         Comments:
             For the moment tags can be add, test, predict, reconciliation
@@ -78,6 +78,8 @@ class Schemes:
         df.index = [str(i) for i in df.index]
         if complete:  # all the elements
             if "test" in kind:
+                if len(kind) > 1:
+                    return {"error": "Test data cannot be mixed with train data"}
                 # case if the test, join the text data
                 t = self.test[["text"]].join(df)
                 return t

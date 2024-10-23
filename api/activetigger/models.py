@@ -312,7 +312,6 @@ class BertModels:
         """
         Manage the training of a model from the API
         """
-
         # Check if there is no other competing processes
         # For the moment : 1 active process by user
         if user in self.computing:
@@ -327,8 +326,10 @@ class BertModels:
             test_size = 0.2
         # test json parameters
         try:
+            params = params.dict()
             e = BertParams(**params)
         except ValidationError as e:
+            print("Validation error")
             return {"error": e.json()}
 
         # name integrating the scheme & user + date

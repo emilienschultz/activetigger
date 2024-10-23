@@ -234,7 +234,7 @@ class BertModelModel(BaseModel):
     scheme: str
     name: str
     base_model: str
-    params: dict | BertModelParametersModel
+    params: BertModelParametersModel
     test_size: float
 
 

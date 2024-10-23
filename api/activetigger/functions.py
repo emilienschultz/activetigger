@@ -310,8 +310,6 @@ def train_bert(
     # TODO : memory use
     """
 
-    print("PARAMS BERT", params, params["batchsize"])
-
     # clear memory
     torch.cuda.empty_cache()
 
