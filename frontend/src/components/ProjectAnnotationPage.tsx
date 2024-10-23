@@ -300,7 +300,7 @@ export const ProjectAnnotationPage: FC = () => {
 
         {
           //display proba
-          displayConfig.displayPrediction && (
+          phase != 'test' && displayConfig.displayPrediction && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
             </div>
@@ -308,15 +308,18 @@ export const ProjectAnnotationPage: FC = () => {
         }
         {
           //display informations
-          displayConfig.displayContext && (
+          phase != 'test' && displayConfig.displayContext && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
-              Context : {JSON.stringify(element?.context)}
+              Context :{' '}
+              {Object.entries(element?.context || { None: 'None' }).map(
+                ([k, v]) => `${k} - ${v} ;`,
+              )}
             </div>
           )
         }
         {
           //display informations
-          displayConfig.displayHistory && (
+          phase != 'test' && displayConfig.displayHistory && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               History : {JSON.stringify(element?.history)}
             </div>

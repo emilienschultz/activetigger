@@ -98,7 +98,7 @@ export const ProjectTestPage: FC = () => {
                 </div>
                 <div className="form-check form-switch">
                   <input
-                    className="form-check-input"
+                    className="form-check-input bg-warning"
                     type="checkbox"
                     role="switch"
                     id="flexSwitchCheckDefault"
@@ -137,7 +137,7 @@ export const ProjectTestPage: FC = () => {
                 )}
               </Tab>
               <Tab eventKey="statistics" title="3. Statistics">
-                {model && model['test_scores'] ? (
+                {model && model.test_scores ? (
                   <div>
                     <table className="table">
                       <thead>

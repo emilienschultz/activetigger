@@ -64,7 +64,15 @@ export const ProjectExportPage: FC = () => {
                 if (currentScheme) getAnnotationsFile(currentScheme, format);
               }}
             >
-              Export annotated data
+              Train data
+            </button>
+            <button
+              className="btn btn-primary m-3"
+              onClick={() => {
+                if (currentScheme) getAnnotationsFile(currentScheme, format);
+              }}
+            >
+              Test data
             </button>
             <h4 className="subsection">Features</h4>
             <div>

@@ -273,6 +273,9 @@ def fit_model(model, X, Y, labels, **kwargs):
     }
 
     r = {"model": model, "proba": proba, "statistics": statistics, "cv10": cv10}
+
+    print("STATISTICS", statistics)
+
     return r
 
 
