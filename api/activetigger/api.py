@@ -785,7 +785,7 @@ async def post_list_elements(
             errors.append(annotation)
             continue
 
-        r = project.schemes.push_tag(
+        r = project.schemes.push_annotation(
             annotation.element_id,
             annotation.label,
             annotation.scheme,
@@ -842,12 +842,12 @@ async def post_reconciliation(
 
     # for each user
     for u in users:
-        r = project.schemes.push_tag(element_id, label, scheme, u, "add")
+        r = project.schemes.push_annotation(element_id, label, scheme, u, "train")
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
     # add a new tag for the reconciliator
-    project.schemes.push_tag(
+    project.schemes.push_annotation(
         element_id, label, scheme, current_user.username, "reconciliation"
     )
 
@@ -974,7 +974,7 @@ async def get_element(
 
 
 @app.post("/annotation/{action}", dependencies=[Depends(verified_user)])
-async def post_tag(
+async def post_annotation(
     action: ActionModel,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
@@ -987,7 +987,7 @@ async def post_tag(
     - No information kept of selection process
     """
     if action in ["add", "update"]:
-        r = project.schemes.push_tag(
+        r = project.schemes.push_annotation(
             annotation.element_id,
             annotation.label,
             annotation.scheme,
@@ -1006,8 +1006,11 @@ async def post_tag(
         return None
 
     if action == "delete":
-        r = project.schemes.delete_tag(
-            annotation.element_id, annotation.scheme, current_user.username
+        r = project.schemes.delete_annotation(
+            annotation.element_id,
+            annotation.scheme,
+            annotation.dataset,
+            current_user.username,
         )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
@@ -1084,7 +1087,7 @@ async def rename_label(
             raise HTTPException(status_code=500, detail=r["error"])
 
     # convert the tags from the previous label
-    r = project.schemes.convert_tags(
+    r = project.schemes.convert_annotations(
         former_label, new_label, scheme, current_user.username
     )
     if "error" in r:

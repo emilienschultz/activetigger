@@ -413,7 +413,7 @@ class Server:
             # add the labels in the database
             for element_id, label in df.items():
                 self.db_manager.add_annotation(
-                    action="add",
+                    action="train",
                     user=username,
                     project_slug=project_slug,
                     element_id=element_id,
@@ -887,7 +887,7 @@ class Project(Server):
             for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
         ]
 
-        df = self.schemes.get_scheme_data(scheme, kind=["add", "predict"])
+        df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
         r["train_annotated_n"] = len(df)
         r["train_annotated_distribution"] = json.loads(
             df["labels"].value_counts().to_json()

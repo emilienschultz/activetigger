@@ -507,7 +507,7 @@ class DatabaseManager:
                 .filter(
                     Annotations.project == project_slug,
                     Annotations.scheme == scheme,
-                    Annotations.action == "add",
+                    Annotations.action == "train",
                 )
                 .order_by(Annotations.time.desc())
                 .limit(limit)
@@ -522,7 +522,7 @@ class DatabaseManager:
                     Annotations.project == project_slug,
                     Annotations.scheme == scheme,
                     Annotations.user == user,
-                    Annotations.action == "add",
+                    Annotations.action == "train",
                 )
                 .order_by(Annotations.time.desc())
                 .limit(limit)

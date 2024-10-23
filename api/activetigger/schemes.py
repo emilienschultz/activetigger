@@ -49,7 +49,7 @@ class Schemes:
         return f"Coding schemes available {self.available()}"
 
     def get_scheme_data(
-        self, scheme: str, complete: bool = False, kind: list | str = ["add"]
+        self, scheme: str, complete: bool = False, kind: list | str = ["train"]
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -57,8 +57,6 @@ class Schemes:
 
         Comments:
             For the moment tags can be add, test, predict, reconciliation
-
-        TODO : replace all "add" with "train" in the code
         """
         if scheme not in self.available():
             return {"error": "Scheme doesn't exist"}
@@ -119,7 +117,7 @@ class Schemes:
         # return the result
         return df, users
 
-    def convert_tags(
+    def convert_annotations(
         self, former_label: str, new_label: str, scheme: str, username: str
     ):
         """
@@ -130,7 +128,7 @@ class Schemes:
         to_recode = df[df["labels"] == former_label].index
         # for each of them, push the new tag
         for i in to_recode:
-            self.push_tag(i, new_label, scheme, username, "add")
+            self.push_annotation(i, new_label, scheme, username, "train")
         return {"success": "All tags recoded"}
 
     def get_total(self, dataset="train"):
@@ -276,11 +274,19 @@ class Schemes:
         labels = available[scheme]
         labels.remove(label)
         # push empty entry for tagged elements
-        df = self.get_scheme_data(scheme)
+        # both for train
+        df = self.get_scheme_data(scheme, kind="train")
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             print(i)
-            self.push_tag(i, None, scheme, user, "add")
+            self.push_annotation(i, None, scheme, user, "train")
+        # and test
+        df = self.get_scheme_data(scheme, kind="test")
+        elements = list(df[df["labels"] == label].index)
+        for i in elements:
+            print(i)
+            self.push_annotation(i, None, scheme, user, "test")
+        # update scheme
         self.update_scheme(scheme, labels)
         return {"success": "scheme updated removing a label"}
 
@@ -320,7 +326,9 @@ class Schemes:
         r = {"project_slug": self.project_slug, "availables": self.available()}
         return r
 
-    def delete_tag(self, element_id: str, scheme: str, user: str = "server") -> bool:
+    def delete_annotation(
+        self, element_id: str, scheme: str, dataset: str, user: str = "server"
+    ) -> bool:
         """
         Delete a recorded tag
         i.e. : add empty label
@@ -335,7 +343,7 @@ class Schemes:
             annotation=None,
         )
         self.db_manager.add_annotation(
-            action="add",
+            action=dataset,
             user=user,
             project_slug=self.project_slug,
             element_id=element_id,
@@ -345,10 +353,10 @@ class Schemes:
 
         return True
 
-    def push_tag(
+    def push_annotation(
         self,
         element_id: str,
-        tag: str | None,
+        label: str | None,
         scheme: str,
         user: str = "server",
         mode: str = "train",
@@ -358,45 +366,38 @@ class Schemes:
         mode : train, predict, test
         """
 
-        # TODO : FIX IN THE FUTURE
-        if mode == "train":
-            mode = "add"
-
         # test if the action is possible
         a = self.available()
         if scheme not in a:
             return {"error": "scheme unavailable"}
-        if (tag is not None) and (tag not in a[scheme]):
+        if (label is not None) and (label not in a[scheme]):
             return {"error": "this tag doesn't belong to this scheme"}
 
         # TODO : add a test also for testing
         # if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 
-        print("PUSH TAG", mode, user, self.project_slug, element_id, scheme, tag)
+        print("PUSH TAG", mode, user, self.project_slug, element_id, scheme, label)
         self.db_manager.add_annotation(
             action=mode,
             user=user,
             project_slug=self.project_slug,
             element_id=element_id,
             scheme=scheme,
-            annotation=tag,
+            annotation=label,
         )
-        print(("push tag", mode, user, self.project_slug, element_id, scheme, tag))
-        return {"success": "tag added"}
-
-    def push_table(self, table, user: str, action: str = "add") -> bool:
-        """
-        Push table index/tags to update
-        Comments:
-        - only update modified labels
-        """
-        data = {i: j for i, j in zip(table.list_ids, table.list_labels)}
-        for i in data:
-            r = self.push_tag(i, data[i], table.scheme, user, action)
-            if "error" in r:
-                return {"error": "Something happened when recording."}
-        return {"success": "table pushed"}
+        print(
+            (
+                "push annotation",
+                mode,
+                user,
+                self.project_slug,
+                element_id,
+                scheme,
+                label,
+            )
+        )
+        return {"success": "annotation added"}
 
     def get_coding_users(self, scheme: str):
         """
