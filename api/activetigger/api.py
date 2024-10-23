@@ -1423,12 +1423,15 @@ async def save_bert(
 
 @app.get("/export/data", dependencies=[Depends(verified_user)])
 async def export_data(
-    project: Annotated[Project, Depends(get_project)], scheme: str, format: str
+    project: Annotated[Project, Depends(get_project)],
+    scheme: str,
+    format: str,
+    dataset: str = "train",
 ) -> FileResponse:
     """
     Export labelled data
     """
-    r = project.export_data(format=format, scheme=scheme)
+    r = project.export_data(format=format, scheme=scheme, dataset=dataset)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return FileResponse(r["path"], filename=r["name"])

@@ -61,7 +61,7 @@ export const ProjectExportPage: FC = () => {
             <button
               className="btn btn-primary"
               onClick={() => {
-                if (currentScheme) getAnnotationsFile(currentScheme, format);
+                if (currentScheme) getAnnotationsFile(currentScheme, format, 'train');
               }}
             >
               Train data
@@ -69,7 +69,7 @@ export const ProjectExportPage: FC = () => {
             <button
               className="btn btn-primary m-3"
               onClick={() => {
-                if (currentScheme) getAnnotationsFile(currentScheme, format);
+                if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
               }}
             >
               Test data

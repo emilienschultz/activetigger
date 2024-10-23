@@ -984,7 +984,7 @@ class Project(Server):
 
         return r
 
-    def export_data(self, scheme: str, format: str = "parquet"):
+    def export_data(self, scheme: str, dataset: str = "train", format: str = "parquet"):
         """
         Export annotation data in different formats
         """
@@ -992,9 +992,15 @@ class Project(Server):
         if not path.exists():
             raise ValueError("Problem of filesystem for project")
 
-        data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
-
-        file_name = f"data_{self.name}_{scheme}.{format}"
+        # test or train
+        if dataset == "test":
+            data = self.schemes.get_scheme_data(
+                scheme=scheme, complete=True, kind="test"
+            )
+            file_name = f"data_test_{self.name}_{scheme}.{format}"
+        else:
+            data = self.schemes.get_scheme_data(scheme=scheme, complete=False)
+            file_name = f"data_train_{self.name}_{scheme}.{format}"
 
         # Create files
         if format == "csv":

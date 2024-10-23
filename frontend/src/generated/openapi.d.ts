@@ -3208,6 +3208,7 @@ export interface operations {
             query: {
                 scheme: string;
                 format: string;
+                dataset?: string;
                 project_slug: string;
             };
             header?: never;

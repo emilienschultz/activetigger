@@ -1075,7 +1075,7 @@ export function useGetFeaturesFile(projectSlug: string | null) {
 export function useGetAnnotationsFile(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getAnnotationsFile = useCallback(
-    async (scheme: string, format: string) => {
+    async (scheme: string, format: string, dataset: string) => {
       if (projectSlug) {
         const res = await api.GET('/export/data', {
           params: {
@@ -1083,6 +1083,7 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
               project_slug: projectSlug,
               scheme: scheme,
               format: format,
+              dataset: dataset,
             },
           },
           parseAs: 'blob',
