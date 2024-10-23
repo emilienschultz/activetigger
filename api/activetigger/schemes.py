@@ -335,7 +335,7 @@ class Schemes:
         """
 
         self.db_manager.add_annotation(
-            action="delete",
+            dataset="delete",
             user=user,
             project_slug=self.project_slug,
             element_id=element_id,
@@ -343,7 +343,7 @@ class Schemes:
             annotation=None,
         )
         self.db_manager.add_annotation(
-            action=dataset,
+            dataset=dataset,
             user=user,
             project_slug=self.project_slug,
             element_id=element_id,
@@ -377,9 +377,8 @@ class Schemes:
         # if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 
-        print("PUSH TAG", mode, user, self.project_slug, element_id, scheme, label)
         self.db_manager.add_annotation(
-            action=mode,
+            dataset=mode,
             user=user,
             project_slug=self.project_slug,
             element_id=element_id,

@@ -280,7 +280,7 @@ class Server:
         if params.col_id is None or params.col_id == "":
             return {"error": "Probleme with the id column: empty name"}
         if params.col_id is None or params.col_text == "":
-            return {"error": "Probleme with the id column: empty name"}
+            return {"error": "Probleme with the text column: empty name"}
 
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
@@ -307,6 +307,7 @@ class Server:
         content = content.drop(
             columns=[i for i in content.columns if "__index_level" in i]
         )
+        content = content.dropna(how="all")
         all_columns = list(content.columns)
 
         # test if the size of the sample requested is possible
@@ -317,7 +318,8 @@ class Server:
             }
 
         # check if index is unique otherwise FORCE the index from 0 to N
-        if not content[params.col_id].nunique() == len(content):
+        print("INDEX", params.col_id, content[params.col_id].nunique(), len(content))
+        if not (content[params.col_id].nunique() == len(content)):
             print("There are duplicate in the column selected for index")
             content["id"] = range(0, len(content))
             params.col_id = "id"
@@ -413,7 +415,7 @@ class Server:
             # add the labels in the database
             for element_id, label in df.items():
                 self.db_manager.add_annotation(
-                    action="train",
+                    dataset="train",
                     user=username,
                     project_slug=project_slug,
                     element_id=element_id,

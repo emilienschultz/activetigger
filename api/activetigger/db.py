@@ -49,7 +49,7 @@ class Annotations(Base):
     __tablename__ = "annotations"
     id = Column(Integer, primary_key=True, autoincrement=True)
     time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
-    action = Column(String)
+    dataset = Column(String)
     user = Column(String)
     project = Column(String)
     element_id = Column(String)
@@ -459,7 +459,7 @@ class DatabaseManager:
         session.close()
         return {"key": user.key, "description": user.description}
 
-    def get_scheme_elements(self, project_slug: str, scheme: str, actions: list[str]):
+    def get_scheme_elements(self, project_slug: str, scheme: str, dataset: list[str]):
         """
         Get last annotation for each element id for a project/scheme
         """
@@ -475,7 +475,7 @@ class DatabaseManager:
             .filter(
                 Annotations.scheme == scheme,
                 Annotations.project == project_slug,
-                Annotations.action.in_(actions),
+                Annotations.dataset.in_(dataset),
             )
             .group_by(Annotations.element_id)
             .order_by(func.max(Annotations.time).desc())
@@ -507,7 +507,7 @@ class DatabaseManager:
                 .filter(
                     Annotations.project == project_slug,
                     Annotations.scheme == scheme,
-                    Annotations.action == "train",
+                    Annotations.dataset == "train",
                 )
                 .order_by(Annotations.time.desc())
                 .limit(limit)
@@ -522,7 +522,7 @@ class DatabaseManager:
                     Annotations.project == project_slug,
                     Annotations.scheme == scheme,
                     Annotations.user == user,
-                    Annotations.action == "train",
+                    Annotations.dataset == "train",
                 )
                 .order_by(Annotations.time.desc())
                 .limit(limit)
@@ -538,7 +538,7 @@ class DatabaseManager:
         annotations = (
             session.query(
                 Annotations.annotation,
-                Annotations.action,
+                Annotations.dataset,
                 Annotations.user,
                 Annotations.time,
             )
@@ -551,11 +551,11 @@ class DatabaseManager:
             .limit(limit)
             .all()
         )
-        return [[a.annotation, a.action, a.user, a.time] for a in annotations]
+        return [[a.annotation, a.dataset, a.user, a.time] for a in annotations]
 
     def add_annotation(
         self,
-        action: str,
+        dataset: str,
         user: str,
         project_slug: str,
         element_id: str,
@@ -565,7 +565,7 @@ class DatabaseManager:
         session = self.Session()
         annotation = Annotations(
             time=datetime.datetime.now(),
-            action=action,
+            dataset=dataset,
             user=user,
             project=project_slug,
             element_id=element_id,
