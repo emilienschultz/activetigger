@@ -999,14 +999,14 @@ class Project(Server):
             )
             file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
-            data = self.schemes.get_scheme_data(scheme=scheme, complete=False)
+            data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
             file_name = f"data_train_{self.name}_{scheme}.{format}"
 
         # Create files
         if format == "csv":
-            data.to_csv(path / file_name)
+            data.reset_index().map(str).to_csv(path / file_name)
         if format == "parquet":
-            data.to_parquet(path / file_name)
+            data.reset_index().map(str).to_parquet(path / file_name)
 
         r = {"name": file_name, "path": path / file_name}
         return r
