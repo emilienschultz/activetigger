@@ -19,13 +19,13 @@ class BaseProjectModel(BaseModel):
     n_train: int
     n_test: int
     dir: Path | None = None
-    embeddings: list = []
+    embeddings: List[str] = []
     n_skip: int = 0
-    default_scheme: list = []
+    default_scheme: List[str] = []
     language: str = "fr"
     col_label: str | None = None
-    cols_context: list = []
-    cols_test: list = []
+    cols_context: List[str] = []
+    cols_test: List[str] = []
     test: bool = False
 
 

@@ -34,7 +34,7 @@ logger = logging.getLogger("server")
 
 # Define server parameters
 db_name = "activetigger.db"
-data_raw = "data_raw.parquet"
+data_all = "data_all.parquet"
 features_file = "features.parquet"
 annotations_file = "annotations.parquet"
 train_file = "train.parquet"
@@ -51,7 +51,7 @@ class Server:
     db_name: str
     features_file: str
     annotations_file: str
-    data_raw: str
+    data_all: str
     train_file: str
     test_file: str
     default_user: str
@@ -73,7 +73,7 @@ class Server:
         """
 
         self.db_name = db_name
-        self.data_raw = data_raw
+        self.data_all = data_all
         self.features_file = features_file
         self.annotations_file = annotations_file
         self.train_file = train_file
@@ -272,6 +272,7 @@ class Server:
         Comments:
         - when saved, the files followed the nomenclature of the project : text, label, etc.
         """
+
         # test if possible to create the project
         if self.exists(params.project_name):
             return {"error": "Project name already exist"}
@@ -279,7 +280,7 @@ class Server:
         # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
             return {"error": "Probleme with the id column: empty name"}
-        if params.col_id is None or params.col_text == "":
+        if params.col_text is None or params.col_text == "":
             return {"error": "Probleme with the text column: empty name"}
 
         # get the slug of the project name as a key
@@ -303,10 +304,11 @@ class Server:
 
         # Step 1 : load all data and index to str and rename
         content = pd.read_csv(params.dir / "data_raw.csv", dtype=str)
-        # quick fix to avoid problem with parquet index
+        # quick fix to avoid problem with pandas index saved in parquet
         content = content.drop(
             columns=[i for i in content.columns if "__index_level" in i]
         )
+        # remove empty lines
         content = content.dropna(how="all")
         all_columns = list(content.columns)
 
@@ -318,19 +320,17 @@ class Server:
             }
 
         # check if index is unique otherwise FORCE the index from 0 to N
-        print("INDEX", params.col_id, content[params.col_id].nunique(), len(content))
         if not (content[params.col_id].nunique() == len(content)):
             print("There are duplicate in the column selected for index")
             content["id"] = range(0, len(content))
             params.col_id = "id"
 
-        # rename the index
-        content = content.rename(columns={params.col_id: "id"}).set_index("id")
+        # rename the index col, transform it in str, and set it as index
+        content.rename(columns={params.col_id: "id"}, inplace=True)
+        content["id"] = content["id"].astype(str)
+        content.set_index("id", inplace=True)
 
-        # save a raw copy of the content
-        content.to_parquet(params.dir / self.data_raw, index=True)
-
-        # create the text column, merging different columns
+        # create the text column, merging the different columns
         if isinstance(params.col_text, list):
             content["text"] = content[params.col_text].apply(
                 lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
@@ -339,23 +339,26 @@ class Server:
             content["text"] = content[params.col_text]
 
         # drop NA texts
+        n_before = len(content)
         content.dropna(subset=["text"], inplace=True)
+        if n_before != len(content):
+            print(f"Drop {n_before - len(content)} empty text lines")
 
         # manage the label column
-        if params.col_label:
+        if (params.col_label is not None) & (params.col_label != ""):
             content.rename(columns={params.col_label: "label"}, inplace=True)
         else:
             content["label"] = None
-
-        # drop duplicated index and assure it is string
-        content = content[~content.index.duplicated(keep="first")]
-        content.index = [str(i) for i in list(content.index)]  # sure to be str
+            params.col_label = None
 
         # limit of usable text (in the futur, will be defined by the number of token)
         def limit(text):
             return 1200
 
         content["limit"] = content["text"].apply(limit)
+
+        # save a complete copy of the dataset
+        content.to_parquet(params.dir / self.data_all, index=True)
 
         # Step 2 : test dataset, no already labelled data, random + stratification
         rows_test = []
@@ -401,28 +404,35 @@ class Server:
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
         # if the case, add labels in the database
+
         if (params.col_label is not None) and ("label" in trainset.columns):
-            print("Add scheme/labels from file")
+            # check there is a limited number of labels
+            print("COL LABEL", params.col_label)
 
             df = trainset["label"].dropna()
             params.default_scheme = list(df.unique())
 
-            # add the scheme in the database
-            self.db_manager.add_scheme(
-                project_slug, "default", json.dumps(params.default_scheme), "file"
-            )
+            if len(params.default_scheme) < 30:
+                print("Add scheme/labels from file")
 
-            # add the labels in the database
-            for element_id, label in df.items():
-                self.db_manager.add_annotation(
-                    dataset="train",
-                    user=username,
-                    project_slug=project_slug,
-                    element_id=element_id,
-                    scheme="default",
-                    annotation=label,
+                # add the scheme in the database
+                self.db_manager.add_scheme(
+                    project_slug, "default", json.dumps(params.default_scheme), "file"
                 )
-                print("add annotations ", element_id)
+
+                # add the labels in the database
+                for element_id, label in df.items():
+                    self.db_manager.add_annotation(
+                        dataset="train",
+                        user=username,
+                        project_slug=project_slug,
+                        element_id=element_id,
+                        scheme="default",
+                        annotation=label,
+                    )
+                    print("add annotations ", element_id)
+            else:
+                print("Too many different labels > 30")
 
         # add user right on the project + root
         self.users.set_auth(username, project_slug, "manager")
@@ -513,7 +523,7 @@ class Project(Server):
         self.features = Features(
             project_slug,
             self.params.dir / features_file,
-            self.params.dir / data_raw,
+            self.params.dir / data_all,
             self.params.dir / self.path_models,
             self.queue,
             self.db_manager,
