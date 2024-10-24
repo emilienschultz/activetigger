@@ -82,9 +82,7 @@ export const ProjectPage: FC = () => {
       <ProjectPageLayout projectName={projectName}>
         {project && (
           <div className="container-fluid">
-            <div className="row">
-              <h2 className="subsection">Project panel</h2>
-            </div>
+            <div className="row"></div>
 
             <div className="row">
               <SchemesManagement projectSlug={projectName} />

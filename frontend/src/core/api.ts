@@ -1013,13 +1013,14 @@ export function useModelInformations(project_slug: string | null, model_name: st
 export function useComputeModelPrediction(projectSlug: string | null) {
   const { notify } = useNotifications();
   const computeModelPrediction = useCallback(
-    async (model_name: string) => {
+    async (model_name: string, dataset: string) => {
       if (projectSlug) {
         const res = await api.POST('/models/bert/predict', {
           params: {
             query: {
               project_slug: projectSlug,
               model_name: model_name,
+              dataset: dataset,
             },
           },
         });

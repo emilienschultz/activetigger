@@ -1,4 +1,3 @@
-import datetime
 import importlib
 import logging
 import time
@@ -185,7 +184,11 @@ async def check_processes(timer, step: int = 1) -> None:
                 df_num = functions.cat2num(predictions[f])
                 name = f.replace("__", "_")
                 project.features.add(
-                    name, "prediction", {}, "current", df_num
+                    name=name,
+                    kind="prediction",
+                    parameters={},
+                    username="system",
+                    new_content=df_num,
                 )  # avoid __ in the name for features
                 print("Add feature", name)
 
@@ -1277,16 +1280,32 @@ async def predict(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_name: str,
-    data: str = "all",
+    dataset: str = "all",
 ) -> None:
     """
     Start prediction with a model
     """
-    df = project.content[["text"]]  # get data
+    # get the data
+    if dataset == "train":
+        df = project.content[["text"]]  # get data
+    elif dataset == "all":
+        r = project.features.get_column_raw("text", index="all")
+        if "success" in r:
+            df = pd.DataFrame(r["success"])
+        else:
+            return {"error": "Problem with full dataset"}
+    else:
+        return {"error": f"dataset {dataset} not found"}
 
-    # start process
+    print("PREDICTION", dataset, df.shape)
+
+    # start process to predict
     r = project.bertmodels.start_predicting_process(
-        name=model_name, df=df, col_text="text", user=current_user.username
+        name=model_name,
+        user=current_user.username,
+        df=df,
+        col_text="text",
+        dataset=dataset,
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -1464,7 +1483,9 @@ async def export_prediction(
     """
     Export annotations
     """
-    r = project.bertmodels.export_prediction(name=name, format=format)
+    r = project.bertmodels.export_prediction(
+        name=name, file_name="predict_all.parquet", format=format
+    )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return FileResponse(r["path"], filename=r["name"])

@@ -46,7 +46,8 @@ export const ProjectExportPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-8">
-            <div className="explanations">Download data as files</div>
+            <div className="explanations">Download data</div>
+
             <div>Select a format</div>
             <select
               className="form-select"
@@ -119,7 +120,7 @@ export const ProjectExportPage: FC = () => {
                 <div>
                   {modelUrl && (
                     <Link to={modelUrl} target="_blank" download className="btn btn-primary mt-3">
-                      Export model
+                      Export fine-tuned model
                     </Link>
                   )}
                   {/* <button
@@ -143,7 +144,7 @@ export const ProjectExportPage: FC = () => {
                         }
                       }}
                     >
-                      Export predictions
+                      Export dataset prediction
                     </button>
                   )}
                 </div>

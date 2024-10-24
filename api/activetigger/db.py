@@ -625,10 +625,11 @@ class DatabaseManager:
         project: str,
         kind: str,
         name: str,
-        parameters: dict,
+        parameters: str,
         user: str,
         data: str = None,
     ):
+        print("PARAMETERS", parameters)
         session = self.Session()
         feature = Features(
             project=project,

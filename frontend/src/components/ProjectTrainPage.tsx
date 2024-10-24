@@ -49,6 +49,11 @@ export const ProjectTrainPage: FC = () => {
   const { model } = useModelInformations(projectSlug || null, currentModel || null);
   const model_scores = model?.train_scores;
 
+  const availablePrediction =
+    currentScheme && currentModel && project?.bertmodels.available[currentScheme][currentModel]
+      ? project?.bertmodels.available[currentScheme][currentModel]['predicted']
+      : false;
+
   // available models
   const availableModels =
     currentScheme && project?.bertmodels.available[currentScheme]
@@ -182,6 +187,8 @@ export const ProjectTrainPage: FC = () => {
     },
   ];
 
+  console.log(project);
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -207,6 +214,7 @@ export const ProjectTrainPage: FC = () => {
                     onClick={() => {
                       if (currentModel) {
                         deleteBertModel(currentModel);
+                        setCurrentModel(null);
                       }
                     }}
                   >
@@ -216,100 +224,143 @@ export const ProjectTrainPage: FC = () => {
 
                 {currentModel && (
                   <div>
-                    <details>
-                      <summary className="custom-summary">Rename</summary>
-                      <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                        <input
-                          id="new_name"
-                          className="form-control me-2 mt-2"
-                          type="text"
-                          placeholder="New name of the model"
-                          {...registerRename('new_name')}
-                        />
-                        <button className="btn btn-primary me-2 mt-2">Rename</button>
-                      </form>
-                    </details>
-
                     {model && (
                       <div>
-                        {!model_scores && (
-                          <button
-                            className="btn btn-primary me-2 mt-2"
-                            onClick={() => computeModelPrediction(currentModel)}
-                          >
-                            Compute prediction
-                          </button>
-                        )}
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th scope="col">Key</th>
-                              <th scope="col">Value</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {Object.entries(model.training['parameters']).map(([key, value]) => (
-                              <tr key={key}>
-                                <td>{key}</td>
-                                <td>{JSON.stringify(value)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        <div className="col-6 col-lg-4">
-                          <LossChart />
-                        </div>
                         <details>
-                          <summary>Scores</summary>
-                          {model.train_scores && (
-                            <table className="table">
-                              {' '}
-                              <thead>
-                                <tr>
-                                  <th scope="col">Key</th>
-                                  <th scope="col">Value</th>
+                          <summary>Parameters</summary>
+                          <details>
+                            <summary>Rename</summary>
+                            <form onSubmit={handleSubmitRename(onSubmitRename)}>
+                              <input
+                                id="new_name"
+                                className="form-control me-2 mt-2"
+                                type="text"
+                                placeholder="New name of the model"
+                                {...registerRename('new_name')}
+                              />
+                              <button className="btn btn-primary me-2 mt-2">Rename</button>
+                            </form>
+                          </details>
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th scope="col">Key</th>
+                                <th scope="col">Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(model.training['parameters']).map(([key, value]) => (
+                                <tr key={key}>
+                                  <td>{key}</td>
+                                  <td>{JSON.stringify(value)}</td>
                                 </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td>F1 micro</td>
-                                  <td>{model.train_scores['f1_micro']}</td>
-                                </tr>
-                                <tr>
-                                  <td>F1 macro</td>
-                                  <td>{model.train_scores['f1_macro']}</td>
-                                </tr>
-                                <tr>
-                                  <td>F1 weighted</td>
-                                  <td>{model.train_scores['f1_weighted']}</td>
-                                </tr>
-                                <tr>
-                                  <td>F1</td>
-                                  <td>{String(model.train_scores['f1'])}</td>
-                                </tr>
-                                <tr>
-                                  <td>Precision</td>
-                                  <td>{String(model.train_scores['precision'])}</td>
-                                </tr>
-                                <tr>
-                                  <td>Recall</td>
-                                  <td>{String(model.train_scores['recall'])}</td>
-                                </tr>
-                                <tr>
-                                  <td>Accuray</td>
-                                  <td>{String(model.train_scores['accuracy'])}</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          )}
+                              ))}
+                            </tbody>
+                          </table>
+                          <div className="col-6 col-lg-4">
+                            <LossChart />
+                          </div>
                         </details>
                         <details>
-                          <summary>False predictions</summary>
-                          <DataGrid
-                            className="fill-grid"
-                            columns={columns}
-                            rows={falsePredictions || []}
-                          />
+                          <summary>Scores</summary>
+                          {!model_scores && !isComputing && (
+                            <button
+                              className="btn btn-primary me-2 mt-2"
+                              onClick={() => computeModelPrediction(currentModel, 'train')}
+                            >
+                              Predict on train dataset
+                            </button>
+                          )}
+                          {isComputing && (
+                            <div>
+                              <button
+                                key="stop"
+                                className="btn btn-primary mt-3 d-flex align-items-center"
+                                onClick={stopTraining}
+                              >
+                                <PulseLoader color={'white'} /> Stop current process
+                              </button>
+                            </div>
+                          )}
+                          {model.train_scores && (
+                            <div>
+                              <table className="table">
+                                {' '}
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Key</th>
+                                    <th scope="col">Value</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>F1 micro</td>
+                                    <td>{model.train_scores['f1_micro']}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>F1 macro</td>
+                                    <td>{model.train_scores['f1_macro']}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>F1 weighted</td>
+                                    <td>{model.train_scores['f1_weighted']}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>F1</td>
+                                    <td>{String(model.train_scores['f1'])}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Precision</td>
+                                    <td>{String(model.train_scores['precision'])}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Recall</td>
+                                    <td>{String(model.train_scores['recall'])}</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Accuray</td>
+                                    <td>{String(model.train_scores['accuracy'])}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                              <details className="m-3">
+                                <summary>False predictions</summary>
+                                {model_scores ? (
+                                  <DataGrid
+                                    className="fill-grid"
+                                    columns={columns}
+                                    rows={falsePredictions || []}
+                                  />
+                                ) : (
+                                  <div>Compute prediction first</div>
+                                )}
+                              </details>
+                            </div>
+                          )}
+                        </details>
+
+                        <details>
+                          <summary>Compute prediction</summary>
+                          {availablePrediction ? (
+                            <div>Prediction computed, you can export it</div>
+                          ) : isComputing ? (
+                            <div>
+                              <button
+                                key="stop"
+                                className="btn btn-primary mt-3 d-flex align-items-center"
+                                onClick={stopTraining}
+                              >
+                                <PulseLoader color={'white'} /> Stop current process
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn btn-info m-4"
+                              onClick={() => computeModelPrediction(currentModel, 'all')}
+                            >
+                              Launch prediction complete dataset
+                            </button>
+                          )}
                         </details>
                       </div>
                     )}
@@ -377,9 +428,12 @@ export const ProjectTrainPage: FC = () => {
                 </form>
                 {isComputing && (
                   <div>
-                    <PulseLoader />
-                    <button key="stop" className="btn btn-primary mt-3" onClick={stopTraining}>
-                      Stop current training
+                    <button
+                      key="stop"
+                      className="btn btn-primary mt-3 d-flex align-items-center"
+                      onClick={stopTraining}
+                    >
+                      <PulseLoader color={'white'} /> Stop current process
                     </button>
                   </div>
                 )}

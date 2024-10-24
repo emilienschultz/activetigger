@@ -495,7 +495,7 @@ def predict_bert(
         gpu = True
 
     # logging the process
-    log_path = path / "status.log"
+    log_path = path / "status_predict.log"
     logger = logging.getLogger("predict_bert_model")
     file_handler = logging.FileHandler(log_path)
     formatter = logging.Formatter(

@@ -24,9 +24,9 @@ class Features:
     """
 
     project_slug: str
-    path: Path
+    path_train: Path
     path_model: Path
-    path_raw: Path
+    path_all: Path
     queue: Queue
     informations: dict
     content: DataFrame
@@ -42,8 +42,8 @@ class Features:
     def __init__(
         self,
         project_slug: str,
-        data_path: Path,
-        raw_path: Path,
+        path_train: Path,
+        path_all: Path,
         models_path: Path,
         queue,
         db_manager,
@@ -54,8 +54,8 @@ class Features:
         """
         self.project_slug = project_slug
         self.db_manager = db_manager
-        self.path = data_path
-        self.path_raw = raw_path
+        self.path_train = path_train
+        self.path_all = path_all
         self.path_models = models_path
         self.queue = queue
         self.informations = {}
@@ -102,7 +102,7 @@ class Features:
         return f"Available features : {self.map}"
 
     def get_map(self) -> tuple[dict, int]:
-        parquet_file = pq.ParquetFile(self.path)
+        parquet_file = pq.ParquetFile(self.path_train)
         column_names = parquet_file.schema.names
 
         def find_strings_with_pattern(strings, pattern):
@@ -141,19 +141,25 @@ class Features:
         new_content.columns = [f"{name}__{i}" for i in new_content.columns]
 
         # read data, add the feature to the dataset and save
-        content = pd.read_parquet(self.path)
-        content = pd.concat([content, new_content], axis=1)
-        content.to_parquet(self.path)
+        content = pd.read_parquet(self.path_train)
+        content = pd.concat(
+            [
+                content[[i for i in content.columns if i not in new_content.columns]],
+                new_content,
+            ],
+            axis=1,
+        )
+        content.to_parquet(self.path_train)
         del content
 
         # add informations to database
         self.db_manager.add_feature(
-            self.project_slug,
-            kind,
-            name,
-            json.dumps(parameters),
-            username,
-            json.dumps(list(new_content.columns)),
+            project=self.project_slug,
+            kind=kind,
+            name=name,
+            parameters=json.dumps(parameters),
+            user=username,
+            data=json.dumps(list(new_content.columns)),
         )
 
         # refresh the map
@@ -173,8 +179,10 @@ class Features:
 
         col = self.get([name])
         # read data, delete columns and save
-        content = pd.read_parquet(self.path)
-        content[[i for i in content.columns if i not in col]].to_parquet(self.path)
+        content = pd.read_parquet(self.path_train)
+        content[[i for i in content.columns if i not in col]].to_parquet(
+            self.path_train
+        )
         del content
 
         # delete from database
@@ -206,7 +214,7 @@ class Features:
             print("Missing features:", missing)
 
         # load only needed data from file
-        data = pd.read_parquet(self.path, columns=cols)
+        data = pd.read_parquet(self.path_train, columns=cols)
 
         return data
 
@@ -272,16 +280,20 @@ class Features:
         features = self.db_manager.get_project_features(self.project_slug)
         return features
 
-    def get_column_raw(self, column_name: str) -> dict:
+    def get_column_raw(self, column_name: str, index: str = "train") -> dict:
         """
         Get column raw dataset
         """
-        df = pd.read_parquet(self.path_raw)
-        df_train = pd.read_parquet(self.path, columns=[])  # only the index
+        df = pd.read_parquet(self.path_all)
+        df_train = pd.read_parquet(self.path_train, columns=[])  # only the index
         if column_name not in list(df.columns):
             return {"error": "Column doesn't exist"}
-        # filter only train id
-        return {"success": df.loc[df_train.index][column_name]}
+        if index == "train":  # filter only train id
+            return {"success": df.loc[df_train.index][column_name]}
+        elif index == "all":
+            return {"success": df[column_name]}
+        else:
+            return {"error": "Wrong index"}
 
     def compute(
         self, df: pd.Series, name: str, kind: str, parameters: dict, username: str

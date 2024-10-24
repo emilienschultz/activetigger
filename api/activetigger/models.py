@@ -95,8 +95,8 @@ class BertModel:
             self.log_history = json.load(f)
 
         # Load prediction if available
-        if (self.path / "predict.parquet").exists():
-            self.pred = pd.read_parquet(self.path / "predict.parquet")
+        if (self.path / "predict_train.parquet").exists():
+            self.pred = pd.read_parquet(self.path / "predict_train.parquet")
 
         # Only load the model if not lazy mode
         if lazy:
@@ -149,7 +149,7 @@ class BertModel:
             flag_modification = True
 
         # add train scores
-        if ("train_scores" not in r) and (self.path / "predict.parquet").exists():
+        if ("train_scores" not in r) and (self.path / "predict_train.parquet").exists():
             df = self.data.copy()
             df["prediction"] = self.pred["prediction"]
             Y_pred = df["prediction"]
@@ -264,7 +264,7 @@ class BertModels:
                 predict = False
                 compressed = False
                 # test if prediction available
-                if (self.path / i / "predict.parquet").exists():
+                if (self.path / i / "predict_all.parquet").exists():
                     predict = True
                 # test if compression available
                 if (self.path / "../../static" / f"{i}.tar.gz").exists():
@@ -399,7 +399,7 @@ class BertModels:
         return {"success": "bert testing predicting"}
 
     def start_predicting_process(
-        self, name: str, user: str, df: DataFrame, col_text: str
+        self, name: str, user: str, df: DataFrame, col_text: str, dataset: str
     ):
         """
         Start predicting process
@@ -418,10 +418,11 @@ class BertModels:
             "model": b.model,
             "tokenizer": b.tokenizer,
             "path": b.path,
-            "file_name": "predict.parquet",
+            "file_name": f"predict_{dataset}.parquet",
+            "dataset": dataset,
         }
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
-        b.status = "predicting"
+        b.status = f"predicting {dataset}"
         self.computing[user] = [b, unique_id]
         return {"success": "bert model predicting"}
 
@@ -498,8 +499,8 @@ class BertModels:
             # else check its state
             if self.queue.current[unique_id]["future"].done():
                 b = self.computing[u][0]
-                if b.status == "predicting":
-                    print("Prediction finished")
+                if b.status == "predicting train":
+                    print("Prediction train finished")
                     df = self.queue.current[unique_id]["future"].result()
                     predictions["predict_" + b.name] = df["prediction"]
                 if b.status == "training":
@@ -511,11 +512,12 @@ class BertModels:
                 self.queue.delete(unique_id)
         return predictions
 
-    def export_prediction(self, name: str, format: str | None = None):
+    def export_prediction(
+        self, name: str, file_name: str = "predict.parquet", format: str | None = None
+    ):
         """
         Export predict file if exists
         """
-        file_name = "predict.parquet"
         path = self.path / name / file_name
 
         # change format if needed
