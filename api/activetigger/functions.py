@@ -92,6 +92,7 @@ def to_dtm(
     min_term_freq: int = 5,
     max_term_freq: int | float = 1.0,
     log: bool = False,
+    language: str = "en",
     norm=None,
     **kwargs,
 ):
@@ -102,8 +103,17 @@ def to_dtm(
     sublinear_tf : log
     Pas pris en compte : DFM : Min Docfreq
     https://quanteda.io/reference/dfm_tfidf.html
-    + stop_words
     """
+
+    # load stopwords
+    if language == "fr":
+        nlp = spacy.blank("en")
+        stop_words = list(nlp.Defaults.stop_words)
+    else:
+        nlp = spacy.blank("en")
+        stop_words = list(nlp.Defaults.stop_words)
+
+    # compute matrix
     if tfidf:
         vectorizer = TfidfVectorizer(
             ngram_range=(1, ngrams),
@@ -111,10 +121,14 @@ def to_dtm(
             sublinear_tf=log,
             norm=norm,
             max_df=max_term_freq,
+            stop_words=stop_words,
         )
     else:
         vectorizer = CountVectorizer(
-            ngram_range=(1, ngrams), min_df=min_term_freq, max_df=max_term_freq
+            ngram_range=(1, ngrams),
+            min_df=min_term_freq,
+            max_df=max_term_freq,
+            stop_words=stop_words,
         )
 
     dtm = vectorizer.fit_transform(texts)
@@ -155,6 +169,7 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
     Returns:
         pandas.DataFrame: embeddings
     """
+    # TODO check language
     if not path_models.exists():
         return {"error": f"path {str(path_models)} does not exist"}
     os.chdir(path_models)

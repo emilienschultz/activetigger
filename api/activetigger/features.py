@@ -354,9 +354,11 @@ class Features:
                     "path_models": self.path_models,
                 }
                 func = to_fasttext
+
             elif kind == "dfm":
                 args = parameters.copy()
                 args["texts"] = df
+                args["language"] = self.lang
                 func = to_dtm
 
             # add the computation to queue
