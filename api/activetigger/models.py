@@ -523,12 +523,10 @@ class BertModels:
         # change format if needed
         if format == "csv":
             df = pd.read_parquet(path)
-            print(df)
             file_name = "predict.csv"
             path = self.path / name / file_name
             df.to_csv(path)
 
-        print(path)
         if not path.exists():
             return {"error": "file does not exist"}
 

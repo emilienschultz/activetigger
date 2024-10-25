@@ -29,6 +29,7 @@ export const ProjectCreationForm: FC = () => {
       project_name: 'New project',
       n_train: 100,
       n_test: 0,
+      language: 'en',
     },
   });
   const { notify } = useNotifications();
@@ -204,6 +205,24 @@ export const ProjectCreationForm: FC = () => {
                       />
                     )}
                   />
+
+                  <label className="form-label" htmlFor="language">
+                    Language of the corpus (for tokenization and word segmentation)
+                  </label>
+                  <select
+                    className="form-control"
+                    id="language"
+                    disabled={data === null}
+                    {...register('language')}
+                  >
+                    <option key="en" value={'en'}>
+                      English
+                    </option>
+                    <option key="fr" value={'fr'}>
+                      French
+                    </option>
+                  </select>
+
                   <label className="form-label" htmlFor="col_label">
                     Column for label (if exists)
                   </label>
