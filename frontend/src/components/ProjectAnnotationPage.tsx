@@ -44,6 +44,7 @@ export const ProjectAnnotationPage: FC = () => {
 
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
+  const [nSample, setNSample] = useState<number | null>(null); // specific info
 
   // hooks to manage element
   const { getNextElementId } = useGetNextElementId(
@@ -83,8 +84,9 @@ export const ProjectAnnotationPage: FC = () => {
   // react to URL param change
   useEffect(() => {
     if (elementId === undefined) {
-      getNextElementId().then((nextElementId) => {
-        if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+      getNextElementId().then((res) => {
+        if (res && res.n_sample) setNSample(res.n_sample);
+        if (res && res.element_id) navigate(`/projects/${projectName}/annotate/${res.element_id}`);
         else {
           navigate(`/projects/${projectName}/annotate/noelement`);
           setElement(null);
@@ -188,6 +190,8 @@ export const ProjectAnnotationPage: FC = () => {
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
+  console.log(nSample);
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -221,13 +225,16 @@ export const ProjectAnnotationPage: FC = () => {
                   ) : (
                     ''
                   )}
+                  {nSample && <span className="badge text-bg-light">/ {`${nSample}`} </span>}
                   <div>
                     <button
                       className="btn"
                       onClick={() => {
-                        getNextElementId().then((nextElementId) => {
-                          if (nextElementId)
-                            navigate(`/projects/${projectName}/annotate/${nextElementId}`);
+                        getNextElementId().then((res) => {
+                          if (res && res.n_sample) setNSample(res.n_sample);
+
+                          if (res && res.element_id)
+                            navigate(`/projects/${projectName}/annotate/${res.element_id}`);
                           else {
                             navigate(`/projects/${projectName}/annotate/noelement`);
                           }

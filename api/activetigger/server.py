@@ -666,6 +666,8 @@ class Project(Server):
         if scheme not in self.schemes.available():
             return {"error": "Scheme doesn't exist"}
 
+        # size of the subsample
+
         # specific case of test, random element
         if selection == "test":
             df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
@@ -681,6 +683,7 @@ class Project(Server):
                 "frame": [],
                 "limit": 1200,
                 "history": [],
+                "n_sample": f.sum(),
             }
             return element
 
@@ -804,6 +807,7 @@ class Project(Server):
             "frame": frame,
             "limit": int(self.content.loc[element_id, "limit"]),
             "history": history,
+            "n_sample": f.sum(),
         }
 
         return element

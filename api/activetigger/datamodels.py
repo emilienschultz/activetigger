@@ -92,6 +92,7 @@ class ElementOutModel(BaseModel):
     frame: list | None
     limit: int | None
     history: list
+    n_sample: Optional[int] = None
 
 
 class UserModel(BaseModel):

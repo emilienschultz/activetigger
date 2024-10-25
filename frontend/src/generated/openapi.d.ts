@@ -625,13 +625,13 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Post Tag
+         * Post Annotation
          * @description Add, Update, Delete annotations
          *     Comment :
          *     - For the moment add == update
          *     - No information kept of selection process
          */
-        post: operations["post_tag_annotation__action__post"];
+        post: operations["post_annotation_annotation__action__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1105,8 +1105,7 @@ export interface components {
             name: string;
             /** Base Model */
             base_model: string;
-            /** Params */
-            params: Record<string, never> | components["schemas"]["BertModelParametersModel"];
+            params: components["schemas"]["BertModelParametersModel"];
             /** Test Size */
             test_size: number;
         };
@@ -1216,6 +1215,8 @@ export interface components {
             limit: number | null;
             /** History */
             history: unknown[];
+            /** N Sample */
+            n_sample?: number | null;
         };
         /**
          * FeatureModel
@@ -1322,7 +1323,7 @@ export interface components {
              * Embeddings
              * @default []
              */
-            embeddings: unknown[];
+            embeddings: string[];
             /**
              * N Skip
              * @default 0
@@ -1332,7 +1333,7 @@ export interface components {
              * Default Scheme
              * @default []
              */
-            default_scheme: unknown[];
+            default_scheme: string[];
             /**
              * Language
              * @default fr
@@ -1344,12 +1345,12 @@ export interface components {
              * Cols Context
              * @default []
              */
-            cols_context: unknown[];
+            cols_context: string[];
             /**
              * Cols Test
              * @default []
              */
-            cols_test: unknown[];
+            cols_test: string[];
             /**
              * Test
              * @default false
@@ -1403,7 +1404,7 @@ export interface components {
              * Embeddings
              * @default []
              */
-            embeddings: unknown[];
+            embeddings: string[];
             /**
              * N Skip
              * @default 0
@@ -1413,7 +1414,7 @@ export interface components {
              * Default Scheme
              * @default []
              */
-            default_scheme: unknown[];
+            default_scheme: string[];
             /**
              * Language
              * @default fr
@@ -1425,12 +1426,12 @@ export interface components {
              * Cols Context
              * @default []
              */
-            cols_context: unknown[];
+            cols_context: string[];
             /**
              * Cols Test
              * @default []
              */
-            cols_test: unknown[];
+            cols_test: string[];
             /**
              * Test
              * @default false
@@ -2635,7 +2636,7 @@ export interface operations {
             };
         };
     };
-    post_tag_annotation__action__post: {
+    post_annotation_annotation__action__post: {
         parameters: {
             query: {
                 project_slug: string;
@@ -3010,7 +3011,7 @@ export interface operations {
         parameters: {
             query: {
                 model_name: string;
-                data?: string;
+                dataset?: string;
                 project_slug: string;
             };
             header?: never;

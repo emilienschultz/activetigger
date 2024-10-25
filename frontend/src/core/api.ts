@@ -486,7 +486,9 @@ export function useGetNextElementId(
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
         },
       });
-      return res.data?.element_id;
+      if (res.data?.element_id)
+        return { element_id: res.data?.element_id, n_sample: res.data?.n_sample };
+      else return null;
     } else {
       notify({ type: 'error', message: 'Select a project/scheme to get elements' });
       return null;
