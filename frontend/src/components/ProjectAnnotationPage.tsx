@@ -220,12 +220,12 @@ export const ProjectAnnotationPage: FC = () => {
                   {statistics ? (
                     <span className="badge text-bg-light">
                       Annotated :{' '}
-                      {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
+                      {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${nSample ? nSample : ''} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
                     </span>
                   ) : (
                     ''
                   )}
-                  {nSample && <span className="badge text-bg-light">/ {`${nSample}`} </span>}
+
                   <div>
                     <button
                       className="btn"
