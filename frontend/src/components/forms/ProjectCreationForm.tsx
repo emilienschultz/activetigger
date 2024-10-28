@@ -22,7 +22,7 @@ export interface DataType {
 // component
 export const ProjectCreationForm: FC = () => {
   // form management
-  const maxSizeMo = 100;
+  const maxSizeMo = 400;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
   const { register, control, handleSubmit } = useForm<ProjectModel & { files: FileList }>({
     defaultValues: {
@@ -40,7 +40,6 @@ export const ProjectCreationForm: FC = () => {
   const createProject = useCreateProject(); // API call
   const files = useWatch({ control, name: 'files' }); // watch the files entry
   // available columns
-  console.log(data?.headers);
   const columns = data?.headers
     .filter((h) => h !== '')
     .map((h) => (
@@ -72,19 +71,16 @@ export const ProjectCreationForm: FC = () => {
       if (file.name.includes('parquet')) {
         console.log('parquet');
         loadParquetFile(file).then((data) => {
-          console.log(data);
           setData(data);
         });
       } else if (file.name.includes('csv')) {
         console.log('csv');
         loadCSVFile(file).then((data) => {
-          console.log(data);
           setData(data);
         });
       } else if (file.name.includes('xlsx')) {
         console.log('csv');
         loadExcelFile(file).then((data) => {
-          console.log(data);
           setData(data);
         });
       } else {
@@ -106,14 +102,20 @@ export const ProjectCreationForm: FC = () => {
         return;
       }
       setSpinner(true);
-      const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
-      console.log('new project payload to send to API', { ...omit(formData, 'files'), csv });
+      console.log('ENVOI');
       try {
-        await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
-        setSpinner(false);
-        navigate(`/projects/`);
+        // ERROR : problème avec gros parquet unparse marche pas
+        const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+        console.log('data parsing done');
+        try {
+          await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
+          setSpinner(false);
+          navigate(`/projects/`);
+        } catch (error) {
+          setSpinner(false);
+        }
       } catch (error) {
-        setSpinner(false);
+        console.log('ERROR WITH UNPARSE');
       }
     }
   };

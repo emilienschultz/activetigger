@@ -764,7 +764,9 @@ async def get_list_elements(
     if "error" in extract:
         raise HTTPException(status_code=500, detail=extract["error"])
     df = extract["batch"].fillna(" ")
-    table = (df[["index", "timestamp", "labels", "text"]]).to_dict(orient="records")
+    table = (df.reset_index()[["id", "timestamp", "labels", "text"]]).to_dict(
+        orient="records"
+    )
     return TableOutModel(
         items=table,
         total=extract["total"],

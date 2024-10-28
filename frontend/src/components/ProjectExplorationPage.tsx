@@ -18,7 +18,7 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
  */
 
 interface Row {
-  index: string;
+  id: string;
   timestamp: string;
   labels: string;
   text: string;
@@ -57,6 +57,8 @@ export const ProjectExplorationPage: FC = () => {
     selectionConfig.mode,
   );
 
+  console.log(table);
+
   const [rows, setRows] = useState<Row[]>([]);
 
   // update rows only when a even trigger the update table
@@ -73,15 +75,15 @@ export const ProjectExplorationPage: FC = () => {
   // define table
   const columns: readonly Column<Row>[] = [
     {
-      key: 'index',
-      name: 'ID',
+      key: 'id',
+      name: 'id',
       resizable: true,
       width: 180,
       renderCell: (props) =>
-        props.row.index in modifiedRows ? (
-          <div className="modified-cell">{props.row.index}</div>
+        props.row.id in modifiedRows ? (
+          <div className="modified-cell">{props.row.id}</div>
         ) : (
-          <div>{props.row.index}</div>
+          <div>{props.row.id}</div>
         ),
     },
     {
@@ -131,8 +133,8 @@ export const ProjectExplorationPage: FC = () => {
           onRowChange({ ...row, labels: event.target.value }, true);
           setModifiedRows((prevState) => ({
             ...prevState,
-            [row.index]: {
-              element_id: row.index,
+            [row.id]: {
+              element_id: row.id,
               label: event.target.value,
               scheme: currentScheme as string,
               project_slug: projectName as string,
