@@ -36,7 +36,7 @@ export const ProjectTestPage: FC = () => {
     currentScheme || null,
     currentModel || null,
   );
-  const { model } = useModelInformations(projectName || null, currentModel || null);
+  const { model } = useModelInformations(projectName || null, currentModel || null, isComputing);
 
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics } = useStatistics(projectName || null, currentScheme || null);
@@ -128,9 +128,6 @@ export const ProjectTestPage: FC = () => {
                     >
                       Compute the test
                     </button>
-                    {
-                      // TODO : BLOCK THE BUTTON TO PREVENT MULTIPLE SEND
-                    }
                   </div>
                 ) : (
                   <div>Select a scheme & a model to start computation</div>

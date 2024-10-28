@@ -46,7 +46,7 @@ export const HomePage: FC = () => {
               )}
 
               <div className="general-info">
-                <div>Frontend v0.6</div>
+                <div>Frontend v0.7</div>
                 <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
                 <div className="text-muted">
                   Credits : Julien Boelaert & Étienne Ollion & Émilien Schultz & Ouestware

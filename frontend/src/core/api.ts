@@ -991,7 +991,11 @@ export function useDeleteBertModel(projectSlug: string | null) {
 /**
  * Get model informations
  */
-export function useModelInformations(project_slug: string | null, model_name: string | null) {
+export function useModelInformations(
+  project_slug: string | null,
+  model_name: string | null,
+  isComputing: boolean,
+) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const modelInformations = useAsyncMemo(async () => {
@@ -1002,7 +1006,7 @@ export function useModelInformations(project_slug: string | null, model_name: st
       if (!res.error) return res.data;
     }
     return null;
-  }, [fetchTrigger, model_name]);
+  }, [fetchTrigger, model_name, isComputing]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
