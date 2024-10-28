@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import multiprocessing
 import os
 import shutil
@@ -430,11 +431,12 @@ def train_bert(
         metric_for_best_model="eval_loss",
     )
 
-    logger.info("Start training")
-
     class CustomLoggingCallback(TrainerCallback):
         def on_step_end(self, args, state, control, **kwargs):
             logger.info(f"Step {state.global_step}")
+            progress_percentage = (state.global_step / state.max_steps) * 100
+            with open(current_path / "train/progress", "w") as f:
+                f.write(str(progress_percentage))
             # end if event set
             if event is not None:
                 if event.is_set():
@@ -448,6 +450,7 @@ def train_bert(
         eval_dataset=df["test"],
         callbacks=[CustomLoggingCallback()],
     )
+
     try:
         trainer.train()
     except KeyboardInterrupt:
@@ -511,6 +514,7 @@ def predict_bert(
 
     # logging the process
     log_path = path / "status_predict.log"
+    progress_path = path / "progress_predict"
     logger = logging.getLogger("predict_bert_model")
     file_handler = logging.FileHandler(log_path)
     formatter = logging.Formatter(
@@ -550,6 +554,10 @@ def predict_bert(
         res = res.softmax(1).detach().numpy()
         predictions.append(res)
 
+        # write progress
+        with open(progress_path, "w") as f:
+            f.write(str((len(predictions) * batch / df.shape[0]) * 100))
+
     # to dataframe
     pred = pd.DataFrame(
         np.concatenate(predictions),
@@ -572,6 +580,7 @@ def predict_bert(
     pred.to_parquet(path / file_name)
     # delete the logs
     os.remove(log_path)
+    os.remove(progress_path)
     print("function prediction : finished")
     return pred
 

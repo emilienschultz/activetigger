@@ -1299,8 +1299,6 @@ async def predict(
     else:
         return {"error": f"dataset {dataset} not found"}
 
-    print("PREDICTION", dataset, df.shape)
-
     # start process to predict
     r = project.bertmodels.start_predicting_process(
         name=model_name,

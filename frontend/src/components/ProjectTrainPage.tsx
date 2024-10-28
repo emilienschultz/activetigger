@@ -46,7 +46,7 @@ export const ProjectTrainPage: FC = () => {
   } = useAppContext();
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
-  const { model } = useModelInformations(projectSlug || null, currentModel || null);
+  const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
 
   const availablePrediction =
@@ -222,11 +222,34 @@ export const ProjectTrainPage: FC = () => {
                   </button>
                 </div>
 
+                {/* Display the progress of training models */}
+                {project?.bertmodels.training &&
+                  Object.keys(project.bertmodels.training).length > 0 && (
+                    <div className="mt-3">
+                      Current training:
+                      <ul>
+                        {Object.entries(
+                          project?.bertmodels.training as Record<
+                            string,
+                            Record<string, string | number>
+                          >,
+                        ).map(([_, v]) => (
+                          <li key={v.name}>
+                            {v.name} - {v.status} :{' '}
+                            <span style={{ fontWeight: 'bold' }}>
+                              {Math.round(Number(v.progress))} %
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                 {currentModel && (
                   <div>
                     {model && (
                       <div>
-                        <details>
+                        <details className="custom-details">
                           <summary>Parameters</summary>
                           <details>
                             <summary>Rename</summary>
@@ -261,7 +284,7 @@ export const ProjectTrainPage: FC = () => {
                             <LossChart />
                           </div>
                         </details>
-                        <details>
+                        <details className="custom-details">
                           <summary>Scores</summary>
                           {!model_scores && !isComputing && (
                             <button
@@ -339,7 +362,7 @@ export const ProjectTrainPage: FC = () => {
                           )}
                         </details>
 
-                        <details>
+                        <details className="custom-details">
                           <summary>Compute prediction</summary>
                           {availablePrediction ? (
                             <div>Prediction computed, you can export it</div>

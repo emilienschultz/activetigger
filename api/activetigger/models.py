@@ -113,6 +113,21 @@ class BertModel:
             r = json.load(f)
         return list(r["id2label"].values())
 
+    def get_training_progress(self):
+        """
+        Get progress when training
+        (different ways)
+        """
+        if (self.status == "training") & (self.path / "train/progress").exists():
+            with open(self.path / "train/progress", "r") as f:
+                r = f.read()
+            return float(r)
+        if ("predicting" in self.status) & (self.path / "progress_predict").exists():
+            with open(self.path / "progress_predict", "r") as f:
+                r = f.read()
+            return float(r)
+        return None
+
     def informations(self) -> dict:
         """
         Compute statistics for train & test
@@ -285,8 +300,18 @@ class BertModels:
     def training(self) -> dict:
         """
         Currently under training
+        - name
+        - progress if available
         """
-        return {u: self.computing[u][0].name for u in self.computing}
+        r = {
+            u: {
+                "name": self.computing[u][0].name,
+                "status": self.computing[u][0].status,
+                "progress": self.computing[u][0].get_training_progress(),
+            }
+            for u in self.computing
+        }
+        return r
 
     def delete(self, bert_name: str) -> dict:
         """
