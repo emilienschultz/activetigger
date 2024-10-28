@@ -57,8 +57,6 @@ export const ProjectExplorationPage: FC = () => {
     selectionConfig.mode,
   );
 
-  console.log(table);
-
   const [rows, setRows] = useState<Row[]>([]);
 
   // update rows only when a even trigger the update table
@@ -141,7 +139,6 @@ export const ProjectExplorationPage: FC = () => {
               dataset: phase,
             },
           }));
-          console.log(modifiedRows);
         }}
         autoFocus
       >

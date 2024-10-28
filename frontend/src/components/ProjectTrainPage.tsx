@@ -104,7 +104,6 @@ export const ProjectTrainPage: FC = () => {
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     await trainBertModel(data);
     resetNewModel();
-    console.log(data);
   };
 
   // loss chart shape data
@@ -186,8 +185,6 @@ export const ProjectTrainPage: FC = () => {
       resizable: true,
     },
   ];
-
-  console.log(project);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">

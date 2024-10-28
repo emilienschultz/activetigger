@@ -104,12 +104,15 @@ class Features:
     def get_map(self) -> tuple[dict, int]:
         parquet_file = pq.ParquetFile(self.path_train)
         column_names = parquet_file.schema.names
+        print("COL NAME", column_names)
 
         def find_strings_with_pattern(strings, pattern):
             matching_strings = [s for s in strings if re.match(pattern, s)]
             return matching_strings
 
-        var = set([i.split("__")[0] for i in column_names if "__index" not in i])
+        var = set(
+            [i.split("__")[0] for i in column_names if "__index" not in i and i != "id"]
+        )
         dic = {i: find_strings_with_pattern(column_names, i) for i in var}
         num_rows = parquet_file.metadata.num_rows
         return dic, num_rows

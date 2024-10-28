@@ -23,8 +23,6 @@ export const ProjectFeaturesPage: FC = () => {
     appContext: { currentProject: project },
   } = useAppContext();
 
-  console.log(project?.features.training);
-
   // API calls
   const { featuresInfo } = useGetFeatureInfo(projectName || null, project);
   const addFeature = useAddFeature(projectName || null);
