@@ -108,6 +108,11 @@ class BertModel:
             self.model = AutoModelForSequenceClassification.from_pretrained(self.path)
             self.status = "loaded"
 
+    def get_labels(self):
+        with open(self.path / "config.json", "r") as f:
+            r = json.load(f)
+        return list(r["id2label"].values())
+
     def informations(self) -> dict:
         """
         Compute statistics for train & test
@@ -374,15 +379,25 @@ class BertModels:
         if not (self.path / name).exists():
             return {"error": "This model does not exist"}
 
-        # delete previous files
-        if (self.path / "predict_test.parquet").exists():
-            os.remove(self.path / "predict_test.parquet")
-        if (self.path / "statistics.json").exists():
-            os.remove(self.path / "statistics.json")
+        # test number of elements in the test set
+        if len(df["labels"].dropna()) < 10:
+            return {"error": "Less than 10 elements annotated"}
 
-        # start prediction on the test set
+        # load model
         b = BertModel(name, self.path / name)
         b.load()
+
+        # test if the testset and the model have the same labels
+        if set(b.get_labels()) != set(df["labels"].dropna().unique()):
+            return {"error": "The testset and the model have different labels"}
+
+        # delete previous files
+        if (self.path / name / "predict_test.parquet").exists():
+            os.remove(self.path / name / "predict_test.parquet")
+        if (self.path / name / "statistics.json").exists():
+            os.remove(self.path / name / "statistics.json")
+
+        # start prediction on the test set
         args = {
             "df": df,
             "col_text": col_text,

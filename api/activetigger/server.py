@@ -740,6 +740,8 @@ class Project(Server):
             return {"error": "No element available with this selection mode."}
         indicator = None
 
+        n_sample = len(ss)
+
         if selection == "deterministic":  # next row
             element_id = ss.index[0]
 
@@ -755,12 +757,13 @@ class Project(Server):
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
-            element_id = (
+            ss = (
                 proba[f][label]
                 .drop(history, errors="ignore")
                 .sort_values(ascending=False)
-                .index[0]
             )  # get max proba id
+            element_id = ss.index[0]
+            n_sample = len(ss)
             indicator = f"probability: {round(proba.loc[element_id,label],2)}"
 
         # higher entropy, only possible if the model has been trained
@@ -770,12 +773,13 @@ class Project(Server):
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
-            element_id = (
+            ss = (
                 proba[f]["entropy"]
                 .drop(history, errors="ignore")
                 .sort_values(ascending=False)
-                .index[0]
             )  # get max entropy id
+            element_id = ss.index[0]
+            n_sample = len(ss)
             indicator = round(proba.loc[element_id, "entropy"], 2)
             indicator = f"entropy: {indicator}"
 
@@ -789,7 +793,7 @@ class Project(Server):
             predict = {"label": predicted_label, "proba": predicted_proba}
 
         # get all tags already existing for the element
-        history = self.schemes.db_manager.get_annotations_by_element(
+        previous = self.schemes.db_manager.get_annotations_by_element(
             self.params.project_slug, scheme, element_id
         )
 
@@ -806,8 +810,8 @@ class Project(Server):
             "predict": predict,
             "frame": frame,
             "limit": int(self.content.loc[element_id, "limit"]),
-            "history": history,
-            "n_sample": f.sum(),
+            "history": previous,
+            "n_sample": n_sample,
         }
 
         return element

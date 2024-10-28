@@ -186,9 +186,18 @@ export const ProjectAnnotationPage: FC = () => {
     };
   }, [availableLabels, handleKeyboardEvents]);
 
-  // separate the text in two parts
-  const textInFrame = element?.text.slice(0, element?.limit as number) || '';
-  const textOutFrame = element?.text.slice(element?.limit as number) || '';
+  // separate the text in two parts & neutralize htmlk
+  function escapeHTML(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  const textInFrame = escapeHTML(element?.text.slice(0, element?.limit as number) || '');
+  const textOutFrame = escapeHTML(element?.text.slice(element?.limit as number) || '');
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
