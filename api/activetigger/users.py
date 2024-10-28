@@ -88,7 +88,12 @@ class Users:
         return users
 
     def add_user(
-        self, name: str, password: str, role: str = "manager", created_by: str = "NA"
+        self,
+        name: str,
+        password: str,
+        role: str = "manager",
+        created_by: str = "NA",
+        mail: str = "NA",
     ) -> bool:
         """
         Add user to database
@@ -99,7 +104,7 @@ class Users:
         if name in self.existing_users():
             return {"error": "Username already exists"}
         hash_pwd = get_hash(password)
-        self.db_manager.add_user(name, hash_pwd, role, created_by)
+        self.db_manager.add_user(name, hash_pwd, role, created_by, contact=mail)
 
         return {"success": "User added to the database"}
 

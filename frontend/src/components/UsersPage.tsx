@@ -18,6 +18,7 @@ interface newUser {
   username: string;
   password: string;
   status: string;
+  mail: string;
 }
 
 export const UsersPage: FC = () => {
@@ -39,7 +40,7 @@ export const UsersPage: FC = () => {
 
   const { handleSubmit, register, reset } = useForm<newUser>();
   const onSubmit: SubmitHandler<newUser> = async (data) => {
-    await createUser(data.username, data.password, data.status);
+    await createUser(data.username, data.password, data.status, data.mail);
     reset();
   };
 
@@ -88,6 +89,12 @@ export const UsersPage: FC = () => {
                   type="text"
                   {...register('password')}
                   placeholder="Password"
+                />
+                <input
+                  className="form-control me-2 mt-2"
+                  type="email"
+                  {...register('mail')}
+                  placeholder="Mail"
                 />
                 <select {...register('status')} className="me-2 mt-2">
                   <option>manager</option>

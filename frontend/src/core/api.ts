@@ -810,10 +810,10 @@ export function useCreateUser(reFetchUsers: () => void) {
   const { notify } = useNotifications();
 
   const createUser = useCallback(
-    async (username: string, password: string, status: string) => {
+    async (username: string, password: string, status: string, mail: string) => {
       const res = await api.POST('/users/create', {
         params: {
-          query: { username_to_create: username, password: password, status: status },
+          query: { username_to_create: username, password: password, status: status, mail: mail },
         },
       });
       if (!res.error) notify({ type: 'success', message: 'User created' });

@@ -380,13 +380,14 @@ async def create_user(
     username_to_create: str = Query(),
     password: str = Query(),
     status: str = Query(),
+    mail: str = Query(),
 ) -> None:
     """
     Create user
     """
     test_rights("modify user", current_user.username)
     r = server.users.add_user(
-        username_to_create, password, status, current_user.username
+        username_to_create, password, status, current_user.username, mail
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -1379,9 +1380,6 @@ async def start_test(
 
     # get data labels + text
     df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
-
-    if len(df["labels"].dropna()) < 10:
-        raise HTTPException(status_code=500, detail="Less than 10 elements annotated")
 
     # launch testing process : prediction
     r = project.bertmodels.start_testing_process(

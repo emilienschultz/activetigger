@@ -64,6 +64,7 @@ class Users(Base):
     user = Column(String)
     key = Column(Text)
     description = Column(Text)
+    contact = Column(Text)
     created_by = Column(String)
 
 
@@ -158,7 +159,14 @@ class DatabaseManager:
         hash_pwd: bytes = get_hash(pwd)
         self.add_user("root", hash_pwd, "root", "system")
 
-    def add_user(self, username: str, password: str, role: str, created_by: str):
+    def add_user(
+        self,
+        username: str,
+        password: str,
+        role: str,
+        created_by: str,
+        contact: str = "",
+    ):
         session = self.Session()
         user = Users(
             user=username,
@@ -166,6 +174,7 @@ class DatabaseManager:
             description=role,
             created_by=created_by,
             time=datetime.datetime.now(),
+            contact=contact,
         )
         session.add(user)
         session.commit()
