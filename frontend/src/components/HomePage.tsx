@@ -17,12 +17,17 @@ export const HomePage: FC = () => {
             <center>
               <h1>Active Tigger</h1>
               <h3>Explore, Classify & Analyze Text</h3>
+
               <img
                 src={logo}
                 alt="ActiveTigger"
                 className="me-2"
                 style={{ width: '200px', height: '200px' }}
               />
+              <div className="alert alert-warning fw-bold mt-3">
+                ⚠️ Warning: This interface is still under development, and data may be erased at any
+                time. This is for test only (or export your data after testing).
+              </div>
               {!authenticatedUser ? (
                 <LoginForm />
               ) : (
@@ -39,6 +44,7 @@ export const HomePage: FC = () => {
                   </Link>
                 </div>
               )}
+
               <div className="general-info">
                 <div>Frontend v0.6</div>
                 <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
