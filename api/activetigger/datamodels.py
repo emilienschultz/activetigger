@@ -117,7 +117,7 @@ class UsersServerModel(BaseModel):
     List of users on the server
     """
 
-    users: List[str]
+    users: Dict[str, Dict[str, str]]
     auth: List[str]
 
 

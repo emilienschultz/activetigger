@@ -1851,6 +1851,7 @@ export interface operations {
                 username_to_create: string;
                 password: string;
                 status: string;
+                mail: string;
             };
             header?: never;
             path?: never;

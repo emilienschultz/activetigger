@@ -79,7 +79,7 @@ class Users:
             auth = self.db_manager.get_user_auth(username, project_slug)
         return auth
 
-    def existing_users(self) -> list:
+    def existing_users(self) -> dict:
         """
         Get existing users
         (except root which can't be modified)

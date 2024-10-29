@@ -44,6 +44,8 @@ export const UsersPage: FC = () => {
     reset();
   };
 
+  console.log(users);
+
   return (
     <PageLayout currentPage="users">
       <div className="container-fluid">
@@ -63,7 +65,7 @@ export const UsersPage: FC = () => {
               >
                 <option></option>
 
-                {users && users.map((e) => <option key={e}>{e}</option>)}
+                {users && Object.keys(users).map((e) => <option key={e}>{e}</option>)}
               </select>
               <button
                 className="btn btn p-0"

@@ -452,9 +452,9 @@ class DatabaseManager:
 
     def get_users(self):
         session = self.Session()
-        result = session.query(Users.user).distinct().all()
+        result = session.query(Users.user, Users.contact).distinct().all()
         session.close()
-        return [row.user for row in result]
+        return {row.user: {"contact": row.contact} for row in result}
 
     def delete_user(self, username: str):
         session = self.Session()

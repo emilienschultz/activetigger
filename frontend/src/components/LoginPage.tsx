@@ -8,7 +8,6 @@ import { PageLayout } from './layout/PageLayout';
 export const LoginPage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { state } = useLocation();
-  console.log(authenticatedUser);
 
   return (
     <PageLayout currentPage="login">
