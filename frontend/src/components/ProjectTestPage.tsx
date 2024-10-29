@@ -27,6 +27,8 @@ export const ProjectTestPage: FC = () => {
     setAppContext,
   } = useAppContext();
 
+  console.log(currentProject);
+
   // available models
   const availableModels =
     currentScheme && currentProject?.bertmodels.available[currentScheme]

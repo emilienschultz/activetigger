@@ -116,13 +116,17 @@ class BertModel:
     def get_training_progress(self):
         """
         Get progress when training
-        (different ways)
+        (different cases)
         """
+        # case of training
         if (self.status == "training") & (self.path / "train/progress").exists():
             with open(self.path / "train/progress", "r") as f:
                 r = f.read()
             return float(r)
-        if ("predicting" in self.status) & (self.path / "progress_predict").exists():
+        # case for prediction (predicting/testing)
+        if (("predicting" in self.status) or (self.status == "testing")) & (
+            self.path / "progress_predict"
+        ).exists():
             with open(self.path / "progress_predict", "r") as f:
                 r = f.read()
             return float(r)

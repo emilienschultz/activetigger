@@ -362,7 +362,9 @@ export const ProjectTrainPage: FC = () => {
                         <details className="custom-details">
                           <summary>Compute prediction</summary>
                           {availablePrediction ? (
-                            <div>Prediction computed, you can export it</div>
+                            <div className="explanations">
+                              Prediction computed, you can export it
+                            </div>
                           ) : isComputing ? (
                             <div>
                               <button

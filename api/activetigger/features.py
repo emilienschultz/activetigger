@@ -104,7 +104,6 @@ class Features:
     def get_map(self) -> tuple[dict, int]:
         parquet_file = pq.ParquetFile(self.path_train)
         column_names = parquet_file.schema.names
-        print("COL NAME", column_names)
 
         def find_strings_with_pattern(strings, pattern):
             matching_strings = [s for s in strings if re.match(pattern, s)]
