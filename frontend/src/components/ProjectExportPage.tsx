@@ -46,7 +46,9 @@ export const ProjectExportPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-8">
-            <div className="explanations">Download data</div>
+            <div className="explanations">
+              Download data (annotations, features, predictions) and fine-tuned models
+            </div>
 
             <div>Select a format</div>
             <select
@@ -58,7 +60,7 @@ export const ProjectExportPage: FC = () => {
               <option key="csv">csv</option>
               <option key="parquet">parquet</option>
             </select>
-            <h4 className="subsection">Annotated data</h4>
+            <h4 className="subsection">Annotations</h4>
             <button
               className="btn btn-primary"
               onClick={() => {
@@ -102,7 +104,8 @@ export const ProjectExportPage: FC = () => {
                   Export selected features
                 </button>
               </div>
-              <h4 className="subsection">Bertmodel</h4>
+              <h4 className="subsection">Fine-tuned models and predictions</h4>
+              <div className="explanations">Select first a model</div>
               <div>
                 <div>
                   <select

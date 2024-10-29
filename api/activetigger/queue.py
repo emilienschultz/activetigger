@@ -21,7 +21,7 @@ class Queue:
     manager: SyncManager
     current: dict
 
-    def __init__(self, nb_workers: int = 2) -> None:
+    def __init__(self, nb_workers: int = 4) -> None:
         """
         Initiating the queue
         """

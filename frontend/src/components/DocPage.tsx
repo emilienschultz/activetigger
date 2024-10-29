@@ -11,14 +11,24 @@ export const DocPage: FC = () => {
           <div className="col-1"></div>
           <div className="col-8">
             <h2 className="subsection">Documentation</h2>
-            <h4>Test mode</h4>
             <div className="alert alert-warning" role="alert">
-              <IoWarning /> This is client side, other users can still modify
+              <IoWarning /> Documentation to write
             </div>
+            <h4 className="subsection">Create a project</h4>
+            To write
+            <h4 className="subsection">Compute features</h4>
+            To write
+            <h4 className="subsection">Explore the data</h4>
+            To write
+            <h4 className="subsection">Annotation phase</h4>
+            To write
+            <h4 className="subsection">Fine-tune a BERT model</h4>
+            To write
+            <h4 className="subsection">Test model</h4>
             The test set:
             <ul>
-              <li>created on the beginning of the project</li>
-              <li>uploaded latter</li>
+              <li>Created on the beginning of the project</li>
+              <li>Uploaded latter</li>
             </ul>
             Once activated, the test mode :
             <ul>
@@ -26,6 +36,8 @@ export const DocPage: FC = () => {
               <li>Allow only annotation for the test set</li>
               <li>Allow to explore the test set</li>
             </ul>
+            <h4 className="subsection">Export data / models</h4>
+            To write
           </div>
         </div>
       </div>{' '}
