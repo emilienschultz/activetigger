@@ -461,7 +461,7 @@ def train_bert(
             shutil.rmtree(current_path)
             return False
     except Exception as e:
-        print("ERROR")
+        print("Error in training")
         print(e)
 
     # save model
