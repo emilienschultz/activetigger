@@ -3,7 +3,13 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 
 import { useParams } from 'react-router-dom';
-import { useModelInformations, useStatistics, useTestModel } from '../core/api';
+import PulseLoader from 'react-spinners/PulseLoader';
+import {
+  useModelInformations,
+  useStatistics,
+  useStopTrainBertModel,
+  useTestModel,
+} from '../core/api';
 import { useAppContext } from '../core/context';
 import { TestSetCreationForm } from './forms/TestSetCreationForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
@@ -37,6 +43,7 @@ export const ProjectTestPage: FC = () => {
     currentModel || null,
   );
   const { model } = useModelInformations(projectName || null, currentModel || null, isComputing);
+  const { stopTraining } = useStopTrainBertModel(projectName || null);
 
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics } = useStatistics(projectName || null, currentScheme || null);
@@ -115,25 +122,36 @@ export const ProjectTestPage: FC = () => {
                   </label>
                 </div>
               </Tab>
-              <Tab eventKey="compute" title="2. Compute">
+
+              <Tab eventKey="statistics" title="2. Compute statistics">
                 {isComputing && (
                   <div>You already have a process launched. Wait for it to complete.</div>
                 )}
-                {currentModel && currentScheme ? (
+                {currentModel && currentScheme && !isComputing && (
                   <div className="col-12">
                     <button
                       className="btn btn-primary m-3"
                       onClick={() => testModel()}
                       disabled={isComputing}
                     >
-                      Compute the test
+                      Compute prediction testset
                     </button>
                   </div>
-                ) : (
+                )}
+                {currentModel && currentScheme && isComputing && (
+                  <div>
+                    <button
+                      key="stop"
+                      className="btn btn-primary mt-3 d-flex align-items-center"
+                      onClick={stopTraining}
+                    >
+                      <PulseLoader color={'white'} /> Stop current process
+                    </button>
+                  </div>
+                )}
+                {!(currentModel && currentScheme) && (
                   <div>Select a scheme & a model to start computation</div>
                 )}
-              </Tab>
-              <Tab eventKey="statistics" title="3. Statistics">
                 {model && model.test_scores ? (
                   <div>
                     <table className="table">
