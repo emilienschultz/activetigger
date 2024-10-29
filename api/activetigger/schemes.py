@@ -82,7 +82,7 @@ class Schemes:
                 t = self.test[["text"]].join(df)
                 return t
             else:
-                return self.content.join(df)
+                return self.content.join(df, rsuffix="_content")
         return df
 
     def get_reconciliation_table(self, scheme: str):
