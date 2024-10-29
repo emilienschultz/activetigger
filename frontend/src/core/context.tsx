@@ -30,7 +30,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   notifications: [],
   displayConfig: {
     displayContext: false,
-    displayPrediction: false,
+    displayPrediction: true,
     displayHistory: false,
     frameSize: 50,
   },
