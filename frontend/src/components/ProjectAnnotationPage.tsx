@@ -314,7 +314,7 @@ export const ProjectAnnotationPage: FC = () => {
 
         {
           //display proba
-          phase != 'test' && displayConfig.displayPrediction && (
+          phase != 'test' && displayConfig.displayPrediction && element?.predict.label && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
             </div>
