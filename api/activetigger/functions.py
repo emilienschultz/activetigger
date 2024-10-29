@@ -409,7 +409,8 @@ def train_bert(
         total_steps = (float(params["epochs"]) * len(df["train"])) // (
             int(params["batchsize"]) * float(params["gradacc"])
         )
-        warmup_steps = (total_steps) // 10
+        warmup_steps = int((total_steps) // 10)
+        print("warmup steps", warmup_steps)
         eval_steps = total_steps // params["eval"]
 
         training_args = TrainingArguments(
