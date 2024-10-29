@@ -400,63 +400,68 @@ def train_bert(
     )
 
     logger.info("Model loaded")
+    print("Model loaded")
 
     if gpu:
         bert.cuda()
 
-    total_steps = (float(params["epochs"]) * len(df["train"])) // (
-        int(params["batchsize"]) * float(params["gradacc"])
-    )
-    warmup_steps = (total_steps) // 10
-    eval_steps = total_steps // params["eval"]
-
-    training_args = TrainingArguments(
-        output_dir=current_path / "train",
-        logging_dir=current_path / "logs",
-        learning_rate=float(params["lrate"]),
-        weight_decay=float(params["wdecay"]),
-        num_train_epochs=float(params["epochs"]),
-        gradient_accumulation_steps=float(params["gradacc"]),
-        per_device_train_batch_size=int(params["batchsize"]),
-        per_device_eval_batch_size=32,
-        warmup_steps=float(warmup_steps),
-        eval_steps=eval_steps,
-        evaluation_strategy="steps",
-        save_strategy="steps",
-        save_steps=eval_steps,
-        logging_steps=eval_steps,
-        do_eval=True,
-        greater_is_better=False,
-        load_best_model_at_end=params["best"],
-        metric_for_best_model="eval_loss",
-    )
-
-    class CustomLoggingCallback(TrainerCallback):
-        def on_step_end(self, args, state, control, **kwargs):
-            logger.info(f"Step {state.global_step}")
-            progress_percentage = (state.global_step / state.max_steps) * 100
-            with open(current_path / "train/progress", "w") as f:
-                f.write(str(progress_percentage))
-            # end if event set
-            if event is not None:
-                if event.is_set():
-                    logger.info("Event set, stopping training.")
-                    control.should_training_stop = True
-
-    trainer = Trainer(
-        model=bert,
-        args=training_args,
-        train_dataset=df["train"],
-        eval_dataset=df["test"],
-        callbacks=[CustomLoggingCallback()],
-    )
-
     try:
-        trainer.train()
-    except KeyboardInterrupt:
-        logger.info("Training interrupted by user.")
-        shutil.rmtree(current_path)
-        return False
+        total_steps = (float(params["epochs"]) * len(df["train"])) // (
+            int(params["batchsize"]) * float(params["gradacc"])
+        )
+        warmup_steps = (total_steps) // 10
+        eval_steps = total_steps // params["eval"]
+
+        training_args = TrainingArguments(
+            output_dir=current_path / "train",
+            logging_dir=current_path / "logs",
+            learning_rate=float(params["lrate"]),
+            weight_decay=float(params["wdecay"]),
+            num_train_epochs=float(params["epochs"]),
+            gradient_accumulation_steps=float(params["gradacc"]),
+            per_device_train_batch_size=int(params["batchsize"]),
+            per_device_eval_batch_size=32,
+            warmup_steps=float(warmup_steps),
+            eval_steps=eval_steps,
+            evaluation_strategy="steps",
+            save_strategy="steps",
+            save_steps=eval_steps,
+            logging_steps=eval_steps,
+            do_eval=True,
+            greater_is_better=False,
+            load_best_model_at_end=params["best"],
+            metric_for_best_model="eval_loss",
+        )
+
+        class CustomLoggingCallback(TrainerCallback):
+            def on_step_end(self, args, state, control, **kwargs):
+                logger.info(f"Step {state.global_step}")
+                progress_percentage = (state.global_step / state.max_steps) * 100
+                with open(current_path / "train/progress", "w") as f:
+                    f.write(str(progress_percentage))
+                # end if event set
+                if event is not None:
+                    if event.is_set():
+                        logger.info("Event set, stopping training.")
+                        control.should_training_stop = True
+
+        trainer = Trainer(
+            model=bert,
+            args=training_args,
+            train_dataset=df["train"],
+            eval_dataset=df["test"],
+            callbacks=[CustomLoggingCallback()],
+        )
+
+        try:
+            trainer.train()
+        except KeyboardInterrupt:
+            logger.info("Training interrupted by user.")
+            shutil.rmtree(current_path)
+            return False
+    except Exception as e:
+        print("ERROR")
+        print(e)
 
     # save model
     bert.save_pretrained(current_path)
