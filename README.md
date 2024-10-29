@@ -5,16 +5,11 @@
 [![PyPI Version](https://img.shields.io/pypi/v/activetigger)](https://pypi.org/project/activetigger/)
 ![React](https://img.shields.io/badge/React-18.0.0-blue)
 
-ActiveTigger is an text annotation web tool dedicated for computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to annotate text dataset relying on active learning.
-
-The app is currently 🚧 **under the beta test phase** 🚧.
+ActiveTigger[^1] is an text annotation web tool dedicated for computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to annotate text dataset relying on active learning.
 
 > [!IMPORTANT] 
-> To test the app, please get in touch to have a beta test access (emilien.schultz AT ensae.fr)
-> **open issues if you identify any bug/problem**
-
-> [!TIP]
-> The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+> The app is currently 🚧 **under the beta test phase** 🚧.
+> [**how to beta test Active Tigger**](https://github.com/emilienschultz/activetigger/blob/main/LICENSE)
 
 >>> **Alert:** Read the documentation carefully.
 
@@ -104,3 +99,5 @@ You can deploy the app with Github Pages for tests
 
 🚧 to write 🚧
 
+
+[^1] The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
