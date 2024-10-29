@@ -25,8 +25,13 @@ export const HomePage: FC = () => {
                 style={{ width: '200px', height: '200px' }}
               />
               <div className="alert alert-warning fw-bold mt-3">
-                ⚠️ Warning: This interface is still under development, and data may be erased at any
-                time. This is for test only (or export your data after testing).
+                ⚠️ Warning: This interface is in beta testing.
+                <br></br>
+                Continuity of service is not guaranteed, please save your data. <br></br>
+                <a href="https://github.com/emilienschultz/activetigger/issues">
+                  Please report any bug or problem on the Github of the project
+                </a>
+                .
               </div>
               {!authenticatedUser ? (
                 <LoginForm />
