@@ -9,7 +9,7 @@ ActiveTigger is an text annotation web tool dedicated for computational social s
 
 The app is currently 🚧 **under the beta test phase** 🚧.
 
-> [!IMPORTANT] Beta test  
+> [!IMPORTANT test] 
 > To test the app, please get in touch to have a beta test access (emilien.schultz AT ensae.fr)
 > **open issues if you identify any bug/problem**
 
