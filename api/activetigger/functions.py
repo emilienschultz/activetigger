@@ -422,7 +422,7 @@ def train_bert(
             gradient_accumulation_steps=float(params["gradacc"]),
             per_device_train_batch_size=int(params["batchsize"]),
             per_device_eval_batch_size=32,
-            warmup_steps=float(warmup_steps),
+            warmup_steps=int(warmup_steps),
             eval_steps=eval_steps,
             evaluation_strategy="steps",
             save_strategy="steps",
