@@ -122,6 +122,21 @@ class Features(Base):
     data = Column(String)
 
 
+class Models(Base):
+    __tablename__ = "models"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
+    time_modified = Column(TIMESTAMP(timezone=True))
+    user = Column(String)
+    project = Column(String)
+    scheme = Column(String)
+    parameters = Column(Text)
+    path = Column(String)
+    status = Column(String)
+    statistics = Column(Text)
+    test = Column(String)
+
+
 class DatabaseManager:
     """
     Database management with SQLAlchemy
@@ -318,6 +333,8 @@ class DatabaseManager:
         session.query(Generations).filter(Generations.project == project_slug).delete()
         session.query(Logs).filter(Logs.project == project_slug).delete()
         session.query(Features).filter(Features.project == project_slug).delete()
+        session.query(Models).filter(Models.project == project_slug).delete()
+
         session.commit()
         session.close()
 
@@ -638,7 +655,6 @@ class DatabaseManager:
         user: str,
         data: str = None,
     ):
-        print("PARAMETERS", parameters)
         session = self.Session()
         feature = Features(
             project=project,
