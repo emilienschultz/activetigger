@@ -127,10 +127,10 @@ export const ProjectCreationForm: FC = () => {
           Create a new project.
           <ul>
             <li>
-              upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo)
+              Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo)
             </li>
-            <li>indicate the columns for id, text, and if needed label & test</li>
-            <li>validate to create</li>
+            <li>Indicate the columns for id, text, and if needed label & test</li>
+            <li>Validate to create</li>
           </ul>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
