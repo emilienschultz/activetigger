@@ -36,7 +36,7 @@ Overall architecture :
 
 ### Users role
 
-- 3 roles : root, manager, annotator
+- Role-Based Access Control (RBAC) - 3 roles : root, manager, annotator
 - Authentification with OAuth2 and token in header
     - Table of valid tokens
 - A table of authorization defines the relation users/projects

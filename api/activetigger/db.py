@@ -55,6 +55,7 @@ class Annotations(Base):
     element_id = Column(String)
     scheme = Column(String)
     annotation = Column(String)
+    comments = Column(Text)
 
 
 class Users(Base):
