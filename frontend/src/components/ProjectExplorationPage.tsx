@@ -119,6 +119,12 @@ export const ProjectExplorationPage: FC = () => {
         </div>
       ),
     },
+    {
+      key: 'Comment',
+      name: 'comment',
+      resizable: true,
+      width: 100,
+    },
     { key: 'timestamp', name: 'Changed', resizable: true, width: 100 },
   ];
 

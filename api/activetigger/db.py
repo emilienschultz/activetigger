@@ -497,6 +497,7 @@ class DatabaseManager:
                 Annotations.annotation,
                 Annotations.user,
                 Annotations.time,
+                Annotations.comment,
                 func.max(Annotations.time),
             )
             .filter(
@@ -511,7 +512,10 @@ class DatabaseManager:
         # Execute the query and fetch all results
         results = query.all()
         session.close()
-        return [[row.element_id, row.annotation, row.user, row.time] for row in results]
+        return [
+            [row.element_id, row.annotation, row.user, row.time, row.comment]
+            for row in results
+        ]
 
     def get_coding_users(self, scheme: str, project_slug: str):
         session = self.Session()

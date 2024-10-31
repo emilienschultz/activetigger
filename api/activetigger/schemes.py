@@ -71,7 +71,7 @@ class Schemes:
         results = self.db_manager.get_scheme_elements(self.project_slug, scheme, kind)
 
         df = pd.DataFrame(
-            results, columns=["id", "labels", "user", "timestamp"]
+            results, columns=["id", "labels", "user", "timestamp", "comment"]
         ).set_index("id")
         df.index = [str(i) for i in df.index]
         if complete:  # all the elements
