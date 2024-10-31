@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import Highlighter from 'react-highlight-words';
@@ -65,18 +65,19 @@ export const ProjectAnnotationPage: FC = () => {
   // define parameters for configuration panels
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
-  const currentModel = useMemo(() => {
-    return authenticatedUser &&
-      currentScheme &&
-      project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
+  const currentModel =
+    authenticatedUser &&
+    currentScheme &&
+    project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
       ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
       : null;
-  }, [project, currentScheme, authenticatedUser]);
-  const availableLabels = useMemo(() => {
-    return currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
-  }, [project, currentScheme]);
+  const availableLabels =
+    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
+
+  console.log(availableSimpleModels);
+  console.log(currentModel);
 
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
@@ -146,10 +147,14 @@ export const ProjectAnnotationPage: FC = () => {
     (label: string, elementId?: string) => {
       if (elementId) {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-        addAnnotation(elementId, label, comment).then(() => {
-          setComment(''); // reset comment
-          navigate(`/projects/${projectName}/annotate/`); // got to next element
-        });
+        addAnnotation(elementId, label, comment).then(() =>
+          // redirect to next element by redirecting wihout any id
+          // thus the getNextElementId query will be dont after the appcontext is reloaded
+          {
+            setComment(''); // reset comment
+            navigate(`/projects/${projectName}/annotate/`); // got to next element
+          },
+        );
         // does not do nothing as we remount through navigate reFetchStatistics();
       }
     },
