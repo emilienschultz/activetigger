@@ -319,15 +319,18 @@ class Server:
                 "error": f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
             }
 
-        # check if index is unique otherwise FORCE the index from 0 to N
-        if not (content[params.col_id].nunique() == len(content)):
+        # check if index after slugify is unique otherwise FORCE the index from 0 to N
+        if not (
+            (content[params.col_id].astype(str).apply(slugify)).nunique()
+            == len(content)
+        ):
             print("There are duplicate in the column selected for index")
             content["id"] = range(0, len(content))
             params.col_id = "id"
 
         # rename the index col, transform it in str, and set it as index
         content.rename(columns={params.col_id: "id"}, inplace=True)
-        content["id"] = content["id"].astype(str)
+        content["id"] = content["id"].astype(str).apply(slugify)
         content.set_index("id", inplace=True)
 
         # create the text column, merging the different columns
@@ -407,7 +410,6 @@ class Server:
 
         if (params.col_label is not None) and ("label" in trainset.columns):
             # check there is a limited number of labels
-            print("COL LABEL", params.col_label)
 
             df = trainset["label"].dropna()
             params.default_scheme = list(df.unique())
