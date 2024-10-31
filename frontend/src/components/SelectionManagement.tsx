@@ -12,15 +12,8 @@ export const SelectionManagement: FC = () => {
   } = useAppContext();
 
   const availableLabels = useMemo(() => {
-    // force a default label
-    if (!selectionConfig.label && availableLabels && availableLabels.length > 0) {
-      setAppContext((prev) => ({
-        ...prev,
-        selectionConfig: { ...selectionConfig, label: availableLabels[0] },
-      }));
-    }
     return currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
-  }, [selectionConfig, currentScheme, project, setAppContext]);
+  }, [currentScheme, project]);
 
   const availableModes =
     authenticatedUser &&
@@ -51,6 +44,14 @@ export const SelectionManagement: FC = () => {
   // useEffect(() => {
   //   reFetchSimpleModel();
   // }, [reFetchSimpleModel, project]);
+
+  // force a default label
+  if (!selectionConfig.label && availableLabels && availableLabels.length > 0) {
+    setAppContext((prev) => ({
+      ...prev,
+      selectionConfig: { ...selectionConfig, label: availableLabels[0] },
+    }));
+  }
 
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
