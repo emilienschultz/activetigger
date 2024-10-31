@@ -23,7 +23,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 }) => {
   // element from the context
   const {
-    appContext: { freqRefreshSimpleModel },
+    appContext: { freqRefreshSimpleModel, currentProject: project },
     setAppContext,
   } = useAppContext();
 
@@ -31,7 +31,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // API call to get the current model with a set intervall
-  const { currentModel } = useGetSimpleModel(projectName, currentScheme);
+  const { currentModel } = useGetSimpleModel(projectName, currentScheme, project);
 
   // useEffect(() => {
   //   const intervalId = setInterval(reFetchSimpleModel, 3000);
