@@ -1,4 +1,5 @@
 import { ChangeEvent, FC, useMemo } from 'react';
+import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 
@@ -34,21 +35,23 @@ export const SelectionManagement: FC = () => {
   // }, [project, currentScheme, authenticatedUser]);
 
   // API call to get the current model & refetch
-  // const { currentModel, reFetchSimpleModel } = useGetSimpleModel(
-  //   project ? project.params.project_slug : null,
-  //   currentScheme || null,
-  // );
+  const { currentModel } = useGetSimpleModel(
+    project ? project.params.project_slug : null,
+    currentScheme || null,
+    project,
+  );
+
   // useEffect(() => {
   //   reFetchSimpleModel();
   // }, [reFetchSimpleModel, project]);
 
-  // // force a default label
-  // if (!selectionConfig.label) {
-  //   setAppContext((prev) => ({
-  //     ...prev,
-  //     selectionConfig: { ...selectionConfig, label: availableLabels[0] || '' },
-  //   }));
-  // }
+  // force a default label
+  if (!selectionConfig.label) {
+    setAppContext((prev) => ({
+      ...prev,
+      selectionConfig: { ...selectionConfig, label: availableLabels[0] || '' },
+    }));
+  }
 
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
@@ -129,7 +132,7 @@ export const SelectionManagement: FC = () => {
         </div>
       </div>
       <div className="d-flex align-items-center">
-        {/* <details className="mx-2">
+        <details className="mx-2">
           <summary className="explanations">
             Active selection : {currentModel ? currentModel['model'] : 'No model trained'}
           </summary>
@@ -159,7 +162,7 @@ export const SelectionManagement: FC = () => {
               </ul>
             </div>
           )}
-        </details> */}
+        </details>
         <details className="mx-2">
           <summary className="explanations">Advanced options</summary>
           <label className="mx-4" style={{ display: 'block' }}>

@@ -713,7 +713,11 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
 /**
  * Get trained simplemodel for a user/scheme
  */
-export function useGetSimpleModel(project_slug: string | null, scheme: string | null) {
+export function useGetSimpleModel(
+  project_slug: string | null,
+  scheme: string | null,
+  project: unknown,
+) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getSimpleModel = useAsyncMemo(async () => {
@@ -731,7 +735,7 @@ export function useGetSimpleModel(project_slug: string | null, scheme: string | 
       }
     }
     return null;
-  }, [project_slug, scheme, fetchTrigger]);
+  }, [project_slug, scheme, fetchTrigger, project]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
