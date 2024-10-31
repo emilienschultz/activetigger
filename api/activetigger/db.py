@@ -55,7 +55,7 @@ class Annotations(Base):
     element_id = Column(String)
     scheme = Column(String)
     annotation = Column(String)
-    comments = Column(Text)
+    comment = Column(Text)
 
 
 class Users(Base):
@@ -588,6 +588,7 @@ class DatabaseManager:
         element_id: str,
         scheme: str,
         annotation: str,
+        comment: str = "",
     ):
         session = self.Session()
         annotation = Annotations(
@@ -598,6 +599,7 @@ class DatabaseManager:
             element_id=element_id,
             scheme=scheme,
             annotation=annotation,
+            comment=comment,
         )
         session.add(annotation)
         session.commit()

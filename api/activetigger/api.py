@@ -998,6 +998,7 @@ async def post_annotation(
             annotation.scheme,
             current_user.username,
             annotation.dataset,
+            annotation.comment,
         )
 
         if "error" in r:

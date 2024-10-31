@@ -360,6 +360,7 @@ class Schemes:
         scheme: str,
         user: str = "server",
         mode: str = "train",
+        comment: str = "",
     ):
         """
         Record a tag in the database
@@ -384,6 +385,7 @@ class Schemes:
             element_id=element_id,
             scheme=scheme,
             annotation=label,
+            comment=comment,
         )
         print(
             (
@@ -394,6 +396,7 @@ class Schemes:
                 element_id,
                 scheme,
                 label,
+                comment,
             )
         )
         return {"success": "annotation added"}

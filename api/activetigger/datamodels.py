@@ -141,6 +141,7 @@ class AnnotationModel(BaseModel):
     element_id: str
     label: str
     dataset: Optional[str] = "train"
+    comment: Optional[str] = None
 
 
 class TableAnnotationsModel(BaseModel):

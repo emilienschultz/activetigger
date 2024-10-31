@@ -2,6 +2,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import Highlighter from 'react-highlight-words';
+import { FaPencilAlt } from 'react-icons/fa';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -45,6 +46,8 @@ export const ProjectAnnotationPage: FC = () => {
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
   const [nSample, setNSample] = useState<number | null>(null); // specific info
+  const [displayComment, setDisplayComment] = useState(false);
+  const [comment, setComment] = useState('');
 
   // hooks to manage element
   const { getNextElementId } = useGetNextElementId(
@@ -143,15 +146,14 @@ export const ProjectAnnotationPage: FC = () => {
     (label: string, elementId?: string) => {
       if (elementId) {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-        addAnnotation(elementId, label).then(() =>
-          // redirect to next element by redirecting wihout any id
-          // thus the getNextElementId query will be dont after the appcontext is reloaded
-          navigate(`/projects/${projectName}/annotate/`),
-        );
+        addAnnotation(elementId, label, comment).then(() => {
+          setComment(''); // reset comment
+          navigate(`/projects/${projectName}/annotate/`); // got to next element
+        });
         // does not do nothing as we remount through navigate reFetchStatistics();
       }
     },
-    [setAppContext, addAnnotation, navigate, projectName],
+    [setAppContext, addAnnotation, navigate, projectName, comment],
   );
 
   const handleKeyboardEvents = useCallback(
@@ -321,7 +323,7 @@ export const ProjectAnnotationPage: FC = () => {
           )
         }
         {
-          //display informations
+          //display context
           phase != 'test' && displayConfig.displayContext && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               Context :{' '}
@@ -332,7 +334,7 @@ export const ProjectAnnotationPage: FC = () => {
           )
         }
         {
-          //display informations
+          //display history
           phase != 'test' && displayConfig.displayHistory && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               History : {JSON.stringify(element?.history)}
@@ -368,7 +370,21 @@ export const ProjectAnnotationPage: FC = () => {
               </button>
             ))
           }
+          <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
+            <FaPencilAlt />
+          </button>
         </div>
+        {displayComment && (
+          <div className="m-3">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
       <div className="mt-5">
