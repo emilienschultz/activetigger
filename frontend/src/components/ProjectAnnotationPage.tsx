@@ -11,6 +11,7 @@ import {
   useGetElementById,
   useGetNextElementId,
   useStatistics,
+  useUpdateSimpleModel,
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -35,7 +36,7 @@ export const ProjectAnnotationPage: FC = () => {
       currentProject: project,
       selectionConfig,
       displayConfig,
-      //      freqRefreshSimpleModel,
+      freqRefreshSimpleModel,
       history,
       phase,
     },
@@ -116,30 +117,30 @@ export const ProjectAnnotationPage: FC = () => {
   ]);
 
   // hooks to update simplemodel
-  // const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false); // use a memory to only update once
-  // const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
+  const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false); // use a memory to only update once
+  const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
 
-  // useEffect(() => {
-  //   // conditions to update the model
-  //   if (
-  //     !updatedSimpleModel &&
-  //     currentModel &&
-  //     history.length > 0 &&
-  //     history.length % freqRefreshSimpleModel == 0
-  //   ) {
-  //     setUpdatedSimpleModel(true);
-  //     updateSimpleModel(currentModel);
-  //   }
-  //   if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
-  //     setUpdatedSimpleModel(false);
-  // }, [
-  //   history,
-  //   updateSimpleModel,
-  //   setUpdatedSimpleModel,
-  //   currentModel,
-  //   freqRefreshSimpleModel,
-  //   updatedSimpleModel,
-  // ]);
+  useEffect(() => {
+    // conditions to update the model
+    if (
+      !updatedSimpleModel &&
+      currentModel &&
+      history.length > 0 &&
+      history.length % freqRefreshSimpleModel == 0
+    ) {
+      setUpdatedSimpleModel(true);
+      updateSimpleModel(currentModel);
+    }
+    if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
+      setUpdatedSimpleModel(false);
+  }, [
+    history,
+    updateSimpleModel,
+    setUpdatedSimpleModel,
+    currentModel,
+    freqRefreshSimpleModel,
+    updatedSimpleModel,
+  ]);
 
   // generic method to apply a chosen label to an element
   const applyLabel = useCallback(
