@@ -35,7 +35,7 @@ export const ProjectAnnotationPage: FC = () => {
       currentProject: project,
       selectionConfig,
       displayConfig,
-      freqRefreshSimpleModel,
+      //      freqRefreshSimpleModel,
       history,
       phase,
     },
