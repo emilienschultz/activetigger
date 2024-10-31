@@ -132,6 +132,8 @@ export const ProjectCreationForm: FC = () => {
             <li>Indicate the columns for id, text, and if needed label & test</li>
             <li>Validate to create</li>
           </ul>
+          Comment : both project name and index will be modified to be compatible with URLs
+          (slugify).
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>
