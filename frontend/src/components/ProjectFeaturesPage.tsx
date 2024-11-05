@@ -105,8 +105,8 @@ export const ProjectFeaturesPage: FC = () => {
                           Select the type of feature
                         </label>
                         <span className="explanations">
-                          Regarding the number of elements in the corpus, some computation can takes
-                          time (dozen of minutes).
+                          Depending on the size of the corpus, computation can take some time (up to
+                          dozes of minutes)
                         </span>
                         <select className="form-control" id="newFeature" {...register('type')}>
                           <option key="empty"></option>

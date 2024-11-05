@@ -316,7 +316,7 @@ class Server:
         if len(content) < params.n_test + params.n_train:
             shutil.rmtree(params.dir)
             return {
-                "error": f"Not enought data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
+                "error": f"Not enough data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
             }
 
         # check if index after slugify is unique otherwise FORCE the index from 0 to N
@@ -329,9 +329,10 @@ class Server:
             params.col_id = "id"
 
         # rename the index col, transform it in str, and set it as index
-        # TODO : take into account the fact that id column can exist
+
         if "id" in content.columns:
             content["id_raw"] = content["id"]  # copy the column id to not erase it
+            # TODO : take into account the fact that id column can exist
         content["id"] = content[params.col_id].astype(str).apply(slugify)
         content.set_index("id", inplace=True)
 
@@ -373,7 +374,7 @@ class Server:
             f = content["label"].isna()
             if (f.sum()) < params.n_test:
                 shutil.rmtree(params.dir)
-                return {"error": "Not enought data for creating the test dataset"}
+                return {"error": "Not enough data for creating the test dataset"}
             if len(params.cols_test) == 0:  # if no stratification
                 testset = content[f].sample(params.n_test)
             else:  # if stratification, total cat, number of element per cat, sample with a lim

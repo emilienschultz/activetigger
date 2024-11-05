@@ -161,7 +161,9 @@ export const ProjectCreationForm: FC = () => {
               // display datable if data available
               data !== null && (
                 <div>
-                  <div>Preview</div>
+                  <div className="m-3">
+                    Size of the dataset : <b>{data.data.length}</b>
+                  </div>
                   <DataTable<Record<DataType['headers'][number], string | number>>
                     columns={data.headers.map((h) => ({
                       name: h,
@@ -187,7 +189,7 @@ export const ProjectCreationForm: FC = () => {
               <div>
                 <div>
                   <label className="form-label" htmlFor="col_id">
-                    Column for id (they need to be unique)
+                    Id column (they need to be unique)
                   </label>
                   <select
                     className="form-control"
@@ -200,7 +202,7 @@ export const ProjectCreationForm: FC = () => {
                 </div>
                 <div>
                   <label className="form-label" htmlFor="col_text">
-                    Column for text (all the selected fields will be concactenated)
+                    Text column (all the selected fields will be concatenated)
                   </label>
 
                   <Controller
@@ -237,7 +239,7 @@ export const ProjectCreationForm: FC = () => {
                   </select>
 
                   <label className="form-label" htmlFor="col_label">
-                    Column for label (if exists)
+                    Column for existing annotations (optionnal)
                   </label>
                   <select
                     className="form-control"
@@ -250,7 +252,7 @@ export const ProjectCreationForm: FC = () => {
                   </select>
 
                   <label className="form-label" htmlFor="cols_context">
-                    Column for contextual information to display (if needed)
+                    Contextual information columns (optionnal)
                   </label>
                   <Controller
                     name="cols_context"
@@ -279,7 +281,7 @@ export const ProjectCreationForm: FC = () => {
                   />
 
                   <label className="form-label" htmlFor="n_test">
-                    Number of elements in the test set
+                    Number of elements in the test set (not already annotated)
                   </label>
                   <input
                     className="form-control"
