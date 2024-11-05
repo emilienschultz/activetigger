@@ -329,8 +329,10 @@ class Server:
             params.col_id = "id"
 
         # rename the index col, transform it in str, and set it as index
-        content.rename(columns={params.col_id: "id"}, inplace=True)
-        content["id"] = content["id"].astype(str).apply(slugify)
+        # TODO : take into account the fact that id column can exist
+        if "id" in content.columns:
+            content["id_raw"] = content["id"]  # copy the column id to not erase it
+        content["id"] = content[params.col_id].astype(str).apply(slugify)
         content.set_index("id", inplace=True)
 
         # create the text column, merging the different columns

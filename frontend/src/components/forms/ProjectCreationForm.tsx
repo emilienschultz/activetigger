@@ -129,7 +129,10 @@ export const ProjectCreationForm: FC = () => {
             <li>
               Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo)
             </li>
-            <li>Indicate the columns for id, text, and if needed label & test</li>
+            <li>Indicate the columns for id, text</li>
+            <li>
+              Optionnal : annotation column & number of elements in testset (not annotated rows)
+            </li>
             <li>Validate to create</li>
           </ul>
           Comment : both project name and index will be modified to be compatible with URLs
