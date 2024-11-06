@@ -700,7 +700,7 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
           },
         });
 
-        if (!res.error) notify({ type: 'warning', message: 'Model under training' });
+        if (!res.error) notify({ type: 'warning', message: 'Training model' });
       }
       return true;
     },
