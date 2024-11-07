@@ -19,3 +19,6 @@ add_users_processed.yaml
 activetigger/frontend_deprecated.py
 api/activetigger/__pycache__/
 api/tests/__pycache__/
+api/activetigger/html/custom.css
+frontend/public/favicon_old.ico
+frontend/src/assets/at_old.png
