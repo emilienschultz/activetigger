@@ -162,7 +162,7 @@ export const ProjectCreationForm: FC = () => {
               data !== null && (
                 <div>
                   <div className="m-3">
-                    Size of the dataset : <b>{data.data.length}</b>
+                    Size of the dataset : <b>{data.data.length - 1}</b>
                   </div>
                   <DataTable<Record<DataType['headers'][number], string | number>>
                     columns={data.headers.map((h) => ({
