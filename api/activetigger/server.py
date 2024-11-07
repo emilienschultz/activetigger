@@ -329,7 +329,6 @@ class Server:
             params.col_id = "id"
 
         # rename the index col, transform it in str, and set it as index
-
         if "id" in content.columns:
             content["id_raw"] = content["id"]  # copy the column id to not erase it
             # TODO : take into account the fact that id column can exist
@@ -366,19 +365,16 @@ class Server:
         # save a complete copy of the dataset
         content.to_parquet(params.dir / self.data_all, index=True)
 
-        # Step 2 : test dataset, no already labelled data, random + stratification
+        # Step 2 : test dataset : from the complete dataset + random/stratification
         rows_test = []
         params.test = False
         if params.n_test != 0:
-            # only on non labelled data
-            f = content["label"].isna()
-            if (f.sum()) < params.n_test:
-                shutil.rmtree(params.dir)
-                return {"error": "Not enough data for creating the test dataset"}
-            if len(params.cols_test) == 0:  # if no stratification
-                testset = content[f].sample(params.n_test)
-            else:  # if stratification, total cat, number of element per cat, sample with a lim
-                df_grouped = content[f].groupby(params.cols_test, group_keys=False)
+            # if no stratification
+            if len(params.cols_test) == 0:
+                testset = content.sample(params.n_test)
+            # if stratification, total cat, number of element per cat, sample with a lim
+            else:
+                df_grouped = content.groupby(params.cols_test, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(params.n_test / nb_cat)
                 testset = df_grouped.apply(
@@ -409,24 +405,23 @@ class Server:
         )
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
-        # if the case, add labels in the database
-
-        if (params.col_label is not None) and ("label" in trainset.columns):
+        # if the case, add existing annotations in the database
+        if (params.col_label is not None) and ("label" in content.columns):
             # check there is a limited number of labels
 
-            df = trainset["label"].dropna()
+            df = content["label"].dropna()
             params.default_scheme = list(df.unique())
 
             if len(params.default_scheme) < 30:
-                print("Add scheme/labels from file")
+                print("Add scheme/labels from file in train/test")
 
                 # add the scheme in the database
                 self.db_manager.add_scheme(
                     project_slug, "default", json.dumps(params.default_scheme), "file"
                 )
 
-                # add the labels in the database
-                for element_id, label in df.items():
+                # add the labels from the trainset in the database
+                for element_id, label in trainset["label"].dropna().items():
                     self.db_manager.add_annotation(
                         dataset="train",
                         user=username,
@@ -435,7 +430,18 @@ class Server:
                         scheme="default",
                         annotation=label,
                     )
-                    print("add annotations ", element_id)
+                    print("add annotations train", element_id)
+                # add the labels from the trainset in the database
+                for element_id, label in testset["label"].dropna().items():
+                    self.db_manager.add_annotation(
+                        dataset="test",
+                        user=username,
+                        project_slug=project_slug,
+                        element_id=element_id,
+                        scheme="default",
+                        annotation=label,
+                    )
+                    print("add annotations test", element_id)
             else:
                 print("Too many different labels > 30")
 
