@@ -70,7 +70,6 @@ const _useAppContext = () => {
   // Function to reset the context
   const resetContext = () => {
     setAppContext(DEFAULT_CONTEXT);
-    localStorage.setItem(CONTEXT_LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_CONTEXT));
   };
 
   return {

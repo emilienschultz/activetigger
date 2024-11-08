@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
@@ -30,16 +30,7 @@ export const ProjectPage: FC = () => {
   const {
     appContext: { currentScheme, currentProject: project, history },
     setAppContext,
-    resetContext,
   } = useAppContext();
-
-  // reset context if project change
-  useEffect(() => {
-    if (projectName != project?.params.project_slug) {
-      console.log('PROJECT CHANGED');
-      resetContext();
-    }
-  }, [projectName, project, resetContext]);
 
   const navigate = useNavigate();
 

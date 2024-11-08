@@ -10,10 +10,18 @@ import { useAppContext } from '../core/context';
  */
 export const CurrentProjectMonitoring: FC = () => {
   const { projectName } = useParams();
-  const { setAppContext } = useAppContext();
+  const { setAppContext, appContext, resetContext } = useAppContext();
   const { authenticatedUser } = useAuth();
 
   const { project, reFetch } = useProject(projectName); // api call
+
+  // reset context if project change
+  useEffect(() => {
+    if (projectName != appContext.currentProject?.params.project_slug) {
+      console.log('PROJECT CHANGED');
+      resetContext();
+    }
+  }, [projectName, appContext.currentProject?.params.project_slug, resetContext]);
 
   useEffect(() => {
     if (project && !('detail' in project)) {
