@@ -1,5 +1,4 @@
 import { omit } from 'lodash';
-import { unparse } from 'papaparse';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form';
@@ -7,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 
+import { stringify } from 'csv-stringify/browser/esm/sync';
 import { useCreateProject } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadCSVFile, loadExcelFile, loadParquetFile } from '../../core/utils';
@@ -23,6 +23,7 @@ export interface DataType {
 export const ProjectCreationForm: FC = () => {
   // form management
   const maxSizeMo = 400;
+  const maxTrainSet = 100000;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
   const { register, control, handleSubmit } = useForm<ProjectModel & { files: FileList }>({
     defaultValues: {
@@ -105,7 +106,8 @@ export const ProjectCreationForm: FC = () => {
       console.log('ENVOI');
       try {
         // ERROR : problème avec gros parquet unparse marche pas
-        const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+        //const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+        const csv = stringify(data.data, { header: true, columns: data.headers });
         console.log('data parsing done');
         try {
           await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
@@ -115,7 +117,7 @@ export const ProjectCreationForm: FC = () => {
           setSpinner(false);
         }
       } catch (error) {
-        console.log('ERROR WITH UNPARSE');
+        console.log(error);
       }
     }
   };
@@ -271,13 +273,14 @@ export const ProjectCreationForm: FC = () => {
                   />
 
                   <label className="form-label" htmlFor="n_train">
-                    Number of elements in the train set
+                    Number of elements in the train set (limit : 100.000)
                   </label>
                   <input
                     className="form-control"
                     id="n_train"
                     type="number"
                     {...register('n_train')}
+                    max={maxTrainSet}
                   />
 
                   <label className="form-label" htmlFor="n_test">

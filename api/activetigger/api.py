@@ -616,6 +616,7 @@ async def delete_project(
     r = server.delete_project(project_slug)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
+    del server.projects[project_slug]
     server.log_action(current_user.username, "delete project", project_slug)
     return None
 

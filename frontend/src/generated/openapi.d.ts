@@ -1077,6 +1077,8 @@ export interface components {
              * @default train
              */
             dataset: string | null;
+            /** Comment */
+            comment?: string | null;
         };
         /**
          * AuthActions
@@ -1356,6 +1358,8 @@ export interface components {
              * @default false
              */
             test: boolean;
+            /** N Total */
+            n_total?: number | null;
             /** Csv */
             csv: string;
         };
@@ -1437,6 +1441,8 @@ export interface components {
              * @default false
              */
             test: boolean;
+            /** N Total */
+            n_total?: number | null;
             /** Project Slug */
             project_slug: string;
             /** All Columns */
@@ -1677,7 +1683,11 @@ export interface components {
          */
         UsersServerModel: {
             /** Users */
-            users: string[];
+            users: {
+                [key: string]: {
+                    [key: string]: string | undefined;
+                } | undefined;
+            };
             /** Auth */
             auth: string[];
         };

@@ -311,6 +311,7 @@ class Server:
         # remove empty lines
         content = content.dropna(how="all")
         all_columns = list(content.columns)
+        n_total = len(content)
 
         # test if the size of the sample requested is possible
         if len(content) < params.n_test + params.n_train:
@@ -368,6 +369,7 @@ class Server:
         # Step 2 : test dataset : from the complete dataset + random/stratification
         rows_test = []
         params.test = False
+        testset = None
         if params.n_test != 0:
             # if no stratification
             if len(params.cols_test) == 0:
@@ -406,7 +408,9 @@ class Server:
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
         # if the case, add existing annotations in the database
-        if (params.col_label is not None) and ("label" in content.columns):
+        if params.col_label is None:
+            self.db_manager.add_scheme(project_slug, "default", json.dumps([]), "file")
+        else:
             # check there is a limited number of labels
 
             df = content["label"].dropna()
@@ -432,16 +436,17 @@ class Server:
                     )
                     print("add annotations train", element_id)
                 # add the labels from the trainset in the database
-                for element_id, label in testset["label"].dropna().items():
-                    self.db_manager.add_annotation(
-                        dataset="test",
-                        user=username,
-                        project_slug=project_slug,
-                        element_id=element_id,
-                        scheme="default",
-                        annotation=label,
-                    )
-                    print("add annotations test", element_id)
+                if testset:
+                    for element_id, label in testset["label"].dropna().items():
+                        self.db_manager.add_annotation(
+                            dataset="test",
+                            user=username,
+                            project_slug=project_slug,
+                            element_id=element_id,
+                            scheme="default",
+                            annotation=label,
+                        )
+                        print("add annotations test", element_id)
             else:
                 print("Too many different labels > 30")
 
@@ -456,6 +461,7 @@ class Server:
         # add elements for the parameters
         project["project_slug"] = project_slug
         project["all_columns"] = all_columns
+        project["n_total"] = n_total
 
         # save the parameters
         self.set_project_parameters(ProjectModel(**project), username)
@@ -716,8 +722,6 @@ class Project(Server):
             if filter == "\\":
                 print("TEST")
                 filter_san = "\\\\"
-
-            print(filter_san)
             if "CONTEXT=" in filter:  # case to search in the context
                 f_regex = (
                     df[self.params.cols_context]

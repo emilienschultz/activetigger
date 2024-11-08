@@ -335,7 +335,6 @@ class DatabaseManager:
         session.query(Logs).filter(Logs.project == project_slug).delete()
         session.query(Features).filter(Features.project == project_slug).delete()
         session.query(Models).filter(Models.project == project_slug).delete()
-
         session.commit()
         session.close()
 

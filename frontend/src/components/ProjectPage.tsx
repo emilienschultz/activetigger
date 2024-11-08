@@ -145,6 +145,10 @@ export const ProjectPage: FC = () => {
                       <td>{project.params.filename}</td>
                     </tr>
                     <tr>
+                      <td>Total rows file</td>
+                      <td>{project.params.n_total}</td>
+                    </tr>
+                    <tr>
                       <td>Language</td>
                       <td>{project.params.language}</td>
                     </tr>
