@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
-import { useGetSimpleModel, useUpdateSimpleModel } from '../core/api';
+import { useUpdateSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
 import { SimpleModelModel } from '../types';
 
@@ -22,7 +22,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 }) => {
   // element from the context
   const {
-    appContext: { freqRefreshSimpleModel, currentProject: project },
+    appContext: { freqRefreshSimpleModel },
     setAppContext,
   } = useAppContext();
 
@@ -30,7 +30,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // API call to get the current model with a set intervall
-  const { currentModel } = useGetSimpleModel(projectName, currentScheme, project);
+  // const { currentModel } = useGetSimpleModel(projectName, currentScheme, project);
 
   // useEffect(() => {
   //   const intervalId = setInterval(reFetchSimpleModel, 3000);
@@ -46,7 +46,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   };
 
   // create form
-  const { register, handleSubmit, control, watch, setValue } = useForm<SimpleModelModel>({
+  const { register, handleSubmit, control, watch } = useForm<SimpleModelModel>({
     defaultValues: {
       model: 'liblinear',
       features: Object.values(availableFeatures),
