@@ -76,9 +76,6 @@ export const ProjectAnnotationPage: FC = () => {
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
 
-  console.log(availableSimpleModels);
-  console.log(currentModel);
-
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
     projectName || null,

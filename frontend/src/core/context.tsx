@@ -48,9 +48,11 @@ export const DEFAULT_CONTEXT: AppContextValue = {
 };
 const storedContext = localStorage.getItem(CONTEXT_LOCAL_STORAGE_KEY);
 
+// type of the context
 export type AppContextType = {
   appContext: AppContextValue;
   setAppContext: React.Dispatch<React.SetStateAction<AppContextValue>>;
+  resetContext: () => void;
 };
 
 export const AppContext = createContext<AppContextType>(null as unknown as AppContextType);
@@ -65,9 +67,16 @@ const _useAppContext = () => {
     localStorage.setItem(CONTEXT_LOCAL_STORAGE_KEY, JSON.stringify(appContext));
   }, [appContext]);
 
+  // Function to reset the context
+  const resetContext = () => {
+    setAppContext(DEFAULT_CONTEXT);
+    localStorage.setItem(CONTEXT_LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_CONTEXT));
+  };
+
   return {
     appContext,
     setAppContext,
+    resetContext,
   };
 };
 
@@ -77,5 +86,11 @@ export function useAppContext() {
 
 export const AppContextProvider: FC<PropsWithChildren> = ({ children }) => {
   const context = _useAppContext();
+
+  // Deal here the logic of context reset ?
+  // useEffect(() => {
+  //   console.log('coucou');
+  // }, [context.appContext.currentScheme]);
+
   return <AppContext.Provider value={context}>{children}</AppContext.Provider>;
 };
