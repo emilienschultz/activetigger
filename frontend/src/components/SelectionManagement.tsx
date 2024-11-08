@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useMemo } from 'react';
+import { ChangeEvent, FC, useEffect, useMemo } from 'react';
 import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -46,12 +46,14 @@ export const SelectionManagement: FC = () => {
   // }, [reFetchSimpleModel, project]);
 
   // force a default label
-  if (!selectionConfig.label && availableLabels && availableLabels.length > 0) {
-    setAppContext((prev) => ({
-      ...prev,
-      selectionConfig: { ...selectionConfig, label: availableLabels[0] },
-    }));
-  }
+  useEffect(() => {
+    if (!selectionConfig.label && availableLabels && availableLabels.length > 0) {
+      setAppContext((prev) => ({
+        ...prev,
+        selectionConfig: { ...selectionConfig, label: availableLabels[0] },
+      }));
+    }
+  }, [availableLabels, selectionConfig, setAppContext]);
 
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
@@ -178,7 +180,7 @@ export const SelectionManagement: FC = () => {
                     frameSelection: !selectionConfig.frameSelection,
                   },
                 }));
-                console.log(selectionConfig.frameSelection);
+                // console.log(selectionConfig.frameSelection);
               }}
             />
             Use visualisation frame to lock the selection

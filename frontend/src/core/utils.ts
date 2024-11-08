@@ -88,7 +88,7 @@ export async function loadExcelFile(file: File): Promise<DataType> {
   // Convert the sheet to JSON format with headers
   const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-  console.log(worksheet);
+  // console.log(worksheet);
 
   // Extract headers (first row)
   const headers = jsonData[0] as string[];

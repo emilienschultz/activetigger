@@ -1,5 +1,4 @@
-import { toPairs } from 'lodash';
-import { FC, useEffect } from 'react';
+import { FC } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
 import { useGetSimpleModel, useUpdateSimpleModel } from '../core/api';
@@ -66,12 +65,13 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   // state for the model selected to modify parameters
   const selectedModel = watch('model');
 
-  useEffect(() => {
-    if (currentModel && currentModel.params) {
-      setValue('model', currentModel.model);
-      toPairs(currentModel.params).map(([key, value]) => setValue(`params.${key}`, value));
-    }
-  }, [currentModel, setValue]);
+  // Display the current model
+  // useEffect(() => {
+  //   if (currentModel && currentModel.params) {
+  //     setValue('model', currentModel.model);
+  //     toPairs(currentModel.params).map(([key, value]) => setValue(`params.${key}`, value));
+  //   }
+  // }, [currentModel, setValue]);
 
   // hooks to update
   const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
@@ -84,7 +84,9 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   return (
     <div>
-      <span className="explanations">Train a prediction model on the current annotated data</span>
+      <span className="explanations">
+        Train a new prediction model on the current annotated data
+      </span>
 
       {/* {currentModel && (
         <div>
@@ -207,7 +209,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             value={freqRefreshSimpleModel}
             onChange={(e) => {
               refreshFreq(Number(e.currentTarget.value));
-              console.log(e.currentTarget.value);
             }}
             step="1"
             style={{ width: '80px', margin: '10px' }}

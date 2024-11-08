@@ -42,7 +42,6 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
       if (file.name.includes('parquet')) {
         console.log('parquet');
         loadParquetFile(file).then((data) => {
-          console.log(data);
           setData(data);
         });
       }

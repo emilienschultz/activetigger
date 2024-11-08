@@ -220,7 +220,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
                         frameSelection: !selectionConfig.frameSelection,
                       },
                     }));
-                    console.log(selectionConfig.frameSelection);
+                    // console.log(selectionConfig.frameSelection);
                   }}
                 />
                 <FaLock />

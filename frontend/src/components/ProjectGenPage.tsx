@@ -69,7 +69,7 @@ export const GenPage: FC = () => {
       }));
   }, [generateConfig, setAppContext]);
 
-  console.log(generateConfig);
+  // console.log(generateConfig);
 
   const columns: readonly Column<Row>[] = [
     {
@@ -99,8 +99,6 @@ export const GenPage: FC = () => {
       resizable: true,
     },
   ];
-
-  console.log(currentProject);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="generate">

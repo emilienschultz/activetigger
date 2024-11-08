@@ -70,7 +70,6 @@ export async function login(params: LoginParams) {
 
   if (res.data && !res.error) return res.data;
   else {
-    console.log(res.error);
     throw new HttpError(
       res.response.status,
       // TODO: debug API type for error, data received are not coherent with types
@@ -93,7 +92,6 @@ export async function logout(token: string) {
 
   if (res.response.status === 200) return true;
   else {
-    console.log(res.error);
     throw new HttpError(
       res.response.status,
       // TODO: debug API type for error, data received are not coherent with types
@@ -1065,7 +1063,6 @@ export function useGetFeaturesFile(projectSlug: string | null) {
           },
           parseAs: 'blob',
         });
-        console.log(res);
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the predictions of the model' });
@@ -1100,7 +1097,6 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
           },
           parseAs: 'blob',
         });
-        console.log(res);
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the annotated data' });
@@ -1134,7 +1130,6 @@ export function useGetPredictionsFile(projectSlug: string | null) {
           },
           parseAs: 'blob',
         });
-        console.log(res);
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the predictions data' });
@@ -1167,7 +1162,6 @@ export function useGetGenerationsFile(projectSlug: string | null) {
           },
           parseAs: 'blob',
         });
-        console.log(res);
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the generations data' });
@@ -1267,8 +1261,6 @@ export function useUpdateProjection(
 
   const updateProjection = useCallback(
     async (formData: ProjectionInStrictModel) => {
-      console.log('format');
-      console.log(formData);
       if (projectSlug && formData.features && scheme && formData.params) {
         const res = await api.POST('/elements/projection/compute', {
           params: {
@@ -1448,7 +1440,6 @@ export function useGenerate(
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
-    console.log(projectSlug, api_name, endpoint, prompt, n_batch, currentScheme, mode);
     if (projectSlug && api_name && endpoint && prompt && n_batch && currentScheme && mode) {
       const res = await api.POST('/elements/generate/start', {
         params: {
