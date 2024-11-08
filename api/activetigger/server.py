@@ -710,17 +710,28 @@ class Project(Server):
 
         # add a regex condition to the selection
         if filter:
+            print(filter)
+            # sanitize
+            filter_san = filter
+            if filter == "\\":
+                print("TEST")
+                filter_san = "\\\\"
+
+            print(filter_san)
             if "CONTEXT=" in filter:  # case to search in the context
                 f_regex = (
                     df[self.params.cols_context]
                     .apply(lambda row: " ".join(row.values.astype(str)), axis=1)
                     .str.contains(
-                        filter.replace("CONTEXT=", ""), regex=True, case=True, na=False
+                        filter_san.replace("CONTEXT=", ""),
+                        regex=True,
+                        case=True,
+                        na=False,
                     )
                 )
             else:
                 f_regex = df["text"].str.contains(
-                    filter, regex=True, case=True, na=False
+                    filter_san, regex=True, case=True, na=False
                 )
             f = f & f_regex
 

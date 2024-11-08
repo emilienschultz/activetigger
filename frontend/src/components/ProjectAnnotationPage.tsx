@@ -295,7 +295,11 @@ export const ProjectAnnotationPage: FC = () => {
           >
             <Highlighter
               highlightClassName="Search"
-              searchWords={selectionConfig.filter ? [selectionConfig.filter] : []}
+              searchWords={
+                selectionConfig.filter && selectionConfig.filter != '\\'
+                  ? [selectionConfig.filter]
+                  : []
+              }
               autoEscape={false}
               textToHighlight={textInFrame}
               highlightStyle={{
@@ -308,7 +312,11 @@ export const ProjectAnnotationPage: FC = () => {
             <span className="text-out-context" title="Outside 512 token window ">
               <Highlighter
                 highlightClassName="Search"
-                searchWords={selectionConfig.filter ? [selectionConfig.filter] : []}
+                searchWords={
+                  selectionConfig.filter && selectionConfig.filter != '\\'
+                    ? [selectionConfig.filter]
+                    : []
+                }
                 autoEscape={false}
                 textToHighlight={textOutFrame}
               />
