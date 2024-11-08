@@ -3,11 +3,12 @@ import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { FC, useEffect, useState } from 'react';
 import DataGrid, { Column, RenderEditCellProps } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
-import { useParams } from 'react-router-dom';
+import { useBlocker, useParams } from 'react-router-dom';
 
 import Highlighter from 'react-highlight-words';
 import { MdSkipNext, MdSkipPrevious } from 'react-icons/md';
 
+import { Modal } from 'react-bootstrap';
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
 import { AnnotationModel } from '../types';
@@ -30,6 +31,19 @@ export const ProjectExplorationPage: FC = () => {
     appContext: { currentScheme, currentProject: project, selectionConfig, phase },
   } = useAppContext();
 
+  // data modification management
+  const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (
+      currentLocation.pathname !== nextLocation.pathname &&
+      Object.values(modifiedRows).length > 0
+    ) {
+      return true;
+    }
+    return false;
+  });
+
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
 
@@ -38,9 +52,6 @@ export const ProjectExplorationPage: FC = () => {
   const [search, setSearch] = useState<string | null>(null);
   const [sample, setSample] = useState<string>('all');
   const [pageSize, setPageSize] = useState(20);
-
-  // data modification management
-  const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
 
   // get API elements when table shape change
   const {
@@ -265,6 +276,18 @@ export const ProjectExplorationPage: FC = () => {
             </div>
           </div>
         </div>
+        <Modal show={blocker.state === 'blocked'} onHide={blocker.reset}>
+          <Modal.Header>
+            <Modal.Title>You are leaving the page</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Do you want to change the page ? You will lose all your changes if you proceed
+          </Modal.Body>
+          <Modal.Footer>
+            <button onClick={blocker.reset}>No</button>
+            <button onClick={blocker.proceed}>Yes</button>
+          </Modal.Footer>
+        </Modal>
       </div>
     </ProjectPageLayout>
   );
