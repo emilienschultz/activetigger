@@ -81,7 +81,7 @@ export function getRouter() {
           element: <ProjectAnnotationPage />,
         },
         {
-          path: '/projects/:projectName/features/',
+          path: '/projects/:projectName/prepare/',
           element: <ProjectFeaturesPage />,
         },
         {

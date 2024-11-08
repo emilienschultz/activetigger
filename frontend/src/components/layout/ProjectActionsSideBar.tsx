@@ -51,13 +51,13 @@ export const ProjectActionsSidebar: FC<{
         </li>
         <li className="nav-item">
           <Link
-            to={`/projects/${projectName}/features`}
-            className={classNames('nav-link', currentProjectAction === 'features' && 'active')}
+            to={`/projects/${projectName}/prepare`}
+            className={classNames('nav-link', currentProjectAction === 'prepare' && 'active')}
             aria-current="page"
-            title="Features"
+            title="Prepare"
           >
             <MdOutlineTransform />
-            <span> Features</span>
+            <span> Prepare</span>
           </Link>
         </li>
         <li className="nav-item">

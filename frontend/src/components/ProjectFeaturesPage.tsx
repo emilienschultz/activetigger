@@ -9,6 +9,7 @@ import { useAddFeature, useDeleteFeature, useGetFeatureInfo } from '../core/api'
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { FeatureModelExtended } from '../types';
+import { LabelsManagement } from './LabelsManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -20,7 +21,7 @@ export const ProjectFeaturesPage: FC = () => {
 
   // get element from the state
   const {
-    appContext: { currentProject: project },
+    appContext: { currentProject: project, currentScheme, reFetchCurrentProject },
   } = useAppContext();
 
   // API calls
@@ -58,12 +59,23 @@ export const ProjectFeaturesPage: FC = () => {
     //reFetch();
   };
 
+  const availableLabels =
+    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+
   return (
-    <ProjectPageLayout projectName={projectName || null} currentAction="features">
+    <ProjectPageLayout projectName={projectName || null} currentAction="prepare">
       {project && (
         <div className="container-fluid">
           <div className="row">
             <div className="col-12">
+              <h2 className="subsection">Labels</h2>
+              <LabelsManagement
+                projectName={projectName || null}
+                currentScheme={currentScheme || null}
+                availableLabels={availableLabels}
+                reFetchCurrentProject={reFetchCurrentProject || (() => null)}
+              />
+              <h2 className="subsection">Features</h2>
               <Tabs id="panel" className="mt-3" defaultActiveKey="existing">
                 <Tab eventKey="existing" title="Existing">
                   <span className="explanations m-2">Features allow to train models.</span>

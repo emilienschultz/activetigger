@@ -9,7 +9,7 @@ export type PossibleProjectActions =
   | 'annotate'
   | 'train'
   | 'parameters'
-  | 'features'
+  | 'prepare'
   | 'explorate'
   | 'test'
   | 'generate'
