@@ -2,6 +2,7 @@ import { saveAs } from 'file-saver';
 import { toPairs, values } from 'lodash';
 import createClient, { Middleware } from 'openapi-fetch';
 import { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
@@ -281,7 +282,8 @@ export function useProject(projectSlug?: string) {
 
   // 2. create a fetchTrigger, a simple boolean which we will use to trigger an API call
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
-
+  const { notify } = useNotifications();
+  const navigate = useNavigate();
   // 3. use an internal state to store the project thanks to useAsyncMemo
   const project = useAsyncMemo(async () => {
     if (projectSlug) {
@@ -290,14 +292,17 @@ export function useProject(projectSlug?: string) {
           path: { project_slug: projectSlug },
         },
       });
-
+      if (res.error) {
+        notify({ type: 'error', message: JSON.stringify(res.error) });
+        navigate(`/projects`);
+      }
       //return res.data.params;
       return res.data;
     }
     return null;
     // in this dependencies list we add projectSlug has a different API call will be made if it changes
     // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
-  }, [projectSlug, fetchTrigger]);
+  }, [projectSlug, fetchTrigger, notify]);
 
   // 4. make sure to simplify the data returned by discarding the status
   // we also return a refetch method which toggle the fetchTrigger state in order to trigger a new API call

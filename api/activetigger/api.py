@@ -238,6 +238,24 @@ async def get_project(project_slug: str) -> ProjectModel:
     if project_slug in server.projects:
         return server.projects[project_slug]
 
+    # Manage a FIFO queue when there is too many projects
+    if len(server.projects) >= server.max_projects:
+        old_element = sorted(
+            [[p, server.projects[p].starting_time] for p in server.projects],
+            key=lambda x: x[1],
+        )[0]
+        if (
+            old_element[1] < time.time() - 3600
+        ):  # check if the project has a least one hour old to avoid destroying current projects
+            del server.projects[old_element[0]]
+            print(f"Delete project {old_element[0]} to gain memory")
+        else:
+            print("Too many projects in the current memory")
+            raise HTTPException(
+                status_code=500,
+                detail="There is too many projects currently loaded in this server. Please wait",
+            )
+
     # load the project
     server.start_project(project_slug)
 

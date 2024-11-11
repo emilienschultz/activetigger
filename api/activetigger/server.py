@@ -41,6 +41,7 @@ train_file = "train.parquet"
 test_file = "test.parquet"
 default_user = "root"
 ALGORITHM = "HS256"
+MAX_LOADED_PROJECTS = 20
 
 
 class Server:
@@ -66,12 +67,14 @@ class Server:
     db_manager: DatabaseManager
     queue: Queue
     users: Users
+    max_projects: int
 
     def __init__(self, path=".", path_models="./models") -> None:
         """
         Start the server
         """
 
+        self.max_projects = MAX_LOADED_PROJECTS
         self.db_name = db_name
         self.data_all = data_all
         self.features_file = features_file
