@@ -405,7 +405,7 @@ class Server:
             )
 
         trainset.to_parquet(params.dir / self.train_file, index=True)
-        trainset[["text"] + params.cols_context].to_parquet(
+        trainset[list(set(["text"] + params.cols_context))].to_parquet(
             params.dir / self.annotations_file, index=True
         )
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)

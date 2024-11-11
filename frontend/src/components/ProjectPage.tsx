@@ -10,8 +10,9 @@ import DataGrid, { Column } from 'react-data-grid';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
-import { ProjectStatistics } from './ProjectStatistics';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
+import { ProjectStatistics } from './ProjectStatistics';
+import { SchemesManagement } from './SchemesManagement';
 
 /**
  * Component to display the project page
@@ -81,8 +82,9 @@ export const ProjectPage: FC = () => {
       <ProjectPageLayout projectName={projectName}>
         {project && (
           <div className="container-fluid">
-            <div className="row"></div>
-
+            <div className="row">
+              <SchemesManagement projectSlug={projectName} />
+            </div>
             <Tabs id="panel" className="mt-3" defaultActiveKey="statistics">
               <Tab eventKey="statistics" title="Statistics">
                 {currentScheme && (

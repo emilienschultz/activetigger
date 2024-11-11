@@ -336,9 +336,9 @@ export const ProjectAnnotationPage: FC = () => {
           //display context
           phase != 'test' && displayConfig.displayContext && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
-              Context :{' '}
+              Context{' '}
               {Object.entries(element?.context || { None: 'None' }).map(
-                ([k, v]) => `${k} - ${v} ;`,
+                ([k, v]) => `[${k} - ${v}]`,
               )}
             </div>
           )
