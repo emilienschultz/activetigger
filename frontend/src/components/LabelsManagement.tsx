@@ -52,7 +52,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 
   return (
     <div>
-      <span className="explanations">Create, delete or rename labels</span>
+      <span className="explanations">Create, delete or rename labels.</span>
       <label htmlFor="select-label" className="form-label">
         Available labels
       </label>
@@ -82,7 +82,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           <FaPlusCircle size={20} className="m-2" />
         </button>
       </div>
-      <label htmlFor="select-label" className="form-label">
+      <label htmlFor="select-label" className="form-label mt-2">
         Convert label
       </label>
       <div className="d-flex align-items-center">

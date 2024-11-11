@@ -16,7 +16,7 @@ export const DocPage: FC = () => {
             </div>
             <h4 className="subsection">Create a project</h4>
             To write
-            <h4 className="subsection">Compute features</h4>
+            <h4 className="subsection">Prepare labels and features</h4>
             To write
             <h4 className="subsection">Explore the data</h4>
             To write

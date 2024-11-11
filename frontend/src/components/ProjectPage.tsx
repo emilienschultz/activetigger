@@ -11,7 +11,6 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
 import { ProjectStatistics } from './ProjectStatistics';
-import { SchemesManagement } from './SchemesManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 /**
@@ -84,11 +83,7 @@ export const ProjectPage: FC = () => {
           <div className="container-fluid">
             <div className="row"></div>
 
-            <div className="row">
-              <SchemesManagement projectSlug={projectName} />
-            </div>
-
-            <Tabs id="panel" className="mb-3" defaultActiveKey="statistics">
+            <Tabs id="panel" className="mt-3" defaultActiveKey="statistics">
               <Tab eventKey="statistics" title="Statistics">
                 {currentScheme && (
                   <div className="row">

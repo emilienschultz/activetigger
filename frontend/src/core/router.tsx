@@ -6,11 +6,11 @@ import { HomePage } from '../components/HomePage';
 import { LoginPage } from '../components/LoginPage';
 import { NotFound } from '../components/NotFoundPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
-import { ProjectExplorationPage } from '../components/ProjectExplorationPage';
+import { ProjectExplorePage } from '../components/ProjectExplorePage';
 import { ProjectExportPage } from '../components/ProjectExportPage';
-import { ProjectFeaturesPage } from '../components/ProjectFeaturesPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
+import { ProjectPreparePage } from '../components/ProjectPreparePage';
 import { ProjectTestPage } from '../components/ProjectTestPage';
 import { ProjectTrainPage } from '../components/ProjectTrainPage';
 
@@ -82,11 +82,11 @@ export function getRouter() {
         },
         {
           path: '/projects/:projectName/prepare/',
-          element: <ProjectFeaturesPage />,
+          element: <ProjectPreparePage />,
         },
         {
-          path: '/projects/:projectName/explorate',
-          element: <ProjectExplorationPage />,
+          path: '/projects/:projectName/explore',
+          element: <ProjectExplorePage />,
         },
         {
           path: '/projects/:projectName/annotate/',

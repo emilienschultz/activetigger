@@ -10,7 +10,7 @@ export type PossibleProjectActions =
   | 'train'
   | 'parameters'
   | 'prepare'
-  | 'explorate'
+  | 'explore'
   | 'test'
   | 'generate'
   | 'export';

@@ -62,13 +62,13 @@ export const ProjectActionsSidebar: FC<{
         </li>
         <li className="nav-item">
           <Link
-            to={`/projects/${projectName}/explorate`}
-            className={classNames('nav-link', currentProjectAction === 'explorate' && 'active')}
+            to={`/projects/${projectName}/explore`}
+            className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
             aria-current="page"
-            title="Exploration"
+            title="Explore"
           >
             <TbListSearch />
-            <span> Exploration</span>
+            <span> Explore</span>
           </Link>
         </li>
         <li className="nav-item">
@@ -79,7 +79,7 @@ export const ProjectActionsSidebar: FC<{
             title="Annotation"
           >
             <PiTagDuotone />
-            <span> Annotation</span>
+            <span> Annotate</span>
           </Link>
         </li>
         <li className="nav-item">
@@ -101,7 +101,7 @@ export const ProjectActionsSidebar: FC<{
             title="Training"
           >
             <MdModelTraining />
-            <span> Training</span>
+            <span> Train</span>
           </Link>
         </li>
         <li className="nav-item">
