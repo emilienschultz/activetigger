@@ -1071,7 +1071,7 @@ export function useGetFeaturesFile(projectSlug: string | null) {
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the predictions of the model' });
-          saveAs(res.data, `features_${projectSlug}.${format}`);
+          saveAs(res.data, `features_${features.join('-')}_${projectSlug}.${format}`);
         }
         return true;
       }
