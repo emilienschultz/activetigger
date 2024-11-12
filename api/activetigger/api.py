@@ -1054,40 +1054,6 @@ async def post_annotation(
 # -------------------
 
 
-@app.post("/schemes/label/{action}", dependencies=[Depends(verified_user)])
-async def add_label(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    action: ActionModel,
-    scheme: str,
-    label: str,
-) -> None:
-    """
-    Add a label to a scheme
-    """
-    test_rights("modify project element", current_user.username, project.name)
-
-    if action == "add":
-        r = project.schemes.add_label(label, scheme, current_user.username)
-        if "error" in r:
-            raise HTTPException(status_code=400, detail=r["error"])
-        server.log_action(
-            current_user.username, f"add label {label} to {scheme}", project.name
-        )
-        return None
-
-    if action == "delete":
-        r = project.schemes.delete_label(label, scheme, current_user.username)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(
-            current_user.username, f"delete label {label} to {scheme}", project.name
-        )
-        return None
-
-    raise HTTPException(status_code=500, detail="Wrong action")
-
-
 @app.post("/schemes/label/rename", dependencies=[Depends(verified_user)])
 async def rename_label(
     project: Annotated[Project, Depends(get_project)],
@@ -1130,6 +1096,40 @@ async def rename_label(
         project.name,
     )
     return None
+
+
+@app.post("/schemes/label/{action}", dependencies=[Depends(verified_user)])
+async def add_label(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    action: ActionModel,
+    scheme: str,
+    label: str,
+) -> None:
+    """
+    Add a label to a scheme
+    """
+    test_rights("modify project element", current_user.username, project.name)
+
+    if action == "add":
+        r = project.schemes.add_label(label, scheme, current_user.username)
+        if "error" in r:
+            raise HTTPException(status_code=400, detail=r["error"])
+        server.log_action(
+            current_user.username, f"add label {label} to {scheme}", project.name
+        )
+        return None
+
+    if action == "delete":
+        r = project.schemes.delete_label(label, scheme, current_user.username)
+        if "error" in r:
+            raise HTTPException(status_code=500, detail=r["error"])
+        server.log_action(
+            current_user.username, f"delete label {label} to {scheme}", project.name
+        )
+        return None
+
+    raise HTTPException(status_code=500, detail="Wrong action")
 
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])
