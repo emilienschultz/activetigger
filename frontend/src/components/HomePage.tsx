@@ -50,8 +50,8 @@ export const HomePage: FC = () => {
                 </div>
               )}
 
-              <div className="general-info">
-                <div>Frontend v0.7</div>
+              <div className="general-info mt-3">
+                <div>Frontend v0.8</div>
                 <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
                 <div className="text-muted">
                   Credits : Julien Boelaert & Étienne Ollion & Émilien Schultz & Ouestware
