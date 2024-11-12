@@ -692,6 +692,8 @@ class Project(Server):
         if selection == "test":
             df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
             f = df["labels"].isnull()
+            if len(df[f]) == 0:
+                return {"error": "No element to annotate"}
             element_id = df[f].sample(random_state=42).index[0]
             element = {
                 "element_id": str(element_id),
