@@ -65,7 +65,7 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
       <div className="row">
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>
-            No test data set have been created. Do you want to upload your how test set ?
+            No test data set have been created. Do you want to upload your own test set ?
             <label className="form-label" htmlFor="csvFile">
               File to upload
             </label>
