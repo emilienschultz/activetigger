@@ -18,7 +18,7 @@ export const ProjectActionsSidebar: FC<{
   currentMode?: string;
   currentScheme?: string;
   currentUser: string;
-}> = ({ currentProjectAction, projectState, currentUser, currentMode }) => {
+}> = ({ currentProjectAction, projectState, currentUser, currentMode, currentScheme }) => {
   const projectName = projectState ? projectState.params.project_slug : null;
 
   // test if computation is currently undergoing
@@ -46,6 +46,9 @@ export const ProjectActionsSidebar: FC<{
             <MdOutlineHomeMax className="m-2" />
             <span>
               <b>{projectName}</b>
+            </span>
+            <span className="mx-2" style={{ fontSize: '0.875rem', color: 'grey' }}>
+              {currentScheme}
             </span>
           </Link>
         </li>
