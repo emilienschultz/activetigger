@@ -1043,6 +1043,8 @@ class Project(Server):
 
         # test or train
         if dataset == "test":
+            if not self.params.test:
+                return {"error": "No test data"}
             data = self.schemes.get_scheme_data(
                 scheme=scheme, complete=True, kind="test"
             )

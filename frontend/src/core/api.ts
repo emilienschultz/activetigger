@@ -1071,7 +1071,7 @@ export function useGetFeaturesFile(projectSlug: string | null) {
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the predictions of the model' });
-          saveAs(res.data, 'features.' + format);
+          saveAs(res.data, `features_${projectSlug}.${format}`);
         }
         return true;
       }
@@ -1105,7 +1105,7 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the annotated data' });
-          saveAs(res.data, 'annotations.' + format);
+          saveAs(res.data, `annotations_${projectSlug}_${scheme}_${dataset}.${format}`);
         }
         return true;
       }
@@ -1138,7 +1138,7 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the predictions data' });
-          saveAs(res.data, 'predictions.' + format);
+          saveAs(res.data, `predictions_${projectSlug}_${model}.${format}`);
         }
         return true;
       }
