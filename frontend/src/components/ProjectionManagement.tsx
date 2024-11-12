@@ -20,6 +20,7 @@ import { LuZoomIn } from 'react-icons/lu';
 import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
 
 interface ZoomDomain {
@@ -50,6 +51,8 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     setAppContext,
   } = useAppContext();
   const navigate = useNavigate();
+  const { notify } = useNotifications();
+
   const { authenticatedUser } = useAuth();
   const { getElementById } = useGetElementById(
     project?.params.project_slug || null,
@@ -105,6 +108,12 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
           : [];
     const params = pick(formData.params, relevantParams) as ProjectionModelParams;
     const data = { ...formData, params };
+    const watchedFeatures = watch('features');
+    console.log(watchedFeatures);
+    if (watchedFeatures.length == 0) {
+      notify({ type: 'error', message: 'Please select at least one feature' });
+      return;
+    }
     await updateProjection(data);
   };
 
@@ -358,7 +367,6 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
                 }}
               />
             )}
-            rules={{ required: true }}
           />
         </div>
         {availableProjections && selectedMethod == 'tsne' && (

@@ -3,6 +3,7 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
 import { useUpdateSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
 import { SimpleModelModel } from '../types';
 
 // TODO: default values + avoid generic parameters
@@ -25,6 +26,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     appContext: { freqRefreshSimpleModel },
     setAppContext,
   } = useAppContext();
+  const { notify } = useNotifications();
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
@@ -78,6 +80,13 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   // action when form validated
   const onSubmit: SubmitHandler<SimpleModelModel> = async (formData) => {
+    const watchedFeatures = watch('features');
+    console.log(watchedFeatures);
+    if (watchedFeatures.length == 0) {
+      notify({ type: 'error', message: 'Please select at least one feature' });
+      return;
+    }
+
     await updateSimpleModel(formData);
     //reset();
   };
@@ -194,7 +203,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
                 }}
               />
             )}
-            rules={{ required: true }}
           />
         </div>
         <button className="btn btn-primary btn-validation">Train</button>
