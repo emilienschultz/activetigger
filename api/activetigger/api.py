@@ -382,13 +382,16 @@ async def read_users_me(
     return UserModel(username=current_user.username, status=current_user.status)
 
 
-@app.get("/users", dependencies=[Depends(verified_user)])
-async def existing_users() -> UsersServerModel:
+@app.get("/users")
+async def existing_users(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> UsersServerModel:
     """
     Get existing users
     """
     return UsersServerModel(
-        users=server.users.existing_users(), auth=["manager", "annotator"]
+        users=server.users.existing_users(username=current_user.username),
+        auth=["manager", "annotator"],
     )
 
 

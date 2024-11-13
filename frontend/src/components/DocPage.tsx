@@ -22,6 +22,9 @@ export const DocPage: FC = () => {
             To write
             <h4 className="subsection">Annotation phase</h4>
             To write
+            <li>
+              <ul>Explain the X/Y/Z count</ul>
+            </li>
             <h4 className="subsection">Fine-tune a BERT model</h4>
             To write
             <h4 className="subsection">Test model</h4>

@@ -79,12 +79,13 @@ class Users:
             auth = self.db_manager.get_user_auth(username, project_slug)
         return auth
 
-    def existing_users(self) -> dict:
+    def existing_users(self, username: str = "root") -> dict:
         """
-        Get existing users
+        Get existing users which have been created by one user
         (except root which can't be modified)
+        TODO : better rules
         """
-        users = self.db_manager.get_users()
+        users = self.db_manager.get_users(username)
         return users
 
     def add_user(
