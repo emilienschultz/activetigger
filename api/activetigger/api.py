@@ -390,7 +390,7 @@ async def existing_users(
     Get existing users
     """
     return UsersServerModel(
-        users=server.users.existing_users(username=current_user.username),
+        users=server.users.existing_users(),
         auth=["manager", "annotator"],
     )
 
@@ -421,8 +421,19 @@ async def delete_user(
 ) -> None:
     """
     Delete user
+    - root can delete all
+    - users can only delete account they created
     """
+    # manage rights
     test_rights("modify user", current_user.username)
+    if current_user.username != "root":
+        u = server.users.existing_users(username=current_user.username)
+        if user_to_delete not in u:
+            raise HTTPException(
+                status_code=500,
+                detail="You don't have the right to delete this account",
+            )
+
     r = server.users.delete_user(user_to_delete)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

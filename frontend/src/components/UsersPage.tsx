@@ -53,7 +53,7 @@ export const UsersPage: FC = () => {
           <div className="col-1"></div>
           <div className="col-8">
             <h2 className="subsection">Manage users and rights</h2>
-            <div className="explanations">Select a user</div>
+            <div className="explanations">Select a user (only users created by the account)</div>
 
             <div className="d-flex align-items-center">
               <select
