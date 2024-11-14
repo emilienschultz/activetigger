@@ -119,13 +119,14 @@ export const ProjectExplorePage: FC = () => {
         >
           <Highlighter
             highlightClassName="Search"
-            searchWords={search ? [search] : []}
+            searchWords={search && search.slice(-1) != '\\' ? [search] : []}
             autoEscape={false}
             textToHighlight={props.row.text}
             highlightStyle={{
               backgroundColor: 'yellow',
               margin: '-3px',
             }}
+            caseSensitive={true}
           />
         </div>
       ),

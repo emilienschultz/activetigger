@@ -24,6 +24,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db import DatabaseManager
 from activetigger.features import Features
+from activetigger.functions import clean_regex
 from activetigger.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.queue import Queue
@@ -721,13 +722,10 @@ class Project(Server):
 
         # add a regex condition to the selection
         if filter:
-            print(filter)
             # sanitize
-            filter_san = filter
-            if filter == "\\":
-                print("TEST")
-                filter_san = "\\\\"
-            if "CONTEXT=" in filter:  # case to search in the context
+            filter_san = clean_regex(filter)
+            print("FILTER", filter, filter_san)
+            if "CONTEXT=" in filter_san:  # case to search in the context
                 f_regex = (
                     df[self.params.cols_context]
                     .apply(lambda row: " ".join(row.values.astype(str)), axis=1)

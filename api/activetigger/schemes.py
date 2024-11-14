@@ -6,6 +6,7 @@ from pandas import DataFrame
 
 from activetigger.datamodels import TableBatch
 from activetigger.db import DatabaseManager
+from activetigger.functions import clean_regex
 
 
 class Schemes:
@@ -194,8 +195,11 @@ class Schemes:
 
         # filter for contains
         if contains:
-            f_contains = df["text"].str.contains(contains)
-            df = df[f_contains]
+            try:
+                f_contains = df["text"].str.contains(clean_regex(contains))
+                df = df[f_contains]
+            except Exception:
+                return {"error": "Problem with regex"}
 
         # build dataset
         if mode == "tagged":

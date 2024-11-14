@@ -296,7 +296,7 @@ export const ProjectAnnotationPage: FC = () => {
             <Highlighter
               highlightClassName="Search"
               searchWords={
-                selectionConfig.filter && selectionConfig.filter != '\\'
+                selectionConfig.filter && selectionConfig.filter.slice(-1) != '\\'
                   ? [selectionConfig.filter]
                   : []
               }
@@ -306,6 +306,7 @@ export const ProjectAnnotationPage: FC = () => {
                 backgroundColor: 'yellow',
                 margin: '-3px',
               }}
+              caseSensitive={true}
             />
 
             {/* text out of frame */}
@@ -313,12 +314,13 @@ export const ProjectAnnotationPage: FC = () => {
               <Highlighter
                 highlightClassName="Search"
                 searchWords={
-                  selectionConfig.filter && selectionConfig.filter != '\\'
+                  selectionConfig.filter && selectionConfig.filter.slice(-1) != '\\'
                     ? [selectionConfig.filter]
                     : []
                 }
                 autoEscape={false}
                 textToHighlight={textOutFrame}
+                caseSensitive={true}
               />
             </span>
           </div>

@@ -691,3 +691,14 @@ def generate(
         print("element generated ", row["id"], response["success"])
 
     return {"success": results}
+
+
+def clean_regex(text: str):
+    """
+    Remove special characters from a string
+    """
+    if text == "\\" or text == "\\\\":
+        text = ""
+    if len(text) > 1 and text[-1] == "\\":
+        text = text[:-1]
+    return text

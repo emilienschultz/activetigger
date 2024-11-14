@@ -20,6 +20,9 @@ export const DocPage: FC = () => {
             To write
             <h4 className="subsection">Explore the data</h4>
             To write
+            <li>
+              <ul>Search field regex are case sensitive</ul>
+            </li>
             <h4 className="subsection">Annotation phase</h4>
             To write
             <li>
