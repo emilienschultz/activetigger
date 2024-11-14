@@ -179,7 +179,7 @@ export const GenPage: FC = () => {
               placeholder="Enter your prompt"
               className="form-control"
               style={{ height: '200px' }}
-              value={generateConfig.prompt || undefined}
+              value={generateConfig.prompt || ''}
               onChange={(e) => {
                 setAppContext((prev) => ({
                   ...prev,
@@ -213,7 +213,7 @@ export const GenPage: FC = () => {
             placeholder="Number of last generated elements to download"
             className="form-control m-4"
             style={{ width: '100px' }}
-            value={numberElements}
+            value={numberElements || 10}
             onChange={(e) => setNumberElements(Number(e.target.value))}
           />
           <button className="btn btn-secondary" onClick={() => getGenerationsFile(numberElements)}>

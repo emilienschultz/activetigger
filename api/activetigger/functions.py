@@ -683,11 +683,11 @@ def generate(
                     "user": user,
                     "project_slug": project_name,
                     "endpoint": endpoint,
-                    "element_id": row["index"],
+                    "element_id": row["id"],
                     "prompt": prompt_with_text,
                     "answer": response["success"],
                 }
             )
-        print("element generated ", row["index"], response["success"])
+        print("element generated ", row["id"], response["success"])
 
     return {"success": results}

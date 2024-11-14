@@ -34,25 +34,21 @@ class Generations:
 
             # else check its state
             if self.queue.current[unique_id]["future"].done():
-                try:
-                    r = self.queue.current[unique_id]["future"].result()
-                    if "error" in r:
-                        print("Error in the generating process", unique_id)
-                    else:
-                        results = r["success"]
-                        for row in results:
-                            self.add(
-                                user=row["user"],
-                                project_slug=row["project_slug"],
-                                element_id=row["element_id"],
-                                endpoint=row["endpoint"],
-                                prompt=row["prompt"],
-                                answer=row["answer"],
-                            )
-                        self.queue.delete(unique_id)
-                        del self.generating[name]
-                except Exception as e:
-                    print("Error in the generating process", unique_id)
+                print(self.queue.current[unique_id]["future"])
+                r = self.queue.current[unique_id]["future"].result()
+                if "error" in r:
+                    print("Error in the generating process 1", unique_id, r)
+                else:
+                    results = r["success"]
+                    for row in results:
+                        self.add(
+                            user=row["user"],
+                            project_slug=row["project_slug"],
+                            element_id=row["element_id"],
+                            endpoint=row["endpoint"],
+                            prompt=row["prompt"],
+                            answer=row["answer"],
+                        )
                     self.queue.delete(unique_id)
                     del self.generating[name]
 
