@@ -156,3 +156,20 @@ class Users:
         if len(user_auth) == 0:  # not associated
             return None
         return user_auth[0][1]
+
+    def change_password(
+        self, username: str, password_old: str, password1: str, password2: str
+    ):
+        """
+        Change password for a user
+        """
+        if password1 != password2:
+            return {"error": "Passwords don't match"}
+        user = self.get_user(username)
+        if not isinstance(user, UserInDBModel):
+            return {"error": "User doesn't exist"}
+        if not compare_to_hash(password_old, user.hashed_password):
+            return {"error": "Wrong password"}
+        hash_pwd = get_hash(password1)
+        self.db_manager.change_password(username, hash_pwd)
+        return None

@@ -118,7 +118,7 @@ export const ProjectPreparePage: FC = () => {
                         </label>
                         <span className="explanations">
                           Depending on the size of the corpus, computation can take some time (up to
-                          dozes of minutes)
+                          dozens of minutes)
                         </span>
                         <select className="form-control" id="newFeature" {...register('type')}>
                           <option key="empty"></option>

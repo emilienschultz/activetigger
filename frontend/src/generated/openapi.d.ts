@@ -158,8 +158,27 @@ export interface paths {
         /**
          * Delete User
          * @description Delete user
+         *     - root can delete all
+         *     - users can only delete account they created
          */
         post: operations["delete_user_users_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/changepwd": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Password */
+        post: operations["change_password_users_changepwd_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -638,26 +657,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/schemes/label/{action}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Label
-         * @description Add a label to a scheme
-         */
-        post: operations["add_label_schemes_label__action__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/schemes/label/rename": {
         parameters: {
             query?: never;
@@ -675,6 +674,26 @@ export interface paths {
          *     - delete former label
          */
         post: operations["rename_label_schemes_label_rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schemes/label/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Label
+         * @description Add a label to a scheme
+         */
+        post: operations["add_label_schemes_label__action__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1920,6 +1939,38 @@ export interface operations {
             };
         };
     };
+    change_password_users_changepwd_post: {
+        parameters: {
+            query: {
+                pwd1: string;
+                pwd2: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     set_auth_users_auth__action__post: {
         parameters: {
             query: {
@@ -2684,17 +2735,16 @@ export interface operations {
             };
         };
     };
-    add_label_schemes_label__action__post: {
+    rename_label_schemes_label_rename_post: {
         parameters: {
             query: {
                 scheme: string;
-                label: string;
+                former_label: string;
+                new_label: string;
                 project_slug: string;
             };
             header?: never;
-            path: {
-                action: components["schemas"]["ActionModel"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -2719,16 +2769,17 @@ export interface operations {
             };
         };
     };
-    rename_label_schemes_label_rename_post: {
+    add_label_schemes_label__action__post: {
         parameters: {
             query: {
                 scheme: string;
-                former_label: string;
-                new_label: string;
+                label: string;
                 project_slug: string;
             };
             header?: never;
-            path?: never;
+            path: {
+                action: components["schemas"]["ActionModel"];
+            };
             cookie?: never;
         };
         requestBody?: never;

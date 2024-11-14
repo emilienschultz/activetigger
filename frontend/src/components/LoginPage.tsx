@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { useAuth } from '../core/auth';
+import { ChangePassword } from './forms/ChangePassword';
 import { LoginForm } from './forms/LoginForm';
 import { PageLayout } from './layout/PageLayout';
 
@@ -28,6 +29,9 @@ export const LoginPage: FC = () => {
           <div className="col-1"></div>
 
           <div className="col-11 col-lg-6">
+            <ChangePassword />
+            <div className="subsection m-2">Change account</div>
+
             <LoginForm redirectTo={state?.path || '/projects'} />
           </div>
         </div>

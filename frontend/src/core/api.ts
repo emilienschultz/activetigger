@@ -1544,3 +1544,28 @@ export function useGetLogs(project_slug: string | null, username: string | null,
   }, [project_slug, username, limit]);
   return { logs: getAsyncMemoData(getLogs) };
 }
+
+/**
+ * Change password
+ */
+export function useChangePassword() {
+  const { notify } = useNotifications();
+  const changePassword = useCallback(
+    async (pwdold: string, pwd1: string, pwd2: string) => {
+      const res = await api.POST('/users/changepwd', {
+        params: {
+          query: {
+            pwdold: pwdold,
+            pwd1: pwd1,
+            pwd2: pwd2,
+          },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Password changed' });
+      return true;
+    },
+    [notify],
+  );
+
+  return { changePassword };
+}

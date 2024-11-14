@@ -493,6 +493,13 @@ class DatabaseManager:
         session.close()
         return {"key": user.key, "description": user.description}
 
+    def change_password(self, username: str, password: str):
+        session = self.Session()
+        user = session.query(Users).filter(Users.user == username).first()
+        user.key = password
+        session.commit()
+        session.close()
+
     def get_scheme_elements(self, project_slug: str, scheme: str, dataset: list[str]):
         """
         Get last annotation for each element id for a project/scheme

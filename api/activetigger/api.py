@@ -440,6 +440,17 @@ async def delete_user(
     return None
 
 
+@app.post("/users/changepwd", dependencies=[Depends(verified_user)])
+async def change_password(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    pwdold: str = Query(),
+    pwd1: str = Query(),
+    pwd2: str = Query(),
+):
+    server.users.change_password(current_user.username, pwdold, pwd1, pwd2)
+    return None
+
+
 @app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
 async def set_auth(
     action: AuthActions,
