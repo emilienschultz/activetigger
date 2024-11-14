@@ -237,7 +237,7 @@ export const ProjectExplorePage: FC = () => {
                   <label>Filter</label>
 
                   <select
-                    className="form-control w-25"
+                    className="form-select w-25 mx-2"
                     onChange={(e) => setSample(e.target.value)}
                     value={sample}
                   >

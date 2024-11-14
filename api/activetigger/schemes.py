@@ -191,7 +191,14 @@ class Schemes:
             list_ids = self.db_manager.get_recent_annotations(
                 self.project_slug, user, scheme, max - min
             )
-            return df.loc[list_ids]
+            df_r = df.loc[list(list_ids)].reset_index()
+            return {
+                "batch": df_r,
+                "total": len(df_r),
+                "min": 0,
+                "max": len(df_r),
+                "filter": "recent",
+            }
 
         # filter for contains
         if contains:

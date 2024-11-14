@@ -574,7 +574,7 @@ class DatabaseManager:
                 .distinct()
                 .all()
             )
-        return [u for u in recent_annotations]
+        return [u[0] for u in recent_annotations]
 
     def get_annotations_by_element(
         self, project_slug: str, scheme: str, element_id: str, limit: int = 10
