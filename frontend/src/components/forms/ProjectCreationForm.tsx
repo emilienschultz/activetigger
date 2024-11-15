@@ -244,12 +244,14 @@ export const ProjectCreationForm: FC = () => {
                     Column for existing annotations (optionnal)
                   </label>
                   <select
-                    className="form-control"
+                    className="event-control"
                     id="col_label"
                     disabled={data === null}
                     {...register('col_label')}
                   >
-                    <option key="none"></option>
+                    <option key="none" style={{ color: 'grey' }}>
+                      Select...
+                    </option>
                     {columns}
                   </select>
 
