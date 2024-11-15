@@ -9,6 +9,7 @@ import Highlighter from 'react-highlight-words';
 import { MdSkipNext, MdSkipPrevious } from 'react-icons/md';
 
 import { Modal } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { useAppContext } from '../core/context';
 import { AnnotationModel } from '../types';
@@ -81,12 +82,11 @@ export const ProjectExplorePage: FC = () => {
       name: 'id',
       resizable: true,
       width: 180,
-      renderCell: (props) =>
-        props.row.id in modifiedRows ? (
-          <div className="modified-cell">{props.row.id}</div>
-        ) : (
-          <div>{props.row.id}</div>
-        ),
+      renderCell: (props) => (
+        <div className={props.row.id in modifiedRows ? 'modified-cell' : ''}>
+          <Link to={`/projects/${projectName}/annotate/${props.row.id}`}>{props.row.id}</Link>
+        </div>
+      ),
     },
     {
       key: 'labels',
