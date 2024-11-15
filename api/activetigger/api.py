@@ -470,7 +470,7 @@ async def set_auth(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         # log action
-        server.log_action(current_user.username, f"add user {username}", "all")
+        server.log_action(current_user.username, f"INFO add user {username}", "all")
 
         return None
 
@@ -482,7 +482,7 @@ async def set_auth(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         # log action
-        server.log_action(current_user.username, f"delete user {username}", "all")
+        server.log_action(current_user.username, f"INFO delete user {username}", "all")
         return None
 
     raise HTTPException(status_code=400, detail="Action not found")
@@ -609,7 +609,7 @@ async def add_testdata(
     server.set_project_parameters(project.params, current_user.username)
 
     # log action
-    server.log_action(current_user.username, "add testdata project", project.name)
+    server.log_action(current_user.username, "INFO add testdata project", project.name)
 
     return None
 
@@ -639,7 +639,9 @@ async def new_project(
         raise HTTPException(status_code=500, detail=r["error"])
 
     # log action
-    server.log_action(current_user.username, "create project", project.project_name)
+    server.log_action(
+        current_user.username, "INFO create project", project.project_name
+    )
 
     return None
 
@@ -660,7 +662,7 @@ async def delete_project(
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     del server.projects[project_slug]
-    server.log_action(current_user.username, "delete project", project_slug)
+    server.log_action(current_user.username, "INFO delete project", project_slug)
     return None
 
 
@@ -761,7 +763,7 @@ async def compute_projection(
         }
         server.log_action(
             current_user.username,
-            "compute projection umap",
+            "INFO compute projection umap",
             project.params.project_slug,
         )
         return WaitingModel(detail="Projection umap is computing")
@@ -784,7 +786,7 @@ async def compute_projection(
 
         server.log_action(
             current_user.username,
-            "compute projection tsne",
+            "INFO compute projection tsne",
             project.params.project_slug,
         )
         return WaitingModel(detail="Projection tsne is computing")
@@ -846,7 +848,7 @@ async def post_list_elements(
             continue
         server.log_action(
             current_user.username,
-            f"update annotation {annotation.element_id}",
+            f"UPDATE ANNOTATION in {annotation.scheme}: {annotation.element_id} as {annotation.label}",
             project.name,
         )
 
@@ -903,7 +905,7 @@ async def post_reconciliation(
     # log
     server.log_action(
         current_user.username,
-        f"reconciliate annotation {element_id} for {users} with {label}",
+        f"RECONCILIATE ANNOTATION in {scheme}: {element_id} as {label}",
         project.name,
     )
     return None
@@ -953,7 +955,7 @@ async def postgenerate(
 
     server.log_action(
         current_user.username,
-        "Start generating process",
+        "INFO Start generating process",
         project.params.project_slug,
     )
 
@@ -975,7 +977,7 @@ async def stop_generation(
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
-        current_user.username, "stop generation", project.params.project_slug
+        current_user.username, "INFO stop generation", project.params.project_slug
     )
     return None
 
@@ -1050,7 +1052,7 @@ async def post_annotation(
 
         server.log_action(
             current_user.username,
-            f"push annotation {annotation.element_id} with the method {annotation.dataset}",
+            f"ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
             project.name,
         )
         return None
@@ -1067,7 +1069,7 @@ async def post_annotation(
 
         server.log_action(
             current_user.username,
-            f"delete annotation {annotation.element_id}",
+            f"DELETE ANNOTATION in {annotation.scheme}: id {annotation.element_id}",
             project.name,
         )
         return None
@@ -1117,7 +1119,7 @@ async def rename_label(
     # log
     server.log_action(
         current_user.username,
-        f"rename label {former_label} to {new_label} in {scheme}",
+        f"RENAME LABEL in {scheme}: label {former_label} to {new_label}",
         project.name,
     )
     return None
@@ -1141,7 +1143,7 @@ async def add_label(
         if "error" in r:
             raise HTTPException(status_code=400, detail=r["error"])
         server.log_action(
-            current_user.username, f"add label {label} to {scheme}", project.name
+            current_user.username, f"ADD LABEL in {scheme}: label {label}", project.name
         )
         return None
 
@@ -1150,7 +1152,9 @@ async def add_label(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(
-            current_user.username, f"delete label {label} to {scheme}", project.name
+            current_user.username,
+            f"DELETE LABEL in {scheme}: label {label}",
+            project.name,
         )
         return None
 
@@ -1174,7 +1178,7 @@ async def post_schemes(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(
-            current_user.username, f"add scheme {scheme.name}", project.name
+            current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name
         )
         return None
     if action == "delete":
@@ -1182,7 +1186,7 @@ async def post_schemes(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(
-            current_user.username, f"delete scheme {scheme.name}", project.name
+            current_user.username, f"DELETE SCHEME: scheme {scheme.name}", project.name
         )
         return None
     if action == "update":
@@ -1190,7 +1194,7 @@ async def post_schemes(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(
-            current_user.username, f"update scheme {scheme.name}", project.name
+            current_user.username, f"UPDATE SCHEME: scheme {scheme.name}", project.name
         )
         return None
     raise HTTPException(status_code=400, detail="Wrong route")
@@ -1236,7 +1240,7 @@ async def post_embeddings(
 
     # Log and return
     server.log_action(
-        current_user.username, f"Compute feature {feature.type}", project.name
+        current_user.username, f"INFO Compute feature {feature.type}", project.name
     )
     return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
@@ -1254,7 +1258,9 @@ async def delete_feature(
     r = project.features.delete(name)
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
-    server.log_action(current_user.username, f"delete feature {name}", project.name)
+    server.log_action(
+        current_user.username, f"INFO delete feature {name}", project.name
+    )
     return None
 
 
@@ -1288,7 +1294,7 @@ async def post_simplemodel(
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "Compute simplemodel", project.name)
+    server.log_action(current_user.username, "INFO compute simplemodel", project.name)
     logger_simplemodel.info("Start computing simplemodel")
     return None
 
@@ -1354,7 +1360,9 @@ async def predict(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"predict bert {model_name}", project.name)
+    server.log_action(
+        current_user.username, f"INFO predict bert {model_name}", project.name
+    )
     return None
 
 
@@ -1385,7 +1393,9 @@ async def post_bert(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"train bert {bert.name}", project.name)
+    server.log_action(
+        current_user.username, f"INFO train bert {bert.name}", project.name
+    )
     return None
 
 
@@ -1403,7 +1413,7 @@ async def stop_bert(
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "stop bert training", project.name)
+    server.log_action(current_user.username, "INFO stop bert training", project.name)
     return None
 
 
@@ -1434,7 +1444,9 @@ async def start_test(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "predict bert for testing", project.name)
+    server.log_action(
+        current_user.username, "INFO predict bert for testing", project.name
+    )
     return None
 
 
@@ -1453,7 +1465,7 @@ async def delete_bert(
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
-        current_user.username, f"delete bert model {bert_name}", project.name
+        current_user.username, f"INFO delete bert model {bert_name}", project.name
     )
     return None
 
@@ -1475,7 +1487,7 @@ async def save_bert(
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
         current_user.username,
-        f"rename bert model {former_name} - {new_name}",
+        f"INFO rename bert model {former_name} - {new_name}",
         project.name,
     )
     return None

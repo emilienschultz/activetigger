@@ -147,7 +147,9 @@ class Server:
         self.db_manager.add_log(user, action, project, connect)
         logger.info(f"{action} from {user} in project {project}")
 
-    def get_logs(self, username: str, project_slug: str, limit: int) -> pd.DataFrame:
+    def get_logs(
+        self, username: str, project_slug: str, limit: int, partial: bool = True
+    ) -> pd.DataFrame:
         """
         Get logs for a user/project
         """
@@ -155,6 +157,8 @@ class Server:
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )
+        if partial:
+            return df[~df["action"].str.contains("INFO ")]
         return df
 
     def get_auth_projects(self, username: str) -> dict[dict]:
