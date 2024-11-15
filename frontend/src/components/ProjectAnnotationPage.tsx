@@ -364,7 +364,7 @@ export const ProjectAnnotationPage: FC = () => {
           phase != 'test' && displayConfig.displayHistory && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               {/* History : {JSON.stringify(element?.history)} */}
-              History : {(element?.history as string[]).map((h) => `[${h[0]} - ${h[2]}]`)}
+              History : {((element?.history as string[]) || []).map((h) => `[${h[0]} - ${h[2]}]`)}
             </div>
           )
         }
