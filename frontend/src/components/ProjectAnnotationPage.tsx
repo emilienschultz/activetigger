@@ -16,7 +16,6 @@ import {
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
-import { LabelsManagement } from './LabelsManagement';
 import { ProjectionManagement } from './ProjectionManagement';
 import { SelectionManagement } from './SelectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
@@ -329,8 +328,19 @@ export const ProjectAnnotationPage: FC = () => {
         {
           //display proba
           phase != 'test' && displayConfig.displayPrediction && element?.predict.label && (
-            <div className="d-flex mb-2 justify-content-center display-prediction">
-              Predicted label : {element?.predict.label} (proba: {element?.predict.proba})
+            <div className="d-flex mb-3 justify-content-center display-prediction">
+              {/* Predicted label : {element?.predict.label} (proba: {element?.predict.proba}) */}
+              <button
+                type="button"
+                key={element?.predict.label + '_predict'}
+                value={element?.predict.label}
+                className="btn btn-secondary"
+                onClick={(e) => {
+                  applyLabel(e.currentTarget.value, elementId);
+                }}
+              >
+                Predicted : {element?.predict.label} (proba: {element?.predict.proba})
+              </button>
             </div>
           )
         }
@@ -402,14 +412,14 @@ export const ProjectAnnotationPage: FC = () => {
       <div className="mt-5">
         {phase != 'test' && (
           <Tabs id="panel2" className="mb-3">
-            <Tab eventKey="labels" title="Labels">
+            {/* <Tab eventKey="labels" title="Labels">
               <LabelsManagement
                 projectName={projectName || null}
                 currentScheme={currentScheme || null}
                 availableLabels={availableLabels}
                 reFetchCurrentProject={reFetchCurrentProject || (() => null)}
               />
-            </Tab>
+            </Tab> */}
             <Tab eventKey="prediction" title="Prediction">
               <SimpleModelManagement
                 projectName={projectName || null}
