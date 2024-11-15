@@ -228,7 +228,10 @@ export const ProjectAnnotationPage: FC = () => {
               <div>
                 <div className="d-flex align-items-center mb-3">
                   {statistics ? (
-                    <span className="badge text-bg-light">
+                    <span
+                      className="badge text-bg-light"
+                      title="tagged / selection untagged / total"
+                    >
                       Annotated :{' '}
                       {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${nSample ? nSample : ''} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
                     </span>
