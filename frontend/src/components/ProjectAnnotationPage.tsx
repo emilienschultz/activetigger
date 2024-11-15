@@ -31,7 +31,6 @@ export const ProjectAnnotationPage: FC = () => {
   const {
     appContext: {
       currentScheme,
-      reFetchCurrentProject,
       currentProject: project,
       selectionConfig,
       displayConfig,
