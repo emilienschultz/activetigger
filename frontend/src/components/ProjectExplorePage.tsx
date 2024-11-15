@@ -58,16 +58,9 @@ export const ProjectExplorePage: FC = () => {
     table,
     getPage,
     total: totalElement,
-  } = useTableElements(
-    projectName,
-    currentScheme,
-    page,
-    pageSize,
-    search,
-    sample,
-    selectionConfig.mode,
-  );
+  } = useTableElements(projectName, currentScheme, page, pageSize, search, sample, phase);
 
+  console.log(selectionConfig);
   const [rows, setRows] = useState<Row[]>([]);
 
   // update rows only when a even trigger the update table
@@ -194,7 +187,7 @@ export const ProjectExplorePage: FC = () => {
         <div className="row mt-3">
           {phase == 'test' && (
             <div className="alert alert-warning">
-              Test mode activated - you are annotating test set
+              Test mode activated - you are annotating the test set
             </div>
           )}
           <div className="col-12">

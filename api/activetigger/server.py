@@ -444,7 +444,7 @@ class Server:
                     )
                     print("add annotations train", element_id)
                 # add the labels from the trainset in the database
-                if testset:
+                if isinstance(testset, pd.DataFrame):
                     for element_id, label in testset["label"].dropna().items():
                         self.db_manager.add_annotation(
                             dataset="test",

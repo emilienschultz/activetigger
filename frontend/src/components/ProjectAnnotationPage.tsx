@@ -210,7 +210,7 @@ export const ProjectAnnotationPage: FC = () => {
             // test mode
             phase == 'test' && (
               <div className="alert alert-warning">
-                Test mode activated - you are annotating test set
+                Test mode activated - you are annotating the test set
                 <div className="col-6">
                   {statistics && (
                     <span className="badge text-bg-light  m-3">
@@ -328,7 +328,7 @@ export const ProjectAnnotationPage: FC = () => {
         {
           //display proba
           phase != 'test' && displayConfig.displayPrediction && element?.predict.label && (
-            <div className="d-flex mb-3 justify-content-center display-prediction">
+            <div className="d-flex mb-2 justify-content-center display-prediction">
               {/* Predicted label : {element?.predict.label} (proba: {element?.predict.proba}) */}
               <button
                 type="button"

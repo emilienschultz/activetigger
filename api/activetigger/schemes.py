@@ -171,7 +171,14 @@ class Schemes:
         if set == "test":
             print("test mode")
             df = self.get_scheme_data(scheme, complete=True, kind="test")
-            print("df", df.shape)
+
+            # filter for contains
+            if contains:
+                try:
+                    f_contains = df["text"].str.contains(clean_regex(contains))
+                    df = df[f_contains]
+                except Exception:
+                    return {"error": "Problem with regex"}
 
             # normalize size
             if max == 0:
@@ -182,7 +189,14 @@ class Schemes:
             if min > len(df):
                 return {"error": "min value too high"}
 
-            return df.sort_index().iloc[min:max].reset_index()
+            # return df.sort_index().iloc[min:max].reset_index()
+            return {
+                "batch": df.sort_index().iloc[min:max].reset_index(),
+                "total": len(df),
+                "min": min,
+                "max": max,
+                "filter": contains,
+            }
 
         df = self.get_scheme_data(scheme, complete=True)
 
