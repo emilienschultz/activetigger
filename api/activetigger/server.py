@@ -779,7 +779,7 @@ class Project(Server):
             element_id = ss.index[0]
 
         if selection == "random":  # random row
-            element_id = ss.sample(frac=1, random_state=42).index[0]
+            element_id = ss.sample(frac=1).index[0]
 
         # higher prob, only possible if the model has been trained
         if selection == "maxprob":

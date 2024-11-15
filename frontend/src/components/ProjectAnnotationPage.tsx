@@ -83,6 +83,9 @@ export const ProjectAnnotationPage: FC = () => {
 
   // react to URL param change
   useEffect(() => {
+    if (elementId === 'noelement') {
+      return;
+    }
     if (elementId === undefined) {
       getNextElementId().then((res) => {
         if (res && res.n_sample) setNSample(res.n_sample);
@@ -207,6 +210,16 @@ export const ProjectAnnotationPage: FC = () => {
       ? (element?.history[0] as string[])[0]
       : null;
 
+  const refetchElement = () => {
+    getNextElementId().then((res) => {
+      if (res && res.n_sample) setNSample(res.n_sample);
+      if (res && res.element_id) navigate(`/projects/${projectName}/annotate/${res.element_id}`);
+      else {
+        navigate(`/projects/${projectName}/annotate/noelement`);
+      }
+    });
+  };
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -245,20 +258,7 @@ export const ProjectAnnotationPage: FC = () => {
                   )}
 
                   <div>
-                    <button
-                      className="btn"
-                      onClick={() => {
-                        getNextElementId().then((res) => {
-                          if (res && res.n_sample) setNSample(res.n_sample);
-
-                          if (res && res.element_id)
-                            navigate(`/projects/${projectName}/annotate/${res.element_id}`);
-                          else {
-                            navigate(`/projects/${projectName}/annotate/noelement`);
-                          }
-                        });
-                      }}
-                    >
+                    <button className="btn" onClick={refetchElement}>
                       <LuRefreshCw size={20} /> Refetch element
                     </button>
                   </div>
@@ -275,17 +275,7 @@ export const ProjectAnnotationPage: FC = () => {
       {elementId === 'noelement' && (
         <div className="alert alert-warning text-center">
           <div className="m-2">No element available</div>
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              getNextElementId().then((nextElementId) => {
-                if (nextElementId) navigate(`/projects/${projectName}/annotate/${nextElementId}`);
-                else {
-                  navigate(`/projects/${projectName}/annotate/noelement`);
-                }
-              });
-            }}
-          >
+          <button className="btn btn-primary" onClick={refetchElement}>
             Refetch with current selection mode
           </button>
         </div>
