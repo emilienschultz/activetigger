@@ -202,6 +202,11 @@ export const ProjectAnnotationPage: FC = () => {
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
+  const lastTag =
+    element?.history.length && element?.history.length > 0
+      ? (element?.history[0] as string[])[0]
+      : null;
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -292,9 +297,14 @@ export const ProjectAnnotationPage: FC = () => {
       <div className="row">
         {element?.text && (
           <div
-            className="col-11 annotation-frame my-4"
+            className="col-11 annotation-frame"
             style={{ height: `${displayConfig.frameSize}vh` }}
           >
+            {lastTag && (
+              <div>
+                <span className="badge bg-info  ">Last tag: {lastTag}</span>
+              </div>
+            )}
             <Highlighter
               highlightClassName="Search"
               searchWords={
@@ -330,6 +340,7 @@ export const ProjectAnnotationPage: FC = () => {
 
         {
           //display proba
+
           phase != 'test' && displayConfig.displayPrediction && element?.predict.label && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               {/* Predicted label : {element?.predict.label} (proba: {element?.predict.proba}) */}
@@ -362,7 +373,8 @@ export const ProjectAnnotationPage: FC = () => {
           //display history
           phase != 'test' && displayConfig.displayHistory && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
-              History : {JSON.stringify(element?.history)}
+              {/* History : {JSON.stringify(element?.history)} */}
+              History : {(element?.history as string[]).map((h) => `[${h[0]} - ${h[2]}]`)}
             </div>
           )
         }
@@ -399,6 +411,7 @@ export const ProjectAnnotationPage: FC = () => {
             <FaPencilAlt />
           </button>
         </div>
+
         {displayComment && (
           <div className="m-3">
             <input
