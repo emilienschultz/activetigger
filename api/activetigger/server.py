@@ -153,7 +153,7 @@ class Server:
         """
         Get logs for a user/project
         """
-        logs = self.db_manager.get_logs(username, project_slug, limit)
+        logs = self.db_manager.get_logs("all", project_slug, limit)
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )

@@ -219,6 +219,14 @@ class DatabaseManager:
                 .limit(limit)
                 .all()
             )
+        elif username == "all":
+            logs = (
+                session.query(Logs)
+                .filter_by(project=project_slug)
+                .order_by(Logs.time.desc())
+                .limit(limit)
+                .all()
+            )
         else:
             logs = (
                 session.query(Logs)

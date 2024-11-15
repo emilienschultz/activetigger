@@ -115,8 +115,9 @@ export const ProjectPage: FC = () => {
                 <button onClick={actionClearHistory} className="delete-button">
                   Clear history
                 </button>
+                <div className="subsection">Activity on this project</div>
                 <DataGrid<Row>
-                  className="fill-grid mt-5"
+                  className="fill-grid mt-2"
                   columns={columns}
                   rows={(logs as unknown as Row[]) || []}
                 />
