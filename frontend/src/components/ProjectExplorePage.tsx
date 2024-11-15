@@ -117,7 +117,8 @@ export const ProjectExplorePage: FC = () => {
             textToHighlight={props.row.text}
             highlightStyle={{
               backgroundColor: 'yellow',
-              margin: '-3px',
+              margin: '0px',
+              padding: '0px',
             }}
             caseSensitive={true}
           />

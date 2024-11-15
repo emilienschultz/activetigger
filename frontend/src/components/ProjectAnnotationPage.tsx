@@ -306,7 +306,8 @@ export const ProjectAnnotationPage: FC = () => {
               textToHighlight={textInFrame}
               highlightStyle={{
                 backgroundColor: 'yellow',
-                margin: '-3px',
+                margin: '0px',
+                padding: '0px',
               }}
               caseSensitive={true}
             />
