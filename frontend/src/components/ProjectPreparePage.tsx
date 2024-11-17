@@ -68,17 +68,19 @@ export const ProjectPreparePage: FC = () => {
         <div className="container-fluid">
           <div className="row">
             <div className="col-12">
-              <h2 className="subsection">Labels</h2>
-              <LabelsManagement
-                projectName={projectName || null}
-                currentScheme={currentScheme || null}
-                availableLabels={availableLabels}
-                reFetchCurrentProject={reFetchCurrentProject || (() => null)}
-              />
-              <h2 className="subsection">Features</h2>
-              <span className="explanations">Create and delete features.</span>
-              <Tabs id="panel" className="mt-3" defaultActiveKey="existing">
-                <Tab eventKey="existing" title="Existing">
+              <Tabs id="panel" className="mt-3" defaultActiveKey="labels">
+                <Tab eventKey="labels" title="Labels">
+                  <LabelsManagement
+                    projectName={projectName || null}
+                    currentScheme={currentScheme || null}
+                    availableLabels={availableLabels}
+                    reFetchCurrentProject={reFetchCurrentProject || (() => null)}
+                  />
+                </Tab>
+                <Tab eventKey="features" title="Features">
+                  <span className="explanations">Create and delete features.</span>
+                  <h4 className="mt-3 subsection">Existing features</h4>
+                  {/* Display existing features */}
                   {Object.keys(featuresInfo || {}).map((element) => (
                     <div className="card text-bg-light mt-3" key={element as string}>
                       <div className="d-flex m-2 align-items-center">
@@ -96,11 +98,10 @@ export const ProjectPreparePage: FC = () => {
                         {featuresInfo?.[element as string]['kind'] === 'regex' && (
                           <span>N={featuresInfo?.[element as string]['parameters']['count']}</span>
                         )}
-
-                        {/* <span>{JSON.stringify(featuresInfo?.[element as string])}</span> */}
                       </div>
                     </div>
                   ))}{' '}
+                  {/* Display computing features */}
                   {Object.values(project?.features.training).map((element) => (
                     <div className="card text-bg-light mt-3 bg-warning" key={element as string}>
                       <div className="d-flex m-2 align-items-center">
@@ -108,111 +109,104 @@ export const ProjectPreparePage: FC = () => {
                       </div>
                     </div>
                   ))}
-                </Tab>
-                <Tab eventKey="create" title="Create">
-                  <div className="row">
-                    <form onSubmit={handleSubmit(createNewFeature)}>
-                      <div className="col-4">
-                        <label className="form-label" htmlFor="newFeature">
-                          Select the type of feature
-                        </label>
-                        <span className="explanations">
-                          Depending on the size of the corpus, computation can take some time (up to
-                          dozens of minutes)
-                        </span>
-                        <select className="form-control" id="newFeature" {...register('type')}>
-                          <option key="empty"></option>
-                          {Object.keys(project.features.options).map((element) => (
-                            <option key={element} value={element}>
-                              {element}
-                            </option>
-                          ))}{' '}
-                        </select>
+                  {/* // create new feature */}
+                  <h4 className="mt-3 subsection">Create a new feature</h4>
+                  <form onSubmit={handleSubmit(createNewFeature)}>
+                    <span className="explanations">
+                      Depending on the size of the corpus, computation can take some time (up to
+                      dozens of minutes)
+                    </span>
+                    <select className="form-control" id="newFeature" {...register('type')}>
+                      <option key="empty"></option>
+                      {Object.keys(project.features.options).map((element) => (
+                        <option key={element} value={element}>
+                          {element}
+                        </option>
+                      ))}{' '}
+                    </select>
 
-                        {selectedFeatureToCreate === 'regex' && (
+                    {selectedFeatureToCreate === 'regex' && (
+                      <input
+                        type="text"
+                        className="form-control mt-3"
+                        placeholder="Enter the regex"
+                        {...register('parameters.value')}
+                      />
+                    )}
+
+                    {selectedFeatureToCreate === 'dfm' && (
+                      <div>
+                        <div>
+                          <label htmlFor="dfm_tfidf">TF-IDF</label>
+                          <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
+                            <option key="true">True</option>
+                            <option key="false">False</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor="dfm_ngrams">Ngrams</label>
                           <input
-                            type="text"
-                            className="form-control mt-3"
-                            placeholder="Enter the regex"
-                            {...register('parameters.value')}
+                            type="number"
+                            id="dfm_ngrams"
+                            value={1}
+                            {...register('parameters.dfm_ngrams')}
                           />
-                        )}
-
-                        {selectedFeatureToCreate === 'dfm' && (
-                          <div>
-                            <div>
-                              <label htmlFor="dfm_tfidf">TF-IDF</label>
-                              <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
-                                <option key="true">True</option>
-                                <option key="false">False</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label htmlFor="dfm_ngrams">Ngrams</label>
-                              <input
-                                type="number"
-                                id="dfm_ngrams"
-                                value={1}
-                                {...register('parameters.dfm_ngrams')}
-                              />
-                            </div>
-                            <div>
-                              <label htmlFor="dfm_min_term_freq">Min term freq</label>
-                              <input
-                                type="number"
-                                id="dfm_min_term_freq"
-                                value={5}
-                                {...register('parameters.dfm_min_term_freq')}
-                              />
-                            </div>
-                            <div>
-                              <label htmlFor="dfm_max_term_freq">Max term freq</label>
-                              <input
-                                type="number"
-                                id="dfm_max_term_freq"
-                                value={100}
-                                {...register('parameters.dfm_max_term_freq')}
-                              />
-                            </div>
-                            <div>
-                              <label htmlFor="dfm_norm">Norm</label>
-                              <select id="dfm_norm" {...register('parameters.dfm_norm')}>
-                                <option key="true">True</option>
-                                <option key="false">False</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label htmlFor="dfm_log">Log</label>
-                              <select id="dfm_log" {...register('parameters.dfm_log')}>
-                                <option key="true">True</option>
-                                <option key="false">False</option>
-                              </select>
-                            </div>
-                          </div>
-                        )}
-
-                        {selectedFeatureToCreate === 'dataset' && (
-                          <div>
-                            <label htmlFor="dataset_col">Column to use</label>
-                            <select id="dataset_col" {...register('parameters.dataset_col')}>
-                              {(project?.params.all_columns || []).map((element) => (
-                                <option key={element as string} value={element as string}>
-                                  {element as string}
-                                </option>
-                              ))}
-                            </select>
-                            <label htmlFor="dataset_type">Type of the feature</label>
-                            <select id="dataset_type" {...register('parameters.dataset_type')}>
-                              <option key="numeric">Numeric</option>
-                              <option key="categorical">Categorical</option>
-                            </select>
-                          </div>
-                        )}
-
-                        <button className="btn btn-primary btn-validation">Create</button>
+                        </div>
+                        <div>
+                          <label htmlFor="dfm_min_term_freq">Min term freq</label>
+                          <input
+                            type="number"
+                            id="dfm_min_term_freq"
+                            value={5}
+                            {...register('parameters.dfm_min_term_freq')}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="dfm_max_term_freq">Max term freq</label>
+                          <input
+                            type="number"
+                            id="dfm_max_term_freq"
+                            value={100}
+                            {...register('parameters.dfm_max_term_freq')}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="dfm_norm">Norm</label>
+                          <select id="dfm_norm" {...register('parameters.dfm_norm')}>
+                            <option key="true">True</option>
+                            <option key="false">False</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor="dfm_log">Log</label>
+                          <select id="dfm_log" {...register('parameters.dfm_log')}>
+                            <option key="true">True</option>
+                            <option key="false">False</option>
+                          </select>
+                        </div>
                       </div>
-                    </form>
-                  </div>
+                    )}
+
+                    {selectedFeatureToCreate === 'dataset' && (
+                      <div>
+                        <label htmlFor="dataset_col">Column to use</label>
+                        <select id="dataset_col" {...register('parameters.dataset_col')}>
+                          {(project?.params.all_columns || []).map((element) => (
+                            <option key={element as string} value={element as string}>
+                              {element as string}
+                            </option>
+                          ))}
+                        </select>
+                        <label htmlFor="dataset_type">Type of the feature</label>
+                        <select id="dataset_type" {...register('parameters.dataset_type')}>
+                          <option key="numeric">Numeric</option>
+                          <option key="categorical">Categorical</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <button className="btn btn-primary btn-validation">Create</button>
+                  </form>
                 </Tab>
               </Tabs>
             </div>
