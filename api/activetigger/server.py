@@ -728,7 +728,6 @@ class Project(Server):
         if filter:
             # sanitize
             filter_san = clean_regex(filter)
-            print("FILTER", filter, filter_san)
             if "CONTEXT=" in filter_san:  # case to search in the context
                 f_regex = (
                     df[self.params.cols_context]

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ebay/nice-modal-react": "^1.2.13",
+    "@types/sortablejs": "^1.15.8",
     "@uidotdev/usehooks": "^2.4.1",
     "ag-grid-react": "^32.1.0",
     "apache-arrow": "^17.0.0",
@@ -34,8 +35,10 @@
     "react-router-dom": "^6.24.0",
     "react-router-typesafe": "^1.5.0",
     "react-select": "^5.8.1",
+    "react-sortablejs": "^6.1.4",
     "react-spinners": "^0.14.1",
     "sass": "^1.77.6",
+    "sortablejs": "^1.15.3",
     "victory": "^37.0.2",
     "xlsx": "^0.18.5"
   },

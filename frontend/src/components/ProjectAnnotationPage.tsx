@@ -6,6 +6,7 @@ import { FaPencilAlt } from 'react-icons/fa';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ReactSortable } from 'react-sortablejs';
 import {
   useAddAnnotation,
   useGetElementById,
@@ -20,6 +21,11 @@ import { ProjectionManagement } from './ProjectionManagement';
 import { SelectionManagement } from './SelectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
+
+interface LabelType {
+  id: number;
+  label: string;
+}
 
 /**
  * Annotation page
@@ -69,10 +75,19 @@ export const ProjectAnnotationPage: FC = () => {
     project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
       ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
       : null;
-  const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+  // const availableLabels =
+  //   currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
   // available methods depend if there is a simple model trained for the user/scheme
   // TO TEST, and in the future change the API if possible
+
+  const [availableLabels, setAvailableLabels] = useState<LabelType[]>(
+    currentScheme && project
+      ? ((project.schemes.available[currentScheme] as string[]) || []).map((label, index) => ({
+          id: index,
+          label: label,
+        }))
+      : [],
+  );
 
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
@@ -169,9 +184,10 @@ export const ProjectAnnotationPage: FC = () => {
         activeElement?.tagName === 'SELECT';
       if (isFormField) return;
 
-      availableLabels.forEach((label, i) => {
+      availableLabels.forEach((item, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
-          applyLabel(label, elementId);
+          console.log(item.label);
+          applyLabel(item.label, elementId);
         }
       });
     },
@@ -380,23 +396,24 @@ export const ProjectAnnotationPage: FC = () => {
           >
             <IoMdSkipBackward />
           </Link>
-
-          {
-            // display buttons for label
-            availableLabels.map((i, e) => (
-              <button
-                type="button"
-                key={i}
-                value={i}
-                className="btn btn-primary grow-1"
-                onClick={(e) => {
-                  applyLabel(e.currentTarget.value, elementId);
-                }}
-              >
-                {i} <span className="badge text-bg-secondary">{e + 1}</span>
-              </button>
-            ))
-          }
+          <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
+            {
+              // display buttons for label
+              availableLabels.map((e, i) => (
+                <button
+                  type="button"
+                  key={e.label}
+                  value={e.label}
+                  className="btn btn-primary grow-1 gap-2 justify-content-center mx-1"
+                  onClick={(v) => {
+                    applyLabel(v.currentTarget.value, elementId);
+                  }}
+                >
+                  {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
+                </button>
+              ))
+            }
+          </ReactSortable>
           <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
             <FaPencilAlt />
           </button>
