@@ -31,6 +31,7 @@ export const ProjectCreationForm: FC = () => {
       n_train: 100,
       n_test: 0,
       language: 'en',
+      clear_test: false,
     },
   });
   const { notify } = useNotifications();
@@ -294,6 +295,16 @@ export const ProjectCreationForm: FC = () => {
                     type="number"
                     {...register('n_test')}
                   />
+
+                  <label className="form-label" htmlFor="clear_test">
+                    Empty testset{' '}
+                    <input
+                      id="clear_test"
+                      type="checkbox"
+                      {...register('clear_test')}
+                      className="mx-3"
+                    />
+                  </label>
 
                   <label className="form-label" htmlFor="cols_test">
                     Stratify the test set by

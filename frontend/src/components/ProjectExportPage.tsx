@@ -58,6 +58,7 @@ export const ProjectExportPage: FC = () => {
               }}
             >
               <option key="csv">csv</option>
+              <option key="xlsx">xlsx</option>
               <option key="parquet">parquet</option>
             </select>
             <h4 className="subsection">Annotations</h4>
@@ -69,14 +70,18 @@ export const ProjectExportPage: FC = () => {
             >
               Train data
             </button>
-            <button
-              className="btn btn-primary m-3"
-              onClick={() => {
-                if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
-              }}
-            >
-              Test data
-            </button>
+
+            {project?.params.test && (
+              <button
+                className="btn btn-primary m-3"
+                onClick={() => {
+                  if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
+                }}
+              >
+                Test data
+              </button>
+            )}
+
             <h4 className="subsection">Features</h4>
             <div>
               <div>

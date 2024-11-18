@@ -266,11 +266,16 @@ class Features:
         for u in training:
             unique_id = self.projections[u]["queue"]
             if self.queue.current[unique_id]["future"].done():
-                df = self.queue.current[unique_id]["future"].result()
-                self.projections[u]["data"] = df
-                self.projections[u]["id"] = self.projections[u]["queue"]
-                del self.projections[u]["queue"]
-                self.queue.delete(unique_id)
+                try:
+                    df = self.queue.current[unique_id]["future"].result()
+                    self.projections[u]["data"] = df
+                    self.projections[u]["id"] = self.projections[u]["queue"]
+                    del self.projections[u]["queue"]
+                    self.queue.delete(unique_id)
+                except Exception as e:
+                    print("Error in feature projections queue", e)
+                    del self.projections[u]["queue"]
+                    self.queue.delete(unique_id)
 
     def get_available(self):
         """

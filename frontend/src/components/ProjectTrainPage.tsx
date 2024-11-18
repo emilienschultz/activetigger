@@ -96,7 +96,7 @@ export const ProjectTrainPage: FC = () => {
         wdecay: 0.01,
         best: true,
         eval: 10,
-        gpu: false,
+        gpu: true,
         adapt: true,
       },
     },

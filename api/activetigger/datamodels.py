@@ -28,6 +28,7 @@ class BaseProjectModel(BaseModel):
     cols_test: List[str] = []
     test: bool = False
     n_total: Optional[int] = None
+    clear_test: bool = False
 
 
 class ProjectModel(BaseProjectModel):

@@ -443,8 +443,8 @@ class Server:
                         annotation=label,
                     )
                     print("add annotations train", element_id)
-                # add the labels from the trainset in the database
-                if isinstance(testset, pd.DataFrame):
+                # add the labels from the trainset in the database if exists & not clear
+                if isinstance(testset, pd.DataFrame) and not params.clear_test:
                     for element_id, label in testset["label"].dropna().items():
                         self.db_manager.add_annotation(
                             dataset="test",
@@ -1031,6 +1031,8 @@ class Project(Server):
             data.to_csv(path / file_name)
         if format == "parquet":
             data.to_parquet(path / file_name)
+        if format == "xlsx":
+            data.to_excel(path / file_name)
 
         r = {"name": file_name, "path": path / file_name}
 
@@ -1061,6 +1063,8 @@ class Project(Server):
             data.reset_index().map(str).to_csv(path / file_name)
         if format == "parquet":
             data.reset_index().map(str).to_parquet(path / file_name)
+        if format == "xlsx":
+            data.reset_index().map(str).to_excel(path / file_name)
 
         r = {"name": file_name, "path": path / file_name}
         return r

@@ -1379,6 +1379,11 @@ export interface components {
             test: boolean;
             /** N Total */
             n_total?: number | null;
+            /**
+             * Clear Test
+             * @default false
+             */
+            clear_test: boolean;
             /** Csv */
             csv: string;
         };
@@ -1462,6 +1467,11 @@ export interface components {
             test: boolean;
             /** N Total */
             n_total?: number | null;
+            /**
+             * Clear Test
+             * @default false
+             */
+            clear_test: boolean;
             /** Project Slug */
             project_slug: string;
             /** All Columns */
@@ -1942,6 +1952,7 @@ export interface operations {
     change_password_users_changepwd_post: {
         parameters: {
             query: {
+                pwdold: string;
                 pwd1: string;
                 pwd2: string;
             };
