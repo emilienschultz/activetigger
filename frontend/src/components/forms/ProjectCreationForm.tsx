@@ -250,7 +250,7 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('col_label')}
                   >
-                    <option key="none" style={{ color: 'grey' }}>
+                    <option key="none" value={''} style={{ color: 'grey' }}>
                       Select...
                     </option>
                     {columns}

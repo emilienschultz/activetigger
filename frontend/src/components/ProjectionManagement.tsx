@@ -170,14 +170,17 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
 
   // zoom management
   const initialZoomDomain = {
-    x: [-1, 1] as DomainTuple,
-    y: [-1, 1] as DomainTuple,
+    x: [-1.5, 1.5] as DomainTuple,
+    y: [-1.5, 1.5] as DomainTuple,
   };
-  const step = 0.3;
+  const step = 0.2;
 
   const [zoomDomain, setZoomDomain] = useState<{ x?: DomainTuple; y?: DomainTuple } | null>(
     initialZoomDomain,
   );
+
+  console.log(zoomDomain);
+
   const handleZoom = (domain: ZoomDomain) => {
     if (!zoomDomain) setZoomDomain(initialZoomDomain);
     setZoomDomain(domain);
@@ -197,6 +200,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   };
   const handleZoomIn = () => {
     if (zoomDomain && zoomDomain.x && zoomDomain.y) {
+      console.log(zoomDomain);
       setZoomDomain({
         x: [Number(zoomDomain.x[0]) + step, Number(zoomDomain.x[1]) - step],
         y: [Number(zoomDomain.y[0]) + step, Number(zoomDomain.y[1]) - step],
@@ -213,7 +217,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   return (
     <div>
       {projectionData && labelColorMapping && (
-        <div className="row">
+        <div className="row align-items-start">
           <div className="col-8">
             <div className="d-flex align-items-center justify-content-center">
               <label className="d-flex align-items-center mx-4" style={{ display: 'block' }}>

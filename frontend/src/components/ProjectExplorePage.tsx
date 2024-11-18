@@ -60,7 +60,6 @@ export const ProjectExplorePage: FC = () => {
     getPage,
     total: totalElement,
   } = useTableElements(projectName, currentScheme, page, pageSize, search, sample, phase);
-  console.log(table);
 
   const [rows, setRows] = useState<Row[]>([]);
 
