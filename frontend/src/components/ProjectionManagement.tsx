@@ -305,11 +305,11 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
                 />
 
                 <VictoryLegend
-                  x={125}
+                  x={0}
                   y={0}
                   title="Legend"
                   centerTitle
-                  orientation="horizontal"
+                  orientation="vertical"
                   gutter={10}
                   style={{
                     border: { stroke: 'black' },
