@@ -29,7 +29,7 @@ interface Row {
 export const ProjectExplorePage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, selectionConfig, phase },
+    appContext: { currentScheme, currentProject: project, phase },
   } = useAppContext();
 
   // data modification management
@@ -60,8 +60,8 @@ export const ProjectExplorePage: FC = () => {
     getPage,
     total: totalElement,
   } = useTableElements(projectName, currentScheme, page, pageSize, search, sample, phase);
+  console.log(table);
 
-  console.log(selectionConfig);
   const [rows, setRows] = useState<Row[]>([]);
 
   // update rows only when a even trigger the update table
@@ -126,8 +126,8 @@ export const ProjectExplorePage: FC = () => {
       ),
     },
     {
-      key: 'Comment',
-      name: 'comment',
+      key: 'comment',
+      name: 'Comment',
       resizable: true,
       width: 100,
     },
