@@ -7,7 +7,6 @@ type PasswordForm = {
   pwd1: string;
   pwd2: string;
 };
-<div className="subsection m-2">Change password</div>;
 
 export const ChangePassword: FC = () => {
   const { changePassword } = useChangePassword();
@@ -20,7 +19,7 @@ export const ChangePassword: FC = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="subsection m-2">Change password</div>
+      <div className="subsection m-2">Change password for the current user</div>
       <input
         type="password"
         placeholder="Old password"

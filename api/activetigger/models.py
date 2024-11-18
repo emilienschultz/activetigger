@@ -543,17 +543,22 @@ class BertModels:
             # else check its state
             if self.queue.current[unique_id]["future"].done():
                 b = self.computing[u][0]
-                if b.status == "predicting train":
-                    print("Prediction train finished")
-                    df = self.queue.current[unique_id]["future"].result()
-                    predictions["predict_" + b.name] = df["prediction"]
-                if b.status == "training":
-                    print("Model trained")
-                if b.status == "testing":
-                    df = self.queue.current[unique_id]["future"].result()
-                    print("Model tested")
-                del self.computing[u]
-                self.queue.delete(unique_id)
+                try:
+                    if b.status == "predicting train":
+                        print("Prediction train finished")
+                        df = self.queue.current[unique_id]["future"].result()
+                        predictions["predict_" + b.name] = df["prediction"]
+                    if b.status == "training":
+                        print("Model trained")
+                    if b.status == "testing":
+                        df = self.queue.current[unique_id]["future"].result()
+                        print("Model tested")
+                    del self.computing[u]
+                    self.queue.delete(unique_id)
+                except Exception as e:
+                    print("Error in model training/predicting", e)
+                    del self.computing[u]
+                    self.queue.delete(unique_id)
         return predictions
 
     def export_prediction(
