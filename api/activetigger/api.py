@@ -171,11 +171,7 @@ async def check_processes(timer, step: int = 1) -> None:
         if (timer - project.starting_time) > 86400:
             to_del.append(p)
 
-        # update different pending processes
-        # project.features.update_processes()
-        project.simplemodels.update_processes()
-        project.generations.update_generations()
-        # predictions = project.bertmodels.update_processes()
+        # update pending processes (queue -> server)
         predictions = project.update_processes()
 
         # if predictions completed, add them as features
@@ -706,15 +702,15 @@ async def get_projection(
         raise HTTPException(status_code=400, detail="Please specify a scheme")
 
     # check if a projection is available
-    if current_user.username not in project.features.projections:
+    if current_user.username not in project.projections.available:
         return None
 
     # data not yet computed
-    if "data" not in project.features.projections[current_user.username]:
+    if "data" not in project.projections.available[current_user.username]:
         return None
 
     # add existing annotations in the data
-    data = project.features.projections[current_user.username]["data"]
+    data = project.projections.available[current_user.username]["data"]
     df = project.schemes.get_scheme_data(scheme, complete=True)
     data["labels"] = df["labels"]
     data["texts"] = df["text"]
@@ -726,7 +722,7 @@ async def get_projection(
         y=list(data[1]),
         labels=list(data["labels"]),
         texts=list(data["texts"]),
-        status=project.features.projections[current_user.username]["id"],
+        status=project.projections.available[current_user.username]["id"],
     )
 
 
@@ -741,58 +737,81 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
+    # get features to project
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
-
     features = project.features.get(projection.features)
 
-    if projection.method == "umap":
-        try:
-            # e = UmapModel(**projection.params)
-            e = UmapModel(**projection.params.__dict__)
-        except ValidationError as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    # get func and validate parameters for projection
+    r = project.projections.validate(projection.method, projection.params.__dict__)
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
 
-        args = {"features": features, "params": e.__dict__}
-        unique_id = server.queue.add("projection", functions.compute_umap, args)
-        if unique_id == "error":
-            raise HTTPException(status_code=500, detail="Error in adding in the queue")
-        project.features.projections[current_user.username] = {
-            "params": projection,
-            "method": "umap",
-            "queue": unique_id,
-        }
-        server.log_action(
-            current_user.username,
-            "INFO compute projection umap",
-            project.params.project_slug,
-        )
-        return WaitingModel(detail="Projection umap is computing")
+    # add to queue
+    unique_id = server.queue.add(
+        "projection", r["func"], {"features": features, "params": r["params"]}
+    )
+    if unique_id == "error":
+        raise HTTPException(status_code=500, detail="Error in adding in the queue")
+    project.projections.training[current_user.username] = {
+        "params": projection,
+        "method": projection.method,
+        "queue": unique_id,
+    }
+    server.log_action(
+        current_user.username,
+        f"INFO compute projection {projection.method}",
+        project.params.project_slug,
+    )
+    return WaitingModel(detail=f"Projection {projection.method} is computing")
 
-    if projection.method == "tsne":
-        try:
-            # e = TsneModel(**projection.params)
-            e = TsneModel(**projection.params.__dict__)
-        except ValidationError as e:
-            raise HTTPException(status_code=500, detail=str(e))
-        args = {"features": features, "params": e.__dict__}
-        unique_id = server.queue.add("projection", functions.compute_tsne, args)
-        if unique_id == "error":
-            raise HTTPException(status_code=500, detail="Error in adding in the queue")
-        project.features.projections[current_user.username] = {
-            "params": projection,
-            "method": "tsne",
-            "queue": unique_id,
-        }
+    # if projection.method == "umap":
+    #     try:
+    #         # e = UmapModel(**projection.params)
+    #         e = UmapModel(**projection.params.__dict__)
+    #     except ValidationError as e:
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-        server.log_action(
-            current_user.username,
-            "INFO compute projection tsne",
-            project.params.project_slug,
-        )
-        return WaitingModel(detail="Projection tsne is computing")
+    #     args = {"features": features, "params": e.__dict__}
+    #     unique_id = server.queue.add("projection", functions.compute_umap, args)
+    #     if unique_id == "error":
+    #         raise HTTPException(status_code=500, detail="Error in adding in the queue")
+    #     project.features.projections[current_user.username] = {
+    #         "params": projection,
+    #         "method": "umap",
+    #         "queue": unique_id,
+    #     }
+    #     server.log_action(
+    #         current_user.username,
+    #         "INFO compute projection umap",
+    #         project.params.project_slug,
+    #     )
+    #     return WaitingModel(detail="Projection umap is computing")
 
-    raise HTTPException(status_code=400, detail="Projection not available")
+    # if projection.method == "tsne":
+    #     try:
+    #         # e = TsneModel(**projection.params)
+    #         e = TsneModel(**projection.params.__dict__)
+    #     except ValidationError as e:
+    #         raise HTTPException(status_code=500, detail=str(e))
+    #     args = {"features": features, "params": e.__dict__}
+    #     unique_id = server.queue.add("projection", functions.compute_tsne, args)
+    #     if unique_id == "error":
+    #         raise HTTPException(status_code=500, detail="Error in adding in the queue")
+    #     project.features.projections[current_user.username] = {
+    #         "params": projection,
+    #         "method": "tsne",
+    #         "queue": unique_id,
+    #     }
+
+    #     server.log_action(
+    #         current_user.username,
+    #         "INFO compute projection tsne",
+    #         project.params.project_slug,
+    #     )
+    #     return WaitingModel(detail="Projection tsne is computing")
+
+    # raise HTTPException(status_code=400, detail="Projection not available")
 
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])

@@ -2,7 +2,6 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.db import DatabaseManager
-from activetigger.queue import Queue
 
 
 class Generations:
@@ -10,47 +9,12 @@ class Generations:
     Class to manage generation data
     """
 
-    queue: Queue
     generating: dict
     db_manager: DatabaseManager
 
-    def __init__(self, queue: Queue, db_manager: DatabaseManager) -> None:
-        self.queue = queue
+    def __init__(self, db_manager: DatabaseManager) -> None:
         self.db_manager = db_manager
         self.generating = {}  # user:{"unique_id", "number","api"}
-
-    def update_generations(self):
-        """
-        Manage the process launched by the class
-        Only one possible by user
-        """
-        for name in self.generating.copy():
-            unique_id = self.generating[name]["unique_id"]
-
-            # case the process have been canceled, clean
-            if unique_id not in self.queue.current:
-                del self.generating[name]
-                continue
-
-            # else check its state
-            if self.queue.current[unique_id]["future"].done():
-                print(self.queue.current[unique_id]["future"])
-                r = self.queue.current[unique_id]["future"].result()
-                if "error" in r:
-                    print("Error in the generating process 1", unique_id, r)
-                else:
-                    results = r["success"]
-                    for row in results:
-                        self.add(
-                            user=row["user"],
-                            project_slug=row["project_slug"],
-                            element_id=row["element_id"],
-                            endpoint=row["endpoint"],
-                            prompt=row["prompt"],
-                            answer=row["answer"],
-                        )
-                    self.queue.delete(unique_id)
-                    del self.generating[name]
 
     def add(
         self,

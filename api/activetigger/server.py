@@ -27,6 +27,7 @@ from activetigger.features import Features
 from activetigger.functions import clean_regex
 from activetigger.generations import Generations
 from activetigger.models import BertModels, SimpleModels
+from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
 from activetigger.users import Users
@@ -513,6 +514,7 @@ class Project(Server):
     bertmodels: BertModels
     simplemodels: SimpleModels
     generations: Generations
+    projections: Projections
 
     def __init__(
         self,
@@ -556,7 +558,8 @@ class Project(Server):
         )
         self.bertmodels = BertModels(self.params.dir, self.queue)
         self.simplemodels = SimpleModels(self.params.dir, self.queue)
-        self.generations = Generations(self.queue, self.db_manager)
+        self.generations = Generations(self.db_manager)
+        self.projections = Projections()
 
     def __del__(self):
         pass
@@ -996,13 +999,12 @@ class Project(Server):
                 "base_parameters": self.bertmodels.params_default,
             },
             "projections": {
-                "options": self.features.possible_projections,
-                # if computed : user + unique id
+                "options": self.projections.options,
                 "available": {
-                    u: self.features.projections[u]["id"]
-                    for u in self.features.projections
-                    if "data" in self.features.projections[u]
+                    i: self.projections.available[i]["id"]
+                    for i in self.projections.available
                 },
+                "training": list(self.projections.training.keys()),
             },
             "generations": {"training": self.generations.generating},
         }
@@ -1080,7 +1082,13 @@ class Project(Server):
         """
         Update ongoing processes for specific operations
         - bertmodels
+        - simplemodels
         - features
+        - generations
+        Logic : each module has it memory of current computing
+        Loop on them, check if the process finished, do action
+        TODO : not the best architecture...
+
         """
         predictions = {}
 
@@ -1113,6 +1121,28 @@ class Project(Server):
                 del self.bertmodels.computing[u]
                 self.queue.delete(unique_id)
 
+        # case for simplemodels
+        for u in self.simplemodels.computing.copy():
+            s = list(self.simplemodels.computing[u].keys())[0]
+            unique_id = self.simplemodels.computing[u][s]["queue"]
+            if self.queue.current[unique_id]["future"].done():
+                try:
+                    results = self.queue.current[unique_id]["future"].result()
+                    sm = self.simplemodels.computing[u][s]["sm"]
+                    sm.model = results["model"]
+                    sm.proba = results["proba"]
+                    sm.cv10 = results["cv10"]
+                    sm.statistics = results["statistics"]
+                    if u not in self.simplemodels.existing:
+                        self.simplemodels.existing[u] = {}
+                    self.simplemodels.existing[u][s] = sm
+                    self.simplemodels.dumps()
+                    print("Simplemodel trained")
+                except Exception as e:
+                    print("Simplemodel failed", e)
+                del self.simplemodels.computing[u]
+                self.queue.delete(unique_id)
+
         # case for features
         for name in self.features.training.copy():
             unique_id = self.features.training[name]["unique_id"]
@@ -1132,8 +1162,55 @@ class Project(Server):
                     parameters = self.features.training[name]["parameters"]
                     username = self.features.training[name]["username"]
                     r = self.features.add(name, kind, username, parameters, df)
+                    print("Feature added", name)
                 self.queue.delete(unique_id)
                 del self.features.training[name]
-                print("Add feature", name)
+
+        # case for projections
+        for name in self.projections.training.copy():
+            unique_id = self.projections.training[name]["queue"]
+            if self.queue.current[unique_id]["future"].done():
+                try:
+                    df = self.queue.current[unique_id]["future"].result()
+                    self.projections.available[name] = {
+                        "data": df,
+                        "method": self.projections.training[name]["method"],
+                        "params": self.projections.training[name]["params"],
+                        "id": unique_id,
+                    }
+                    print("projection added")
+                except Exception as e:
+                    print("Error in feature projections queue", e)
+                del self.projections.training[name]
+                self.queue.delete(unique_id)
+
+        # case for generation
+        for name in self.generations.generating.copy():
+            unique_id = self.generations.generating[name]["unique_id"]
+
+            # case the process have been canceled, clean
+            if unique_id not in self.queue.current:
+                del self.generations.generating[name]
+                continue
+
+            # else check its state
+            if self.queue.current[unique_id]["future"].done():
+                print(self.queue.current[unique_id]["future"])
+                r = self.queue.current[unique_id]["future"].result()
+                if "error" in r:
+                    print("Error in the generating process 1", unique_id, r)
+                else:
+                    results = r["success"]
+                    for row in results:
+                        self.generations.add(
+                            user=row["user"],
+                            project_slug=row["project_slug"],
+                            element_id=row["element_id"],
+                            endpoint=row["endpoint"],
+                            prompt=row["prompt"],
+                            answer=row["answer"],
+                        )
+                self.queue.delete(unique_id)
+                del self.generations.generating[name]
 
         return predictions

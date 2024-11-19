@@ -32,8 +32,8 @@ class Features:
     content: DataFrame
     map: dict
     training: dict
-    projections: dict
-    possible_projections: dict
+    # projections: dict
+    # possible_projections: dict
     options: dict
     lang: str
     db_manager: DatabaseManager
@@ -60,25 +60,25 @@ class Features:
         self.queue = queue
         self.informations = {}
         self.map, self.n = self.get_map()
-        self.training: dict = {}
         self.lang = lang
+        self.training: dict = {}
 
-        # managing projections
-        self.projections: dict = {}
-        self.possible_projections: dict = {
-            "umap": {
-                "n_neighbors": 15,
-                "min_dist": 0.1,
-                "n_components": 2,
-                "metric": ["cosine", "euclidean"],
-            },
-            "tsne": {
-                "n_components": 2,
-                "learning_rate": "auto",
-                "init": "random",
-                "perplexity": 3,
-            },
-        }
+        # # managing projections
+        # self.projections: dict = {}
+        # self.possible_projections: dict = {
+        #     "umap": {
+        #         "n_neighbors": 15,
+        #         "min_dist": 0.1,
+        #         "n_components": 2,
+        #         "metric": ["cosine", "euclidean"],
+        #     },
+        #     "tsne": {
+        #         "n_components": 2,
+        #         "learning_rate": "auto",
+        #         "init": "random",
+        #         "perplexity": 3,
+        #     },
+        # }
 
         # options
         self.options: dict = {
@@ -232,50 +232,6 @@ class Features:
             "parameters": json.loads(feature.parameters),
             "columns": json.loads(feature.data),
         }
-
-    def update_processes(self):
-        """
-        Check for computing processing completed
-        and clean them for the queue
-        """
-        # for features
-        for name in self.training.copy():
-            unique_id = self.training[name]["unique_id"]
-
-            # case the process have been canceled, clean
-            if unique_id not in self.queue.current:
-                del self.training[name]
-                continue
-            # else check its state
-            if self.queue.current[unique_id]["future"].done():
-                r = self.queue.current[unique_id]["future"].result()
-                if "error" in r:
-                    print("Error in the feature processing", unique_id)
-                else:
-                    df = r["success"]
-                    kind = self.training[name]["kind"]
-                    parameters = self.training[name]["parameters"]
-                    username = self.training[name]["username"]
-                    r = self.add(name, kind, username, parameters, df)
-                    self.queue.delete(unique_id)
-                    del self.training[name]
-                    print("Add feature", name)
-
-        # for projections
-        training = [u for u in self.projections if "queue" in self.projections[u]]
-        for u in training:
-            unique_id = self.projections[u]["queue"]
-            if self.queue.current[unique_id]["future"].done():
-                try:
-                    df = self.queue.current[unique_id]["future"].result()
-                    self.projections[u]["data"] = df
-                    self.projections[u]["id"] = self.projections[u]["queue"]
-                    del self.projections[u]["queue"]
-                    self.queue.delete(unique_id)
-                except Exception as e:
-                    print("Error in feature projections queue", e)
-                    del self.projections[u]["queue"]
-                    self.queue.delete(unique_id)
 
     def get_available(self):
         """

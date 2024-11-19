@@ -137,7 +137,9 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   }, [projectionData, labelColorMapping]);
 
   // manage projection refresh (could be AMELIORATED)
+  console.log(currentProjection);
   useEffect(() => {
+    console.log('USEEFFECT');
     // case a first projection is added
     if (
       project &&
@@ -179,8 +181,6 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     initialZoomDomain,
   );
 
-  console.log(zoomDomain);
-
   const handleZoom = (domain: ZoomDomain) => {
     if (!zoomDomain) setZoomDomain(initialZoomDomain);
     setZoomDomain(domain);
@@ -200,7 +200,6 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   };
   const handleZoomIn = () => {
     if (zoomDomain && zoomDomain.x && zoomDomain.y) {
-      console.log(zoomDomain);
       setZoomDomain({
         x: [Number(zoomDomain.x[0]) + step, Number(zoomDomain.x[1]) - step],
         y: [Number(zoomDomain.y[0]) + step, Number(zoomDomain.y[1]) - step],
@@ -213,6 +212,8 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
 
   // element to display
   const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
+
+  //  console.log(project);
 
   return (
     <div>

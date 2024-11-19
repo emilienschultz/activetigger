@@ -531,39 +531,39 @@ class BertModels:
         b.load(lazy=lazy)
         return b
 
-    def update_processes(self) -> dict:
-        """
-        Update current computing
-        Return features to add
-        """
-        predictions = {}
-        for u in self.computing.copy():
-            unique_id = self.computing[u][1]
-            # case the process have been canceled, clean
-            if unique_id not in self.queue.current:
-                del self.computing[u]
-                continue
+    # def update_processes(self) -> dict:
+    #     """
+    #     Update current computing
+    #     Return features to add
+    #     """
+    #     predictions = {}
+    #     for u in self.computing.copy():
+    #         unique_id = self.computing[u][1]
+    #         # case the process have been canceled, clean
+    #         if unique_id not in self.queue.current:
+    #             del self.computing[u]
+    #             continue
 
-            # else check its state
-            if self.queue.current[unique_id]["future"].done():
-                b = self.computing[u][0]
-                try:
-                    if b.status == "predicting train":
-                        print("Prediction train finished")
-                        df = self.queue.current[unique_id]["future"].result()
-                        predictions["predict_" + b.name] = df["prediction"]
-                    if b.status == "training":
-                        print("Model trained")
-                    if b.status == "testing":
-                        df = self.queue.current[unique_id]["future"].result()
-                        print("Model tested")
-                    del self.computing[u]
-                    self.queue.delete(unique_id)
-                except Exception as e:
-                    print("Error in model training/predicting", e)
-                    del self.computing[u]
-                    self.queue.delete(unique_id)
-        return predictions
+    #         # else check its state
+    #         if self.queue.current[unique_id]["future"].done():
+    #             b = self.computing[u][0]
+    #             try:
+    #                 if b.status == "predicting train":
+    #                     print("Prediction train finished")
+    #                     df = self.queue.current[unique_id]["future"].result()
+    #                     predictions["predict_" + b.name] = df["prediction"]
+    #                 if b.status == "training":
+    #                     print("Model trained")
+    #                 if b.status == "testing":
+    #                     df = self.queue.current[unique_id]["future"].result()
+    #                     print("Model tested")
+    #                 del self.computing[u]
+    #                 self.queue.delete(unique_id)
+    #             except Exception as e:
+    #                 print("Error in model training/predicting", e)
+    #                 del self.computing[u]
+    #                 self.queue.delete(unique_id)
+    #     return predictions
 
     def export_prediction(
         self, name: str, file_name: str = "predict.parquet", format: str | None = None
@@ -836,33 +836,33 @@ class SimpleModels:
             self.existing = pickle.load(file)
         return True
 
-    def update_processes(self):
-        """
-        Update current computing simplemodels
-        """
-        for u in self.computing.copy():
-            s = list(self.computing[u].keys())[0]
-            unique_id = self.computing[u][s]["queue"]
-            if self.queue.current[unique_id]["future"].done():
-                # TODO : deal better exception in the training
-                try:
-                    results = self.queue.current[unique_id]["future"].result()
-                    sm = self.computing[u][s]["sm"]
-                    sm.model = results["model"]
-                    sm.proba = results["proba"]
-                    sm.cv10 = results["cv10"]
-                    sm.statistics = results["statistics"]
-                    if u not in self.existing:
-                        self.existing[u] = {}
-                    self.existing[u][s] = sm
-                    del self.computing[u]
-                    self.queue.delete(unique_id)
-                    self.dumps()
-                except Exception as e:
-                    print("Simplemodel failed")
-                    print(e)
-                    del self.computing[u]
-                    self.queue.delete(unique_id)
+    # def update_processes(self):
+    #     """
+    #     Update current computing simplemodels
+    #     """
+    #     for u in self.computing.copy():
+    #         s = list(self.computing[u].keys())[0]
+    #         unique_id = self.computing[u][s]["queue"]
+    #         if self.queue.current[unique_id]["future"].done():
+    #             # TODO : deal better exception in the training
+    #             try:
+    #                 results = self.queue.current[unique_id]["future"].result()
+    #                 sm = self.computing[u][s]["sm"]
+    #                 sm.model = results["model"]
+    #                 sm.proba = results["proba"]
+    #                 sm.cv10 = results["cv10"]
+    #                 sm.statistics = results["statistics"]
+    #                 if u not in self.existing:
+    #                     self.existing[u] = {}
+    #                 self.existing[u][s] = sm
+    #                 del self.computing[u]
+    #                 self.queue.delete(unique_id)
+    #                 self.dumps()
+    #             except Exception as e:
+    #                 print("Simplemodel failed")
+    #                 print(e)
+    #                 del self.computing[u]
+    #                 self.queue.delete(unique_id)
 
 
 class SimpleModel:
