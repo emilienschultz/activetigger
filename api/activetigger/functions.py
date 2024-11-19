@@ -325,17 +325,23 @@ def train_bert(
     # TODO : memory use
     """
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    # clear memory
-    torch.cuda.empty_cache()
 
     # check if GPU is available
-    gpu = False
-    if torch.cuda.is_available():
-        print("GPU is available")
-        gpu = True
+    # gpu = False
+    # if torch.cuda.is_available():
+    #     print("GPU is available")
+    #     gpu = True
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("device", device)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        device = torch.device("cuda")  # Use CUDA
+        print("Using CUDA for computation")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")  # Use MPS on macOS
+        print("Using MPS for computation")
+    else:
+        device = torch.device("cpu")  # Fallback to CPU
+        print("Using CPU for computation")
 
     #  create repertory for the specific model
     current_path = path / name
@@ -417,9 +423,7 @@ def train_bert(
     logger.info("Model loaded")
     print("Model loaded")
 
-    if gpu:
-        bert.cuda()
-        print("GPU")
+    bert.to(device)
 
     try:
         total_steps = (float(params["epochs"]) * len(df["train"])) // (
@@ -503,9 +507,6 @@ def train_bert(
     # save log history of the training for statistics
     with open(current_path / "log_history.txt", "w") as f:
         json.dump(trainer.state.log_history, f)
-
-    # remove temporary logs
-    os.remove(log_path)
 
     # clean memory
     del trainer, bert
