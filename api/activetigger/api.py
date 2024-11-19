@@ -713,7 +713,7 @@ async def get_projection(
     data = project.projections.available[current_user.username]["data"]
     df = project.schemes.get_scheme_data(scheme, complete=True)
     data["labels"] = df["labels"]
-    data["texts"] = df["text"]
+    # data["texts"] = df["text"]
     data = data.fillna("NA")
 
     return ProjectionOutModel(
@@ -721,7 +721,7 @@ async def get_projection(
         x=list(data[0]),
         y=list(data[1]),
         labels=list(data["labels"]),
-        texts=list(data["texts"]),
+        # texts=list(data["texts"]),
         status=project.projections.available[current_user.username]["id"],
     )
 

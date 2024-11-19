@@ -294,7 +294,9 @@ class ProjectionOutModel(BaseModel):
     x: List
     y: List
     labels: List
-    texts: List
+
+
+#    texts: List
 
 
 class FeatureModel(BaseModel):

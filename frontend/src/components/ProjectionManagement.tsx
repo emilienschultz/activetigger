@@ -137,7 +137,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   }, [projectionData, labelColorMapping]);
 
   // manage projection refresh (could be AMELIORATED)
-  console.log(currentProjection);
+  console.log(projectionData);
   useEffect(() => {
     console.log('USEEFFECT');
     // case a first projection is added
@@ -285,7 +285,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
                       x: value,
                       y: projectionData.y[index],
                       labels: projectionData.labels[index],
-                      texts: projectionData.texts[index],
+                      //texts: projectionData.texts[index],
                       index: projectionData.index[index],
                     };
                   })}
