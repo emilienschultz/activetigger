@@ -1075,3 +1075,41 @@ class Project(Server):
         """
         users = self.db_manager.get_distinct_users(self.name, period)
         return users
+
+    def update_processes(self) -> dict:
+        """
+        Update ongoing processes for specific operations
+        - bertmodels
+        """
+        predictions = {}
+
+        # case for bertmodels
+        for u in self.bertmodels.computing.copy():
+            unique_id = self.bertmodels.computing[u][1]
+
+            # case the process have been canceled, clean
+            if unique_id not in self.queue.current:
+                del self.bertmodels.computing[u]
+                continue
+
+            # check the state and finish the process
+            if self.queue.current[unique_id]["future"].done():
+                b = self.bertmodels.computing[u][0]
+                try:
+                    if b.status == "training":
+                        print("Model trained")
+                    if b.status == "testing":
+                        print("Model tested")
+                        # df = self.queue.current[unique_id]["future"].result()
+                    if b.status == "predicting train":
+                        print("Prediction train finished")
+                        df = self.queue.current[unique_id]["future"].result()
+                        predictions["predict_" + b.name] = df["prediction"]
+                except Exception as e:
+                    print("Error in model training/predicting", e)
+
+                # delete the terminated process
+                del self.bertmodels.computing[u]
+                self.queue.delete(unique_id)
+
+        return predictions
