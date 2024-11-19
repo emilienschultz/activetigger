@@ -248,6 +248,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
             {
               <VictoryChart
                 theme={VictoryTheme.material}
+                domain={initialZoomDomain}
                 containerComponent={
                   <VictoryZoomContainer
                     zoomDomain={zoomDomain || initialZoomDomain}
