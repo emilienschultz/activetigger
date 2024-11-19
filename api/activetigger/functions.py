@@ -531,6 +531,9 @@ def predict_bert(
     + probabilities
     + entropy
     """
+    # empty cache
+    torch.cuda.empty_cache()
+
     # check if GPU available
     gpu = False
     if torch.cuda.is_available():

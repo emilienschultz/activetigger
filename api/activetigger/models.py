@@ -122,6 +122,8 @@ class BertModel:
         if (self.status == "training") & (self.path / "train/progress").exists():
             with open(self.path / "train/progress", "r") as f:
                 r = f.read()
+                if r == "":
+                    r = 0
             return float(r)
         # case for prediction (predicting/testing)
         if (("predicting" in self.status) or (self.status == "testing")) & (
@@ -129,6 +131,8 @@ class BertModel:
         ).exists():
             with open(self.path / "progress_predict", "r") as f:
                 r = f.read()
+                if r == "":
+                    r = 0
             return float(r)
         return None
 
