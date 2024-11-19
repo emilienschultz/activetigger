@@ -1,6 +1,5 @@
 import json
 import logging
-import math
 import multiprocessing
 import os
 import shutil
@@ -325,7 +324,7 @@ def train_bert(
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
     # TODO : memory use
     """
-
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
     # clear memory
     torch.cuda.empty_cache()
 
@@ -334,6 +333,9 @@ def train_bert(
     if torch.cuda.is_available():
         print("GPU is available")
         gpu = True
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("device", device)
 
     #  create repertory for the specific model
     current_path = path / name
@@ -376,16 +378,25 @@ def train_bert(
 
     # Tokenize
     if params["adapt"]:
+        print("Adapt")
         df = df.map(
             lambda e: tokenizer(
-                e["text"], truncation=True, padding=True, max_length=512
+                e["text"],
+                truncation=True,
+                padding=True,
+                max_length=512,
+                return_tensors="pt",
             ),
             batched=True,
         )
     else:
         df = df.map(
             lambda e: tokenizer(
-                e["text"], truncation=True, padding="max_length", max_length=512
+                e["text"],
+                truncation=True,
+                padding="max_length",
+                max_length=512,
+                return_tensors="pt",
             ),
             batched=True,
         )
@@ -399,11 +410,16 @@ def train_bert(
         base_model, num_labels=len(labels), id2label=id2label, label2id=label2id
     )
 
+    for name, param in bert.named_parameters():
+        print(f"Parameter: {name}, Type: {param.dtype}")
+        break  # To print only the first parameter's type
+
     logger.info("Model loaded")
     print("Model loaded")
 
     if gpu:
         bert.cuda()
+        print("GPU")
 
     try:
         total_steps = (float(params["epochs"]) * len(df["train"])) // (
@@ -412,27 +428,28 @@ def train_bert(
         warmup_steps = int((total_steps) // 10)
         print("warmup steps", warmup_steps)
         eval_steps = total_steps // params["eval"]
-
+        print("training arguments", params)
         training_args = TrainingArguments(
             output_dir=current_path / "train",
             logging_dir=current_path / "logs",
             learning_rate=float(params["lrate"]),
             weight_decay=float(params["wdecay"]),
             num_train_epochs=float(params["epochs"]),
-            gradient_accumulation_steps=float(params["gradacc"]),
+            gradient_accumulation_steps=int(params["gradacc"]),
             per_device_train_batch_size=int(params["batchsize"]),
             per_device_eval_batch_size=32,
             warmup_steps=int(warmup_steps),
             eval_steps=eval_steps,
             evaluation_strategy="steps",
             save_strategy="steps",
-            save_steps=eval_steps,
-            logging_steps=eval_steps,
+            save_steps=int(eval_steps),
+            logging_steps=int(eval_steps),
             do_eval=True,
             greater_is_better=False,
             load_best_model_at_end=params["best"],
             metric_for_best_model="eval_loss",
         )
+        print("training arguments created")
 
         class CustomLoggingCallback(TrainerCallback):
             def on_step_end(self, args, state, control, **kwargs):
@@ -446,6 +463,7 @@ def train_bert(
                         logger.info("Event set, stopping training.")
                         control.should_training_stop = True
 
+        print("Build trainer")
         trainer = Trainer(
             model=bert,
             args=training_args,
@@ -455,6 +473,7 @@ def train_bert(
         )
 
         try:
+            print("Start training")
             trainer.train()
         except KeyboardInterrupt:
             logger.info("Training interrupted by user.")

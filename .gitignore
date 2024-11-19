@@ -22,3 +22,4 @@ api/tests/__pycache__/
 api/activetigger/html/custom.css
 frontend/public/favicon_old.ico
 frontend/src/assets/at_old.png
+api/mlruns

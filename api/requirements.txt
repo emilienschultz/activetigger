@@ -1,6 +1,5 @@
 spacy
 fastapi
-streamlit
 uvicorn
 torch
 transformers[torch]
@@ -24,9 +23,6 @@ sentence-transformers
 sentencepiece
 umap-learn
 sacremoses
-streamlit_autorefresh
-streamlit_option_menu
-streamlit-pydantic
 python-multipart
 openai
 sqlalchemy
