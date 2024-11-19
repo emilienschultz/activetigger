@@ -1080,6 +1080,7 @@ class Project(Server):
         """
         Update ongoing processes for specific operations
         - bertmodels
+        - features
         """
         predictions = {}
 
@@ -1111,5 +1112,28 @@ class Project(Server):
                 # delete the terminated process
                 del self.bertmodels.computing[u]
                 self.queue.delete(unique_id)
+
+        # case for features
+        for name in self.features.training.copy():
+            unique_id = self.features.training[name]["unique_id"]
+
+            # case the process have been canceled, clean
+            if unique_id not in self.queue.current:
+                del self.features.training[name]
+                continue
+            # else check its state
+            if self.queue.current[unique_id]["future"].done():
+                r = self.queue.current[unique_id]["future"].result()
+                if "error" in r:
+                    print("Error in the feature processing", r)
+                else:
+                    df = r["success"]
+                    kind = self.features.training[name]["kind"]
+                    parameters = self.features.training[name]["parameters"]
+                    username = self.features.training[name]["username"]
+                    r = self.features.add(name, kind, username, parameters, df)
+                self.queue.delete(unique_id)
+                del self.features.training[name]
+                print("Add feature", name)
 
         return predictions

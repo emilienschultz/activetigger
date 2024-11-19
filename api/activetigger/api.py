@@ -172,11 +172,11 @@ async def check_processes(timer, step: int = 1) -> None:
             to_del.append(p)
 
         # update different pending processes
-        project.features.update_processes()
+        # project.features.update_processes()
         project.simplemodels.update_processes()
         project.generations.update_generations()
-        predictions = project.bertmodels.update_processes()
-        # predictions = project.update_processes()
+        # predictions = project.bertmodels.update_processes()
+        predictions = project.update_processes()
 
         # if predictions completed, add them as features
         # careful : they are categorical variables

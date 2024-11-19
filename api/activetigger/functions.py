@@ -23,7 +23,7 @@ from sklearn.manifold import TSNE
 from sklearn.metrics import accuracy_score, f1_score, precision_score
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from torch.cuda.amp import autocast
+from torch import autocast
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -202,11 +202,21 @@ def to_sbert(
     """
 
     # manage GPU
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    sbert = SentenceTransformer(model)
-    sbert = sbert.to(device)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        device = torch.device("cuda")  # Use CUDA
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")  # Use MPS on macOS
+    else:
+        device = torch.device("cpu")  # Fallback to CPU
+    print(f"Using {device} for computation")
+
+    sbert = SentenceTransformer(model, device=device)
     sbert.max_seq_length = 512
-    with autocast():
+    if device == "cuda":
+        with autocast(device_type=device):
+            emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+    else:
         emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
     emb = pd.DataFrame(emb, index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
