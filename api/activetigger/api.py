@@ -1402,6 +1402,7 @@ async def post_bert(
     df = df[["text", "labels"]].dropna()  # remove non tag data
     r = project.bertmodels.start_training_process(
         name=bert.name,
+        project=project.name,
         user=current_user.username,
         scheme=bert.scheme,
         df=df,

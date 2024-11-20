@@ -401,7 +401,6 @@ def train_bert(
 
     # Tokenize
     if params["adapt"]:
-        print("Adapt")
         df = df.map(
             lambda e: tokenizer(
                 e["text"],
@@ -432,10 +431,6 @@ def train_bert(
     bert = AutoModelForSequenceClassification.from_pretrained(
         base_model, num_labels=len(labels), id2label=id2label, label2id=label2id
     )
-
-    for name, param in bert.named_parameters():
-        print(f"Parameter: {name}, Type: {param.dtype}")
-        break  # To print only the first parameter's type
 
     logger.info("Model loaded")
     print("Model loaded")

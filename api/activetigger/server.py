@@ -512,6 +512,7 @@ class Project(Server):
     starting_time: float
     name: str
     queue: Queue
+    computing: list
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
@@ -536,6 +537,7 @@ class Project(Server):
         self.starting_time = time.time()
         self.name = project_slug
         self.queue = queue
+        self.computing = []  # currently computing elements
         self.db_manager = db_manager
         self.params = self.load_params(project_slug)
         self.path_models = path_models
@@ -563,7 +565,7 @@ class Project(Server):
             self.db_manager,
             self.params.language,
         )
-        self.bertmodels = BertModels(self.params.dir, self.queue)
+        self.bertmodels = BertModels(self.params.dir, self.queue, self.db_manager)
         self.simplemodels = SimpleModels(self.params.dir, self.queue)
         self.generations = Generations(self.db_manager)
         self.projections = Projections()

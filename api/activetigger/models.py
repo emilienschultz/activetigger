@@ -30,6 +30,7 @@ from activetigger.datamodels import (
     Multi_naivebayesParams,
     RandomforestParams,
 )
+from activetigger.db import DatabaseManager
 
 
 class BertModel:
@@ -236,8 +237,11 @@ class BertModels:
     queue: Any
     path: Path
     computing: dict
+    db_manager: DatabaseManager
 
-    def __init__(self, path: Path, queue: Any) -> None:
+    def __init__(
+        self, path: Path, queue: Any, computing: list, db_manager: DatabaseManager
+    ) -> None:
         self.params_default = {
             "batchsize": 4,
             "gradacc": 1,
@@ -263,6 +267,8 @@ class BertModels:
             "xlm-roberta-base",
         ]
         self.queue = queue
+        # self.computing = computing
+        self.db_manager = db_manager
         self.path: Path = Path(path) / "bert"
         if not self.path.exists():
             os.mkdir(self.path)
@@ -325,19 +331,18 @@ class BertModels:
         """
         Delete bert model
         """
-        if not (self.path / bert_name).exists():
-            return {"error": "Bert model does not exist"}
-
+        # self.db_manager.delete_bert(bert_name)
         try:
             shutil.rmtree(self.path / bert_name)
             os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
-            return {"success": "Bert model deleted"}
-        except Exception:
-            return {"error": "An error occured in deleting bert model"}
+        except Exception as e:
+            print(e)
+        return {"success": "Bert model deleted"}
 
     def start_training_process(
         self,
         name: str,
+        project: str,
         user: str,
         scheme: str,
         df: DataFrame,
@@ -362,6 +367,7 @@ class BertModels:
             params = self.params_default
         if test_size is None:
             test_size = 0.2
+
         # test json parameters
         try:
             params = params.dict()
@@ -375,7 +381,7 @@ class BertModels:
         day = current_date.strftime("%d")
         month = current_date.strftime("%m")
         year = current_date.strftime("%Y")
-        name = f"{name}__{user}__{day}-{month}-{year}__{scheme}"
+        name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
 
         # launch as a independant process
         args = {
@@ -395,6 +401,19 @@ class BertModels:
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
         self.computing[user] = [b, unique_id]
+
+        # add in database
+        # if not self.db_manager.add_model(
+        #     kind="bert",
+        #     name=name,
+        #     user=user,
+        #     project=project,
+        #     scheme=scheme,
+        #     params=params.__dict__,
+        #     path=str(self.path / name),
+        #     status="training",
+        # ):
+        #     return {"error": "An error occured in database"}
 
         return {"success": "bert model on training"}
 
@@ -531,40 +550,6 @@ class BertModels:
         b.load(lazy=lazy)
         return b
 
-    # def update_processes(self) -> dict:
-    #     """
-    #     Update current computing
-    #     Return features to add
-    #     """
-    #     predictions = {}
-    #     for u in self.computing.copy():
-    #         unique_id = self.computing[u][1]
-    #         # case the process have been canceled, clean
-    #         if unique_id not in self.queue.current:
-    #             del self.computing[u]
-    #             continue
-
-    #         # else check its state
-    #         if self.queue.current[unique_id]["future"].done():
-    #             b = self.computing[u][0]
-    #             try:
-    #                 if b.status == "predicting train":
-    #                     print("Prediction train finished")
-    #                     df = self.queue.current[unique_id]["future"].result()
-    #                     predictions["predict_" + b.name] = df["prediction"]
-    #                 if b.status == "training":
-    #                     print("Model trained")
-    #                 if b.status == "testing":
-    #                     df = self.queue.current[unique_id]["future"].result()
-    #                     print("Model tested")
-    #                 del self.computing[u]
-    #                 self.queue.delete(unique_id)
-    #             except Exception as e:
-    #                 print("Error in model training/predicting", e)
-    #                 del self.computing[u]
-    #                 self.queue.delete(unique_id)
-    #     return predictions
-
     def export_prediction(
         self, name: str, file_name: str = "predict.parquet", format: str | None = None
     ):
@@ -595,6 +580,23 @@ class BertModels:
             return {"error": "file does not exist"}
         r = {"name": file_name, "path": self.path / "../../static" / file_name}
         return r
+
+    # def finish_process(self, unique_id:str):
+    #     """
+    #     finish a process in  the queue
+    #     """
+    #     # get the key in the list
+    #     u = [u for u in self.computing if self.computing[u][1] == unique_id][0]
+    #     b = self.computing[u][0]
+    #     if b.status == "training":
+    #         print("Model trained")
+    #     if b.status == "testing":
+    #         print("Model tested")
+    #     if b.status == "predicting train":
+    #         print("Prediction train finished")
+    #         df = self.queue.current[unique_id]["future"].result()
+    #         predictions["predict_" + b.name] = df["prediction"]
+    #     return None
 
 
 class SimpleModels:

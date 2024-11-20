@@ -131,6 +131,8 @@ class Models(Base):
     user = Column(String)
     project = Column(String)
     scheme = Column(String)
+    kind = Column(String)
+    name = Column(String)
     parameters = Column(Text)
     path = Column(String)
     status = Column(String)
@@ -730,3 +732,49 @@ class DatabaseManager:
             }
             for i in features
         }
+
+    def add_model(
+        self,
+        kind: str,
+        project: str,
+        name: str,
+        user: str,
+        status: str,
+        scheme: str,
+        params: dict,
+        path: str,
+    ):
+        session = self.Session()
+
+        # test if the name does not exist
+        models = session.query(Models).filter(Models.name == name).all()
+        if len(models) > 0:
+            return False
+
+        model = Models(
+            project=project,
+            time=datetime.datetime.now(),
+            kind=kind,
+            name=name,
+            user=user,
+            parameters=json.dumps(params),
+            scheme=scheme,
+            status=status,
+            path=path,
+        )
+        session.add(model)
+        session.commit()
+        session.close()
+        return True
+
+    def delete_model(self, name: str):
+        session = self.Session()
+        # test if the name does not exist
+        models = session.query(Models).filter(Models.name == name).all()
+        if len(models) > 0:
+            return False
+        # delete the model
+        session.query(Models).filter(Models.name == name).delete()
+        session.commit()
+        session.close()
+        return True
