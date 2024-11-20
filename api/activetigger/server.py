@@ -59,7 +59,7 @@ class Server:
     test_file: str
     default_user: str
     ALGORITHM: str
-    n_workers: int = 2
+    n_workers: int = 4
     starting_time: float = None
     SECRET_KEY: str
     path: Path
@@ -75,6 +75,13 @@ class Server:
         """
         Start the server
         """
+
+        # unix system : set priority to this process
+        try:
+            os.nice(-15)
+            print(f"Process niceness set to {os.nice(0)}")
+        except PermissionError:
+            print("You need administrative privileges to set negative niceness values.")
 
         self.max_projects = MAX_LOADED_PROJECTS
         self.db_name = db_name

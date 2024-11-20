@@ -200,6 +200,10 @@ def to_sbert(
     Returns:
         pandas.DataFrame: embeddings
     """
+    try:
+        os.nice(5)
+    except PermissionError:
+        print("You need administrative privileges to set negative niceness values.")
 
     # manage GPU
     if torch.cuda.is_available():
@@ -335,7 +339,10 @@ def train_bert(
     # TODO : memory use
     """
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
+    try:
+        os.nice(5)
+    except PermissionError:
+        print("You need administrative privileges to set negative niceness values.")
     # check if GPU is available
     # gpu = False
     # if torch.cuda.is_available():
