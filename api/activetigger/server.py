@@ -562,13 +562,16 @@ class Project(Server):
             self.params.dir / data_all,
             self.params.dir / self.path_models,
             self.queue,
+            self.computing,
             self.db_manager,
             self.params.language,
         )
-        self.bertmodels = BertModels(self.params.dir, self.queue, self.db_manager)
-        self.simplemodels = SimpleModels(self.params.dir, self.queue)
-        self.generations = Generations(self.db_manager)
-        self.projections = Projections()
+        self.bertmodels = BertModels(
+            self.params.dir, self.queue, self.computing, self.db_manager
+        )
+        self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
+        self.generations = Generations(self.db_manager, self.computing)
+        self.projections = Projections(self.computing)
 
     def __del__(self):
         pass
@@ -993,7 +996,7 @@ class Project(Server):
             "features": {
                 "options": self.features.options,
                 "available": list(self.features.map.keys()),
-                "training": list(self.features.training.keys()),
+                "training": self.features.current_computing(),
             },
             "simplemodel": {
                 "options": self.simplemodels.available_models,
@@ -1013,9 +1016,9 @@ class Project(Server):
                     i: self.projections.available[i]["id"]
                     for i in self.projections.available
                 },
-                "training": list(self.projections.training.keys()),
+                "training": list(self.projections.training().keys()),
             },
-            "generations": {"training": self.generations.generating},
+            "generations": {"training": self.generations.current_users_generating()},
         }
         # end_time = time.time()
         # execution_time = end_time - start_time
@@ -1087,6 +1090,12 @@ class Project(Server):
         users = self.db_manager.get_distinct_users(self.name, period)
         return users
 
+    def get_process(self, kind: str, user: str):
+        """
+        Get current processes
+        """
+        return [e for e in self.computing if e["user"] == user and e["kind"] == kind]
+
     def update_processes(self) -> dict:
         """
         Update ongoing processes for specific operations
@@ -1101,116 +1110,84 @@ class Project(Server):
         """
         predictions = {}
 
-        # case for bertmodels
-        for u in self.bertmodels.computing.copy():
-            unique_id = self.bertmodels.computing[u][1]
-
-            # case the process have been canceled, clean
-            if unique_id not in self.queue.current:
-                del self.bertmodels.computing[u]
+        for e in self.computing.copy():
+            # case of not in queue
+            if e["unique_id"] not in self.queue.current:
+                self.computing.remove(e)
                 continue
+            is_done = self.queue.current[e["unique_id"]]["future"].done()
 
-            # check the state and finish the process
-            if self.queue.current[unique_id]["future"].done():
-                b = self.bertmodels.computing[u][0]
+            # case for bertmodels
+            if (e["kind"] == "bert") and is_done:
                 try:
-                    if b.status == "training":
+                    if e["model"].status == "training":
                         print("Model trained")
-                    if b.status == "testing":
+                    if e["model"].status == "testing":
                         print("Model tested")
                         # df = self.queue.current[unique_id]["future"].result()
-                    if b.status == "predicting train":
+                    if e["model"].status == "predicting train":
                         print("Prediction train finished")
-                        df = self.queue.current[unique_id]["future"].result()
-                        predictions["predict_" + b.name] = df["prediction"]
-                except Exception as e:
-                    print("Error in model training/predicting", e)
+                        df = self.queue.current[e["unique_id"]]["future"].result()
+                        predictions["predict_" + e["model"].name] = df["prediction"]
+                except Exception as ex:
+                    print("Error in model training/predicting", ex)
+                self.computing.remove(e)
+                self.queue.delete(e["unique_id"])
 
-                # delete the terminated process
-                del self.bertmodels.computing[u]
-                self.queue.delete(unique_id)
-
-        # case for simplemodels
-        for u in self.simplemodels.computing.copy():
-            s = list(self.simplemodels.computing[u].keys())[0]
-            unique_id = self.simplemodels.computing[u][s]["queue"]
-            if self.queue.current[unique_id]["future"].done():
+            # case for simplemodels
+            if (e["kind"] == "simplemodel") and is_done:
                 try:
-                    results = self.queue.current[unique_id]["future"].result()
-                    sm = self.simplemodels.computing[u][s]["sm"]
+                    results = self.queue.current[e["unique_id"]]["future"].result()
+                    sm = e["model"]
                     sm.model = results["model"]
                     sm.proba = results["proba"]
                     sm.cv10 = results["cv10"]
                     sm.statistics = results["statistics"]
-                    if u not in self.simplemodels.existing:
-                        self.simplemodels.existing[u] = {}
-                    self.simplemodels.existing[u][s] = sm
+                    if e["user"] not in self.simplemodels.existing:
+                        self.simplemodels.existing[e["user"]] = {}
+                    self.simplemodels.existing[e["user"]][e["scheme"]] = sm
                     self.simplemodels.dumps()
                     print("Simplemodel trained")
-                except Exception as e:
-                    print("Simplemodel failed", e)
-                del self.simplemodels.computing[u]
-                self.queue.delete(unique_id)
+                except Exception as ex:
+                    print("Simplemodel failed", ex)
+                self.computing.remove(e)
+                self.queue.delete(e["unique_id"])
 
-        # case for features
-        for name in self.features.training.copy():
-            unique_id = self.features.training[name]["unique_id"]
-
-            # case the process have been canceled, clean
-            if unique_id not in self.queue.current:
-                del self.features.training[name]
-                continue
-            # else check its state
-            if self.queue.current[unique_id]["future"].done():
-                r = self.queue.current[unique_id]["future"].result()
-                if "error" in r:
-                    print("Error in the feature processing", r)
-                else:
-                    df = r["success"]
-                    kind = self.features.training[name]["kind"]
-                    parameters = self.features.training[name]["parameters"]
-                    username = self.features.training[name]["username"]
-                    r = self.features.add(name, kind, username, parameters, df)
-                    print("Feature added", name)
-                self.queue.delete(unique_id)
-                del self.features.training[name]
-
-        # case for projections
-        for name in self.projections.training.copy():
-            unique_id = self.projections.training[name]["queue"]
-            if self.queue.current[unique_id]["future"].done():
+            # case for features
+            if (e["kind"] == "feature") and is_done:
+                r = self.queue.current[e["unique_id"]]["future"].result()
                 try:
-                    df = self.queue.current[unique_id]["future"].result()
-                    self.projections.available[name] = {
+                    df = r["success"]
+                    r = self.features.add(
+                        e["name"], e["type"], e["user"], e["parameters"], df
+                    )
+                    print("Feature added", e["name"])
+                except Exception as ex:
+                    print("Error in feature processing", ex)
+                self.computing.remove(e)
+                self.queue.delete(e["unique_id"])
+
+            # case for projections
+            if (e["kind"] == "projection") and is_done:
+                try:
+                    df = self.queue.current[e["unique_id"]]["future"].result()
+                    self.projections.available[e["user"]] = {
                         "data": df,
-                        "method": self.projections.training[name]["method"],
-                        "params": self.projections.training[name]["params"],
-                        "id": unique_id,
+                        "method": e["method"],
+                        "params": e["params"],
+                        "id": e["unique_id"],
                     }
                     print("projection added")
-                except Exception as e:
-                    print("Error in feature projections queue", e)
-                del self.projections.training[name]
-                self.queue.delete(unique_id)
+                except Exception as ex:
+                    print("Error in feature projections queue", ex)
+                self.computing.remove(e)
+                self.queue.delete(e["unique_id"])
 
-        # case for generation
-        for name in self.generations.generating.copy():
-            unique_id = self.generations.generating[name]["unique_id"]
-
-            # case the process have been canceled, clean
-            if unique_id not in self.queue.current:
-                del self.generations.generating[name]
-                continue
-
-            # else check its state
-            if self.queue.current[unique_id]["future"].done():
-                print(self.queue.current[unique_id]["future"])
-                r = self.queue.current[unique_id]["future"].result()
-                if "error" in r:
-                    print("Error in the generating process 1", unique_id, r)
-                else:
-                    results = r["success"]
-                    for row in results:
+            # case for generations
+            if (e["kind"] == "generation") and is_done:
+                try:
+                    r = self.queue.current[e["unique_id"]]["future"].result()
+                    for row in r["success"]:
                         self.generations.add(
                             user=row["user"],
                             project_slug=row["project_slug"],
@@ -1219,7 +1196,9 @@ class Project(Server):
                             prompt=row["prompt"],
                             answer=row["answer"],
                         )
-                self.queue.delete(unique_id)
-                del self.generations.generating[name]
+                except Exception as ex:
+                    print("Error in generation queue", ex)
+                self.computing.remove(e)
+                self.queue.delete(e["unique_id"])
 
         return predictions

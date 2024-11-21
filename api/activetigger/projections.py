@@ -9,10 +9,10 @@ class Projections:
 
     available: dict
     options: dict
-    training: dict
+    computing: dict
 
-    def __init__(self) -> None:
-        self.training: dict = {}
+    def __init__(self, computing: list) -> None:
+        self.computing: list = computing
         self.available: dict = {}
         self.options: dict = {
             "umap": {
@@ -41,3 +41,15 @@ class Projections:
             except Exception as e:
                 return {"error": str(e)}
         return {"error": "Unknown method"}
+
+    def current_computing(self):
+        return [e["name"] for e in self.computing if e["kind"] == "projection"]
+
+    def training(self) -> dict:
+        """
+        Currently under training
+        """
+        r = {
+            e["user"]: e["method"] for e in self.computing if e["kind"] == "projection"
+        }
+        return r

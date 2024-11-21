@@ -2,6 +2,7 @@ import importlib
 import logging
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 from io import StringIO
 from typing import Annotated, Any, Dict, List
 
@@ -753,65 +754,22 @@ async def compute_projection(
     )
     if unique_id == "error":
         raise HTTPException(status_code=500, detail="Error in adding in the queue")
-    project.projections.training[current_user.username] = {
-        "params": projection,
-        "method": projection.method,
-        "queue": unique_id,
-    }
+    project.computing.append(
+        {
+            "unique_id": unique_id,
+            "user": current_user.username,
+            "time": datetime.now(),
+            "kind": "projection",
+            "method": projection.method,
+            "params": projection,
+        }
+    )
     server.log_action(
         current_user.username,
         f"INFO compute projection {projection.method}",
         project.params.project_slug,
     )
     return WaitingModel(detail=f"Projection {projection.method} is computing")
-
-    # if projection.method == "umap":
-    #     try:
-    #         # e = UmapModel(**projection.params)
-    #         e = UmapModel(**projection.params.__dict__)
-    #     except ValidationError as e:
-    #         raise HTTPException(status_code=500, detail=str(e))
-
-    #     args = {"features": features, "params": e.__dict__}
-    #     unique_id = server.queue.add("projection", functions.compute_umap, args)
-    #     if unique_id == "error":
-    #         raise HTTPException(status_code=500, detail="Error in adding in the queue")
-    #     project.features.projections[current_user.username] = {
-    #         "params": projection,
-    #         "method": "umap",
-    #         "queue": unique_id,
-    #     }
-    #     server.log_action(
-    #         current_user.username,
-    #         "INFO compute projection umap",
-    #         project.params.project_slug,
-    #     )
-    #     return WaitingModel(detail="Projection umap is computing")
-
-    # if projection.method == "tsne":
-    #     try:
-    #         # e = TsneModel(**projection.params)
-    #         e = TsneModel(**projection.params.__dict__)
-    #     except ValidationError as e:
-    #         raise HTTPException(status_code=500, detail=str(e))
-    #     args = {"features": features, "params": e.__dict__}
-    #     unique_id = server.queue.add("projection", functions.compute_tsne, args)
-    #     if unique_id == "error":
-    #         raise HTTPException(status_code=500, detail="Error in adding in the queue")
-    #     project.features.projections[current_user.username] = {
-    #         "params": projection,
-    #         "method": "tsne",
-    #         "queue": unique_id,
-    #     }
-
-    #     server.log_action(
-    #         current_user.username,
-    #         "INFO compute projection tsne",
-    #         project.params.project_slug,
-    #     )
-    #     return WaitingModel(detail="Projection tsne is computing")
-
-    # raise HTTPException(status_code=400, detail="Projection not available")
 
 
 @app.get("/elements/table", dependencies=[Depends(verified_user)])
@@ -967,11 +925,17 @@ async def postgenerate(
             status_code=500, detail="Error in adding the generation call in the queue"
         )
 
-    project.generations.generating[current_user.username] = {
-        "unique_id": unique_id,
-        "number": request.n_batch,
-        "api": request.api,
-    }
+    project.computing.append(
+        {
+            "unique_id": unique_id,
+            "user": current_user.username,
+            "project": project.name,
+            "api": request.api,
+            "number": request.n_batch,
+            "time": datetime.now(),
+            "kind": "generation",
+        }
+    )
 
     server.log_action(
         current_user.username,

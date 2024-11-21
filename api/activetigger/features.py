@@ -1,6 +1,8 @@
 import json
 import re
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pyarrow.parquet as pq
@@ -31,9 +33,7 @@ class Features:
     informations: dict
     content: DataFrame
     map: dict
-    training: dict
-    # projections: dict
-    # possible_projections: dict
+    computing: dict
     options: dict
     lang: str
     db_manager: DatabaseManager
@@ -45,7 +45,8 @@ class Features:
         path_train: Path,
         path_all: Path,
         models_path: Path,
-        queue,
+        queue: Any,
+        computing: dict,
         db_manager,
         lang: str,
     ) -> None:
@@ -61,24 +62,7 @@ class Features:
         self.informations = {}
         self.map, self.n = self.get_map()
         self.lang = lang
-        self.training: dict = {}
-
-        # # managing projections
-        # self.projections: dict = {}
-        # self.possible_projections: dict = {
-        #     "umap": {
-        #         "n_neighbors": 15,
-        #         "min_dist": 0.1,
-        #         "n_components": 2,
-        #         "metric": ["cosine", "euclidean"],
-        #     },
-        #     "tsne": {
-        #         "n_components": 2,
-        #         "learning_rate": "auto",
-        #         "init": "random",
-        #         "perplexity": 3,
-        #     },
-        # }
+        self.computing = computing
 
         # options
         self.options: dict = {
@@ -258,14 +242,20 @@ class Features:
         else:
             return {"error": "Wrong index"}
 
+    def current_user_processes(self, user: str):
+        return [e for e in self.computing if e["user"] == user]
+
+    def current_computing(self):
+        return [e["name"] for e in self.computing if e["kind"] == "feature"]
+
     def compute(
         self, df: pd.Series, name: str, kind: str, parameters: dict, username: str
     ):
         """
         Compute new feature
         """
-        if name in self.training:
-            return {"error": "feature already in training"}
+        if len(self.current_user_processes(username)) > 0:
+            return {"error": "There is already a process launched by the user"}
 
         if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
             return {"error": "Not implemented"}
@@ -327,13 +317,18 @@ class Features:
             # add the computation to queue
             unique_id = self.queue.add("feature", func, args)
             if unique_id == "error":
-                return unique_id
-            self.training[name] = {
-                "unique_id": unique_id,
-                "kind": kind,
-                "parameters": parameters,
-                "name": name,
-                "username": username,
-            }
+                return "error"
+
+            self.computing.append(
+                {
+                    "unique_id": unique_id,
+                    "kind": "feature",
+                    "parameters": parameters,
+                    "type": kind,
+                    "user": username,
+                    "name": name,
+                    "time": datetime.now(),
+                }
+            )
 
         return {"success": "Feature in training"}

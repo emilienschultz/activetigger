@@ -9,12 +9,12 @@ class Generations:
     Class to manage generation data
     """
 
-    generating: dict
+    computing: list
     db_manager: DatabaseManager
 
-    def __init__(self, db_manager: DatabaseManager) -> None:
+    def __init__(self, db_manager: DatabaseManager, computing: list) -> None:
         self.db_manager = db_manager
-        self.generating = {}  # user:{"unique_id", "number","api"}
+        self.computing = computing  # user:{"unique_id", "number","api"}
 
     def add(
         self,
@@ -57,6 +57,17 @@ class Generations:
         df["time"] = df["time"].dt.tz_localize("UTC")
         df["time"] = df["time"].dt.tz_convert("Europe/Paris")
         return df
+
+    def current_users_generating(self) -> list:
+        return {
+            e["user"]: {
+                "unique_id": e["unique_id"],
+                "number": e["number"],
+                "api": e["api"],
+            }
+            for e in self.computing
+            if e["kind"] == "generation"
+        }
 
     # def add_generation(
     #     self,

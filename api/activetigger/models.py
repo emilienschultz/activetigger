@@ -236,7 +236,7 @@ class BertModels:
 
     queue: Any
     path: Path
-    computing: dict
+    computing: list
     db_manager: DatabaseManager
 
     def __init__(
@@ -267,14 +267,14 @@ class BertModels:
             "xlm-roberta-base",
         ]
         self.queue = queue
-        # self.computing = computing
+        self.computing = computing
         self.db_manager = db_manager
         self.path: Path = Path(path) / "bert"
         if not self.path.exists():
             os.mkdir(self.path)
 
         # keep current processes (one by user max)
-        self.computing: dict = {}
+        # self.computing: dict = {}
 
     def __repr__(self) -> str:
         return f"Trained models : {self.trained()}"
@@ -318,12 +318,13 @@ class BertModels:
         - progress if available
         """
         r = {
-            u: {
-                "name": self.computing[u][0].name,
-                "status": self.computing[u][0].status,
-                "progress": self.computing[u][0].get_training_progress(),
+            e["user"]: {
+                "name": e["model"].name,
+                "status": e["model"].status,
+                "progress": e["model"].get_training_progress(),
             }
-            for u in self.computing
+            for e in self.computing
+            if e["kind"] == "bert"
         }
         return r
 
@@ -338,6 +339,12 @@ class BertModels:
         except Exception as e:
             print(e)
         return {"success": "Bert model deleted"}
+
+    def current_user_processes(self, user: str):
+        """
+        Get the user current processes
+        """
+        return [e for e in self.computing if e["user"] == user]
 
     def start_training_process(
         self,
@@ -357,8 +364,10 @@ class BertModels:
         """
         # Check if there is no other competing processes
         # For the moment : 1 active process by user
-        if user in self.computing:
-            return {"error": "processes already launched, cancel it before"}
+        if len(self.current_user_processes(user)) > 0:
+            return {
+                "error": "User already has a process launched, please wait before launching another one"
+            }
 
         # set default parameters if needed
         if base_model is None:
@@ -400,7 +409,18 @@ class BertModels:
         # Update the queue
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
-        self.computing[user] = [b, unique_id]
+        # self.computing[user] = [b, unique_id]
+        self.computing.append(
+            {
+                "user": user,
+                "model": b,
+                "unique_id": unique_id,
+                "time": current_date,
+                "kind": "bert",
+                "status": "training",
+                "scheme": scheme,
+            }
+        )
 
         # add in database
         # if not self.db_manager.add_model(
@@ -425,8 +445,10 @@ class BertModels:
         - launch as an independant process functions.test_bert
         - once computed, sync with the queue
         """
-        if user in self.computing:
-            return {"error": "Processes already launched, cancel it before"}
+        if len(self.current_user_processes(user)) > 0:
+            return {
+                "error": "User already has a process launched, please wait before launching another one"
+            }
 
         if not (self.path / name).exists():
             return {"error": "This model does not exist"}
@@ -461,7 +483,16 @@ class BertModels:
         }
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = "testing"
-        self.computing[user] = [b, unique_id]
+        self.computing.append(
+            {
+                "user": user,
+                "model": b,
+                "unique_id": unique_id,
+                "time": datetime.now(),
+                "kind": "bert",
+                "status": "training",
+            }
+        )
 
         return {"success": "bert testing predicting"}
 
@@ -471,8 +502,10 @@ class BertModels:
         """
         Start predicting process
         """
-        if user in self.computing:
-            return {"error": "Processes already launched, cancel it before"}
+        if len(self.current_user_processes(user)) > 0:
+            return {
+                "error": "User already has a process launched, please wait before launching another one"
+            }
 
         if not (self.path / name).exists():
             return {"error": "This model does not exist"}
@@ -490,7 +523,16 @@ class BertModels:
         }
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = f"predicting {dataset}"
-        self.computing[user] = [b, unique_id]
+        self.computing.append(
+            {
+                "user": user,
+                "model": b,
+                "unique_id": unique_id,
+                "time": datetime.now(),
+                "kind": "bert",
+                "status": "training",
+            }
+        )
         return {"success": "bert model predicting"}
 
     def start_compression(self, name):
@@ -503,21 +545,6 @@ class BertModels:
         )
         process.start()
         print("starting compression")
-
-    def stop_user_process(self, user: str):
-        """
-        Stop the process of an user
-        """
-        if user not in self.computing:
-            return {"error": "no current processes"}
-        self.computing[user][1].terminate()  # end process
-
-        # delete files in case of training
-        b = self.computing[user][0]
-        if b.status == "training":
-            shutil.rmtree(self.computing[user][0].path)
-        del self.computing[user]  # delete process
-        return {"success": "process terminated"}
 
     def rename(self, former_name: str, new_name: str):
         """
@@ -581,23 +608,6 @@ class BertModels:
         r = {"name": file_name, "path": self.path / "../../static" / file_name}
         return r
 
-    # def finish_process(self, unique_id:str):
-    #     """
-    #     finish a process in  the queue
-    #     """
-    #     # get the key in the list
-    #     u = [u for u in self.computing if self.computing[u][1] == unique_id][0]
-    #     b = self.computing[u][0]
-    #     if b.status == "training":
-    #         print("Model trained")
-    #     if b.status == "testing":
-    #         print("Model tested")
-    #     if b.status == "predicting train":
-    #         print("Prediction train finished")
-    #         df = self.queue.current[unique_id]["future"].result()
-    #         predictions["predict_" + b.name] = df["prediction"]
-    #     return None
-
 
 class SimpleModels:
     """
@@ -610,12 +620,12 @@ class SimpleModels:
     available_models: dict
     validation: dict
     existing: dict
-    computing: dict
+    computing: list
     path: Path
     queue: Any
     save_file: str
 
-    def __init__(self, path: Path, queue):
+    def __init__(self, path: Path, queue: Any, computing: list) -> None:
         """
         Init Simplemodels class
         """
@@ -637,7 +647,7 @@ class SimpleModels:
             "multi_naivebayes": Multi_naivebayesParams,
         }
         self.existing: dict = {}  # computed simplemodels
-        self.computing: dict = {}  # curently under computation
+        self.computing: list = computing  # curently under computation
         self.path: Path = path  # path to operate
         self.queue = queue  # access to executor for multiprocessing
         self.save_file: str = "simplemodels.pickle"  # file to save current state
@@ -682,13 +692,15 @@ class SimpleModels:
                 }
         return {"error": "No model for this user and scheme"}
 
-    def training(self):
+    def training(self) -> dict:
         """
-        Training simplemodels
+        Currently under training
         """
-        r = {}
-        for u in self.computing:
-            r[u] = list(self.computing[u].keys())
+        r = {
+            e["user"]: list(e["scheme"])
+            for e in self.computing
+            if e["kind"] == "simplemodel"
+        }
         return r
 
     def exists(self, user: str, scheme: str):
@@ -817,9 +829,17 @@ class SimpleModels:
         sm = SimpleModel(
             name, user, X, Y, labels, "computing", features, standardize, model_params
         )
-        if user not in self.computing:
-            self.computing[user] = {}
-        self.computing[user][scheme] = {"queue": unique_id, "sm": sm}
+        self.computing.append(
+            {
+                "user": user,
+                "model": sm,
+                "unique_id": unique_id,
+                "time": datetime.now(),
+                "kind": "simplemodel",
+                "status": "training",
+                "scheme": scheme,
+            }
+        )
 
     def dumps(self):
         """
@@ -837,34 +857,6 @@ class SimpleModels:
         with open(self.path / self.save_file, "rb") as file:
             self.existing = pickle.load(file)
         return True
-
-    # def update_processes(self):
-    #     """
-    #     Update current computing simplemodels
-    #     """
-    #     for u in self.computing.copy():
-    #         s = list(self.computing[u].keys())[0]
-    #         unique_id = self.computing[u][s]["queue"]
-    #         if self.queue.current[unique_id]["future"].done():
-    #             # TODO : deal better exception in the training
-    #             try:
-    #                 results = self.queue.current[unique_id]["future"].result()
-    #                 sm = self.computing[u][s]["sm"]
-    #                 sm.model = results["model"]
-    #                 sm.proba = results["proba"]
-    #                 sm.cv10 = results["cv10"]
-    #                 sm.statistics = results["statistics"]
-    #                 if u not in self.existing:
-    #                     self.existing[u] = {}
-    #                 self.existing[u][s] = sm
-    #                 del self.computing[u]
-    #                 self.queue.delete(unique_id)
-    #                 self.dumps()
-    #             except Exception as e:
-    #                 print("Simplemodel failed")
-    #                 print(e)
-    #                 del self.computing[u]
-    #                 self.queue.delete(unique_id)
 
 
 class SimpleModel:
