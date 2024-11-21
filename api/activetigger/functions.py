@@ -217,6 +217,8 @@ def to_sbert(
 
     sbert = SentenceTransformer(model, device=device)
     sbert.max_seq_length = 512
+
+    print("start computation")
     if device == "cuda":
         with autocast(device_type=device):
             emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
@@ -224,6 +226,7 @@ def to_sbert(
         emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
     emb = pd.DataFrame(emb, index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
+    print("computation end")
     return {"success": emb}
 
 

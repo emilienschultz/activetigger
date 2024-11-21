@@ -954,9 +954,10 @@ async def stop_generation(
     """
     Stop current generation
     """
-    if current_user.username not in project.generations.generating:
+    p = project.get_process("generation", current_user.username)
+    if len(p) == 0:
         raise HTTPException(status_code=400, detail="No process found for this user")
-    unique_id = project.generations.generating[current_user.username]["unique_id"]
+    unique_id = p[0]["unique_id"]
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

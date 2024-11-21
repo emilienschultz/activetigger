@@ -109,7 +109,6 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     const params = pick(formData.params, relevantParams) as ProjectionModelParams;
     const data = { ...formData, params };
     const watchedFeatures = watch('features');
-    console.log(watchedFeatures);
     if (watchedFeatures.length == 0) {
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
@@ -137,9 +136,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   }, [projectionData, labelColorMapping]);
 
   // manage projection refresh (could be AMELIORATED)
-  console.log(projectionData);
   useEffect(() => {
-    console.log('USEEFFECT');
     // case a first projection is added
     if (
       project &&

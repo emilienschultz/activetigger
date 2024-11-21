@@ -754,7 +754,7 @@ class SimpleModels:
         df_stand = scaler.fit_transform(df)
         return pd.DataFrame(df_stand, columns=df.columns, index=df.index)
 
-    def add_simplemodel(
+    def compute_simplemodel(
         self,
         user,
         scheme,
@@ -767,7 +767,7 @@ class SimpleModels:
         model_params: dict | None = None,
     ):
         """
-        A a new simplemodel for a user and a scheme
+        Add a new simplemodel for a user and a scheme
         """
         logger_simplemodel = logging.getLogger("simplemodel")
         logger_simplemodel.info("Intiating the computation process for the simplemodel")
@@ -857,6 +857,20 @@ class SimpleModels:
         with open(self.path / self.save_file, "rb") as file:
             self.existing = pickle.load(file)
         return True
+
+    def add(self, element, results):
+        """
+        Add simplemodel after computation
+        """
+        sm = element["model"]
+        sm.model = results["model"]
+        sm.proba = results["proba"]
+        sm.cv10 = results["cv10"]
+        sm.statistics = results["statistics"]
+        if element["user"] not in self.existing:
+            self.existing[element["user"]] = {}
+        self.existing[element["user"]][element["scheme"]] = sm
+        self.dumps()
 
 
 class SimpleModel:

@@ -53,3 +53,14 @@ class Projections:
             e["user"]: e["method"] for e in self.computing if e["kind"] == "projection"
         }
         return r
+
+    def add(self, element, results):
+        """
+        Add projection after computation
+        """
+        self.available[element["user"]] = {
+            "data": results,
+            "method": element["method"],
+            "params": element["params"],
+            "id": element["unique_id"],
+        }
