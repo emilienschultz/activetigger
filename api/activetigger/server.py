@@ -983,7 +983,7 @@ class Project(Server):
         """
         Send state of the project
         """
-        # start_time = time.time()
+        start_time = time.time()
         r = {
             "params": self.params,
             "users": {"active": self.get_active_users()},
@@ -1020,8 +1020,9 @@ class Project(Server):
             },
             "generations": {"training": self.generations.current_users_generating()},
         }
-        # end_time = time.time()
-        # execution_time = end_time - start_time
+
+        end_time = time.time()
+        execution_time = end_time - start_time
         # print(f"Execution time: {execution_time:.5f} seconds")
         return r
 
