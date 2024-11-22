@@ -234,13 +234,19 @@ class BertModels:
     TODO : std.err in the logs for processes
     """
 
+    project_slug: str
     queue: Any
     path: Path
     computing: list
     db_manager: DatabaseManager
 
     def __init__(
-        self, path: Path, queue: Any, computing: list, db_manager: DatabaseManager
+        self,
+        project_slug: str,
+        path: Path,
+        queue: Any,
+        computing: list,
+        db_manager: DatabaseManager,
     ) -> None:
         self.params_default = {
             "batchsize": 4,
@@ -266,6 +272,7 @@ class BertModels:
             "microsoft/Multilingual-MiniLM-L12-H384",
             "xlm-roberta-base",
         ]
+        self.project_slug = project_slug
         self.queue = queue
         self.computing = computing
         self.db_manager = db_manager
@@ -277,39 +284,64 @@ class BertModels:
         # self.computing: dict = {}
 
     def __repr__(self) -> str:
-        return f"Trained models : {self.trained()}"
+        return f"Trained models : {self.available()}"
 
-    def trained(self) -> dict:
+    def available(self) -> dict:
         """
-        Trained bert by scheme in the project
-        + if prediction available
-        + compression if available / launch it
+        Available models
         """
-        r: dict = {}
-        if self.path.exists():  # if bert models have been trained
-            all_files = os.listdir(self.path)
-            trained = [
-                i
-                for i in all_files
-                if os.path.isdir(self.path / i)
-                and (self.path / i / "finished").exists()
-            ]
-            for i in trained:
+        models = self.db_manager.available_models(self.project_slug)
+        r = {}
+        for m in models:
+            if m["scheme"] not in r:
+                r[m["scheme"]] = {}
+            if Path(m["path"]).exists():
                 predict = False
                 compressed = False
-                # test if prediction available
-                if (self.path / i / "predict_all.parquet").exists():
+                if (Path(m["path"]) / "predict_all.parquet").exists():
                     predict = True
-                # test if compression available
-                if (self.path / "../../static" / f"{i}.tar.gz").exists():
+                if (self.path / "../../static" / f"{m['name']}.tar.gz").exists():
                     compressed = True
                 else:
-                    self.start_compression(i)
-                scheme = i.split("__")[-2]  # scheme after __
-                if scheme not in r:
-                    r[scheme] = {}
-                r[scheme][i] = {"predicted": predict, "compressed": compressed}
+                    self.start_compression(m["name"])
+                r[m["scheme"]][m["name"]] = {
+                    "predicted": predict,
+                    "compressed": compressed,
+                }
         return r
+
+    # def trained(self) -> dict:
+    #     """
+    #     Trained bert by scheme in the project
+    #     + if prediction available
+    #     + compression if available / launch it
+    #     """
+    #     print("AVAILABLE", self.available())
+    #     r: dict = {}
+    #     if self.path.exists():  # if bert models have been trained
+    #         all_files = os.listdir(self.path)
+    #         trained = [
+    #             i
+    #             for i in all_files
+    #             if os.path.isdir(self.path / i)
+    #             and (self.path / i / "finished").exists()
+    #         ]
+    #         for i in trained:
+    #             predict = False
+    #             compressed = False
+    #             # test if prediction available
+    #             if (self.path / i / "predict_all.parquet").exists():
+    #                 predict = True
+    #             # test if compression available
+    #             if (self.path / "../../static" / f"{i}.tar.gz").exists():
+    #                 compressed = True
+    #             else:
+    #                 self.start_compression(i)
+    #             scheme = i.split("__")[-2]  # scheme after __
+    #             if scheme not in r:
+    #                 r[scheme] = {}
+    #             r[scheme][i] = {"predicted": predict, "compressed": compressed}
+    #     return r
 
     def training(self) -> dict:
         """
@@ -332,7 +364,7 @@ class BertModels:
         """
         Delete bert model
         """
-        # self.db_manager.delete_bert(bert_name)
+        self.db_manager.delete_model(self.project_slug, bert_name)
         try:
             shutil.rmtree(self.path / bert_name)
             os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
@@ -429,7 +461,7 @@ class BertModels:
             user=user,
             project=project,
             scheme=scheme,
-            params=params.__dict__,
+            params=params,
             path=str(self.path / name),
             status="training",
         ):
@@ -550,30 +582,30 @@ class BertModels:
         """
         Rename a model (copy it)
         """
-        if not (self.path / former_name).exists():
-            return {"error": "no model currently trained"}
-        if (self.path / new_name).exists():
-            return {"error": "this name already exists"}
-        if (self.path / former_name / "status.log").exists():
+        # get model
+        model = self.db_manager.get_model(self.project_slug, former_name)
+        if model is None:
+            return {"error": "model does not exist"}
+        if (Path(model.path) / "status.log").exists():
             return {"error": "model not trained completly"}
-
-        # keep the scheme information
-        if "__" not in new_name:
-            new_name = new_name + "__" + former_name.split("__")[-1]
-
-        os.rename(self.path / former_name, self.path / new_name)
+        r = self.db_manager.rename_model(self.project_slug, former_name, new_name)
+        if "error" in r:
+            return r
+        os.rename(model.path, model.path.replace(former_name, new_name))
         return {"success": "model renamed"}
 
     def get(self, name: str, lazy=False) -> BertModel | None:
         """
         Get a model
         """
-        if not (self.path / name).exists():
+        model = self.db_manager.get_model(self.project_slug, name)
+        if model is None:
             return None
-        if (self.path / name / "status.log").exists():
-            # process not finished
+        if not Path(model.path).exists():
             return None
-        b = BertModel(name, self.path / name)
+        if (Path(model.path) / "status.log").exists():
+            return None
+        b = BertModel(name, Path(model.path))
         b.load(lazy=lazy)
         return b
 
@@ -607,6 +639,18 @@ class BertModels:
             return {"error": "file does not exist"}
         r = {"name": file_name, "path": self.path / "../../static" / file_name}
         return r
+
+    def add(self, element):
+        if element["model"].status == "training":
+            # update bdd status
+            self.db_manager.change_model_status(
+                self.project_slug, element["model"].name, "trained"
+            )
+            print("Model trained")
+        if element["model"].status == "testing":
+            print("Model tested")
+        if element["model"].status == "predicting train":
+            print("Prediction train finished")
 
 
 class SimpleModels:

@@ -765,12 +765,52 @@ class DatabaseManager:
         session.add(model)
         session.commit()
         session.close()
+
+        print("available", self.available_models(project))
+
         return True
 
-    def delete_model(self, name: str):
+    def change_model_status(self, project: str, name: str, status: str):
+        session = self.Session()
+        model = (
+            session.query(Models)
+            .filter(Models.name == name, Models.project == project)
+            .first()
+        )
+        model.status = "trained"
+        session.commit()
+        session.close()
+
+    def available_models(self, project: str):
+        session = self.Session()
+        models = (
+            session.query(Models.name, Models.parameters, Models.path, Models.scheme)
+            .filter(
+                Models.project == project,
+                Models.status == "trained",
+            )
+            .distinct()
+            .all()
+        )
+        session.close()
+        return [
+            {
+                "name": m.name,
+                "scheme": m.scheme,
+                "path": m.path,
+                "parameters": json.loads(m.parameters),
+            }
+            for m in models
+        ]
+
+    def delete_model(self, project: str, name: str):
         session = self.Session()
         # test if the name does not exist
-        models = session.query(Models).filter(Models.name == name).all()
+        models = (
+            session.query(Models)
+            .filter(Models.name == name, Models.project == project)
+            .all()
+        )
         if len(models) > 0:
             return False
         # delete the model
@@ -778,3 +818,36 @@ class DatabaseManager:
         session.commit()
         session.close()
         return True
+
+    def get_model(self, project: str, name: str):
+        session = self.Session()
+        model = (
+            session.query(Models)
+            .filter(Models.name == name, Models.project == project)
+            .first()
+        )
+        session.close()
+        return model
+
+    def rename_model(self, project: str, old_name: str, new_name: str):
+        session = self.Session()
+
+        # test if the name does not exist
+        models = (
+            session.query(Models)
+            .filter(Models.name == new_name, Models.project == project)
+            .all()
+        )
+        if len(models) > 0:
+            return {"error": "The new name already exists"}
+        # get and rename
+        model = (
+            session.query(Models)
+            .filter(Models.name == old_name, Models.project == project)
+            .first()
+        )
+        model.name = new_name
+        model.path = model.path.replace(old_name, new_name)
+        session.commit()
+        session.close()
+        return {"success": "model renamed"}

@@ -1393,9 +1393,10 @@ async def stop_bert(
     """
     Stop user process
     """
-    if current_user.username not in project.bertmodels.computing:
+    p = project.get_process("generation", current_user.username)
+    if len(p) == 0:
         raise HTTPException(status_code=400, detail="No process found")
-    unique_id = project.bertmodels.computing[current_user.username][1]
+    unique_id = p[0]["unique_id"]
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

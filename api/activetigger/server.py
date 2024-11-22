@@ -567,7 +567,7 @@ class Project(Server):
             self.params.language,
         )
         self.bertmodels = BertModels(
-            self.params.dir, self.queue, self.computing, self.db_manager
+            project_slug, self.params.dir, self.queue, self.computing, self.db_manager
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
         self.generations = Generations(self.db_manager, self.computing)
@@ -1005,7 +1005,7 @@ class Project(Server):
             },
             "bertmodels": {
                 "options": self.bertmodels.base_models,
-                "available": self.bertmodels.trained(),
+                "available": self.bertmodels.available(),
                 "training": self.bertmodels.training(),
                 "test": {},
                 "base_parameters": self.bertmodels.params_default,
@@ -1121,14 +1121,11 @@ class Project(Server):
             if (e["kind"] == "bert") and is_done:
                 clean = True
                 try:
-                    if e["model"].status == "training":
-                        print("Model trained")
-                    if e["model"].status == "testing":
-                        print("Model tested")
-                    if e["model"].status == "predicting train":
-                        print("Prediction train finished")
-                        df = self.queue.current[e["unique_id"]]["future"].result()
-                        predictions["predict_" + e["model"].name] = df["prediction"]
+                    self.bertmodels.add(e)
+                    # case there is a prediction
+                    r = self.queue.current[e["unique_id"]]["future"].result()
+                    if isinstance(r, dict) and "prediction" in r:
+                        predictions["predict_" + e["model"].name] = r["prediction"]
                 except Exception as ex:
                     print("Error in model training/predicting", ex)
 
