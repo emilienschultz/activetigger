@@ -44,6 +44,10 @@ export const DocPage: FC = () => {
             </ul>
             <h4 className="subsection">Export data / models</h4>
             To write
+            <h4 className="subsection">General comments</h4>
+            <ul>
+              <li>Only one process allowed in the same time by user</li>
+            </ul>
           </div>
         </div>
       </div>{' '}

@@ -186,6 +186,8 @@ export const ProjectTrainPage: FC = () => {
     },
   ];
 
+  console.log(project);
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">

@@ -305,7 +305,7 @@ class BertModels:
                     compressed = True
                 else:
                     self.start_compression(i)
-                scheme = i.split("__")[-1]  # scheme after __
+                scheme = i.split("__")[-2]  # scheme after __
                 if scheme not in r:
                     r[scheme] = {}
                 r[scheme][i] = {"predicted": predict, "compressed": compressed}
@@ -423,17 +423,17 @@ class BertModels:
         )
 
         # add in database
-        # if not self.db_manager.add_model(
-        #     kind="bert",
-        #     name=name,
-        #     user=user,
-        #     project=project,
-        #     scheme=scheme,
-        #     params=params.__dict__,
-        #     path=str(self.path / name),
-        #     status="training",
-        # ):
-        #     return {"error": "An error occured in database"}
+        if not self.db_manager.add_model(
+            kind="bert",
+            name=name,
+            user=user,
+            project=project,
+            scheme=scheme,
+            params=params.__dict__,
+            path=str(self.path / name),
+            status="training",
+        ):
+            return {"error": "An error occured in database"}
 
         return {"success": "bert model on training"}
 
