@@ -628,6 +628,9 @@ class BertModels:
         return r
 
     def add(self, element):
+        """
+        Manage computed process for model
+        """
         if element["status"] == "training":
             # update bdd status
             self.db_manager.change_model_status(
@@ -637,7 +640,6 @@ class BertModels:
         if element["status"] == "testing":
             print("Model tested")
         if element["status"] == "predicting":
-            print("MODEL PREDICTED")
             # case of global prediction completed
             if element["dataset"] == "all":
                 self.db_manager.set_model_params(

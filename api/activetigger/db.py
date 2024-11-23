@@ -861,6 +861,5 @@ class DatabaseManager:
         )
         parameters = json.loads(model.parameters)
         parameters[flag] = value
-        print("PARAMETERS", parameters)
         model.parameters = json.dumps(parameters)
         session.commit()

@@ -1119,14 +1119,13 @@ class Project(Server):
 
             # case for bertmodels
             if (e["kind"] == "bert") and is_done:
-                print("PROCESS BERT", e)
                 clean = True
                 try:
                     self.bertmodels.add(e)
                     # case there is a prediction
                     r = self.queue.current[e["unique_id"]]["future"].result()
-                    if isinstance(r, dict) and "prediction" in r:
-                        predictions["predict_" + e["model"].name] = r["prediction"]
+                    if r is not None:
+                        predictions["predict_" + e["model"].name] = r
                 except Exception as ex:
                     print("Error in model training/predicting", ex)
 
