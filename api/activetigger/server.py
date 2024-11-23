@@ -1119,6 +1119,7 @@ class Project(Server):
 
             # case for bertmodels
             if (e["kind"] == "bert") and is_done:
+                print("PROCESS BERT", e)
                 clean = True
                 try:
                     self.bertmodels.add(e)

@@ -851,3 +851,16 @@ class DatabaseManager:
         session.commit()
         session.close()
         return {"success": "model renamed"}
+
+    def set_model_params(self, project: str, name: str, flag: str, value):
+        session = self.Session()
+        model = (
+            session.query(Models)
+            .filter(Models.name == name, Models.project == project)
+            .first()
+        )
+        parameters = json.loads(model.parameters)
+        parameters[flag] = value
+        print("PARAMETERS", parameters)
+        model.parameters = json.dumps(parameters)
+        session.commit()

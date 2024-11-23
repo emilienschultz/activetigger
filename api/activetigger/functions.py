@@ -556,6 +556,15 @@ def predict_bert(
         print("GPU is available")
         gpu = True
 
+    # if torch.cuda.is_available():
+    #     torch.cuda.empty_cache()
+    #     device = torch.device("cuda")  # Use CUDA
+    # elif torch.backends.mps.is_available():
+    #     device = torch.device("mps")  # Use MPS on macOS
+    # else:
+    #     device = torch.device("cpu")  # Fallback to CPU
+    # print(f"Using {device} for computation")
+
     # logging the process
     log_path = path / "status_predict.log"
     progress_path = path / "progress_predict"
@@ -622,6 +631,7 @@ def predict_bert(
 
     # write the content in a parquet file
     pred.to_parquet(path / file_name)
+    print("Written", file_name)
     # delete the logs
     os.remove(log_path)
     os.remove(progress_path)

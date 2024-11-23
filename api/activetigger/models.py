@@ -227,16 +227,11 @@ class BertModel:
 class BertModels:
     """
     Managing bertmodel training
-
-    Comments:
-        All the data are sorted in path/bert/$NAME
-
-    TODO : std.err in the logs for processes
     """
 
     project_slug: str
-    queue: Any
     path: Path
+    queue: Any
     computing: list
     db_manager: DatabaseManager
 
@@ -280,68 +275,55 @@ class BertModels:
         if not self.path.exists():
             os.mkdir(self.path)
 
-        # keep current processes (one by user max)
-        # self.computing: dict = {}
-
     def __repr__(self) -> str:
         return f"Trained models : {self.available()}"
 
     def available(self) -> dict:
         """
-        Available models
+        Information on available models for state
         """
         models = self.db_manager.available_models(self.project_slug)
         r = {}
         for m in models:
             if m["scheme"] not in r:
                 r[m["scheme"]] = {}
-            if Path(m["path"]).exists():
-                predict = False
-                compressed = False
-                if (Path(m["path"]) / "predict_all.parquet").exists():
-                    predict = True
+            r[m["scheme"]][m["name"]] = {
+                "predicted": m["parameters"]["predicted"],
+                "compressed": m["parameters"]["compressed"],
+            }
+            # if no compression, start it
+            if not m["parameters"]["compressed"]:
                 if (self.path / "../../static" / f"{m['name']}.tar.gz").exists():
-                    compressed = True
+                    # update bdd
+                    self.db_manager.set_model_params(
+                        self.project_slug,
+                        m["name"],
+                        "compressed",
+                        True,
+                    )
                 else:
+                    # create a flag
+                    with open(
+                        self.path / "../../static" / f"{m['name']}.tar.gz", "w"
+                    ) as f:
+                        f.write("process started")
+                    # start compression
                     self.start_compression(m["name"])
-                r[m["scheme"]][m["name"]] = {
-                    "predicted": predict,
-                    "compressed": compressed,
-                }
-        return r
 
-    # def trained(self) -> dict:
-    #     """
-    #     Trained bert by scheme in the project
-    #     + if prediction available
-    #     + compression if available / launch it
-    #     """
-    #     print("AVAILABLE", self.available())
-    #     r: dict = {}
-    #     if self.path.exists():  # if bert models have been trained
-    #         all_files = os.listdir(self.path)
-    #         trained = [
-    #             i
-    #             for i in all_files
-    #             if os.path.isdir(self.path / i)
-    #             and (self.path / i / "finished").exists()
-    #         ]
-    #         for i in trained:
-    #             predict = False
-    #             compressed = False
-    #             # test if prediction available
-    #             if (self.path / i / "predict_all.parquet").exists():
-    #                 predict = True
-    #             # test if compression available
-    #             if (self.path / "../../static" / f"{i}.tar.gz").exists():
-    #                 compressed = True
-    #             else:
-    #                 self.start_compression(i)
-    #             scheme = i.split("__")[-2]  # scheme after __
-    #             if scheme not in r:
-    #                 r[scheme] = {}
-    #             r[scheme][i] = {"predicted": predict, "compressed": compressed}
-    #     return r
+            # if Path(m["path"]).exists():
+            #     predict = False
+            #     compressed = False
+            #     if (Path(m["path"]) / "predict_all.parquet").exists():
+            #         predict = True
+            #     if (self.path / "../../static" / f"{m['name']}.tar.gz").exists():
+            #         compressed = True
+            #     else:
+            #         self.start_compression(m["name"])
+            #     r[m["scheme"]][m["name"]] = {
+            #         "predicted": predict,
+            #         "compressed": compressed,
+            #     }
+        return r
 
     def training(self) -> dict:
         """
@@ -454,6 +436,10 @@ class BertModels:
             }
         )
 
+        # add flags in params
+        params["predicted"] = False
+        params["compressed"] = False
+
         # add in database
         if not self.db_manager.add_model(
             kind="bert",
@@ -522,7 +508,7 @@ class BertModels:
                 "unique_id": unique_id,
                 "time": datetime.now(),
                 "kind": "bert",
-                "status": "training",
+                "status": "testing",
             }
         )
 
@@ -562,7 +548,8 @@ class BertModels:
                 "unique_id": unique_id,
                 "time": datetime.now(),
                 "kind": "bert",
-                "status": "training",
+                "dataset": dataset,
+                "status": "predicting",
             }
         )
         return {"success": "bert model predicting"}
@@ -641,16 +628,25 @@ class BertModels:
         return r
 
     def add(self, element):
-        if element["model"].status == "training":
+        if element["status"] == "training":
             # update bdd status
             self.db_manager.change_model_status(
                 self.project_slug, element["model"].name, "trained"
             )
             print("Model trained")
-        if element["model"].status == "testing":
+        if element["status"] == "testing":
             print("Model tested")
-        if element["model"].status == "predicting train":
-            print("Prediction train finished")
+        if element["status"] == "predicting":
+            print("MODEL PREDICTED")
+            # case of global prediction completed
+            if element["dataset"] == "all":
+                self.db_manager.set_model_params(
+                    self.project_slug,
+                    element["model"].name,
+                    flag="predicted",
+                    value=True,
+                )
+            print("Prediction finished")
 
 
 class SimpleModels:
