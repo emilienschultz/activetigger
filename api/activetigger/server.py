@@ -24,7 +24,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import clean_regex
+from activetigger.functions import cat2num, clean_regex
 from activetigger.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
@@ -1124,7 +1124,7 @@ class Project(Server):
                     self.bertmodels.add(e)
                     # case there is a prediction
                     r = self.queue.current[e["unique_id"]]["future"].result()
-                    if r is not None:
+                    if r is not None and not isinstance(r, bool):
                         predictions["predict_" + e["model"].name] = r
                 except Exception as ex:
                     print("Error in model training/predicting", ex)
@@ -1183,4 +1183,17 @@ class Project(Server):
                 self.computing.remove(e)
                 self.queue.delete(e["unique_id"])
 
-        return predictions
+        # if predictions, add them
+        for f in predictions:
+            df_num = cat2num(predictions[f])
+            name = f.replace("__", "_")
+            self.features.add(
+                name=name,
+                kind="prediction",
+                parameters={},
+                username="system",
+                new_content=df_num,
+            )  # avoid __ in the name for features
+            print("Add feature", name)
+
+        return None

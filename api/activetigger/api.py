@@ -20,7 +20,6 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
-from pydantic import ValidationError
 
 import activetigger.functions as functions
 from activetigger.datamodels import (
@@ -155,14 +154,14 @@ async def check_processes(timer, step: int = 1) -> None:
     (i.e. joining parallel processes)
     Limited to once per time interval
     """
-    # max one update alllwoed per step
+    # max one update alllowed per step
     if (time.time() - timer) < step:
         return None
 
     # update last update
     timer = time.time()
 
-    # check the queue to see if process are completed
+    # check the queue to see if it is still running
     server.queue.check()
 
     # update processes for each active projects
@@ -171,26 +170,9 @@ async def check_processes(timer, step: int = 1) -> None:
         # if project existing since one day, remove it from memory
         if (timer - project.starting_time) > 86400:
             to_del.append(p)
+            continue
+        project.update_processes()
 
-        # update pending processes (queue -> server)
-        predictions = project.update_processes()
-
-        # if predictions completed, add them as features
-        # careful : they are categorical variables
-        if len(predictions) > 0:
-            for f in predictions:
-                df_num = functions.cat2num(predictions[f])
-                name = f.replace("__", "_")
-                project.features.add(
-                    name=name,
-                    kind="prediction",
-                    parameters={},
-                    username="system",
-                    new_content=df_num,
-                )  # avoid __ in the name for features
-                print("Add feature", name)
-
-    # delete old project (they will be loaded if needed)
     for p in to_del:
         del server.projects[p]
 

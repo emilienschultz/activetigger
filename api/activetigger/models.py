@@ -346,12 +346,15 @@ class BertModels:
         """
         Delete bert model
         """
-        self.db_manager.delete_model(self.project_slug, bert_name)
+        r = self.db_manager.delete_model(self.project_slug, bert_name)
+        if not r:
+            return {"error": "Problem in model deletion in database"}
         try:
             shutil.rmtree(self.path / bert_name)
             os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
         except Exception as e:
             print(e)
+            return {"error": "Problem in model deletion"}
         return {"success": "Bert model deleted"}
 
     def current_user_processes(self, user: str):

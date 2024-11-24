@@ -811,10 +811,13 @@ class DatabaseManager:
             .filter(Models.name == name, Models.project == project)
             .all()
         )
-        if len(models) > 0:
+        if len(models) == 0:
+            print("Model does not exist")
             return False
         # delete the model
-        session.query(Models).filter(Models.name == name).delete()
+        session.query(Models).filter(
+            Models.name == name, Models.project == project
+        ).delete()
         session.commit()
         session.close()
         return True
