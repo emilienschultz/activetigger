@@ -56,6 +56,8 @@ class Users:
         """
         Delete user auth
         """
+        if username == "root":
+            return {"error": "Can't delete root user auth"}
         self.db_manager.delete_auth(project_slug, username)
         return {"success": "Auth deleted"}
 
@@ -85,7 +87,10 @@ class Users:
         (except root which can't be modified)
         TODO : better rules
         """
-        users = self.db_manager.get_users(username)
+        if username == "root":
+            users = self.db_manager.get_users_created_by("all")
+        else:
+            users = self.db_manager.get_users_created_by(username)
         return users
 
     def add_user(
@@ -109,18 +114,20 @@ class Users:
 
         return {"success": "User added to the database"}
 
-    def delete_user(self, name: str) -> dict:
+    def delete_user(self, user_to_delete: str, username: str) -> dict:
         """
         Deleting user
         """
-        # specific cases
-        if name not in self.existing_users():
-            return {"error": "Username does not exist"}
-        if name == "root":
+        # test specific rights
+        if user_to_delete == "root":
             return {"error": "Can't delete root user"}
+        if user_to_delete not in self.existing_users():
+            return {"error": "Username does not exist"}
+        if user_to_delete not in self.existing_users("root"):
+            return {"error": "You don't have the right to delete this user"}
 
         # delete the user
-        self.db_manager.delete_user(name)
+        self.db_manager.delete_user(user_to_delete)
 
         return {"success": "User deleted"}
 

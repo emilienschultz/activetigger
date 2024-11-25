@@ -219,22 +219,25 @@ async def get_project(project_slug: str) -> ProjectModel:
         return server.projects[project_slug]
 
     # Manage a FIFO queue when there is too many projects
-    if len(server.projects) >= server.max_projects:
-        old_element = sorted(
-            [[p, server.projects[p].starting_time] for p in server.projects],
-            key=lambda x: x[1],
-        )[0]
-        if (
-            old_element[1] < time.time() - 3600
-        ):  # check if the project has a least one hour old to avoid destroying current projects
-            del server.projects[old_element[0]]
-            print(f"Delete project {old_element[0]} to gain memory")
-        else:
-            print("Too many projects in the current memory")
-            raise HTTPException(
-                status_code=500,
-                detail="There is too many projects currently loaded in this server. Please wait",
-            )
+    try:
+        if len(server.projects) >= server.max_projects:
+            old_element = sorted(
+                [[p, server.projects[p].starting_time] for p in server.projects],
+                key=lambda x: x[1],
+            )[0]
+            if (
+                old_element[1] < time.time() - 3600
+            ):  # check if the project has a least one hour old to avoid destroying current projects
+                del server.projects[old_element[0]]
+                print(f"Delete project {old_element[0]} to gain memory")
+            else:
+                print("Too many projects in the current memory")
+                raise HTTPException(
+                    status_code=500,
+                    detail="There is too many projects currently loaded in this server. Please wait",
+                )
+    except Exception as e:
+        print("PROBLEM IN THE FIFO QUEUE", e)
 
     # load the project
     server.start_project(project_slug)
@@ -325,7 +328,7 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> TokenModel:
     """
-    Authentificate user from username/passwordand return token
+    Authentificate user from username/password and return token
     """
     # authentificate the user
     user = server.users.authenticate_user(form_data.username, form_data.password)
@@ -369,8 +372,9 @@ async def existing_users(
     """
     Get existing users
     """
+    users = server.users.existing_users()
     return UsersServerModel(
-        users=server.users.existing_users(),
+        users=users,
         auth=["manager", "annotator"],
     )
 
@@ -406,15 +410,7 @@ async def delete_user(
     """
     # manage rights
     test_rights("modify user", current_user.username)
-    if current_user.username != "root":
-        u = server.users.existing_users(username=current_user.username)
-        if user_to_delete not in u:
-            raise HTTPException(
-                status_code=500,
-                detail="You don't have the right to delete this account",
-            )
-
-    r = server.users.delete_user(user_to_delete)
+    r = server.users.delete_user(user_to_delete, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return None
@@ -427,6 +423,9 @@ async def change_password(
     pwd1: str = Query(),
     pwd2: str = Query(),
 ):
+    """
+    Change password for an account
+    """
     server.users.change_password(current_user.username, pwdold, pwd1, pwd2)
     return None
 
@@ -440,7 +439,7 @@ async def set_auth(
     status: str = Query(None),
 ) -> None:
     """
-    Set user auth
+    Modify user auth on a specific project
     """
     test_rights("modify project", current_user.username, project_slug)
     if action == "add":
@@ -449,19 +448,13 @@ async def set_auth(
         r = server.users.set_auth(username, project_slug, status)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        # log action
         server.log_action(current_user.username, f"INFO add user {username}", "all")
-
         return None
 
     if action == "delete":
-        # prevent to destroy root auth to access projects
-        if username == "root":
-            raise HTTPException(status_code=403, detail="Forbidden to delete root auth")
         r = server.users.delete_auth(username, project_slug)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        # log action
         server.log_action(current_user.username, f"INFO delete user {username}", "all")
         return None
 
@@ -483,7 +476,7 @@ async def get_logs(
     """
     Get all logs for a username/project
     """
-    df = server.get_logs(username, project_slug, limit)
+    df = server.get_logs(project_slug, limit)
     return TableOutModel(
         items=df.to_dict(orient="records"),
         total=limit,
@@ -552,7 +545,7 @@ async def get_queue() -> dict:
 @app.get("/queue/num")
 async def get_nb_queue() -> int:
     """
-    Get the number of element active in the queue
+    Get the number of element active in the server queue
     """
     return server.queue.get_nb_active_processes()
 
@@ -577,17 +570,15 @@ async def add_testdata(
     testset: TestSetDataModel,
 ) -> None:
     """
-    Add a dataset for test
+    Add a dataset for test when there is none available
     """
     r = project.add_testdata(testset)
 
     # log action
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-
     # if success, update also parameters of the project
     server.set_project_parameters(project.params, current_user.username)
-
     # log action
     server.log_action(current_user.username, "INFO add testdata project", project.name)
 
@@ -604,12 +595,6 @@ async def new_project(
     """
     # test rights to create project
     test_rights("create project", current_user.username)
-
-    # test if project_slug already exists
-    if server.exists(project.project_name):
-        raise HTTPException(
-            status_code=500, detail="Project name already exists (exact or slugified)"
-        )
 
     # create the project
     r = server.create_project(project, current_user.username)
@@ -641,7 +626,6 @@ async def delete_project(
     r = server.delete_project(project_slug)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    del server.projects[project_slug]
     server.log_action(current_user.username, "INFO delete project", project_slug)
     return None
 

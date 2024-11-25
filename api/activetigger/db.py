@@ -477,9 +477,12 @@ class DatabaseManager:
         session.close()
         return [[row[0], row[1]] for row in result]
 
-    def get_users(self, username: str):
+    def get_users_created_by(self, username: str):
+        """
+        get users created by *username*
+        """
         session = self.Session()
-        if username == "root":
+        if username == "all":
             result = session.query(Users.user, Users.contact).distinct().all()
         else:
             result = (

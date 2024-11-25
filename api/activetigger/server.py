@@ -156,7 +156,7 @@ class Server:
         logger.info(f"{action} from {user} in project {project}")
 
     def get_logs(
-        self, username: str, project_slug: str, limit: int, partial: bool = True
+        self, project_slug: str, limit: int, partial: bool = True
     ) -> pd.DataFrame:
         """
         Get logs for a user/project
@@ -501,6 +501,10 @@ class Server:
 
         # clean database
         self.db_manager.delete_project(project_slug)
+
+        # clean memory
+        del self.projects[project_slug]
+
         return {"success": "Project deleted"}
 
 
