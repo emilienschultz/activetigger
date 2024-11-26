@@ -659,14 +659,11 @@ async def get_next(
 async def get_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str | None,
+    scheme: str,
 ) -> ProjectionOutModel | None:
     """
     Get projection data if computed
     """
-
-    if scheme is None:
-        raise HTTPException(status_code=400, detail="Please specify a scheme")
 
     # check if a projection is available
     if current_user.username not in project.projections.available:
@@ -676,11 +673,10 @@ async def get_projection(
     if "data" not in project.projections.available[current_user.username]:
         return None
 
-    # add existing annotations in the data
+    # create the data from projection and current scheme
     data = project.projections.available[current_user.username]["data"]
     df = project.schemes.get_scheme_data(scheme, complete=True)
     data["labels"] = df["labels"]
-    # data["texts"] = df["text"]
     data = data.fillna("NA")
 
     return ProjectionOutModel(
@@ -691,6 +687,9 @@ async def get_projection(
         # texts=list(data["texts"]),
         status=project.projections.available[current_user.username]["id"],
     )
+
+
+# CONTINUE REFACTOR FROM HERE
 
 
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
