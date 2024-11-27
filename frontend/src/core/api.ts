@@ -175,8 +175,10 @@ export function useCreateProject() {
         // POST has a body
         body: project,
       });
-      if (!res.error) notify({ type: 'success', message: 'Project created' });
-      else
+      if (!res.error) {
+        notify({ type: 'success', message: 'Project created' });
+        return res['data'];
+      } else
         throw new Error(
           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
         );

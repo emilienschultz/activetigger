@@ -104,16 +104,19 @@ export const ProjectCreationForm: FC = () => {
         return;
       }
       setSpinner(true);
-      console.log('ENVOI');
       try {
         // ERROR : problème avec gros parquet unparse marche pas
         //const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
         const csv = stringify(data.data, { header: true, columns: data.headers });
         console.log('data parsing done');
         try {
-          await createProject({ ...omit(formData, 'files'), csv, filename: data.filename });
+          const slug = await createProject({
+            ...omit(formData, 'files'),
+            csv,
+            filename: data.filename,
+          });
           setSpinner(false);
-          navigate(`/projects/`);
+          navigate(`/projects/${slug}`);
         } catch (error) {
           setSpinner(false);
         }
@@ -130,7 +133,8 @@ export const ProjectCreationForm: FC = () => {
           Create a new project.
           <ul>
             <li>
-              Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo)
+              Upload a file in tabular format (csv (; or tab), xlsx or parquet, size limit{' '}
+              {maxSizeMo} Mo)
             </li>
             <li>Indicate the columns for id, text</li>
             <li>

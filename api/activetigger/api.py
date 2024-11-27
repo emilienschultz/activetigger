@@ -589,7 +589,7 @@ async def add_testdata(
 async def new_project(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: ProjectDataModel,
-) -> None:
+) -> str:
     """
     Load new project
     """
@@ -608,7 +608,7 @@ async def new_project(
         current_user.username, "INFO create project", project.project_name
     )
 
-    return None
+    return r["success"]
 
 
 @app.post(

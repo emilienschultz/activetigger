@@ -55,9 +55,7 @@ export async function loadCSVFile(file: File): Promise<DataType> {
         // detect if this is coma or tab separated value
         const line = csvContent.split('\n')[0];
         const tabCount = (line.match(/\t/g) || []).length;
-        console.log(line);
-        console.log(tabCount);
-        const separator = tabCount > 3 ? '\t' : ',';
+        const separator = tabCount > 3 ? '\t' : ';';
 
         Papa.parse<Record<string, string>>(csvContent, {
           header: true,

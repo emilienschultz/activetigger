@@ -483,7 +483,7 @@ class Server:
         # clean
         os.remove(params.dir / "data_raw.csv")
 
-        return {"success": "Project created"}
+        return {"success": project_slug}
 
     def delete_project(self, project_slug: str) -> dict:
         """

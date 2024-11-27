@@ -151,6 +151,14 @@ export const ProjectPage: FC = () => {
                       <td>{project.params.language}</td>
                     </tr>
                     <tr>
+                      <td>Columns text</td>
+                      <td>{project.params.cols_text}</td>
+                    </tr>
+                    <tr>
+                      <td>Column id</td>
+                      <td>{project.params.col_id}</td>
+                    </tr>
+                    <tr>
                       <td>Colums context</td>
                       <td>{JSON.stringify(project.params.cols_context)}</td>
                     </tr>
