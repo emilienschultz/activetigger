@@ -1,6 +1,5 @@
 import { FC } from 'react';
 import { Link } from 'react-router-dom';
-
 import logo from '../assets/at.png';
 import { useAuth } from '../core/auth';
 import { LoginForm } from './forms/LoginForm';
@@ -51,7 +50,9 @@ export const HomePage: FC = () => {
               )}
 
               <div className="general-info mt-3">
-                <div>Frontend v0.8</div>
+                <div>
+                  Last update of the frontend<b> {__BUILD_DATE__}</b>
+                </div>
                 <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
                 <div className="text-muted">
                   Credits : Julien Boelaert & Étienne Ollion & Émilien Schultz & Ouestware
