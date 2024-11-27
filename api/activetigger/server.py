@@ -296,8 +296,8 @@ class Server:
         # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
             return {"error": "Probleme with the id column: empty name"}
-        if params.col_text is None or params.col_text == "":
-            return {"error": "Probleme with the text column: empty name"}
+        if params.cols_text is None or len(params.cols_text) == 0:
+            return {"error": "There is no column selected for the text"}
 
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
@@ -315,13 +315,14 @@ class Server:
         # Step 1 : load all data and index to str and rename columns
         content = pd.read_csv(params.dir / "data_raw.csv", dtype=str)
 
-        # rename columns
-        # content.columns = ["dataset_" + i for i in content.columns]
+        # rename columns both for data & params to avoid confusion
+        content.columns = ["dataset_" + i for i in content.columns]
+        params.col_id = "dataset_" + params.col_id if params.col_id else None
+        params.cols_text = ["dataset_" + i for i in params.cols_text if i]
+        params.cols_context = ["dataset_" + i for i in params.cols_context if i]
+        params.col_label = "dataset_" + params.col_label if params.col_label else None
+        params.cols_test = ["dataset_" + i for i in params.cols_test if i]
 
-        # quick fix to avoid problem with pandas index saved in parquet
-        content = content.drop(
-            columns=[i for i in content.columns if "__index_level" in i]
-        )
         # remove empty lines
         content = content.dropna(how="all")
         all_columns = list(content.columns)
@@ -336,7 +337,7 @@ class Server:
 
         # create the index
         # case of the index should be the row number
-        if params.col_id == "row_number":
+        if params.col_id == "dataset_row_number":
             print("Use the row number as index")
             content["id"] = [str(i) for i in range(len(content))]
             content.set_index("id", inplace=True)
@@ -349,19 +350,13 @@ class Server:
             ):
                 shutil.rmtree(params.dir)
                 return {"error": "The column selected for index has not unique values."}
-            if "id" in content.columns:
-                content["id_raw"] = content["id"]  # copy the column id to not erase it
-                # TODO : take into account the fact that id column can exist
             content["id"] = content[params.col_id].astype(str).apply(slugify)
             content.set_index("id", inplace=True)
 
         # create the text column, merging the different columns
-        if isinstance(params.col_text, list):
-            content["text"] = content[params.col_text].apply(
-                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
-            )
-        else:
-            content["text"] = content[params.col_text]
+        content["text"] = content[params.cols_text].apply(
+            lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
+        )
 
         # drop NA texts
         n_before = len(content)

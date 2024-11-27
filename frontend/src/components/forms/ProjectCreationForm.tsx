@@ -99,7 +99,7 @@ export const ProjectCreationForm: FC = () => {
         notify({ type: 'error', message: 'Please select a id column' });
         return;
       }
-      if (!formData.col_text) {
+      if (!formData.cols_text) {
         notify({ type: 'error', message: 'Please select a text column' });
         return;
       }
@@ -207,12 +207,12 @@ export const ProjectCreationForm: FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="form-label" htmlFor="col_text">
-                    Text column (all the selected fields will be concatenated)
+                  <label className="form-label" htmlFor="cols_text">
+                    Text columns (all the selected fields will be concatenated)
                   </label>
 
                   <Controller
-                    name="col_text"
+                    name="cols_text"
                     control={control}
                     render={({ field: { onChange } }) => (
                       <Select

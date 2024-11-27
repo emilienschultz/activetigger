@@ -12,9 +12,9 @@ class BaseProjectModel(BaseModel):
     Parameters of a project to save in the database
     """
 
+    cols_text: List[str]
     project_name: str
     filename: str
-    col_text: str | List[str]
     col_id: str
     n_train: int
     n_test: int

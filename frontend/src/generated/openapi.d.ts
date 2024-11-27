@@ -57,7 +57,7 @@ export interface paths {
         put?: never;
         /**
          * Login For Access Token
-         * @description Authentificate user from username/passwordand return token
+         * @description Authentificate user from username/password and return token
          */
         post: operations["login_for_access_token_token_post"];
         delete?: never;
@@ -177,7 +177,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Change Password */
+        /**
+         * Change Password
+         * @description Change password for an account
+         */
         post: operations["change_password_users_changepwd_post"];
         delete?: never;
         options?: never;
@@ -196,7 +199,7 @@ export interface paths {
         put?: never;
         /**
          * Set Auth
-         * @description Set user auth
+         * @description Modify user auth on a specific project
          */
         post: operations["set_auth_users_auth__action__post"];
         delete?: never;
@@ -335,7 +338,7 @@ export interface paths {
         };
         /**
          * Get Nb Queue
-         * @description Get the number of element active in the queue
+         * @description Get the number of element active in the server queue
          */
         get: operations["get_nb_queue_queue_num_get"];
         put?: never;
@@ -377,7 +380,7 @@ export interface paths {
         put?: never;
         /**
          * Add Testdata
-         * @description Add a dataset for test
+         * @description Add a dataset for test when there is none available
          */
         post: operations["add_testdata_projects_testset_post"];
         delete?: never;
@@ -1326,12 +1329,12 @@ export interface components {
          * @description To create a new project
          */
         ProjectDataModel: {
+            /** Cols Text */
+            cols_text: string[];
             /** Project Name */
             project_name: string;
             /** Filename */
             filename: string;
-            /** Col Text */
-            col_text: string | string[];
             /** Col Id */
             col_id: string;
             /** N Train */
@@ -1414,12 +1417,12 @@ export interface components {
          * @description Once created
          */
         ProjectModel: {
+            /** Cols Text */
+            cols_text: string[];
             /** Project Name */
             project_name: string;
             /** Filename */
             filename: string;
-            /** Col Text */
-            col_text: string | string[];
             /** Col Id */
             col_id: string;
             /** N Train */
@@ -1538,8 +1541,6 @@ export interface components {
             y: unknown[];
             /** Labels */
             labels: unknown[];
-            /** Texts */
-            texts: unknown[];
         };
         /**
          * ReconciliationModel
@@ -2373,7 +2374,7 @@ export interface operations {
     get_projection_elements_projection_get: {
         parameters: {
             query: {
-                scheme: string | null;
+                scheme: string;
                 project_slug: string;
             };
             header?: never;
