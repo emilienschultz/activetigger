@@ -395,11 +395,12 @@ class DatabaseManager:
             time_threshold = datetime.datetime.now() - datetime.timedelta(
                 seconds=timespan
             )
+            print(time_threshold, time_threshold.timestamp())
             users = (
                 session.query(Annotations.user)
                 .filter(
                     Annotations.project == project_slug,
-                    Annotations.time > time_threshold.timestamp(),
+                    Annotations.time > time_threshold,
                 )
                 .distinct()
                 .all()
@@ -411,6 +412,15 @@ class DatabaseManager:
                 .distinct()
                 .all()
             )
+        session.close()
+        return [u.user for u in users]
+
+    def get_current_users(self, timespan: int = 600):
+        session = self.Session()
+        time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
+        users = (
+            session.query(Logs.user).filter(Logs.time > time_threshold).distinct().all()
+        )
         session.close()
         return [u.user for u in users]
 

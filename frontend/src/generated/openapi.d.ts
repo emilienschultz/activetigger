@@ -126,6 +126,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Users
+         * @description Get recently connected users
+         */
+        get: operations["recent_users_users_recent_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/create": {
         parameters: {
             query?: never;
@@ -1885,6 +1905,26 @@ export interface operations {
             };
         };
     };
+    recent_users_users_recent_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
     create_user_users_create_post: {
         parameters: {
             query: {
@@ -2291,7 +2331,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": string;
                 };
             };
             /** @description Validation Error */

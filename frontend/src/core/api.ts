@@ -1571,3 +1571,21 @@ export function useChangePassword() {
 
   return { changePassword };
 }
+
+export function useGetActiveUsers() {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getActiveUsers = useAsyncMemo(async () => {
+    const res = await api.GET('/users/recent', {});
+
+    //return res.data.params;
+    return res.data;
+
+    // in this dependencies list we add projectSlug has a different API call will be made if it changes
+    // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
+}

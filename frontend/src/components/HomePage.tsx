@@ -1,12 +1,14 @@
 import { FC } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/at.png';
+import { useGetActiveUsers } from '../core/api';
 import { useAuth } from '../core/auth';
 import { LoginForm } from './forms/LoginForm';
 import Notifications from './layout/Notifications';
 
 export const HomePage: FC = () => {
   const { authenticatedUser } = useAuth();
+  const { users } = useGetActiveUsers();
   return (
     <>
       <main className="container-fluid">
@@ -45,7 +47,8 @@ export const HomePage: FC = () => {
                     className="btn btn-primary btn-lg shadow-sm rounded-pill m-3"
                   >
                     Go to your projects
-                  </Link>
+                  </Link>{' '}
+                  <div className="explanations">Active users : {users?.length}</div>
                 </div>
               )}
 

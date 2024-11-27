@@ -48,8 +48,6 @@ from activetigger.datamodels import (
     TableOutModel,
     TestSetDataModel,
     TokenModel,
-    TsneModel,
-    UmapModel,
     UserInDBModel,
     UserModel,
     UsersServerModel,
@@ -377,6 +375,15 @@ async def existing_users(
         users=users,
         auth=["manager", "annotator"],
     )
+
+
+@app.get("/users/recent")
+async def recent_users() -> List[str]:
+    """
+    Get recently connected users
+    """
+    users = server.db_manager.get_current_users(300)
+    return users
 
 
 @app.post("/users/create", dependencies=[Depends(verified_user)])
