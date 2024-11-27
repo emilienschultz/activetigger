@@ -312,14 +312,12 @@ class Server:
         with open(params.dir / "data_raw.csv", "w") as f:
             f.write(params.csv)
 
-        # TODO : maximise the aleardy tagged in the annotate dataset, and None in the test
-        # if possible, annotated data in the annotation dataset
-        # if possible, test data without annotation
-        # if n_test = 0, no test set
-        # stratified if possible by cols_test
-
-        # Step 1 : load all data and index to str and rename
+        # Step 1 : load all data and index to str and rename columns
         content = pd.read_csv(params.dir / "data_raw.csv", dtype=str)
+
+        # rename columns
+        # content.columns = ["dataset_" + i for i in content.columns]
+
         # quick fix to avoid problem with pandas index saved in parquet
         content = content.drop(
             columns=[i for i in content.columns if "__index_level" in i]
@@ -336,21 +334,26 @@ class Server:
                 "error": f"Not enough data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
             }
 
-        # check if index after slugify is unique otherwise FORCE the index from 0 to N
-        if not (
-            (content[params.col_id].astype(str).apply(slugify)).nunique()
-            == len(content)
-        ):
-            print("There are duplicate in the column selected for index")
-            content["id"] = range(0, len(content))
-            params.col_id = "id"
-
-        # rename the index col, transform it in str, and set it as index
-        if "id" in content.columns:
-            content["id_raw"] = content["id"]  # copy the column id to not erase it
-            # TODO : take into account the fact that id column can exist
-        content["id"] = content[params.col_id].astype(str).apply(slugify)
-        content.set_index("id", inplace=True)
+        # create the index
+        # case of the index should be the row number
+        if params.col_id == "row_number":
+            print("Use the row number as index")
+            content["id"] = [str(i) for i in range(len(content))]
+            content.set_index("id", inplace=True)
+        # case of a column as index
+        else:
+            # check if index after slugify is unique otherwise throw an error
+            if not (
+                (content[params.col_id].astype(str).apply(slugify)).nunique()
+                == len(content)
+            ):
+                shutil.rmtree(params.dir)
+                return {"error": "The column selected for index has not unique values."}
+            if "id" in content.columns:
+                content["id_raw"] = content["id"]  # copy the column id to not erase it
+                # TODO : take into account the fact that id column can exist
+            content["id"] = content[params.col_id].astype(str).apply(slugify)
+            content.set_index("id", inplace=True)
 
         # create the text column, merging the different columns
         if isinstance(params.col_text, list):

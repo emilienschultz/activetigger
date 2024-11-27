@@ -200,6 +200,9 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('col_id')}
                   >
+                    <option key="row_number" value="row_number">
+                      Row number
+                    </option>
                     {columns}
                   </select>
                 </div>
