@@ -208,6 +208,7 @@ export const ProjectPreparePage: FC = () => {
                     <button className="btn btn-primary btn-validation">Create</button>
                   </form>
                 </Tab>
+                <Tab eventKey="codebook" title="Codebook"></Tab>
               </Tabs>
             </div>
           </div>

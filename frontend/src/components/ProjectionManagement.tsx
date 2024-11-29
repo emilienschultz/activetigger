@@ -67,6 +67,17 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     currentScheme,
   );
 
+  const projectionDataFormated = projectionData
+    ? projectionData.x.map((value, index) => {
+        return {
+          x: value,
+          y: projectionData.y[index],
+          labels: projectionData.labels[index],
+          index: projectionData.index[index],
+        };
+      })
+    : [];
+
   // form management
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableProjections = project?.projections.options ? project?.projections.options : null;
@@ -271,6 +282,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
                           : labelColorMapping[datum.labels],
                       opacity: ({ datum }) => (datum.index === currentElementId ? 1 : 0.5),
                       cursor: 'pointer',
+                      strokeWidth: 0,
                     },
                   }}
                   size={({ datum }) => (datum.index === currentElementId ? 5 : 2)}
@@ -278,15 +290,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
                   labelComponent={
                     <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />
                   }
-                  data={projectionData.x.map((value, index) => {
-                    return {
-                      x: value,
-                      y: projectionData.y[index],
-                      labels: projectionData.labels[index],
-                      //texts: projectionData.texts[index],
-                      index: projectionData.index[index],
-                    };
-                  })}
+                  data={projectionDataFormated}
                   events={[
                     {
                       target: 'data',
@@ -296,16 +300,16 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
                           getElementById(datum.index, 'train').then((element) => {
                             setSelectedElement(element || null);
                           });
-                          //navigate(`/projects/${projectName}/annotate/${datum.index}`);
                         },
                       },
                     },
                   ]}
+                  animate={false}
                 />
 
                 <VictoryLegend
                   x={0}
-                  y={0}
+                  y={60}
                   title="Legend"
                   centerTitle
                   orientation="vertical"

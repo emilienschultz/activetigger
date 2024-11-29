@@ -250,7 +250,7 @@ def compute_umap(features: DataFrame, params: dict, **kwargs):
     try:
         reducer = cuml.UMAP(**params)
         print("Using cuML for UMAP computation")
-    except ImportError:
+    except Exception as e:
         reducer = umap.UMAP(**params)
         print("Using standard UMAP for computation")
 
