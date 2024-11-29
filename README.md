@@ -103,6 +103,10 @@ You can deploy the app with Github Pages for tests
 
 🚧 to write 🚧
 
+## Funding
+
+The development of Active Tigger is supported by : [DRARI Île-de-France](https://www.enseignementsup-recherche.gouv.fr/fr/drari-ile-de-france) [ECODEC](https://labex-ecodec.ensae.fr/) [Progedo](https://www.progedo.fr/)
+
 ## How to cite
 
 🚧 to write 🚧
