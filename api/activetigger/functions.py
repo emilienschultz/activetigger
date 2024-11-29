@@ -243,7 +243,6 @@ def to_sbert(
 def compute_umap(features: DataFrame, params: dict, **kwargs):
     """
     Compute UMAP projection
-    TODO : test the cuml implementation UMAP with GPU
     """
     scaled_features = StandardScaler().fit_transform(features)
 

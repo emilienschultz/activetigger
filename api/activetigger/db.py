@@ -395,7 +395,6 @@ class DatabaseManager:
             time_threshold = datetime.datetime.now() - datetime.timedelta(
                 seconds=timespan
             )
-            print(time_threshold, time_threshold.timestamp())
             users = (
                 session.query(Annotations.user)
                 .filter(
