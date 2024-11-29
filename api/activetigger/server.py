@@ -423,7 +423,7 @@ class Server:
 
         # if the case, add existing annotations in the database
         if params.col_label is None:
-            self.db_manager.add_scheme(project_slug, "default", json.dumps([]), "file")
+            self.db_manager.add_scheme(project_slug, "default", [], "file")
         else:
             # check there is a limited number of labels
 
@@ -435,7 +435,7 @@ class Server:
 
                 # add the scheme in the database
                 self.db_manager.add_scheme(
-                    project_slug, "default", json.dumps(params.default_scheme), "file"
+                    project_slug, "default", list(params.default_scheme), "file"
                 )
 
                 # add the labels from the trainset in the database

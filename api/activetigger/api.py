@@ -28,6 +28,7 @@ from activetigger.datamodels import (
     AuthActions,
     AvailableProjectsModel,
     BertModelModel,
+    CodebookModel,
     DocumentationModel,
     ElementOutModel,
     FeatureModel,
@@ -1155,6 +1156,42 @@ async def post_schemes(
         )
         return None
     raise HTTPException(status_code=400, detail="Wrong route")
+
+
+@app.post("/codebook", dependencies=[Depends(verified_user)])
+async def post_codebook(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project: Annotated[Project, Depends(get_project)],
+    codebook: CodebookModel,
+) -> None:
+    """
+    Add codebook
+    """
+    test_rights("modify project element", current_user.username, project.name)
+
+    r = project.schemes.add_codebook(codebook.name, codebook.tags)
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
+    server.log_action(
+        current_user.username,
+        f"MODIFY CODEBOOK: codebook {codebook.name}",
+        project.name,
+    )
+    return None
+
+
+@app.get("/codebook", dependencies=[Depends(verified_user)])
+async def get_codebook(
+    project: Annotated[Project, Depends(get_project)],
+    scheme: str,
+) -> List[str]:
+    """
+    Get the codebook of a scheme for a project
+    """
+    r = project.schemes.get_codebook(scheme)
+    if "error" in r:
+        raise HTTPException(status_code=500, detail=r["error"])
+    return r
 
 
 # Features management

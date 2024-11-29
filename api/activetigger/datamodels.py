@@ -489,3 +489,8 @@ class TableBatch(BaseModel):
     min: int
     max: int
     filter: str
+
+
+class CodebookModel(BaseModel):
+    content: str
+    scheme: str

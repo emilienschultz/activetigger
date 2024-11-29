@@ -311,7 +311,8 @@ class DatabaseManager:
         session.commit()
         session.close()
 
-    def add_scheme(self, project_slug: str, name: str, params: dict, username: str):
+    def add_scheme(self, project_slug: str, name: str, labels: list, username: str):
+        params = json.dumps({"labels": labels, "codebook": None})
         session = self.Session()
         scheme = Schemes(
             project=project_slug,
@@ -325,12 +326,17 @@ class DatabaseManager:
         session.commit()
         session.close()
 
-    def update_scheme(self, project_slug: str, name: str, params: str):
+    def update_scheme_labels(self, project_slug: str, name: str, labels: list):
+        """
+        Update the labels in the database
+        """
         session = self.Session()
         scheme = (
             session.query(Schemes).filter_by(project=project_slug, name=name).first()
         )
-        scheme.params = params
+        params = json.loads(scheme.params)
+        params["labels"] = labels
+        scheme.params = json.dumps(params)
         scheme.time_modified = datetime.datetime.now()
         session.commit()
         session.close()
@@ -654,7 +660,14 @@ class DatabaseManager:
             .all()
         )
         session.close()
-        return [[s.name, s.params] for s in schemes]
+        return [
+            {
+                "name": s.name,
+                "labels": json.loads(s.params)["labels"],
+                "codebook": json.loads(s.params)["codebook"],
+            }
+            for s in schemes
+        ]
 
     def delete_scheme(self, project_slug: str, name: str):
         session = self.Session()

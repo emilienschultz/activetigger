@@ -252,7 +252,7 @@ class Schemes:
         if self.exists(name):
             return {"error": "scheme name already exists"}
 
-        self.db_manager.add_scheme(self.project_slug, name, json.dumps(labels), None)
+        self.db_manager.add_scheme(self.project_slug, name, labels, None)
 
         return {"success": "scheme created"}
 
@@ -319,7 +319,7 @@ class Schemes:
         """
         Update existing schemes from database
         """
-        self.db_manager.update_scheme(self.project_slug, scheme, json.dumps(labels))
+        self.db_manager.update_scheme_labels(self.project_slug, scheme, labels)
         return {"success": "scheme updated"}
 
     def delete_scheme(self, name) -> dict:
@@ -342,7 +342,7 @@ class Schemes:
         Available schemes {scheme:[labels]}
         """
         r = self.db_manager.available_schemes(self.project_slug)
-        return {i[0]: json.loads(i[1]) for i in r}
+        return {i["name"]: i["labels"] for i in r}
 
     def get(self) -> dict:
         """
