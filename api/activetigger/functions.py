@@ -7,6 +7,16 @@ from pathlib import Path
 from typing import Optional
 
 import bcrypt
+
+# accelerate UMAP
+try:
+    import cuml
+
+    CUMl_AVAILABLE = True
+except ImportError:
+    print("CuML not installed")
+    CUMl_AVAILABLE = False
+
 import datasets
 import fasttext
 import numpy as np
@@ -236,7 +246,15 @@ def compute_umap(features: DataFrame, params: dict, **kwargs):
     TODO : test the cuml implementation UMAP with GPU
     """
     scaled_features = StandardScaler().fit_transform(features)
-    reducer = umap.UMAP(**params)
+
+    # Check if cuML is available for GPU acceleration
+    try:
+        reducer = cuml.UMAP(**params)
+        print("Using cuML for UMAP computation")
+    except ImportError:
+        reducer = umap.UMAP(**params)
+        print("Using standard UMAP for computation")
+
     reduced_features = reducer.fit_transform(scaled_features)
     df = pd.DataFrame(reduced_features, index=features.index)
     df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1

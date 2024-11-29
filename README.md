@@ -52,6 +52,14 @@ You can also install the last stable version of the API from PyPi with
 pip install activetigger
 ```
 
+#### Optional: Install GPU Support for UMAP
+
+To enable GPU support, install Rapids Cuml. For instance, for CUDA 12
+
+```bash
+pip install --extra-index-url=https://pypi.nvidia.com "cuml-cu12==24.10.*"
+```
+
 ### Install the React frontend
 
 The frontend is written in React/Typescript. To run the dev version and to build the app, you need first to install node.js and npm (version > 20).
