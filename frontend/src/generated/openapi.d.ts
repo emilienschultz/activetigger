@@ -723,6 +723,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schemes/codebook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Codebook
+         * @description Get the codebook of a scheme for a project
+         */
+        get: operations["get_codebook_schemes_codebook_get"];
+        put?: never;
+        /**
+         * Post Codebook
+         * @description Add codebook
+         */
+        post: operations["post_codebook_schemes_codebook_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schemes/{action}": {
         parameters: {
             query?: never;
@@ -1221,6 +1245,13 @@ export interface components {
             client_id?: string | null;
             /** Client Secret */
             client_secret?: string | null;
+        };
+        /** CodebookModel */
+        CodebookModel: {
+            /** Content */
+            content: string;
+            /** Scheme */
+            scheme: string;
         };
         /**
          * DocumentationModel
@@ -2835,6 +2866,73 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_codebook_schemes_codebook_get: {
+        parameters: {
+            query: {
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_codebook_schemes_codebook_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodebookModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

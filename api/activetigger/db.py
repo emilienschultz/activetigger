@@ -341,6 +341,37 @@ class DatabaseManager:
         session.commit()
         session.close()
 
+    def update_scheme_codebook(self, project_slug: str, scheme: str, codebook: str):
+        """
+        Update the codebook in the database
+        """
+        print("update_scheme_codebook", project_slug, scheme, codebook)
+        session = self.Session()
+        scheme = (
+            session.query(Schemes).filter_by(project=project_slug, name=scheme).first()
+        )
+        try:
+            params = json.loads(scheme.params)
+            params["codebook"] = codebook
+            scheme.params = json.dumps(params)
+            scheme.time_modified = datetime.datetime.now()
+            session.commit()
+            session.close()
+            return True
+        except:
+            return None
+
+    def get_scheme_codebook(self, project_slug: str, name: str):
+        session = self.Session()
+        scheme = (
+            session.query(Schemes).filter_by(project=project_slug, name=name).first()
+        )
+        session.close()
+        try:
+            return json.loads(scheme.params)["codebook"]
+        except:
+            return None
+
     def delete_project(self, project_slug: str):
         session = self.Session()
         session.query(Projects).filter(Projects.project_slug == project_slug).delete()

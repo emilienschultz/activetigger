@@ -1589,3 +1589,53 @@ export function useGetActiveUsers() {
 
   return { users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
 }
+
+export function useGetSchemeCodebook(project_slug: string | null, scheme: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getCodebook = useAsyncMemo(async () => {
+    if (project_slug && scheme) {
+      const res = await api.GET('/schemes/codebook', {
+        params: {
+          query: {
+            project_slug: project_slug,
+            scheme: scheme,
+          },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [scheme, fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { codebook: getAsyncMemoData(getCodebook), reFetchCodebook: reFetch };
+}
+
+export function usePostSchemeCodebook(project_slug: string | null, scheme: string | null) {
+  const { notify } = useNotifications();
+  const postCodebook = useCallback(
+    async (codebook: string) => {
+      if (project_slug && scheme) {
+        const res = await api.POST('/schemes/codebook', {
+          params: {
+            query: {
+              project_slug: project_slug,
+            },
+          },
+          body: {
+            scheme: scheme,
+            content: codebook,
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Codebook updated' });
+        return true;
+      }
+      return null;
+    },
+    [project_slug, scheme, notify],
+  );
+
+  return { postCodebook };
+}

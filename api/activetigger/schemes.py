@@ -432,3 +432,21 @@ class Schemes:
         """
         results = self.db_manager.get_coding_users(scheme, self.project_slug)
         return results
+
+    def add_codebook(self, scheme: str, codebook: dict):
+        """
+        Add codebook
+        """
+        r = self.db_manager.update_scheme_codebook(self.project_slug, scheme, codebook)
+        if not r:
+            return {"error": "codebook not added"}
+        return {"success": "codebook added"}
+
+    def get_codebook(self, scheme: str):
+        """
+        Get codebook
+        """
+        r = self.db_manager.get_scheme_codebook(self.project_slug, scheme)
+        if not r:
+            return {"error": "codebook not found"}
+        return {"success": r}
