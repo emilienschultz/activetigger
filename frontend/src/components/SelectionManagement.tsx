@@ -1,4 +1,5 @@
 import { ChangeEvent, FC, useEffect, useMemo } from 'react';
+import { FcStatistics } from 'react-icons/fc';
 import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -133,35 +134,48 @@ export const SelectionManagement: FC = () => {
           />
         </div>
       </div>
-      <div className="d-flex align-items-center">
+      <div className="d-flex align-items-top">
         <details className="mx-2">
           <summary className="explanations">
-            Active selection : {currentModel ? currentModel['model'] : 'No model trained'}
+            Active model <FcStatistics />{' '}
+            <span className="badge bg-light text-dark">
+              {currentModel ? currentModel['model'] : 'No model trained'}
+            </span>
           </summary>
           {currentModel && (
             <div>
-              Model parameters :
-              <ul>
+              <table className="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>Model parameters</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 {currentModel.params &&
                   (currentModel.params && Object.entries(currentModel.params)).map(
                     ([key, value], i) => (
-                      <li key={i}>
-                        {key} - {value}
-                      </li>
+                      <tr key={i}>
+                        <td>{key}</td>
+                        <td>{value}</td>
+                      </tr>
                     ),
                   )}
-              </ul>
-              Statistics:
-              <ul>
+                <thead>
+                  <tr>
+                    <th>Indicators</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 {currentModel.params &&
                   (currentModel.statistics && Object.entries(currentModel.statistics)).map(
                     ([key, value], i) => (
-                      <li key={i}>
-                        {key} - {JSON.stringify(value)}
-                      </li>
+                      <tr key={i}>
+                        <td>{key}</td>
+                        <td> {JSON.stringify(value)}</td>
+                      </tr>
                     ),
                   )}
-              </ul>
+              </table>
             </div>
           )}
         </details>
