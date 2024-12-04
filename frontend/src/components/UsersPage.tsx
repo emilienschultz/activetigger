@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
+import Select from 'react-select';
 import {
   useAddUserAuthProject,
   useCreateUser,
@@ -45,6 +46,13 @@ export const UsersPage: FC = () => {
     reset();
   };
 
+  const userOptions = users
+    ? Object.keys(users).map((userKey) => ({
+        value: userKey,
+        label: userKey,
+      }))
+    : [];
+
   console.log(users);
 
   return (
@@ -61,17 +69,16 @@ export const UsersPage: FC = () => {
             </div>
 
             <div className="d-flex align-items-center">
-              <select
+              <Select
                 id="select-user"
                 className="form-select"
-                onChange={(e) => {
-                  setCurrentUser(e.target.value);
+                options={userOptions}
+                onChange={(selectedOption) => {
+                  setCurrentUser(selectedOption ? selectedOption.value : null);
                 }}
-              >
-                <option></option>
-
-                {users && Object.keys(users).map((e) => <option key={e}>{e}</option>)}
-              </select>
+                isClearable
+                placeholder="Select a user"
+              />
               <button
                 className="btn btn p-0"
                 onClick={() => {

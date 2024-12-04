@@ -17,20 +17,19 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
 
   const { codebook } = useGetSchemeCodebook(projectName || null, currentScheme || null);
   const [modifiedCodebook, setModifiedCodebook] = useState<string | undefined>(undefined);
-  // const [previousCodebook, setPreviousCodebook] = useState<string | undefined>(undefined);
-  // const [hasChanged, setHasChanged] = useState<boolean>(false);
 
   // update the text zone once (if undefined)
   useEffect(() => {
     if (codebook && modifiedCodebook === undefined) {
       setModifiedCodebook(codebook);
-      //      setPreviousCodebook(codebook);
     }
   }, [codebook, modifiedCodebook]);
 
   const saveCodebook = async () => {
     postCodebook(modifiedCodebook || '');
   };
+
+  console.log(codebook);
 
   return (
     <div className="container mt-3">
@@ -45,11 +44,6 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
       <button className="btn btn-primary mt-3" onClick={saveCodebook}>
         Save modifications
       </button>
-      {/* {hasChanged && (
-        <div className="alert alert-warning mt-3">
-          Someone modified the online version of the codebook.
-        </div>
-      )} */}
     </div>
   );
 };

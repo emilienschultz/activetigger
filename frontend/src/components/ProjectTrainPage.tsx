@@ -397,7 +397,11 @@ export const ProjectTrainPage: FC = () => {
                   <div>
                     <label>Model base</label>
 
-                    <select id="new-model-type" {...registerNewModel('base')}>
+                    <select
+                      id="new-model-type"
+                      {...registerNewModel('base')}
+                      className="form-select"
+                    >
                       {(project?.bertmodels.options || []).map((e) => (
                         <option key={e}>{e}</option>
                       ))}
@@ -405,7 +409,12 @@ export const ProjectTrainPage: FC = () => {
                   </div>
                   <div>
                     <label>Name to identify the model</label>
-                    <input type="text" {...registerNewModel('name')} placeholder="Name the model" />
+                    <input
+                      type="text"
+                      {...registerNewModel('name')}
+                      placeholder="Name the model"
+                      className="form-control"
+                    />
                   </div>
                   <div>
                     <label>Batch Size:</label>
