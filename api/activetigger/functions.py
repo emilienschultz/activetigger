@@ -421,6 +421,7 @@ def train_bert(
 
     # Tokenize
     if params["adapt"]:
+        print("Adapt")
         df = df.map(
             lambda e: tokenizer(
                 e["text"],
@@ -516,8 +517,8 @@ def train_bert(
             shutil.rmtree(current_path)
             return False
     except Exception as e:
-        print("Error in training")
-        print(e)
+        print("Error in training", e)
+        return {"error": "training failed: " + str(e)}
 
     # save model
     bert.save_pretrained(current_path)

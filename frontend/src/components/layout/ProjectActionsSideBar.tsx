@@ -86,17 +86,7 @@ export const ProjectActionsSidebar: FC<{
             <span> Annotate</span>
           </Link>
         </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/generate`}
-            className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
-            aria-current="page"
-            title="Generate"
-          >
-            <RiAiGenerate />
-            <span> Generate</span>
-          </Link>
-        </li>
+
         <li className="nav-item">
           <Link
             to={`/projects/${projectName}/train`}
@@ -130,6 +120,17 @@ export const ProjectActionsSidebar: FC<{
             <span> Export</span>
           </Link>
         </li>
+        <li className="nav-item">
+          <Link
+            to={`/projects/${projectName}/generate`}
+            className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
+            aria-current="page"
+            title="Generate"
+          >
+            <RiAiGenerate />
+            <span> Generate</span>
+          </Link>
+        </li>
         <li className="nav-item ">
           <div className="nav-link">
             <div className="badge text-bg-info">
@@ -138,6 +139,7 @@ export const ProjectActionsSidebar: FC<{
             </div>
           </div>
         </li>
+
         {currentComputation && (
           <li className="nav-item ">
             <div className="nav-link">

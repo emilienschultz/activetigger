@@ -1,8 +1,10 @@
 import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
+import { Tooltip } from 'react-tooltip';
 import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
 
 import 'ag-grid-community/styles/ag-grid.css';
@@ -89,7 +91,7 @@ export const ProjectTrainPage: FC = () => {
   } = useForm<newBertModel>({
     defaultValues: {
       parameters: {
-        batchsize: 4,
+        batchsize: 16,
         gradacc: 1.0,
         epochs: 3,
         lrate: 5e-5,
@@ -97,7 +99,7 @@ export const ProjectTrainPage: FC = () => {
         best: true,
         eval: 10,
         gpu: true,
-        adapt: true,
+        adapt: false,
       },
     },
   });
@@ -395,6 +397,15 @@ export const ProjectTrainPage: FC = () => {
                 <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
                   <label htmlFor="new-model-type"></label>
                   <div>
+                    <label>Name for the model</label>
+                    <input
+                      type="text"
+                      {...registerNewModel('name')}
+                      placeholder="Name the model"
+                      className="form-control"
+                    />
+                  </div>
+                  <div>
                     <label>Model base</label>
 
                     <select
@@ -407,52 +418,95 @@ export const ProjectTrainPage: FC = () => {
                       ))}
                     </select>
                   </div>
+
                   <div>
-                    <label>Name to identify the model</label>
-                    <input
-                      type="text"
-                      {...registerNewModel('name')}
-                      placeholder="Name the model"
-                      className="form-control"
-                    />
-                  </div>
-                  <div>
-                    <label>Batch Size:</label>
+                    <label>
+                      Batch Size{' '}
+                      <a className="batchsize">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".batchsize" place="top">
+                        how many samples are processed simultaneously
+                      </Tooltip>
+                    </label>
                     <input type="number" {...registerNewModel('parameters.batchsize')} />
                   </div>
                   <div>
-                    <label>Gradient Accumulation:</label>
+                    <label>
+                      Gradient Accumulation{' '}
+                      <a className="gradientacc">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".gradientacc" place="top">
+                        summing gradients over multiple steps before updating the model weights
+                      </Tooltip>
+                    </label>
                     <input type="number" step="0.01" {...registerNewModel('parameters.gradacc')} />
                   </div>
                   <div>
-                    <label>Epochs:</label>
+                    <label>
+                      Epochs{' '}
+                      <a className="epochs">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".epochs" place="top">
+                        one complete pass through the entire training dataset during the training
+                        process
+                      </Tooltip>
+                    </label>
                     <input type="number" {...registerNewModel('parameters.epochs')} />
                   </div>
                   <div>
-                    <label>Learning Rate:</label>
+                    <label>
+                      Learning Rate{' '}
+                      <a className="learningrate">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".learningrate" place="top">
+                        step size at which the model updates its weights during training
+                      </Tooltip>
+                    </label>
                     <input type="number" step="0.00001" {...registerNewModel('parameters.lrate')} />
                   </div>
                   <div>
-                    <label>Weight Decay:</label>
+                    <label>
+                      Weight Decay{' '}
+                      <a className="weightdecay">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".weightdecay" place="top">
+                        regularization technique that reduces model weights over time to prevent
+                        overfitting
+                      </Tooltip>
+                    </label>
                     <input type="number" step="0.001" {...registerNewModel('parameters.wdecay')} />
                   </div>
                   <div>
-                    <label>Eval:</label>
+                    <label>
+                      Eval{' '}
+                      <a className="evalstep">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".evalstep" place="top">
+                        how often (in terms of training steps) the evaluation of the model on the
+                        validation dataset is performed during training
+                      </Tooltip>
+                    </label>
                     <input type="number" {...registerNewModel('parameters.eval')} />
                   </div>
                   <div className="form-group d-flex align-items-center">
-                    <label>Best:</label>
+                    <label>Best</label>
                     <input type="checkbox" {...registerNewModel('parameters.best')} />
                   </div>
 
                   <div className="form-group d-flex align-items-center">
-                    <label>GPU:</label>
+                    <label>GPU</label>
                     <input type="checkbox" {...registerNewModel('parameters.gpu')} />
                   </div>
-                  <div className="form-group d-flex align-items-center">
+                  {/* <div className="form-group d-flex align-items-center" style={{ display: 'none' }}>
                     <label>Adapt:</label>
                     <input type="checkbox" {...registerNewModel('parameters.adapt')} />
-                  </div>
+                  </div> */}
                   {!isComputing && (
                     <button key="start" className="btn btn-primary me-2 mt-2">
                       Train the model
