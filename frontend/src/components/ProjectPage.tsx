@@ -7,6 +7,8 @@ import { useDeleteProject, useGetLogs } from '../core/api';
 
 import Modal from 'react-bootstrap/Modal';
 import DataGrid, { Column } from 'react-data-grid';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
+import { Tooltip } from 'react-tooltip';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
@@ -91,6 +93,12 @@ export const ProjectPage: FC = () => {
                   <div className="row">
                     <div className="text-muted smalfont-weight-light">
                       Recent users{' '}
+                      <a className="recentusers">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".recentusers" place="top">
+                        Users who made an action in the project during the last 30 minutes
+                      </Tooltip>
                       {activeUsers.map((e) => (
                         <span className="badge rounded-pill text-bg-light text-muted me-2" key={e}>
                           {e}
@@ -106,12 +114,24 @@ export const ProjectPage: FC = () => {
                 {currentScheme && <AnnotationDisagreementManagement projectSlug={projectName} />}
               </Tab>
               <Tab eventKey="session" title="History session">
-                <span className="explanations">
-                  Element annotated during this session. If you annotate already annotated data, it
-                  prevents you to see an element twice. Clear it if you want to be able to
-                  re-annotate again.
-                </span>
-                <div>Number of element in history : {history.length}</div>
+                <span className="explanations">History of the current session</span>
+                <div>
+                  Session counter{' '}
+                  <a className="history">
+                    <HiOutlineQuestionMarkCircle />
+                  </a>
+                  <Tooltip anchorSelect=".history" place="top">
+                    Element annotated during this session. If you annotate already annotated data,
+                    it prevents you to see an element twice. Clear it if you want to be able to
+                    re-annotate again.
+                  </Tooltip>{' '}
+                  <span
+                    className="badge rounded-pill text-bg-light text-muted me-2"
+                    key={history.length}
+                  >
+                    {history.length}
+                  </span>
+                </div>
                 <button onClick={actionClearHistory} className="delete-button">
                   Clear history
                 </button>

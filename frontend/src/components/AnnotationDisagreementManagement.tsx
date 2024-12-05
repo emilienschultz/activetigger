@@ -43,6 +43,9 @@ export const AnnotationDisagreementManagement: FC<{
   return (
     <div className="container-fluid">
       <div className="row">
+        <span className="explanations">
+          Identify disparity between users for multi-users annotation. Empty if no disagreement.
+        </span>
         <div className="col-3 m-3">
           <button className="btn btn-primary" onClick={validateChanges}>
             Validate changes
