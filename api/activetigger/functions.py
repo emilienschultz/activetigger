@@ -554,7 +554,7 @@ def predict_bert(
     col_text: str,
     event: multiprocessing.synchronize.Event,
     col_labels: str | None = None,
-    batch: int = 128,
+    batch: int = 32,
     file_name: str = "predict.parquet",
     **kwargs,
 ) -> dict:
