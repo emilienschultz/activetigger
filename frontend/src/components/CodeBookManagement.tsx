@@ -14,22 +14,29 @@ interface CodebookManagementProps {
 
 export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, currentScheme }) => {
   const { postCodebook } = usePostSchemeCodebook(projectName || null, currentScheme || null);
-
-  const { codebook } = useGetSchemeCodebook(projectName || null, currentScheme || null);
+  const { codebook, time, reFetchCodebook } = useGetSchemeCodebook(
+    projectName || null,
+    currentScheme || null,
+  );
   const [modifiedCodebook, setModifiedCodebook] = useState<string | undefined>(undefined);
+  //  const [lastModified, setLastModified] = useState<string | undefined | null>(undefined);
 
   // update the text zone once (if undefined)
   useEffect(() => {
     if (codebook && modifiedCodebook === undefined) {
       setModifiedCodebook(codebook);
+      //      setLastModified(time);
     }
-  }, [codebook, modifiedCodebook]);
+  }, [codebook, modifiedCodebook, time]);
 
   const saveCodebook = async () => {
-    postCodebook(modifiedCodebook || '');
+    postCodebook(modifiedCodebook || '', time || '');
+    console.log('save codebook', time);
+    reFetchCodebook();
+    console.log('reFetchCodebook');
+    console.log(codebook, time);
   };
-
-  console.log(codebook);
+  console.log(codebook, time);
 
   return (
     <div className="container mt-3">

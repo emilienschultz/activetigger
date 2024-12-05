@@ -433,14 +433,37 @@ class Schemes:
         results = self.db_manager.get_coding_users(scheme, self.project_slug)
         return results
 
-    def add_codebook(self, scheme: str, codebook: dict):
+    def add_codebook(self, scheme: str, codebook: str, time: str):
         """
         Add codebook
+        if mismatch between date, keep both and return error
         """
-        r = self.db_manager.update_scheme_codebook(self.project_slug, scheme, codebook)
-        if not r:
-            return {"error": "codebook not added"}
-        return {"success": "codebook added"}
+        # get lastmodified timestamp for the scheme
+        r = self.db_manager.get_scheme_codebook(self.project_slug, scheme)
+        # if no modification since the last time, ok
+        if r["time"] == time:
+            r = self.db_manager.update_scheme_codebook(
+                self.project_slug, scheme, codebook
+            )
+            if not r:
+                return {"error": "Codebook not added"}
+            return {"success": "Codebook added"}
+        # if scheme have been modified since the last time
+        else:
+            new_codebook = f"""
+# [CONFLICT] -------- NEW CODEBOOK --------
+
+{codebook}
+
+# [CONFLICT] -------- PREVIOUS CODEBOOK --------
+
+{r["codebook"]}"""
+            r = self.db_manager.update_scheme_codebook(
+                self.project_slug, scheme, new_codebook
+            )
+            if not r:
+                return {"error": "Codebook not added"}
+            return {"error": "Codebook in conflict, please refresh and arbitrate"}
 
     def get_codebook(self, scheme: str):
         """

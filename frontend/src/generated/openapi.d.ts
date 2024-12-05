@@ -1252,6 +1252,8 @@ export interface components {
             content: string;
             /** Scheme */
             scheme: string;
+            /** Time */
+            time?: string | null;
         };
         /**
          * DocumentationModel
@@ -2905,7 +2907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string;
+                    "application/json": components["schemas"]["CodebookModel"];
                 };
             };
             /** @description Validation Error */

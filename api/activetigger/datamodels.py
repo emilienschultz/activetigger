@@ -494,3 +494,4 @@ class TableBatch(BaseModel):
 class CodebookModel(BaseModel):
     content: str
     scheme: str
+    time: Optional[str] = None

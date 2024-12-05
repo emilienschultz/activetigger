@@ -1024,7 +1024,7 @@ class Project(Server):
         }
 
         end_time = time.time()
-        execution_time = end_time - start_time
+        # execution_time = end_time - start_time
         # print(f"Execution time: {execution_time:.5f} seconds")
         return r
 

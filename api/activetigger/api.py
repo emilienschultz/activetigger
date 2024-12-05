@@ -1130,7 +1130,7 @@ async def post_codebook(
     """
     test_rights("modify project element", current_user.username, project.name)
 
-    r = project.schemes.add_codebook(codebook.scheme, codebook.content)
+    r = project.schemes.add_codebook(codebook.scheme, codebook.content, codebook.time)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(
@@ -1145,14 +1145,16 @@ async def post_codebook(
 async def get_codebook(
     project: Annotated[Project, Depends(get_project)],
     scheme: str,
-) -> str:
+) -> CodebookModel:
     """
     Get the codebook of a scheme for a project
     """
     r = project.schemes.get_codebook(scheme)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    return r["success"]
+    return CodebookModel(
+        scheme=scheme, content=r["success"]["codebook"], time=r["success"]["time"]
+    )
 
 
 @app.post("/schemes/{action}", dependencies=[Depends(verified_user)])

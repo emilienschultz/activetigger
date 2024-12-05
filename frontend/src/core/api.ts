@@ -1610,13 +1610,19 @@ export function useGetSchemeCodebook(project_slug: string | null, scheme: string
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { codebook: getAsyncMemoData(getCodebook), reFetchCodebook: reFetch };
+  const data = getAsyncMemoData(getCodebook);
+
+  return {
+    codebook: data ? data.content : '',
+    time: data ? data.time : null,
+    reFetchCodebook: reFetch,
+  };
 }
 
 export function usePostSchemeCodebook(project_slug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
   const postCodebook = useCallback(
-    async (codebook: string) => {
+    async (codebook: string, lastmodified: string) => {
       if (project_slug && scheme) {
         const res = await api.POST('/schemes/codebook', {
           params: {
@@ -1627,6 +1633,7 @@ export function usePostSchemeCodebook(project_slug: string | null, scheme: strin
           body: {
             scheme: scheme,
             content: codebook,
+            time: lastmodified,
           },
         });
         if (!res.error) notify({ type: 'success', message: 'Codebook updated' });

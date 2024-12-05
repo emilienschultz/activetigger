@@ -368,7 +368,10 @@ class DatabaseManager:
         )
         session.close()
         try:
-            return json.loads(scheme.params)["codebook"]
+            return {
+                "codebook": json.loads(scheme.params)["codebook"],
+                "time": str(scheme.time_modified),
+            }
         except:
             return None
 
