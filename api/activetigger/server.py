@@ -1129,9 +1129,13 @@ class Project(Server):
                     r = self.queue.current[e["unique_id"]]["future"].result()
                     if not isinstance(r, dict):
                         print("Probleme with the function")
+                        self.computing.remove(e)
+                        self.queue.delete(e["unique_id"])
                         return {"error": "Probleme with the function"}
                     if "error" in r:
                         print("Error in model training/predicting", r["error"])
+                        self.computing.remove(e)
+                        self.queue.delete(e["unique_id"])
                         return {"error": r["error"]}
                     if "prediction" in r:
                         predictions["predict_" + e["model"].name] = r["prediction"]

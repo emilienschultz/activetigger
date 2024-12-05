@@ -12,6 +12,7 @@ import 'ag-grid-community/styles/ag-theme-quartz.css';
 import DataGrid, { Column } from 'react-data-grid';
 
 import { Tab, Tabs } from 'react-bootstrap';
+import { FaTools } from 'react-icons/fa';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
@@ -91,7 +92,7 @@ export const ProjectTrainPage: FC = () => {
   } = useForm<newBertModel>({
     defaultValues: {
       parameters: {
-        batchsize: 16,
+        batchsize: 4,
         gradacc: 1.0,
         epochs: 3,
         lrate: 5e-5,
@@ -195,7 +196,16 @@ export const ProjectTrainPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-8">
-            <div className="explanations">Train and modify models</div>
+            <div className="explanations">
+              Train and modify models
+              <a className="batchsize m-2">
+                <FaTools />
+              </a>
+              <Tooltip anchorSelect=".batchsize" place="top">
+                If the model doesn't train, the reason can be the limit of available GPU. Please try
+                latter. If the problem persists, contact us.
+              </Tooltip>
+            </div>
             <Tabs id="panel" className="mb-3" defaultActiveKey="models">
               <Tab eventKey="models" title="Models">
                 <label htmlFor="selected-model">Existing models</label>
@@ -426,7 +436,8 @@ export const ProjectTrainPage: FC = () => {
                         <HiOutlineQuestionMarkCircle />
                       </a>
                       <Tooltip anchorSelect=".batchsize" place="top">
-                        how many samples are processed simultaneously
+                        How many samples are processed simultaneously. With small GPU, keep it
+                        around 4.
                       </Tooltip>
                     </label>
                     <input type="number" {...registerNewModel('parameters.batchsize')} />
