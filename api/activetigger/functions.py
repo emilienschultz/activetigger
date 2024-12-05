@@ -374,6 +374,10 @@ def train_bert(
         device = torch.device("cpu")  # Fallback to CPU
         print("Using CPU for computation")
 
+    # force CPU
+    if not params["gpu"]:
+        device = torch.device("cpu")
+
     #  create repertory for the specific model
     current_path = path / name
     if not current_path.exists():
@@ -561,6 +565,7 @@ def predict_bert(
     """
     # empty cache
     torch.cuda.empty_cache()
+    print(batch)
 
     # check if GPU available
     gpu = False
@@ -638,6 +643,8 @@ def predict_bert(
     # delete the logs
     os.remove(log_path)
     os.remove(progress_path)
+    torch.cuda.empty_cache()
+
     print("function prediction : finished")
     return {"success": True, "prediction": pred}
 

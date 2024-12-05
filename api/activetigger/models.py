@@ -553,6 +553,7 @@ class BertModels:
                 "kind": "bert",
                 "dataset": dataset,
                 "status": "predicting",
+                "batch": 32,
             }
         )
         return {"success": "bert model predicting"}
