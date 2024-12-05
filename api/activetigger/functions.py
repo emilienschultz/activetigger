@@ -339,7 +339,7 @@ def train_bert(
     test_size: float,
     event: Optional[multiprocessing.synchronize.Event] = None,
     **kwargs,
-) -> bool:
+) -> dict:
     """
     Train a bert model and write it
 
@@ -356,18 +356,12 @@ def train_bert(
     event : possibility to interrupt
 
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
-    # TODO : memory use
     """
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     try:
         os.nice(5)
     except PermissionError:
         print("You need administrative privileges to set negative niceness values.")
-    # check if GPU is available
-    # gpu = False
-    # if torch.cuda.is_available():
-    #     print("GPU is available")
-    #     gpu = True
 
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -515,10 +509,10 @@ def train_bert(
         except KeyboardInterrupt:
             logger.info("Training interrupted by user.")
             shutil.rmtree(current_path)
-            return False
+            return {"error": "Interrupted by user"}
     except Exception as e:
         print("Error in training", e)
-        return {"error": "training failed: " + str(e)}
+        return {"error": "Training failed: " + str(e)}
 
     # save model
     bert.save_pretrained(current_path)
@@ -545,7 +539,7 @@ def train_bert(
     del trainer, bert
     torch.cuda.empty_cache()
 
-    return True
+    return {"success": "Model trained"}
 
 
 def predict_bert(
@@ -559,7 +553,7 @@ def predict_bert(
     batch: int = 128,
     file_name: str = "predict.parquet",
     **kwargs,
-) -> DataFrame | bool:
+) -> dict:
     """
     Predict from a model
     + probabilities
@@ -573,15 +567,6 @@ def predict_bert(
     if torch.cuda.is_available():
         print("GPU is available")
         gpu = True
-
-    # if torch.cuda.is_available():
-    #     torch.cuda.empty_cache()
-    #     device = torch.device("cuda")  # Use CUDA
-    # elif torch.backends.mps.is_available():
-    #     device = torch.device("mps")  # Use MPS on macOS
-    # else:
-    #     device = torch.device("cpu")  # Fallback to CPU
-    # print(f"Using {device} for computation")
 
     # logging the process
     log_path = path / "status_predict.log"
@@ -605,7 +590,7 @@ def predict_bert(
         # user interrupt
         if event.is_set():
             logger.info("Event set, stopping training.")
-            return False
+            return {"error": "Stopped by user"}
 
         print("Next chunck prediction")
         chunk = tokenizer(
@@ -654,7 +639,7 @@ def predict_bert(
     os.remove(log_path)
     os.remove(progress_path)
     print("function prediction : finished")
-    return pred
+    return {"success": True, "prediction": pred}
 
 
 def truncate_text(text: str, max_tokens: int = 512):

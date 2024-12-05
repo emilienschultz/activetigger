@@ -1023,7 +1023,7 @@ class Project(Server):
             "generations": {"training": self.generations.current_users_generating()},
         }
 
-        end_time = time.time()
+        # end_time = time.time()
         # execution_time = end_time - start_time
         # print(f"Execution time: {execution_time:.5f} seconds")
         return r
@@ -1104,6 +1104,7 @@ class Project(Server):
         Update completed processes and do specific operations regarding their kind
         - get the result from the queue
         - add the result if needed
+        - manage error if needed
         """
         predictions = {}
 
@@ -1126,8 +1127,14 @@ class Project(Server):
                     self.bertmodels.add(e)
                     # case there is a prediction
                     r = self.queue.current[e["unique_id"]]["future"].result()
-                    if r is not None and not isinstance(r, bool):
-                        predictions["predict_" + e["model"].name] = r
+                    if not isinstance(r, dict):
+                        print("Probleme with the function")
+                        return {"error": "Probleme with the function"}
+                    if "error" in r:
+                        print("Error in model training/predicting", r["error"])
+                        return {"error": r["error"]}
+                    if "prediction" in r:
+                        predictions["predict_" + e["model"].name] = r["prediction"]
                 except Exception as ex:
                     print("Error in model training/predicting", ex)
 
