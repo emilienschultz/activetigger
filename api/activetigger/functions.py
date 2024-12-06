@@ -357,7 +357,7 @@ def train_bert(
 
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
     """
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
     try:
         os.nice(5)
     except PermissionError:
