@@ -540,7 +540,7 @@ def train_bert(
         json.dump(trainer.state.log_history, f)
 
     # clean memory
-    del trainer, bert
+    del trainer, bert, df
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
@@ -644,9 +644,9 @@ def predict_bert(
     # delete the logs
     os.remove(log_path)
     os.remove(progress_path)
+    del tokenizer, model, chunk
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
-
     print("function prediction : finished")
     return {"success": True, "prediction": pred}
 

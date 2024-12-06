@@ -198,10 +198,10 @@ export const ProjectTrainPage: FC = () => {
           <div className="col-8">
             <div className="explanations">
               Train and modify models
-              <a className="batchsize m-2">
+              <a className="problems m-2">
                 <FaTools />
               </a>
-              <Tooltip anchorSelect=".batchsize" place="top">
+              <Tooltip anchorSelect=".problems" place="top">
                 If the model doesn't train, the reason can be the limit of available GPU. Please try
                 latter. If the problem persists, contact us.
               </Tooltip>
