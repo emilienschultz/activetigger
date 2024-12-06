@@ -356,6 +356,8 @@ def train_bert(
     event : possibility to interrupt
 
     # pour le moment fichier status.log existe tant que l'entrainement est en cours
+
+    # ATTENTION : environ 160 Mo de cache reste dans le GPU par worker
     """
 
     try:
@@ -479,7 +481,7 @@ def train_bert(
             greater_is_better=False,
             load_best_model_at_end=params["best"],
             metric_for_best_model="eval_loss",
-            no_cuda=~params["gpu"],  # deactivate gpu
+            use_cpu=not bool(params["gpu"]),  # deactivate gpu
         )
         print("training arguments created")
 

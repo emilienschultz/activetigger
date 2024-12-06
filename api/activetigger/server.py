@@ -439,28 +439,30 @@ class Server:
                 )
 
                 # add the labels from the trainset in the database
-                for element_id, label in trainset["label"].dropna().items():
-                    self.db_manager.add_annotation(
-                        dataset="train",
-                        user=username,
-                        project_slug=project_slug,
-                        element_id=element_id,
-                        scheme="default",
-                        annotation=label,
-                    )
-                    print("add annotations train", element_id)
+                elements = [
+                    {"element_id": element_id, "annotation": label, "comment": ""}
+                    for element_id, label in trainset["label"].dropna().items()
+                ]
+                self.db_manager.add_annotations(
+                    dataset="train",
+                    user=username,
+                    project_slug=project_slug,
+                    scheme="default",
+                    elements=elements,
+                )
                 # add the labels from the trainset in the database if exists & not clear
                 if isinstance(testset, pd.DataFrame) and not params.clear_test:
-                    for element_id, label in testset["label"].dropna().items():
-                        self.db_manager.add_annotation(
-                            dataset="test",
-                            user=username,
-                            project_slug=project_slug,
-                            element_id=element_id,
-                            scheme="default",
-                            annotation=label,
-                        )
-                        print("add annotations test", element_id)
+                    elements = [
+                        {"element_id": element_id, "annotation": label, "comment": ""}
+                        for element_id, label in testset["label"].dropna().items()
+                    ]
+                    self.db_manager.add_annotations(
+                        dataset="test",
+                        user=username,
+                        project_slug=project_slug,
+                        scheme="default",
+                        elements=elements,
+                    )
             else:
                 print("Too many different labels > 30")
 

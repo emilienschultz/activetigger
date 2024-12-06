@@ -1,15 +1,14 @@
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { FC, useState } from 'react';
+import DataGrid, { Column } from 'react-data-grid';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
 import { Tooltip } from 'react-tooltip';
 import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
-
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-quartz.css';
-import DataGrid, { Column } from 'react-data-grid';
 
 import { Tab, Tabs } from 'react-bootstrap';
 import { FaTools } from 'react-icons/fa';
@@ -48,6 +47,7 @@ export const ProjectTrainPage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
+  const navigate = useNavigate();
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
@@ -107,6 +107,7 @@ export const ProjectTrainPage: FC = () => {
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     await trainBertModel(data);
     resetNewModel();
+    navigate(`/project/${projectSlug}/train`);
   };
 
   // loss chart shape data

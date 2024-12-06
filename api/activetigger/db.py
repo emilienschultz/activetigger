@@ -660,6 +660,32 @@ class DatabaseManager:
         )
         return [[a.annotation, a.dataset, a.user, a.time] for a in annotations]
 
+    def add_annotations(
+        self,
+        dataset: str,
+        user: str,
+        project_slug: str,
+        scheme: str,
+        elements: list[
+            dict
+        ],  # [{"element_id": str, "annotation": str, "comment": str}]
+    ):
+        session = self.Session()
+        for e in elements:
+            annotation = Annotations(
+                time=datetime.datetime.now(),
+                dataset=dataset,
+                user=user,
+                project=project_slug,
+                element_id=e["element_id"],
+                scheme=scheme,
+                annotation=e["annotation"],
+                comment=e["comment"],
+            )
+            session.add(annotation)
+        session.commit()
+        session.close()
+
     def add_annotation(
         self,
         dataset: str,
