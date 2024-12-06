@@ -450,7 +450,7 @@ def train_bert(
     logger.info("Model loaded")
     print("Model loaded")
 
-    bert.to(device)
+    # bert.to(device)
 
     try:
         total_steps = (float(params["epochs"]) * len(df["train"])) // (
