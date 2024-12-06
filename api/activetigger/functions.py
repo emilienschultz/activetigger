@@ -374,10 +374,6 @@ def train_bert(
         device = torch.device("cpu")  # Fallback to CPU
         print("Using CPU for computation")
 
-    # force CPU
-    if not params["gpu"]:
-        device = torch.device("cpu")
-
     #  create repertory for the specific model
     current_path = path / name
     if not current_path.exists():
@@ -483,6 +479,7 @@ def train_bert(
             greater_is_better=False,
             load_best_model_at_end=params["best"],
             metric_for_best_model="eval_loss",
+            no_cuda=~params["gpu"],  # deactivate gpu
         )
         print("training arguments created")
 
@@ -540,7 +537,7 @@ def train_bert(
         json.dump(trainer.state.log_history, f)
 
     # clean memory
-    del trainer, bert, df
+    del trainer, bert, df, device
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 

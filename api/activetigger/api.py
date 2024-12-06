@@ -1404,7 +1404,7 @@ async def stop_bert(
     """
     Stop user process
     """
-    p = project.get_process("generation", current_user.username)
+    p = project.get_process("bert", current_user.username)
     if len(p) == 0:
         raise HTTPException(status_code=400, detail="No process found")
     unique_id = p[0]["unique_id"]
