@@ -501,6 +501,7 @@ class BertModels:
             "tokenizer": b.tokenizer,
             "path": b.path,
             "file_name": "predict_test.parquet",
+            "batch": 32,
         }
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = "testing"
@@ -541,6 +542,7 @@ class BertModels:
             "path": b.path,
             "file_name": f"predict_{dataset}.parquet",
             "dataset": dataset,
+            "batch": 32,
         }
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = f"predicting {dataset}"
@@ -553,7 +555,6 @@ class BertModels:
                 "kind": "bert",
                 "dataset": dataset,
                 "status": "predicting",
-                "batch": 32,
             }
         )
         return {"success": "bert model predicting"}

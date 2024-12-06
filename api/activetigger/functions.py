@@ -542,6 +542,7 @@ def train_bert(
     # clean memory
     del trainer, bert
     torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
 
     return {"success": "Model trained"}
 
@@ -565,7 +566,7 @@ def predict_bert(
     """
     # empty cache
     torch.cuda.empty_cache()
-    print(batch)
+    print("batch size", batch)
 
     # check if GPU available
     gpu = False
@@ -644,6 +645,7 @@ def predict_bert(
     os.remove(log_path)
     os.remove(progress_path)
     torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
 
     print("function prediction : finished")
     return {"success": True, "prediction": pred}
