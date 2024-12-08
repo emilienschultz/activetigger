@@ -169,6 +169,20 @@ def tokenize(texts: Series, language: str = "fr") -> Series:
     return pd.Series(textes_tk, index=texts.index)
 
 
+def gpu_check():
+    """
+    Check GPU memory
+    """
+    if not torch.cuda.is_available():
+        return {"error": "No GPU detected"}
+
+    device = torch.device("cuda")
+
+    memory = [i / 1024**3 for i in torch.cuda.mem_get_info(device)]
+
+    return {"success": memory}
+
+
 def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> DataFrame:
     """
     Compute fasttext embedding
@@ -487,6 +501,7 @@ def train_bert(
 
         class CustomLoggingCallback(TrainerCallback):
             def on_step_end(self, args, state, control, **kwargs):
+                print(gpu_check())
                 logger.info(f"Step {state.global_step}")
                 progress_percentage = (state.global_step / state.max_steps) * 100
                 with open(current_path / "train/progress", "w") as f:
