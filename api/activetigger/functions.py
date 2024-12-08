@@ -169,7 +169,7 @@ def tokenize(texts: Series, language: str = "fr") -> Series:
     return pd.Series(textes_tk, index=texts.index)
 
 
-def get_gpu_memory_info():
+def get_gpu_memory_info() -> dict:
     """
     Get info on GPU
     """
@@ -180,8 +180,8 @@ def get_gpu_memory_info():
 
     return {
         "gpu_available": True,
-        "total_memory": mem[1] / 1e9,  # Convert to GB
-        "available_memory": mem[0] / 1e9,  # Convert to GB
+        "total_memory": round(mem[1] / 1e9, 2),  # Convert to GB
+        "available_memory": round(mem[0] / 1e9, 2),  # Convert to GB
     }
 
 

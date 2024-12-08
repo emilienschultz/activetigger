@@ -29,7 +29,7 @@ export const Notifications: FC = () => {
       })),
     [setAppContext],
   );
-  //console.log(notifications);
+
   return (
     <div
       className="toasts-container fixed-bottom"
