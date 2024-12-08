@@ -888,6 +888,16 @@ class DatabaseManager:
             for m in models
         ]
 
+    def model_exists(self, project: str, name: str):
+        session = self.Session()
+        models = (
+            session.query(Models)
+            .filter(Models.name == name, Models.project == project)
+            .all()
+        )
+        session.close()
+        return len(models) > 0
+
     def delete_model(self, project: str, name: str):
         session = self.Session()
         # test if the name does not exist

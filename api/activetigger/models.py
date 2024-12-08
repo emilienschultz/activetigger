@@ -386,6 +386,17 @@ class BertModels:
                 "error": "User already has a process launched, please wait before launching another one"
             }
 
+        # name integrating the scheme & user + date
+        current_date = datetime.now()
+        day = current_date.strftime("%d")
+        month = current_date.strftime("%m")
+        year = current_date.strftime("%Y")
+        name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
+
+        # check if a project not already exist
+        if self.db_manager.model_exists(project, name):
+            return {"error": "A model with this name already exists"}
+
         # set default parameters if needed
         if base_model is None:
             base_model = "almanach/camembert-base"
@@ -401,13 +412,6 @@ class BertModels:
         except ValidationError as e:
             print("Validation error")
             return {"error": e.json()}
-
-        # name integrating the scheme & user + date
-        current_date = datetime.now()
-        day = current_date.strftime("%d")
-        month = current_date.strftime("%m")
-        year = current_date.strftime("%Y")
-        name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
 
         # launch as a independant process
         args = {
