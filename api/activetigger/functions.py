@@ -176,9 +176,7 @@ def gpu_check():
     if not torch.cuda.is_available():
         return {"error": "No GPU detected"}
 
-    device = torch.device("cuda")
-
-    memory = [i / 1024**3 for i in torch.cuda.mem_get_info(device)]
+    memory = [i / 1024**3 for i in torch.cuda.mem_get_info()]
 
     return {"success": memory}
 
