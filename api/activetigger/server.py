@@ -24,7 +24,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import cat2num, clean_regex
+from activetigger.functions import cat2num, clean_regex, get_gpu_memory_info
 from activetigger.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
@@ -44,6 +44,7 @@ test_file = "test.parquet"
 default_user = "root"
 ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
+N_WORKERS = 2
 
 
 class Server:
@@ -59,8 +60,8 @@ class Server:
     test_file: str
     default_user: str
     ALGORITHM: str
-    n_workers: int = 4
-    starting_time: float = None
+    n_workers: int
+    starting_time: float
     SECRET_KEY: str
     path: Path
     path_models: Path
@@ -92,6 +93,7 @@ class Server:
         self.test_file = test_file
         self.default_user = default_user
         self.ALGORITHM = ALGORITHM
+        self.n_workers = N_WORKERS
 
         self.starting_time = time.time()
         self.SECRET_KEY = secrets.token_hex(32)

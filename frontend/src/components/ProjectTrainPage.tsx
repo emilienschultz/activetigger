@@ -5,7 +5,7 @@ import DataGrid, { Column } from 'react-data-grid';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
 import { Tooltip } from 'react-tooltip';
 import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
@@ -47,10 +47,10 @@ export const ProjectTrainPage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
-  const navigate = useNavigate();
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
+  const [activeTab, setActiveTab] = useState('models');
 
   const availablePrediction =
     currentScheme && currentModel && project?.bertmodels.available[currentScheme][currentModel]
@@ -104,10 +104,12 @@ export const ProjectTrainPage: FC = () => {
       },
     },
   });
+  console.log(activeTab);
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     await trainBertModel(data);
     resetNewModel();
-    navigate(`/projects/${projectSlug}/train`);
+    setActiveTab('models');
+    console.log(activeTab);
   };
 
   // loss chart shape data
@@ -190,8 +192,6 @@ export const ProjectTrainPage: FC = () => {
     },
   ];
 
-  console.log(project);
-
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -207,7 +207,12 @@ export const ProjectTrainPage: FC = () => {
                 latter. If the problem persists, contact us.
               </Tooltip>
             </div>
-            <Tabs id="panel" className="mb-3" defaultActiveKey="models">
+            <Tabs
+              id="panel"
+              className="mb-3"
+              defaultActiveKey={activeTab}
+              onSelect={(key) => setActiveTab(key || 'models')}
+            >
               <Tab eventKey="models" title="Models">
                 <label htmlFor="selected-model">Existing models</label>
                 <div className="d-flex align-items-center">

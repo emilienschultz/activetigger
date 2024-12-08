@@ -1336,7 +1336,6 @@ export function useGetQueue(projectState: ProjectStateModel | null) {
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
   const data = getAsyncMemoData(getQueueState);
-  console.log(data);
 
   return {
     queueState: data?.queue,

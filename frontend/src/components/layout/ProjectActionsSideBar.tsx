@@ -137,9 +137,13 @@ export const ProjectActionsSidebar: FC<{
               <span className="d-none d-md-inline">Server load: </span>
               {Object.values(queueState || []).length}
             </div>
-            <div className="badge text-bg-warning">
-              <span className="d-none d-md-inline">GPU: </span>
-              {gpu ? `${gpu['available_memory']} / ${gpu['total_memory']} Go` : 'No'}
+            <div className="badge text-bg-warning" title="Available GPU memory">
+              <span className="d-none d-md-inline">
+                GPU:
+                {gpu
+                  ? `${gpu['total_memory'] - gpu['available_memory']} / ${gpu['total_memory']} Go`
+                  : 'No'}
+              </span>
             </div>
           </div>
         </li>

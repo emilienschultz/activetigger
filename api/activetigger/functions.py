@@ -176,6 +176,7 @@ def get_gpu_memory_info() -> dict:
     if not torch.cuda.is_available():
         return {"gpu_available": False, "total_memory": 0, "available_memory": 0}
 
+    torch.cuda.empty_cache()
     mem = torch.cuda.mem_get_info()
 
     return {
@@ -663,9 +664,10 @@ def predict_bert(
     # delete the logs
     os.remove(log_path)
     os.remove(progress_path)
-    del tokenizer, model, chunk
+    del tokenizer, model, chunk, df
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
+
     print("function prediction : finished")
     return {"success": True, "prediction": pred}
 
