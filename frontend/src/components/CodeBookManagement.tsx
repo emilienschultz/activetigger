@@ -31,12 +31,8 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
 
   const saveCodebook = async () => {
     postCodebook(modifiedCodebook || '', time || '');
-    console.log('save codebook', time);
     reFetchCodebook();
-    console.log('reFetchCodebook');
-    console.log(codebook, time);
   };
-  console.log(codebook, time);
 
   return (
     <div className="container mt-3">

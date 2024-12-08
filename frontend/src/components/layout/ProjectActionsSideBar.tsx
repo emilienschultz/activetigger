@@ -30,7 +30,7 @@ export const ProjectActionsSidebar: FC<{
     : false;
 
   // display the number of current processes on the server
-  const { queueState } = useGetQueue(projectState || null);
+  const { queueState, gpu } = useGetQueue(projectState || null);
 
   return (
     <div
@@ -136,6 +136,10 @@ export const ProjectActionsSidebar: FC<{
             <div className="badge text-bg-info">
               <span className="d-none d-md-inline">Server load: </span>
               {Object.values(queueState || []).length}
+            </div>
+            <div className="badge text-bg-warning">
+              <span className="d-none d-md-inline">GPU: </span>
+              {gpu ? `${gpu['available_memory']} / ${gpu['total_memory']} Go` : 'No'}
             </div>
           </div>
         </li>

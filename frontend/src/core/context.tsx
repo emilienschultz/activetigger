@@ -86,10 +86,5 @@ export function useAppContext() {
 export const AppContextProvider: FC<PropsWithChildren> = ({ children }) => {
   const context = _useAppContext();
 
-  // Deal here the logic of context reset ?
-  // useEffect(() => {
-  //   console.log('coucou');
-  // }, [context.appContext.currentScheme]);
-
   return <AppContext.Provider value={context}>{children}</AppContext.Provider>;
 };

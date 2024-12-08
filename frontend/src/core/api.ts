@@ -1325,7 +1325,7 @@ export function useGetQueue(projectState: ProjectStateModel | null) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getQueueState = useAsyncMemo(async () => {
-    const res = await api.GET('/queue', {});
+    const res = await api.GET('/server', {});
     if (!res.error) {
       if ('data' in res) return res.data;
       else return null;
@@ -1335,7 +1335,14 @@ export function useGetQueue(projectState: ProjectStateModel | null) {
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { queueState: getAsyncMemoData(getQueueState), reFetchQueueState: reFetch };
+  const data = getAsyncMemoData(getQueueState);
+  console.log(data);
+
+  return {
+    queueState: data?.queue,
+    gpu: data?.gpu['gpu_available'] ? data?.gpu : undefined,
+    reFetchQueueState: reFetch,
+  };
 }
 
 /**

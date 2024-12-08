@@ -54,6 +54,7 @@ from activetigger.datamodels import (
     UsersServerModel,
     WaitingModel,
 )
+from activetigger.functions import get_gpu_memory_info
 from activetigger.server import Project, Server
 
 # General comments
@@ -540,14 +541,22 @@ async def get_projects(
     return AvailableProjectsModel(projects=r)
 
 
-@app.get("/queue")
+@app.get("/server")
 async def get_queue() -> dict:
     """
-    Get the state of the server queue
+    Get the state of the server
+    - queue
+    - gpu use
     """
-    r = server.queue.state()
+
+    q = server.queue.state()
     # only running processes for the moment
-    return {i: r[i] for i in r if r[i]["state"] == "running"}
+    queue = {i: q[i] for i in q if q[i]["state"] == "running"}
+    gpu = get_gpu_memory_info()
+
+    r = {"queue": queue, "gpu": gpu}
+
+    return r
 
 
 @app.get("/queue/num")

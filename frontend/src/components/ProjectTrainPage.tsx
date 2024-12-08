@@ -107,7 +107,7 @@ export const ProjectTrainPage: FC = () => {
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     await trainBertModel(data);
     resetNewModel();
-    navigate(`/project/${projectSlug}/train`);
+    navigate(`/projects/${projectSlug}/train`);
   };
 
   // loss chart shape data

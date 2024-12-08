@@ -329,7 +329,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/queue": {
+    "/server": {
         parameters: {
             query?: never;
             header?: never;
@@ -340,7 +340,7 @@ export interface paths {
          * Get Queue
          * @description Get the state of the server queue
          */
-        get: operations["get_queue_queue_get"];
+        get: operations["get_queue_server_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2239,7 +2239,7 @@ export interface operations {
             };
         };
     };
-    get_queue_queue_get: {
+    get_queue_server_get: {
         parameters: {
             query?: never;
             header?: never;
