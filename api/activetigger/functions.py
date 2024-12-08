@@ -1,3 +1,4 @@
+import gc
 import json
 import logging
 import multiprocessing
@@ -561,6 +562,8 @@ def train_bert(
 
     # clean memory
     del trainer, bert, df, device
+    gc.collect()
+    torch.cuda.synchronize()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
@@ -664,7 +667,11 @@ def predict_bert(
     # delete the logs
     os.remove(log_path)
     os.remove(progress_path)
-    del tokenizer, model, chunk, df
+
+    del tokenizer, model, chunk, df, res, predictions, outputs
+
+    gc.collect()
+    torch.cuda.synchronize()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
