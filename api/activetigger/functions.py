@@ -561,7 +561,8 @@ def train_bert(
         json.dump(trainer.state.log_history, f)
 
     # clean memory
-    del trainer, bert, df, device
+
+    del trainer, bert, df, device, event
     gc.collect()
     torch.cuda.synchronize()
     torch.cuda.empty_cache()
@@ -672,7 +673,7 @@ def predict_bert(
     os.remove(log_path)
     os.remove(progress_path)
 
-    del tokenizer, model, chunk, df, res, predictions, outputs
+    del tokenizer, model, chunk, df, res, predictions, outputs, event
     gc.collect()
 
     torch.cuda.synchronize()

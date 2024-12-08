@@ -418,7 +418,7 @@ class BertModels:
         args = {
             "path": self.path,
             "name": name,
-            "df": df,
+            "df": df.copy(deep=True),
             "col_label": col_label,
             "col_text": col_text,
             "base_model": base_model,
@@ -427,6 +427,8 @@ class BertModels:
         }
 
         unique_id = self.queue.add("training", functions.train_bert, args)
+
+        del args
 
         # Update the queue
         b = BertModel(name, self.path / name, base_model)
