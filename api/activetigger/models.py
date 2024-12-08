@@ -105,6 +105,7 @@ class BertModel:
         else:
             with open(self.path / "config.json", "r") as jsonfile:
                 modeltype = json.load(jsonfile)["_name_or_path"]
+            self.base_model = modeltype
             self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
             self.model = AutoModelForSequenceClassification.from_pretrained(self.path)
             self.status = "loaded"
@@ -501,9 +502,10 @@ class BertModels:
             "df": df,
             "col_text": col_text,
             "col_labels": col_labels,
-            "model": b.model,
-            "tokenizer": b.tokenizer,
+            # "model": b.model,
+            # "tokenizer": b.tokenizer,
             "path": b.path,
+            "basemodel": b.base_model,
             "file_name": "predict_test.parquet",
             "batch": 32,
         }
@@ -541,9 +543,10 @@ class BertModels:
         args = {
             "df": df,
             "col_text": col_text,
-            "model": b.model,
-            "tokenizer": b.tokenizer,
+            # "model": b.model,
+            # "tokenizer": b.tokenizer,
             "path": b.path,
+            "basemodel": b.base_model,
             "file_name": f"predict_{dataset}.parquet",
             "dataset": dataset,
             "batch": 32,

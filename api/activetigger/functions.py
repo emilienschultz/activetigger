@@ -571,8 +571,6 @@ def train_bert(
 
 
 def predict_bert(
-    model,
-    tokenizer,
     path: Path,
     df: DataFrame,
     col_text: str,
@@ -607,6 +605,12 @@ def predict_bert(
     )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+
+    print("load model")
+    with open(path / "config.json", "r") as jsonfile:
+        modeltype = json.load(jsonfile)["_name_or_path"]
+    tokenizer = AutoTokenizer.from_pretrained(modeltype)
+    model = AutoModelForSequenceClassification.from_pretrained(path)
 
     print("function prediction : start")
     if torch.cuda.is_available():
@@ -669,14 +673,14 @@ def predict_bert(
     os.remove(progress_path)
 
     del tokenizer, model, chunk, df, res, predictions, outputs
-
     gc.collect()
+
     torch.cuda.synchronize()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
     print("function prediction : finished")
-    return {"success": True, "prediction": pred}
+    return {"success": True, "prediction": pred.copy()}
 
 
 def truncate_text(text: str, max_tokens: int = 512):
