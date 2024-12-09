@@ -259,6 +259,13 @@ def to_sbert(
     emb = pd.DataFrame(emb, index=texts.index)
     emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
     print("computation end")
+
+    # cleaning
+    del sbert, texts
+    gc.collect()
+    torch.cuda.synchronize()
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     return {"success": emb}
 
 
