@@ -10,6 +10,8 @@ ActiveTigger[^1] is an text annotation web tool dedicated for computational soci
 > [!IMPORTANT] 
 > The app is currently 🚧 **under the beta test phase** 🚧.
 >
+> [Presentation in French of the tool](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
+>
 > [**How to beta test Active Tigger**](https://github.com/emilienschultz/activetigger/blob/main/doc/Betatest.md)
 
 

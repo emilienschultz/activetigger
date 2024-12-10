@@ -139,8 +139,8 @@ export const ProjectActionsSidebar: FC<{
         </li>
         <li className="nav-item ">
           <div className="nav-link">
-            <div className="badge text-bg-info" title="Number of processes">
-              <span className="d-none d-md-inline">Server load: </span>
+            <div className="badge text-bg-info" title="Number of processes running">
+              <span className="d-none d-md-inline">Process: </span>
               {Object.values(queueState || []).length}
             </div>
             <br></br>
