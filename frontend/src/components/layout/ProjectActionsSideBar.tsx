@@ -139,21 +139,21 @@ export const ProjectActionsSidebar: FC<{
         </li>
         <li className="nav-item ">
           <div className="nav-link">
-            <div className="badge text-bg-info">
+            <div className="badge text-bg-info" title="Number of processes">
               <span className="d-none d-md-inline">Server load: </span>
               {Object.values(queueState || []).length}
             </div>
             <br></br>
-            <div className="badge text-bg-warning" title="Available GPU memory">
+            <div className="badge text-bg-warning" title="Used/Total">
               <span className="d-none d-md-inline">
                 GPU:
                 {gpu
-                  ? `${Math.round(gpu['total_memory'] - gpu['available_memory'])} / ${gpu['total_memory']} Go`
+                  ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
                   : 'No'}
               </span>
             </div>
             <br></br>
-            {projectState?.errors && projectState?.errors.length === 0 && (
+            {projectState?.errors && projectState?.errors.length > 0 && (
               <a className="errors">
                 <div className="badge text-bg-danger">
                   <MdRunningWithErrors /> Errors
