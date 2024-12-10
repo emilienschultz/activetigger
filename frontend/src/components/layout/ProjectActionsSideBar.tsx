@@ -148,22 +148,22 @@ export const ProjectActionsSidebar: FC<{
               <span className="d-none d-md-inline">
                 GPU:
                 {gpu
-                  ? `${gpu['total_memory'] - gpu['available_memory']} / ${gpu['total_memory']} Go`
+                  ? `${Math.round(gpu['total_memory'] - gpu['available_memory'])} / ${gpu['total_memory']} Go`
                   : 'No'}
               </span>
             </div>
-            {projectState?.errors && projectState?.errors.length > 0 && (
-              <div>
-                <br></br>
-                <a className="errors">
-                  <MdRunningWithErrors />
-                </a>
-                <Tooltip anchorSelect=".errors" place="top">
-                  {projectState?.errors?.map((errorList, index) => (
-                    <div key={index}>{errorList.join(' - ')}</div>
-                  ))}
-                </Tooltip>
-              </div>
+            <br></br>
+            {projectState?.errors && projectState?.errors.length === 0 && (
+              <a className="errors">
+                <div className="badge text-bg-danger">
+                  <MdRunningWithErrors /> Errors
+                  <Tooltip anchorSelect=".errors" place="top">
+                    {projectState?.errors?.map((errorList, index) => (
+                      <div key={index}>{errorList.join(' - ')}</div>
+                    ))}
+                  </Tooltip>
+                </div>
+              </a>
             )}
           </div>
         </li>
