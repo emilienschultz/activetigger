@@ -1161,7 +1161,7 @@ class Project(Server):
 
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in model training/predicting", ex]
+                        [datetime.now(), "Error in model training/predicting", str(ex)]
                     )
                     print("Error in model training/predicting", ex)
 
@@ -1173,7 +1173,7 @@ class Project(Server):
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append([datetime.now(), "simplemodel failed", ex])
+                    self.errors.append([datetime.now(), "simplemodel failed", str(ex)])
                     print("Simplemodel failed", ex)
 
             # case for features
@@ -1187,7 +1187,7 @@ class Project(Server):
                     print("Feature added", e["name"])
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in feature processing", ex]
+                        [datetime.now(), "Error in feature processing", str(ex)]
                     )
                     print("Error in feature processing", ex)
 
@@ -1200,7 +1200,7 @@ class Project(Server):
                     print("projection added")
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in feature projections queue", ex]
+                        [datetime.now(), "Error in feature projections queue", str(ex)]
                     )
                     print("Error in feature projections queue", ex)
 
@@ -1220,7 +1220,7 @@ class Project(Server):
                         )
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in generation queue", ex]
+                        [datetime.now(), "Error in generation queue", str(ex)]
                     )
                     print("Error in generation queue", ex)
 
