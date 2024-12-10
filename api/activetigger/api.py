@@ -1339,6 +1339,7 @@ async def predict(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_name: str,
     dataset: str = "all",
+    batch_size: int = 32,
 ) -> None:
     """
     Start prediction with a model
@@ -1362,6 +1363,7 @@ async def predict(
         df=df,
         col_text="text",
         dataset=dataset,
+        batch_size=batch_size,
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

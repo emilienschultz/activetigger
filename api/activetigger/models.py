@@ -527,7 +527,13 @@ class BertModels:
         return {"success": "bert testing predicting"}
 
     def start_predicting_process(
-        self, name: str, user: str, df: DataFrame, col_text: str, dataset: str
+        self,
+        name: str,
+        user: str,
+        df: DataFrame,
+        col_text: str,
+        dataset: str,
+        batch_size: int = 32,
     ):
         """
         Start predicting process
@@ -545,13 +551,11 @@ class BertModels:
         args = {
             "df": df,
             "col_text": col_text,
-            # "model": b.model,
-            # "tokenizer": b.tokenizer,
             "path": b.path,
             "basemodel": b.base_model,
             "file_name": f"predict_{dataset}.parquet",
             "dataset": dataset,
-            "batch": 32,
+            "batch": batch_size,
         }
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = f"predicting {dataset}"

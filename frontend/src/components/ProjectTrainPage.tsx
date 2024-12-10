@@ -50,7 +50,6 @@ export const ProjectTrainPage: FC = () => {
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
-  const [activeTab, setActiveTab] = useState('models');
 
   const availablePrediction =
     currentScheme && currentModel && project?.bertmodels.available[currentScheme][currentModel]
@@ -65,7 +64,8 @@ export const ProjectTrainPage: FC = () => {
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // compute model preduction
-  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null);
+  const [batchSize, setBatchSize] = useState<number>(32);
+  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
 
   // form to rename
   const { renameBertModel } = useRenameBertModel(projectSlug || null);
@@ -104,12 +104,9 @@ export const ProjectTrainPage: FC = () => {
       },
     },
   });
-  console.log(activeTab);
+
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     await trainBertModel(data);
-    resetNewModel();
-    setActiveTab('models');
-    console.log(activeTab);
   };
 
   // loss chart shape data
@@ -192,6 +189,8 @@ export const ProjectTrainPage: FC = () => {
     },
   ];
 
+  console.log(batchSize);
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -207,12 +206,7 @@ export const ProjectTrainPage: FC = () => {
                 latter. If the problem persists, contact us.
               </Tooltip>
             </div>
-            <Tabs
-              id="panel"
-              className="mb-3"
-              defaultActiveKey={activeTab}
-              onSelect={(key) => setActiveTab(key || 'models')}
-            >
+            <Tabs id="panel" className="mb-3" defaultActiveKey={'models'}>
               <Tab eventKey="models" title="Models">
                 <label htmlFor="selected-model">Existing models</label>
                 <div className="d-flex align-items-center">
@@ -541,6 +535,26 @@ export const ProjectTrainPage: FC = () => {
                     </button>
                   </div>
                 )}
+              </Tab>
+              <Tab eventKey="parameters" title="Parameters">
+                <div>
+                  <label>
+                    Batch size for predictions{' '}
+                    <a className="batch">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".batch" place="top">
+                      Batch used for predict. Keep it small (2 or 4) for small GPU.
+                    </Tooltip>
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    className="m-2 form-control"
+                    value={batchSize}
+                    onChange={(e) => setBatchSize(Number(e.target.value))}
+                  />
+                </div>
               </Tab>
             </Tabs>
           </div>

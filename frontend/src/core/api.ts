@@ -1026,7 +1026,7 @@ export function useModelInformations(
 /**
  * Compute model prediction
  */
-export function useComputeModelPrediction(projectSlug: string | null) {
+export function useComputeModelPrediction(projectSlug: string | null, batchSize: number) {
   const { notify } = useNotifications();
   const computeModelPrediction = useCallback(
     async (model_name: string, dataset: string) => {
@@ -1037,6 +1037,7 @@ export function useComputeModelPrediction(projectSlug: string | null) {
               project_slug: projectSlug,
               model_name: model_name,
               dataset: dataset,
+              batch_size: batchSize,
             },
           },
         });
@@ -1046,7 +1047,7 @@ export function useComputeModelPrediction(projectSlug: string | null) {
       }
       return null;
     },
-    [projectSlug, notify],
+    [projectSlug, notify, batchSize],
   );
 
   return { computeModelPrediction };

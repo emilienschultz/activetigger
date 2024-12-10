@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
+import pytz
 import yaml
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
@@ -45,6 +46,7 @@ default_user = "root"
 ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
 N_WORKERS = 2
+TIMEZONE = pytz.timezone("Europe/Paris")
 
 
 class Server:
@@ -579,7 +581,7 @@ class Project(Server):
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
         self.generations = Generations(self.db_manager, self.computing)
         self.projections = Projections(self.computing)
-        self.errors = []
+        self.errors = []  # Move to specific class / db in the future
 
     def __del__(self):
         pass
@@ -1141,7 +1143,7 @@ class Project(Server):
                         self.queue.delete(e["unique_id"])
                         self.errors.append(
                             [
-                                datetime.now(),
+                                datetime.now(TIMEZONE),
                                 "bert training",
                                 "Probleme with the function",
                             ]
@@ -1152,7 +1154,7 @@ class Project(Server):
                         self.computing.remove(e)
                         self.queue.delete(e["unique_id"])
                         self.errors.append(
-                            [datetime.now(), "bert training", r["error"]]
+                            [datetime.now(TIMEZONE), "bert training", r["error"]]
                         )
                         # return {"error": r["error"]}
                     if "prediction" in r:
@@ -1161,7 +1163,11 @@ class Project(Server):
 
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in model training/predicting", str(ex)]
+                        [
+                            datetime.now(TIMEZONE),
+                            "Error in model training/predicting",
+                            str(ex),
+                        ]
                     )
                     print("Error in model training/predicting", ex)
 
@@ -1173,7 +1179,9 @@ class Project(Server):
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append([datetime.now(), "simplemodel failed", str(ex)])
+                    self.errors.append(
+                        [datetime.now(TIMEZONE), "simplemodel failed", str(ex)]
+                    )
                     print("Simplemodel failed", ex)
 
             # case for features
@@ -1187,7 +1195,7 @@ class Project(Server):
                     print("Feature added", e["name"])
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in feature processing", str(ex)]
+                        [datetime.now(TIMEZONE), "Error in feature processing", str(ex)]
                     )
                     print("Error in feature processing", ex)
 
@@ -1200,7 +1208,11 @@ class Project(Server):
                     print("projection added")
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in feature projections queue", str(ex)]
+                        [
+                            datetime.now(TIMEZONE),
+                            "Error in feature projections queue",
+                            str(ex),
+                        ]
                     )
                     print("Error in feature projections queue", ex)
 
@@ -1220,7 +1232,7 @@ class Project(Server):
                         )
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(), "Error in generation queue", str(ex)]
+                        [datetime.now(TIMEZONE), "Error in generation queue", str(ex)]
                     )
                     print("Error in generation queue", ex)
 
