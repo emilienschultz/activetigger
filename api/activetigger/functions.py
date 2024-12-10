@@ -247,26 +247,30 @@ def to_sbert(
         device = torch.device("cpu")  # Fallback to CPU
     print(f"Using {device} for computation")
 
-    sbert = SentenceTransformer(model, device=device)
-    sbert.max_seq_length = 512
+    try:
+        sbert = SentenceTransformer(model, device=device)
+        sbert.max_seq_length = 512
 
-    print("start computation")
-    if device == "cuda":
-        with autocast(device_type=device):
+        print("start computation")
+        if device == "cuda":
+            with autocast(device_type=device):
+                emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+        else:
             emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
-    else:
-        emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
-    emb = pd.DataFrame(emb, index=texts.index)
-    emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
-    print("computation end")
-
-    # cleaning
-    del sbert, texts
-    gc.collect()
-    torch.cuda.synchronize()
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
-    return {"success": emb}
+        emb = pd.DataFrame(emb, index=texts.index)
+        emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
+        print("computation end")
+        return {"success": emb}
+    except Exception as e:
+        print(e)
+        return {"error": e}
+    finally:
+        # cleaning
+        del sbert, texts
+        gc.collect()
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 
 def compute_umap(features: DataFrame, params: dict, **kwargs):
@@ -542,40 +546,40 @@ def train_bert(
             logger.info("Training interrupted by user.")
             shutil.rmtree(current_path)
             return {"error": "Interrupted by user"}
+
+        # save model
+        bert.save_pretrained(current_path)
+        logger.info(f"Model trained {current_path}")
+
+        # save training data
+        training_data.to_parquet(current_path / "training_data.parquet")
+
+        # save parameters
+        params["test_size"] = test_size
+        params["base_model"] = base_model
+        with open(current_path / "parameters.json", "w") as f:
+            json.dump(params, f)
+
+        # remove intermediate steps and logs if succeed
+        shutil.rmtree(current_path / "train")
+        os.rename(log_path, current_path / "finished")
+
+        # save log history of the training for statistics
+        with open(current_path / "log_history.txt", "w") as f:
+            json.dump(trainer.state.log_history, f)
+
+        return {"success": "Model trained"}
+
     except Exception as e:
         print("Error in training", e)
         return {"error": "Training failed: " + str(e)}
-
-    # save model
-    bert.save_pretrained(current_path)
-    logger.info(f"Model trained {current_path}")
-
-    # save training data
-    training_data.to_parquet(current_path / "training_data.parquet")
-
-    # save parameters
-    params["test_size"] = test_size
-    params["base_model"] = base_model
-    with open(current_path / "parameters.json", "w") as f:
-        json.dump(params, f)
-
-    # remove intermediate steps and logs if succeed
-    shutil.rmtree(current_path / "train")
-    os.rename(log_path, current_path / "finished")
-
-    # save log history of the training for statistics
-    with open(current_path / "log_history.txt", "w") as f:
-        json.dump(trainer.state.log_history, f)
-
-    # clean memory
-
-    del trainer, bert, df, device, event
-    gc.collect()
-    torch.cuda.synchronize()
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
-
-    return {"success": "Model trained"}
+    finally:
+        # clean memory
+        del trainer, bert, df, device, event
+        gc.collect()
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 
 def predict_bert(
@@ -624,71 +628,76 @@ def predict_bert(
     if torch.cuda.is_available():
         model.cuda()
 
-    # Start prediction with batches
-    predictions = []
-    # logging the process
-    for chunk in [df[col_text][i : i + batch] for i in range(0, df.shape[0], batch)]:
-        # user interrupt
-        if event.is_set():
-            logger.info("Event set, stopping training.")
-            return {"error": "Stopped by user"}
+    try:
+        # Start prediction with batches
+        predictions = []
+        # logging the process
+        for chunk in [
+            df[col_text][i : i + batch] for i in range(0, df.shape[0], batch)
+        ]:
+            # user interrupt
+            if event.is_set():
+                logger.info("Event set, stopping training.")
+                return {"error": "Stopped by user"}
 
-        print("Next chunck prediction")
-        chunk = tokenizer(
-            list(chunk),
-            padding=True,
-            truncation=True,
-            max_length=512,
-            return_tensors="pt",
+            print("Next chunck prediction")
+            chunk = tokenizer(
+                list(chunk),
+                padding=True,
+                truncation=True,
+                max_length=512,
+                return_tensors="pt",
+            )
+            if gpu:
+                chunk = chunk.to("cuda")
+            with torch.no_grad():
+                outputs = model(**chunk)
+            res = outputs[0]
+            if gpu:
+                res = res.cpu()
+            res = res.softmax(1).detach().numpy()
+            predictions.append(res)
+
+            # write progress
+            with open(progress_path, "w") as f:
+                f.write(str((len(predictions) * batch / df.shape[0]) * 100))
+
+        # to dataframe
+        pred = pd.DataFrame(
+            np.concatenate(predictions),
+            columns=sorted(list(model.config.label2id.keys())),
+            index=df.index,
         )
-        if gpu:
-            chunk = chunk.to("cuda")
-        with torch.no_grad():
-            outputs = model(**chunk)
-        res = outputs[0]
-        if gpu:
-            res = res.cpu()
-        res = res.softmax(1).detach().numpy()
-        predictions.append(res)
 
-        # write progress
-        with open(progress_path, "w") as f:
-            f.write(str((len(predictions) * batch / df.shape[0]) * 100))
+        # calculate entropy
+        entropy = -1 * (pred * np.log(pred)).sum(axis=1)
+        pred["entropy"] = entropy
 
-    # to dataframe
-    pred = pd.DataFrame(
-        np.concatenate(predictions),
-        columns=sorted(list(model.config.label2id.keys())),
-        index=df.index,
-    )
+        # calculate label
+        pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
 
-    # calculate entropy
-    entropy = -1 * (pred * np.log(pred)).sum(axis=1)
-    pred["entropy"] = entropy
+        # if asked, add the label column for latter statistics
+        if col_labels:
+            pred[col_labels] = df[col_labels]
 
-    # calculate label
-    pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
-
-    # if asked, add the label column for latter statistics
-    if col_labels:
-        pred[col_labels] = df[col_labels]
-
-    # write the content in a parquet file
-    pred.to_parquet(path / file_name)
-    print("Written", file_name)
-    # delete the logs
-    os.remove(log_path)
-    os.remove(progress_path)
-
-    del tokenizer, model, chunk, df, res, predictions, outputs, event
-    gc.collect()
-
-    torch.cuda.synchronize()
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
-
-    print("function prediction : finished")
-    return {"success": True, "prediction": pred.copy()}
+        # write the content in a parquet file
+        pred.to_parquet(path / file_name)
+        print("Written", file_name)
+        print("function prediction : finished")
+        return {"success": True, "prediction": pred.copy()}
+    except Exception as e:
+        print("Error in prediction", e)
+        return {"error": str(e)}
+    finally:
+        # delete the logs
+        os.remove(log_path)
+        os.remove(progress_path)
+        # clean memory
+        del tokenizer, model, chunk, df, res, predictions, outputs, event
+        gc.collect()
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 
 def truncate_text(text: str, max_tokens: int = 512):

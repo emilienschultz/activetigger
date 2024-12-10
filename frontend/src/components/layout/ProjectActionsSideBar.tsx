@@ -137,6 +137,7 @@ export const ProjectActionsSidebar: FC<{
               <span className="d-none d-md-inline">Server load: </span>
               {Object.values(queueState || []).length}
             </div>
+            <br></br>
             <div className="badge text-bg-warning" title="Available GPU memory">
               <span className="d-none d-md-inline">
                 GPU:
