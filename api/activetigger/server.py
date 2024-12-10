@@ -1133,7 +1133,6 @@ class Project(Server):
             if (e["kind"] == "bert") and is_done:
                 clean = True
                 try:
-                    self.bertmodels.add(e)
                     # case there is a prediction
                     r = self.queue.current[e["unique_id"]]["future"].result()
                     if not isinstance(r, dict):
@@ -1158,7 +1157,12 @@ class Project(Server):
                         # return {"error": r["error"]}
                     if "prediction" in r:
                         predictions["predict_" + e["model"].name] = r["prediction"]
+                    self.bertmodels.add(e)
+
                 except Exception as ex:
+                    self.errors.append(
+                        [datetime.now(), "Error in model training/predicting", ex]
+                    )
                     print("Error in model training/predicting", ex)
 
             # case for simplemodels
