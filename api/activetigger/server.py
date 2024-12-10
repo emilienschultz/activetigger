@@ -991,7 +991,7 @@ class Project(Server):
         """
         Send state of the project
         """
-        start_time = time.time()
+        # start_time = time.time()
         r = {
             "params": self.params,
             "users": {"active": self.get_active_users()},
