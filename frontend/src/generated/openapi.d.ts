@@ -338,7 +338,9 @@ export interface paths {
         };
         /**
          * Get Queue
-         * @description Get the state of the server queue
+         * @description Get the state of the server
+         *     - queue
+         *     - gpu use
          */
         get: operations["get_queue_server_get"];
         put?: never;
@@ -1556,6 +1558,8 @@ export interface components {
             projections: Record<string, never>;
             /** Generations */
             generations: Record<string, never>;
+            /** Errors */
+            errors: unknown[][];
         };
         /** ProjectSummaryModel */
         ProjectSummaryModel: {

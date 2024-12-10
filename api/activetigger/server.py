@@ -529,6 +529,7 @@ class Project(Server):
     simplemodels: SimpleModels
     generations: Generations
     projections: Projections
+    errors: list
 
     def __init__(
         self,
@@ -578,6 +579,7 @@ class Project(Server):
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
         self.generations = Generations(self.db_manager, self.computing)
         self.projections = Projections(self.computing)
+        self.errors = []
 
     def __del__(self):
         pass
@@ -1025,6 +1027,7 @@ class Project(Server):
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
             "generations": {"training": self.generations.current_users_generating()},
+            "errors": self.errors,
         }
 
         # end_time = time.time()
@@ -1112,6 +1115,8 @@ class Project(Server):
         """
         predictions = {}
 
+        # TODO : clean old errors from the message list
+
         for e in self.computing.copy():
             # clean flag
             clean = False
@@ -1135,12 +1140,22 @@ class Project(Server):
                         print("Probleme with the function")
                         self.computing.remove(e)
                         self.queue.delete(e["unique_id"])
-                        return {"error": "Probleme with the function"}
+                        self.errors.append(
+                            [
+                                datetime.now(),
+                                "bert training",
+                                "Probleme with the function",
+                            ]
+                        )
+                        # return {"error": "Probleme with the function"}
                     if "error" in r:
                         print("Error in model training/predicting", r["error"])
                         self.computing.remove(e)
                         self.queue.delete(e["unique_id"])
-                        return {"error": r["error"]}
+                        self.errors.append(
+                            [datetime.now(), "bert training", r["error"]]
+                        )
+                        # return {"error": r["error"]}
                     if "prediction" in r:
                         predictions["predict_" + e["model"].name] = r["prediction"]
                 except Exception as ex:
@@ -1154,6 +1169,7 @@ class Project(Server):
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
+                    self.errors.append([datetime.now(), "simplemodel failed", ex])
                     print("Simplemodel failed", ex)
 
             # case for features
@@ -1166,6 +1182,9 @@ class Project(Server):
                     )
                     print("Feature added", e["name"])
                 except Exception as ex:
+                    self.errors.append(
+                        [datetime.now(), "Error in feature processing", ex]
+                    )
                     print("Error in feature processing", ex)
 
             # case for projections
@@ -1176,6 +1195,9 @@ class Project(Server):
                     self.projections.add(e, df)
                     print("projection added")
                 except Exception as ex:
+                    self.errors.append(
+                        [datetime.now(), "Error in feature projections queue", ex]
+                    )
                     print("Error in feature projections queue", ex)
 
             # case for generations
@@ -1193,6 +1215,9 @@ class Project(Server):
                             answer=row["answer"],
                         )
                 except Exception as ex:
+                    self.errors.append(
+                        [datetime.now(), "Error in generation queue", ex]
+                    )
                     print("Error in generation queue", ex)
 
             # delete from computing & queue

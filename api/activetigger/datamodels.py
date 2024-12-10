@@ -416,6 +416,7 @@ class ProjectStateModel(BaseModel):
     bertmodels: Dict[str, Any]
     projections: Dict[str, Any]
     generations: Dict[str, Any]
+    errors: List[List]
 
 
 class QueueModel(BaseModel):

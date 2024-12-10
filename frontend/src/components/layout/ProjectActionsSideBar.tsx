@@ -1,11 +1,17 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
-import { MdModelTraining, MdOutlineHomeMax, MdOutlineTransform } from 'react-icons/md';
+import {
+  MdModelTraining,
+  MdOutlineHomeMax,
+  MdOutlineTransform,
+  MdRunningWithErrors,
+} from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 import { useGetQueue } from '../../core/api';
 import { ProjectStateModel } from '../../types';
 import { PossibleProjectActions } from './ProjectPageLayout';
@@ -146,6 +152,19 @@ export const ProjectActionsSidebar: FC<{
                   : 'No'}
               </span>
             </div>
+            {projectState?.errors && projectState?.errors.length > 0 && (
+              <div>
+                <br></br>
+                <a className="errors">
+                  <MdRunningWithErrors />
+                </a>
+                <Tooltip anchorSelect=".errors" place="top">
+                  {projectState?.errors?.map((errorList, index) => (
+                    <div key={index}>{errorList.join(' - ')}</div>
+                  ))}
+                </Tooltip>
+              </div>
+            )}
           </div>
         </li>
 

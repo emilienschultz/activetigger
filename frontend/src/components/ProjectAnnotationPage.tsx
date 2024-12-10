@@ -235,6 +235,8 @@ export const ProjectAnnotationPage: FC = () => {
     });
   };
 
+  console.log(project);
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
