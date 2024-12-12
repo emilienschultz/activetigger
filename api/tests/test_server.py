@@ -81,13 +81,11 @@ def test_add_kill_job_queue():
 
 
 def test_state_queue():
-    import time
-
     queue = Queue(2)
 
     assert isinstance(queue.state(), dict)
 
-    num = queue.add("test", dummy_func, {"x": 2})
+    queue.add("test", dummy_func, {"x": 2})
     state = queue.state()
     nb_state = queue.get_nb_active_processes()
     assert len(state) == 1
@@ -102,7 +100,6 @@ def test_state_queue():
 
 
 def test_server(start_server):
-    from datetime import datetime
     from pathlib import Path
 
     assert isinstance(start_server.path, Path)
@@ -198,7 +195,7 @@ def test_create_delete_project(start_server, new_project):
     """
     # create project
     r = start_server.create_project(new_project, "test")
-    assert not "error" in r
+    assert "error" not in r
 
     # start & get project
     start_server.start_project("test")
@@ -210,6 +207,6 @@ def test_create_delete_project(start_server, new_project):
 
     # delete project
     r = start_server.delete_project(project.params.project_slug)
-    assert not "error" in r
+    assert "error" not in r
 
     # TODO : ADD STRATIFICATION

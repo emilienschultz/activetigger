@@ -862,9 +862,11 @@ class SimpleModels:
             model = RandomForestClassifier(
                 n_estimators=int(model_params["n_estimators"]),
                 random_state=42,
-                max_features=int(model_params["max_features"])
-                if model_params["max_features"]
-                else None,
+                max_features=(
+                    int(model_params["max_features"])
+                    if model_params["max_features"]
+                    else None
+                ),
                 n_jobs=-1,
             )
 

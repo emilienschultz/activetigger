@@ -1,6 +1,7 @@
 import gc
 import json
 import logging
+from logging import Logger
 import multiprocessing
 import os
 import shutil
@@ -41,8 +42,38 @@ from transformers import (
     BertTokenizer,
     Trainer,
     TrainerCallback,
+    TrainerControl,
+    TrainerState,
     TrainingArguments,
 )
+
+
+class CustomLoggingCallback(TrainerCallback):
+    event: Optional[multiprocessing.synchronize.Event]
+    current_path: str
+    logger: Logger
+
+    def __init__(self, event, logger, current_path):
+        self.event = event
+        self.current_path = current_path
+        self.logger = logger
+
+    def on_step_end(
+        self,
+        args: TrainingArguments,
+        state: TrainerState,
+        control: TrainerControl,
+        **kwargs,
+    ):
+        self.logger.info(f"Step {state.global_step}")
+        progress_percentage = (state.global_step / state.max_steps) * 100
+        with open(self.current_path / "train/progress", "w") as f:
+            f.write(str(progress_percentage))
+        # end if event set
+        if self.event is not None:
+            if self.event.is_set():
+                self.logger.info("Event set, stopping training.")
+                control.should_training_stop = True
 
 
 def get_root_pwd() -> str:
@@ -283,7 +314,7 @@ def compute_umap(features: DataFrame, params: dict, **kwargs):
     try:
         reducer = cuml.UMAP(**params)
         print("Using cuML for UMAP computation")
-    except Exception as e:
+    except Exception:
         reducer = umap.UMAP(**params)
         print("Using standard UMAP for computation")
 
@@ -436,7 +467,8 @@ def train_bert(
         logger.info(f"Missing texts - reducing training data to {len(df)}")
 
     # formatting data
-    labels = sorted(list(df[col_label].dropna().unique()))  # alphabetical order
+    # alphabetical order
+    labels = sorted(list(df[col_label].dropna().unique()))
     label2id = {j: i for i, j in enumerate(labels)}
     id2label = {i: j for i, j in enumerate(labels)}
     training_data = df[[col_text, col_label]]
@@ -518,25 +550,15 @@ def train_bert(
         )
         print("training arguments created")
 
-        class CustomLoggingCallback(TrainerCallback):
-            def on_step_end(self, args, state, control, **kwargs):
-                logger.info(f"Step {state.global_step}")
-                progress_percentage = (state.global_step / state.max_steps) * 100
-                with open(current_path / "train/progress", "w") as f:
-                    f.write(str(progress_percentage))
-                # end if event set
-                if event is not None:
-                    if event.is_set():
-                        logger.info("Event set, stopping training.")
-                        control.should_training_stop = True
-
         print("Build trainer")
         trainer = Trainer(
             model=bert,
             args=training_args,
             train_dataset=df["train"],
             eval_dataset=df["test"],
-            callbacks=[CustomLoggingCallback()],
+            callbacks=[
+                CustomLoggingCallback(event, current_path=current_path, logger=logger)
+            ],
         )
 
         try:
@@ -738,8 +760,8 @@ def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
     if response.status_code == 200:
         try:
             return {"success": response.json()["response"]}
-        except:
-            return {"error": "Error in the content"}
+        except Exception as e:
+            return {"error": f"Error in the content: {e}"}
     else:
         return {"error": "Error in the API call " + response.content}
 
