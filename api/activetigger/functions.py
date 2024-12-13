@@ -50,7 +50,7 @@ from transformers import (
 
 class CustomLoggingCallback(TrainerCallback):
     event: Optional[multiprocessing.synchronize.Event]
-    current_path: str
+    current_path: Path
     logger: Logger
 
     def __init__(self, event, logger, current_path):
@@ -67,7 +67,7 @@ class CustomLoggingCallback(TrainerCallback):
     ):
         self.logger.info(f"Step {state.global_step}")
         progress_percentage = (state.global_step / state.max_steps) * 100
-        with open(self.current_path / "train/progress", "w") as f:
+        with open(self.current_path.joinpath("train/progress"), "w") as f:
             f.write(str(progress_percentage))
         # end if event set
         if self.event is not None:
@@ -285,9 +285,11 @@ def to_sbert(
         print("start computation")
         if device == "cuda":
             with autocast(device_type=device):
-                emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+                emb = sbert.encode(list(texts), device=device,
+                                   batch_size=batch_size)
         else:
-            emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+            emb = sbert.encode(list(texts), device=device,
+                               batch_size=batch_size)
         emb = pd.DataFrame(emb, index=texts.index)
         emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
         print("computation end")
@@ -441,12 +443,12 @@ def train_bert(
         print("Using CPU for computation")
 
     #  create repertory for the specific model
-    current_path = path / name
+    current_path = path.joinpath(name)
     if not current_path.exists():
         os.makedirs(current_path)
 
     # logging the process
-    log_path = current_path / "status.log"
+    log_path = current_path.joinpath("status.log")
     logger = logging.getLogger("train_bert_model")
     file_handler = logging.FileHandler(log_path)
     formatter = logging.Formatter(
@@ -528,8 +530,8 @@ def train_bert(
         eval_steps = total_steps // params["eval"]
         print("training arguments", params)
         training_args = TrainingArguments(
-            output_dir=current_path / "train",
-            logging_dir=current_path / "logs",
+            output_dir=current_path.joinpath("train"),
+            logging_dir=current_path.joinpath("logs"),
             learning_rate=float(params["lrate"]),
             weight_decay=float(params["wdecay"]),
             num_train_epochs=float(params["epochs"]),
@@ -557,7 +559,8 @@ def train_bert(
             train_dataset=df["train"],
             eval_dataset=df["test"],
             callbacks=[
-                CustomLoggingCallback(event, current_path=current_path, logger=logger)
+                CustomLoggingCallback(
+                    event, current_path=current_path, logger=logger)
             ],
         )
 
@@ -574,20 +577,21 @@ def train_bert(
         logger.info(f"Model trained {current_path}")
 
         # save training data
-        training_data.to_parquet(current_path / "training_data.parquet")
+        training_data.to_parquet(
+            current_path.joinpath("training_data.parquet"))
 
         # save parameters
         params["test_size"] = test_size
         params["base_model"] = base_model
-        with open(current_path / "parameters.json", "w") as f:
+        with open(current_path.joinpath("parameters.json", "w")) as f:
             json.dump(params, f)
 
         # remove intermediate steps and logs if succeed
-        shutil.rmtree(current_path / "train")
-        os.rename(log_path, current_path / "finished")
+        shutil.rmtree(current_path.joinpath("train"))
+        os.rename(log_path, current_path.joinpath("finished"))
 
         # save log history of the training for statistics
-        with open(current_path / "log_history.txt", "w") as f:
+        with open(current_path.joinpath("log_history.txt", "w")) as f:
             json.dump(trainer.state.log_history, f)
 
         return {"success": "Model trained"}
@@ -655,7 +659,7 @@ def predict_bert(
         predictions = []
         # logging the process
         for chunk in [
-            df[col_text][i : i + batch] for i in range(0, df.shape[0], batch)
+            df[col_text][i: i + batch] for i in range(0, df.shape[0], batch)
         ]:
             # user interrupt
             if event.is_set():
