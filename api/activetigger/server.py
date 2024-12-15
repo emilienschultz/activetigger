@@ -117,7 +117,7 @@ class Server:
 
         # create directories
         (self.path / "static").mkdir(parents=True, exist_ok=True)
-        self.path_models.mkdir(exist_ok=True):
+        self.path_models.mkdir(exist_ok=True)
 
         # attributes of the server
         self.projects = {}

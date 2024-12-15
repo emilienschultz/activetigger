@@ -1,10 +1,10 @@
 import gc
 import json
 import logging
-from logging import Logger
 import multiprocessing
 import os
 import shutil
+from logging import Logger
 from pathlib import Path
 from typing import Optional
 
@@ -285,11 +285,9 @@ def to_sbert(
         print("start computation")
         if device == "cuda":
             with autocast(device_type=device):
-                emb = sbert.encode(list(texts), device=device,
-                                   batch_size=batch_size)
+                emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
         else:
-            emb = sbert.encode(list(texts), device=device,
-                               batch_size=batch_size)
+            emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
         emb = pd.DataFrame(emb, index=texts.index)
         emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
         print("computation end")
@@ -559,8 +557,7 @@ def train_bert(
             train_dataset=df["train"],
             eval_dataset=df["test"],
             callbacks=[
-                CustomLoggingCallback(
-                    event, current_path=current_path, logger=logger)
+                CustomLoggingCallback(event, current_path=current_path, logger=logger)
             ],
         )
 
@@ -577,13 +574,12 @@ def train_bert(
         logger.info(f"Model trained {current_path}")
 
         # save training data
-        training_data.to_parquet(
-            current_path.joinpath("training_data.parquet"))
+        training_data.to_parquet(current_path.joinpath("training_data.parquet"))
 
         # save parameters
         params["test_size"] = test_size
         params["base_model"] = base_model
-        with open(current_path.joinpath("parameters.json", "w")) as f:
+        with open(current_path.joinpath("parameters.json"), "w") as f:
             json.dump(params, f)
 
         # remove intermediate steps and logs if succeed
@@ -591,7 +587,7 @@ def train_bert(
         os.rename(log_path, current_path.joinpath("finished"))
 
         # save log history of the training for statistics
-        with open(current_path.joinpath("log_history.txt", "w")) as f:
+        with open(current_path.joinpath("log_history.txt"), "w") as f:
             json.dump(trainer.state.log_history, f)
 
         return {"success": "Model trained"}
@@ -659,7 +655,7 @@ def predict_bert(
         predictions = []
         # logging the process
         for chunk in [
-            df[col_text][i: i + batch] for i in range(0, df.shape[0], batch)
+            df[col_text][i : i + batch] for i in range(0, df.shape[0], batch)
         ]:
             # user interrupt
             if event.is_set():

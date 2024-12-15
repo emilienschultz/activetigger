@@ -99,11 +99,18 @@ You can deploy the app with Github Pages for tests
 
 ## Documentation
 
-🚧 to write 🚧
+🚧 currently writing itself 🚧
 
-## How to contribute
+## Contributing
 
-🚧 to write 🚧
+Something in the code looks ugly ? Do you miss a feature? Please add your knowledge to the common effort.
+
+1. Create a fork
+2. Create your feature branch: `git checkout -b my-feature`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin my-new-feature`
+5. Submit a pull request 🚀
+
 
 ## Funding
 
@@ -111,7 +118,6 @@ The development of Active Tigger is supported by : [DRARI Île-de-France](https:
 
 ## How to cite
 
-🚧 to write 🚧
-
+🚧 please not for the moment 🚧
 
 [^1]: The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
