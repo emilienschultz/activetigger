@@ -25,7 +25,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import cat2num, clean_regex, get_gpu_memory_info
+from activetigger.functions import cat2num, clean_regex
 from activetigger.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections

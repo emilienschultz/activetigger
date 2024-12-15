@@ -73,7 +73,7 @@ def project(start_server, new_project):
     """
     # create project
     r = start_server.create_project(new_project, "test")
-    assert not "error" in r
+    assert "error" not in r
 
     # start & get project
     start_server.start_project("test")
@@ -83,7 +83,7 @@ def project(start_server, new_project):
 
     # delete project
     r = start_server.delete_project(project.params.project_slug)
-    assert not "error" in r
+    assert "error" not in r
 
 
 def test_scheme(project):
@@ -96,20 +96,20 @@ def test_scheme(project):
 
     # ADD
     r = project.schemes.add_scheme("test", ["A", "B"])
-    assert not "error" in r
+    assert "error" not in r
     available = project.schemes.available()
     assert len(available) == 2
     assert "test" in available
 
     # UPDATE
     r = project.schemes.update_scheme("test", ["A", "B", "C"])
-    assert not "error" in r
+    assert "error" not in r
     available = project.schemes.available()
     assert len(available["test"]) == 3
 
     # REMOVE
     r = project.schemes.delete_scheme("test")
-    assert not "error" in r
+    assert "error" not in r
     available = project.schemes.available()
     assert len(available) == 1
 

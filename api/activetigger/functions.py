@@ -1,6 +1,7 @@
 import gc
 import json
 import logging
+from logging import Logger
 import multiprocessing
 import os
 import shutil
@@ -41,8 +42,38 @@ from transformers import (
     BertTokenizer,
     Trainer,
     TrainerCallback,
+    TrainerControl,
+    TrainerState,
     TrainingArguments,
 )
+
+
+class CustomLoggingCallback(TrainerCallback):
+    event: Optional[multiprocessing.synchronize.Event]
+    current_path: Path
+    logger: Logger
+
+    def __init__(self, event, logger, current_path):
+        self.event = event
+        self.current_path = current_path
+        self.logger = logger
+
+    def on_step_end(
+        self,
+        args: TrainingArguments,
+        state: TrainerState,
+        control: TrainerControl,
+        **kwargs,
+    ):
+        self.logger.info(f"Step {state.global_step}")
+        progress_percentage = (state.global_step / state.max_steps) * 100
+        with open(self.current_path.joinpath("train/progress"), "w") as f:
+            f.write(str(progress_percentage))
+        # end if event set
+        if self.event is not None:
+            if self.event.is_set():
+                self.logger.info("Event set, stopping training.")
+                control.should_training_stop = True
 
 
 def get_root_pwd() -> str:
@@ -254,9 +285,11 @@ def to_sbert(
         print("start computation")
         if device == "cuda":
             with autocast(device_type=device):
-                emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+                emb = sbert.encode(list(texts), device=device,
+                                   batch_size=batch_size)
         else:
-            emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+            emb = sbert.encode(list(texts), device=device,
+                               batch_size=batch_size)
         emb = pd.DataFrame(emb, index=texts.index)
         emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
         print("computation end")
@@ -283,7 +316,7 @@ def compute_umap(features: DataFrame, params: dict, **kwargs):
     try:
         reducer = cuml.UMAP(**params)
         print("Using cuML for UMAP computation")
-    except Exception as e:
+    except Exception:
         reducer = umap.UMAP(**params)
         print("Using standard UMAP for computation")
 
@@ -410,12 +443,12 @@ def train_bert(
         print("Using CPU for computation")
 
     #  create repertory for the specific model
-    current_path = path / name
+    current_path = path.joinpath(name)
     if not current_path.exists():
         os.makedirs(current_path)
 
     # logging the process
-    log_path = current_path / "status.log"
+    log_path = current_path.joinpath("status.log")
     logger = logging.getLogger("train_bert_model")
     file_handler = logging.FileHandler(log_path)
     formatter = logging.Formatter(
@@ -436,7 +469,8 @@ def train_bert(
         logger.info(f"Missing texts - reducing training data to {len(df)}")
 
     # formatting data
-    labels = sorted(list(df[col_label].dropna().unique()))  # alphabetical order
+    # alphabetical order
+    labels = sorted(list(df[col_label].dropna().unique()))
     label2id = {j: i for i, j in enumerate(labels)}
     id2label = {i: j for i, j in enumerate(labels)}
     training_data = df[[col_text, col_label]]
@@ -496,8 +530,8 @@ def train_bert(
         eval_steps = total_steps // params["eval"]
         print("training arguments", params)
         training_args = TrainingArguments(
-            output_dir=current_path / "train",
-            logging_dir=current_path / "logs",
+            output_dir=current_path.joinpath("train"),
+            logging_dir=current_path.joinpath("logs"),
             learning_rate=float(params["lrate"]),
             weight_decay=float(params["wdecay"]),
             num_train_epochs=float(params["epochs"]),
@@ -518,25 +552,16 @@ def train_bert(
         )
         print("training arguments created")
 
-        class CustomLoggingCallback(TrainerCallback):
-            def on_step_end(self, args, state, control, **kwargs):
-                logger.info(f"Step {state.global_step}")
-                progress_percentage = (state.global_step / state.max_steps) * 100
-                with open(current_path / "train/progress", "w") as f:
-                    f.write(str(progress_percentage))
-                # end if event set
-                if event is not None:
-                    if event.is_set():
-                        logger.info("Event set, stopping training.")
-                        control.should_training_stop = True
-
         print("Build trainer")
         trainer = Trainer(
             model=bert,
             args=training_args,
             train_dataset=df["train"],
             eval_dataset=df["test"],
-            callbacks=[CustomLoggingCallback()],
+            callbacks=[
+                CustomLoggingCallback(
+                    event, current_path=current_path, logger=logger)
+            ],
         )
 
         try:
@@ -552,20 +577,21 @@ def train_bert(
         logger.info(f"Model trained {current_path}")
 
         # save training data
-        training_data.to_parquet(current_path / "training_data.parquet")
+        training_data.to_parquet(
+            current_path.joinpath("training_data.parquet"))
 
         # save parameters
         params["test_size"] = test_size
         params["base_model"] = base_model
-        with open(current_path / "parameters.json", "w") as f:
+        with open(current_path.joinpath("parameters.json", "w")) as f:
             json.dump(params, f)
 
         # remove intermediate steps and logs if succeed
-        shutil.rmtree(current_path / "train")
-        os.rename(log_path, current_path / "finished")
+        shutil.rmtree(current_path.joinpath("train"))
+        os.rename(log_path, current_path.joinpath("finished"))
 
         # save log history of the training for statistics
-        with open(current_path / "log_history.txt", "w") as f:
+        with open(current_path.joinpath("log_history.txt", "w")) as f:
             json.dump(trainer.state.log_history, f)
 
         return {"success": "Model trained"}
@@ -633,7 +659,7 @@ def predict_bert(
         predictions = []
         # logging the process
         for chunk in [
-            df[col_text][i : i + batch] for i in range(0, df.shape[0], batch)
+            df[col_text][i: i + batch] for i in range(0, df.shape[0], batch)
         ]:
             # user interrupt
             if event.is_set():
@@ -738,8 +764,8 @@ def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
     if response.status_code == 200:
         try:
             return {"success": response.json()["response"]}
-        except:
-            return {"error": "Error in the content"}
+        except Exception as e:
+            return {"error": f"Error in the content: {e}"}
     else:
         return {"error": "Error in the API call " + response.content}
 

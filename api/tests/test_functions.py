@@ -1,7 +1,3 @@
-import pytest
-from io import StringIO
-
-
 def test_get_root_pwd(monkeypatch, capsys):
     """
     Test the get_root_pwd

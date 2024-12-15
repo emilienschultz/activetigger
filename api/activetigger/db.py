@@ -1,5 +1,7 @@
 import datetime
 import json
+import logging
+from json.decoder import JSONDecodeError
 from pathlib import Path
 
 from sqlalchemy import (
@@ -358,7 +360,8 @@ class DatabaseManager:
             session.commit()
             session.close()
             return True
-        except:
+        except JSONDecodeError as e:
+            logging.warning("Unable to parse codebook scheme: %", e)
             return None
 
     def get_scheme_codebook(self, project_slug: str, name: str):
@@ -372,7 +375,8 @@ class DatabaseManager:
                 "codebook": json.loads(scheme.params)["codebook"],
                 "time": str(scheme.time_modified),
             }
-        except:
+        except JSONDecodeError as e:
+            logging.warning("Unable to parse codebook scheme: %", e)
             return None
 
     def delete_project(self, project_slug: str):

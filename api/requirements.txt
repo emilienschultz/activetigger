@@ -34,3 +34,5 @@ https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.7.
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz#egg=en_core_web_sm
 #--extra-index-url=https://pypi.nvidia.com
 #cuml-cu12==24.10.*
+ruff
+black
