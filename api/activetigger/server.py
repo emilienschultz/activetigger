@@ -116,15 +116,11 @@ class Server:
         self.db = self.path / self.db_name
 
         # create directories
-        if not self.path.exists():
-            os.makedirs(self.path)
-        if not (self.path / "static").exists():
-            os.mkdir((self.path / "static"))
-        if not self.path_models.exists():
-            os.makedirs(self.path_models)
+        (self.path / "static").mkdir(parents=True, exist_ok=True)
+        self.path_models.mkdir(exist_ok=True):
 
         # attributes of the server
-        self.projects: dict = {}
+        self.projects = {}
         self.db_manager = DatabaseManager(self.db)
         self.queue = Queue(self.n_workers)
         self.users = Users(self.db_manager)
@@ -157,7 +153,7 @@ class Server:
         Log action in the database
         """
         self.db_manager.add_log(user, action, project, connect)
-        logger.info(f"{action} from {user} in project {project}")
+        logger.info("%s from %s in project %s", action, user, project)
 
     def get_logs(
         self, project_slug: str, limit: int, partial: bool = True
