@@ -444,11 +444,13 @@ export const ProjectAnnotationPage: FC = () => {
               onChange={(e) => {
                 setSelectedLabels(e.map((e) => e.value));
               }}
+              value={selectedLabels.map((e) => ({ value: e, label: e }))}
             />
             <button
               className="btn"
               onClick={() => {
                 postAnnotation(selectedLabels.join('|'), elementId);
+                setSelectedLabels([]);
               }}
             >
               <FaSquareCheck size={30} />
