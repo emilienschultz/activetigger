@@ -3,9 +3,11 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import Highlighter from 'react-highlight-words';
 import { FaPencilAlt } from 'react-icons/fa';
+import { FaSquareCheck } from 'react-icons/fa6';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import Select from 'react-select';
 import { ReactSortable } from 'react-sortablejs';
 import {
   useAddAnnotation,
@@ -86,7 +88,7 @@ export const ProjectAnnotationPage: FC = () => {
         )
       : [],
   );
-  const [kindScheme, setKindScheme] = useState<string>(
+  const [kindScheme] = useState<string>(
     currentScheme && project
       ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
       : 'multiclass',
@@ -158,8 +160,8 @@ export const ProjectAnnotationPage: FC = () => {
     updatedSimpleModel,
   ]);
 
-  // generic method to apply a chosen label to an element
-  const applyLabel = useCallback(
+  // post an annotation
+  const postAnnotation = useCallback(
     (label: string, elementId?: string) => {
       if (elementId) {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
@@ -190,11 +192,11 @@ export const ProjectAnnotationPage: FC = () => {
       availableLabels.forEach((item, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           console.log(item.label);
-          applyLabel(item.label, elementId);
+          postAnnotation(item.label, elementId);
         }
       });
     },
-    [availableLabels, applyLabel, elementId],
+    [availableLabels, postAnnotation, elementId],
   );
 
   useEffect(() => {
@@ -227,6 +229,9 @@ export const ProjectAnnotationPage: FC = () => {
       }
     });
   };
+
+  // management multilabels
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
@@ -349,7 +354,7 @@ export const ProjectAnnotationPage: FC = () => {
                 value={element?.predict.label}
                 className="btn btn-secondary"
                 onClick={(e) => {
-                  applyLabel(e.currentTarget.value, elementId);
+                  postAnnotation(e.currentTarget.value, elementId);
                 }}
               >
                 Predicted : {element?.predict.label} (proba: {element?.predict.proba})
@@ -378,52 +383,79 @@ export const ProjectAnnotationPage: FC = () => {
           )
         }
       </div>
-      <div className="row">
-        <div className="d-flex flex-wrap gap-2 justify-content-center">
-          <Link
-            to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
-            className="btn btn-outline-secondary"
-            onClick={() => {
-              setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
-            }}
-          >
-            <IoMdSkipBackward />
-          </Link>
-          <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
-            {
-              // display buttons for label
-              availableLabels.map((e, i) => (
-                <button
-                  type="button"
-                  key={e.label}
-                  value={e.label}
-                  className="btn btn-primary grow-1 gap-2 justify-content-center mx-1"
-                  onClick={(v) => {
-                    applyLabel(v.currentTarget.value, elementId);
-                  }}
-                >
-                  {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
-                </button>
-              ))
-            }
-          </ReactSortable>
-          <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
-            <FaPencilAlt />
-          </button>
-        </div>
-
-        {displayComment && (
-          <div className="m-3">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
+      {kindScheme == 'multiclass' && (
+        <div className="row">
+          <div className="d-flex flex-wrap gap-2 justify-content-center">
+            <Link
+              to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
+              }}
+            >
+              <IoMdSkipBackward />
+            </Link>
+            <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
+              {
+                // display buttons for label
+                availableLabels.map((e, i) => (
+                  <button
+                    type="button"
+                    key={e.label}
+                    value={e.label}
+                    className="btn btn-primary grow-1 gap-2 justify-content-center mx-1"
+                    onClick={(v) => {
+                      postAnnotation(v.currentTarget.value, elementId);
+                    }}
+                  >
+                    {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
+                  </button>
+                ))
+              }
+            </ReactSortable>
+            <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
+              <FaPencilAlt />
+            </button>
           </div>
-        )}
-      </div>
+
+          {displayComment && (
+            <div className="m-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* multilabel : for the moment
+      multiple select concatenated*/}
+      {kindScheme == 'multilabel' && (
+        <div className="row justify-content-center">
+          <div className="col-8 d-flex justify-content-center align-items-center">
+            <Select
+              isMulti
+              className="flex-grow-1"
+              options={availableLabels.map((e) => ({ value: e.label, label: e.label }))}
+              onChange={(e) => {
+                setSelectedLabels(e.map((e) => e.value));
+              }}
+            />
+            <button
+              className="btn"
+              onClick={() => {
+                postAnnotation(selectedLabels.join('|'), elementId);
+              }}
+            >
+              <FaSquareCheck size={30} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-5">
         {phase != 'test' && (

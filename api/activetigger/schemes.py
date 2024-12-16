@@ -397,8 +397,17 @@ class Schemes:
         a = self.available()
         if scheme not in a:
             return {"error": "scheme unavailable"}
-        if (label is not None) and (label not in a[scheme]["labels"]):
-            return {"error": "this tag doesn't belong to this scheme"}
+        if label is None:
+            return {"error": "no label"}
+
+        # test if the labels used exist in the scheme
+        if "|" in label:
+            er = [i for i in label.split("|") if i not in a[scheme]["labels"]]
+            if len(er) > 0:
+                return {"error": f"labels don't belong to this scheme : {er}"}
+        else:
+            if label not in a[scheme]["labels"]:
+                return {"error": "this tag doesn't belong to this scheme"}
 
         # TODO : add a test also for testing
         # if (not element_id in self.content.index):
