@@ -397,7 +397,7 @@ class Schemes:
         a = self.available()
         if scheme not in a:
             return {"error": "scheme unavailable"}
-        if (label is not None) and (label not in a[scheme]):
+        if (label is not None) and (label not in a[scheme]["labels"]):
             return {"error": "this tag doesn't belong to this scheme"}
 
         # TODO : add a test also for testing
