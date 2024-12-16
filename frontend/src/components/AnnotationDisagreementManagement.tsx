@@ -19,7 +19,7 @@ export const AnnotationDisagreementManagement: FC<{
 
   // available labels from context
   const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
 
   // get disagreement table
   const { tableDisagreement, users, reFetchTable } = useTableDisagreement(

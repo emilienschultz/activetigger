@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
@@ -20,7 +20,9 @@ export const SelectCurrentScheme: FC = () => {
     setAppContext,
   } = useAppContext();
 
-  const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
+  const availableSchemes = useMemo(() => {
+    return currentProject ? Object.keys(currentProject.schemes.available) : [];
+  }, [currentProject]);
 
   // manage scheme selection
   useEffect(() => {
@@ -103,7 +105,7 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   // action to create the new scheme
   const createNewScheme: SubmitHandler<SchemeModel> = async (formData) => {
     try {
-      await addScheme(formData.name);
+      await addScheme(formData.name, formData.kind || 'multiclass');
       if (reFetchCurrentProject) reFetchCurrentProject();
       notify({ type: 'success', message: `Scheme ${formData.name} created` });
     } catch (error) {
@@ -127,6 +129,7 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
 
     if (reFetchCurrentProject) reFetchCurrentProject();
   };
+
   return (
     <div>
       <div className="row">
@@ -134,11 +137,11 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
           <div className="mt-3">
             <SelectCurrentScheme />
           </div>
-          <button onClick={deleteSelectedScheme} className="btn btn p-0 m-1">
-            <FaRegTrashAlt size={20} />
+          <button onClick={deleteSelectedScheme} className="btn btn-primary mx-2">
+            <FaRegTrashAlt size={20} /> Delete
           </button>
-          <button onClick={handleIconClick} className="btn p-0 m-1">
-            <FaPlusCircle size={20} />
+          <button onClick={handleIconClick} className="btn btn-primary">
+            <FaPlusCircle size={20} /> Add
           </button>
         </div>
       </div>
@@ -148,7 +151,7 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
           showCreateNewScheme && (
             <div className="row">
               <form onSubmit={handleSubmit(createNewScheme)}>
-                <div className="secondary-panel col-4">
+                <div className="col-4">
                   <input
                     className="form-control"
                     id="scheme_name"
@@ -156,6 +159,16 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
                     {...register('name')}
                     placeholder="Enter new scheme name"
                   />
+                  <label
+                    htmlFor="scheme-selected"
+                    style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
+                  >
+                    Type
+                  </label>
+                  <select id="scheme_kind" className="form-select" {...register('kind')}>
+                    <option value="multiclass">Multiclass</option>
+                    <option value="multilabel">Multilabel (expertimental)</option>
+                  </select>
                   <button className="btn btn-primary btn-validation">Create</button>
                 </div>
               </form>

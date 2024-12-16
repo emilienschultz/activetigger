@@ -244,14 +244,16 @@ class Schemes:
             "filter": contains,
         }
 
-    def add_scheme(self, name: str, labels: list):
+    def add_scheme(
+        self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
+    ):
         """
         Add new scheme
         """
         if self.exists(name):
             return {"error": "scheme name already exists"}
 
-        self.db_manager.add_scheme(self.project_slug, name, labels, None)
+        self.db_manager.add_scheme(self.project_slug, name, labels, kind, user)
 
         return {"success": "scheme created"}
 
@@ -270,7 +272,7 @@ class Schemes:
             available[scheme] = []
         if label in available[scheme]:
             return {"error": "label already exist"}
-        labels = available[scheme]
+        labels = available[scheme]["labels"]
         labels.append(label)
         self.update_scheme(scheme, labels)
         return {"success": "scheme updated with a new label"}
@@ -341,7 +343,7 @@ class Schemes:
         Available schemes {scheme:[labels]}
         """
         r = self.db_manager.available_schemes(self.project_slug)
-        return {i["name"]: i["labels"] for i in r}
+        return {i["name"]: {"labels": i["labels"], "kind": i["kind"]} for i in r}
 
     def get(self) -> dict:
         """

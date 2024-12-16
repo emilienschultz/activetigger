@@ -46,7 +46,7 @@ export const ProjectExplorePage: FC = () => {
   });
 
   const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
 
   // selection elements
   const [page, setPage] = useState<number | null>(0);

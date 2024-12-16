@@ -13,7 +13,7 @@ export const SelectionManagement: FC = () => {
   } = useAppContext();
 
   const availableLabels = useMemo(() => {
-    return currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+    return currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
   }, [currentScheme, project]);
 
   const availableModes =
@@ -166,15 +166,17 @@ export const SelectionManagement: FC = () => {
                     <th></th>
                   </tr>
                 </thead>
-                {currentModel.params &&
-                  (currentModel.statistics && Object.entries(currentModel.statistics)).map(
-                    ([key, value], i) => (
-                      <tr key={i}>
-                        <td>{key}</td>
-                        <td> {JSON.stringify(value)}</td>
-                      </tr>
-                    ),
-                  )}
+                <tbody>
+                  {currentModel.params &&
+                    (currentModel.statistics && Object.entries(currentModel.statistics)).map(
+                      ([key, value], i) => (
+                        <tr key={i}>
+                          <td>{key}</td>
+                          <td> {JSON.stringify(value)}</td>
+                        </tr>
+                      ),
+                    )}
+                </tbody>
               </table>
             </div>
           )}
@@ -194,7 +196,6 @@ export const SelectionManagement: FC = () => {
                     frameSelection: !selectionConfig.frameSelection,
                   },
                 }));
-                // console.log(selectionConfig.frameSelection);
               }}
             />
             Use visualisation frame to lock the selection

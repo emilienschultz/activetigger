@@ -1162,7 +1162,9 @@ async def get_codebook(
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return CodebookModel(
-        scheme=scheme, content=r["success"]["codebook"], time=r["success"]["time"]
+        scheme=scheme,
+        content=str(r["success"]["codebook"]),
+        time=str(r["success"]["time"]),
     )
 
 
@@ -1179,7 +1181,9 @@ async def post_schemes(
     test_rights("modify project element", current_user.username, project.name)
 
     if action == "add":
-        r = project.schemes.add_scheme(scheme.name, scheme.tags)
+        r = project.schemes.add_scheme(
+            scheme.name, scheme.labels, scheme.kind, current_user.username
+        )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(
@@ -1195,7 +1199,7 @@ async def post_schemes(
         )
         return None
     if action == "update":
-        r = project.schemes.update_scheme(scheme.name, scheme.tags)
+        r = project.schemes.update_scheme(scheme.name, scheme.labels)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
         server.log_action(

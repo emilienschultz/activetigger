@@ -1623,10 +1623,15 @@ export interface components {
             /** Name */
             name: string;
             /**
-             * Tags
+             * Kind
+             * @default multiclass
+             */
+            kind: string | null;
+            /**
+             * Labels
              * @default []
              */
-            tags: unknown[] | null;
+            labels: unknown[] | null;
         };
         /**
          * SimpleModelModel
@@ -3230,6 +3235,7 @@ export interface operations {
             query: {
                 model_name: string;
                 dataset?: string;
+                batch_size?: number;
                 project_slug: string;
             };
             header?: never;

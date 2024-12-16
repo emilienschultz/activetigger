@@ -328,7 +328,7 @@ export function useDeleteScheme(projectSlug: string, schemeName: string | null) 
           path: { action: 'delete' },
           query: { project_slug: projectSlug },
         },
-        body: { project_slug: projectSlug, name: schemeName, tags: null },
+        body: { project_slug: projectSlug, name: schemeName, kind: null, labels: null },
       });
       if (!res.error) notify({ type: 'success', message: 'Scheme deleted' });
     }
@@ -345,7 +345,7 @@ export function useAddScheme(projectSlug: string) {
   const { notify } = useNotifications();
 
   const addScheme = useCallback(
-    async (schemeName: string) => {
+    async (schemeName: string, kind: string) => {
       if (schemeName) {
         // do the new projects POST call
         const res = await api.POST('/schemes/{action}', {
@@ -353,7 +353,7 @@ export function useAddScheme(projectSlug: string) {
             path: { action: 'add' },
             query: { project_slug: projectSlug },
           },
-          body: { project_slug: projectSlug, name: schemeName, tags: null },
+          body: { project_slug: projectSlug, name: schemeName, kind: kind, labels: null },
         });
         if (!res.error) notify({ type: 'success', message: 'Scheme add' });
 

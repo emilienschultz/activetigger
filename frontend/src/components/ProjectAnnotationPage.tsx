@@ -75,18 +75,21 @@ export const ProjectAnnotationPage: FC = () => {
     project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
       ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
       : null;
-  // const availableLabels =
-  //   currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
-  // available methods depend if there is a simple model trained for the user/scheme
-  // TO TEST, and in the future change the API if possible
 
   const [availableLabels, setAvailableLabels] = useState<LabelType[]>(
     currentScheme && project
-      ? ((project.schemes.available[currentScheme] as string[]) || []).map((label, index) => ({
-          id: index,
-          label: label,
-        }))
+      ? ((project.schemes.available[currentScheme]['labels'] as string[]) || []).map(
+          (label, index) => ({
+            id: index,
+            label: label,
+          }),
+        )
       : [],
+  );
+  const [kindScheme, setKindScheme] = useState<string>(
+    currentScheme && project
+      ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
+      : 'multiclass',
   );
 
   // get statistics to display (TODO : try a way to avoid another request ?)
@@ -207,16 +210,6 @@ export const ProjectAnnotationPage: FC = () => {
     };
   }, [availableLabels, handleKeyboardEvents]);
 
-  // separate the text in two parts & neutralize htmlk
-  // function escapeHTML(text: string): string {
-  //   return text
-  //     .replace(/&/g, '&amp;')
-  //     .replace(/</g, '&lt;')
-  //     .replace(/>/g, '&gt;')
-  //     .replace(/"/g, '&quot;')
-  //     .replace(/'/g, '&#039;');
-  // }
-
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
@@ -234,8 +227,6 @@ export const ProjectAnnotationPage: FC = () => {
       }
     });
   };
-
-  console.log(project);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
@@ -437,14 +428,6 @@ export const ProjectAnnotationPage: FC = () => {
       <div className="mt-5">
         {phase != 'test' && (
           <Tabs id="panel2" className="mb-3">
-            {/* <Tab eventKey="labels" title="Labels">
-              <LabelsManagement
-                projectName={projectName || null}
-                currentScheme={currentScheme || null}
-                availableLabels={availableLabels}
-                reFetchCurrentProject={reFetchCurrentProject || (() => null)}
-              />
-            </Tab> */}
             <Tab eventKey="prediction" title="Prediction">
               <SimpleModelManagement
                 projectName={projectName || null}

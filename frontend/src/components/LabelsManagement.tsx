@@ -8,6 +8,7 @@ interface LabelsManagementProps {
   projectName: string | null;
   currentScheme: string | null;
   availableLabels: string[];
+  kindScheme: string;
   reFetchCurrentProject: () => void;
 }
 
@@ -15,6 +16,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   projectName,
   currentScheme,
   availableLabels,
+  kindScheme,
   reFetchCurrentProject,
 }) => {
   // hooks to manage labels
@@ -53,6 +55,11 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   return (
     <div>
       <span className="explanations">Create, delete or rename labels.</span>
+      <br></br>
+      <span>
+        {' '}
+        The current scheme is a <b>{kindScheme}</b>
+      </span>
       <label htmlFor="select-label" className="form-label">
         Available labels
       </label>
