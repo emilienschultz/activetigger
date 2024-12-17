@@ -3,12 +3,9 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import Highlighter from 'react-highlight-words';
 import { FaPencilAlt } from 'react-icons/fa';
-import { FaSquareCheck } from 'react-icons/fa6';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import Select from 'react-select';
-import { ReactSortable } from 'react-sortablejs';
 import {
   useAddAnnotation,
   useGetElementById,
@@ -19,15 +16,12 @@ import {
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
+import { ProjectPageLayout } from './layout/ProjectPageLayout';
+import { MulticlassInput } from './MulticlassInput';
+import { MultilabelInput } from './MultilabelInput';
 import { ProjectionManagement } from './ProjectionManagement';
 import { SelectionManagement } from './SelectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
-
-interface LabelType {
-  id: number;
-  label: string;
-}
 
 /**
  * Annotation page
@@ -78,16 +72,10 @@ export const ProjectAnnotationPage: FC = () => {
       ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
       : null;
 
-  const [availableLabels, setAvailableLabels] = useState<LabelType[]>(
+  const availableLabels =
     currentScheme && project
-      ? ((project.schemes.available[currentScheme]['labels'] as string[]) || []).map(
-          (label, index) => ({
-            id: index,
-            label: label,
-          }),
-        )
-      : [],
-  );
+      ? (project.schemes.available[currentScheme]['labels'] as string[])
+      : [];
   const [kindScheme] = useState<string>(
     currentScheme && project
       ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
@@ -179,39 +167,6 @@ export const ProjectAnnotationPage: FC = () => {
     [setAppContext, addAnnotation, navigate, projectName, comment],
   );
 
-  const handleKeyboardEvents = useCallback(
-    (ev: KeyboardEvent) => {
-      // prevent shortkey to perturb the inputs
-      const activeElement = document.activeElement;
-      const isFormField =
-        activeElement?.tagName === 'INPUT' ||
-        activeElement?.tagName === 'TEXTAREA' ||
-        activeElement?.tagName === 'SELECT';
-      if (isFormField) return;
-
-      availableLabels.forEach((item, i) => {
-        if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
-          console.log(item.label);
-          postAnnotation(item.label, elementId);
-        }
-      });
-    },
-    [availableLabels, postAnnotation, elementId],
-  );
-
-  useEffect(() => {
-    // manage keyboard shortcut if less than 10 label
-    if (availableLabels.length > 0 && availableLabels.length < 10) {
-      document.addEventListener('keydown', handleKeyboardEvents);
-    }
-
-    return () => {
-      if (availableLabels.length > 0 && availableLabels.length < 10) {
-        document.removeEventListener('keydown', handleKeyboardEvents);
-      }
-    };
-  }, [availableLabels, handleKeyboardEvents]);
-
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
@@ -229,9 +184,6 @@ export const ProjectAnnotationPage: FC = () => {
       }
     });
   };
-
-  // management multilabels
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
@@ -383,81 +335,49 @@ export const ProjectAnnotationPage: FC = () => {
           )
         }
       </div>
-      {kindScheme == 'multiclass' && (
-        <div className="row">
-          <div className="d-flex flex-wrap gap-2 justify-content-center">
-            <Link
-              to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
-              className="btn btn-outline-secondary"
-              onClick={() => {
-                setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
-              }}
-            >
-              <IoMdSkipBackward />
-            </Link>
-            <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
-              {
-                // display buttons for label
-                availableLabels.map((e, i) => (
-                  <button
-                    type="button"
-                    key={e.label}
-                    value={e.label}
-                    className="btn btn-primary grow-1 gap-2 justify-content-center mx-1"
-                    onClick={(v) => {
-                      postAnnotation(v.currentTarget.value, elementId);
-                    }}
-                  >
-                    {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
-                  </button>
-                ))
-              }
-            </ReactSortable>
-            <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
-              <FaPencilAlt />
-            </button>
-          </div>
 
-          {displayComment && (
-            <div className="m-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-            </div>
+      <div className="row">
+        <div className="d-flex flex-wrap gap-2 justify-content-center">
+          <Link
+            to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
+            className="btn btn-outline-secondary"
+            onClick={() => {
+              setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
+            }}
+          >
+            <IoMdSkipBackward />
+          </Link>
+          <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
+            <FaPencilAlt />
+          </button>
+          {kindScheme == 'multiclass' && (
+            <MulticlassInput
+              elementId={elementId || 'noelement'}
+              postAnnotation={postAnnotation}
+              labels={availableLabels}
+            />
+          )}
+          {kindScheme == 'multilabel' && (
+            <MultilabelInput
+              elementId={elementId || 'noelement'}
+              postAnnotation={postAnnotation}
+              labels={availableLabels}
+            />
           )}
         </div>
-      )}
 
-      {/* multilabel : for the moment
-      multiple select concatenated*/}
-      {kindScheme == 'multilabel' && (
-        <div className="row justify-content-center">
-          <div className="col-8 d-flex justify-content-center align-items-center">
-            <Select
-              isMulti
-              className="flex-grow-1"
-              options={availableLabels.map((e) => ({ value: e.label, label: e.label }))}
-              onChange={(e) => {
-                setSelectedLabels(e.map((e) => e.value));
-              }}
-              value={selectedLabels.map((e) => ({ value: e, label: e }))}
+        {displayComment && (
+          <div className="m-3">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
             />
-            <button
-              className="btn"
-              onClick={() => {
-                postAnnotation(selectedLabels.join('|'), elementId);
-                setSelectedLabels([]);
-              }}
-            >
-              <FaSquareCheck size={30} />
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="mt-5">
         {phase != 'test' && (
