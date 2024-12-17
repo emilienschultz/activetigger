@@ -56,6 +56,7 @@ from activetigger.datamodels import (
 )
 from activetigger.functions import get_gpu_memory_info
 from activetigger.server import Project, Server
+from activetigger.users import UserException
 
 # General comments
 # - all post are logged
@@ -400,11 +401,12 @@ async def create_user(
     Create user
     """
     test_rights("modify user", current_user.username)
-    r = server.users.add_user(
-        username_to_create, password, status, current_user.username, mail
-    )
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    try:
+        server.users.add_user(
+            username_to_create, password, status, current_user.username, mail
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     return None
 
 
@@ -419,9 +421,10 @@ async def delete_user(
     """
     # manage rights
     test_rights("modify user", current_user.username)
-    r = server.users.delete_user(user_to_delete, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    try:
+        server.users.delete_user(user_to_delete, current_user.username)
+    except UserException as e:
+        raise HTTPException(status_code=500, detail=str(e))
     return None
 
 
@@ -454,17 +457,21 @@ async def set_auth(
     if action == "add":
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")
-        r = server.users.set_auth(username, project_slug, status)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
+        try:
+            server.users.set_auth(username, project_slug, status)
+        except UserException as e:
+            raise HTTPException(status_code=500, detail=str(e))
         server.log_action(current_user.username, f"INFO add user {username}", "all")
         return None
 
     if action == "delete":
-        r = server.users.delete_auth(username, project_slug)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(current_user.username, f"INFO delete user {username}", "all")
+        try:
+            server.users.delete_auth(username, project_slug)
+            server.log_action(
+                current_user.username, f"INFO delete user {username}", "all"
+            )
+        except UserException as e:
+            raise HTTPException(status_code=500, detail=str(e))
         return None
 
     raise HTTPException(status_code=400, detail="Action not found")

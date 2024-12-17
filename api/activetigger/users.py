@@ -4,8 +4,12 @@ from pathlib import Path
 import yaml
 
 from activetigger.datamodels import UserInDBModel
-from activetigger.db import DatabaseManager
+from activetigger.db import DBException, DatabaseManager
 from activetigger.functions import compare_to_hash, get_hash
+
+
+class UserException(Exception):
+    pass
 
 
 class Users:
@@ -49,17 +53,18 @@ class Users:
         """
         Set user auth for a project
         """
-        self.db_manager.add_auth(project_slug, username, status)
-        return {"success": "Auth added to database"}
+        try:
+            self.db_manager.add_auth(project_slug, username, status)
+        except Exception as e:
+            raise UserException from e
 
     def delete_auth(self, username: str, project_slug: str):
         """
         Delete user auth
         """
         if username == "root":
-            return {"error": "Can't delete root user auth"}
+            raise UserException("Can't delete root user auth")
         self.db_manager.delete_auth(project_slug, username)
-        return {"success": "Auth deleted"}
 
     def get_auth_projects(self, username: str) -> list:
         """
@@ -100,59 +105,55 @@ class Users:
         role: str = "manager",
         created_by: str = "NA",
         mail: str = "NA",
-    ) -> bool:
+    ):
         """
         Add user to database
         Comments:
             Default, users are managers
         """
-        # test if the user doesn't exist
-        if name in self.existing_users():
-            return {"error": "Username already exists"}
         hash_pwd = get_hash(password)
-        self.db_manager.add_user(name, hash_pwd, role, created_by, contact=mail)
+        # DB will throw an exception if user unicity constraint is violated
+        try:
+            self.db_manager.add_user(
+                name, hash_pwd.hex(), role, created_by, contact=mail
+            )
+        except DBException as e:
+            raise UserException from e
 
-        return {"success": "User added to the database"}
-
-    def delete_user(self, user_to_delete: str, username: str) -> dict:
+    def delete_user(self, user_to_delete: str, username: str):
         """
         Deleting user
         """
         # test specific rights
         if user_to_delete == "root":
-            return {"error": "Can't delete root user"}
+            raise UserException("Can't delete root user")
         if user_to_delete not in self.existing_users():
-            return {"error": "Username does not exist"}
-        if user_to_delete not in self.existing_users("root"):
-            return {"error": "You don't have the right to delete this user"}
+            raise UserException("Username does not exist")
+        if user_to_delete not in self.existing_users(username):
+            raise UserException("You don't have the right to delete this user")
 
         # delete the user
         self.db_manager.delete_user(user_to_delete)
 
-        return {"success": "User deleted"}
-
-    def get_user(self, name) -> UserInDBModel | dict:
+    def get_user(self, name) -> UserInDBModel:
         """
         Get user from database
         """
-        if name not in self.existing_users():
-            return {"error": "Username doesn't exist"}
-        user = self.db_manager.get_user(name)
-        return UserInDBModel(
-            username=name, hashed_password=user["key"], status=user["description"]
-        )
+        try:
+            return self.db_manager.get_user(name)
+        except DBException as e:
+            raise Exception(e)
 
-    def authenticate_user(
-        self, username: str, password: str
-    ) -> UserInDBModel | dict[str, str]:
+    def authenticate_user(self, username: str, password: str) -> UserInDBModel:
         """
         User authentification
         """
-        user = self.get_user(username)
-        if not isinstance(user, UserInDBModel):
-            return user
+        try:
+            user = self.get_user(username)
+        except DBException as e:
+            raise Exception(e)
         if not compare_to_hash(password, user.hashed_password):
-            return {"error": "Wrong password"}
+            raise Exception("Wrong password")
         return user
 
     def auth(self, username: str, project_slug: str):
@@ -171,12 +172,9 @@ class Users:
         Change password for a user
         """
         if password1 != password2:
-            return {"error": "Passwords don't match"}
+            raise UserException("Passwords don't match")
         user = self.get_user(username)
-        if not isinstance(user, UserInDBModel):
-            return {"error": "User doesn't exist"}
         if not compare_to_hash(password_old, user.hashed_password):
-            return {"error": "Wrong password"}
+            raise UserException("Wrong password")
         hash_pwd = get_hash(password1)
-        self.db_manager.change_password(username, hash_pwd)
-        return None
+        self.db_manager.change_password(username, hash_pwd.hex())

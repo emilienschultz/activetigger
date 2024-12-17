@@ -9,6 +9,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
+requires-python = ">= 3.11"
 dependencies = ["fastapi[all]",
 		"sentencepiece",
 		"requests",
@@ -37,3 +38,6 @@ dependencies = ["fastapi[all]",
 		"plotly",
 		"matplotlib",
 		"scikit-learn"]
+
+[tool.mypy]
+ignore_missing_imports = true

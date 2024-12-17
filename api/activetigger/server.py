@@ -599,13 +599,16 @@ class Project(Server):
         if self.schemes.test is not None:
             return {"error": "Already a test dataset"}
 
+        if self.params.dir is None:
+            return {"error": "The project does not have a directory set"}
+
         # write the buffer send by the frontend
-        with open(self.params.dir / "test_set_raw.csv", "w") as f:
+        with open(self.params.dir.joinpath("test_set_raw.csv"), "w") as f:
             f.write(testset.csv)
 
         # load it
         df = pd.read_csv(
-            self.params.dir / "test_set_raw.csv",
+            self.params.dir.joinpath("test_set_raw.csv"),
             dtype={testset.col_id: str, testset.col_text: str},
             nrows=testset.n_test,
         )
@@ -616,7 +619,7 @@ class Project(Server):
         ).set_index("id")
 
         # write the dataset
-        df[[testset.col_text]].to_parquet(self.params.dir / self.test_file)
+        df[[testset.col_text]].to_parquet(self.params.dir.joinpath(self.test_file))
         # load the data
         self.schemes.test = df[[testset.col_text]]
         # update parameters
@@ -902,7 +905,7 @@ class Project(Server):
 
             # get prediction if it exists
             predict = {"label": None, "proba": None}
-            if (user is not None) & (scheme is not None):
+            if (user is not None) and (scheme is not None):
                 if self.simplemodels.exists(user, scheme):
                     sm = self.simplemodels.get_model(user, scheme)
                     predicted_label = sm.proba.loc[element_id, "prediction"]
@@ -1041,7 +1044,7 @@ class Project(Server):
             return {"error": "No features selected"}
 
         path = self.params.dir  # path of the data
-        if not path.exists():
+        if path is None or not path.exists():
             raise ValueError("Problem of filesystem for project")
 
         data = self.features.get(features)
@@ -1050,13 +1053,13 @@ class Project(Server):
 
         # create files
         if format == "csv":
-            data.to_csv(path / file_name)
+            data.to_csv(path.joinpath(file_name))
         if format == "parquet":
-            data.to_parquet(path / file_name)
+            data.to_parquet(path.joinpath(file_name))
         if format == "xlsx":
-            data.to_excel(path / file_name)
+            data.to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path / file_name}
+        r = {"name": file_name, "path": path.joinpath(file_name)}
 
         return r
 
@@ -1065,7 +1068,7 @@ class Project(Server):
         Export annotation data in different formats
         """
         path = self.params.dir  # path of the data
-        if not path.exists():
+        if path is None or not path.exists():
             raise ValueError("Problem of filesystem for project")
 
         # test or train
@@ -1082,13 +1085,13 @@ class Project(Server):
 
         # Create files
         if format == "csv":
-            data.reset_index().map(str).to_csv(path / file_name)
+            data.reset_index().map(str).to_csv(path.joinpath(file_name))
         if format == "parquet":
-            data.reset_index().map(str).to_parquet(path / file_name)
+            data.reset_index().map(str).to_parquet(path.joinpath(file_name))
         if format == "xlsx":
-            data.reset_index().map(str).to_excel(path / file_name)
+            data.reset_index().map(str).to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path / file_name}
+        r = {"name": file_name, "path": path.joinpath(file_name)}
         return r
 
     def get_active_users(self, period: int = 300):

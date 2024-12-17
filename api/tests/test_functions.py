@@ -2,7 +2,9 @@ def test_get_root_pwd(monkeypatch, capsys):
     """
     Test the get_root_pwd
     """
-    from functions import get_root_pwd  # Import the function from your module
+    from activetigger.functions import (
+        get_root_pwd,
+    )  # Import the function from your module
 
     inputs = iter(["password123", "password123"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
