@@ -12,6 +12,7 @@ import {
   useUsers,
   useUsersAuth,
 } from '../core/api';
+import { useAuth } from '../core/auth';
 import { useNotifications } from '../core/notifications';
 import { ChangePassword } from './forms/ChangePassword';
 import { PageLayout } from './layout/PageLayout';
@@ -27,6 +28,8 @@ export const UsersPage: FC = () => {
   const projects = useUserProjects();
   const [currentProjectSlug, setCurrentProjectSlug] = useState<string | null>(null);
   const { notify } = useNotifications();
+
+  const { authenticatedUser } = useAuth();
 
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [currentAuth, setCurrentAuth] = useState<string | null>(null);
@@ -53,8 +56,6 @@ export const UsersPage: FC = () => {
       }))
     : [];
 
-  console.log(users);
-
   return (
     <PageLayout currentPage="users">
       <div className="container-fluid">
@@ -64,9 +65,7 @@ export const UsersPage: FC = () => {
             <ChangePassword />
             <h2 className="subsection">Manage users and rights</h2>
 
-            <div className="explanations">
-              Select a user (you can only delete users you created)
-            </div>
+            <div className="explanations">Select a user to attribute rights</div>
 
             <div className="d-flex align-items-center">
               <Select
@@ -89,34 +88,36 @@ export const UsersPage: FC = () => {
                 <MdOutlineDeleteOutline size={30} />
               </button>
             </div>
-            <details className="custom-details">
-              <summary>Add user</summary>
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <input
-                  className="form-control me-2 mt-2"
-                  type="text"
-                  {...register('username')}
-                  placeholder="New user name"
-                />
-                <input
-                  className="form-control me-2 mt-2"
-                  type="text"
-                  {...register('password')}
-                  placeholder="Password"
-                />
-                <input
-                  className="form-control me-2 mt-2"
-                  type="email"
-                  {...register('mail')}
-                  placeholder="Mail"
-                />
-                <select {...register('status')} className="me-2 mt-2">
-                  <option>manager</option>
-                  <option>annotator</option>
-                </select>
-                <button className="btn btn-primary me-2 mt-2">Add user</button>
-              </form>
-            </details>
+            {authenticatedUser?.username === 'root' && (
+              <details className="custom-details">
+                <summary>Add user</summary>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <input
+                    className="form-control me-2 mt-2"
+                    type="text"
+                    {...register('username')}
+                    placeholder="New user name"
+                  />
+                  <input
+                    className="form-control me-2 mt-2"
+                    type="text"
+                    {...register('password')}
+                    placeholder="Password"
+                  />
+                  <input
+                    className="form-control me-2 mt-2"
+                    type="email"
+                    {...register('mail')}
+                    placeholder="Mail"
+                  />
+                  <select {...register('status')} className="me-2 mt-2">
+                    <option>manager</option>
+                    <option>annotator</option>
+                  </select>
+                  <button className="btn btn-primary me-2 mt-2">Add user</button>
+                </form>
+              </details>
+            )}
             <span className="explanations">Select the project</span>
 
             <br></br>
