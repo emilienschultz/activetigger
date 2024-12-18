@@ -786,7 +786,7 @@ def generate(
     results = []
 
     # loop on all elements
-    for index, row in df.iterrows():
+    for _index, row in df.iterrows():
         # test for interruption
         if event is not None:
             if event.is_set():

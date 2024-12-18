@@ -49,7 +49,7 @@ class Schemes:
         return f"Coding schemes available {self.available()}"
 
     def get_scheme_data(
-        self, scheme: str, complete: bool = False, kind: list | str = ["train"]
+        self, scheme: str, complete: bool = False, kind: list | str = None
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -58,6 +58,8 @@ class Schemes:
         Comments:
             For the moment tags can be add, test, predict, reconciliation
         """
+        if kind is None:
+            kind = ["train"]
         if scheme not in self.available():
             return {"error": "Scheme doesn't exist"}
 
