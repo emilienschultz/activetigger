@@ -340,7 +340,7 @@ export const ProjectAnnotationPage: FC = () => {
         <div className="d-flex flex-wrap gap-2 justify-content-center">
           <Link
             to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
-            className="btn btn-outline-secondary"
+            className="btn"
             onClick={() => {
               setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
             }}
@@ -388,6 +388,8 @@ export const ProjectAnnotationPage: FC = () => {
                 currentScheme={currentScheme || null}
                 availableSimpleModels={availableSimpleModels}
                 availableFeatures={availableFeatures}
+                availableLabels={availableLabels}
+                kindScheme={kindScheme}
               />
             </Tab>
             <Tab eventKey="visualization" title="Visualization">

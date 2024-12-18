@@ -193,6 +193,7 @@ class SimpleModelModel(BaseModel):
     # TODO CAN BE BETTER
     scheme: str
     standardize: Optional[bool] = True
+    dichotomize: Optional[str] = None
 
 
 class SimpleModelOutModel(BaseModel):

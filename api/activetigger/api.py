@@ -706,9 +706,6 @@ async def get_projection(
     )
 
 
-# CONTINUE REFACTOR FROM HERE
-
-
 @app.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
 async def compute_projection(
     project: Annotated[Project, Depends(get_project)],
@@ -1300,6 +1297,7 @@ async def post_simplemodel(
     """
     Compute simplemodel
     """
+    print(simplemodel)
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])

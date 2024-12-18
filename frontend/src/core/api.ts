@@ -702,6 +702,7 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
             model: formData.model,
             params: formData.params,
             standardize: false,
+            dichotomize: formData.dichotomize,
           },
         });
 

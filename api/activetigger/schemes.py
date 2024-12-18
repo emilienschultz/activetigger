@@ -483,3 +483,10 @@ class Schemes:
         if not r:
             return {"error": "codebook not found"}
         return {"success": r}
+
+    def dichotomize(self, annotation: str, label: str):
+        """
+        check if the label is in the annotation
+        current situation : separator |
+        """
+        return label if label in annotation.split("|") else "not-" + label

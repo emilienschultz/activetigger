@@ -654,9 +654,19 @@ class Project(Server):
         except ValidationError as e:
             return {"error": e.json()}
 
+        # add information on the target of the model
+        if simplemodel.dichotomize is not None:
+            params["dichotomize"] = simplemodel.dichotomize
+
         # get data
         df_features = self.features.get(simplemodel.features)
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
+
+        # management for multilabels / dichotomize
+        if simplemodel.dichotomize is not None:
+            df_scheme["labels"] = df_scheme["labels"].apply(
+                lambda x: self.schemes.dichotomize(x, simplemodel.dichotomize)
+            )
 
         # test for a minimum of annotated elements
         counts = df_scheme["labels"].value_counts()

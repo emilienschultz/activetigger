@@ -1658,6 +1658,8 @@ export interface components {
              * @default true
              */
             standardize: boolean | null;
+            /** Dichotomize */
+            dichotomize?: string | null;
         };
         /**
          * SimpleModelOutModel
