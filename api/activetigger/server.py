@@ -710,7 +710,7 @@ class Project(Server):
         sample: str = "untagged",
         user: str = "user",
         label: None | str = None,
-        history: list = [],
+        history: list = None,
         frame: None | list = None,
         filter: str | None = None,
     ) -> dict:
@@ -727,6 +727,8 @@ class Project(Server):
         filter is a regex to use on the corpus
         """
 
+        if history is None:
+            history = []
         if scheme not in self.schemes.available():
             return {"error": "Scheme doesn't exist"}
 
