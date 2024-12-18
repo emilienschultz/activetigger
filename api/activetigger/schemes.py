@@ -244,14 +244,16 @@ class Schemes:
             "filter": contains,
         }
 
-    def add_scheme(self, name: str, labels: list):
+    def add_scheme(
+        self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
+    ):
         """
         Add new scheme
         """
         if self.exists(name):
             return {"error": "scheme name already exists"}
 
-        self.db_manager.add_scheme(self.project_slug, name, labels, None)
+        self.db_manager.add_scheme(self.project_slug, name, labels, kind, user)
 
         return {"success": "scheme created"}
 
@@ -270,7 +272,7 @@ class Schemes:
             available[scheme] = []
         if label in available[scheme]:
             return {"error": "label already exist"}
-        labels = available[scheme]
+        labels = available[scheme]["labels"]
         labels.append(label)
         self.update_scheme(scheme, labels)
         return {"success": "scheme updated with a new label"}
@@ -341,7 +343,7 @@ class Schemes:
         Available schemes {scheme:[labels]}
         """
         r = self.db_manager.available_schemes(self.project_slug)
-        return {i["name"]: i["labels"] for i in r}
+        return {i["name"]: {"labels": i["labels"], "kind": i["kind"]} for i in r}
 
     def get(self) -> dict:
         """
@@ -395,8 +397,17 @@ class Schemes:
         a = self.available()
         if scheme not in a:
             return {"error": "scheme unavailable"}
-        if (label is not None) and (label not in a[scheme]):
-            return {"error": "this tag doesn't belong to this scheme"}
+        if label is None:
+            return {"error": "no label"}
+
+        # test if the labels used exist in the scheme
+        if "|" in label:
+            er = [i for i in label.split("|") if i not in a[scheme]["labels"]]
+            if len(er) > 0:
+                return {"error": f"labels don't belong to this scheme : {er}"}
+        else:
+            if label not in a[scheme]["labels"]:
+                return {"error": "this tag doesn't belong to this scheme"}
 
         # TODO : add a test also for testing
         # if (not element_id in self.content.index):
@@ -472,3 +483,10 @@ class Schemes:
         if not r:
             return {"error": "codebook not found"}
         return {"success": r}
+
+    def dichotomize(self, annotation: str, label: str):
+        """
+        check if the label is in the annotation
+        current situation : separator |
+        """
+        return label if label in annotation.split("|") else "not-" + label

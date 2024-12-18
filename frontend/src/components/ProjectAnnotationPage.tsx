@@ -6,7 +6,6 @@ import { FaPencilAlt } from 'react-icons/fa';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ReactSortable } from 'react-sortablejs';
 import {
   useAddAnnotation,
   useGetElementById,
@@ -17,15 +16,12 @@ import {
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
+import { ProjectPageLayout } from './layout/ProjectPageLayout';
+import { MulticlassInput } from './MulticlassInput';
+import { MultilabelInput } from './MultilabelInput';
 import { ProjectionManagement } from './ProjectionManagement';
 import { SelectionManagement } from './SelectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
-
-interface LabelType {
-  id: number;
-  label: string;
-}
 
 /**
  * Annotation page
@@ -75,18 +71,15 @@ export const ProjectAnnotationPage: FC = () => {
     project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
       ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
       : null;
-  // const availableLabels =
-  //   currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
-  // available methods depend if there is a simple model trained for the user/scheme
-  // TO TEST, and in the future change the API if possible
 
-  const [availableLabels, setAvailableLabels] = useState<LabelType[]>(
+  const availableLabels =
     currentScheme && project
-      ? ((project.schemes.available[currentScheme] as string[]) || []).map((label, index) => ({
-          id: index,
-          label: label,
-        }))
-      : [],
+      ? (project.schemes.available[currentScheme]['labels'] as string[])
+      : [];
+  const [kindScheme] = useState<string>(
+    currentScheme && project
+      ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
+      : 'multiclass',
   );
 
   // get statistics to display (TODO : try a way to avoid another request ?)
@@ -155,8 +148,8 @@ export const ProjectAnnotationPage: FC = () => {
     updatedSimpleModel,
   ]);
 
-  // generic method to apply a chosen label to an element
-  const applyLabel = useCallback(
+  // post an annotation
+  const postAnnotation = useCallback(
     (label: string, elementId?: string) => {
       if (elementId) {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
@@ -173,49 +166,6 @@ export const ProjectAnnotationPage: FC = () => {
     },
     [setAppContext, addAnnotation, navigate, projectName, comment],
   );
-
-  const handleKeyboardEvents = useCallback(
-    (ev: KeyboardEvent) => {
-      // prevent shortkey to perturb the inputs
-      const activeElement = document.activeElement;
-      const isFormField =
-        activeElement?.tagName === 'INPUT' ||
-        activeElement?.tagName === 'TEXTAREA' ||
-        activeElement?.tagName === 'SELECT';
-      if (isFormField) return;
-
-      availableLabels.forEach((item, i) => {
-        if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
-          console.log(item.label);
-          applyLabel(item.label, elementId);
-        }
-      });
-    },
-    [availableLabels, applyLabel, elementId],
-  );
-
-  useEffect(() => {
-    // manage keyboard shortcut if less than 10 label
-    if (availableLabels.length > 0 && availableLabels.length < 10) {
-      document.addEventListener('keydown', handleKeyboardEvents);
-    }
-
-    return () => {
-      if (availableLabels.length > 0 && availableLabels.length < 10) {
-        document.removeEventListener('keydown', handleKeyboardEvents);
-      }
-    };
-  }, [availableLabels, handleKeyboardEvents]);
-
-  // separate the text in two parts & neutralize htmlk
-  // function escapeHTML(text: string): string {
-  //   return text
-  //     .replace(/&/g, '&amp;')
-  //     .replace(/</g, '&lt;')
-  //     .replace(/>/g, '&gt;')
-  //     .replace(/"/g, '&quot;')
-  //     .replace(/'/g, '&#039;');
-  // }
 
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
@@ -234,8 +184,6 @@ export const ProjectAnnotationPage: FC = () => {
       }
     });
   };
-
-  console.log(project);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
@@ -358,7 +306,7 @@ export const ProjectAnnotationPage: FC = () => {
                 value={element?.predict.label}
                 className="btn btn-secondary"
                 onClick={(e) => {
-                  applyLabel(e.currentTarget.value, elementId);
+                  postAnnotation(e.currentTarget.value, elementId);
                 }}
               >
                 Predicted : {element?.predict.label} (proba: {element?.predict.proba})
@@ -387,38 +335,35 @@ export const ProjectAnnotationPage: FC = () => {
           )
         }
       </div>
+
       <div className="row">
         <div className="d-flex flex-wrap gap-2 justify-content-center">
           <Link
             to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
-            className="btn btn-outline-secondary"
+            className="btn"
             onClick={() => {
               setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
             }}
           >
             <IoMdSkipBackward />
           </Link>
-          <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
-            {
-              // display buttons for label
-              availableLabels.map((e, i) => (
-                <button
-                  type="button"
-                  key={e.label}
-                  value={e.label}
-                  className="btn btn-primary grow-1 gap-2 justify-content-center mx-1"
-                  onClick={(v) => {
-                    applyLabel(v.currentTarget.value, elementId);
-                  }}
-                >
-                  {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
-                </button>
-              ))
-            }
-          </ReactSortable>
           <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
             <FaPencilAlt />
           </button>
+          {kindScheme == 'multiclass' && (
+            <MulticlassInput
+              elementId={elementId || 'noelement'}
+              postAnnotation={postAnnotation}
+              labels={availableLabels}
+            />
+          )}
+          {kindScheme == 'multilabel' && (
+            <MultilabelInput
+              elementId={elementId || 'noelement'}
+              postAnnotation={postAnnotation}
+              labels={availableLabels}
+            />
+          )}
         </div>
 
         {displayComment && (
@@ -437,20 +382,14 @@ export const ProjectAnnotationPage: FC = () => {
       <div className="mt-5">
         {phase != 'test' && (
           <Tabs id="panel2" className="mb-3">
-            {/* <Tab eventKey="labels" title="Labels">
-              <LabelsManagement
-                projectName={projectName || null}
-                currentScheme={currentScheme || null}
-                availableLabels={availableLabels}
-                reFetchCurrentProject={reFetchCurrentProject || (() => null)}
-              />
-            </Tab> */}
             <Tab eventKey="prediction" title="Prediction">
               <SimpleModelManagement
                 projectName={projectName || null}
                 currentScheme={currentScheme || null}
                 availableSimpleModels={availableSimpleModels}
                 availableFeatures={availableFeatures}
+                availableLabels={availableLabels}
+                kindScheme={kindScheme}
               />
             </Tab>
             <Tab eventKey="visualization" title="Visualization">

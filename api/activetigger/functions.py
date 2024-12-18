@@ -273,21 +273,20 @@ def to_sbert(
         torch.cuda.empty_cache()
         device = torch.device("cuda")  # Use CUDA
     elif torch.backends.mps.is_available():
-        device = torch.device("mps")  # Use MPS on macOS
+        device = torch.device("mps")
     else:
         device = torch.device("cpu")  # Fallback to CPU
-    print(f"Using {device} for computation")
 
     try:
-        sbert = SentenceTransformer(model, device=device)
+        sbert = SentenceTransformer(model, device=str(device))
         sbert.max_seq_length = 512
 
         print("start computation")
-        if device == "cuda":
+        if device.type == "cuda":
             with autocast(device_type=device):
                 emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
         else:
-            emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+            emb = sbert.encode(list(texts), batch_size=batch_size, device=device)
         emb = pd.DataFrame(emb, index=texts.index)
         emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
         print("computation end")
@@ -299,9 +298,10 @@ def to_sbert(
         # cleaning
         del sbert, texts
         gc.collect()
-        torch.cuda.synchronize()
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
 
 
 def compute_umap(features: DataFrame, params: dict, **kwargs):

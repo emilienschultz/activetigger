@@ -162,7 +162,8 @@ class SchemeModel(BaseModel):
 
     project_slug: str
     name: str
-    tags: Optional[list] = []
+    kind: Optional[str] = "multiclass"
+    labels: Optional[list] = []
 
 
 class RegexModel(BaseModel):
@@ -192,6 +193,7 @@ class SimpleModelModel(BaseModel):
     # TODO CAN BE BETTER
     scheme: str
     standardize: Optional[bool] = True
+    dichotomize: Optional[str] = None
 
 
 class SimpleModelOutModel(BaseModel):

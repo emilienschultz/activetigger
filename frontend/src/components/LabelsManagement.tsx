@@ -3,11 +3,13 @@ import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { RiFindReplaceLine } from 'react-icons/ri';
 
 import { useAddLabel, useDeleteLabel, useRenameLabel } from '../core/api';
+import { useNotifications } from '../core/notifications';
 
 interface LabelsManagementProps {
   projectName: string | null;
   currentScheme: string | null;
   availableLabels: string[];
+  kindScheme: string;
   reFetchCurrentProject: () => void;
 }
 
@@ -15,8 +17,11 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   projectName,
   currentScheme,
   availableLabels,
+  kindScheme,
   reFetchCurrentProject,
 }) => {
+  const { notify } = useNotifications();
+
   // hooks to manage labels
   const { addLabel } = useAddLabel(projectName || null, currentScheme || null);
   const { deleteLabel } = useDeleteLabel(projectName || null, currentScheme || null);
@@ -25,6 +30,10 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   // manage label creation
   const [createLabelValue, setCreateLabelValue] = useState('');
   const handleCreateLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.value.includes('|')) {
+      notify({ type: 'error', message: 'Label name cannot contain |' });
+      return;
+    }
     setCreateLabelValue(event.target.value);
   };
   const createLabel = () => {
@@ -53,6 +62,11 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   return (
     <div>
       <span className="explanations">Create, delete or rename labels.</span>
+      <br></br>
+      <span>
+        {' '}
+        The current scheme is a <b>{kindScheme}</b>
+      </span>
       <label htmlFor="select-label" className="form-label">
         Available labels
       </label>

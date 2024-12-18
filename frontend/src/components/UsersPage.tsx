@@ -138,27 +138,29 @@ export const UsersPage: FC = () => {
             <div>
               {authUsers ? (
                 <table className="table-auth">
-                  <tr>
-                    <th>User</th>
-                    <th>Auth</th>
-                    <th>Delete</th>
-                  </tr>
-                  {Object.entries(authUsers).map(([user, auth]) => (
-                    <tr key={user}>
-                      <td>{user}</td>
-                      <td>{auth}</td>
-                      <td>
-                        <button
-                          className="btn btn p-0"
-                          onClick={() => {
-                            deleteUserAuth(user);
-                          }}
-                        >
-                          <MdOutlineDeleteOutline />
-                        </button>
-                      </td>
+                  <tbody>
+                    <tr>
+                      <th>User</th>
+                      <th>Auth</th>
+                      <th>Delete</th>
                     </tr>
-                  ))}
+                    {Object.entries(authUsers).map(([user, auth]) => (
+                      <tr key={user}>
+                        <td>{user}</td>
+                        <td>{auth}</td>
+                        <td>
+                          <button
+                            className="btn btn p-0"
+                            onClick={() => {
+                              deleteUserAuth(user);
+                            }}
+                          >
+                            <MdOutlineDeleteOutline />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               ) : (
                 <span></span>

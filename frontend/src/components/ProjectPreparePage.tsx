@@ -58,7 +58,9 @@ export const ProjectPreparePage: FC = () => {
   };
 
   const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
+    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
+  const kindScheme =
+    currentScheme && project ? project.schemes.available[currentScheme]['kind'] : '';
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="prepare">
@@ -72,6 +74,7 @@ export const ProjectPreparePage: FC = () => {
                     projectName={projectName || null}
                     currentScheme={currentScheme || null}
                     availableLabels={availableLabels}
+                    kindScheme={kindScheme}
                     reFetchCurrentProject={reFetchCurrentProject || (() => null)}
                   />
                 </Tab>

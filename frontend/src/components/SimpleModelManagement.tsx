@@ -13,6 +13,8 @@ interface SimpleModelManagementProps {
   currentScheme: string | null;
   availableSimpleModels: Record<string, Record<string, number>>;
   availableFeatures: string[];
+  availableLabels: string[];
+  kindScheme: string;
 }
 
 export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
@@ -20,6 +22,8 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   currentScheme,
   availableSimpleModels,
   availableFeatures,
+  availableLabels,
+  kindScheme,
 }) => {
   // element from the context
   const {
@@ -30,17 +34,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
-
-  // API call to get the current model with a set intervall
-  // const { currentModel } = useGetSimpleModel(projectName, currentScheme, project);
-
-  // useEffect(() => {
-  //   const intervalId = setInterval(reFetchSimpleModel, 3000);
-  //   reFetchSimpleModel();
-  //   return () => {
-  //     clearInterval(intervalId);
-  //   };
-  // }, [reFetchSimpleModel]);
 
   // function to change refresh frequency
   const refreshFreq = (newValue: number) => {
@@ -61,19 +54,12 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         n_estimators: 500,
         max_features: null,
       },
+      dichotomize: availableLabels[0],
     },
   });
 
   // state for the model selected to modify parameters
   const selectedModel = watch('model');
-
-  // Display the current model
-  // useEffect(() => {
-  //   if (currentModel && currentModel.params) {
-  //     setValue('model', currentModel.model);
-  //     toPairs(currentModel.params).map(([key, value]) => setValue(`params.${key}`, value));
-  //   }
-  // }, [currentModel, setValue]);
 
   // hooks to update
   const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
@@ -97,13 +83,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         Train a new prediction model on the current annotated data
       </span>
 
-      {/* {currentModel && (
-        <div>
-          Current model : {currentModel.model} - Parameters : {JSON.stringify(currentModel.params)}{' '}
-          - Statistics {JSON.stringify(currentModel.statistics)}
-        </div>
-      )} */}
-
       <form onSubmit={handleSubmit(onSubmit)}>
         <label htmlFor="model">Select a model</label>
         <select id="model" {...register('model')}>
@@ -111,6 +90,16 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             <option key={e}>{e}</option>
           ))}{' '}
         </select>
+        {kindScheme == 'multilabel' && (
+          <>
+            <label htmlFor="dichotomize">Dichotomize on the label</label>
+            <select id="dichotomize" {...register('dichotomize')}>
+              {Object.values(availableLabels).map((e) => (
+                <option key={e}>{e}</option>
+              ))}{' '}
+            </select>
+          </>
+        )}
         {
           //generate_config(selectedSimpleModel)
           (selectedModel == 'liblinear' && (
@@ -164,8 +153,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
                     checked
                   />
                 </label>
-                {/* <label htmlFor="class_prior">Class prior</label>
-                <input type="number" id="class_prior" {...register('params.class_prior')}></input> */}
               </div>
             )) ||
             (selectedModel == 'randomforest' && (

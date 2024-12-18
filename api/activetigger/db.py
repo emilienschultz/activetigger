@@ -313,8 +313,12 @@ class DatabaseManager:
         session.commit()
         session.close()
 
-    def add_scheme(self, project_slug: str, name: str, labels: list, username: str):
-        params = json.dumps({"labels": labels, "codebook": None})
+    def add_scheme(
+        self, project_slug: str, name: str, labels: list, kind: str, username: str
+    ):
+        if not labels:
+            labels = []
+        params = json.dumps({"labels": labels, "codebook": None, "kind": kind})
         session = self.Session()
         scheme = Schemes(
             project=project_slug,
@@ -724,14 +728,21 @@ class DatabaseManager:
             .all()
         )
         session.close()
-        return [
-            {
-                "name": s.name,
-                "labels": json.loads(s.params)["labels"],
-                "codebook": json.loads(s.params)["codebook"],
-            }
-            for s in schemes
-        ]
+        r = []
+        for s in schemes:
+            params = json.loads(s.params)
+            kind = (
+                params["kind"] if "kind" in params else "multiclass"
+            )  # temporary hack
+            r.append(
+                {
+                    "name": s.name,
+                    "labels": params["labels"],
+                    "codebook": params["codebook"],
+                    "kind": kind,
+                }
+            )
+        return r
 
     def delete_scheme(self, project_slug: str, name: str):
         session = self.Session()

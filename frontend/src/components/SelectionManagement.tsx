@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useEffect, useMemo } from 'react';
+import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FcStatistics } from 'react-icons/fc';
 import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -12,10 +12,6 @@ export const SelectionManagement: FC = () => {
     setAppContext,
   } = useAppContext();
 
-  const availableLabels = useMemo(() => {
-    return currentScheme && project ? project.schemes.available[currentScheme] || [] : [];
-  }, [currentScheme, project]);
-
   const availableModes =
     authenticatedUser &&
     currentScheme &&
@@ -27,14 +23,6 @@ export const SelectionManagement: FC = () => {
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 
-  // const currentModel = useMemo(() => {
-  //   return authenticatedUser &&
-  //     currentScheme &&
-  //     project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
-  //     ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-  //     : null;
-  // }, [project, currentScheme, authenticatedUser]);
-
   // API call to get the current model & refetch
   const { currentModel } = useGetSimpleModel(
     project ? project.params.project_slug : null,
@@ -42,9 +30,24 @@ export const SelectionManagement: FC = () => {
     project,
   );
 
-  // useEffect(() => {
-  //   reFetchSimpleModel();
-  // }, [reFetchSimpleModel, project]);
+  // labels for maxprob : either all labels (multiclass) or one label (binary)
+  // const availableLabels = useMemo(() => {
+  //   return currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
+  // }, [currentScheme, project]);
+
+  const [availableLabels, setAvailableLabels] = useState<string[]>(
+    currentScheme && project ? project.schemes.available[currentScheme]['labels'] : [],
+  );
+
+  // update if new model
+  useEffect(() => {
+    if (currentModel && currentModel.params && currentModel.params['dichotomize']) {
+      setAvailableLabels([
+        currentModel.params['dichotomize'] as string,
+        'not-' + currentModel.params['dichotomize'],
+      ]);
+    }
+  }, [currentModel]);
 
   // force a default label
   useEffect(() => {
@@ -151,30 +154,34 @@ export const SelectionManagement: FC = () => {
                     <th></th>
                   </tr>
                 </thead>
-                {currentModel.params &&
-                  (currentModel.params && Object.entries(currentModel.params)).map(
-                    ([key, value], i) => (
-                      <tr key={i}>
-                        <td>{key}</td>
-                        <td>{value}</td>
-                      </tr>
-                    ),
-                  )}
+                <tbody>
+                  {currentModel.params &&
+                    (currentModel.params && Object.entries(currentModel.params)).map(
+                      ([key, value], i) => (
+                        <tr key={i}>
+                          <td>{key}</td>
+                          <td>{value}</td>
+                        </tr>
+                      ),
+                    )}
+                </tbody>
                 <thead>
                   <tr>
                     <th>Indicators</th>
                     <th></th>
                   </tr>
                 </thead>
-                {currentModel.params &&
-                  (currentModel.statistics && Object.entries(currentModel.statistics)).map(
-                    ([key, value], i) => (
-                      <tr key={i}>
-                        <td>{key}</td>
-                        <td> {JSON.stringify(value)}</td>
-                      </tr>
-                    ),
-                  )}
+                <tbody>
+                  {currentModel.params &&
+                    (currentModel.statistics && Object.entries(currentModel.statistics)).map(
+                      ([key, value], i) => (
+                        <tr key={i}>
+                          <td>{key}</td>
+                          <td> {JSON.stringify(value)}</td>
+                        </tr>
+                      ),
+                    )}
+                </tbody>
               </table>
             </div>
           )}
@@ -194,7 +201,6 @@ export const SelectionManagement: FC = () => {
                     frameSelection: !selectionConfig.frameSelection,
                   },
                 }));
-                // console.log(selectionConfig.frameSelection);
               }}
             />
             Use visualisation frame to lock the selection

@@ -1623,10 +1623,15 @@ export interface components {
             /** Name */
             name: string;
             /**
-             * Tags
+             * Kind
+             * @default multiclass
+             */
+            kind: string | null;
+            /**
+             * Labels
              * @default []
              */
-            tags: unknown[] | null;
+            labels: unknown[] | null;
         };
         /**
          * SimpleModelModel
@@ -1653,6 +1658,8 @@ export interface components {
              * @default true
              */
             standardize: boolean | null;
+            /** Dichotomize */
+            dichotomize?: string | null;
         };
         /**
          * SimpleModelOutModel
@@ -3230,6 +3237,7 @@ export interface operations {
             query: {
                 model_name: string;
                 dataset?: string;
+                batch_size?: number;
                 project_slug: string;
             };
             header?: never;
