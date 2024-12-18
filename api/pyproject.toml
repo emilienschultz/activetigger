@@ -45,12 +45,13 @@ line-length = 100
 extend-select = [
 #  "B",           # flake8-bugbear
   "I",           # isort
+# that will be a problem for pytest fixture unless you swap with the usefixture decorator https://docs.pytest.org/en/7.1.x/how-to/fixtures.html#use-fixtures-in-classes-and-modules-with-usefixtures
 #  "ARG",         # flake8-unused-arguments
 #  "C4",          # flake8-comprehensions
 #  "EM",          # flake8-errmsg
-#  "ICN",         # flake8-import-conventions
+  "ICN",         # flake8-import-conventions
 #  "G",           # flake8-logging-format
-#  "PGH",         # pygrep-hooks
+  "PGH",         # pygrep-hooks
 #  "PIE",         # flake8-pie
 #  "PL",          # pylint
 #  "PTH",         # flake8-use-pathlib
@@ -60,11 +61,10 @@ extend-select = [
 #  "SIM",         # flake8-simplify
 #  "T20",         # flake8-print
 #  "UP",          # pyupgrade
-#  "YTT",         # flake8-2020
-#  "EXE",         # flake8-executable
+  "YTT",         # flake8-2020
+  "EXE",         # flake8-executable
 #  "PYI",         # flake8-pyi
 #  "S",           # flake8-bandit
-#  "G",        # .format and co in logging methods
 ]
 ignore = [
 #  "E501",     # E501 Line too long (158 > 100 characters)
