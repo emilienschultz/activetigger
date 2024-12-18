@@ -154,15 +154,17 @@ export const SelectionManagement: FC = () => {
                     <th></th>
                   </tr>
                 </thead>
-                {currentModel.params &&
-                  (currentModel.params && Object.entries(currentModel.params)).map(
-                    ([key, value], i) => (
-                      <tr key={i}>
-                        <td>{key}</td>
-                        <td>{value}</td>
-                      </tr>
-                    ),
-                  )}
+                <tbody>
+                  {currentModel.params &&
+                    (currentModel.params && Object.entries(currentModel.params)).map(
+                      ([key, value], i) => (
+                        <tr key={i}>
+                          <td>{key}</td>
+                          <td>{value}</td>
+                        </tr>
+                      ),
+                    )}
+                </tbody>
                 <thead>
                   <tr>
                     <th>Indicators</th>
