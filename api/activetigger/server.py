@@ -336,6 +336,7 @@ class Server:
             }
 
         # create the index
+        keep_id = []  # keep unchanged the index to avoid desindexing
         # case of the index should be the row number
         if params.col_id == "dataset_row_number":
             print("Use the row number as index")
@@ -351,6 +352,7 @@ class Server:
                 shutil.rmtree(params.dir)
                 return {"error": "The column selected for index has not unique values."}
             content["id"] = content[params.col_id].astype(str).apply(slugify)
+            keep_id.append(params.col_id)
             content.set_index("id", inplace=True)
 
         # create the text column, merging the different columns
@@ -416,14 +418,14 @@ class Server:
             )
 
         trainset.to_parquet(params.dir / self.train_file, index=True)
-        trainset[list(set(["text"] + params.cols_context))].to_parquet(
+        trainset[list(set(["text"] + params.cols_context + keep_id))].to_parquet(
             params.dir / self.annotations_file, index=True
         )
         trainset[[]].to_parquet(params.dir / self.features_file, index=True)
 
         # if the case, add existing annotations in the database
         if params.col_label is None:
-            self.db_manager.add_scheme(project_slug, "default", [], "file")
+            self.db_manager.add_scheme(project_slug, "default", [], "file", "server")
         else:
             # check there is a limited number of labels
 
@@ -435,7 +437,11 @@ class Server:
 
                 # add the scheme in the database
                 self.db_manager.add_scheme(
-                    project_slug, "default", list(params.default_scheme), "file"
+                    project_slug,
+                    "default",
+                    list(params.default_scheme),
+                    "file",
+                    "system",
                 )
 
                 # add the labels from the trainset in the database
