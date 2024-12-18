@@ -84,14 +84,21 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
         if status in ["root", "manager"]:
             return True
         else:
-            raise HTTPException(403, "No rights for this action")
+            raise HTTPException(500, "No rights for this action")
 
     # possibility to create user
+    if action == "create user":
+        if status in ["root"]:
+            return True
+        else:
+            raise HTTPException(500, "No rights for this action")
+
+    # possibility to modify user
     if action == "modify user":
         if status in ["root", "manager"]:
             return True
         else:
-            raise HTTPException(403, "No rights for this action")
+            raise HTTPException(500, "No rights for this action")
 
     if not project_slug:
         raise HTTPException(500, "Project name missing")
@@ -104,14 +111,14 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
         if (auth == "manager") or (status == "root"):
             return True
         else:
-            raise HTTPException(403, "No rights for this action")
+            raise HTTPException(500, "No rights for this action")
 
     # possibility to create elements of a project
     if action == "modify project element":
         if (auth == "manager") or (status == "root"):
             return True
         else:
-            raise HTTPException(403, "No rights for this action")
+            raise HTTPException(500, "No rights for this action")
     raise HTTPException(404, "No action found")
 
 
@@ -399,7 +406,7 @@ async def create_user(
     """
     Create user
     """
-    test_rights("modify user", current_user.username)
+    test_rights("create user", current_user.username)
     r = server.users.add_user(
         username_to_create, password, status, current_user.username, mail
     )
