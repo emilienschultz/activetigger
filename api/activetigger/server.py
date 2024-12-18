@@ -425,7 +425,9 @@ class Server:
 
         # if the case, add existing annotations in the database
         if params.col_label is None:
-            self.db_manager.add_scheme(project_slug, "default", [], "file", "server")
+            self.db_manager.add_scheme(
+                project_slug, "default", [], "multiclass", "system"
+            )
         else:
             # check there is a limited number of labels
 
@@ -440,7 +442,7 @@ class Server:
                     project_slug,
                     "default",
                     list(params.default_scheme),
-                    "file",
+                    "multiclass",
                     "system",
                 )
 
