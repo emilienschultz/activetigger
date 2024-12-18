@@ -2,6 +2,7 @@ import os
 import shutil
 
 import pytest
+
 from activetigger.datamodels import ProjectDataModel
 from activetigger.server import Server
 
