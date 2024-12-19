@@ -25,15 +25,17 @@ export const ProjectCreationForm: FC = () => {
   const maxSizeMo = 400;
   const maxTrainSet = 100000;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
-  const { register, control, handleSubmit } = useForm<ProjectModel & { files: FileList }>({
-    defaultValues: {
-      project_name: 'New project',
-      n_train: 100,
-      n_test: 0,
-      language: 'en',
-      clear_test: false,
+  const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
+    {
+      defaultValues: {
+        project_name: 'New project',
+        n_train: 100,
+        n_test: 0,
+        language: 'en',
+        clear_test: false,
+      },
     },
-  });
+  );
   const { notify } = useNotifications();
 
   const [spinner, setSpinner] = useState<boolean>(false); // state for the data
@@ -74,16 +76,19 @@ export const ProjectCreationForm: FC = () => {
         console.log('parquet');
         loadParquetFile(file).then((data) => {
           setData(data);
+          setValue('n_train', Math.min(data.data.length, 100));
         });
       } else if (file.name.includes('csv')) {
         console.log('csv');
         loadCSVFile(file).then((data) => {
           setData(data);
+          setValue('n_train', Math.min(data.data.length, 100));
         });
       } else if (file.name.includes('xlsx')) {
-        console.log('csv');
+        console.log('xlsx');
         loadExcelFile(file).then((data) => {
           setData(data);
+          setValue('n_train', Math.min(data.data.length, 100));
         });
       } else {
         notify({ type: 'error', message: 'Only csv or parquet files are allowed for now' });
@@ -107,7 +112,9 @@ export const ProjectCreationForm: FC = () => {
       try {
         // ERROR : problème avec gros parquet unparse marche pas
         //const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
-        const csv = stringify(data.data, { header: true, columns: data.headers });
+        console.log('start parsing');
+        console.log(data.headers);
+        const csv = stringify(data.data, { header: true, columns: data.headers.filter(Boolean) });
         console.log('data parsing done');
         try {
           const slug = await createProject({
@@ -122,6 +129,8 @@ export const ProjectCreationForm: FC = () => {
         }
       } catch (error) {
         console.log(error);
+        notify({ type: 'error', message: 'Error creating project' });
+        navigate('/projects');
       }
     }
   };
