@@ -362,12 +362,15 @@ class BertModels:
         """
         return [e for e in self.computing if e["user"] == user]
 
-    def estimate_memory_use(self, model: str):
+    def estimate_memory_use(self, model: str, kind: str = "train"):
         """
-        Estimate the GPU memory needed to train a model
+        Estimate the GPU memory in Gb needed to train a model
         TODO : implement
         """
-        return 4
+        if kind == "train":
+            return 4
+        if kind == "predict":
+            return 3
 
     def start_training_process(
         self,
@@ -421,7 +424,7 @@ class BertModels:
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
         if params["gpu"]:
             mem = functions.get_gpu_memory_info()
-            if self.estimate_memory_use(name) > mem["available_memory"]:
+            if self.estimate_memory_use(name, kind="train") > mem["available_memory"]:
                 return {"error": "Not enough GPU memory available. Wait or reduce batch."}
 
         # launch as a independant process
