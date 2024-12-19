@@ -254,3 +254,41 @@ $tertiary: #8f8d8d;
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* Project List Container */
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+/* Project Card */
+.project-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px 20px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.project-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #f9f9f9;
+}
+
+/* Project Title */
+.project-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 8px;
+}
+
+/* Project Details */
+.project-details {
+  font-size: 14px;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+}

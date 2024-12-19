@@ -1,13 +1,32 @@
-import { FC } from 'react';
-import { Link } from 'react-router-dom';
+import { FC, useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { useUserProjects } from '../core/api';
 import { PageLayout } from './layout/PageLayout';
 
 import { IoIosAddCircle } from 'react-icons/io';
+import { AvailableProjectsModel } from '../types';
 
 export const ProjectsPage: FC = () => {
   const projects = useUserProjects();
+  const navigate = useNavigate();
+  const [rows, setRows] = useState<AvailableProjectsModel[]>([]);
+  useEffect(() => {
+    setRows(projects || []);
+  }, [projects]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const searchValue = e.target.value.toLowerCase();
+
+    setRows(
+      (projects || []).filter((project) => {
+        const projectName = project.parameters.project_name.toLowerCase();
+        const createdBy = project.created_by.toLowerCase();
+
+        return projectName.includes(searchValue) || createdBy.includes(searchValue);
+      }),
+    );
+  };
 
   return (
     <PageLayout currentPage="projects">
@@ -23,22 +42,27 @@ export const ProjectsPage: FC = () => {
                 </Link>
               </div>
 
-              <ul className="list-unstyled mt-3">
-                {(projects || []).map((project) => (
-                  <li key={project.parameters.project_name} className="projects-list">
-                    <Link
-                      to={`/projects/${project.parameters.project_slug}`}
-                      className="project-link"
-                    >
-                      <b>{project.parameters.project_name}</b>
-                      <br />
-                      <p className="project-description">
-                        (created by {project.created_by} the {project.created_at})
-                      </p>
-                    </Link>
-                  </li>
+              <div className="project-list">
+                <input
+                  type="text"
+                  className="form-control mt-3"
+                  placeholder="Search for a project or a user"
+                  onChange={handleSearch}
+                />
+                {rows.map((project) => (
+                  <div
+                    key={project.parameters.project_slug}
+                    className="project-card"
+                    onClick={() => navigate(`/projects/${project.parameters.project_slug}`)}
+                  >
+                    <h3 className="project-title">{project.parameters.project_name}</h3>
+                    <p className="project-details">
+                      <span>Created by: {project.created_by}</span>
+                      <span>Created at: {project.created_at}</span>
+                    </p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         }
