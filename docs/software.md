@@ -9,6 +9,7 @@
 - Optimize vizualisation for large dataset ⚙
 - Create a easy/pro mode 
 - Write documentation + tutorial
+- Animate community on Discord
 
 ### Enhancements
 

@@ -304,9 +304,7 @@ class BertModels:
                     )
                 else:
                     # create a flag
-                    with open(
-                        self.path / "../../static" / f"{m['name']}.tar.gz", "w"
-                    ) as f:
+                    with open(self.path / "../../static" / f"{m['name']}.tar.gz", "w") as f:
                         f.write("process started")
                     # start compression
                     self.start_compression(m["name"])
@@ -364,6 +362,13 @@ class BertModels:
         """
         return [e for e in self.computing if e["user"] == user]
 
+    def estimate_memory_use(self, model: str):
+        """
+        Estimate the GPU memory needed to train a model
+        TODO : implement
+        """
+        return 4
+
     def start_training_process(
         self,
         name: str,
@@ -380,8 +385,7 @@ class BertModels:
         """
         Manage the training of a model from the API
         """
-        # Check if there is no other competing processes
-        # For the moment : 1 active process by user
+        # Check if there is no other competing processes : 1 active process by user
         if len(self.current_user_processes(user)) > 0:
             return {
                 "error": "User already has a process launched, please wait before launching another one"
@@ -406,13 +410,19 @@ class BertModels:
         if test_size is None:
             test_size = 0.2
 
-        # test json parameters
+        # test parameters format
         try:
             params = params.dict()
             e = BertParams(**params)
         except ValidationError as e:
             print("Validation error")
             return {"error": e.json()}
+
+        # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
+        if params["gpu"]:
+            mem = functions.get_gpu_memory_info()
+            if self.estimate_memory_use(name) > mem["available_memory"]:
+                return {"error": "Not enough GPU memory available. Wait or reduce batch."}
 
         # launch as a independant process
         args = {
@@ -427,13 +437,11 @@ class BertModels:
         }
 
         unique_id = self.queue.add("training", functions.train_bert, args)
-
         del args
 
         # Update the queue
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
-        # self.computing[user] = [b, unique_id]
         self.computing.append(
             {
                 "user": user,
@@ -651,9 +659,7 @@ class BertModels:
         """
         if element["status"] == "training":
             # update bdd status
-            self.db_manager.change_model_status(
-                self.project_slug, element["model"].name, "trained"
-            )
+            self.db_manager.change_model_status(self.project_slug, element["model"].name, "trained")
             print("Model trained")
         if element["status"] == "testing":
             print("Model tested")
@@ -756,11 +762,7 @@ class SimpleModels:
         """
         Currently under training
         """
-        r = {
-            e["user"]: list(e["scheme"])
-            for e in self.computing
-            if e["kind"] == "simplemodel"
-        }
+        r = {e["user"]: list(e["scheme"]) for e in self.computing if e["kind"] == "simplemodel"}
         return r
 
     def exists(self, user: str, scheme: str):
@@ -839,9 +841,7 @@ class SimpleModels:
 
         # Select model
         if name == "knn":
-            model = KNeighborsClassifier(
-                n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1
-            )
+            model = KNeighborsClassifier(n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1)
 
         if name == "lasso":
             model = LogisticRegression(
@@ -863,9 +863,7 @@ class SimpleModels:
                 n_estimators=int(model_params["n_estimators"]),
                 random_state=42,
                 max_features=(
-                    int(model_params["max_features"])
-                    if model_params["max_features"]
-                    else None
+                    int(model_params["max_features"]) if model_params["max_features"] else None
                 ),
                 n_jobs=-1,
             )
@@ -888,9 +886,7 @@ class SimpleModels:
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
         unique_id = self.queue.add("simplemodel", functions.fit_model, args)
-        sm = SimpleModel(
-            name, user, X, Y, labels, "computing", features, standardize, model_params
-        )
+        sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
         self.computing.append(
             {
                 "user": user,
@@ -996,9 +992,7 @@ class SimpleModel:
 
     def compute_stats(self):
         self.proba = self.compute_proba(self.model, self.X)
-        self.statistics = self.compute_statistics(
-            self.model, self.X, self.Y, self.labels
-        )
+        self.statistics = self.compute_statistics(self.model, self.X, self.Y, self.labels)
         self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
 
     def compute_proba(self, model, X):

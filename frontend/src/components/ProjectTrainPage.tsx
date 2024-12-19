@@ -564,7 +564,7 @@ export const ProjectTrainPage: FC = () => {
                           <HiOutlineQuestionMarkCircle />
                         </a>
                         <Tooltip anchorSelect=".batch" place="top">
-                          Batch used for predict. Keep it small (2 or 4) for small GPU.
+                          Batch used for predict. Keep it small (16 or 32) for small GPU.
                         </Tooltip>
                       </label>
                       <input
