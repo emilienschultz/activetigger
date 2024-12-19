@@ -1,4 +1,4 @@
-# General description of the service
+# Architecture
 
 This is a collection of technical points/choices for the app
 

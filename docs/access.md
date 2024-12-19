@@ -1,4 +1,4 @@
-# Beta test
+# Get access
 
 The beta test phase started October 30, 2024.
 
@@ -18,11 +18,3 @@ The beta test phase started October 30, 2024.
 - Contact emilien.schultz AT ensae.fr to request access (please motivate your demand)
 - Upload data / annotate / train models and report **bugs/problems with issues**
 
-## How to contribute
-
-If you want to contribute to the codebase, please get in touch.
-
-## Current beta-testers
-
-- Étienne Ollion
-- Julien Boelaert

@@ -133,7 +133,7 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   return (
     <div>
       <div className="row">
-        <div className="d-flex align-items-center">
+        <div className="d-flex flex-wrap align-items-center">
           <div className="mt-3">
             <SelectCurrentScheme />
           </div>

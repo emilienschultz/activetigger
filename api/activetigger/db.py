@@ -33,9 +33,7 @@ class Projects(Base):
 class Schemes(Base):
     __tablename__ = "schemes"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time_created = Column(
-        TIMESTAMP(timezone=True), server_default=func.current_timestamp()
-    )
+    time_created = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
     time_modified = Column(
         TIMESTAMP(timezone=True),
         server_default=func.current_timestamp(),
@@ -93,9 +91,7 @@ class Logs(Base):
 class Tokens(Base):
     __tablename__ = "tokens"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    time_created = Column(
-        TIMESTAMP(timezone=True), server_default=func.current_timestamp()
-    )
+    time_created = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
     token = Column(Text)
     status = Column(String)
     time_revoked = Column(TIMESTAMP(timezone=True))
@@ -313,9 +309,7 @@ class DatabaseManager:
         session.commit()
         session.close()
 
-    def add_scheme(
-        self, project_slug: str, name: str, labels: list, kind: str, username: str
-    ):
+    def add_scheme(self, project_slug: str, name: str, labels: list, kind: str, username: str):
         if not labels:
             labels = []
         params = json.dumps({"labels": labels, "codebook": None, "kind": kind})
@@ -337,9 +331,7 @@ class DatabaseManager:
         Update the labels in the database
         """
         session = self.Session()
-        scheme = (
-            session.query(Schemes).filter_by(project=project_slug, name=name).first()
-        )
+        scheme = session.query(Schemes).filter_by(project=project_slug, name=name).first()
         params = json.loads(scheme.params)
         params["labels"] = labels
         scheme.params = json.dumps(params)
@@ -353,9 +345,7 @@ class DatabaseManager:
         """
         print("update_scheme_codebook", project_slug, scheme, codebook)
         session = self.Session()
-        scheme = (
-            session.query(Schemes).filter_by(project=project_slug, name=scheme).first()
-        )
+        scheme = session.query(Schemes).filter_by(project=project_slug, name=scheme).first()
         try:
             params = json.loads(scheme.params)
             params["codebook"] = codebook
@@ -370,9 +360,7 @@ class DatabaseManager:
 
     def get_scheme_codebook(self, project_slug: str, name: str):
         session = self.Session()
-        scheme = (
-            session.query(Schemes).filter_by(project=project_slug, name=name).first()
-        )
+        scheme = session.query(Schemes).filter_by(project=project_slug, name=name).first()
         session.close()
         try:
             return {
@@ -432,17 +420,12 @@ class DatabaseManager:
             .all()
         )
         session.close()
-        return [
-            [el.time, el.element_id, el.prompt, el.answer, el.endpoint]
-            for el in generated
-        ]
+        return [[el.time, el.element_id, el.prompt, el.answer, el.endpoint] for el in generated]
 
     def get_distinct_users(self, project_slug: str, timespan: int | None):
         session = self.Session()
         if timespan:
-            time_threshold = datetime.datetime.now() - datetime.timedelta(
-                seconds=timespan
-            )
+            time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
             users = (
                 session.query(Annotations.user)
                 .filter(
@@ -465,9 +448,7 @@ class DatabaseManager:
     def get_current_users(self, timespan: int = 600):
         session = self.Session()
         time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
-        users = (
-            session.query(Logs.user).filter(Logs.time > time_threshold).distinct().all()
-        )
+        users = session.query(Logs.user).filter(Logs.time > time_threshold).distinct().all()
         session.close()
         return [u.user for u in users]
 
@@ -480,9 +461,7 @@ class DatabaseManager:
     def add_auth(self, project_slug: str, user: str, status: str):
         session = self.Session()
         auth = (
-            session.query(Auths)
-            .filter(Auths.project == project_slug, Auths.user == user)
-            .first()
+            session.query(Auths).filter(Auths.project == project_slug, Auths.user == user).first()
         )
         if auth:
             auth.status = status
@@ -494,9 +473,7 @@ class DatabaseManager:
 
     def delete_auth(self, project_slug: str, user: str):
         session = self.Session()
-        session.query(Auths).filter(
-            Auths.project == project_slug, Auths.user == user
-        ).delete()
+        session.query(Auths).filter(Auths.project == project_slug, Auths.user == user).delete()
         session.commit()
         session.close()
 
@@ -520,11 +497,7 @@ class DatabaseManager:
     def get_user_auth(self, username: str, project_slug: str = None):
         session = self.Session()
         if project_slug is None:
-            result = (
-                session.query(Auths.user, Auths.status)
-                .filter(Auths.user == username)
-                .all()
-            )
+            result = session.query(Auths.user, Auths.status).filter(Auths.user == username).all()
         else:
             result = (
                 session.query(Auths.user, Auths.status)
@@ -597,8 +570,7 @@ class DatabaseManager:
         results = query.all()
         session.close()
         return [
-            [row.element_id, row.annotation, row.user, row.time, row.comment]
-            for row in results
+            [row.element_id, row.annotation, row.user, row.time, row.comment] for row in results
         ]
 
     def get_coding_users(self, scheme: str, project_slug: str):
@@ -612,9 +584,7 @@ class DatabaseManager:
         session.close()
         return [u for u in distinct_users]
 
-    def get_recent_annotations(
-        self, project_slug: str, user: str, scheme: str, limit: int
-    ):
+    def get_recent_annotations(self, project_slug: str, user: str, scheme: str, limit: int):
         session = self.Session()
         if user == "all":
             recent_annotations = (
@@ -674,9 +644,7 @@ class DatabaseManager:
         user: str,
         project_slug: str,
         scheme: str,
-        elements: list[
-            dict
-        ],  # [{"element_id": str, "annotation": str, "comment": str}]
+        elements: list[dict],  # [{"element_id": str, "annotation": str, "comment": str}]
     ):
         session = self.Session()
         for e in elements:
@@ -731,9 +699,7 @@ class DatabaseManager:
         r = []
         for s in schemes:
             params = json.loads(s.params)
-            kind = (
-                params["kind"] if "kind" in params else "multiclass"
-            )  # temporary hack
+            kind = params["kind"] if "kind" in params else "multiclass"  # temporary hack
             r.append(
                 {
                     "name": s.name,
@@ -802,9 +768,7 @@ class DatabaseManager:
 
     def delete_feature(self, project: str, name: str):
         session = self.Session()
-        session.query(Features).filter(
-            Features.name == name, Features.project == project
-        ).delete()
+        session.query(Features).filter(Features.name == name, Features.project == project).delete()
         session.commit()
         session.close()
 
@@ -872,11 +836,7 @@ class DatabaseManager:
 
     def change_model_status(self, project: str, name: str, status: str):
         session = self.Session()
-        model = (
-            session.query(Models)
-            .filter(Models.name == name, Models.project == project)
-            .first()
-        )
+        model = session.query(Models).filter(Models.name == name, Models.project == project).first()
         model.status = "trained"
         session.commit()
         session.close()
@@ -905,40 +865,26 @@ class DatabaseManager:
 
     def model_exists(self, project: str, name: str):
         session = self.Session()
-        models = (
-            session.query(Models)
-            .filter(Models.name == name, Models.project == project)
-            .all()
-        )
+        models = session.query(Models).filter(Models.name == name, Models.project == project).all()
         session.close()
         return len(models) > 0
 
     def delete_model(self, project: str, name: str):
         session = self.Session()
         # test if the name does not exist
-        models = (
-            session.query(Models)
-            .filter(Models.name == name, Models.project == project)
-            .all()
-        )
+        models = session.query(Models).filter(Models.name == name, Models.project == project).all()
         if len(models) == 0:
             print("Model does not exist")
             return False
         # delete the model
-        session.query(Models).filter(
-            Models.name == name, Models.project == project
-        ).delete()
+        session.query(Models).filter(Models.name == name, Models.project == project).delete()
         session.commit()
         session.close()
         return True
 
     def get_model(self, project: str, name: str):
         session = self.Session()
-        model = (
-            session.query(Models)
-            .filter(Models.name == name, Models.project == project)
-            .first()
-        )
+        model = session.query(Models).filter(Models.name == name, Models.project == project).first()
         session.close()
         return model
 
@@ -947,17 +893,13 @@ class DatabaseManager:
 
         # test if the name does not exist
         models = (
-            session.query(Models)
-            .filter(Models.name == new_name, Models.project == project)
-            .all()
+            session.query(Models).filter(Models.name == new_name, Models.project == project).all()
         )
         if len(models) > 0:
             return {"error": "The new name already exists"}
         # get and rename
         model = (
-            session.query(Models)
-            .filter(Models.name == old_name, Models.project == project)
-            .first()
+            session.query(Models).filter(Models.name == old_name, Models.project == project).first()
         )
         model.name = new_name
         model.path = model.path.replace(old_name, new_name)
@@ -967,11 +909,7 @@ class DatabaseManager:
 
     def set_model_params(self, project: str, name: str, flag: str, value):
         session = self.Session()
-        model = (
-            session.query(Models)
-            .filter(Models.name == name, Models.project == project)
-            .first()
-        )
+        model = session.query(Models).filter(Models.name == name, Models.project == project).first()
         parameters = json.loads(model.parameters)
         parameters[flag] = value
         model.parameters = json.dumps(parameters)

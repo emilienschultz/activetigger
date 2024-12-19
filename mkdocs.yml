@@ -1,0 +1,11 @@
+site_name: ActiveTigger Documentation
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Documentation: documentation.md
+  - Get access: access.md
+  - Software: description.md
+  - Contributors: contributors.md
+markdown_extensions:
+  - footnotes
+theme: readthedocs
