@@ -9,10 +9,9 @@ ActiveTigger[^1] is an text annotation web tool dedicated for computational soci
 
 > [!IMPORTANT] 
 > The app is currently 🚧 **under the beta test phase** 🚧.
->
-> [Presentation in French of the tool](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
->
-> [**How to beta test Active Tigger**](https://github.com/emilienschultz/activetigger/blob/main/doc/Betatest.md)
+
+
+[Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
 
 
 ## Install the app
@@ -99,7 +98,7 @@ You can deploy the app with Github Pages for tests
 
 ## Documentation
 
-🚧 currently writing itself 🚧
+The documentation is [here](https://emilienschultz.github.io/activetigger/docs/)
 
 ## Contributing
 
@@ -118,6 +117,6 @@ The development of Active Tigger is supported by : [DRARI Île-de-France](https:
 
 ## How to cite
 
-🚧 please not for the moment 🚧
+🚧 please not cite for the moment 🚧
 
 [^1]: The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
