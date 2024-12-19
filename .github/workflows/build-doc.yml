@@ -1,11 +1,7 @@
 name: Build documentation
 on:
- push:
-    branches: [main]
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
   workflow_dispatch:
+
 permissions:
   contents: write
 jobs:
