@@ -268,6 +268,7 @@ def to_sbert(
 
     # manage GPU
     if torch.cuda.is_available():
+        torch.cuda.empty_cache()
         device = torch.device("cuda")  # Use CUDA
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
