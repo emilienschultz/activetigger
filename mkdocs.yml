@@ -2,9 +2,9 @@ site_name: ActiveTigger Documentation
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
-  - Documentation: documentation.md
-  - Get access: access.md
-  - Software: description.md
+  - User Guide: documentation.md
+  - Get Access: access.md
+  - Software: software.md
   - Contributors: contributors.md
 markdown_extensions:
   - footnotes
