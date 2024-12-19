@@ -2,6 +2,23 @@
 
 ## Roadmap
 
+### Next Steps
+
+- Multilabel workflow, bert-fine tuning
+- Optimize GPU management
+- Optimize vizualisation for large dataset ⚙
+- Create a easy/pro mode 
+- Write documentation + tutorial
+
+### Enhancements
+
+- Build Docker image ⚙
+- Integrate genAI tools ⚙
+- Add carbon count 
+- Add new models (Phi3, pleias, ...) 
+- Refactor design ⚙
+- Better data set management (expand)
+
 ## Architecture
 
 This is a collection of technical points/choices for the app
