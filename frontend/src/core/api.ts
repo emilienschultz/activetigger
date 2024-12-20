@@ -1341,6 +1341,7 @@ export function useGetQueue(projectState: ProjectStateModel | null) {
 
   return {
     queueState: data?.queue,
+    activeProjects: data?.active_projects,
     gpu: data?.gpu['gpu_available'] ? data?.gpu : undefined,
     reFetchQueueState: reFetch,
   };
@@ -1653,4 +1654,27 @@ export function usePostSchemeCodebook(project_slug: string | null, scheme: strin
   );
 
   return { postCodebook };
+}
+
+/**
+ * Stop process generation by id
+ */
+export function useStopProcess() {
+  const { notify } = useNotifications();
+  const stopProcess = useCallback(
+    async (uniqueId: string) => {
+      const res = await api.POST('/kill', {
+        params: {
+          query: {
+            unique_id: uniqueId,
+          },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Process stopped' });
+      return true;
+    },
+    [notify],
+  );
+
+  return { stopProcess };
 }
