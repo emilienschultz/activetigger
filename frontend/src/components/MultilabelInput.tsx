@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { FaSquareCheck } from 'react-icons/fa6';
 import Select from 'react-select';
 
@@ -15,6 +15,24 @@ export const MultilabelInput: FC<MulticlassInputProps> = ({
 }) => {
   // management multilabels
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+
+  // add shortcut
+  const handleKeyboardEvents = useCallback(
+    (ev: KeyboardEvent) => {
+      if (ev.key === 'Enter' && ev.ctrlKey) {
+        postAnnotation(selectedLabels.join('|'), elementId);
+        setSelectedLabels([]);
+      }
+    },
+    [postAnnotation, selectedLabels, elementId],
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyboardEvents);
+    return () => {
+      document.removeEventListener('keydown', handleKeyboardEvents);
+    };
+  }, [handleKeyboardEvents]);
 
   return (
     <div className="col-8 d-flex justify-content-center align-items-center">
