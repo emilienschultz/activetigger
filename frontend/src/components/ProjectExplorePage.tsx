@@ -35,6 +35,11 @@ export const ProjectExplorePage: FC = () => {
   // data modification management
   const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
 
+  const kindScheme =
+    currentScheme && project
+      ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
+      : 'multiclass';
+
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
     if (
       currentLocation.pathname !== nextLocation.pathname &&
@@ -89,9 +94,12 @@ export const ProjectExplorePage: FC = () => {
     },
     {
       key: 'labels',
-      name: 'Label ✎',
+      name: kindScheme === 'multiclass' ? 'Label ✎' : 'Label',
       resizable: true,
-      renderEditCell: renderDropdown,
+      renderCell: (props) => (
+        <div style={{ textAlign: 'center', width: '100%' }}>{props.row.labels}</div>
+      ),
+      renderEditCell: kindScheme === 'multiclass' ? renderDropdown : undefined,
       width: 100,
     },
     {
@@ -132,6 +140,8 @@ export const ProjectExplorePage: FC = () => {
     },
     { key: 'timestamp', name: 'Changed', resizable: true, width: 100 },
   ];
+
+  console.log(rows);
 
   // specific function to have a select component
   function renderDropdown({ row, onRowChange }: RenderEditCellProps<Row>) {
