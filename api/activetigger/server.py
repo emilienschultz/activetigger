@@ -155,16 +155,12 @@ class Server:
         self.db_manager.add_log(user, action, project, connect)
         logger.info("%s from %s in project %s", action, user, project)
 
-    def get_logs(
-        self, project_slug: str, limit: int, partial: bool = True
-    ) -> pd.DataFrame:
+    def get_logs(self, project_slug: str, limit: int, partial: bool = True) -> pd.DataFrame:
         """
         Get logs for a user/project
         """
         logs = self.db_manager.get_logs("all", project_slug, limit)
-        df = pd.DataFrame(
-            logs, columns=["id", "time", "user", "project", "action", "NA"]
-        )
+        df = pd.DataFrame(logs, columns=["id", "time", "user", "project", "action", "NA"])
         if partial:
             return df[~df["action"].str.contains("INFO ")]
         return df
@@ -259,15 +255,11 @@ class Server:
 
         if existing_project:
             # Update the existing project
-            self.db_manager.update_project(
-                project.project_slug, jsonable_encoder(project)
-            )
+            self.db_manager.update_project(project.project_slug, jsonable_encoder(project))
             return {"success": "project updated"}
         else:
             # Insert a new project
-            self.db_manager.add_project(
-                project.project_slug, jsonable_encoder(project), username
-            )
+            self.db_manager.add_project(project.project_slug, jsonable_encoder(project), username)
             return {"success": "project added"}
 
     def existing_projects(self) -> list:
@@ -345,10 +337,7 @@ class Server:
         # case of a column as index
         else:
             # check if index after slugify is unique otherwise throw an error
-            if not (
-                (content[params.col_id].astype(str).apply(slugify)).nunique()
-                == len(content)
-            ):
+            if not ((content[params.col_id].astype(str).apply(slugify)).nunique() == len(content)):
                 shutil.rmtree(params.dir)
                 return {"error": "The column selected for index has not unique values."}
             content["id"] = content[params.col_id].astype(str).apply(slugify)
@@ -395,9 +384,7 @@ class Server:
                 df_grouped = content.groupby(params.cols_test, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(params.n_test / nb_cat)
-                testset = df_grouped.apply(
-                    lambda x: x.sample(min(len(x), nb_elements_cat))
-                )
+                testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
             testset.to_parquet(params.dir / self.test_file, index=True)
             params.test = True
             rows_test = list(testset.index)
@@ -407,15 +394,11 @@ class Server:
         f_notna = content["label"].notna()
         f_na = content["label"].isna()
 
-        if (
-            f_notna.sum() > params.n_train
-        ):  # case where there is more labelled data than needed
+        if f_notna.sum() > params.n_train:  # case where there is more labelled data than needed
             trainset = content[f_notna].sample(params.n_train)
         else:
             n_train_random = params.n_train - f_notna.sum()  # number of element to pick
-            trainset = pd.concat(
-                [content[f_notna], content[f_na].sample(n_train_random)]
-            )
+            trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
 
         trainset.to_parquet(params.dir / self.train_file, index=True)
         trainset[list(set(["text"] + params.cols_context + keep_id))].to_parquet(
@@ -425,9 +408,7 @@ class Server:
 
         # if the case, add existing annotations in the database
         if params.col_label is None:
-            self.db_manager.add_scheme(
-                project_slug, "default", [], "multiclass", "system"
-            )
+            self.db_manager.add_scheme(project_slug, "default", [], "multiclass", "system")
         else:
             # check there is a limited number of labels
 
@@ -619,9 +600,7 @@ class Project(Server):
         )
 
         # change names
-        df = df.rename(
-            columns={testset.col_id: "id", testset.col_text: "text"}
-        ).set_index("id")
+        df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"}).set_index("id")
 
         # write the dataset
         df[[testset.col_text]].to_parquet(self.params.dir / self.test_file)
@@ -680,9 +659,7 @@ class Project(Server):
         counts = df_scheme["labels"].value_counts()
         valid_categories = counts[counts >= 3]
         if len(valid_categories) < 2:
-            return {
-                "error": "there are less than 2 categories with 3 annotated elements"
-            }
+            return {"error": "there are less than 2 categories with 3 annotated elements"}
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -781,9 +758,7 @@ class Project(Server):
                     )
                 )
             else:
-                f_regex = df["text"].str.contains(
-                    filter_san, regex=True, case=True, na=False
-                )
+                f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
@@ -831,9 +806,7 @@ class Project(Server):
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f][label]
-                .drop(history, errors="ignore")
-                .sort_values(ascending=False)
+                proba[f][label].drop(history, errors="ignore").sort_values(ascending=False)
             )  # get max proba id
             element_id = ss.index[0]
             n_sample = len(ss)
@@ -847,9 +820,7 @@ class Project(Server):
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f]["entropy"]
-                .drop(history, errors="ignore")
-                .sort_values(ascending=False)
+                proba[f]["entropy"].drop(history, errors="ignore").sort_values(ascending=False)
             )  # get max entropy id
             element_id = ss.index[0]
             n_sample = len(ss)
@@ -874,9 +845,7 @@ class Project(Server):
             "element_id": element_id,
             "text": self.content.fillna("NA").loc[element_id, "text"],
             "context": dict(
-                self.content.fillna("NA")
-                .loc[element_id, self.params.cols_context]
-                .apply(str)
+                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
             ),
             "selection": selection,
             "info": indicator,
@@ -926,9 +895,7 @@ class Project(Server):
                 if self.simplemodels.exists(user, scheme):
                     sm = self.simplemodels.get_model(user, scheme)
                     predicted_label = sm.proba.loc[element_id, "prediction"]
-                    predicted_proba = round(
-                        sm.proba.loc[element_id, predicted_label], 2
-                    )
+                    predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
@@ -940,9 +907,7 @@ class Project(Server):
                 "element_id": element_id,
                 "text": self.content.loc[element_id, "text"],
                 "context": dict(
-                    self.content.fillna("NA")
-                    .loc[element_id, self.params.cols_context]
-                    .apply(str)
+                    self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
                 ),
                 "selection": "request",
                 "predict": predict,
@@ -970,30 +935,39 @@ class Project(Server):
         if scheme is None:
             return {"error": "Scheme not defined"}
 
-        if scheme not in self.schemes.available():
+        schemes = self.schemes.available()
+        if scheme not in schemes:
             return {"error": "Scheme does not exist"}
+        kind = schemes[scheme]["kind"]
 
         # part train
         r = {"train_set_n": len(self.schemes.content)}
         r["users"] = [
-            i[0]
-            for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
+            i[0] for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
         ]
 
         df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
+
+        # different treatment if the scheme is multilabel or multiclass
         r["train_annotated_n"] = len(df)
-        r["train_annotated_distribution"] = json.loads(
-            df["labels"].value_counts().to_json()
-        )
+        if kind == "multiclass":
+            r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+        else:
+            r["train_annotated_distribution"] = json.loads(
+                df["labels"].str.split("|").explode().value_counts().to_json()
+            )
 
         # part test
         if self.params.test:
             df = self.schemes.get_scheme_data(scheme, kind=["test"])
             r["test_set_n"] = len(self.schemes.test)
             r["test_annotated_n"] = len(df)
-            r["test_annotated_distribution"] = json.loads(
-                df["labels"].value_counts().to_json()
-            )
+            if kind == "multiclass":
+                r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+            else:
+                r["test_annotated_distribution"] = json.loads(
+                    df["labels"].str.split("|").explode().value_counts().to_json()
+                )
         else:
             r["test_set_n"] = None
             r["test_annotated_n"] = None
@@ -1039,8 +1013,7 @@ class Project(Server):
             "projections": {
                 "options": self.projections.options,
                 "available": {
-                    i: self.projections.available[i]["id"]
-                    for i in self.projections.available
+                    i: self.projections.available[i]["id"] for i in self.projections.available
                 },
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
@@ -1092,9 +1065,7 @@ class Project(Server):
         if dataset == "test":
             if not self.params.test:
                 return {"error": "No test data"}
-            data = self.schemes.get_scheme_data(
-                scheme=scheme, complete=True, kind="test"
-            )
+            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind="test")
             file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
@@ -1169,9 +1140,7 @@ class Project(Server):
                         print("Error in model training/predicting", r["error"])
                         self.computing.remove(e)
                         self.queue.delete(e["unique_id"])
-                        self.errors.append(
-                            [datetime.now(TIMEZONE), "bert training", r["error"]]
-                        )
+                        self.errors.append([datetime.now(TIMEZONE), "bert training", r["error"]])
                         # return {"error": r["error"]}
                     if "prediction" in r:
                         predictions["predict_" + e["model"].name] = r["prediction"]
@@ -1195,9 +1164,7 @@ class Project(Server):
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(TIMEZONE), "simplemodel failed", str(ex)]
-                    )
+                    self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
                     print("Simplemodel failed", ex)
 
             # case for features
