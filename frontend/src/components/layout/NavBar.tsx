@@ -8,6 +8,7 @@ import { useAuth } from '../../core/auth';
 const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'projects', label: 'Projects', href: '/projects' },
   { id: 'users', label: 'Users', href: '/users' },
+  // { id: 'monitor', label: 'Monitor', href: '/monitor' },
   { id: 'help', label: 'Help', href: '/help' },
   { id: 'login', label: 'Login', href: '/login' },
 ];

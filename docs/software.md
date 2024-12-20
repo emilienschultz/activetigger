@@ -7,9 +7,11 @@
 - Multilabel workflow, bert-fine tuning
 - Optimize GPU management
 - Optimize vizualisation for large dataset ⚙
-- Create a easy/pro mode 
+- Create a easy/medium/pro mode
+    - *need definition*
+- Define the monitor panel
+    - *need definition*
 - Write documentation + tutorial
-- Animate community on Discord
 
 ### Enhancements
 
@@ -19,6 +21,7 @@
 - Add new models (Phi3, pleias, ...) 
 - Refactor design ⚙
 - Better data set management (expand)
+- Animate community on Discord
 
 ## Architecture
 

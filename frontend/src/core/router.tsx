@@ -13,6 +13,7 @@ import { ProjectPage } from '../components/ProjectPage';
 import { ProjectPreparePage } from '../components/ProjectPreparePage';
 import { ProjectTestPage } from '../components/ProjectTestPage';
 import { ProjectTrainPage } from '../components/ProjectTrainPage';
+import { MonitorPage } from '../components/pages/MonitorPage';
 
 import { ProjectsPage } from '../components/ProjectsPage';
 import { UsersPage } from '../components/UsersPage';
@@ -43,6 +44,14 @@ export function getRouter() {
       element: (
         <AuthRequired>
           <UsersPage />
+        </AuthRequired>
+      ),
+    },
+    {
+      path: '/monitor',
+      element: (
+        <AuthRequired>
+          <MonitorPage />
         </AuthRequired>
       ),
     },
