@@ -11,7 +11,6 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
-import { AnnotationDisagreementManagement } from './AnnotationDisagreementManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { ProjectStatistics } from './ProjectStatistics';
 import { SchemesManagement } from './SchemesManagement';
@@ -110,9 +109,7 @@ export const ProjectPage: FC = () => {
                   </div>
                 )}
               </Tab>
-              <Tab eventKey="disagreement" title="Disagreements">
-                {currentScheme && <AnnotationDisagreementManagement projectSlug={projectName} />}
-              </Tab>
+
               <Tab eventKey="session" title="History session">
                 <span className="explanations">History of the current session</span>
                 <div>

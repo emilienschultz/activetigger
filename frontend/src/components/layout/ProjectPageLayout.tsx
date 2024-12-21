@@ -11,6 +11,8 @@ export type PossibleProjectActions =
   | 'parameters'
   | 'prepare'
   | 'explore'
+  | 'curate'
+  | 'monitor'
   | 'test'
   | 'generate'
   | 'export';

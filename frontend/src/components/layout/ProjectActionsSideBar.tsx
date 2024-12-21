@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
+import { GiChoice } from 'react-icons/gi';
 import { MdModelTraining, MdOutlineHomeMax, MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
@@ -83,13 +84,24 @@ export const ProjectActionsSidebar: FC<{
             to={`/projects/${projectName}/annotate`}
             className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
             aria-current="page"
-            title="Annotation"
+            title="Annotate"
           >
             <PiTagDuotone />
             <span> Annotate</span>
           </Link>
         </li>
+        <li className="nav-item">
+          <Link
+            to={`/projects/${projectName}/curate`}
+            className={classNames('nav-link', currentProjectAction === 'curate' && 'active')}
+            aria-current="page"
+            title="Curate"
+          >
+            <GiChoice />
 
+            <span> Curate</span>
+          </Link>
+        </li>
         <li className="nav-item">
           <Link
             to={`/projects/${projectName}/train`}

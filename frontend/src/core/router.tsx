@@ -13,6 +13,7 @@ import { ProjectPage } from '../components/ProjectPage';
 import { ProjectPreparePage } from '../components/ProjectPreparePage';
 import { ProjectTestPage } from '../components/ProjectTestPage';
 import { ProjectTrainPage } from '../components/ProjectTrainPage';
+import { CuratePage } from '../components/pages/CurationPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
 
 import { ProjectsPage } from '../components/ProjectsPage';
@@ -100,6 +101,10 @@ export function getRouter() {
         {
           path: '/projects/:projectName/annotate/',
           element: <ProjectAnnotationPage />,
+        },
+        {
+          path: '/projects/:projectName/curate/',
+          element: <CuratePage />,
         },
         {
           path: '/projects/:projectName/generate/',
