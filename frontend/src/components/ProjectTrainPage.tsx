@@ -47,6 +47,10 @@ export const ProjectTrainPage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
+  // available labels from context
+  const availableLabels =
+    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
+
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
@@ -207,377 +211,387 @@ export const ProjectTrainPage: FC = () => {
             </div>
             {
               /* Temporary disable multi-class fine-tuning */
-              kindScheme === 'multilabel' ? (
-                <div className="alert alert-info m-2">
-                  Multi-class fine-tuning is not supported for the moment
-                </div>
-              ) : (
-                <Tabs id="panel" className="mb-3" defaultActiveKey={'models'}>
-                  <Tab eventKey="models" title="Models">
-                    <label htmlFor="selected-model">Existing models</label>
-                    <div className="d-flex align-items-center">
+
+              <Tabs id="panel" className="mb-3" defaultActiveKey={'models'}>
+                <Tab eventKey="models" title="Models">
+                  <label htmlFor="selected-model">Existing models</label>
+                  <div className="d-flex align-items-center">
+                    <select
+                      id="selected-model"
+                      className="form-select"
+                      onChange={(e) => setCurrentModel(e.target.value)}
+                    >
+                      <option></option>
+                      {availableModels.map((e) => (
+                        <option key={e}>{e}</option>
+                      ))}
+                    </select>
+                    <button
+                      className="btn btn p-0"
+                      onClick={() => {
+                        if (currentModel) {
+                          deleteBertModel(currentModel);
+                          setCurrentModel(null);
+                        }
+                      }}
+                    >
+                      <MdOutlineDeleteOutline size={30} />
+                    </button>
+                  </div>
+
+                  {/* Display the progress of training models */}
+                  {project?.bertmodels.training &&
+                    Object.keys(project.bertmodels.training).length > 0 && (
+                      <div className="mt-3">
+                        Current training:
+                        <ul>
+                          {Object.entries(
+                            project?.bertmodels.training as Record<
+                              string,
+                              Record<string, string | number>
+                            >,
+                          ).map(([_, v]) => (
+                            <li key={v.name}>
+                              {v.name} - {v.status} :{' '}
+                              <span style={{ fontWeight: 'bold' }}>
+                                {Math.round(Number(v.progress))} %
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {currentModel && (
+                    <div>
+                      {model && (
+                        <div>
+                          <details className="custom-details">
+                            <summary>Parameters</summary>
+                            <details>
+                              <summary>Rename</summary>
+                              <form onSubmit={handleSubmitRename(onSubmitRename)}>
+                                <input
+                                  id="new_name"
+                                  className="form-control me-2 mt-2"
+                                  type="text"
+                                  placeholder="New name of the model"
+                                  {...registerRename('new_name')}
+                                />
+                                <button className="btn btn-primary me-2 mt-2">Rename</button>
+                              </form>
+                            </details>
+                            <table className="table">
+                              <thead>
+                                <tr>
+                                  <th scope="col">Key</th>
+                                  <th scope="col">Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.entries(model.training['parameters']).map(
+                                  ([key, value]) => (
+                                    <tr key={key}>
+                                      <td>{key}</td>
+                                      <td>{JSON.stringify(value)}</td>
+                                    </tr>
+                                  ),
+                                )}
+                              </tbody>
+                            </table>
+                            <div className="col-6 col-lg-4">
+                              <LossChart />
+                            </div>
+                          </details>
+                          <details className="custom-details">
+                            <summary>Scores</summary>
+                            {!model_scores && !isComputing && (
+                              <button
+                                className="btn btn-primary me-2 mt-2"
+                                onClick={() => computeModelPrediction(currentModel, 'train')}
+                              >
+                                Predict on train dataset
+                              </button>
+                            )}
+                            {isComputing && (
+                              <div>
+                                <button
+                                  key="stop"
+                                  className="btn btn-primary mt-3 d-flex align-items-center"
+                                  onClick={stopTraining}
+                                >
+                                  <PulseLoader color={'white'} /> Stop current process
+                                </button>
+                              </div>
+                            )}
+                            {model.train_scores && (
+                              <div>
+                                <table className="table">
+                                  {' '}
+                                  <thead>
+                                    <tr>
+                                      <th scope="col">Key</th>
+                                      <th scope="col">Value</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <td>F1 micro</td>
+                                      <td>{model.train_scores['f1_micro']}</td>
+                                    </tr>
+                                    <tr>
+                                      <td>F1 macro</td>
+                                      <td>{model.train_scores['f1_macro']}</td>
+                                    </tr>
+                                    <tr>
+                                      <td>F1 weighted</td>
+                                      <td>{model.train_scores['f1_weighted']}</td>
+                                    </tr>
+                                    <tr>
+                                      <td>F1</td>
+                                      <td>{String(model.train_scores['f1'])}</td>
+                                    </tr>
+                                    <tr>
+                                      <td>Precision</td>
+                                      <td>{String(model.train_scores['precision'])}</td>
+                                    </tr>
+                                    <tr>
+                                      <td>Recall</td>
+                                      <td>{String(model.train_scores['recall'])}</td>
+                                    </tr>
+                                    <tr>
+                                      <td>Accuray</td>
+                                      <td>{String(model.train_scores['accuracy'])}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                                <details className="m-3">
+                                  <summary>False predictions</summary>
+                                  {model_scores ? (
+                                    <DataGrid
+                                      className="fill-grid"
+                                      columns={columns}
+                                      rows={falsePredictions || []}
+                                    />
+                                  ) : (
+                                    <div>Compute prediction first</div>
+                                  )}
+                                </details>
+                              </div>
+                            )}
+                          </details>
+
+                          <details className="custom-details">
+                            <summary>Compute prediction</summary>
+                            {availablePrediction ? (
+                              <div className="explanations">
+                                Prediction computed, you can export it
+                              </div>
+                            ) : isComputing ? (
+                              <div>
+                                <button
+                                  key="stop"
+                                  className="btn btn-primary mt-3 d-flex align-items-center"
+                                  onClick={stopTraining}
+                                >
+                                  <PulseLoader color={'white'} /> Stop current process
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                className="btn btn-info m-4"
+                                onClick={() => computeModelPrediction(currentModel, 'all')}
+                              >
+                                Launch prediction complete dataset
+                              </button>
+                            )}
+                          </details>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Tab>
+                <Tab eventKey="new" title="New model">
+                  <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
+                    {kindScheme == 'multilabel' && (
+                      <div role="alert" className="alert alert-warning">
+                        <label htmlFor="dichotomize">
+                          This is a multiclass scheme. The model needs to be dichotomize on a
+                          specific label (yes/no)
+                        </label>
+                        <select id="dichotomize" {...registerNewModel('dichotomize')}>
+                          {Object.values(availableLabels).map((e) => (
+                            <option key={e}>{e}</option>
+                          ))}{' '}
+                        </select>
+                      </div>
+                    )}
+
+                    <label htmlFor="new-model-type"></label>
+                    <div>
+                      <label>Name for the model</label>
+                      <input
+                        type="text"
+                        {...registerNewModel('name')}
+                        placeholder="Name the model"
+                        className="form-control"
+                      />
+                    </div>
+
+                    <div>
+                      <label>Model base</label>
+
                       <select
-                        id="selected-model"
+                        id="new-model-type"
+                        {...registerNewModel('base')}
                         className="form-select"
-                        onChange={(e) => setCurrentModel(e.target.value)}
                       >
-                        <option></option>
-                        {availableModels.map((e) => (
+                        {(project?.bertmodels.options || []).map((e) => (
                           <option key={e}>{e}</option>
                         ))}
                       </select>
-                      <button
-                        className="btn btn p-0"
-                        onClick={() => {
-                          if (currentModel) {
-                            deleteBertModel(currentModel);
-                            setCurrentModel(null);
-                          }
-                        }}
-                      >
-                        <MdOutlineDeleteOutline size={30} />
-                      </button>
                     </div>
 
-                    {/* Display the progress of training models */}
-                    {project?.bertmodels.training &&
-                      Object.keys(project.bertmodels.training).length > 0 && (
-                        <div className="mt-3">
-                          Current training:
-                          <ul>
-                            {Object.entries(
-                              project?.bertmodels.training as Record<
-                                string,
-                                Record<string, string | number>
-                              >,
-                            ).map(([_, v]) => (
-                              <li key={v.name}>
-                                {v.name} - {v.status} :{' '}
-                                <span style={{ fontWeight: 'bold' }}>
-                                  {Math.round(Number(v.progress))} %
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                    {currentModel && (
-                      <div>
-                        {model && (
-                          <div>
-                            <details className="custom-details">
-                              <summary>Parameters</summary>
-                              <details>
-                                <summary>Rename</summary>
-                                <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                                  <input
-                                    id="new_name"
-                                    className="form-control me-2 mt-2"
-                                    type="text"
-                                    placeholder="New name of the model"
-                                    {...registerRename('new_name')}
-                                  />
-                                  <button className="btn btn-primary me-2 mt-2">Rename</button>
-                                </form>
-                              </details>
-                              <table className="table">
-                                <thead>
-                                  <tr>
-                                    <th scope="col">Key</th>
-                                    <th scope="col">Value</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {Object.entries(model.training['parameters']).map(
-                                    ([key, value]) => (
-                                      <tr key={key}>
-                                        <td>{key}</td>
-                                        <td>{JSON.stringify(value)}</td>
-                                      </tr>
-                                    ),
-                                  )}
-                                </tbody>
-                              </table>
-                              <div className="col-6 col-lg-4">
-                                <LossChart />
-                              </div>
-                            </details>
-                            <details className="custom-details">
-                              <summary>Scores</summary>
-                              {!model_scores && !isComputing && (
-                                <button
-                                  className="btn btn-primary me-2 mt-2"
-                                  onClick={() => computeModelPrediction(currentModel, 'train')}
-                                >
-                                  Predict on train dataset
-                                </button>
-                              )}
-                              {isComputing && (
-                                <div>
-                                  <button
-                                    key="stop"
-                                    className="btn btn-primary mt-3 d-flex align-items-center"
-                                    onClick={stopTraining}
-                                  >
-                                    <PulseLoader color={'white'} /> Stop current process
-                                  </button>
-                                </div>
-                              )}
-                              {model.train_scores && (
-                                <div>
-                                  <table className="table">
-                                    {' '}
-                                    <thead>
-                                      <tr>
-                                        <th scope="col">Key</th>
-                                        <th scope="col">Value</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      <tr>
-                                        <td>F1 micro</td>
-                                        <td>{model.train_scores['f1_micro']}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>F1 macro</td>
-                                        <td>{model.train_scores['f1_macro']}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>F1 weighted</td>
-                                        <td>{model.train_scores['f1_weighted']}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>F1</td>
-                                        <td>{String(model.train_scores['f1'])}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>Precision</td>
-                                        <td>{String(model.train_scores['precision'])}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>Recall</td>
-                                        <td>{String(model.train_scores['recall'])}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>Accuray</td>
-                                        <td>{String(model.train_scores['accuracy'])}</td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                  <details className="m-3">
-                                    <summary>False predictions</summary>
-                                    {model_scores ? (
-                                      <DataGrid
-                                        className="fill-grid"
-                                        columns={columns}
-                                        rows={falsePredictions || []}
-                                      />
-                                    ) : (
-                                      <div>Compute prediction first</div>
-                                    )}
-                                  </details>
-                                </div>
-                              )}
-                            </details>
-
-                            <details className="custom-details">
-                              <summary>Compute prediction</summary>
-                              {availablePrediction ? (
-                                <div className="explanations">
-                                  Prediction computed, you can export it
-                                </div>
-                              ) : isComputing ? (
-                                <div>
-                                  <button
-                                    key="stop"
-                                    className="btn btn-primary mt-3 d-flex align-items-center"
-                                    onClick={stopTraining}
-                                  >
-                                    <PulseLoader color={'white'} /> Stop current process
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  className="btn btn-info m-4"
-                                  onClick={() => computeModelPrediction(currentModel, 'all')}
-                                >
-                                  Launch prediction complete dataset
-                                </button>
-                              )}
-                            </details>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </Tab>
-                  <Tab eventKey="new" title="New model">
-                    <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
-                      <label htmlFor="new-model-type"></label>
-                      <div>
-                        <label>Name for the model</label>
-                        <input
-                          type="text"
-                          {...registerNewModel('name')}
-                          placeholder="Name the model"
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label>Model base</label>
-
-                        <select
-                          id="new-model-type"
-                          {...registerNewModel('base')}
-                          className="form-select"
-                        >
-                          {(project?.bertmodels.options || []).map((e) => (
-                            <option key={e}>{e}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label>
-                          Batch Size{' '}
-                          <a className="batchsize">
-                            <HiOutlineQuestionMarkCircle />
-                          </a>
-                          <Tooltip anchorSelect=".batchsize" place="top">
-                            How many samples are processed simultaneously. With small GPU, keep it
-                            around 4.
-                          </Tooltip>
-                        </label>
-                        <input type="number" {...registerNewModel('parameters.batchsize')} />
-                      </div>
-                      <div>
-                        <label>
-                          Gradient Accumulation{' '}
-                          <a className="gradientacc">
-                            <HiOutlineQuestionMarkCircle />
-                          </a>
-                          <Tooltip anchorSelect=".gradientacc" place="top">
-                            summing gradients over multiple steps before updating the model weights
-                          </Tooltip>
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          {...registerNewModel('parameters.gradacc')}
-                        />
-                      </div>
-                      <div>
-                        <label>
-                          Epochs{' '}
-                          <a className="epochs">
-                            <HiOutlineQuestionMarkCircle />
-                          </a>
-                          <Tooltip anchorSelect=".epochs" place="top">
-                            one complete pass through the entire training dataset during the
-                            training process
-                          </Tooltip>
-                        </label>
-                        <input type="number" {...registerNewModel('parameters.epochs')} />
-                      </div>
-                      <div>
-                        <label>
-                          Learning Rate{' '}
-                          <a className="learningrate">
-                            <HiOutlineQuestionMarkCircle />
-                          </a>
-                          <Tooltip anchorSelect=".learningrate" place="top">
-                            step size at which the model updates its weights during training
-                          </Tooltip>
-                        </label>
-                        <input
-                          type="number"
-                          step="0.00001"
-                          {...registerNewModel('parameters.lrate')}
-                        />
-                      </div>
-                      <div>
-                        <label>
-                          Weight Decay{' '}
-                          <a className="weightdecay">
-                            <HiOutlineQuestionMarkCircle />
-                          </a>
-                          <Tooltip anchorSelect=".weightdecay" place="top">
-                            regularization technique that reduces model weights over time to prevent
-                            overfitting
-                          </Tooltip>
-                        </label>
-                        <input
-                          type="number"
-                          step="0.001"
-                          {...registerNewModel('parameters.wdecay')}
-                        />
-                      </div>
-                      <div>
-                        <label>
-                          Eval{' '}
-                          <a className="evalstep">
-                            <HiOutlineQuestionMarkCircle />
-                          </a>
-                          <Tooltip anchorSelect=".evalstep" place="top">
-                            how often (in terms of training steps) the evaluation of the model on
-                            the validation dataset is performed during training
-                          </Tooltip>
-                        </label>
-                        <input type="number" {...registerNewModel('parameters.eval')} />
-                      </div>
-                      <div className="form-group d-flex align-items-center">
-                        <label>Best</label>
-                        <input type="checkbox" {...registerNewModel('parameters.best')} />
-                      </div>
-
-                      <div className="form-group d-flex align-items-center">
-                        <label>GPU</label>
-                        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
-                      </div>
-                      {/* <div className="form-group d-flex align-items-center" style={{ display: 'none' }}>
-                    <label>Adapt:</label>
-                    <input type="checkbox" {...registerNewModel('parameters.adapt')} />
-                  </div> */}
-                      {!isComputing && (
-                        <button key="start" className="btn btn-primary me-2 mt-2">
-                          Train the model
-                        </button>
-                      )}
-                    </form>
-                    {isComputing && (
-                      <div>
-                        <button
-                          key="stop"
-                          className="btn btn-primary mt-3 d-flex align-items-center"
-                          onClick={stopTraining}
-                        >
-                          <PulseLoader color={'white'} /> Stop current process
-                        </button>
-                      </div>
-                    )}
-                  </Tab>
-                  <Tab eventKey="parameters" title="Parameters">
                     <div>
                       <label>
-                        Batch size for predictions{' '}
-                        <a className="batch">
+                        Batch Size{' '}
+                        <a className="batchsize">
                           <HiOutlineQuestionMarkCircle />
                         </a>
-                        <Tooltip anchorSelect=".batch" place="top">
-                          Batch used for predict. Keep it small (16 or 32) for small GPU.
+                        <Tooltip anchorSelect=".batchsize" place="top">
+                          How many samples are processed simultaneously. With small GPU, keep it
+                          around 4.
+                        </Tooltip>
+                      </label>
+                      <input type="number" {...registerNewModel('parameters.batchsize')} />
+                    </div>
+                    <div>
+                      <label>
+                        Gradient Accumulation{' '}
+                        <a className="gradientacc">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".gradientacc" place="top">
+                          summing gradients over multiple steps before updating the model weights
                         </Tooltip>
                       </label>
                       <input
                         type="number"
-                        step="1"
-                        className="m-2 form-control"
-                        value={batchSize}
-                        onChange={(e) => setBatchSize(Number(e.target.value))}
+                        step="0.01"
+                        {...registerNewModel('parameters.gradacc')}
                       />
                     </div>
-                  </Tab>
-                </Tabs>
-              )
+                    <div>
+                      <label>
+                        Epochs{' '}
+                        <a className="epochs">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".epochs" place="top">
+                          one complete pass through the entire training dataset during the training
+                          process
+                        </Tooltip>
+                      </label>
+                      <input type="number" {...registerNewModel('parameters.epochs')} />
+                    </div>
+                    <div>
+                      <label>
+                        Learning Rate{' '}
+                        <a className="learningrate">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".learningrate" place="top">
+                          step size at which the model updates its weights during training
+                        </Tooltip>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.00001"
+                        {...registerNewModel('parameters.lrate')}
+                      />
+                    </div>
+                    <div>
+                      <label>
+                        Weight Decay{' '}
+                        <a className="weightdecay">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".weightdecay" place="top">
+                          regularization technique that reduces model weights over time to prevent
+                          overfitting
+                        </Tooltip>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        {...registerNewModel('parameters.wdecay')}
+                      />
+                    </div>
+                    <div>
+                      <label>
+                        Eval{' '}
+                        <a className="evalstep">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".evalstep" place="top">
+                          how often (in terms of training steps) the evaluation of the model on the
+                          validation dataset is performed during training
+                        </Tooltip>
+                      </label>
+                      <input type="number" {...registerNewModel('parameters.eval')} />
+                    </div>
+                    <div className="form-group d-flex align-items-center">
+                      <label>Best</label>
+                      <input type="checkbox" {...registerNewModel('parameters.best')} />
+                    </div>
+
+                    <div className="form-group d-flex align-items-center">
+                      <label>GPU</label>
+                      <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+                    </div>
+                    {/* <div className="form-group d-flex align-items-center" style={{ display: 'none' }}>
+                    <label>Adapt:</label>
+                    <input type="checkbox" {...registerNewModel('parameters.adapt')} />
+                  </div> */}
+                    {!isComputing && (
+                      <button key="start" className="btn btn-primary me-2 mt-2">
+                        Train the model
+                      </button>
+                    )}
+                  </form>
+                  {isComputing && (
+                    <div>
+                      <button
+                        key="stop"
+                        className="btn btn-primary mt-3 d-flex align-items-center"
+                        onClick={stopTraining}
+                      >
+                        <PulseLoader color={'white'} /> Stop current process
+                      </button>
+                    </div>
+                  )}
+                </Tab>
+                <Tab eventKey="parameters" title="Parameters">
+                  <div>
+                    <label>
+                      Batch size for predictions{' '}
+                      <a className="batch">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".batch" place="top">
+                        Batch used for predict. Keep it small (16 or 32) for small GPU.
+                      </Tooltip>
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      className="m-2 form-control"
+                      value={batchSize}
+                      onChange={(e) => setBatchSize(Number(e.target.value))}
+                    />
+                  </div>
+                </Tab>
+              </Tabs>
             }
           </div>
         </div>

@@ -410,8 +410,11 @@ class Server:
         if params.col_label is None:
             self.db_manager.add_scheme(project_slug, "default", [], "multiclass", "system")
         else:
-            # check there is a limited number of labels
+            # determine if multiclass / multilabel (arbitrary rule)
+            delimiters = content["label"].str.contains("|", regex=False).sum()
+            print("DELIMITERS", delimiters)
 
+            # check there is a limited number of labels
             df = content["label"].dropna()
             params.default_scheme = list(df.unique())
 
@@ -423,7 +426,7 @@ class Server:
                     project_slug,
                     "default",
                     list(params.default_scheme),
-                    "multiclass",
+                    "multiclass" if delimiters < 5 else "multilabel",
                     "system",
                 )
 

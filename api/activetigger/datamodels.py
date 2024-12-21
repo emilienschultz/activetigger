@@ -236,12 +236,12 @@ class BertModelModel(BaseModel):
     """
 
     project_slug: str
-    # user: str
     scheme: str
     name: str
     base_model: str
     params: BertModelParametersModel
     test_size: float
+    dichotomize: Optional[str] = None
 
 
 class UmapModel(BaseModel):

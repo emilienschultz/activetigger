@@ -1312,7 +1312,6 @@ async def post_simplemodel(
     """
     Compute simplemodel
     """
-    print(simplemodel)
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -1394,10 +1393,21 @@ async def post_bert(
 ) -> None:
     """
     Compute bertmodel
-    TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
     """
-    df = project.schemes.get_scheme_data(bert.scheme, complete=True)  # move it elswhere ?
-    df = df[["text", "labels"]].dropna()  # remove non tag data
+    df = project.schemes.get_scheme_data(bert.scheme, complete=True)
+
+    # remove non tag data
+    df = df[["text", "labels"]].dropna()
+
+    # management for multilabels / dichotomize
+    if bert.dichotomize is not None:
+        df["labels"] = df["labels"].apply(
+            lambda x: project.schemes.dichotomize(x, bert.dichotomize)
+        )
+        bert.name = f"{bert.name}_multilabel_on_{bert.dichotomize}"
+
+    print(df["labels"])
+
     r = project.bertmodels.start_training_process(
         name=bert.name,
         project=project.name,
@@ -1410,6 +1420,7 @@ async def post_bert(
         params=bert.params,
         test_size=bert.test_size,
     )
+
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(current_user.username, f"INFO train bert {bert.name}", project.name)

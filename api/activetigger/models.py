@@ -381,9 +381,9 @@ class BertModels:
         df: DataFrame,
         col_text: str,
         col_label: str,
-        base_model: str | None = None,
+        base_model: str = "almanach/camembert-base",
+        test_size: float = 0.2,
         params: dict | None = None,
-        test_size: float | None = None,
     ) -> dict:
         """
         Manage the training of a model from the API
@@ -406,12 +406,8 @@ class BertModels:
             return {"error": "A model with this name already exists"}
 
         # set default parameters if needed
-        if base_model is None:
-            base_model = "almanach/camembert-base"
         if params is None:
             params = self.params_default
-        if test_size is None:
-            test_size = 0.2
 
         # test parameters format
         try:
@@ -442,7 +438,7 @@ class BertModels:
         unique_id = self.queue.add("training", functions.train_bert, args)
         del args
 
-        # Update the queue
+        # Update the queue state
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
         self.computing.append(

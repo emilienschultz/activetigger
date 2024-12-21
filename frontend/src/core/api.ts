@@ -908,6 +908,7 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
             name: dataForm.name || '',
             test_size: 0.2,
             params: dataForm.parameters,
+            dichotomize: dataForm.dichotomize,
           },
         });
         if (!res.error) notify({ type: 'warning', message: 'Starting bertmodel training' });

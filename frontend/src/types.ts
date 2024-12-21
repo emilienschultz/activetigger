@@ -111,6 +111,7 @@ export interface newBertModel {
   name?: string;
   base: string;
   parameters: BertModelParametersModel;
+  dichotomize?: string;
 }
 
 export interface TestSetModel {
