@@ -54,7 +54,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         n_estimators: 500,
         max_features: null,
       },
-      dichotomize: availableLabels[0],
+      dichotomize: kindScheme == 'multilabel' ? availableLabels[0] : undefined,
     },
   });
 

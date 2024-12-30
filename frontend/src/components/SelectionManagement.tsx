@@ -59,6 +59,8 @@ export const SelectionManagement: FC = () => {
     }
   }, [availableLabels, selectionConfig, setAppContext]);
 
+  console.log(currentModel);
+
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
   ) : (

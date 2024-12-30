@@ -36,7 +36,6 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
 
       availableLabels.forEach((item, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
-          console.log(item.label);
           postAnnotation(item.label, elementId);
         }
       });
