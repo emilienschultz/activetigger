@@ -41,6 +41,7 @@ export const SelectionManagement: FC = () => {
 
   // update if new model
   useEffect(() => {
+    // case where the simple model is dichotomize on a specific label
     if (currentModel && currentModel.params && currentModel.params['dichotomize']) {
       setAvailableLabels([
         currentModel.params['dichotomize'] as string,
@@ -58,8 +59,6 @@ export const SelectionManagement: FC = () => {
       }));
     }
   }, [availableLabels, selectionConfig, setAppContext]);
-
-  console.log(currentModel);
 
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>

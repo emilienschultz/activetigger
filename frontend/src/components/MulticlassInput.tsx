@@ -56,8 +56,6 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
     };
   }, [availableLabels, handleKeyboardEvents]);
 
-  console.log(labels);
-
   return (
     <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
       {
