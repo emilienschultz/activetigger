@@ -593,9 +593,10 @@ def train_bert(
         # clean memory
         del trainer, bert, df, device, event
         gc.collect()
-        torch.cuda.synchronize()
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
 
 
 def predict_bert(
@@ -707,9 +708,10 @@ def predict_bert(
         # clean memory
         del tokenizer, model, chunk, df, res, predictions, outputs, event
         gc.collect()
-        torch.cuda.synchronize()
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
 
 
 def truncate_text(text: str, max_tokens: int = 512):

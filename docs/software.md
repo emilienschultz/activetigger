@@ -18,7 +18,7 @@
 - Build Docker image ⚙
 - Integrate genAI tools ⚙
 - Add carbon count 
-- Add new models (Phi3, pleias, ...) 
+- Add new models (Modernbert, Phi3, pleias, ...) 
 - Refactor design ⚙
 - Better data set management (expand)
 - Animate community on Discord
