@@ -23,7 +23,8 @@ from activetigger.datamodels import (
     SimpleModelModel,
     TestSetDataModel,
 )
-from activetigger.db import DatabaseManager
+from activetigger.db.manager import DatabaseManager
+from activetigger.db.users import UsersService
 from activetigger.features import Features
 from activetigger.functions import cat2num, clean_regex
 from activetigger.generations import Generations
@@ -31,7 +32,6 @@ from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
-from activetigger.users import Users
 
 logger = logging.getLogger("server")
 
@@ -71,7 +71,7 @@ class Server:
     projects: dict
     db_manager: DatabaseManager
     queue: Queue
-    users: Users
+    users: UsersService
     max_projects: int
 
     def __init__(self, path=".", path_models="./models") -> None:
@@ -121,9 +121,9 @@ class Server:
 
         # attributes of the server
         self.projects = {}
-        self.db_manager = DatabaseManager(self.db)
+        self.db_manager = DatabaseManager(str(self.db))
         self.queue = Queue(self.n_workers)
-        self.users = Users(self.db_manager)
+        self.users = self.db_manager.users_service
 
         # logging
         logging.basicConfig(
@@ -848,7 +848,7 @@ class Project(Server):
             predict = {"label": predicted_label, "proba": predicted_proba}
 
         # get all tags already existing for the element
-        previous = self.schemes.db_manager.get_annotations_by_element(
+        previous = self.schemes.projects_service.get_annotations_by_element(
             self.params.project_slug, scheme, element_id
         )
 
@@ -910,7 +910,7 @@ class Project(Server):
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
-            history = self.schemes.db_manager.get_annotations_by_element(
+            history = self.schemes.projects_service.get_annotations_by_element(
                 self.params.project_slug, scheme, element_id
             )
 

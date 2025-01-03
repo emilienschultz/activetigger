@@ -106,12 +106,12 @@ def get_root_pwd() -> str:
             return root_password
 
 
-def get_hash(text: str):
+def get_hash(text: str) -> bytes:
     """
     Build a hash string from text
     """
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(text.encode(), salt)
+    hashed: bytes = bcrypt.hashpw(text.encode(), salt)
     return hashed
 
 
@@ -236,7 +236,9 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
     if not path_models.exists():
         return {"error": f"path {str(path_models)} does not exist"}
     os.chdir(path_models)
-    print("If the model doesn't exist, it will be downloaded first. It could talke some time.")
+    print(
+        "If the model doesn't exist, it will be downloaded first. It could talke some time."
+    )
     model_name = download_model(language, if_exists="ignore")
     print("Model loaded")
     texts_tk = tokenize(texts)
@@ -447,7 +449,9 @@ def train_bert(
     log_path = current_path.joinpath("status.log")
     logger = logging.getLogger("train_bert_model")
     file_handler = logging.FileHandler(log_path)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.info(f"Start {base_model}")
@@ -553,7 +557,9 @@ def train_bert(
             args=training_args,
             train_dataset=df["train"],
             eval_dataset=df["test"],
-            callbacks=[CustomLoggingCallback(event, current_path=current_path, logger=logger)],
+            callbacks=[
+                CustomLoggingCallback(event, current_path=current_path, logger=logger)
+            ],
         )
 
         try:
@@ -630,7 +636,9 @@ def predict_bert(
     progress_path = path / "progress_predict"
     logger = logging.getLogger("predict_bert_model")
     file_handler = logging.FileHandler(log_path)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
@@ -648,7 +656,9 @@ def predict_bert(
         # Start prediction with batches
         predictions = []
         # logging the process
-        for chunk in [df[col_text][i : i + batch] for i in range(0, df.shape[0], batch)]:
+        for chunk in [
+            df[col_text][i : i + batch] for i in range(0, df.shape[0], batch)
+        ]:
             # user interrupt
             if event.is_set():
                 logger.info("Event set, stopping training.")

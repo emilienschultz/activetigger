@@ -1,204 +1,29 @@
 import datetime
 import json
 import logging
-from json.decoder import JSONDecodeError
-from pathlib import Path
 
-from sqlalchemy import (
-    TIMESTAMP,
-    Column,
-    Integer,
-    String,
-    Text,
-    create_engine,
-    func,
-    select,
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session as SessionType
+from sqlalchemy.orm import sessionmaker
+
+from activetigger.db.models import (
+    Annotations,
+    Auths,
+    Features,
+    Generations,
+    Logs,
+    Models,
+    Projects,
+    Schemes,
+    Tokens,
 )
-from sqlalchemy.orm import declarative_base, sessionmaker
-
-from activetigger.functions import get_hash, get_root_pwd
-
-Base = declarative_base()
 
 
-class Projects(Base):
-    __tablename__ = "projects"
-    project_slug = Column(String, primary_key=True)
-    time_created = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    parameters = Column(Text)
-    time_modified = Column(TIMESTAMP(timezone=True))
-    user = Column(String)
+class ProjectsService:
+    Session: sessionmaker[SessionType]
 
-
-class Schemes(Base):
-    __tablename__ = "schemes"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time_created = Column(
-        TIMESTAMP(timezone=True), server_default=func.current_timestamp()
-    )
-    time_modified = Column(
-        TIMESTAMP(timezone=True),
-        server_default=func.current_timestamp(),
-        onupdate=func.current_timestamp(),
-    )
-    user = Column(String)
-    project = Column(String)
-    name = Column(String)
-    params = Column(Text)
-
-
-class Annotations(Base):
-    __tablename__ = "annotations"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
-    dataset = Column(String)
-    user = Column(String)
-    project = Column(String)
-    element_id = Column(String)
-    scheme = Column(String)
-    annotation = Column(String)
-    comment = Column(Text)
-
-
-class Users(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
-    user = Column(String)
-    key = Column(Text)
-    description = Column(Text)
-    contact = Column(Text)
-    created_by = Column(String)
-
-
-class Auths(Base):
-    __tablename__ = "auth"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user = Column(String)
-    project = Column(String)
-    status = Column(String)
-    created_by = Column(String)
-
-
-class Logs(Base):
-    __tablename__ = "logs"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
-    user = Column(String)
-    project = Column(String)
-    action = Column(String)
-    connect = Column(String)
-
-
-class Tokens(Base):
-    __tablename__ = "tokens"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time_created = Column(
-        TIMESTAMP(timezone=True), server_default=func.current_timestamp()
-    )
-    token = Column(Text)
-    status = Column(String)
-    time_revoked = Column(TIMESTAMP(timezone=True))
-
-
-class Generations(Base):
-    __tablename__ = "generations"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
-    user = Column(String)
-    project = Column(String)
-    element_id = Column(String)
-    endpoint = Column(String)
-    prompt = Column(Text)
-    answer = Column(Text)
-
-
-class Features(Base):
-    __tablename__ = "features"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
-    user = Column(String)
-    project = Column(String)
-    name = Column(String)
-    kind = Column(String)
-    parameters = Column(Text)
-    data = Column(String)
-
-
-class Models(Base):
-    __tablename__ = "models"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    time = Column(TIMESTAMP(timezone=True), server_default=func.current_timestamp())
-    time_modified = Column(TIMESTAMP(timezone=True))
-    user = Column(String)
-    project = Column(String)
-    scheme = Column(String)
-    kind = Column(String)
-    name = Column(String)
-    parameters = Column(Text)
-    path = Column(String)
-    status = Column(String)
-    statistics = Column(Text)
-    test = Column(String)
-
-
-class DatabaseManager:
-    """
-    Database management with SQLAlchemy
-    """
-
-    def __init__(self, path_db: str):
-        self.db_url = f"sqlite:///{path_db}"
-
-        # test if the db exists, else create it
-        if not Path(path_db).exists():
-            self.create_db()
-
-        # connect the session
-        self.engine = create_engine(self.db_url)
-        self.Session = sessionmaker(bind=self.engine)
-        self.default_user = "server"
-
-        # check if there is a root user, add it
-        session = self.Session()
-        if not session.query(Users).filter_by(user="root").first():
-            self.create_root_session()
-        session.close()
-
-    def create_db(self):
-        print("Create database")
-        self.engine = create_engine(self.db_url)
-        Base.metadata.create_all(self.engine)
-
-    def create_root_session(self) -> None:
-        """
-        Create root session
-        :return: None
-        """
-        pwd: str = get_root_pwd()
-        hash_pwd: bytes = get_hash(pwd)
-        self.add_user("root", hash_pwd, "root", "system")
-
-    def add_user(
-        self,
-        username: str,
-        password: str,
-        role: str,
-        created_by: str,
-        contact: str = "",
-    ):
-        session = self.Session()
-        user = Users(
-            user=username,
-            key=password,
-            description=role,
-            created_by=created_by,
-            time=datetime.datetime.now(),
-            contact=contact,
-        )
-        session.add(user)
-        session.commit()
-        session.close()
+    def __init__(self, sessionmaker: sessionmaker[SessionType]):
+        self.Session = sessionmaker
 
     def add_log(self, user: str, action: str, project_slug: str, connect: str):
         session = self.Session()
@@ -364,7 +189,7 @@ class DatabaseManager:
             session.commit()
             session.close()
             return True
-        except JSONDecodeError as e:
+        except json.JSONDecodeError as e:
             logging.warning("Unable to parse codebook scheme: %", e)
             return None
 
@@ -379,20 +204,13 @@ class DatabaseManager:
                 "codebook": json.loads(scheme.params)["codebook"],
                 "time": str(scheme.time_modified),
             }
-        except JSONDecodeError as e:
+        except json.JSONDecodeError as e:
             logging.warning("Unable to parse codebook scheme: %", e)
             return None
 
     def delete_project(self, project_slug: str):
         session = self.Session()
         session.query(Projects).filter(Projects.project_slug == project_slug).delete()
-        session.query(Schemes).filter(Schemes.project == project_slug).delete()
-        session.query(Annotations).filter(Annotations.project == project_slug).delete()
-        session.query(Auths).filter(Auths.project == project_slug).delete()
-        session.query(Generations).filter(Generations.project == project_slug).delete()
-        session.query(Logs).filter(Logs.project == project_slug).delete()
-        session.query(Features).filter(Features.project == project_slug).delete()
-        session.query(Models).filter(Models.project == project_slug).delete()
         session.commit()
         session.close()
 
@@ -533,42 +351,6 @@ class DatabaseManager:
             )
         session.close()
         return [[row[0], row[1]] for row in result]
-
-    def get_users_created_by(self, username: str):
-        """
-        get users created by *username*
-        """
-        session = self.Session()
-        if username == "all":
-            result = session.query(Users.user, Users.contact).distinct().all()
-        else:
-            result = (
-                session.query(Users.user, Users.contact)
-                .filter(Users.created_by == username)
-                .distinct()
-                .all()
-            )
-        session.close()
-        return {row.user: {"contact": row.contact} for row in result}
-
-    def delete_user(self, username: str):
-        session = self.Session()
-        session.query(Users).filter(Users.user == username).delete()
-        session.commit()
-        session.close()
-
-    def get_user(self, username: str):
-        session = self.Session()
-        user = session.query(Users).filter(Users.user == username).first()
-        session.close()
-        return {"key": user.key, "description": user.description}
-
-    def change_password(self, username: str, password: str):
-        session = self.Session()
-        user = session.query(Users).filter(Users.user == username).first()
-        user.key = password
-        session.commit()
-        session.close()
 
     def get_scheme_elements(self, project_slug: str, scheme: str, dataset: list[str]):
         """

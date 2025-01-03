@@ -30,7 +30,8 @@ from activetigger.datamodels import (
     Multi_naivebayesParams,
     RandomforestParams,
 )
-from activetigger.db import DatabaseManager
+from activetigger.db.manager import DatabaseManager
+from activetigger.db.projects import ProjectsService
 
 
 class BertModel:
@@ -270,7 +271,7 @@ class BertModels:
     path: Path
     queue: Any
     computing: list
-    db_manager: DatabaseManager
+    projects_service: ProjectsService
 
     def __init__(
         self,
@@ -308,7 +309,7 @@ class BertModels:
         self.project_slug = project_slug
         self.queue = queue
         self.computing = computing
-        self.db_manager = db_manager
+        self.projects_service = db_manager.projets_service
         self.path: Path = Path(path) / "bert"
         if not self.path.exists():
             os.mkdir(self.path)
@@ -320,7 +321,7 @@ class BertModels:
         """
         Information on available models for state
         """
-        models = self.db_manager.available_models(self.project_slug)
+        models = self.projects_service.available_models(self.project_slug)
         r = {}
         for m in models:
             if m["scheme"] not in r:
@@ -333,7 +334,7 @@ class BertModels:
             if not m["parameters"]["compressed"]:
                 if (self.path / "../../static" / f"{m['name']}.tar.gz").exists():
                     # update bdd
-                    self.db_manager.set_model_params(
+                    self.projects_service.set_model_params(
                         self.project_slug,
                         m["name"],
                         "compressed",
@@ -382,7 +383,7 @@ class BertModels:
         """
         Delete bert model
         """
-        r = self.db_manager.delete_model(self.project_slug, bert_name)
+        r = self.projects_service.delete_model(self.project_slug, bert_name)
         if not r:
             return {"error": "Problem in model deletion in database"}
         try:
@@ -439,7 +440,7 @@ class BertModels:
         name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
 
         # check if a project not already exist
-        if self.db_manager.model_exists(project, name):
+        if self.projects_service.model_exists(project, name):
             return {"error": "A model with this name already exists"}
 
         # set default parameters if needed
@@ -495,7 +496,7 @@ class BertModels:
         params["compressed"] = False
 
         # add in database
-        if not self.db_manager.add_model(
+        if not self.projects_service.add_model(
             kind="bert",
             name=name,
             user=user,
@@ -632,12 +633,12 @@ class BertModels:
         Rename a model (copy it)
         """
         # get model
-        model = self.db_manager.get_model(self.project_slug, former_name)
+        model = self.projects_service.get_model(self.project_slug, former_name)
         if model is None:
             return {"error": "model does not exist"}
         if (Path(model.path) / "status.log").exists():
             return {"error": "model not trained completly"}
-        r = self.db_manager.rename_model(self.project_slug, former_name, new_name)
+        r = self.projects_service.rename_model(self.project_slug, former_name, new_name)
         if "error" in r:
             return r
         os.rename(model.path, model.path.replace(former_name, new_name))
@@ -647,7 +648,7 @@ class BertModels:
         """
         Get a model
         """
-        model = self.db_manager.get_model(self.project_slug, name)
+        model = self.projects_service.get_model(self.project_slug, name)
         if model is None:
             return None
         if not Path(model.path).exists():
@@ -696,13 +697,16 @@ class BertModels:
         if element["status"] == "training":
             # update bdd status
             self.db_manager.change_model_status(self.project_slug, element["model"].name, "trained")
+            self.projects_service.change_model_status(
+                self.project_slug, element["model"].name, "trained"
+            )
             print("Model trained")
         if element["status"] == "testing":
             print("Model tested")
         if element["status"] == "predicting":
             # case of global prediction completed
             if element["dataset"] == "all":
-                self.db_manager.set_model_params(
+                self.projects_service.set_model_params(
                     self.project_slug,
                     element["model"].name,
                     flag="predicted",

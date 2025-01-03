@@ -1,7 +1,8 @@
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.db import DatabaseManager
+from activetigger.db.manager import DatabaseManager
+from activetigger.db.projects import ProjectsService
 
 
 class Generations:
@@ -10,10 +11,10 @@ class Generations:
     """
 
     computing: list
-    db_manager: DatabaseManager
+    projects_service: ProjectsService
 
     def __init__(self, db_manager: DatabaseManager, computing: list) -> None:
-        self.db_manager = db_manager
+        self.projects_service = db_manager.projects_service
         self.computing = computing  # user:{"unique_id", "number","api"}
 
     def add(
@@ -28,7 +29,7 @@ class Generations:
         """
         Add a generated element in the database
         """
-        self.db_manager.add_generated(
+        self.projects_service.add_generated(
             user=user,
             project_slug=project_slug,
             element_id=element_id,
@@ -47,7 +48,7 @@ class Generations:
         """
         Get generated elements from the database
         """
-        result = self.db_manager.get_generated(
+        result = self.projects_service.get_generated(
             project_slug=project_slug, username=username, n_elements=n_elements
         )
         df = pd.DataFrame(
