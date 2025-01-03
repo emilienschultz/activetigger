@@ -256,6 +256,7 @@ class BertModels:
             "adapt": True,
         }
         self.base_models = [
+            "answerdotai/ModernBERT-base",
             "camembert/camembert-base",
             "camembert/camembert-large",
             "flaubert/flaubert_small_cased",

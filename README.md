@@ -5,7 +5,11 @@
 [![PyPI Version](https://img.shields.io/pypi/v/activetigger)](https://pypi.org/project/activetigger/)
 ![React](https://img.shields.io/badge/React-18.0.0-blue)
 
+Hi❗
+
 ActiveTigger[^1] is an text annotation web tool dedicated for computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to annotate text dataset relying on active learning.
+
+Designed primarily for researchers and students in social science (sociology and political science), its use can extends to all users that need to annotate textual data.
 
 > [!IMPORTANT] 
 > The app is currently 🚧 **under the beta test phase** 🚧.

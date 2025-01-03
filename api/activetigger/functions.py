@@ -531,7 +531,7 @@ def train_bert(
             num_train_epochs=float(params["epochs"]),
             gradient_accumulation_steps=int(params["gradacc"]),
             per_device_train_batch_size=int(params["batchsize"]),
-            per_device_eval_batch_size=32,
+            per_device_eval_batch_size=int(params["batchsize"]),
             warmup_steps=int(warmup_steps),
             eval_steps=eval_steps,
             evaluation_strategy="steps",
@@ -543,6 +543,7 @@ def train_bert(
             load_best_model_at_end=params["best"],
             metric_for_best_model="eval_loss",
             use_cpu=not bool(params["gpu"]),  # deactivate gpu
+            # optim="adamw_torch_fused", # improved optimizer
         )
         print("training arguments created")
 
