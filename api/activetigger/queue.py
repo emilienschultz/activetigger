@@ -62,7 +62,9 @@ class Queue:
             self.executor.submit(lambda: None)
         except Exception:
             self.executor.shutdown(cancel_futures=True)
-            self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.nb_workers)
+            self.executor = concurrent.futures.ProcessPoolExecutor(
+                max_workers=self.nb_workers
+            )
             logger.error("Restart executor")
             print("Problem with executor ; restart")
 
@@ -124,7 +126,11 @@ class Queue:
             else:
                 info = "done"
                 exception = self.current[f]["future"].exception()
-            r[f] = {"state": info, "exception": exception, "kind": self.current[f]["kind"]}
+            r[f] = {
+                "state": info,
+                "exception": exception,
+                "kind": self.current[f]["kind"],
+            }
         return r
 
     def get_nb_active_processes(self) -> int:

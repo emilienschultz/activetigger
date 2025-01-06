@@ -61,10 +61,10 @@ class Server:
     train_file: str
     test_file: str
     default_user: str
-    ALGORITHM: str
+    algorithm: str
     n_workers: int
     starting_time: float
-    SECRET_KEY: str
+    secret_key: str
     path: Path
     path_models: Path
     db: Path
@@ -94,11 +94,11 @@ class Server:
         self.train_file = train_file
         self.test_file = test_file
         self.default_user = default_user
-        self.ALGORITHM = ALGORITHM
+        self.algorithm = ALGORITHM
         self.n_workers = N_WORKERS
 
         self.starting_time = time.time()
-        self.SECRET_KEY = secrets.token_hex(32)
+        self.secret_key = secrets.token_hex(32)
 
         # Define path
         self.path = Path(path)
@@ -113,10 +113,10 @@ class Server:
             if "path_models" in config:
                 self.path_models = Path(config["path_models"])
 
-        self.db = self.path / self.db_name
+        self.db = self.path.joinpath(self.db_name)
 
         # create directories
-        (self.path / "static").mkdir(parents=True, exist_ok=True)
+        (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
 
         # attributes of the server
@@ -127,7 +127,7 @@ class Server:
 
         # logging
         logging.basicConfig(
-            filename=self.path / "log_server.log",
+            filename=self.path.joinpath("log_server.log"),
             level=logging.DEBUG,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
@@ -155,12 +155,16 @@ class Server:
         self.db_manager.add_log(user, action, project, connect)
         logger.info("%s from %s in project %s", action, user, project)
 
-    def get_logs(self, project_slug: str, limit: int, partial: bool = True) -> pd.DataFrame:
+    def get_logs(
+        self, project_slug: str, limit: int, partial: bool = True
+    ) -> pd.DataFrame:
         """
         Get logs for a user/project
         """
         logs = self.db_manager.get_logs("all", project_slug, limit)
-        df = pd.DataFrame(logs, columns=["id", "time", "user", "project", "action", "NA"])
+        df = pd.DataFrame(
+            logs, columns=["id", "time", "user", "project", "action", "NA"]
+        )
         if partial:
             return df[~df["action"].str.contains("INFO ")]
         return df
@@ -205,7 +209,7 @@ class Server:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 
         # add it in the database as active
         self.db_manager.add_token(encoded_jwt, "active")
@@ -230,7 +234,7 @@ class Server:
             return {"error": "Token not valid"}
 
         # decode payload
-        payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+        payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
         return payload
 
     def start_project(self, project_slug: str) -> dict:
@@ -255,11 +259,15 @@ class Server:
 
         if existing_project:
             # Update the existing project
-            self.db_manager.update_project(project.project_slug, jsonable_encoder(project))
+            self.db_manager.update_project(
+                project.project_slug, jsonable_encoder(project)
+            )
             return {"success": "project updated"}
         else:
             # Insert a new project
-            self.db_manager.add_project(project.project_slug, jsonable_encoder(project), username)
+            self.db_manager.add_project(
+                project.project_slug, jsonable_encoder(project), username
+            )
             return {"success": "project added"}
 
     def existing_projects(self) -> list:
@@ -295,17 +303,17 @@ class Server:
         project_slug = slugify(params.project_name)
 
         # create dedicated directory
-        params.dir = self.path / project_slug
-        if params.dir.exists():
+        params.dir = self.path.joinpath(project_slug)
+        if params.dir is None:
             return {"error": "This name is already used"}
         os.makedirs(params.dir)
 
         # copy total dataset as a copy (csv for the moment)
-        with open(params.dir / "data_raw.csv", "w") as f:
+        with open(params.dir.joinpath("data_raw.csv"), "w") as f:
             f.write(params.csv)
 
         # Step 1 : load all data and index to str and rename columns
-        content = pd.read_csv(params.dir / "data_raw.csv", dtype=str)
+        content = pd.read_csv(params.dir.joinpath("data_raw.csv"), dtype=str)
 
         # rename columns both for data & params to avoid confusion
         content.columns = ["dataset_" + i for i in content.columns]
@@ -337,7 +345,10 @@ class Server:
         # case of a column as index
         else:
             # check if index after slugify is unique otherwise throw an error
-            if not ((content[params.col_id].astype(str).apply(slugify)).nunique() == len(content)):
+            if not (
+                (content[params.col_id].astype(str).apply(slugify)).nunique()
+                == len(content)
+            ):
                 shutil.rmtree(params.dir)
                 return {"error": "The column selected for index has not unique values."}
             content["id"] = content[params.col_id].astype(str).apply(slugify)
@@ -369,7 +380,7 @@ class Server:
         content["limit"] = content["text"].apply(limit)
 
         # save a complete copy of the dataset
-        content.to_parquet(params.dir / self.data_all, index=True)
+        content.to_parquet(params.dir.joinpath(self.data_all), index=True)
 
         # Step 2 : test dataset : from the complete dataset + random/stratification
         rows_test = []
@@ -384,8 +395,10 @@ class Server:
                 df_grouped = content.groupby(params.cols_test, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(params.n_test / nb_cat)
-                testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
-            testset.to_parquet(params.dir / self.test_file, index=True)
+                testset = df_grouped.apply(
+                    lambda x: x.sample(min(len(x), nb_elements_cat))
+                )
+            testset.to_parquet(params.dir.joinpath(self.test_file), index=True)
             params.test = True
             rows_test = list(testset.index)
 
@@ -394,21 +407,27 @@ class Server:
         f_notna = content["label"].notna()
         f_na = content["label"].isna()
 
-        if f_notna.sum() > params.n_train:  # case where there is more labelled data than needed
+        if (
+            f_notna.sum() > params.n_train
+        ):  # case where there is more labelled data than needed
             trainset = content[f_notna].sample(params.n_train)
         else:
             n_train_random = params.n_train - f_notna.sum()  # number of element to pick
-            trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
+            trainset = pd.concat(
+                [content[f_notna], content[f_na].sample(n_train_random)]
+            )
 
-        trainset.to_parquet(params.dir / self.train_file, index=True)
+        trainset.to_parquet(params.dir.joinpath(self.train_file), index=True)
         trainset[list(set(["text"] + params.cols_context + keep_id))].to_parquet(
-            params.dir / self.annotations_file, index=True
+            params.dir.joinpath(self.annotations_file), index=True
         )
-        trainset[[]].to_parquet(params.dir / self.features_file, index=True)
+        trainset[[]].to_parquet(params.dir.joinpath(self.features_file), index=True)
 
         # if the case, add existing annotations in the database
         if params.col_label is None:
-            self.db_manager.add_scheme(project_slug, "default", [], "multiclass", "system")
+            self.db_manager.add_scheme(
+                project_slug, "default", [], "multiclass", "system"
+            )
         else:
             # determine if multiclass / multilabel (arbitrary rule)
             delimiters = content["label"].str.contains("|", regex=False).sum()
@@ -475,7 +494,7 @@ class Server:
         self.set_project_parameters(ProjectModel(**project), username)
 
         # clean
-        os.remove(params.dir / "data_raw.csv")
+        os.remove(params.dir.joinpath("data_raw.csv"))
 
         return {"success": project_slug}
 
@@ -489,7 +508,8 @@ class Server:
 
         # remove directory
         params = self.get_project_params(project_slug)
-        shutil.rmtree(params.dir)
+        if params is not None and params.dir is not None:
+            shutil.rmtree(params.dir)
 
         # clean database
         self.db_manager.delete_project(project_slug)
@@ -531,6 +551,7 @@ class Project(Server):
         """
         Load existing project
         """
+        super().__init__()  # Call Server init to herit from it
         self.starting_time = time.time()
         self.name = project_slug
         self.queue = queue
@@ -544,20 +565,20 @@ class Project(Server):
             raise ValueError("No directory exists for this project")
 
         # loading data
-        self.content = pd.read_parquet(self.params.dir / train_file)
+        self.content = pd.read_parquet(self.params.dir.joinpath(train_file))
 
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
-            self.params.dir / annotations_file,
-            self.params.dir / test_file,
+            self.params.dir.joinpath(annotations_file),
+            self.params.dir.joinpath(test_file),
             self.db_manager,
         )
         self.features = Features(
             project_slug,
-            self.params.dir / features_file,
-            self.params.dir / data_all,
-            self.params.dir / self.path_models,
+            self.params.dir.joinpath(features_file),
+            self.params.dir.joinpath(data_all),
+            self.params.dir.joinpath(self.path_models),
             self.queue,
             self.computing,
             self.db_manager,
@@ -591,22 +612,27 @@ class Project(Server):
         if self.schemes.test is not None:
             return {"error": "Already a test dataset"}
 
+        if self.params.dir is None:
+            raise Exception("Cannot add test data without a valid dir")
+
         # write the buffer send by the frontend
-        with open(self.params.dir / "test_set_raw.csv", "w") as f:
+        with open(self.params.dir.joinpath("test_set_raw.csv"), "w") as f:
             f.write(testset.csv)
 
         # load it
         df = pd.read_csv(
-            self.params.dir / "test_set_raw.csv",
+            self.params.dir.joinpath("test_set_raw.csv"),
             dtype={testset.col_id: str, testset.col_text: str},
             nrows=testset.n_test,
         )
 
         # change names
-        df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"}).set_index("id")
+        df = df.rename(
+            columns={testset.col_id: "id", testset.col_text: "text"}
+        ).set_index("id")
 
         # write the dataset
-        df[[testset.col_text]].to_parquet(self.params.dir / self.test_file)
+        df[[testset.col_text]].to_parquet(self.params.dir.joinpath(self.test_file))
         # load the data
         self.schemes.test = df[[testset.col_text]]
         # update parameters
@@ -662,7 +688,9 @@ class Project(Server):
         counts = df_scheme["labels"].value_counts()
         valid_categories = counts[counts >= 3]
         if len(valid_categories) < 2:
-            return {"error": "there are less than 2 categories with 3 annotated elements"}
+            return {
+                "error": "there are less than 2 categories with 3 annotated elements"
+            }
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -761,7 +789,9 @@ class Project(Server):
                     )
                 )
             else:
-                f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
+                f_regex = df["text"].str.contains(
+                    filter_san, regex=True, case=True, na=False
+                )
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
@@ -809,7 +839,9 @@ class Project(Server):
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f][label].drop(history, errors="ignore").sort_values(ascending=False)
+                proba[f][label]
+                .drop(history, errors="ignore")
+                .sort_values(ascending=False)
             )  # get max proba id
             element_id = ss.index[0]
             n_sample = len(ss)
@@ -823,7 +855,9 @@ class Project(Server):
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f]["entropy"].drop(history, errors="ignore").sort_values(ascending=False)
+                proba[f]["entropy"]
+                .drop(history, errors="ignore")
+                .sort_values(ascending=False)
             )  # get max entropy id
             element_id = ss.index[0]
             n_sample = len(ss)
@@ -848,7 +882,9 @@ class Project(Server):
             "element_id": element_id,
             "text": self.content.fillna("NA").loc[element_id, "text"],
             "context": dict(
-                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                self.content.fillna("NA")
+                .loc[element_id, self.params.cols_context]
+                .apply(str)
             ),
             "selection": selection,
             "info": indicator,
@@ -894,11 +930,13 @@ class Project(Server):
 
             # get prediction if it exists
             predict = {"label": None, "proba": None}
-            if (user is not None) & (scheme is not None):
+            if (user is not None) and (scheme is not None):
                 if self.simplemodels.exists(user, scheme):
                     sm = self.simplemodels.get_model(user, scheme)
                     predicted_label = sm.proba.loc[element_id, "prediction"]
-                    predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
+                    predicted_proba = round(
+                        sm.proba.loc[element_id, predicted_label], 2
+                    )
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
@@ -910,7 +948,9 @@ class Project(Server):
                 "element_id": element_id,
                 "text": self.content.loc[element_id, "text"],
                 "context": dict(
-                    self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                    self.content.fillna("NA")
+                    .loc[element_id, self.params.cols_context]
+                    .apply(str)
                 ),
                 "selection": "request",
                 "predict": predict,
@@ -946,7 +986,8 @@ class Project(Server):
         # part train
         r = {"train_set_n": len(self.schemes.content)}
         r["users"] = [
-            i[0] for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
+            i[0]
+            for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
         ]
 
         df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
@@ -954,7 +995,9 @@ class Project(Server):
         # different treatment if the scheme is multilabel or multiclass
         r["train_annotated_n"] = len(df)
         if kind == "multiclass":
-            r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+            r["train_annotated_distribution"] = json.loads(
+                df["labels"].value_counts().to_json()
+            )
         else:
             r["train_annotated_distribution"] = json.loads(
                 df["labels"].str.split("|").explode().value_counts().to_json()
@@ -966,7 +1009,9 @@ class Project(Server):
             r["test_set_n"] = len(self.schemes.test)
             r["test_annotated_n"] = len(df)
             if kind == "multiclass":
-                r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+                r["test_annotated_distribution"] = json.loads(
+                    df["labels"].value_counts().to_json()
+                )
             else:
                 r["test_annotated_distribution"] = json.loads(
                     df["labels"].str.split("|").explode().value_counts().to_json()
@@ -1016,7 +1061,8 @@ class Project(Server):
             "projections": {
                 "options": self.projections.options,
                 "available": {
-                    i: self.projections.available[i]["id"] for i in self.projections.available
+                    i: self.projections.available[i]["id"]
+                    for i in self.projections.available
                 },
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
@@ -1037,7 +1083,7 @@ class Project(Server):
             return {"error": "No features selected"}
 
         path = self.params.dir  # path of the data
-        if not path.exists():
+        if path is None:
             raise ValueError("Problem of filesystem for project")
 
         data = self.features.get(features)
@@ -1046,13 +1092,13 @@ class Project(Server):
 
         # create files
         if format == "csv":
-            data.to_csv(path / file_name)
+            data.to_csv(path.joinpath(file_name))
         if format == "parquet":
-            data.to_parquet(path / file_name)
+            data.to_parquet(path.joinpath(file_name))
         if format == "xlsx":
-            data.to_excel(path / file_name)
+            data.to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path / file_name}
+        r = {"name": file_name, "path": path.joinpath(file_name)}
 
         return r
 
@@ -1061,14 +1107,16 @@ class Project(Server):
         Export annotation data in different formats
         """
         path = self.params.dir  # path of the data
-        if not path.exists():
+        if path is None:
             raise ValueError("Problem of filesystem for project")
 
         # test or train
         if dataset == "test":
             if not self.params.test:
                 return {"error": "No test data"}
-            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind="test")
+            data = self.schemes.get_scheme_data(
+                scheme=scheme, complete=True, kind="test"
+            )
             file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
@@ -1076,13 +1124,13 @@ class Project(Server):
 
         # Create files
         if format == "csv":
-            data.reset_index().map(str).to_csv(path / file_name)
+            data.reset_index().map(str).to_csv(path.joinpath(file_name))
         if format == "parquet":
-            data.reset_index().map(str).to_parquet(path / file_name)
+            data.reset_index().map(str).to_parquet(path.joinpath(file_name))
         if format == "xlsx":
-            data.reset_index().map(str).to_excel(path / file_name)
+            data.reset_index().map(str).to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path / file_name}
+        r = {"name": file_name, "path": path.joinpath(file_name)}
         return r
 
     def get_active_users(self, period: int = 300):
@@ -1143,7 +1191,9 @@ class Project(Server):
                         print("Error in model training/predicting", r["error"])
                         self.computing.remove(e)
                         self.queue.delete(e["unique_id"])
-                        self.errors.append([datetime.now(TIMEZONE), "bert training", r["error"]])
+                        self.errors.append(
+                            [datetime.now(TIMEZONE), "bert training", r["error"]]
+                        )
                         # return {"error": r["error"]}
                     if "prediction" in r:
                         predictions["predict_" + e["model"].name] = r["prediction"]
@@ -1167,7 +1217,9 @@ class Project(Server):
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
+                    self.errors.append(
+                        [datetime.now(TIMEZONE), "simplemodel failed", str(ex)]
+                    )
                     print("Simplemodel failed", ex)
 
             # case for features
