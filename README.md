@@ -65,6 +65,10 @@ To enable GPU support, [install Rapids Cuml](https://docs.rapids.ai/install/#sys
 pip install --extra-index-url=https://pypi.nvidia.com "cuml-cu12==24.10.*"
 ```
 
+#### Temporary: some models (ModernBERT) need unpublished versions of Huggingface Transformers
+
+The requirements contains the clone of the repository.
+
 ### Install the React frontend
 
 The frontend is written in React/Typescript. To run the dev version and to build the app, you need first to install node.js and npm (version > 20).
