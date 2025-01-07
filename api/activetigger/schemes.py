@@ -102,7 +102,9 @@ class Schemes:
             self.project_slug, scheme
         )
         # Shape the data
-        df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
+        df = pd.DataFrame(
+            results, columns=["id", "labels", "user", "time"]
+        )  # shape as a dataframe
 
         def agg(x):
             return list(x)[0] if len(x) > 0 else None  # take the label else None
@@ -114,13 +116,17 @@ class Schemes:
             lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
         )  # filter for disagreement
         users = list(df.columns)
-        df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
+        df = pd.DataFrame(
+            df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"]
+        )
         df = df.join(self.content[["text"]], how="left")  # add the text
         df = df[f_multi].reset_index()
         # return the result
         return df, users
 
-    def convert_annotations(self, former_label: str, new_label: str, scheme: str, username: str):
+    def convert_annotations(
+        self, former_label: str, new_label: str, scheme: str, username: str
+    ):
         """
         Convert tags from a specific label to another
         """
@@ -245,7 +251,9 @@ class Schemes:
             "filter": contains,
         }
 
-    def add_scheme(self, name: str, labels: list, kind: str = "multiclass", user: str = "server"):
+    def add_scheme(
+        self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
+    ):
         """
         Add new scheme
         """

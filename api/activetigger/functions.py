@@ -284,7 +284,9 @@ def to_sbert(
         print("start computation")
         if device.type == "cuda":
             with autocast(device_type=str(device)):
-                emb = sbert.encode(list(texts), device=str(device), batch_size=batch_size)
+                emb = sbert.encode(
+                    list(texts), device=str(device), batch_size=batch_size
+                )
         else:
             emb = sbert.encode(list(texts), batch_size=batch_size, device=str(device))
         emb = pd.DataFrame(emb, index=texts.index)
