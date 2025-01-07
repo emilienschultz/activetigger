@@ -360,7 +360,7 @@ export const ProjectTrainPage: FC = () => {
                                       <td>{String(model.train_scores['recall'])}</td>
                                     </tr>
                                     <tr>
-                                      <td>Accuray</td>
+                                      <td>Accuracy</td>
                                       <td>{String(model.train_scores['accuracy'])}</td>
                                     </tr>
                                   </tbody>
