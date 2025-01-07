@@ -281,10 +281,10 @@ def to_sbert(
 
         print("start computation")
         if device.type == "cuda":
-            with autocast(device_type=device):
-                emb = sbert.encode(list(texts), device=device, batch_size=batch_size)
+            with autocast(device_type=str(device)):
+                emb = sbert.encode(list(texts), device=str(device), batch_size=batch_size)
         else:
-            emb = sbert.encode(list(texts), batch_size=batch_size, device=device)
+            emb = sbert.encode(list(texts), batch_size=batch_size, device=str(device))
         emb = pd.DataFrame(emb, index=texts.index)
         emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
         print("computation end")
