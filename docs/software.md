@@ -4,14 +4,15 @@
 
 ### Next Steps
 
-- Multilabel workflow, bert-fine tuning
-- Optimize GPU management
+- Multilabel workflow + bert-fine tuning
+- Optimize GPU management (prediction)
 - Optimize vizualisation for large dataset ⚙
 - Create a easy/medium/pro mode
     - *need definition*
 - Define the monitor panel
     - *need definition*
 - Write documentation + tutorial
+- Create Python wrapper
 
 ### Enhancements
 
@@ -19,9 +20,12 @@
 - Integrate genAI tools ⚙
 - Add carbon count 
 - Add new models (Modernbert, Phi3, pleias, ...) 
-- Refactor design ⚙
+- Refactor design (better ergonomy / colors / etc.) ⚙
 - Better data set management (expand)
 - Animate community on Discord
+
+### Possibilities
+- Attribute specific task to users
 
 ## Architecture
 
