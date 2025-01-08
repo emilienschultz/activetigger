@@ -104,6 +104,11 @@ npm run build
 
 You can deploy the app with Github Pages for tests
 
+### Python client
+
+A python client is under development to interact with the API https://github.com/emilienschultz/activetigger-client
+
+
 ## Documentation
 
 The documentation is [here](https://emilienschultz.github.io/activetigger/docs/)

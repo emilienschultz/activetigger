@@ -751,9 +751,6 @@ class Project(Server):
         if sample == "tagged":
             f = df["labels"].notna()
 
-        print("SAMPLE")
-        print(df["labels"].isna().sum())
-
         # add a regex condition to the selection
         if filter:
             # sanitize
