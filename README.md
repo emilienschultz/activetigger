@@ -12,7 +12,7 @@ ActiveTigger[^1] is an text annotation web tool dedicated for computational soci
 Designed primarily by researchers in in social sciences, its use can extends to all users that need to annotate textual data.
 
 > [!IMPORTANT] 
-> The app is currently 🚧 **under the beta test phase** 🚧.
+> The app is currently 🚧 **under the beta test phase** 🚧. The stable version is planned for mid-June.
 
 
 [Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
@@ -132,4 +132,4 @@ The development of Active Tigger is supported by : [DRARI Île-de-France](https:
 
 🚧 please not cite for the moment 🚧
 
-[^1]: The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger)
+[^1]: The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger). Active Tigger name is a pun that draws on the similarity between the words 'Tagger' and 'Tigger.'
