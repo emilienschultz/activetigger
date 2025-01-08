@@ -349,19 +349,20 @@ export const ProjectTrainPage: FC = () => {
                                     </tr>
                                     <tr>
                                       <td>F1</td>
-                                      <td>{String(model.train_scores['f1'])}</td>
+                                      <td>{JSON.stringify(model.train_scores['f1'])}</td>
                                     </tr>
+
                                     <tr>
                                       <td>Precision</td>
-                                      <td>{String(model.train_scores['precision'])}</td>
+                                      <td>{JSON.stringify(model.train_scores['precision'])}</td>
                                     </tr>
                                     <tr>
                                       <td>Recall</td>
-                                      <td>{String(model.train_scores['recall'])}</td>
+                                      <td>{JSON.stringify(model.train_scores['recall'])}</td>
                                     </tr>
                                     <tr>
                                       <td>Accuracy</td>
-                                      <td>{String(model.train_scores['accuracy'])}</td>
+                                      <td>{model.train_scores['accuracy']}</td>
                                     </tr>
                                   </tbody>
                                 </table>

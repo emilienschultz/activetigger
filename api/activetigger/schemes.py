@@ -296,13 +296,11 @@ class Schemes:
         df = self.get_scheme_data(scheme, kind="train")
         elements = list(df[df["labels"] == label].index)
         for i in elements:
-            print(i)
             self.push_annotation(i, None, scheme, user, "train")
         # and test
         df = self.get_scheme_data(scheme, kind="test")
         elements = list(df[df["labels"] == label].index)
         for i in elements:
-            print(i)
             self.push_annotation(i, None, scheme, user, "test")
         # update scheme
         self.update_scheme(scheme, labels)
@@ -389,11 +387,11 @@ class Schemes:
         a = self.available()
         if scheme not in a:
             return {"error": "scheme unavailable"}
-        if label is None:
-            return {"error": "no label"}
 
         # test if the labels used exist in the scheme
-        if "|" in label:
+        if label is None:
+            print("Add null label for ", element_id)
+        elif "|" in label:
             er = [i for i in label.split("|") if i not in a[scheme]["labels"]]
             if len(er) > 0:
                 return {"error": f"labels don't belong to this scheme : {er}"}

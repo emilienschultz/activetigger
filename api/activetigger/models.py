@@ -138,7 +138,7 @@ class BertModel:
             return float(r)
         return None
 
-    def informations(self) -> dict:
+    def informations(self, decimals: int = 3) -> dict:
         """
         Compute statistics for train & test
         - load statistics if computed
@@ -184,15 +184,45 @@ class BertModel:
             df["prediction"] = self.pred["prediction"]
             Y_pred = df["prediction"]
             Y = df["labels"]
+            labels = list(Y.unique())
+            print(labels)
             f = df.apply(lambda x: x["prediction"] != x["labels"], axis=1)
             r["train_scores"] = {
-                "f1_micro": f1_score(Y, Y_pred, average="micro"),
-                "f1_macro": f1_score(Y, Y_pred, average="macro"),
-                "f1_weighted": f1_score(Y, Y_pred, average="weighted"),
-                "f1": list(f1_score(Y, Y_pred, average=None)),
-                "precision": list(precision_score(list(Y), list(Y_pred), average=None)),
-                "recall": list(recall_score(list(Y), list(Y_pred), average=None)),
-                "accuracy": accuracy_score(Y, Y_pred),
+                "f1_micro": round(f1_score(Y, Y_pred, average="micro"), decimals),
+                "f1_macro": round(f1_score(Y, Y_pred, average="macro"), decimals),
+                "f1_weighted": round(f1_score(Y, Y_pred, average="weighted"), decimals),
+                "f1": dict(
+                    zip(
+                        labels,
+                        [
+                            round(i, decimals)
+                            for i in f1_score(Y, Y_pred, average=None, labels=labels)
+                        ],
+                    )
+                ),
+                "precision": dict(
+                    zip(
+                        labels,
+                        [
+                            round(i, decimals)
+                            for i in precision_score(
+                                list(Y), list(Y_pred), average=None, labels=labels
+                            )
+                        ],
+                    )
+                ),
+                "recall": dict(
+                    zip(
+                        labels,
+                        [
+                            round(i, decimals)
+                            for i in recall_score(
+                                list(Y), list(Y_pred), average=None, labels=labels
+                            )
+                        ],
+                    )
+                ),
+                "accuracy": round(accuracy_score(Y, Y_pred), decimals),
                 "false_prediction": df[f][["text", "labels", "prediction"]]
                 .reset_index()
                 .to_json(orient="records"),
@@ -208,13 +238,19 @@ class BertModel:
             Y = df["labels"]
             f = df.apply(lambda x: x["prediction"] != x["labels"], axis=1)
             r["test_scores"] = {
-                "f1_micro": f1_score(Y, Y_pred, average="micro"),
-                "f1_macro": f1_score(Y, Y_pred, average="macro"),
-                "f1_weighted": f1_score(Y, Y_pred, average="weighted"),
-                "f1": list(f1_score(Y, Y_pred, average=None)),
-                "precision": precision_score(list(Y), list(Y_pred), average="micro"),
-                "recall": list(recall_score(list(Y), list(Y_pred), average=None)),
-                "accuracy": accuracy_score(Y, Y_pred),
+                "f1_micro": round(f1_score(Y, Y_pred, average="micro"), decimals),
+                "f1_macro": round(f1_score(Y, Y_pred, average="macro"), decimals),
+                "f1_weighted": round(f1_score(Y, Y_pred, average="weighted"), decimals),
+                "f1": [round(i, decimals) for i in list(f1_score(Y, Y_pred, average=None))],
+                "precision": [
+                    round(i, decimals)
+                    for i in precision_score(list(Y), list(Y_pred), average="micro")
+                ],
+                "recall": [
+                    round(i, decimals)
+                    for i in list(recall_score(list(Y), list(Y_pred), average=None))
+                ],
+                "accuracy": round(accuracy_score(Y, Y_pred), decimals),
             }
             flag_modification = True
 
@@ -305,9 +341,7 @@ class BertModels:
                     )
                 else:
                     # create a flag
-                    with open(
-                        self.path / "../../static" / f"{m['name']}.tar.gz", "w"
-                    ) as f:
+                    with open(self.path / "../../static" / f"{m['name']}.tar.gz", "w") as f:
                         f.write("process started")
                     # start compression
                     self.start_compression(m["name"])
@@ -424,9 +458,7 @@ class BertModels:
         if params["gpu"]:
             mem = functions.get_gpu_memory_info()
             if self.estimate_memory_use(name, kind="train") > mem["available_memory"]:
-                return {
-                    "error": "Not enough GPU memory available. Wait or reduce batch."
-                }
+                return {"error": "Not enough GPU memory available. Wait or reduce batch."}
 
         # launch as a independant process
         args = {
@@ -663,9 +695,7 @@ class BertModels:
         """
         if element["status"] == "training":
             # update bdd status
-            self.db_manager.change_model_status(
-                self.project_slug, element["model"].name, "trained"
-            )
+            self.db_manager.change_model_status(self.project_slug, element["model"].name, "trained")
             print("Model trained")
         if element["status"] == "testing":
             print("Model tested")
@@ -768,11 +798,7 @@ class SimpleModels:
         """
         Currently under training
         """
-        r = {
-            e["user"]: list(e["scheme"])
-            for e in self.computing
-            if e["kind"] == "simplemodel"
-        }
+        r = {e["user"]: list(e["scheme"]) for e in self.computing if e["kind"] == "simplemodel"}
         return r
 
     def exists(self, user: str, scheme: str):
@@ -851,9 +877,7 @@ class SimpleModels:
 
         # Select model
         if name == "knn":
-            model = KNeighborsClassifier(
-                n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1
-            )
+            model = KNeighborsClassifier(n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1)
 
         if name == "lasso":
             model = LogisticRegression(
@@ -875,9 +899,7 @@ class SimpleModels:
                 n_estimators=int(model_params["n_estimators"]),
                 random_state=42,
                 max_features=(
-                    int(model_params["max_features"])
-                    if model_params["max_features"]
-                    else None
+                    int(model_params["max_features"]) if model_params["max_features"] else None
                 ),
                 n_jobs=-1,
             )
@@ -900,9 +922,7 @@ class SimpleModels:
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
         unique_id = self.queue.add("simplemodel", functions.fit_model, args)
-        sm = SimpleModel(
-            name, user, X, Y, labels, "computing", features, standardize, model_params
-        )
+        sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
         self.computing.append(
             {
                 "user": user,
@@ -1008,9 +1028,7 @@ class SimpleModel:
 
     def compute_stats(self):
         self.proba = self.compute_proba(self.model, self.X)
-        self.statistics = self.compute_statistics(
-            self.model, self.X, self.Y, self.labels
-        )
+        self.statistics = self.compute_statistics(self.model, self.X, self.Y, self.labels)
         self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
 
     def compute_proba(self, model, X):
