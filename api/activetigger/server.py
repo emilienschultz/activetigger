@@ -496,7 +496,8 @@ class Server:
         self.db_manager.delete_project(project_slug)
 
         # clean memory
-        del self.projects[project_slug]
+        if project_slug in self.projects:
+            del self.projects[project_slug]
 
         return {"success": "Project deleted"}
 
