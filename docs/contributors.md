@@ -6,6 +6,7 @@
 - Julien Boelaert
 - Emma Bonutti
 - Annina Claesson
+- Arnault Chatelain
 
 ## Development 
 

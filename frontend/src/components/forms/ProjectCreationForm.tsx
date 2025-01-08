@@ -258,7 +258,7 @@ export const ProjectCreationForm: FC = () => {
                   </select>
 
                   <label className="form-label" htmlFor="col_label">
-                    Column for existing annotations (optionnal)
+                    Column for existing annotations (optional)
                   </label>
                   <select
                     className="event-control"
@@ -273,7 +273,7 @@ export const ProjectCreationForm: FC = () => {
                   </select>
 
                   <label className="form-label" htmlFor="cols_context">
-                    Contextual information columns (optionnal)
+                    Contextual information columns (optional)
                   </label>
                   <Controller
                     name="cols_context"

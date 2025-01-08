@@ -5,14 +5,14 @@
 ### Next Steps
 
 - Multilabel workflow + bert-fine tuning
-- Optimize GPU management (prediction)
+- Create Python wrapper
+- Write documentation + tutorial
 - Optimize vizualisation for large dataset ⚙
 - Create a easy/medium/pro mode
     - *need definition*
 - Define the monitor panel
     - *need definition*
-- Write documentation + tutorial
-- Create Python wrapper
+- Optimize GPU management (prediction)
 
 ### Enhancements
 

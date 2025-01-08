@@ -97,9 +97,7 @@ class Schemes:
 
         results = self.db_manager.get_table_annotations_users(self.project_slug, scheme)
         # Shape the data
-        df = pd.DataFrame(
-            results, columns=["id", "labels", "user", "time"]
-        )  # shape as a dataframe
+        df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
 
         def agg(x):
             return list(x)[0] if len(x) > 0 else None  # take the label else None
@@ -111,17 +109,13 @@ class Schemes:
             lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
         )  # filter for disagreement
         users = list(df.columns)
-        df = pd.DataFrame(
-            df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"]
-        )
+        df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
         df = df.join(self.content[["text"]], how="left")  # add the text
         df = df[f_multi].reset_index()
         # return the result
         return df, users
 
-    def convert_annotations(
-        self, former_label: str, new_label: str, scheme: str, username: str
-    ):
+    def convert_annotations(self, former_label: str, new_label: str, scheme: str, username: str):
         """
         Convert tags from a specific label to another
         """
@@ -246,9 +240,7 @@ class Schemes:
             "filter": contains,
         }
 
-    def add_scheme(
-        self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
-    ):
+    def add_scheme(self, name: str, labels: list, kind: str = "multiclass", user: str = "server"):
         """
         Add new scheme
         """
@@ -264,8 +256,6 @@ class Schemes:
         Add label in a scheme
         """
         available = self.available()
-        print("AVAILABLE", available)
-
         if (label is None) or (label == ""):
             return {"error": "the name is void"}
         if scheme not in available:
@@ -297,9 +287,9 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             return {"error": "scheme doesn't exist"}
-        if label not in available[scheme]:
+        if label not in available[scheme]["labels"]:
             return {"error": "label does not exist"}
-        labels = available[scheme]
+        labels = available[scheme]["labels"]
         labels.remove(label)
         # push empty entry for tagged elements
         # both for train
@@ -454,9 +444,7 @@ class Schemes:
         r = self.db_manager.get_scheme_codebook(self.project_slug, scheme)
         # if no modification since the last time, ok
         if r["time"] == time:
-            r = self.db_manager.update_scheme_codebook(
-                self.project_slug, scheme, codebook
-            )
+            r = self.db_manager.update_scheme_codebook(self.project_slug, scheme, codebook)
             if not r:
                 return {"error": "Codebook not added"}
             return {"success": "Codebook added"}
@@ -470,9 +458,7 @@ class Schemes:
 # [CONFLICT] -------- PREVIOUS CODEBOOK --------
 
 {r["codebook"]}"""
-            r = self.db_manager.update_scheme_codebook(
-                self.project_slug, scheme, new_codebook
-            )
+            r = self.db_manager.update_scheme_codebook(self.project_slug, scheme, new_codebook)
             if not r:
                 return {"error": "Codebook not added"}
             return {"error": "Codebook in conflict, please refresh and arbitrate"}

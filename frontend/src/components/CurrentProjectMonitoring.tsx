@@ -33,6 +33,7 @@ export const CurrentProjectMonitoring: FC = () => {
     const isComputing =
       project &&
       authenticatedUser &&
+      project.bertmodels.training &&
       Object.keys(project.bertmodels.training).includes(authenticatedUser.username);
 
     if (typeof isComputing === 'boolean')
