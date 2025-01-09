@@ -18,7 +18,7 @@ class DatabaseManager:
     SessionMaker: sessionmaker[Session]
     default_user: str
     users_service: UsersService
-    projets_service: ProjectsService
+    projects_service: ProjectsService
 
     def __init__(self, path_db: str):
         db_url = f"sqlite:///{path_db}"
@@ -28,7 +28,7 @@ class DatabaseManager:
         self.SessionMaker = sessionmaker(bind=self.engine)
         self.default_user = "server"
         self.users_service = UsersService(self.SessionMaker)
-        self.projets_service = ProjectsService(self.SessionMaker)
+        self.projects_service = ProjectsService(self.SessionMaker)
 
         # Create tables if not already present
         Base.metadata.create_all(self.engine)
@@ -46,4 +46,4 @@ class DatabaseManager:
         """
         pwd: str = get_root_pwd()
         hash_pwd: bytes = get_hash(pwd)
-        self.users_service.add_user("root", hash_pwd.hex(), "root", "system")
+        self.users_service.add_user("root", hash_pwd.decode("utf8"), "root", "system")

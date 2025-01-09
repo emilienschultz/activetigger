@@ -119,11 +119,9 @@ def compare_to_hash(text: str, hash: str | bytes):
     """
     Compare string to its hash
     """
-    if type(text) is str:
-        text = text.encode()
-    if type(hash) is str:
-        hash = hash.encode()
-    r = bcrypt.checkpw(text, hash)
+
+    bytes_hash: bytes = hash.encode() if type(hash) is str else hash
+    r = bcrypt.checkpw(text.encode(), bytes_hash)
     return r
 
 

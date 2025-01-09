@@ -398,7 +398,7 @@ async def recent_users() -> List[str]:
     """
     Get recently connected users
     """
-    users = server.db_manager.get_current_users(300)
+    users = server.db_manager.projects_service.get_current_users(300)
     return users
 
 

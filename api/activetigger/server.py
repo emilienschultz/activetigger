@@ -152,7 +152,7 @@ class Server:
         """
         Log action in the database
         """
-        self.db_manager.add_log(user, action, project, connect)
+        self.db_manager.projects_service.add_log(user, action, project, connect)
         logger.info("%s from %s in project %s", action, user, project)
 
     def get_logs(
@@ -161,7 +161,7 @@ class Server:
         """
         Get logs for a user/project
         """
-        logs = self.db_manager.get_logs("all", project_slug, limit)
+        logs = self.db_manager.projects_service.get_logs("all", project_slug, limit)
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )
@@ -212,7 +212,7 @@ class Server:
         encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 
         # add it in the database as active
-        self.db_manager.add_token(encoded_jwt, "active")
+        self.db_manager.projects_service.add_token(encoded_jwt, "active")
 
         # return it
         return encoded_jwt
@@ -221,7 +221,7 @@ class Server:
         """
         Revoke existing access token
         """
-        self.db_manager.revoke_token(token)
+        self.db_manager.projects_service.revoke_token(token)
         return None
 
     def decode_access_token(self, token: str):
@@ -229,7 +229,7 @@ class Server:
         Decode access token
         """
         # get status
-        status = self.db_manager.get_token_status(token)
+        status = self.db_manager.projects_service.get_token_status(token)
         if status != "active":
             return {"error": "Token not valid"}
 
@@ -255,17 +255,19 @@ class Server:
         """
 
         # get project
-        existing_project = self.db_manager.get_project(project.project_slug)
+        existing_project = self.db_manager.projects_service.get_project(
+            project.project_slug
+        )
 
         if existing_project:
             # Update the existing project
-            self.db_manager.update_project(
+            self.db_manager.projects_service.update_project(
                 project.project_slug, jsonable_encoder(project)
             )
             return {"success": "project updated"}
         else:
             # Insert a new project
-            self.db_manager.add_project(
+            self.db_manager.projects_service.add_project(
                 project.project_slug, jsonable_encoder(project), username
             )
             return {"success": "project added"}
@@ -274,7 +276,7 @@ class Server:
         """
         Get existing projects
         """
-        existing_projects = self.db_manager.existing_projects()
+        existing_projects = self.db_manager.projects_service.existing_projects()
         return existing_projects
 
     def create_project(self, params: ProjectDataModel, username: str) -> dict:
@@ -425,7 +427,7 @@ class Server:
 
         # if the case, add existing annotations in the database
         if params.col_label is None:
-            self.db_manager.add_scheme(
+            self.db_manager.projects_service.add_scheme(
                 project_slug, "default", [], "multiclass", "system"
             )
         else:
@@ -441,7 +443,7 @@ class Server:
                 print("Add scheme/labels from file in train/test")
 
                 # add the scheme in the database
-                self.db_manager.add_scheme(
+                self.db_manager.projects_service.add_scheme(
                     project_slug,
                     "default",
                     list(params.default_scheme),
@@ -454,7 +456,7 @@ class Server:
                     {"element_id": element_id, "annotation": label, "comment": ""}
                     for element_id, label in trainset["label"].dropna().items()
                 ]
-                self.db_manager.add_annotations(
+                self.db_manager.projects_service.add_annotations(
                     dataset="train",
                     user=username,
                     project_slug=project_slug,
@@ -467,7 +469,7 @@ class Server:
                         {"element_id": element_id, "annotation": label, "comment": ""}
                         for element_id, label in testset["label"].dropna().items()
                     ]
-                    self.db_manager.add_annotations(
+                    self.db_manager.projects_service.add_annotations(
                         dataset="test",
                         user=username,
                         project_slug=project_slug,
@@ -512,7 +514,7 @@ class Server:
             shutil.rmtree(params.dir)
 
         # clean database
-        self.db_manager.delete_project(project_slug)
+        self.db_manager.projects_service.delete_project(project_slug)
 
         # clean memory
         del self.projects[project_slug]
@@ -599,7 +601,7 @@ class Project(Server):
         """
         Load params from database
         """
-        existing_project = self.db_manager.get_project(project_slug)
+        existing_project = self.db_manager.projects_service.get_project(project_slug)
         if existing_project:
             return ProjectModel(**json.loads(existing_project["parameters"]))
         else:

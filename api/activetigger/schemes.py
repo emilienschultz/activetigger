@@ -34,7 +34,7 @@ class Schemes:
         Init empty
         """
         self.project_slug = project_slug
-        self.projects_service = db_manager.projets_service
+        self.projects_service = db_manager.projects_service
         self.content = pd.read_parquet(path_content)  # text + context
         self.test = None
         if path_test.exists():

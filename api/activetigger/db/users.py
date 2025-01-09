@@ -48,10 +48,7 @@ class UsersService:
             if username != "all":
                 stmt = stmt.filter_by(created_by=username)
             stmt = stmt.distinct()
-            return {
-                row.user: {"contact": row.contact}
-                for row in session.scalars(stmt).all()
-            }
+            return {row[0]: {"contact": row[1]} for row in session.execute(stmt).all()}
 
     def delete_user(self, username: str) -> None:
         with self.SessionMaker.begin() as session:

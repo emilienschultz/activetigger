@@ -311,7 +311,7 @@ class BertModels:
         self.project_slug = project_slug
         self.queue = queue
         self.computing = computing
-        self.projects_service = db_manager.projets_service
+        self.projects_service = db_manager.projects_service
         self.path: Path = Path(path) / "bert"
         if not self.path.exists():
             os.mkdir(self.path)

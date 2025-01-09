@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 
 from activetigger.datamodels import UserInDBModel
-from activetigger.db import DatabaseManager
+from activetigger.db.manager import DatabaseManager
 from activetigger.functions import compare_to_hash, get_hash
 
 
@@ -42,14 +42,14 @@ class Users:
         """
         Get user auth for a project
         """
-        auth = self.db_manager.get_project_auth(project_slug)
+        auth = self.db_manager.projects_service.get_project_auth(project_slug)
         return auth
 
     def set_auth(self, username: str, project_slug: str, status: str):
         """
         Set user auth for a project
         """
-        self.db_manager.add_auth(project_slug, username, status)
+        self.db_manager.projects_service.add_auth(project_slug, username, status)
         return {"success": "Auth added to database"}
 
     def delete_auth(self, username: str, project_slug: str):
@@ -58,14 +58,14 @@ class Users:
         """
         if username == "root":
             return {"error": "Can't delete root user auth"}
-        self.db_manager.delete_auth(project_slug, username)
+        self.db_manager.projects_service.delete_auth(project_slug, username)
         return {"success": "Auth deleted"}
 
     def get_auth_projects(self, username: str) -> list:
         """
         Get user auth
         """
-        auth = self.db_manager.get_user_projects(username)
+        auth = self.db_manager.projects_service.get_user_projects(username)
         return auth
 
     def get_auth(self, username: str, project_slug: str = "all") -> list:
@@ -76,9 +76,11 @@ class Users:
         - Or one project
         """
         if project_slug == "all":
-            auth = self.db_manager.get_user_auth(username)
+            auth = self.db_manager.projects_service.get_user_auth(username)
         else:
-            auth = self.db_manager.get_user_auth(username, project_slug)
+            auth = self.db_manager.projects_service.get_user_auth(
+                username, project_slug
+            )
         return auth
 
     def existing_users(self, username: str = "root") -> dict:
@@ -88,9 +90,9 @@ class Users:
         TODO : better rules
         """
         if username == "root":
-            users = self.db_manager.get_users_created_by("all")
+            users = self.db_manager.users_service.get_users_created_by("all")
         else:
-            users = self.db_manager.get_users_created_by(username)
+            users = self.db_manager.users_service.get_users_created_by(username)
         return users
 
     def add_user(
@@ -110,7 +112,9 @@ class Users:
         if name in self.existing_users():
             return {"error": "Username already exists"}
         hash_pwd = get_hash(password)
-        self.db_manager.add_user(name, hash_pwd, role, created_by, contact=mail)
+        self.db_manager.users_service.add_user(
+            name, hash_pwd, role, created_by, contact=mail
+        )
 
         return {"success": "User added to the database"}
 
@@ -127,7 +131,7 @@ class Users:
             return {"error": "You don't have the right to delete this user"}
 
         # delete the user
-        self.db_manager.delete_user(user_to_delete)
+        self.db_manager.users_service.delete_user(user_to_delete)
 
         return {"success": "User deleted"}
 
@@ -137,9 +141,9 @@ class Users:
         """
         if name not in self.existing_users():
             return {"error": "Username doesn't exist"}
-        user = self.db_manager.get_user(name)
+        user = self.db_manager.users_service.get_user(name)
         return UserInDBModel(
-            username=name, hashed_password=user["key"], status=user["description"]
+            username=name, hashed_password=user.key, status=user.description
         )
 
     def authenticate_user(
@@ -178,5 +182,5 @@ class Users:
         if not compare_to_hash(password_old, user.hashed_password):
             return {"error": "Wrong password"}
         hash_pwd = get_hash(password1)
-        self.db_manager.change_password(username, hash_pwd)
+        self.db_manager.users_service.change_password(username, hash_pwd)
         return None
