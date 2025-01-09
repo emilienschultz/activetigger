@@ -224,7 +224,7 @@ export const ProjectAnnotationPage: FC = () => {
 
                   <div>
                     <button className="btn" onClick={refetchElement}>
-                      <LuRefreshCw size={20} /> Refetch element
+                      <LuRefreshCw size={20} /> Get element
                     </button>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export const ProjectAnnotationPage: FC = () => {
         <div className="alert alert-warning text-center">
           <div className="m-2">No element available</div>
           <button className="btn btn-primary" onClick={refetchElement}>
-            Refetch with current selection mode
+            Get element
           </button>
         </div>
       )}
