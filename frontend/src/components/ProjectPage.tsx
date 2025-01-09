@@ -141,6 +141,7 @@ export const ProjectPage: FC = () => {
               </Tab>
               <Tab eventKey="parameters" title="Parameters">
                 <span className="explanations">Parameters of this project</span>
+
                 <table className="table-statistics">
                   <tbody>
                     <tr className="table-delimiter">

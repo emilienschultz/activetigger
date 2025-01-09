@@ -22,6 +22,7 @@ export type AppContextValue = {
   reFetchCurrentProject?: () => void; // update the state of the project
   phase: string;
   isComputing: boolean;
+  developmentMode: boolean;
 };
 
 export const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
@@ -45,6 +46,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   freqRefreshSimpleModel: 0,
   phase: 'train',
   isComputing: false,
+  developmentMode: false,
 };
 const storedContext = localStorage.getItem(CONTEXT_LOCAL_STORAGE_KEY);
 
