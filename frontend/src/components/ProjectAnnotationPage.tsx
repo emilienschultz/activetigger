@@ -429,7 +429,7 @@ export const ProjectAnnotationPage: FC = () => {
                   }}
                   style={{ marginRight: '10px' }}
                 />
-                Display informations
+                Display information
               </label>
               <label style={{ display: 'block', marginBottom: '10px' }}>
                 <input
