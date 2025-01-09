@@ -4,7 +4,7 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from io import StringIO
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any
 
 import pandas as pd
 from fastapi import (
@@ -162,7 +162,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 )  # defining the authentification object
 
 
-async def check_processes(timer, step: int = 1) -> None:
+async def check_processes(timer: float, step: int = 1) -> None:
     """
     Function to update server state
     (i.e. joining parallel processes)
@@ -394,7 +394,7 @@ async def existing_users(
 
 
 @app.get("/users/recent")
-async def recent_users() -> List[str]:
+async def recent_users() -> list[str]:
     """
     Get recently connected users
     """
@@ -485,7 +485,7 @@ async def set_auth(
 
 
 @app.get("/users/auth", dependencies=[Depends(verified_user)])
-async def get_auth(username: str) -> List:
+async def get_auth(username: str) -> list:
     """
     Get all user auth
     """
@@ -1254,7 +1254,7 @@ async def post_schemes(
 
 
 @app.get("/features", dependencies=[Depends(verified_user)])
-async def get_features(project: Annotated[Project, Depends(get_project)]) -> List[str]:
+async def get_features(project: Annotated[Project, Depends(get_project)]) -> list[str]:
     """
     Available scheme of a project
     """
@@ -1317,7 +1317,7 @@ async def delete_feature(
 async def get_feature_info(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get feature info
     """
@@ -1366,7 +1366,7 @@ async def get_simplemodel(
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
 async def get_bert(
     project: Annotated[Project, Depends(get_project)], name: str
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get Bert parameters and statistics
     """

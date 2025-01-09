@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, List, Optional
+from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -25,25 +25,25 @@ class Projects(Base):
     parameters: Mapped[dict[str, Any]]
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["Users"] = relationship("Users")
-    schemes: Mapped[List["Schemes"]] = relationship(
+    schemes: Mapped[list["Schemes"]] = relationship(
         "Schemes", cascade="all, delete-orphan", back_populates="project"
     )
-    annotations: Mapped[List["Annotations"]] = relationship(
+    annotations: Mapped[list["Annotations"]] = relationship(
         "Annotations", cascade="all, delete-orphan", back_populates="project"
     )
-    auths: Mapped[List["Auths"]] = relationship(
+    auths: Mapped[list["Auths"]] = relationship(
         "Auths", cascade="all, delete-orphan", back_populates="project"
     )
-    logs: Mapped[List["Logs"]] = relationship(
+    logs: Mapped[list["Logs"]] = relationship(
         "Logs", cascade="all, delete-orphan", back_populates="project"
     )
-    generations: Mapped[List["Generations"]] = relationship(
+    generations: Mapped[list["Generations"]] = relationship(
         "Generations", cascade="all, delete-orphan", back_populates="project"
     )
-    features: Mapped[List["Features"]] = relationship(
+    features: Mapped[list["Features"]] = relationship(
         "Features", cascade="all, delete-orphan", back_populates="project"
     )
-    models: Mapped[List["Models"]] = relationship(
+    models: Mapped[list["Models"]] = relationship(
         "Models", cascade="all, delete-orphan", back_populates="project"
     )
 
@@ -60,7 +60,7 @@ class Users(Base):
     description: Mapped[str]
     contact: Mapped[str] = mapped_column(Text)
     created_by: Mapped[str]
-    projects: Mapped[List[Projects]] = relationship(
+    projects: Mapped[list[Projects]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -81,7 +81,7 @@ class Schemes(Base):
     user: Mapped[Users] = relationship()
     project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug"))
     project: Mapped[Projects] = relationship(back_populates="schemes")
-    models: Mapped[List["Models"]] = relationship()
+    models: Mapped[list["Models"]] = relationship()
     name: Mapped[str]
     params: Mapped[dict[str, Any]]
 
@@ -141,7 +141,7 @@ class Tokens(Base):
     )
     token: Mapped[str]
     status: Mapped[str]
-    time_revoked: Mapped[Optional[datetime.datetime]] = mapped_column(
+    time_revoked: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True)
     )
 

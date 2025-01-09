@@ -1,6 +1,6 @@
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -12,22 +12,22 @@ class BaseProjectModel(BaseModel):
     Parameters of a project to save in the database
     """
 
-    cols_text: List[str]
+    cols_text: list[str]
     project_name: str
     filename: str
     col_id: str
     n_train: int
     n_test: int
     dir: Path | None = None
-    embeddings: List[str] = []
+    embeddings: list[str] = []
     n_skip: int = 0
-    default_scheme: List[str] = []
+    default_scheme: list[str] = []
     language: str = "fr"
     col_label: str | None = None
-    cols_context: List[str] = []
-    cols_test: List[str] = []
+    cols_context: list[str] = []
+    cols_test: list[str] = []
     test: bool = False
-    n_total: Optional[int] = None
+    n_total: int | None = None
     clear_test: bool = False
 
 
@@ -37,7 +37,7 @@ class ProjectModel(BaseProjectModel):
     """
 
     project_slug: str
-    all_columns: Optional[List] = None
+    all_columns: list[str] | None = None
 
 
 class ProjectDataModel(BaseProjectModel):
@@ -76,8 +76,8 @@ class NextInModel(BaseModel):
     sample: str = "untagged"
     tag: str | None = None
     frame: list[Any] | None = None
-    history: list = []
-    filter: Optional[str] = None
+    history: list[str] = []
+    filter: str | None = None
 
 
 class ElementOutModel(BaseModel):
@@ -87,14 +87,14 @@ class ElementOutModel(BaseModel):
 
     element_id: str
     text: str
-    context: Dict[str, Any]
+    context: dict[str, Any]
     selection: str
     info: str | None
-    predict: Dict[str, Any]
+    predict: dict[str, Any]
     frame: list | None
     limit: int | None
-    history: list
-    n_sample: Optional[int] = None
+    history: list[str]
+    n_sample: int | None = None
 
 
 class UserModel(BaseModel):
@@ -116,11 +116,11 @@ class UserInDBModel(UserModel):
 
 class UsersServerModel(BaseModel):
     """
-    List of users on the server
+    list of users on the server
     """
 
-    users: Dict[str, Dict[str, str]]
-    auth: List[str]
+    users: dict[str, dict[str, str]]
+    auth: list[str]
 
 
 class TokenModel(BaseModel):
@@ -142,8 +142,8 @@ class AnnotationModel(BaseModel):
     scheme: str
     element_id: str
     label: str
-    dataset: Optional[str] = "train"
-    comment: Optional[str] = None
+    dataset: str | None = "train"
+    comment: str | None = None
 
 
 class TableAnnotationsModel(BaseModel):
@@ -151,8 +151,8 @@ class TableAnnotationsModel(BaseModel):
     Table of annotations
     """
 
-    annotations: List[AnnotationModel]
-    dataset: Optional[str] = "train"
+    annotations: list[AnnotationModel]
+    dataset: str | None = "train"
 
 
 class SchemeModel(BaseModel):
@@ -162,8 +162,8 @@ class SchemeModel(BaseModel):
 
     project_slug: str
     name: str
-    kind: Optional[str] = "multiclass"
-    labels: Optional[list] = []
+    kind: str | None = "multiclass"
+    labels: list[str] = []
 
 
 class RegexModel(BaseModel):
@@ -186,14 +186,14 @@ class SimpleModelModel(BaseModel):
     features: list
     model: str
     params: (
-        Dict[str, str | float | bool | int | None]
-        | Dict[str, Dict[str, str | float | bool | int | None]]
+        dict[str, str | float | bool | int | None]
+        | dict[str, dict[str, str | float | bool | int | None]]
         | None
     )
     # TODO CAN BE BETTER
     scheme: str
-    standardize: Optional[bool] = True
-    dichotomize: Optional[str] = None
+    standardize: bool | None = True
+    dichotomize: str | None = None
 
 
 class SimpleModelOutModel(BaseModel):
@@ -204,8 +204,8 @@ class SimpleModelOutModel(BaseModel):
     features: list
     model: str
     params: (
-        Dict[str, str | float | bool | None]
-        | Dict[str, Dict[str, str | float | bool | None]]
+        dict[str, str | float | bool | None]
+        | dict[str, dict[str, str | float | bool | None]]
         | None
     )
     scheme: str
@@ -241,7 +241,7 @@ class BertModelModel(BaseModel):
     base_model: str
     params: BertModelParametersModel
     test_size: float
-    dichotomize: Optional[str] = None
+    dichotomize: str | None = None
 
 
 class UmapModel(BaseModel):
@@ -272,8 +272,8 @@ class ProjectionInModel(BaseModel):
     """
 
     method: str
-    features: List
-    params: Dict[str, Any]
+    features: list
+    params: dict[str, Any]
 
 
 class ProjectionInStrictModel(BaseModel):
@@ -282,7 +282,7 @@ class ProjectionInStrictModel(BaseModel):
     """
 
     method: str
-    features: List
+    features: list
     params: TsneModel | UmapModel
 
 
@@ -292,13 +292,13 @@ class ProjectionOutModel(BaseModel):
     """
 
     status: str
-    index: List
-    x: List
-    y: List
-    labels: List
+    index: list
+    x: list
+    y: list
+    labels: list
 
 
-#    texts: List
+#    texts: list
 
 
 class FeatureModel(BaseModel):
@@ -308,7 +308,7 @@ class FeatureModel(BaseModel):
 
     type: str
     name: str
-    parameters: Dict[str, Union[str, float]]
+    parameters: dict[str, str | float]
 
 
 class LiblinearParams(BaseModel):
@@ -331,7 +331,7 @@ class LassoParams(BaseModel):
 class Multi_naivebayesParams(BaseModel):
     alpha: float
     fit_prior: bool = True
-    class_prior: Optional[str] | None = None
+    class_prior: str | None | None = None
 
 
 class BertParams(BaseModel):
@@ -352,7 +352,7 @@ class GenerateModel(BaseModel):
 
     api: str
     endpoint: str
-    token: Optional[str] = None
+    token: str | None = None
     prompt: str
     n_batch: int = 1
     scheme: str
@@ -364,7 +364,7 @@ class TableOutModel(BaseModel):
     Response for table of elements
     """
 
-    items: List
+    items: list
     total: int
 
 
@@ -384,7 +384,7 @@ class ProjectsServerModel(BaseModel):
     Response for available projects
     """
 
-    projects: List[str]
+    projects: list[str]
     auth: list
 
 
@@ -400,7 +400,7 @@ class AvailableProjectsModel(BaseModel):
     Response for available projects
     """
 
-    projects: List[ProjectSummaryModel]
+    projects: list[ProjectSummaryModel]
 
 
 class ProjectStateModel(BaseModel):
@@ -410,15 +410,15 @@ class ProjectStateModel(BaseModel):
     """
 
     params: ProjectModel
-    users: Dict[str, Any]
-    next: Dict[str, Any]
-    schemes: Dict[str, Any]
-    features: Dict[str, Any]
-    simplemodel: Dict[str, Any]
-    bertmodels: Dict[str, Any]
-    projections: Dict[str, Any]
-    generations: Dict[str, Any]
-    errors: List[List]
+    users: dict[str, Any]
+    next: dict[str, Any]
+    schemes: dict[str, Any]
+    features: dict[str, Any]
+    simplemodel: dict[str, Any]
+    bertmodels: dict[str, Any]
+    projections: dict[str, Any]
+    generations: dict[str, Any]
+    errors: list[list]
 
 
 class QueueModel(BaseModel):
@@ -426,7 +426,7 @@ class QueueModel(BaseModel):
     Response for current queue
     """
 
-    content: Dict[str, Dict[str, Any]]
+    content: dict[str, dict[str, Any]]
 
 
 class ProjectDescriptionModel(BaseModel):
@@ -434,14 +434,14 @@ class ProjectDescriptionModel(BaseModel):
     Project description
     """
 
-    users: List[str]
+    users: list[str]
     train_set_n: int
     train_annotated_n: int
-    train_annotated_distribution: Dict[str, Any]
-    test_set_n: Optional[int] = None
-    test_annotated_n: Optional[int] = None
-    test_annotated_distribution: Optional[Dict[str, Any]] = None
-    sm_10cv: Optional[Any] = None
+    train_annotated_distribution: dict[str, Any]
+    test_set_n: int | None = None
+    test_annotated_n: int | None = None
+    test_annotated_distribution: dict[str, Any] | None = None
+    sm_10cv: Any | None = None
 
 
 class ProjectAuthsModel(BaseModel):
@@ -449,7 +449,7 @@ class ProjectAuthsModel(BaseModel):
     Auth description for a project
     """
 
-    auth: Dict[str, Any]
+    auth: dict[str, Any]
 
 
 class WaitingModel(BaseModel):
@@ -466,7 +466,7 @@ class DocumentationModel(BaseModel):
     Documentation model
     """
 
-    credits: List[str]
+    credits: list[str]
     page: str
     documentation: str
     contact: str
@@ -474,11 +474,11 @@ class DocumentationModel(BaseModel):
 
 class ReconciliationModel(BaseModel):
     """
-    List of elements to reconciliate
+    list of elements to reconciliate
     """
 
-    table: List[Dict[str, str | Dict[str, str]]]
-    users: List[str]
+    table: list[dict[str, str | dict[str, str]]]
+    users: list[str]
 
 
 class AuthActions(StrEnum):
@@ -497,4 +497,4 @@ class TableBatch(BaseModel):
 class CodebookModel(BaseModel):
     content: str
     scheme: str
-    time: Optional[str] = None
+    time: str | None = None
