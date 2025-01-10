@@ -83,30 +83,20 @@ jobs:
 
           clean-exclude: data
 
-  documentation:
-    runs-on: ubuntu-latest
+      # compile documentation
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Install dependencies for doc
+        run: |
+          pip install mkdocs mkdocs-material
 
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.11'
+      - name: Build MkDocs site
+        run: |
+          mkdocs build
 
-    - name: Install dependencies
-      run: |
-        pip install mkdocs mkdocs-material
-
-    - name: Build MkDocs site
-      run: |
-        mkdocs build
-
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: site
-        keep_files: true
-        destination_dir: docs
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: site
+          keep_files: true
+          destination_dir: docs
