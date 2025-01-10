@@ -1212,8 +1212,8 @@ async def get_codebook(
         raise HTTPException(status_code=500, detail=r["error"])
     return CodebookModel(
         scheme=scheme,
-        content=str(r["success"]["codebook"]),
-        time=str(r["success"]["time"]),
+        content=str(r["codebook"]),
+        time=str(r["time"]),
     )
 
 
