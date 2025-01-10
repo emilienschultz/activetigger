@@ -6,7 +6,7 @@ import os
 import shutil
 from logging import Logger
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, TypedDict
 
 import bcrypt
 
@@ -120,7 +120,7 @@ def compare_to_hash(text: str, hash: str | bytes):
     Compare string to its hash
     """
 
-    bytes_hash: bytes = hash.encode() if type(hash) is str else hash
+    bytes_hash: bytes = hash.encode() if isinstance(hash, str) else hash
     r = bcrypt.checkpw(text.encode(), bytes_hash)
     return r
 
@@ -766,7 +766,16 @@ def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
         except Exception as e:
             return {"error": f"Error in the content: {e}"}
     else:
-        return {"error": "Error in the API call " + response.content}
+        return {"error": "Error in the API call " + response.content.decode("utf8")}
+
+
+class GenerationResult(TypedDict):
+    user: str
+    project_slug: str
+    endpoint: str
+    element_id: Any
+    prompt: str
+    answer: str
 
 
 def generate(
@@ -786,14 +795,14 @@ def generate(
     """
     # errors
     errors = []
-    results = []
+    results: list[GenerationResult] = []
 
     # loop on all elements
     for _index, row in df.iterrows():
         # test for interruption
         if event is not None:
             if event.is_set():
-                return {"error": "process interrupted", "results": results}
+                raise Exception("Process interrupted: %s", " ".join(str(results)))
 
         # insert the content in the prompt (either at the end or where it is indicated)
         if "#INSERTTEXT" in prompt:
@@ -824,7 +833,7 @@ def generate(
             )
         print("element generated ", row["id"], response["success"])
 
-    return {"success": results}
+    logging.info("Successful generation: %s", " ".join(str(results)))
 
 
 def clean_regex(text: str):

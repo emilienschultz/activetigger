@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -5,6 +6,7 @@ import yaml
 
 from activetigger.datamodels import UserInDBModel
 from activetigger.db.manager import DatabaseManager
+from activetigger.db.models import Users as UserEntity
 from activetigger.functions import compare_to_hash, get_hash
 
 
@@ -38,28 +40,28 @@ class Users:
             # rename the file
             os.rename("add_users.yaml", "add_users_processed.yaml")
 
-    def get_project_auth(self, project_slug: str):
+    def get_project_auth(self, project_slug: str) -> dict[UserEntity, str]:
         """
         Get user auth for a project
         """
         auth = self.db_manager.projects_service.get_project_auth(project_slug)
         return auth
 
-    def set_auth(self, username: str, project_slug: str, status: str):
+    def set_auth(self, username: str, project_slug: str, status: str) -> None:
         """
         Set user auth for a project
         """
         self.db_manager.projects_service.add_auth(project_slug, username, status)
-        return {"success": "Auth added to database"}
+        logging.info("Auth successfully to %s", username)
 
-    def delete_auth(self, username: str, project_slug: str):
+    def delete_auth(self, username: str, project_slug: str) -> None:
         """
         Delete user auth
         """
         if username == "root":
-            return {"error": "Can't delete root user auth"}
+            raise Exception("Can't delete root user auth")
         self.db_manager.projects_service.delete_auth(project_slug, username)
-        return {"success": "Auth deleted"}
+        logging.info("Auth of user %s deleted", username)
 
     def get_auth_projects(self, username: str) -> list:
         """
@@ -102,7 +104,7 @@ class Users:
         role: str = "manager",
         created_by: str = "NA",
         mail: str = "NA",
-    ) -> bool:
+    ) -> None:
         """
         Add user to database
         Comments:
@@ -110,53 +112,49 @@ class Users:
         """
         # test if the user doesn't exist
         if name in self.existing_users():
-            return {"error": "Username already exists"}
+            raise Exception("Username already exists")
         hash_pwd = get_hash(password)
         self.db_manager.users_service.add_user(
-            name, hash_pwd, role, created_by, contact=mail
+            name, hash_pwd.decode("utf8"), role, created_by, contact=mail
         )
 
-        return {"success": "User added to the database"}
+        logging.info("User added to the database")
 
-    def delete_user(self, user_to_delete: str, username: str) -> dict:
+    def delete_user(self, user_to_delete: str, username: str) -> None:
         """
         Deleting user
         """
         # test specific rights
         if user_to_delete == "root":
-            return {"error": "Can't delete root user"}
+            raise Exception("Can't delete root user")
         if user_to_delete not in self.existing_users():
-            return {"error": "Username does not exist"}
+            raise Exception("Username does not exist")
         if user_to_delete not in self.existing_users("root"):
-            return {"error": "You don't have the right to delete this user"}
+            raise Exception("You don't have the right to delete this user")
 
         # delete the user
         self.db_manager.users_service.delete_user(user_to_delete)
 
-        return {"success": "User deleted"}
+        logging.info("User %s successfully deleted", user_to_delete)
 
-    def get_user(self, name) -> UserInDBModel | dict:
+    def get_user(self, name: str) -> UserInDBModel:
         """
         Get user from database
         """
         if name not in self.existing_users():
-            return {"error": "Username doesn't exist"}
+            raise Exception("Username doesn't exist")
         user = self.db_manager.users_service.get_user(name)
         return UserInDBModel(
             username=name, hashed_password=user.key, status=user.description
         )
 
-    def authenticate_user(
-        self, username: str, password: str
-    ) -> UserInDBModel | dict[str, str]:
+    def authenticate_user(self, username: str, password: str) -> UserInDBModel:
         """
         User authentification
         """
         user = self.get_user(username)
-        if not isinstance(user, UserInDBModel):
-            return user
         if not compare_to_hash(password, user.hashed_password):
-            return {"error": "Wrong password"}
+            raise Exception("Wrong password")
         return user
 
     def auth(self, username: str, project_slug: str):
@@ -170,17 +168,15 @@ class Users:
 
     def change_password(
         self, username: str, password_old: str, password1: str, password2: str
-    ):
+    ) -> None:
         """
         Change password for a user
         """
         if password1 != password2:
-            return {"error": "Passwords don't match"}
+            raise Exception("Passwords don't match")
         user = self.get_user(username)
-        if not isinstance(user, UserInDBModel):
-            return {"error": "User doesn't exist"}
         if not compare_to_hash(password_old, user.hashed_password):
-            return {"error": "Wrong password"}
+            raise Exception("Wrong password")
         hash_pwd = get_hash(password1)
-        self.db_manager.users_service.change_password(username, hash_pwd)
+        self.db_manager.users_service.change_password(username, hash_pwd.decode("utf8"))
         return None

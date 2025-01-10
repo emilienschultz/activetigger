@@ -4,9 +4,12 @@ import logging
 from collections.abc import Sequence
 
 from sqlalchemy import delete, func, select, update
+from typing import Any, TypedDict
+
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
+from activetigger.db import DBException
 from activetigger.db.models import (
     Annotations,
     Auths,
@@ -19,6 +22,11 @@ from activetigger.db.models import (
     Tokens,
     Users,
 )
+
+
+class Codebook(TypedDict):
+    codebook: str
+    time: str
 
 
 class ProjectsService:
@@ -85,43 +93,44 @@ class ProjectsService:
         session.close()
         print("CREATE PROJECT", datetime.datetime.now())
 
-    def update_project(self, project_slug: str, parameters: dict):
+    def update_project(self, project_slug: str, parameters: dict[str, Any]):
         session = self.Session()
         project = session.query(Projects).filter_by(project_slug=project_slug).first()
+        if project is None:
+            raise DBException("Project not found")
+
         project.time_modified = datetime.datetime.now()
-        project.parameters = json.dumps(parameters)
+        project.parameters = parameters
         session.commit()
         session.close()
 
-    def existing_projects(self) -> list:
+    def existing_projects(self) -> list[str]:
         session = self.Session()
         projects = session.query(Projects).all()
         session.close()
         return [project.project_slug for project in projects]
 
     def add_token(self, token: str, status: str):
-        session = self.Session()
-        token = Tokens(token=token, status=status, time_created=datetime.datetime.now())
-        session.add(token)
-        session.commit()
-        session.close()
+        with self.Session.begin() as session:
+            new_token = Tokens(
+                token=token, status=status, time_created=datetime.datetime.now()
+            )
+            session.add(new_token)
 
     def get_token_status(self, token: str):
-        session = self.Session()
-        token = session.query(Tokens).filter_by(token=token).first()
-        session.close()
-        if token:
-            return token.status
-        else:
-            return None
+        with self.Session() as session:
+            found_token = session.scalars(select(Tokens).filter_by(token=token)).first()
+            if found_token is None:
+                raise DBException("Token not found")
+            return found_token.status
 
     def revoke_token(self, token: str):
-        session = self.Session()
-        token = session.query(Tokens).filter_by(token=token).first()
-        token.time_revoked = datetime.datetime.now()
-        token.status = "revoked"
-        session.commit()
-        session.close()
+        with self.Session.begin() as session:
+            _ = session.execute(
+                update(Tokens)
+                .filter_by(token=token)
+                .values(time_revoked=datetime.datetime.now(), status="revoked")
+            )
 
     def add_scheme(self, project_slug: str, name: str, labels: list, kind: str, username: str):
         if not labels:
@@ -138,50 +147,46 @@ class ProjectsService:
             )
             session.add(scheme)
 
-    def update_scheme_labels(self, project_slug: str, name: str, labels: list):
+    def update_scheme_labels(self, project_slug: str, name: str, labels: list[str]):
         """
         Update the labels in the database
         """
-        session = self.Session()
-        scheme = session.query(Schemes).filter_by(project_id=project_slug, name=name).first()
-        params = json.loads(scheme.params)
-        params["labels"] = labels
-        scheme.params = json.dumps(params)
-        scheme.time_modified = datetime.datetime.now()
-        session.commit()
-        session.close()
+        with self.Session.begin() as session:
+            scheme = session.scalars(
+                select(Schemes).filter_by(project=project_slug, name=name)
+            ).first()
+            if scheme is None:
+                raise DBException("Scheme not found")
+            scheme.params["labels"] = labels
+            scheme.time_modified = datetime.datetime.now()
 
-    def update_scheme_codebook(self, project_slug: str, scheme: str, codebook: str):
+    def update_scheme_codebook(
+        self, project_slug: str, scheme: str, codebook: str
+    ) -> None:
         """
         Update the codebook in the database
         """
-        print("update_scheme_codebook", project_slug, scheme, codebook)
-        session = self.Session()
-        scheme = session.query(Schemes).filter_by(project_id=project_slug, name=scheme).first()
-        try:
-            params = json.loads(scheme.params)
-            params["codebook"] = codebook
-            scheme.params = json.dumps(params)
-            scheme.time_modified = datetime.datetime.now()
-            session.commit()
-            session.close()
-            return True
-        except json.JSONDecodeError as e:
-            logging.warning("Unable to parse codebook scheme: %", e)
-            return None
+        logging.debug("update_scheme_codebook", project_slug, scheme, codebook)
+        with self.Session.begin() as session:
+            result_scheme = session.scalars(
+                select(Schemes).filter_by(project=project_slug, name=scheme)
+            ).first()
+            if result_scheme is None:
+                raise DBException("Scheme not found")
+            result_scheme.params["codebook"] = codebook
+            result_scheme.time_modified = datetime.datetime.now()
 
-    def get_scheme_codebook(self, project_slug: str, name: str):
-        session = self.Session()
-        scheme = session.query(Schemes).filter_by(project_id=project_slug, name=name).first()
-        session.close()
-        try:
+    def get_scheme_codebook(self, project_slug: str, name: str) -> Codebook:
+        with self.Session() as session:
+            scheme = session.scalars(
+                select(Schemes).filter_by(project=project_slug, name=name)
+            ).first()
+            if scheme is None:
+                raise DBException("Scheme not found")
             return {
-                "codebook": json.loads(scheme.params)["codebook"],
+                "codebook": scheme.params["codebook"],
                 "time": str(scheme.time_modified),
             }
-        except json.JSONDecodeError as e:
-            logging.warning("Unable to parse codebook scheme: %", e)
-            return None
 
     def delete_project(self, project_slug: str):
         with self.Session.begin() as session:
@@ -283,12 +288,21 @@ class ProjectsService:
             return [row for row in result]
 
     def get_user_auth(self, username: str, project_slug: str | None = None):
-        with self.Session() as session:
-            stmt = select(Auths.user_id, Auths.status).filter_by(user_id=username)
-            if project_slug is not None:
-                stmt = stmt.filter_by(project_id=project_slug)
-            result = session.execute(stmt).all()
-            return [[row[0], row[1]] for row in result]
+        session = self.Session()
+        if project_slug is None:
+            result = (
+                session.query(Auths.user, Auths.status)
+                .filter(Auths.user == username)
+                .all()
+            )
+        else:
+            result = (
+                session.query(Auths.user, Auths.status)
+                .filter(Auths.user == username, Auths.project == project_slug)
+                .all()
+            )
+        session.close()
+        return [[row[0], row[1]] for row in result]
 
     def get_scheme_elements(self, project_slug: str, scheme: str, dataset: list[str]):
         """
@@ -402,20 +416,18 @@ class ProjectsService:
         annotation: str,
         comment: str = "",
     ):
-        session = self.Session()
-        annotation = Annotations(
-            time=datetime.datetime.now(),
-            dataset=dataset,
-            user_id=user,
-            project_id=project_slug,
-            element_id=element_id,
-            scheme_id=scheme,
-            annotation=annotation,
-            comment=comment,
-        )
-        session.add(annotation)
-        session.commit()
-        session.close()
+        with self.Session.begin() as session:
+            new_annotation = Annotations(
+                time=datetime.datetime.now(),
+                dataset=dataset,
+                user=user,
+                project=project_slug,
+                element_id=element_id,
+                scheme=scheme,
+                annotation=annotation,
+                comment=comment,
+            )
+            session.add(new_annotation)
 
     def available_schemes(self, project_slug: str):
         with self.Session() as session:
@@ -471,7 +483,7 @@ class ProjectsService:
         name: str,
         parameters: str,
         user: str,
-        data: str = None,
+        data: str | None = None,
     ):
         session = self.Session()
         feature = Features(
@@ -559,7 +571,9 @@ class ProjectsService:
     def change_model_status(self, project: str, name: str, status: str):
         with self.Session.begin() as session:
             _ = session.execute(
-                update(Models).filter_by(name=name, project_id=project).values(status=status)
+                update(Models)
+                .filter_by(name=name, project_id=project)
+                .values(status=status)
             )
 
     def available_models(self, project: str):
@@ -630,6 +644,9 @@ class ProjectsService:
             .filter(Models.name == old_name, Models.project_id == project)
             .first()
         )
+        if model is None:
+            raise DBException("Model not found")
+
         model.name = new_name
         model.path = model.path.replace(old_name, new_name)
         session.commit()
@@ -641,6 +658,9 @@ class ProjectsService:
         model = (
             session.query(Models).filter(Models.name == name, Models.project_id == project).first()
         )
+        if model is None:
+            raise DBException("Model not found")
+
         parameters = json.loads(model.parameters)
         parameters[flag] = value
         model.parameters = json.dumps(parameters)
