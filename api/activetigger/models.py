@@ -702,9 +702,6 @@ class BertModels:
         """
         if element["status"] == "training":
             # update bdd status
-            self.db_manager.change_model_status(
-                self.project_slug, element["model"].name, "trained"
-            )
             self.projects_service.change_model_status(
                 self.project_slug, element["model"].name, "trained"
             )
