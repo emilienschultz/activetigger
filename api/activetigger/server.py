@@ -23,7 +23,7 @@ from activetigger.datamodels import (
     SimpleModelModel,
     TestSetDataModel,
 )
-from activetigger.db import DatabaseManager
+from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import cat2num, clean_regex
 from activetigger.generations import Generations
@@ -121,7 +121,7 @@ class Server:
 
         # attributes of the server
         self.projects = {}
-        self.db_manager = DatabaseManager(self.db)
+        self.db_manager = DatabaseManager(str(self.db))
         self.queue = Queue(self.n_workers)
         self.users = Users(self.db_manager)
 
@@ -152,15 +152,19 @@ class Server:
         """
         Log action in the database
         """
-        self.db_manager.add_log(user, action, project, connect)
+        self.db_manager.projects_service.add_log(user, action, project, connect)
         logger.info("%s from %s in project %s", action, user, project)
 
-    def get_logs(self, project_slug: str, limit: int, partial: bool = True) -> pd.DataFrame:
+    def get_logs(
+        self, project_slug: str, limit: int, partial: bool = True
+    ) -> pd.DataFrame:
         """
         Get logs for a user/project
         """
-        logs = self.db_manager.get_logs("all", project_slug, limit)
-        df = pd.DataFrame(logs, columns=["id", "time", "user", "project", "action", "NA"])
+        logs = self.db_manager.projects_service.get_logs("all", project_slug, limit)
+        df = pd.DataFrame(
+            logs, columns=["id", "time", "user", "project", "action", "NA"]
+        )
         if partial:
             return df[~df["action"].str.contains("INFO ")]
         return df
@@ -208,7 +212,7 @@ class Server:
         encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 
         # add it in the database as active
-        self.db_manager.add_token(encoded_jwt, "active")
+        self.db_manager.projects_service.add_token(encoded_jwt, "active")
 
         # return it
         return encoded_jwt
@@ -217,7 +221,7 @@ class Server:
         """
         Revoke existing access token
         """
-        self.db_manager.revoke_token(token)
+        self.db_manager.projects_service.revoke_token(token)
         return None
 
     def decode_access_token(self, token: str):
@@ -225,7 +229,7 @@ class Server:
         Decode access token
         """
         # get status
-        status = self.db_manager.get_token_status(token)
+        status = self.db_manager.projects_service.get_token_status(token)
         if status != "active":
             return {"error": "Token not valid"}
 
@@ -251,22 +255,28 @@ class Server:
         """
 
         # get project
-        existing_project = self.db_manager.get_project(project.project_slug)
+        existing_project = self.db_manager.projects_service.get_project(
+            project.project_slug
+        )
 
         if existing_project:
             # Update the existing project
-            self.db_manager.update_project(project.project_slug, jsonable_encoder(project))
+            self.db_manager.projects_service.update_project(
+                project.project_slug, jsonable_encoder(project)
+            )
             return {"success": "project updated"}
         else:
             # Insert a new project
-            self.db_manager.add_project(project.project_slug, jsonable_encoder(project), username)
+            self.db_manager.projects_service.add_project(
+                project.project_slug, jsonable_encoder(project), username
+            )
             return {"success": "project added"}
 
     def existing_projects(self) -> list:
         """
         Get existing projects
         """
-        existing_projects = self.db_manager.existing_projects()
+        existing_projects = self.db_manager.projects_service.existing_projects()
         return existing_projects
 
     def create_project(self, params: ProjectDataModel, username: str) -> dict:
@@ -337,7 +347,10 @@ class Server:
         # case of a column as index
         else:
             # check if index after slugify is unique otherwise throw an error
-            if not ((content[params.col_id].astype(str).apply(slugify)).nunique() == len(content)):
+            if not (
+                (content[params.col_id].astype(str).apply(slugify)).nunique()
+                == len(content)
+            ):
                 shutil.rmtree(params.dir)
                 return {"error": "The column selected for index has not unique values."}
             content["id"] = content[params.col_id].astype(str).apply(slugify)
@@ -384,7 +397,9 @@ class Server:
                 df_grouped = content.groupby(params.cols_test, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(params.n_test / nb_cat)
-                testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
+                testset = df_grouped.apply(
+                    lambda x: x.sample(min(len(x), nb_elements_cat))
+                )
             testset.to_parquet(params.dir.joinpath(self.test_file), index=True)
             params.test = True
             rows_test = list(testset.index)
@@ -394,11 +409,15 @@ class Server:
         f_notna = content["label"].notna()
         f_na = content["label"].isna()
 
-        if f_notna.sum() > params.n_train:  # case where there is more labelled data than needed
+        if (
+            f_notna.sum() > params.n_train
+        ):  # case where there is more labelled data than needed
             trainset = content[f_notna].sample(params.n_train)
         else:
             n_train_random = params.n_train - f_notna.sum()  # number of element to pick
-            trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
+            trainset = pd.concat(
+                [content[f_notna], content[f_na].sample(n_train_random)]
+            )
 
         trainset.to_parquet(params.dir.joinpath(self.train_file), index=True)
         trainset[list(set(["text"] + params.cols_context + keep_id))].to_parquet(
@@ -408,7 +427,9 @@ class Server:
 
         # if the case, add existing annotations in the database
         if params.col_label is None:
-            self.db_manager.add_scheme(project_slug, "default", [], "multiclass", "system")
+            self.db_manager.projects_service.add_scheme(
+                project_slug, "default", [], "multiclass", "system"
+            )
         else:
             # determine if multiclass / multilabel (arbitrary rule)
             delimiters = content["label"].str.contains("|", regex=False).sum()
@@ -422,7 +443,7 @@ class Server:
                 print("Add scheme/labels from file in train/test")
 
                 # add the scheme in the database
-                self.db_manager.add_scheme(
+                self.db_manager.projects_service.add_scheme(
                     project_slug,
                     "default",
                     list(params.default_scheme),
@@ -435,7 +456,7 @@ class Server:
                     {"element_id": element_id, "annotation": label, "comment": ""}
                     for element_id, label in trainset["label"].dropna().items()
                 ]
-                self.db_manager.add_annotations(
+                self.db_manager.projects_service.add_annotations(
                     dataset="train",
                     user=username,
                     project_slug=project_slug,
@@ -448,7 +469,7 @@ class Server:
                         {"element_id": element_id, "annotation": label, "comment": ""}
                         for element_id, label in testset["label"].dropna().items()
                     ]
-                    self.db_manager.add_annotations(
+                    self.db_manager.projects_service.add_annotations(
                         dataset="test",
                         user=username,
                         project_slug=project_slug,
@@ -493,7 +514,7 @@ class Server:
             shutil.rmtree(params.dir)
 
         # clean database
-        self.db_manager.delete_project(project_slug)
+        self.db_manager.projects_service.delete_project(project_slug)
 
         # clean memory
         if project_slug in self.projects:
@@ -581,7 +602,7 @@ class Project(Server):
         """
         Load params from database
         """
-        existing_project = self.db_manager.get_project(project_slug)
+        existing_project = self.db_manager.projects_service.get_project(project_slug)
         if existing_project:
             return ProjectModel(**json.loads(existing_project["parameters"]))
         else:
@@ -609,7 +630,9 @@ class Project(Server):
         )
 
         # change names
-        df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"}).set_index("id")
+        df = df.rename(
+            columns={testset.col_id: "id", testset.col_text: "text"}
+        ).set_index("id")
 
         # write the dataset
         df[[testset.col_text]].to_parquet(self.params.dir.joinpath(self.test_file))
@@ -668,7 +691,9 @@ class Project(Server):
         counts = df_scheme["labels"].value_counts()
         valid_categories = counts[counts >= 3]
         if len(valid_categories) < 2:
-            return {"error": "there are less than 2 categories with 3 annotated elements"}
+            return {
+                "error": "there are less than 2 categories with 3 annotated elements"
+            }
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -767,7 +792,9 @@ class Project(Server):
                     )
                 )
             else:
-                f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
+                f_regex = df["text"].str.contains(
+                    filter_san, regex=True, case=True, na=False
+                )
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
@@ -815,7 +842,9 @@ class Project(Server):
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f][label].drop(history, errors="ignore").sort_values(ascending=False)
+                proba[f][label]
+                .drop(history, errors="ignore")
+                .sort_values(ascending=False)
             )  # get max proba id
             element_id = ss.index[0]
             n_sample = f.sum()
@@ -829,7 +858,9 @@ class Project(Server):
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f]["entropy"].drop(history, errors="ignore").sort_values(ascending=False)
+                proba[f]["entropy"]
+                .drop(history, errors="ignore")
+                .sort_values(ascending=False)
             )  # get max entropy id
             element_id = ss.index[0]
             n_sample = f.sum()
@@ -846,7 +877,7 @@ class Project(Server):
             predict = {"label": predicted_label, "proba": predicted_proba}
 
         # get all tags already existing for the element
-        previous = self.schemes.db_manager.get_annotations_by_element(
+        previous = self.schemes.projects_service.get_annotations_by_element(
             self.params.project_slug, scheme, element_id
         )
 
@@ -854,7 +885,9 @@ class Project(Server):
             "element_id": element_id,
             "text": self.content.fillna("NA").loc[element_id, "text"],
             "context": dict(
-                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                self.content.fillna("NA")
+                .loc[element_id, self.params.cols_context]
+                .apply(str)
             ),
             "selection": selection,
             "info": indicator,
@@ -904,11 +937,13 @@ class Project(Server):
                 if self.simplemodels.exists(user, scheme):
                     sm = self.simplemodels.get_model(user, scheme)
                     predicted_label = sm.proba.loc[element_id, "prediction"]
-                    predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
+                    predicted_proba = round(
+                        sm.proba.loc[element_id, predicted_label], 2
+                    )
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
-            history = self.schemes.db_manager.get_annotations_by_element(
+            history = self.schemes.projects_service.get_annotations_by_element(
                 self.params.project_slug, scheme, element_id
             )
 
@@ -916,7 +951,9 @@ class Project(Server):
                 "element_id": element_id,
                 "text": self.content.loc[element_id, "text"],
                 "context": dict(
-                    self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                    self.content.fillna("NA")
+                    .loc[element_id, self.params.cols_context]
+                    .apply(str)
                 ),
                 "selection": "request",
                 "predict": predict,
@@ -952,7 +989,8 @@ class Project(Server):
         # part train
         r = {"train_set_n": len(self.schemes.content)}
         r["users"] = [
-            i[0] for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
+            i[0]
+            for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
         ]
 
         df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
@@ -960,7 +998,9 @@ class Project(Server):
         # different treatment if the scheme is multilabel or multiclass
         r["train_annotated_n"] = len(df.dropna(subset=["labels"]))
         if kind == "multiclass":
-            r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+            r["train_annotated_distribution"] = json.loads(
+                df["labels"].value_counts().to_json()
+            )
         else:
             r["train_annotated_distribution"] = json.loads(
                 df["labels"].str.split("|").explode().value_counts().to_json()
@@ -972,7 +1012,9 @@ class Project(Server):
             r["test_set_n"] = len(self.schemes.test)
             r["test_annotated_n"] = len(df.dropna(subset=["labels"]))
             if kind == "multiclass":
-                r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+                r["test_annotated_distribution"] = json.loads(
+                    df["labels"].value_counts().to_json()
+                )
             else:
                 r["test_annotated_distribution"] = json.loads(
                     df["labels"].str.split("|").explode().value_counts().to_json()
@@ -1022,7 +1064,8 @@ class Project(Server):
             "projections": {
                 "options": self.projections.options,
                 "available": {
-                    i: self.projections.available[i]["id"] for i in self.projections.available
+                    i: self.projections.available[i]["id"]
+                    for i in self.projections.available
                 },
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
@@ -1074,7 +1117,9 @@ class Project(Server):
         if dataset == "test":
             if not self.params.test:
                 return {"error": "No test data"}
-            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind="test")
+            data = self.schemes.get_scheme_data(
+                scheme=scheme, complete=True, kind="test"
+            )
             file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
@@ -1149,7 +1194,9 @@ class Project(Server):
                         print("Error in model training/predicting", r["error"])
                         self.computing.remove(e)
                         self.queue.delete(e["unique_id"])
-                        self.errors.append([datetime.now(TIMEZONE), "bert training", r["error"]])
+                        self.errors.append(
+                            [datetime.now(TIMEZONE), "bert training", r["error"]]
+                        )
                         # return {"error": r["error"]}
                     if "prediction" in r:
                         predictions["predict_" + e["model"].name] = r["prediction"]
@@ -1173,7 +1220,9 @@ class Project(Server):
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
+                    self.errors.append(
+                        [datetime.now(TIMEZONE), "simplemodel failed", str(ex)]
+                    )
                     print("Simplemodel failed", ex)
 
             # case for features

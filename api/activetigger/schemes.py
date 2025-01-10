@@ -4,7 +4,8 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import TableBatch
-from activetigger.db import DatabaseManager
+from activetigger.db.manager import DatabaseManager
+from activetigger.db.projects import ProjectsService
 from activetigger.functions import clean_regex
 
 
@@ -18,7 +19,7 @@ class Schemes:
     """
 
     project_slug: str
-    db_manager: DatabaseManager
+    projects_service: ProjectsService
     content: DataFrame
     test: DataFrame | None
 
@@ -33,7 +34,7 @@ class Schemes:
         Init empty
         """
         self.project_slug = project_slug
-        self.db_manager = db_manager
+        self.projects_service = db_manager.projects_service
         self.content = pd.read_parquet(path_content)  # text + context
         self.test = None
         if path_test.exists():
@@ -70,7 +71,9 @@ class Schemes:
         # - last element for each id
         # - for a specific scheme
 
-        results = self.db_manager.get_scheme_elements(self.project_slug, scheme, kind)
+        results = self.projects_service.get_scheme_elements(
+            self.project_slug, scheme, kind
+        )
 
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "timestamp", "comment"]
@@ -95,9 +98,13 @@ class Schemes:
         if scheme not in self.available():
             return {"error": "Scheme doesn't exist"}
 
-        results = self.db_manager.get_table_annotations_users(self.project_slug, scheme)
+        results = self.projects_service.get_table_annotations_users(
+            self.project_slug, scheme
+        )
         # Shape the data
-        df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
+        df = pd.DataFrame(
+            results, columns=["id", "labels", "user", "time"]
+        )  # shape as a dataframe
 
         def agg(x):
             return list(x)[0] if len(x) > 0 else None  # take the label else None
@@ -109,13 +116,17 @@ class Schemes:
             lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
         )  # filter for disagreement
         users = list(df.columns)
-        df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
+        df = pd.DataFrame(
+            df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"]
+        )
         df = df.join(self.content[["text"]], how="left")  # add the text
         df = df[f_multi].reset_index()
         # return the result
         return df, users
 
-    def convert_annotations(self, former_label: str, new_label: str, scheme: str, username: str):
+    def convert_annotations(
+        self, former_label: str, new_label: str, scheme: str, username: str
+    ):
         """
         Convert tags from a specific label to another
         """
@@ -197,7 +208,7 @@ class Schemes:
 
         # case of recent annotations (no filter possible)
         if mode == "recent":
-            list_ids = self.db_manager.get_recent_annotations(
+            list_ids = self.projects_service.get_recent_annotations(
                 self.project_slug, user, scheme, max - min
             )
             df_r = df.loc[list(list_ids)].reset_index()
@@ -240,14 +251,16 @@ class Schemes:
             "filter": contains,
         }
 
-    def add_scheme(self, name: str, labels: list, kind: str = "multiclass", user: str = "server"):
+    def add_scheme(
+        self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
+    ):
         """
         Add new scheme
         """
         if self.exists(name):
             return {"error": "scheme name already exists"}
 
-        self.db_manager.add_scheme(self.project_slug, name, labels, kind, user)
+        self.projects_service.add_scheme(self.project_slug, name, labels, kind, user)
 
         return {"success": "scheme created"}
 
@@ -310,14 +323,14 @@ class Schemes:
         """
         Update existing schemes from database
         """
-        self.db_manager.update_scheme_labels(self.project_slug, scheme, labels)
+        self.projects_service.update_scheme_labels(self.project_slug, scheme, labels)
         return {"success": "scheme updated"}
 
     def delete_scheme(self, name) -> dict:
         """
         Delete a scheme
         """
-        self.db_manager.delete_scheme(self.project_slug, name)
+        self.projects_service.delete_scheme(self.project_slug, name)
         return {"success": "scheme deleted"}
 
     def exists(self, name: str) -> bool:
@@ -332,7 +345,7 @@ class Schemes:
         """
         Available schemes {scheme:[labels]}
         """
-        r = self.db_manager.available_schemes(self.project_slug)
+        r = self.projects_service.available_schemes(self.project_slug)
         return {i["name"]: {"labels": i["labels"], "kind": i["kind"]} for i in r}
 
     def get(self) -> dict:
@@ -350,7 +363,7 @@ class Schemes:
         i.e. : add empty label
         """
 
-        self.db_manager.add_annotation(
+        self.projects_service.add_annotation(
             dataset="delete",
             user=user,
             project_slug=self.project_slug,
@@ -358,7 +371,7 @@ class Schemes:
             scheme=scheme,
             annotation=None,
         )
-        self.db_manager.add_annotation(
+        self.projects_service.add_annotation(
             dataset=dataset,
             user=user,
             project_slug=self.project_slug,
@@ -403,7 +416,7 @@ class Schemes:
         # if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 
-        self.db_manager.add_annotation(
+        self.projects_service.add_annotation(
             dataset=mode,
             user=user,
             project_slug=self.project_slug,
@@ -430,7 +443,7 @@ class Schemes:
         """
         Get users action for a scheme
         """
-        results = self.db_manager.get_coding_users(scheme, self.project_slug)
+        results = self.projects_service.get_coding_users(scheme, self.project_slug)
         return results
 
     def add_codebook(self, scheme: str, codebook: str, time: str):
@@ -439,10 +452,12 @@ class Schemes:
         if mismatch between date, keep both and return error
         """
         # get lastmodified timestamp for the scheme
-        r = self.db_manager.get_scheme_codebook(self.project_slug, scheme)
+        r = self.projects_service.get_scheme_codebook(self.project_slug, scheme)
         # if no modification since the last time, ok
         if r["time"] == time:
-            r = self.db_manager.update_scheme_codebook(self.project_slug, scheme, codebook)
+            r = self.projects_service.update_scheme_codebook(
+                self.project_slug, scheme, codebook
+            )
             if not r:
                 return {"error": "Codebook not added"}
             return {"success": "Codebook added"}
@@ -456,7 +471,9 @@ class Schemes:
 # [CONFLICT] -------- PREVIOUS CODEBOOK --------
 
 {r["codebook"]}"""
-            r = self.db_manager.update_scheme_codebook(self.project_slug, scheme, new_codebook)
+            r = self.projects_service.update_scheme_codebook(
+                self.project_slug, scheme, new_codebook
+            )
             if not r:
                 return {"error": "Codebook not added"}
             return {"error": "Codebook in conflict, please refresh and arbitrate"}
@@ -465,7 +482,7 @@ class Schemes:
         """
         Get codebook
         """
-        r = self.db_manager.get_scheme_codebook(self.project_slug, scheme)
+        r = self.projects_service.get_scheme_codebook(self.project_slug, scheme)
         if not r:
             return {"error": "codebook not found"}
         return {"success": r}

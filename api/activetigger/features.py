@@ -8,7 +8,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 from pandas import DataFrame, Series
 
-from activetigger.db import DatabaseManager
+from activetigger.db.projects import ProjectsService
 from activetigger.functions import to_dtm, to_fasttext, to_sbert
 from activetigger.queue import Queue
 
@@ -36,7 +36,7 @@ class Features:
     computing: dict
     options: dict
     lang: str
-    db_manager: DatabaseManager
+    projects_service: ProjectsService
     n: int
 
     def __init__(
@@ -54,7 +54,7 @@ class Features:
         Initit features
         """
         self.project_slug = project_slug
-        self.db_manager = db_manager
+        self.projects_service = db_manager.projects_service
         self.path_train = path_train
         self.path_all = path_all
         self.path_models = models_path

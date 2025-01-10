@@ -25,3 +25,5 @@ frontend/public/favicon_old.ico
 frontend/src/assets/at_old.png
 api/mlruns
 site/
+**/*.sql
+.vscode
