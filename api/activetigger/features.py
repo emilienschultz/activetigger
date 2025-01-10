@@ -139,7 +139,7 @@ class Features:
         del content
 
         # add informations to database
-        self.db_manager.add_feature(
+        self.projects_service.add_feature(
             project=self.project_slug,
             kind=kind,
             name=name,
@@ -160,7 +160,7 @@ class Features:
         if name not in self.map:
             return {"error": "feature doesn't exist in mapping"}
 
-        if self.db_manager.get_feature(self.project_slug, name) is None:
+        if self.projects_service.get_feature(self.project_slug, name) is None:
             return {"error": "feature doesn't exist in database"}
 
         col = self.get([name])
@@ -172,7 +172,7 @@ class Features:
         del content
 
         # delete from database
-        self.db_manager.delete_feature(self.project_slug, name)
+        self.projects_service.delete_feature(self.project_slug, name)
 
         # refresh the map
         self.map = self.get_map()[0]
@@ -205,7 +205,7 @@ class Features:
         return data
 
     def info(self, name: str):
-        feature = self.db_manager.get_feature(self.project_slug, name)
+        feature = self.projects_service.get_feature(self.project_slug, name)
         if feature is None:
             return {"error": "feature doesn't exist in database"}
         return {
@@ -224,7 +224,7 @@ class Features:
             Maybe not the best solution
             Database ? How to avoid a loop ...
         """
-        features = self.db_manager.get_project_features(self.project_slug)
+        features = self.projects_service.get_project_features(self.project_slug)
         return features
 
     def get_column_raw(self, column_name: str, index: str = "train") -> dict:

@@ -1,10 +1,11 @@
 import importlib
 import logging
 import time
+from collections.abc import Awaitable
 from contextlib import asynccontextmanager
 from datetime import datetime
 from io import StringIO
-from typing import Annotated, Any
+from typing import Annotated, Any, Callable
 
 import pandas as pd
 from fastapi import (
@@ -192,7 +193,9 @@ async def check_processes(timer: float, step: int = 1) -> None:
 
 
 @app.middleware("http")
-async def middleware(request: Request, call_next):
+async def middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+):
     """
     Middleware to take care of completed processes
     Executed at each action on the server
