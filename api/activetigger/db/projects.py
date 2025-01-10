@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 from collections.abc import Sequence
 from typing import Any, TypedDict
@@ -78,11 +77,11 @@ class ProjectsService:
         else:
             return None
 
-    def add_project(self, project_slug: str, parameters: dict, username: str):
+    def add_project(self, project_slug: str, parameters: dict[str, Any], username: str):
         session = self.Session()
         project = Projects(
             project_slug=project_slug,
-            parameters=json.dumps(parameters),
+            parameters=parameters,
             time_created=datetime.datetime.now(),
             time_modified=datetime.datetime.now(),
             user_id=username,
@@ -307,14 +306,14 @@ class ProjectsService:
         session = self.Session()
         if project_slug is None:
             result = (
-                session.query(Auths.user, Auths.status)
-                .filter(Auths.user == username)
+                session.query(Auths.user_id, Auths.status)
+                .filter(Auths.user_id == username)
                 .all()
             )
         else:
             result = (
-                session.query(Auths.user, Auths.status)
-                .filter(Auths.user == username, Auths.project == project_slug)
+                session.query(Auths.user_id, Auths.status)
+                .filter(Auths.user_id == username, Auths.project_id == project_slug)
                 .all()
             )
         session.close()
@@ -510,9 +509,9 @@ class ProjectsService:
         project: str,
         kind: str,
         name: str,
-        parameters: str,
+        parameters: dict[str, Any],
         user: str,
-        data: str | None = None,
+        data: list[dict[str, Any]] | None = None,
     ):
         session = self.Session()
         feature = Features(
@@ -555,9 +554,9 @@ class ProjectsService:
                 i.name: {
                     "time": i.time.strftime("%Y-%m-%d %H:%M:%S"),
                     "kind": i.kind,
-                    "parameters": json.loads(i.parameters),
+                    "parameters": i.parameters,
                     "user": i.user,
-                    "data": json.loads(i.data),
+                    "data": i.data,
                 }
                 for i in features
             }
@@ -570,7 +569,7 @@ class ProjectsService:
         user: str,
         status: str,
         scheme: str,
-        params: dict,
+        params: dict[str, Any],
         path: str,
     ):
         session = self.Session()
@@ -586,7 +585,7 @@ class ProjectsService:
             kind=kind,
             name=name,
             user_id=user,
-            parameters=json.dumps(params),
+            parameters=params,
             scheme_id=scheme,
             status=status,
             path=path,
@@ -622,7 +621,7 @@ class ProjectsService:
                 "name": m.name,
                 "scheme": m.scheme,
                 "path": m.path,
-                "parameters": json.loads(m.parameters),
+                "parameters": m.parameters,
             }
             for m in models
         ]
@@ -702,7 +701,6 @@ class ProjectsService:
         if model is None:
             raise DBException("Model not found")
 
-        parameters = json.loads(model.parameters)
+        parameters = model.parameters
         parameters[flag] = value
-        model.parameters = json.dumps(parameters)
         session.commit()

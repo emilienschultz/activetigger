@@ -176,8 +176,8 @@ class Features(Base):
     project: Mapped[Projects] = relationship(back_populates="features")
     name: Mapped[str]
     kind: Mapped[str]
-    parameters: Mapped[str]
-    data: Mapped[str]
+    parameters: Mapped[dict[str, Any]]
+    data: Mapped[dict[str, Any]]
 
 
 class Models(Base):
@@ -200,7 +200,7 @@ class Models(Base):
     scheme: Mapped[Schemes] = relationship(back_populates="models")
     kind: Mapped[str]
     name: Mapped[str]
-    parameters: Mapped[str]
+    parameters: Mapped[dict[str, Any]]
     path: Mapped[str]
     status: Mapped[str]
     statistics: Mapped[str]
