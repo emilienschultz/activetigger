@@ -7,9 +7,9 @@
 
 Hi❗
 
-ActiveTigger[^1] is an text annotation web tool dedicated for computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to annotate text dataset relying on active learning.
+ActiveTigger[^1] is a text annotation web tool dedicated to computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to annotate text dataset relying on active learning.
 
-Designed primarily by researchers in in social sciences, its use can extends to all users that need to annotate textual data.
+Designed primarily by researchers in social sciences, its use can extend to all users that need to annotate textual data.
 
 > [!IMPORTANT] 
 > The app is currently 🚧 **under the beta test phase** 🚧. The stable version is planned for mid-June.
@@ -44,7 +44,7 @@ Add a specific `config.yaml` file in the api directory if you want to specify th
 - `path` : path to store files (for instance `./data`)
 - `path_models` : path to store the models (for instance `./data/models`)
 
-Launch the server (on 0.0.0.0 port 5000 by default, you can configurate exposed port if needed with -p PORTNUM).
+Launch the server (on 0.0.0.0 port 5000 by default, you can configure exposed port if needed with -p PORTNUM).
 
 ```bash
 cd activetigger/api
@@ -67,7 +67,7 @@ pip install --extra-index-url=https://pypi.nvidia.com "cuml-cu12==24.10.*"
 
 #### Temporary: some models (ModernBERT) need unpublished versions of Huggingface Transformers
 
-The requirements contains the clone of the repository.
+The requirements contain the clone of the repository.
 
 ### Install the React frontend
 
@@ -130,6 +130,6 @@ The development of Active Tigger is supported by : [DRARI Île-de-France](https:
 
 ## How to cite
 
-🚧 please not cite for the moment 🚧
+🚧 please do not cite for the moment 🚧
 
 [^1]: The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger). Active Tigger name is a pun that draws on the similarity between the words 'Tagger' and 'Tigger.'
