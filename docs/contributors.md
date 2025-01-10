@@ -14,10 +14,10 @@
 - Paul Girard (Ouestware)
 - Jean-Baptiste Richardet
 - Matthias Bussonnier
+- Léo Mignot
 
 ## Feedbacks
 
-- Léo Mignot
 - David Larousserie
 
 ## Funding

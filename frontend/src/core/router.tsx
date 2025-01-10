@@ -3,24 +3,23 @@ import { Outlet, createHashRouter } from 'react-router-dom';
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
 import { DocPage } from '../components/DocPage';
 import { HomePage } from '../components/HomePage';
-import { LoginPage } from '../components/LoginPage';
 import { NotFound } from '../components/NotFoundPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
 import { ProjectExplorePage } from '../components/ProjectExplorePage';
 import { ProjectExportPage } from '../components/ProjectExportPage';
+import { GenPage } from '../components/ProjectGenPage';
 import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
 import { ProjectPreparePage } from '../components/ProjectPreparePage';
 import { ProjectTestPage } from '../components/ProjectTestPage';
 import { ProjectTrainPage } from '../components/ProjectTrainPage';
-import { CuratePage } from '../components/pages/CurationPage';
-import { MonitorPage } from '../components/pages/MonitorPage';
-
 import { ProjectsPage } from '../components/ProjectsPage';
 import { UsersPage } from '../components/UsersPage';
-
-import { GenPage } from '../components/ProjectGenPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
+import { AccountPage } from '../components/pages/AccountPage';
+import { CuratePage } from '../components/pages/CurationPage';
+import { LoginPage } from '../components/pages/LoginPage';
+import { MonitorPage } from '../components/pages/MonitorPage';
 
 export function getRouter() {
   return createHashRouter([
@@ -35,6 +34,10 @@ export function getRouter() {
     {
       path: '/login',
       element: <LoginPage />,
+    },
+    {
+      path: '/account',
+      element: <AccountPage />,
     },
     {
       path: '/help',

@@ -14,7 +14,6 @@ import {
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useNotifications } from '../core/notifications';
-import { ChangePassword } from './forms/ChangePassword';
 import { PageLayout } from './layout/PageLayout';
 
 interface newUser {
@@ -62,7 +61,6 @@ export const UsersPage: FC = () => {
         <div className="row">
           <div className="col-1"></div>
           <div className="col-8">
-            <ChangePassword />
             <h2 className="subsection">Manage users and rights</h2>
 
             <div className="explanations">Select a user to attribute rights</div>

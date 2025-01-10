@@ -9,10 +9,10 @@ import { useAppContext } from '../../core/context';
 
 const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'projects', label: 'Projects', href: '/projects' },
-  { id: 'users', label: 'Users', href: '/users' },
   // { id: 'monitor', label: 'Monitor', href: '/monitor' },
-  { id: 'help', label: 'Help', href: '/help' },
-  { id: 'login', label: 'Login', href: '/login' },
+  // { id: 'help', label: 'Help', href: '/help' },
+  { id: 'account', label: 'Account', href: '/account' },
+  { id: 'users', label: 'Users', href: '/users' },
 ];
 
 interface NavBarPropsType {

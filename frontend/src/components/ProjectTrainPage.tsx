@@ -262,6 +262,18 @@ export const ProjectTrainPage: FC = () => {
                       </div>
                     )}
 
+                  {isComputing && (
+                    <div>
+                      <button
+                        key="stop"
+                        className="btn btn-primary mt-3 d-flex align-items-center"
+                        onClick={stopTraining}
+                      >
+                        <PulseLoader color={'white'} /> Stop current process
+                      </button>
+                    </div>
+                  )}
+
                   {currentModel && (
                     <div>
                       {model && (
