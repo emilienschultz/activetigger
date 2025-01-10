@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import Highlighter from 'react-highlight-words';
@@ -49,6 +49,14 @@ export const ProjectAnnotationPage: FC = () => {
   const [displayComment, setDisplayComment] = useState(false);
   const [comment, setComment] = useState('');
 
+  // Reinitialize scroll in frame
+  const frameRef = useRef<HTMLDivElement>(null);
+  const resetScroll = () => {
+    if (frameRef.current) {
+      frameRef.current.scrollTop = 0;
+    }
+  };
+
   // hooks to manage element
   const { getNextElementId } = useGetNextElementId(
     projectName || null,
@@ -90,6 +98,7 @@ export const ProjectAnnotationPage: FC = () => {
 
   // react to URL param change
   useEffect(() => {
+    resetScroll();
     if (elementId === 'noelement') {
       return;
     }
@@ -157,7 +166,7 @@ export const ProjectAnnotationPage: FC = () => {
           // redirect to next element by redirecting wihout any id
           // thus the getNextElementId query will be dont after the appcontext is reloaded
           {
-            setComment(''); // reset comment
+            setComment('');
             navigate(`/projects/${projectName}/annotate/`); // got to next element
           },
         );
@@ -254,6 +263,7 @@ export const ProjectAnnotationPage: FC = () => {
           <div
             className="col-11 annotation-frame"
             style={{ height: `${displayConfig.frameSize}vh` }}
+            ref={frameRef}
           >
             {lastTag && (
               <div>
