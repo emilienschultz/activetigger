@@ -1,9 +1,11 @@
 import cx from 'classnames';
 import { FC, useState } from 'react';
+import { FiRefreshCcw } from 'react-icons/fi';
 import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../assets/at.png';
 import { useAuth } from '../../core/auth';
+import { useAppContext } from '../../core/context';
 
 const PAGES: { id: string; label: string; href: string }[] = [
   { id: 'projects', label: 'Projects', href: '/projects' },
@@ -23,6 +25,12 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
   const navigate = useNavigate();
 
   const [expanded, setExpanded] = useState<boolean>(false);
+
+  // function to clear history
+  const { setAppContext } = useAppContext();
+  const actionClearHistory = () => {
+    setAppContext((prev) => ({ ...prev, history: [] }));
+  };
 
   return (
     <div className="bg-primary">
@@ -66,7 +74,10 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
             </ul>
             {authenticatedUser ? (
               <span className="d-flex align-items-center navbar-text navbar-text-margins">
-                Logged as {authenticatedUser.username}
+                <span className="mx-2">Logged as {authenticatedUser.username}</span>
+                <button className="btn btn-primary" onClick={actionClearHistory}>
+                  <FiRefreshCcw />
+                </button>
                 <button
                   className="btn btn-primary"
                   onClick={async () => {

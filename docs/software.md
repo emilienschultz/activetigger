@@ -2,6 +2,11 @@
 
 ## Roadmap
 
+### Calendar
+
+- Experimental generative for April.
+- Stable classical version planned for mid-June (+ Docker).
+
 ### Next Steps
 
 - Multilabel workflow + bert-fine tuning

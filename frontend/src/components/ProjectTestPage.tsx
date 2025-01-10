@@ -130,6 +130,13 @@ export const ProjectTestPage: FC = () => {
                       Activate test mode
                     </label>
                   </div>
+                  {phase == 'test' && (
+                    <div className="alert alert-info m-3">
+                      Now you can go back to the annotation panel to annotate the test dataset. Once
+                      you have a test dataset, you will be able to compute test statistics (next
+                      tab. Exit test mode to go back to train dataset.)
+                    </div>
+                  )}
                 </Tab>
 
                 <Tab eventKey="statistics" title="2. Compute statistics">

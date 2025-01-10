@@ -52,7 +52,7 @@ export const AnnotationDisagreementManagement: FC<{
       <div className="row">
         <div className="col-12">
           <div className="explanations">List of disagreements between users</div>
-          <div>There is {tableDisagreement?.length} disagreements</div>
+          <div>{tableDisagreement?.length} disagreements</div>
           <button className="btn btn-warning m-3" onClick={validateChanges}>
             Validate changes
           </button>

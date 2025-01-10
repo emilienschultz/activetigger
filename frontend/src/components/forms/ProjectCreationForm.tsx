@@ -147,7 +147,7 @@ export const ProjectCreationForm: FC = () => {
             </li>
             <li>Indicate the columns for id, text</li>
             <li>
-              Optionnal : annotation column & number of elements in testset (not annotated rows)
+              Optional : annotation column & number of elements in testset (not annotated rows)
             </li>
             <li>Validate to create</li>
           </ul>

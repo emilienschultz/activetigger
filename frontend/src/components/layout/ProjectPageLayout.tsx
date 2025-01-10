@@ -30,7 +30,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
 }) => {
   // get the current state of the project
   const {
-    appContext: { currentProject: project, currentScheme, phase },
+    appContext: { currentProject: project, currentScheme, phase, developmentMode },
   } = useAppContext();
 
   // get current user
@@ -48,6 +48,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
               currentScheme={currentScheme}
               currentUser={authenticatedUser.username}
               currentMode={phase}
+              developmentMode={developmentMode}
             />
           </div>
           <div className="col-11 col-md-9 col-lg-10">{children}</div>

@@ -517,7 +517,8 @@ class Server:
         self.db_manager.projects_service.delete_project(project_slug)
 
         # clean memory
-        del self.projects[project_slug]
+        if project_slug in self.projects:
+            del self.projects[project_slug]
 
         return {"success": "Project deleted"}
 
@@ -774,9 +775,6 @@ class Project(Server):
             f = df["labels"].isna()
         if sample == "tagged":
             f = df["labels"].notna()
-
-        print("SAMPLE")
-        print(df["labels"].isna().sum())
 
         # add a regex condition to the selection
         if filter:

@@ -25,7 +25,7 @@ permissions:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 
 jobs:
-  # This workflow contains a single job called "build"
+  # This workflow contains a 2 jobs called "build" and "documentation"
 
   build:
     # The type of runner that the job will run on
@@ -82,3 +82,21 @@ jobs:
           folder: frontend/dist # The folder the action should deploy.
 
           clean-exclude: data
+
+      # compile documentation
+
+      - name: Install dependencies for doc
+        run: |
+          pip install mkdocs mkdocs-material
+
+      - name: Build MkDocs site
+        run: |
+          mkdocs build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: site
+          keep_files: true
+          destination_dir: docs
