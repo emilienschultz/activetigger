@@ -114,7 +114,7 @@ class Auths(Base):
     project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug"))
     project: Mapped[Projects] = relationship(back_populates="auths")
     status: Mapped[str]
-    created_by: Mapped[str]
+    created_by: Mapped[str | None]
 
 
 class Logs(Base):

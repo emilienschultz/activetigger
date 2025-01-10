@@ -188,7 +188,7 @@ class Server:
         """
         Get project params from database
         """
-        existing_project = self.db_manager.get_project(project_slug)
+        existing_project = self.db_manager.projects_service.get_project(project_slug)
         if existing_project:
             return ProjectModel(**json.loads(existing_project["parameters"]))
         else:
@@ -990,7 +990,9 @@ class Project(Server):
         r = {"train_set_n": len(self.schemes.content)}
         r["users"] = [
             i[0]
-            for i in self.db_manager.get_coding_users(scheme, self.params.project_slug)
+            for i in self.db_manager.projects_service.get_coding_users(
+                scheme, self.params.project_slug
+            )
         ]
 
         df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
@@ -1140,7 +1142,7 @@ class Project(Server):
         """
         Get current active users on the time period
         """
-        users = self.db_manager.get_distinct_users(self.name, period)
+        users = self.db_manager.projects_service.get_distinct_users(self.name, period)
         return users
 
     def get_process(self, kind: str, user: str):
