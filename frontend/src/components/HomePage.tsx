@@ -94,7 +94,7 @@ export const HomePage: FC = () => {
           <div className="container text-center">
             <i className="fas fa-info-circle"></i>
             <span className="ml-2">
-              CREST / CSS @ IPP © 2024 - <i>under development -</i>
+              CREST / CSS @ IPP © 2025 - <i>beta version - under development -</i>
             </span>
           </div>
         </footer>

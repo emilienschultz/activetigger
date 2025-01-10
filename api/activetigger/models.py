@@ -242,10 +242,9 @@ class BertModel:
                 "f1_macro": round(f1_score(Y, Y_pred, average="macro"), decimals),
                 "f1_weighted": round(f1_score(Y, Y_pred, average="weighted"), decimals),
                 "f1": [round(i, decimals) for i in list(f1_score(Y, Y_pred, average=None))],
-                "precision": [
-                    round(i, decimals)
-                    for i in precision_score(list(Y), list(Y_pred), average="micro")
-                ],
+                "precision": round(
+                    precision_score(list(Y), list(Y_pred), average="micro"), decimals
+                ),
                 "recall": [
                     round(i, decimals)
                     for i in list(recall_score(list(Y), list(Y_pred), average=None))
