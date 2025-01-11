@@ -4,8 +4,9 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import TableBatch
+from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.projects import ProjectsService
+from activetigger.db.projects import Codebook, ProjectsService
 from activetigger.functions import clean_regex
 
 
@@ -455,11 +456,12 @@ class Schemes:
         r = self.projects_service.get_scheme_codebook(self.project_slug, scheme)
         # if no modification since the last time, ok
         if r["time"] == time:
-            r = self.projects_service.update_scheme_codebook(
-                self.project_slug, scheme, codebook
-            )
-            if not r:
-                return {"error": "Codebook not added"}
+            try:
+                self.projects_service.update_scheme_codebook(
+                    self.project_slug, scheme, codebook
+                )
+            except DBException as e:
+                raise Exception("Codebook not added") from e
             return {"success": "Codebook added"}
         # if scheme have been modified since the last time
         else:
@@ -471,21 +473,22 @@ class Schemes:
 # [CONFLICT] -------- PREVIOUS CODEBOOK --------
 
 {r["codebook"]}"""
-            r = self.projects_service.update_scheme_codebook(
-                self.project_slug, scheme, new_codebook
-            )
-            if not r:
-                return {"error": "Codebook not added"}
+            try:
+                self.projects_service.update_scheme_codebook(
+                    self.project_slug, scheme, new_codebook
+                )
+            except DBException as e:
+                raise Exception("Codebook not added") from e
             return {"error": "Codebook in conflict, please refresh and arbitrate"}
 
-    def get_codebook(self, scheme: str):
+    def get_codebook(self, scheme: str) -> Codebook:
         """
         Get codebook
         """
-        r = self.projects_service.get_scheme_codebook(self.project_slug, scheme)
-        if not r:
-            return {"error": "codebook not found"}
-        return {"success": r}
+        try:
+            return self.projects_service.get_scheme_codebook(self.project_slug, scheme)
+        except DBException as e:
+            raise Exception from e
 
     def dichotomize(self, annotation: str, label: str):
         """

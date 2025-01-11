@@ -80,3 +80,9 @@ unfixable = [
   "RUF100",
 ]
 
+[tool.mypy]
+python_version = "3.11"
+files = [
+	"activetigger/db/*.py" # Add files each time one is cleaned
+]
+incremental = true

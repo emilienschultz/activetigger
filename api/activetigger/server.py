@@ -23,6 +23,7 @@ from activetigger.datamodels import (
     SimpleModelModel,
     TestSetDataModel,
 )
+from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import cat2num, clean_regex
@@ -169,7 +170,7 @@ class Server:
             return df[~df["action"].str.contains("INFO ")]
         return df
 
-    def get_auth_projects(self, username: str) -> dict[dict]:
+    def get_auth_projects(self, username: str) -> list[ProjectSummaryModel]:
         """
         Get projects authorized for the user
         """
@@ -229,9 +230,13 @@ class Server:
         Decode access token
         """
         # get status
-        status = self.db_manager.projects_service.get_token_status(token)
+        try:
+            status = self.db_manager.projects_service.get_token_status(token)
+        except DBException as e:
+            raise Exception from e
+
         if status != "active":
-            return {"error": "Token not valid"}
+            raise Exception("Token is invalid")
 
         # decode payload
         payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
@@ -721,7 +726,7 @@ class Project(Server):
         sample: str = "untagged",
         user: str = "user",
         label: None | str = None,
-        history: list = None,
+        history: list = [],
         frame: None | list = None,
         filter: str | None = None,
     ) -> dict:
@@ -738,8 +743,6 @@ class Project(Server):
         filter is a regex to use on the corpus
         """
 
-        if history is None:
-            history = []
         if scheme not in self.schemes.available():
             return {"error": "Scheme doesn't exist"}
 

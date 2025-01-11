@@ -4,6 +4,7 @@ import time
 from collections.abc import Awaitable
 from contextlib import asynccontextmanager
 from datetime import datetime
+from importlib.abc import Traversable
 from io import StringIO
 from typing import Annotated, Any, Callable
 
@@ -76,8 +77,10 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
     - status of the account
     - relation to the project
     """
-
-    user = server.users.get_user(name=username)
+    try:
+        user = server.users.get_user(name=username)
+    except Exception as e:
+        raise HTTPException(404) from e
     status = user.status
 
     # possibility to create project
@@ -272,27 +275,26 @@ async def verified_user(
     # decode token
     try:
         payload = server.decode_access_token(token)
-        if "error" in payload:
-            raise HTTPException(status_code=403, detail=payload["error"])
         username = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Problem with token")
     except JWTError:
         raise HTTPException(status_code=401, detail="Problem with token")
+    except Exception as e:
+        raise HTTPException(status_code=403) from e
 
     # get user caracteristics
-    user = server.users.get_user(name=username)
-
-    if "error" in user:
-        raise HTTPException(status_code=404, detail=user["error"])
-
-    return user
+    try:
+        user = server.users.get_user(name=username)
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=404) from e
 
 
 async def check_auth_exists(
     request: Request,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    project_slug: str | None = None,
+    project_slug: str,
 ) -> None:
     """
     Check if a user is associated to a project
@@ -314,8 +316,8 @@ async def welcome() -> str:
     """
     Welcome page at the root path for the API
     """
-    data_path = importlib.resources.files("activetigger")
-    with open(data_path / "html/welcome.html", "r") as f:
+    data_path: Traversable = importlib.resources.files("activetigger")
+    with open(data_path.joinpath("html", "welcome.html"), "r") as f:
         r = f.read()
     return r
 
@@ -348,11 +350,10 @@ async def login_for_access_token(
     Authentificate user from username/password and return token
     """
     # authentificate the user
-    user = server.users.authenticate_user(form_data.username, form_data.password)
-
-    # manage error
-    if not isinstance(user, UserInDBModel):
-        raise HTTPException(status_code=401, detail=user["error"])
+    try:
+        user = server.users.authenticate_user(form_data.username, form_data.password)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Wrong username or password") from e
 
     # create new token for the user
     access_token = server.create_access_token(
@@ -417,11 +418,12 @@ async def create_user(
     Create user
     """
     test_rights("create user", current_user.username)
-    r = server.users.add_user(
-        username_to_create, password, status, current_user.username, mail
-    )
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    try:
+        server.users.add_user(
+            username_to_create, password, status, current_user.username, mail
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
     return None
 
 
@@ -436,9 +438,10 @@ async def delete_user(
     """
     # manage rights
     test_rights("modify user", current_user.username)
-    r = server.users.delete_user(user_to_delete, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    try:
+        server.users.delete_user(user_to_delete, current_user.username)
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
     return None
 
 
@@ -471,16 +474,18 @@ async def set_auth(
     if action == "add":
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")
-        r = server.users.set_auth(username, project_slug, status)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
+        try:
+            server.users.set_auth(username, project_slug, status)
+        except Exception as e:
+            raise HTTPException(status_code=500) from e
         server.log_action(current_user.username, f"INFO add user {username}", "all")
         return None
 
     if action == "delete":
-        r = server.users.delete_auth(username, project_slug)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
+        try:
+            server.users.delete_auth(username, project_slug)
+        except Exception as e:
+            raise HTTPException(status_code=500) from e
         server.log_action(current_user.username, f"INFO delete user {username}", "all")
         return None
 
@@ -620,10 +625,11 @@ async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
     """
     if not server.exists(project_slug):
         raise HTTPException(status_code=404, detail="Project doesn't exist")
-    r = server.users.get_project_auth(project_slug)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return ProjectAuthsModel(auth=r)
+    try:
+        r = server.users.get_project_auth(project_slug)
+        return ProjectAuthsModel(auth=r)
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @app.post("/projects/testset", dependencies=[Depends(verified_user)])
@@ -1206,8 +1212,8 @@ async def get_codebook(
         raise HTTPException(status_code=500, detail=r["error"])
     return CodebookModel(
         scheme=scheme,
-        content=str(r["success"]["codebook"]),
-        time=str(r["success"]["time"]),
+        content=str(r["codebook"]),
+        time=str(r["time"]),
     )
 
 
@@ -1399,9 +1405,9 @@ async def predict(
         if "success" in r:
             df = pd.DataFrame(r["success"])
         else:
-            return {"error": "Problem with full dataset"}
+            raise Exception("Problem with full dataset")
     else:
-        return {"error": f"dataset {dataset} not found"}
+        raise Exception(f"dataset {dataset} not found")
 
     # start process to predict
     r = project.bertmodels.start_predicting_process(
@@ -1638,7 +1644,7 @@ async def export_generations(
     table = project.generations.get_generated(
         project_slug=project.name,
         username=current_user.username,
-        n_elements=number,
+        n_elements=str(number),
     )
 
     if "error" in table:
