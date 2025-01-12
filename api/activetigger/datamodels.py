@@ -163,7 +163,7 @@ class SchemeModel(BaseModel):
     project_slug: str
     name: str
     kind: str | None = "multiclass"
-    labels: list[str] = []
+    labels: list[str] | None = None
 
 
 class RegexModel(BaseModel):

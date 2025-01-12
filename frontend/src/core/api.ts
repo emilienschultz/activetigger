@@ -353,7 +353,7 @@ export function useAddScheme(projectSlug: string) {
             path: { action: 'add' },
             query: { project_slug: projectSlug },
           },
-          body: { project_slug: projectSlug, name: schemeName, kind: kind, labels: null },
+          body: { project_slug: projectSlug, name: schemeName, kind: kind, labels: [] },
         });
         if (!res.error) notify({ type: 'success', message: 'Scheme add' });
 

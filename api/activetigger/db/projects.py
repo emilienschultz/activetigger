@@ -153,7 +153,9 @@ class ProjectsService:
             ).first()
             if scheme is None:
                 raise DBException("Scheme not found")
-            scheme.params["labels"] = labels
+            params = scheme.params.copy()
+            params["labels"] = labels
+            scheme.params = params
             scheme.time_modified = datetime.datetime.now()
 
     def update_scheme_codebook(self, project_slug: str, scheme: str, codebook: str) -> None:
