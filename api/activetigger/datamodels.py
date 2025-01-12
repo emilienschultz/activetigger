@@ -93,7 +93,7 @@ class ElementOutModel(BaseModel):
     predict: dict[str, Any]
     frame: list | None
     limit: int | None
-    history: list[str]
+    history: list | None = None
     n_sample: int | None = None
 
 

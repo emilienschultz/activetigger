@@ -60,7 +60,7 @@ class ProjectsService:
             {
                 "id": log.id,
                 "time": log.time,
-                "user": log.user,
+                "user": log.user_id,
                 "project": log.project_id,
                 "action": log.action,
                 "connect": log.connect,
@@ -376,7 +376,7 @@ class ProjectsService:
                 .order_by(Annotations.time.desc())
                 .limit(limit)
             ).all()
-            return [[a.annotation, a.dataset, a.user, a.time] for a in annotations]
+            return [[a.annotation, a.dataset, a.user_id, a.time] for a in annotations]
 
     def add_annotations(
         self,
