@@ -158,7 +158,6 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
       console.log('Fetch projection data');
-      console.log(projectionData);
     }
     // case if the projection changed
     if (
