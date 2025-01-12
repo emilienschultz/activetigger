@@ -27,3 +27,4 @@ api/mlruns
 site/
 **/*.sql
 .vscode
+api/activetigger/db/__pycache__/
