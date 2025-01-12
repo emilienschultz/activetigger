@@ -171,7 +171,6 @@ class Server:
         Get projects authorized for the user
         """
         projects_auth = self.users.get_auth_projects(username)
-        print(projects_auth)
         return [
             ProjectSummaryModel(
                 user_right=i[1],

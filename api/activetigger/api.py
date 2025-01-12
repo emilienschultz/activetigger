@@ -1108,6 +1108,8 @@ async def rename_label(
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
 
+    print("old label deleted")
+
     # log
     server.log_action(
         current_user.username,
