@@ -167,7 +167,9 @@ class ProjectsService:
             ).first()
             if result_scheme is None:
                 raise DBException("Scheme not found")
-            result_scheme.params["codebook"] = codebook
+            params = result_scheme.params.copy()
+            params["codebook"] = codebook
+            result_scheme.params = params
             result_scheme.time_modified = datetime.datetime.now()
 
     def get_scheme_codebook(self, project_slug: str, name: str) -> Codebook:
