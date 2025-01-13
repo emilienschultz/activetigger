@@ -246,9 +246,14 @@ class ProjectsService:
     def get_current_users(self, timespan: int = 600):
         session = self.Session()
         time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
-        users = session.query(Logs.user).filter(Logs.time > time_threshold).distinct().all()
+        users = (
+            session.query(Logs.user, Logs.user_id)
+            .filter(Logs.time > time_threshold)
+            .distinct()
+            .all()
+        )
         session.close()
-        return [u.user for u in users]
+        return [u.user_id for u in users]
 
     def get_project_auth(self, project_slug: str):
         with self.Session() as session:
