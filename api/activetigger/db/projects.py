@@ -258,7 +258,7 @@ class ProjectsService:
     def get_project_auth(self, project_slug: str):
         with self.Session() as session:
             auth = session.scalars(select(Auths).filter_by(project_id=project_slug)).all()
-            return {el.user: el.status for el in auth}
+            return {el.user_id: el.status for el in auth}
 
     def add_auth(self, project_slug: str, user: str, status: str):
         with self.Session.begin() as session:
