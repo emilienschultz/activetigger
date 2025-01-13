@@ -102,7 +102,7 @@ class Annotations(Base):
     scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
     scheme: Mapped[Schemes] = relationship()
     annotation: Mapped[str]
-    comment: Mapped[str] = mapped_column(Text)
+    comment: Mapped[str | None] = mapped_column(Text)
 
 
 class Auths(Base):
@@ -128,8 +128,8 @@ class Logs(Base):
     user: Mapped[Users] = relationship()
     project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug"))
     project: Mapped[Projects] = relationship(back_populates="logs")
-    action: Mapped[str]
-    connect: Mapped[str]
+    action: Mapped[str | None]
+    connect: Mapped[str | None]
 
 
 class Tokens(Base):
@@ -141,9 +141,7 @@ class Tokens(Base):
     )
     token: Mapped[str]
     status: Mapped[str]
-    time_revoked: Mapped[datetime.datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
+    time_revoked: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Generations(Base):
@@ -203,5 +201,5 @@ class Models(Base):
     parameters: Mapped[dict[str, Any]]
     path: Mapped[str]
     status: Mapped[str]
-    statistics: Mapped[str]
-    test: Mapped[str]
+    statistics: Mapped[str | None]
+    test: Mapped[str | None]
