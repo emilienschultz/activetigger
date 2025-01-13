@@ -500,7 +500,7 @@ class Server:
 
         # remove directory
         params = self.get_project_params(project_slug)
-        if params is not None and params.dir is not None:
+        if params is not None and params.dir is not None and params.dir.exists():
             shutil.rmtree(params.dir)
 
         # clean database
@@ -828,7 +828,7 @@ class Project(Server):
             )  # get max proba id
             element_id = ss.index[0]
             n_sample = f.sum()
-            indicator = f"probability: {round(proba.loc[element_id,label],2)}"
+            indicator = f"probability: {round(proba.loc[element_id, label], 2)}"
 
         # higher entropy, only possible if the model has been trained
         if selection == "active":
