@@ -583,7 +583,7 @@ class ProjectsService:
         return [
             {
                 "name": m.name,
-                "scheme": m.scheme,
+                "scheme": m.scheme_id,
                 "path": m.path,
                 "parameters": m.parameters,
             }
