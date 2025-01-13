@@ -655,6 +655,7 @@ class ProjectsService:
         if model is None:
             raise DBException("Model not found")
 
-        parameters = model.parameters
+        parameters = model.parameters.copy()
         parameters[flag] = value
+        model.parameters = parameters
         session.commit()
