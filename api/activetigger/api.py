@@ -81,7 +81,11 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
         user = server.users.get_user(name=username)
     except Exception as e:
         raise HTTPException(404) from e
+
+    # general status
     status = user.status
+
+    # TODO : check project auth
 
     # possibility to create project
     if action == "create project":
@@ -106,7 +110,7 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
 
     # possibility to modify user
     if action == "modify user":
-        if status in ["root", "manager"]:
+        if status in ["root"]:
             return True
         else:
             raise HTTPException(500, "No rights for this action")
