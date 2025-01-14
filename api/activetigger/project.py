@@ -5,6 +5,7 @@ import shutil
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import pytz
@@ -16,11 +17,14 @@ from activetigger.datamodels import (
     ProjectModel,
     SimpleModelModel,
     TestSetDataModel,
+    UserFeatureComputing,
+    UserGenerationComputing,
+    UserModelComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import clean_regex
-from activetigger.generations import Generations
+from activetigger.generation.generations import GenerationResult, Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
@@ -38,7 +42,7 @@ class Project:
     starting_time: float
     name: str
     queue: Queue
-    computing: list
+    computing: list[UserGenerationComputing | UserFeatureComputing | UserModelComputing]
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
@@ -117,7 +121,7 @@ class Project:
             self.params.dir.joinpath("data_all.parquet"),
             self.path_models,
             self.queue,
-            self.computing,
+            cast(list[UserFeatureComputing], self.computing),
             self.db_manager,
             self.params.language,
         )
@@ -130,7 +134,9 @@ class Project:
             MODELS,
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
-        self.generations = Generations(self.db_manager, self.computing)
+        self.generations = Generations(
+            self.db_manager, cast(list[UserGenerationComputing], self.computing)
+        )
         self.projections = Projections(self.computing)
         self.errors = []  # Move to specific class / db in the future
 
@@ -173,9 +179,7 @@ class Project:
 
         # change names
         if not testset.col_label:
-            df = df.rename(
-                columns={testset.col_id: "id", testset.col_text: "text"}
-            ).set_index("id")
+            df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"}).set_index("id")
         else:
             df = df.rename(
                 columns={
@@ -273,9 +277,7 @@ class Project:
         counts = df_scheme["labels"].value_counts()
         valid_categories = counts[counts >= 3]
         if len(valid_categories) < 2:
-            return {
-                "error": "there are less than 2 categories with 3 annotated elements"
-            }
+            return {"error": "there are less than 2 categories with 3 annotated elements"}
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -376,9 +378,7 @@ class Project:
                     )
                 )
             else:
-                f_regex = df["text"].str.contains(
-                    filter_san, regex=True, case=True, na=False
-                )
+                f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
@@ -426,9 +426,7 @@ class Project:
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f][label]
-                .drop(history, errors="ignore")
-                .sort_values(ascending=False)
+                proba[f][label].drop(history, errors="ignore").sort_values(ascending=False)
             )  # get max proba id
             element_id = ss.index[0]
             n_sample = f.sum()
@@ -442,9 +440,7 @@ class Project:
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f]["entropy"]
-                .drop(history, errors="ignore")
-                .sort_values(ascending=False)
+                proba[f]["entropy"].drop(history, errors="ignore").sort_values(ascending=False)
             )  # get max entropy id
             element_id = ss.index[0]
             n_sample = f.sum()
@@ -469,9 +465,7 @@ class Project:
             "element_id": element_id,
             "text": self.content.fillna("NA").loc[element_id, "text"],
             "context": dict(
-                self.content.fillna("NA")
-                .loc[element_id, self.params.cols_context]
-                .apply(str)
+                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
             ),
             "selection": selection,
             "info": indicator,
@@ -521,9 +515,7 @@ class Project:
                 if self.simplemodels.exists(user, scheme):
                     sm = self.simplemodels.get_model(user, scheme)
                     predicted_label = sm.proba.loc[element_id, "prediction"]
-                    predicted_proba = round(
-                        sm.proba.loc[element_id, predicted_label], 2
-                    )
+                    predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
@@ -535,9 +527,7 @@ class Project:
                 "element_id": element_id,
                 "text": self.content.loc[element_id, "text"],
                 "context": dict(
-                    self.content.fillna("NA")
-                    .loc[element_id, self.params.cols_context]
-                    .apply(str)
+                    self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
                 ),
                 "selection": "request",
                 "predict": predict,
@@ -584,9 +574,7 @@ class Project:
         # different treatment if the scheme is multilabel or multiclass
         r["train_annotated_n"] = len(df.dropna(subset=["labels"]))
         if kind == "multiclass":
-            r["train_annotated_distribution"] = json.loads(
-                df["labels"].value_counts().to_json()
-            )
+            r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
         else:
             r["train_annotated_distribution"] = json.loads(
                 df["labels"].str.split("|").explode().value_counts().to_json()
@@ -598,9 +586,7 @@ class Project:
             r["test_set_n"] = len(self.schemes.test)
             r["test_annotated_n"] = len(df.dropna(subset=["labels"]))
             if kind == "multiclass":
-                r["test_annotated_distribution"] = json.loads(
-                    df["labels"].value_counts().to_json()
-                )
+                r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
             else:
                 r["test_annotated_distribution"] = json.loads(
                     df["labels"].str.split("|").explode().value_counts().to_json()
@@ -650,8 +636,7 @@ class Project:
             "projections": {
                 "options": self.projections.options,
                 "available": {
-                    i: self.projections.available[i]["id"]
-                    for i in self.projections.available
+                    i: self.projections.available[i]["id"] for i in self.projections.available
                 },
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
@@ -703,9 +688,7 @@ class Project:
         if dataset == "test":
             if not self.params.test:
                 return {"error": "No test data"}
-            data = self.schemes.get_scheme_data(
-                scheme=scheme, complete=True, kind="test"
-            )
+            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind="test")
             file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
@@ -763,23 +746,24 @@ class Project:
             clean = False
 
             # case of not in queue
-            if e["unique_id"] not in self.queue.current:
+            if e.unique_id not in self.queue.current:
                 print("Problem : id in computing not in queue")
                 self.computing.remove(e)
                 continue
 
-            is_done = self.queue.current[e["unique_id"]]["future"].done()
+            is_done = self.queue.current[e.unique_id]["future"].done()
 
             # case for bertmodels
-            if (e["kind"] == "bert") and is_done:
+            if (e.kind == "bert") and is_done:
+                computation = cast(UserModelComputing, e)
                 clean = True
                 try:
                     # case there is a prediction
-                    r = self.queue.current[e["unique_id"]]["future"].result()
+                    r = self.queue.current[e.unique_id]["future"].result()
                     if not isinstance(r, dict):
                         print("Probleme with the function")
                         self.computing.remove(e)
-                        self.queue.delete(e["unique_id"])
+                        self.queue.delete(e.unique_id)
                         self.errors.append(
                             [
                                 datetime.now(TIMEZONE),
@@ -791,10 +775,8 @@ class Project:
                     if "error" in r:
                         print("Error in model training/predicting", r["error"])
                         self.computing.remove(e)
-                        self.queue.delete(e["unique_id"])
-                        self.errors.append(
-                            [datetime.now(TIMEZONE), "bert training", r["error"]]
-                        )
+                        self.queue.delete(e.unique_id)
+                        self.errors.append([datetime.now(TIMEZONE), "bert training", r["error"]])
                         # return {"error": r["error"]}
                     # get the prediction in the trainset
                     if "path" in r and "predict_train.parquet" in r["path"]:
@@ -806,9 +788,7 @@ class Project:
 
                 except Exception as ex:
                     # delete the model in the db
-                    self.bertmodels.projects_service.delete_model(
-                        self.name, e["model"].name
-                    )
+                    self.bertmodels.projects_service.delete_model(self.name, e["model"].name)
                     # add an error message for the user
                     self.errors.append(
                         [
@@ -820,27 +800,30 @@ class Project:
                     print("Error in model training/predicting", ex)
 
             # case for simplemodels
-            if (e["kind"] == "simplemodel") and is_done:
+            if (e.kind == "simplemodel") and is_done:
                 clean = True
                 try:
-                    results = self.queue.current[e["unique_id"]]["future"].result()
+                    results = self.queue.current[e.unique_id]["future"].result()
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(TIMEZONE), "simplemodel failed", str(ex)]
-                    )
+                    self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
                     print("Simplemodel failed", ex)
 
             # case for features
-            if (e["kind"] == "feature") and is_done:
+            if (e.kind == "feature") and is_done:
+                computation = cast(UserFeatureComputing, e)
                 clean = True
                 try:
-                    r = self.queue.current[e["unique_id"]]["future"].result()
+                    r = self.queue.current[e.unique_id]["future"].result()
                     self.features.add(
-                        e["name"], e["type"], e["user"], e["parameters"], r["success"]
+                        computation.name,
+                        computation.type,
+                        computation.user,
+                        computation.parameters,
+                        r["success"],
                     )
-                    print("Feature added", e["name"])
+                    print("Feature added", computation.name)
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(TIMEZONE), "Error in feature processing", str(ex)]
@@ -848,10 +831,10 @@ class Project:
                     print("Error in feature processing", ex)
 
             # case for projections
-            if (e["kind"] == "projection") and is_done:
+            if (e.kind == "projection") and is_done:
                 clean = True
                 try:
-                    df = self.queue.current[e["unique_id"]]["future"].result()
+                    df = self.queue.current[e.unique_id]["future"].result()
                     self.projections.add(e, df)
                     print("projection added")
                 except Exception as ex:
@@ -865,29 +848,36 @@ class Project:
                     print("Error in feature projections queue", ex)
 
             # case for generations
-            if (e["kind"] == "generation") and is_done:
+            if (e.kind == "generation") and is_done:
                 clean = True
                 try:
-                    r = self.queue.current[e["unique_id"]]["future"].result()
-                    for row in r["success"]:
+                    r = cast(
+                        list[GenerationResult],
+                        self.queue.current[e.unique_id]["future"].result(),
+                    )
+                    for row in r:
                         self.generations.add(
-                            user=row["user"],
-                            project_slug=row["project_slug"],
-                            element_id=row["element_id"],
-                            endpoint=row["endpoint"],
-                            prompt=row["prompt"],
-                            answer=row["answer"],
+                            user=row.user,
+                            project_slug=row.project_slug,
+                            element_id=row.element_id,
+                            model_id=row.model_id,
+                            prompt=row.prompt,
+                            answer=row.answer,
                         )
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(TIMEZONE), "Error in generation queue", str(ex)]
+                        [
+                            datetime.now(TIMEZONE),
+                            "Error in generation queue",
+                            getattr(ex, "message", repr(ex)),
+                        ]
                     )
-                    print("Error in generation queue", ex)
+                    logging.warning("Error in generation queue", getattr(ex, "message", repr(ex)))
 
             # delete from computing & queue
             if clean:
                 self.computing.remove(e)
-                self.queue.delete(e["unique_id"])
+                self.queue.delete(e.unique_id)
 
         # if predictions, add them
         for f in add_predictions:

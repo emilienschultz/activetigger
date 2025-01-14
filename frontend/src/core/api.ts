@@ -7,6 +7,8 @@ import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
   AvailableProjectsModel,
+  GenModelAPI,
+  GenModel,
   LoginParams,
   ProjectDataModel,
   ProjectStateModel,
@@ -14,6 +16,7 @@ import {
   SimpleModelModel,
   TestSetDataModel,
   newBertModel,
+  SupportedAPI,
 } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders } from './auth';
@@ -1504,14 +1507,62 @@ export function useTestModel(
   return { testModel };
 }
 
+export function useGetGenModels() {
+  const { notify } = useNotifications();
+  const models = useCallback(async () => {
+    const res = await api.GET('/elements/generate/models');
+    if (res.error) {
+      notify({ type: 'error', message: 'Could not fetch available models' });
+      return [];
+    } else return res.data as GenModelAPI[];
+  }, [notify]);
+  return { models };
+}
+
+export async function getProjectGenModels(
+  project: string,
+): Promise<Array<GenModel & { api: string }>> {
+  const res = await api.GET(`/elements/{project_slug}/generate/models`, {
+    params: { path: { project_slug: project } },
+  });
+  if (res.error) {
+    console.error(res.error);
+    return [];
+  } else
+    return res.data.map((model) => ({
+      ...model,
+      // Transform null to undefined
+      endpoint: model.endpoint || undefined,
+      credentials: model.credentials || undefined,
+    }));
+}
+
+export async function createGenModel(
+  project: string,
+  model: Omit<GenModel & { api: SupportedAPI }, 'id'>,
+): Promise<number> {
+  const res = await api.POST(`/elements/{project_slug}/generate/models`, {
+    params: { path: { project_slug: project } },
+    body: model,
+  });
+  if (res.error) throw new Error(res.error.detail?.join() || 'Unable to create model');
+  else return res.data;
+}
+
+export async function deleteGenModel(project: string, modelId: number) {
+  const res = await api.DELETE(`/elements/{project_slug}/generate/models/{model_id}`, {
+    params: { path: { project_slug: project, model_id: modelId } },
+  });
+  if (res.error) console.error(res.error);
+}
+
 /**
  * Post generate data
  */
 export function useGenerate(
   projectSlug: string | null,
   currentScheme: string | null,
-  api_name: string | null,
-  endpoint: string | null,
+  modelId: number | null,
   n_batch: number | null,
   prompt: string | null,
   mode: string | null,
@@ -1519,7 +1570,7 @@ export function useGenerate(
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
-    if (projectSlug && api_name && endpoint && prompt && n_batch && currentScheme && mode) {
+    if (projectSlug && modelId && prompt && n_batch && currentScheme && mode) {
       const res = await api.POST('/elements/generate/start', {
         params: {
           query: {
@@ -1527,9 +1578,8 @@ export function useGenerate(
           },
         },
         body: {
-          api: api_name,
+          model_id: modelId,
           prompt: prompt,
-          endpoint: endpoint,
           n_batch: n_batch,
           token: token,
           scheme: currentScheme,
@@ -1540,7 +1590,7 @@ export function useGenerate(
       return true;
     }
     return null;
-  }, [projectSlug, notify, n_batch, token, endpoint, prompt, api_name, mode, currentScheme]);
+  }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);
 
   return { generate };
 }

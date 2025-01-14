@@ -419,13 +419,13 @@ class BertModels:
         - progress if available
         """
         r = {
-            e["user"]: {
-                "name": e["model"].name,
-                "status": e["model"].status,
-                "progress": e["model"].get_training_progress(),
+            e.user: {
+                "name": e.model.name,
+                "status": e.model.status,
+                "progress": e.model.get_training_progress(),
             }
             for e in self.computing
-            if e["kind"] == "bert"
+            if e.kind == "bert"
         }
         return r
 
@@ -448,7 +448,7 @@ class BertModels:
         """
         Get the user current processes
         """
-        return [e for e in self.computing if e["user"] == user]
+        return [e for e in self.computing if e.user == user]
 
     def estimate_memory_use(self, model: str, kind: str = "train"):
         """
@@ -875,11 +875,7 @@ class SimpleModels:
         """
         Currently under training
         """
-        r = {
-            e["user"]: list(e["scheme"])
-            for e in self.computing
-            if e["kind"] == "simplemodel"
-        }
+        r = {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
         return r
 
     def exists(self, user: str, scheme: str):

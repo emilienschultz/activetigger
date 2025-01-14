@@ -10,19 +10,19 @@ importers:
     dependencies:
       '@ebay/nice-modal-react':
         specifier: ^1.2.13
-        version: 1.2.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.13(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@types/sortablejs':
         specifier: ^1.15.8
         version: 1.15.8
       '@uidotdev/usehooks':
         specifier: ^2.4.1
-        version: 2.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.4.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@uiw/react-md-editor':
         specifier: ^4.0.4
-        version: 4.0.5(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.5(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       ag-grid-react:
         specifier: ^32.1.0
-        version: 32.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 32.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       apache-arrow:
         specifier: ^17.0.0
         version: 17.0.0
@@ -48,47 +48,47 @@ importers:
         specifier: ^5.4.1
         version: 5.5.0
       react:
-        specifier: ^18.3.1
-        version: 18.3.1
+        specifier: ^19.0.0
+        version: 19.0.0
       react-bootstrap:
         specifier: ^2.10.4
-        version: 2.10.7(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.10.7(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-data-grid:
         specifier: ^7.0.0-beta.46
-        version: 7.0.0-beta.47(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 7.0.0-beta.47(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-data-table-component:
         specifier: ^7.6.2
-        version: 7.6.2(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 7.6.2(react@19.0.0)(styled-components@6.1.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0))
       react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
+        specifier: ^19.0.0
+        version: 19.0.0(react@19.0.0)
       react-highlight-words:
-        specifier: ^0.20.0
-        version: 0.20.0(react@18.3.1)
+        specifier: ^0.21.0
+        version: 0.21.0(react@19.0.0)
       react-hook-form:
         specifier: ^7.52.1
-        version: 7.54.2(react@18.3.1)
+        version: 7.54.2(react@19.0.0)
       react-icons:
         specifier: ^5.2.1
-        version: 5.4.0(react@18.3.1)
+        version: 5.4.0(react@19.0.0)
       react-router-dom:
         specifier: ^6.24.0
-        version: 6.28.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 6.28.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-router-typesafe:
         specifier: ^1.5.0
-        version: 1.5.0(react-router-dom@6.28.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+        version: 1.5.0(react-router-dom@6.28.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       react-select:
         specifier: ^5.8.1
-        version: 5.9.0(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 5.9.0(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-sortablejs:
         specifier: ^6.1.4
-        version: 6.1.4(@types/sortablejs@1.15.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sortablejs@1.15.6)
+        version: 6.1.4(@types/sortablejs@1.15.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sortablejs@1.15.6)
       react-spinners:
-        specifier: ^0.14.1
-        version: 0.14.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.15.0
+        version: 0.15.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-tooltip:
         specifier: ^5.28.0
-        version: 5.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 5.28.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       rehype-sanitize:
         specifier: ^6.0.0
         version: 6.0.0
@@ -98,9 +98,12 @@ importers:
       sortablejs:
         specifier: ^1.15.3
         version: 1.15.6
+      tiktoken:
+        specifier: ^1.0.18
+        version: 1.0.18
       victory:
         specifier: ^37.0.2
-        version: 37.3.5(react@18.3.1)
+        version: 37.3.5(react@19.0.0)
       xlsx:
         specifier: ^0.18.5
         version: 0.18.5
@@ -2370,18 +2373,18 @@ packages:
       react: '>= 16.8.3'
       styled-components: '>= 5.0.0'
 
-  react-dom@18.3.1:
-    resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
+  react-dom@19.0.0:
+    resolution: {integrity: sha512-4GV5sHFG0e/0AD4X+ySy6UJd3jVl1iNsNHdpad0qhABJ11twS3TTBnseqsKurKcsNqCEFeGL3uLpVChpIO3QfQ==}
     peerDependencies:
-      react: ^18.3.1
+      react: ^19.0.0
 
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
 
-  react-highlight-words@0.20.0:
-    resolution: {integrity: sha512-asCxy+jCehDVhusNmCBoxDf2mm1AJ//D+EzDx1m5K7EqsMBIHdZ5G4LdwbSEXqZq1Ros0G0UySWmAtntSph7XA==}
+  react-highlight-words@0.21.0:
+    resolution: {integrity: sha512-SdWEeU9fIINArEPO1rO5OxPyuhdEKZQhHzZZP1ie6UeXQf+CjycT1kWaB+9bwGcVbR0NowuHK3RqgqNg6bgBDQ==}
     peerDependencies:
-      react: ^0.14.0 || ^15.0.0 || ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
+      react: ^0.14.0 || ^15.0.0 || ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0 || ^19.0.0-0
 
   react-hook-form@7.54.2:
     resolution: {integrity: sha512-eHpAUgUjWbZocoQYUHposymRb4ZP6d0uwUnooL2uOybA9/3tPUvoAKqEWK1WaSiTxxOfTpffNZP7QwlnM3/gEg==}
@@ -2444,11 +2447,11 @@ packages:
       react-dom: '>=16.9.0'
       sortablejs: '1'
 
-  react-spinners@0.14.1:
-    resolution: {integrity: sha512-2Izq+qgQ08HTofCVEdcAQCXFEYfqTDdfeDQJeo/HHQiQJD4imOicNLhkfN2eh1NYEWVOX4D9ok2lhuDB0z3Aag==}
+  react-spinners@0.15.0:
+    resolution: {integrity: sha512-ZO3/fNB9Qc+kgpG3SfdlMnvTX6LtLmTnOogb3W6sXIaU/kZ1ydEViPfZ06kSOaEsor58C/tzXw2wROGQu3X2pA==}
     peerDependencies:
-      react: ^16.0.0 || ^17.0.0 || ^18.0.0
-      react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0
+      react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   react-tooltip@5.28.0:
     resolution: {integrity: sha512-R5cO3JPPXk6FRbBHMO0rI9nkUG/JKfalBSQfZedZYzmqaZQgq7GLzF8vcCWx6IhUCKg0yPqJhXIzmIO5ff15xg==}
@@ -2462,8 +2465,8 @@ packages:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
 
-  react@18.3.1:
-    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
+  react@19.0.0:
+    resolution: {integrity: sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==}
     engines: {node: '>=0.10.0'}
 
   readdirp@4.0.2:
@@ -2587,8 +2590,8 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
 
-  scheduler@0.23.2:
-    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
+  scheduler@0.25.0:
+    resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -2728,6 +2731,9 @@ packages:
 
   text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
+
+  tiktoken@1.0.18:
+    resolution: {integrity: sha512-DXJesdYwmBHtkmz1sji+UMZ4AOEE8F7Uw/PS/uy0XfkKOzZC4vXkYXHMYyDT+grdflvF4bggtPt9cYaqOMslBw==}
 
   tiny-invariant@1.2.0:
     resolution: {integrity: sha512-1Uhn/aqw5C6RI4KejVeTg6mIS7IqxnLJ8Mv2tV5rTc0qWobay7pDUz6Wi392Cnc8ak1H0F2cjoRzb2/AW4+Fvg==}
@@ -3289,10 +3295,10 @@ snapshots:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
 
-  '@ebay/nice-modal-react@1.2.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@ebay/nice-modal-react@1.2.13(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
   '@emotion/babel-plugin@11.13.5':
     dependencies:
@@ -3328,17 +3334,17 @@ snapshots:
 
   '@emotion/memoize@0.9.0': {}
 
-  '@emotion/react@11.14.0(@types/react@18.3.18)(react@18.3.1)':
+  '@emotion/react@11.14.0(@types/react@18.3.18)(react@19.0.0)':
     dependencies:
       '@babel/runtime': 7.26.0
       '@emotion/babel-plugin': 11.13.5
       '@emotion/cache': 11.14.0
       '@emotion/serialize': 1.3.3
-      '@emotion/use-insertion-effect-with-fallbacks': 1.2.0(react@18.3.1)
+      '@emotion/use-insertion-effect-with-fallbacks': 1.2.0(react@19.0.0)
       '@emotion/utils': 1.4.2
       '@emotion/weak-memoize': 0.4.0
       hoist-non-react-statics: 3.3.2
-      react: 18.3.1
+      react: 19.0.0
     optionalDependencies:
       '@types/react': 18.3.18
     transitivePeerDependencies:
@@ -3358,9 +3364,9 @@ snapshots:
 
   '@emotion/unitless@0.8.1': {}
 
-  '@emotion/use-insertion-effect-with-fallbacks@1.2.0(react@18.3.1)':
+  '@emotion/use-insertion-effect-with-fallbacks@1.2.0(react@19.0.0)':
     dependencies:
-      react: 18.3.1
+      react: 19.0.0
 
   '@emotion/utils@1.4.2': {}
 
@@ -3575,10 +3581,10 @@ snapshots:
 
   '@popperjs/core@2.11.8': {}
 
-  '@react-aria/ssr@3.9.7(react@18.3.1)':
+  '@react-aria/ssr@3.9.7(react@19.0.0)':
     dependencies:
       '@swc/helpers': 0.5.15
-      react: 18.3.1
+      react: 19.0.0
 
   '@redocly/ajv@8.11.2':
     dependencies:
@@ -3607,28 +3613,28 @@ snapshots:
 
   '@remix-run/router@1.21.0': {}
 
-  '@restart/hooks@0.4.16(react@18.3.1)':
+  '@restart/hooks@0.4.16(react@19.0.0)':
     dependencies:
       dequal: 2.0.3
-      react: 18.3.1
+      react: 19.0.0
 
-  '@restart/hooks@0.5.1(react@18.3.1)':
+  '@restart/hooks@0.5.1(react@19.0.0)':
     dependencies:
       dequal: 2.0.3
-      react: 18.3.1
+      react: 19.0.0
 
-  '@restart/ui@1.9.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@restart/ui@1.9.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@babel/runtime': 7.26.0
       '@popperjs/core': 2.11.8
-      '@react-aria/ssr': 3.9.7(react@18.3.1)
-      '@restart/hooks': 0.5.1(react@18.3.1)
+      '@react-aria/ssr': 3.9.7(react@19.0.0)
+      '@restart/hooks': 0.5.1(react@19.0.0)
       '@types/warning': 3.0.3
       dequal: 2.0.3
       dom-helpers: 5.2.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      uncontrollable: 8.0.4(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      uncontrollable: 8.0.4(react@19.0.0)
       warning: 4.0.3
 
   '@rollup/rollup-android-arm-eabi@4.30.1':
@@ -3907,20 +3913,20 @@ snapshots:
       '@typescript-eslint/types': 7.18.0
       eslint-visitor-keys: 3.4.3
 
-  '@uidotdev/usehooks@2.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@uidotdev/usehooks@2.4.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
   '@uiw/copy-to-clipboard@1.0.17': {}
 
-  '@uiw/react-markdown-preview@5.1.3(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@uiw/react-markdown-preview@5.1.3(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@babel/runtime': 7.26.0
       '@uiw/copy-to-clipboard': 1.0.17
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-markdown: 9.0.3(@types/react@18.3.18)(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      react-markdown: 9.0.3(@types/react@18.3.18)(react@19.0.0)
       rehype-attr: 3.0.3
       rehype-autolink-headings: 7.1.0
       rehype-ignore: 2.0.2
@@ -3935,12 +3941,12 @@ snapshots:
       - '@types/react'
       - supports-color
 
-  '@uiw/react-md-editor@4.0.5(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@uiw/react-md-editor@4.0.5(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@babel/runtime': 7.26.0
-      '@uiw/react-markdown-preview': 5.1.3(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      '@uiw/react-markdown-preview': 5.1.3(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
       rehype: 13.0.2
       rehype-prism-plus: 2.0.0
     transitivePeerDependencies:
@@ -3974,12 +3980,12 @@ snapshots:
     dependencies:
       ag-charts-types: 10.3.3
 
-  ag-grid-react@32.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  ag-grid-react@32.3.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       ag-grid-community: 32.3.3
       prop-types: 15.8.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
   agent-base@7.1.3: {}
 
@@ -5727,9 +5733,9 @@ snapshots:
 
   prettier@3.4.2: {}
 
-  prop-types-extra@1.1.1(react@18.3.1):
+  prop-types-extra@1.1.1(react@19.0.0):
     dependencies:
-      react: 18.3.1
+      react: 19.0.0
       react-is: 16.13.1
       warning: 4.0.3
 
@@ -5745,66 +5751,64 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  react-bootstrap@2.10.7(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-bootstrap@2.10.7(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@babel/runtime': 7.26.0
-      '@restart/hooks': 0.4.16(react@18.3.1)
-      '@restart/ui': 1.9.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@restart/hooks': 0.4.16(react@19.0.0)
+      '@restart/ui': 1.9.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@types/prop-types': 15.7.14
       '@types/react-transition-group': 4.4.12(@types/react@18.3.18)
       classnames: 2.5.1
       dom-helpers: 5.2.1
       invariant: 2.2.4
       prop-types: 15.8.1
-      prop-types-extra: 1.1.1(react@18.3.1)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-transition-group: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      uncontrollable: 7.2.1(react@18.3.1)
+      prop-types-extra: 1.1.1(react@19.0.0)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      react-transition-group: 4.4.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      uncontrollable: 7.2.1(react@19.0.0)
       warning: 4.0.3
     optionalDependencies:
       '@types/react': 18.3.18
 
-  react-data-grid@7.0.0-beta.47(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-data-grid@7.0.0-beta.47(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       clsx: 2.1.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
-  react-data-table-component@7.6.2(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
+  react-data-table-component@7.6.2(react@19.0.0)(styled-components@6.1.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0)):
     dependencies:
       deepmerge: 4.3.1
-      react: 18.3.1
-      styled-components: 6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 19.0.0
+      styled-components: 6.1.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
 
-  react-dom@18.3.1(react@18.3.1):
+  react-dom@19.0.0(react@19.0.0):
     dependencies:
-      loose-envify: 1.4.0
-      react: 18.3.1
-      scheduler: 0.23.2
+      react: 19.0.0
+      scheduler: 0.25.0
 
   react-fast-compare@3.2.2: {}
 
-  react-highlight-words@0.20.0(react@18.3.1):
+  react-highlight-words@0.21.0(react@19.0.0):
     dependencies:
       highlight-words-core: 1.2.3
       memoize-one: 4.0.3
-      prop-types: 15.8.1
-      react: 18.3.1
+      react: 19.0.0
 
-  react-hook-form@7.54.2(react@18.3.1):
+  react-hook-form@7.54.2(react@19.0.0):
     dependencies:
-      react: 18.3.1
+      react: 19.0.0
 
-  react-icons@5.4.0(react@18.3.1):
+  react-icons@5.4.0(react@19.0.0):
     dependencies:
-      react: 18.3.1
+      react: 19.0.0
 
   react-is@16.13.1: {}
 
   react-lifecycles-compat@3.0.4: {}
 
-  react-markdown@9.0.3(@types/react@18.3.18)(react@18.3.1):
+  react-markdown@9.0.3(@types/react@18.3.18)(react@19.0.0):
     dependencies:
       '@types/hast': 3.0.4
       '@types/react': 18.3.18
@@ -5812,7 +5816,7 @@ snapshots:
       hast-util-to-jsx-runtime: 2.3.2
       html-url-attributes: 3.0.1
       mdast-util-to-hast: 13.2.0
-      react: 18.3.1
+      react: 19.0.0
       remark-parse: 11.0.0
       remark-rehype: 11.1.1
       unified: 11.0.5
@@ -5823,74 +5827,72 @@ snapshots:
 
   react-refresh@0.14.2: {}
 
-  react-router-dom@6.28.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-router-dom@6.28.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@remix-run/router': 1.21.0
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-router: 6.28.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      react-router: 6.28.1(react@19.0.0)
 
-  react-router-typesafe@1.5.0(react-router-dom@6.28.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.7.3):
+  react-router-typesafe@1.5.0(react-router-dom@6.28.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)(typescript@5.7.3):
     dependencies:
-      react: 18.3.1
-      react-router-dom: 6.28.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 19.0.0
+      react-router-dom: 6.28.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       typescript: 5.7.3
 
-  react-router@6.28.1(react@18.3.1):
+  react-router@6.28.1(react@19.0.0):
     dependencies:
       '@remix-run/router': 1.21.0
-      react: 18.3.1
+      react: 19.0.0
 
-  react-select@5.9.0(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-select@5.9.0(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@babel/runtime': 7.26.0
       '@emotion/cache': 11.14.0
-      '@emotion/react': 11.14.0(@types/react@18.3.18)(react@18.3.1)
+      '@emotion/react': 11.14.0(@types/react@18.3.18)(react@19.0.0)
       '@floating-ui/dom': 1.6.13
       '@types/react-transition-group': 4.4.12(@types/react@18.3.18)
       memoize-one: 6.0.0
       prop-types: 15.8.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-transition-group: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      use-isomorphic-layout-effect: 1.2.0(@types/react@18.3.18)(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      react-transition-group: 4.4.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      use-isomorphic-layout-effect: 1.2.0(@types/react@18.3.18)(react@19.0.0)
     transitivePeerDependencies:
       - '@types/react'
       - supports-color
 
-  react-sortablejs@6.1.4(@types/sortablejs@1.15.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sortablejs@1.15.6):
+  react-sortablejs@6.1.4(@types/sortablejs@1.15.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sortablejs@1.15.6):
     dependencies:
       '@types/sortablejs': 1.15.8
       classnames: 2.3.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
       sortablejs: 1.15.6
       tiny-invariant: 1.2.0
 
-  react-spinners@0.14.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-spinners@0.15.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
-  react-tooltip@5.28.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-tooltip@5.28.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@floating-ui/dom': 1.6.13
       classnames: 2.5.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
-  react-transition-group@4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-transition-group@4.4.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@babel/runtime': 7.26.0
       dom-helpers: 5.2.1
       loose-envify: 1.4.0
       prop-types: 15.8.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
-  react@18.3.1:
-    dependencies:
-      loose-envify: 1.4.0
+  react@19.0.0: {}
 
   readdirp@4.0.2: {}
 
@@ -6112,9 +6114,7 @@ snapshots:
     optionalDependencies:
       '@parcel/watcher': 2.5.0
 
-  scheduler@0.23.2:
-    dependencies:
-      loose-envify: 1.4.0
+  scheduler@0.25.0: {}
 
   semver@6.3.1: {}
 
@@ -6251,7 +6251,7 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.4
 
-  styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  styled-components@6.1.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@emotion/is-prop-valid': 1.2.2
       '@emotion/unitless': 0.8.1
@@ -6259,8 +6259,8 @@ snapshots:
       css-to-react-native: 3.2.0
       csstype: 3.1.3
       postcss: 8.4.38
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
       shallowequal: 1.1.0
       stylis: 4.3.2
       tslib: 2.6.2
@@ -6288,6 +6288,8 @@ snapshots:
       wordwrapjs: 5.1.0
 
   text-table@0.2.0: {}
+
+  tiktoken@1.0.18: {}
 
   tiny-invariant@1.2.0: {}
 
@@ -6365,17 +6367,17 @@ snapshots:
       has-symbols: 1.1.0
       which-boxed-primitive: 1.1.1
 
-  uncontrollable@7.2.1(react@18.3.1):
+  uncontrollable@7.2.1(react@19.0.0):
     dependencies:
       '@babel/runtime': 7.26.0
       '@types/react': 18.3.18
       invariant: 2.2.4
-      react: 18.3.1
+      react: 19.0.0
       react-lifecycles-compat: 3.0.4
 
-  uncontrollable@8.0.4(react@18.3.1):
+  uncontrollable@8.0.4(react@19.0.0):
     dependencies:
-      react: 18.3.1
+      react: 19.0.0
 
   undici-types@6.19.8: {}
 
@@ -6432,9 +6434,9 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  use-isomorphic-layout-effect@1.2.0(@types/react@18.3.18)(react@18.3.1):
+  use-isomorphic-layout-effect@1.2.0(@types/react@18.3.18)(react@19.0.0):
     dependencies:
-      react: 18.3.1
+      react: 19.0.0
     optionalDependencies:
       '@types/react': 18.3.18
 
@@ -6453,176 +6455,176 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  victory-area@37.3.5(react@18.3.1):
+  victory-area@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
       victory-vendor: 37.3.5
 
-  victory-axis@37.3.5(react@18.3.1):
+  victory-axis@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-bar@37.3.5(react@18.3.1):
+  victory-bar@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
       victory-vendor: 37.3.5
 
-  victory-box-plot@37.3.5(react@18.3.1):
+  victory-box-plot@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
       victory-vendor: 37.3.5
 
-  victory-brush-container@37.3.5(react@18.3.1):
+  victory-brush-container@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-core: 37.3.5(react@18.3.1)
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-brush-line@37.3.5(react@18.3.1):
+  victory-brush-line@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-core: 37.3.5(react@18.3.1)
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-candlestick@37.3.5(react@18.3.1):
+  victory-candlestick@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-canvas@37.3.5(react@18.3.1):
+  victory-canvas@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-bar: 37.3.5(react@18.3.1)
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-bar: 37.3.5(react@19.0.0)
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-chart@37.3.5(react@18.3.1):
+  victory-chart@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-axis: 37.3.5(react@18.3.1)
-      victory-core: 37.3.5(react@18.3.1)
-      victory-polar-axis: 37.3.5(react@18.3.1)
-      victory-shared-events: 37.3.5(react@18.3.1)
+      victory-axis: 37.3.5(react@19.0.0)
+      victory-core: 37.3.5(react@19.0.0)
+      victory-polar-axis: 37.3.5(react@19.0.0)
+      victory-shared-events: 37.3.5(react@19.0.0)
 
-  victory-core@37.3.5(react@18.3.1):
+  victory-core@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
       victory-vendor: 37.3.5
 
-  victory-create-container@37.3.5(react@18.3.1):
+  victory-create-container@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-brush-container: 37.3.5(react@18.3.1)
-      victory-core: 37.3.5(react@18.3.1)
-      victory-cursor-container: 37.3.5(react@18.3.1)
-      victory-selection-container: 37.3.5(react@18.3.1)
-      victory-voronoi-container: 37.3.5(react@18.3.1)
-      victory-zoom-container: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-brush-container: 37.3.5(react@19.0.0)
+      victory-core: 37.3.5(react@19.0.0)
+      victory-cursor-container: 37.3.5(react@19.0.0)
+      victory-selection-container: 37.3.5(react@19.0.0)
+      victory-voronoi-container: 37.3.5(react@19.0.0)
+      victory-zoom-container: 37.3.5(react@19.0.0)
 
-  victory-cursor-container@37.3.5(react@18.3.1):
+  victory-cursor-container@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-errorbar@37.3.5(react@18.3.1):
+  victory-errorbar@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-group@37.3.5(react@18.3.1):
+  victory-group@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-core: 37.3.5(react@18.3.1)
-      victory-shared-events: 37.3.5(react@18.3.1)
+      victory-core: 37.3.5(react@19.0.0)
+      victory-shared-events: 37.3.5(react@19.0.0)
 
-  victory-histogram@37.3.5(react@18.3.1):
+  victory-histogram@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-bar: 37.3.5(react@18.3.1)
-      victory-core: 37.3.5(react@18.3.1)
+      victory-bar: 37.3.5(react@19.0.0)
+      victory-core: 37.3.5(react@19.0.0)
       victory-vendor: 37.3.5
 
-  victory-legend@37.3.5(react@18.3.1):
+  victory-legend@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-line@37.3.5(react@18.3.1):
+  victory-line@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
       victory-vendor: 37.3.5
 
-  victory-pie@37.3.5(react@18.3.1):
+  victory-pie@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
       victory-vendor: 37.3.5
 
-  victory-polar-axis@37.3.5(react@18.3.1):
+  victory-polar-axis@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-scatter@37.3.5(react@18.3.1):
+  victory-scatter@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-selection-container@37.3.5(react@18.3.1):
+  victory-selection-container@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-shared-events@37.3.5(react@18.3.1):
+  victory-shared-events@37.3.5(react@19.0.0):
     dependencies:
       json-stringify-safe: 5.0.1
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-core: 37.3.5(react@18.3.1)
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-stack@37.3.5(react@18.3.1):
+  victory-stack@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-core: 37.3.5(react@18.3.1)
-      victory-shared-events: 37.3.5(react@18.3.1)
+      victory-core: 37.3.5(react@19.0.0)
+      victory-shared-events: 37.3.5(react@19.0.0)
 
-  victory-tooltip@37.3.5(react@18.3.1):
+  victory-tooltip@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
   victory-vendor@37.3.5:
     dependencies:
@@ -6641,58 +6643,58 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
-  victory-voronoi-container@37.3.5(react@18.3.1):
+  victory-voronoi-container@37.3.5(react@19.0.0):
     dependencies:
       delaunay-find: 0.0.6
       lodash: 4.17.21
-      react: 18.3.1
+      react: 19.0.0
       react-fast-compare: 3.2.2
-      victory-core: 37.3.5(react@18.3.1)
-      victory-tooltip: 37.3.5(react@18.3.1)
+      victory-core: 37.3.5(react@19.0.0)
+      victory-tooltip: 37.3.5(react@19.0.0)
 
-  victory-voronoi@37.3.5(react@18.3.1):
+  victory-voronoi@37.3.5(react@19.0.0):
     dependencies:
       d3-voronoi: 1.1.4
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory-zoom-container@37.3.5(react@18.3.1):
+  victory-zoom-container@37.3.5(react@19.0.0):
     dependencies:
       lodash: 4.17.21
-      react: 18.3.1
-      victory-core: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-core: 37.3.5(react@19.0.0)
 
-  victory@37.3.5(react@18.3.1):
+  victory@37.3.5(react@19.0.0):
     dependencies:
-      react: 18.3.1
-      victory-area: 37.3.5(react@18.3.1)
-      victory-axis: 37.3.5(react@18.3.1)
-      victory-bar: 37.3.5(react@18.3.1)
-      victory-box-plot: 37.3.5(react@18.3.1)
-      victory-brush-container: 37.3.5(react@18.3.1)
-      victory-brush-line: 37.3.5(react@18.3.1)
-      victory-candlestick: 37.3.5(react@18.3.1)
-      victory-canvas: 37.3.5(react@18.3.1)
-      victory-chart: 37.3.5(react@18.3.1)
-      victory-core: 37.3.5(react@18.3.1)
-      victory-create-container: 37.3.5(react@18.3.1)
-      victory-cursor-container: 37.3.5(react@18.3.1)
-      victory-errorbar: 37.3.5(react@18.3.1)
-      victory-group: 37.3.5(react@18.3.1)
-      victory-histogram: 37.3.5(react@18.3.1)
-      victory-legend: 37.3.5(react@18.3.1)
-      victory-line: 37.3.5(react@18.3.1)
-      victory-pie: 37.3.5(react@18.3.1)
-      victory-polar-axis: 37.3.5(react@18.3.1)
-      victory-scatter: 37.3.5(react@18.3.1)
-      victory-selection-container: 37.3.5(react@18.3.1)
-      victory-shared-events: 37.3.5(react@18.3.1)
-      victory-stack: 37.3.5(react@18.3.1)
-      victory-tooltip: 37.3.5(react@18.3.1)
-      victory-voronoi: 37.3.5(react@18.3.1)
-      victory-voronoi-container: 37.3.5(react@18.3.1)
-      victory-zoom-container: 37.3.5(react@18.3.1)
+      react: 19.0.0
+      victory-area: 37.3.5(react@19.0.0)
+      victory-axis: 37.3.5(react@19.0.0)
+      victory-bar: 37.3.5(react@19.0.0)
+      victory-box-plot: 37.3.5(react@19.0.0)
+      victory-brush-container: 37.3.5(react@19.0.0)
+      victory-brush-line: 37.3.5(react@19.0.0)
+      victory-candlestick: 37.3.5(react@19.0.0)
+      victory-canvas: 37.3.5(react@19.0.0)
+      victory-chart: 37.3.5(react@19.0.0)
+      victory-core: 37.3.5(react@19.0.0)
+      victory-create-container: 37.3.5(react@19.0.0)
+      victory-cursor-container: 37.3.5(react@19.0.0)
+      victory-errorbar: 37.3.5(react@19.0.0)
+      victory-group: 37.3.5(react@19.0.0)
+      victory-histogram: 37.3.5(react@19.0.0)
+      victory-legend: 37.3.5(react@19.0.0)
+      victory-line: 37.3.5(react@19.0.0)
+      victory-pie: 37.3.5(react@19.0.0)
+      victory-polar-axis: 37.3.5(react@19.0.0)
+      victory-scatter: 37.3.5(react@19.0.0)
+      victory-selection-container: 37.3.5(react@19.0.0)
+      victory-shared-events: 37.3.5(react@19.0.0)
+      victory-stack: 37.3.5(react@19.0.0)
+      victory-tooltip: 37.3.5(react@19.0.0)
+      victory-voronoi: 37.3.5(react@19.0.0)
+      victory-voronoi-container: 37.3.5(react@19.0.0)
+      victory-zoom-container: 37.3.5(react@19.0.0)
 
   vite@5.4.11(@types/node@22.10.5)(sass@1.83.1):
     dependencies:

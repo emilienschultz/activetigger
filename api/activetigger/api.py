@@ -24,7 +24,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
 
-import activetigger.functions as functions
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
@@ -35,7 +34,10 @@ from activetigger.datamodels import (
     DocumentationModel,
     ElementOutModel,
     FeatureModel,
-    GenerateModel,
+    GenerationCreationModel,
+    GenerationModel,
+    GenerationModelApi,
+    GenerationRequest,
     NextInModel,
     ProjectAuthsModel,
     ProjectDataModel,
@@ -52,14 +54,16 @@ from activetigger.datamodels import (
     TableOutModel,
     TestSetDataModel,
     TokenModel,
+    UserGenerationComputing,
     UserInDBModel,
     UserModel,
     UsersServerModel,
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
+from activetigger.generation.generations import Generations
 from activetigger.orchestrator import Orchestrator
-from activetigger.project import Project
+from activetigger.server import Project, Server
 
 # General comments
 # - all post are logged
@@ -624,10 +628,10 @@ async def get_queue() -> dict:
     for p in orchestrator.projects:
         active_projects[p] = [
             {
-                "unique_id": c["unique_id"],
-                "user": c["user"],
-                "kind": c["kind"],
-                "time": c["time"],
+                "unique_id": c.unique_id,
+                "user": c.user,
+                "kind": c.kind,
+                "time": c.time,
             }
             for c in orchestrator.projects[p].computing
         ]
@@ -988,11 +992,56 @@ async def post_reconciliation(
     return None
 
 
+@app.get("/elements/generate/models", dependencies=[Depends(verified_user)])
+async def list_generation_models() -> list[GenerationModelApi]:
+    """
+    Returns the list of the available GenAI models for generation
+    """
+    return server.db_manager.generations_service.get_available_models()
+
+
+@app.get(
+    "/elements/{project_slug}/generate/models", dependencies=[Depends(verified_user)]
+)
+async def list_project_generation_models(project_slug: str) -> list[GenerationModel]:
+    """
+    Returns the list of the available GenAI models configure for a project
+    """
+    return server.db_manager.generations_service.get_project_gen_models(project_slug)
+
+
+@app.post(
+    "/elements/{project_slug}/generate/models", dependencies=[Depends(verified_user)]
+)
+async def add_project_generation_models(
+    project_slug: str, model: GenerationCreationModel
+) -> int:
+    """
+    Add a new GenAI model for the project
+    """
+    return server.db_manager.generations_service.add_project_gen_model(
+        project_slug, model
+    )
+
+
+@app.delete(
+    "/elements/{project_slug}/generate/models/{model_id}",
+    dependencies=[Depends(verified_user)],
+)
+async def delete_project_generation_models(project_slug: str, model_id: int) -> None:
+    """
+    Delete a GenAI model from the project
+    """
+    return server.db_manager.generations_service.delete_project_gen_model(
+        project_slug, model_id
+    )
+
+
 @app.post("/elements/generate/start", dependencies=[Depends(verified_user)])
 async def postgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    request: GenerateModel,
+    request: GenerationRequest,
 ) -> None:
     """
     Launch a call to generate from a prompt
@@ -1007,17 +1056,18 @@ async def postgenerate(
     if "error" in extract:
         raise HTTPException(status_code=500, detail=extract["error"])
 
+    model = server.db_manager.generations_service.get_gen_model(request.model_id)
+
     # create the independant process to manage the generation
     args = {
         "user": current_user.username,
         "project_name": project.name,
-        "df": extract["batch"],
-        "api": request.api,
-        "endpoint": request.endpoint,
+        "df": extract.batch,
         "prompt": request.prompt,
+        "model": model,
     }
 
-    unique_id = orchestrator.queue.add("generation", functions.generate, args)
+    unique_id = server.queue.add("generation", Generations.generate, args)
 
     if unique_id == "error":
         raise HTTPException(
@@ -1025,15 +1075,15 @@ async def postgenerate(
         )
 
     project.computing.append(
-        {
-            "unique_id": unique_id,
-            "user": current_user.username,
-            "project": project.name,
-            "api": request.api,
-            "number": request.n_batch,
-            "time": datetime.now(),
-            "kind": "generation",
-        }
+        UserGenerationComputing(
+            unique_id=unique_id,
+            user=current_user.username,
+            project=project.name,
+            model_id=request.model_id,
+            number=request.n_batch,
+            time=datetime.now(),
+            kind="generation",
+        )
     )
 
     orchestrator.log_action(

@@ -125,3 +125,29 @@ export interface TestSetModel {
   scheme?: string | null;
   n_test: number;
 }
+
+export type SupportedAPI = 'Ollama' | 'OpenAI' | 'HuggingFace';
+
+export type GenModelAPI = { models: GenModel[] } & (
+  | {
+      name: 'Ollama';
+      endpoint: string;
+    }
+  | {
+      name: 'OpenAI';
+      credentials: string;
+    }
+  | {
+      name: 'HuggingFace';
+      endpoint: string;
+      credentials: string;
+    }
+);
+
+export interface GenModel {
+  id: number;
+  slug: string;
+  name: string;
+  endpoint?: string;
+  credentials?: string;
+}
