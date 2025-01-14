@@ -1241,7 +1241,7 @@ async def post_schemes(
 @app.get("/features", dependencies=[Depends(verified_user)])
 async def get_features(project: Annotated[Project, Depends(get_project)]) -> list[str]:
     """
-    Available scheme of a project
+    Available features for the project
     """
     return list(project.features.map.keys())
 

@@ -550,7 +550,10 @@ class Project(Server):
         self.queue = queue
         self.computing = []  # currently computing elements
         self.db_manager = db_manager
-        self.params = self.load_params(project_slug)
+        try:
+            self.params = self.load_params(project_slug)
+        except Exception as e:
+            raise ValueError("This project can be loaded", str(e))
         self.path_models = path_models
 
         # check if directory exists
