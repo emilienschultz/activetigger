@@ -2,6 +2,7 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any
 
+from pandas import DataFrame
 from pydantic import BaseModel
 
 # Data model to use of the API
@@ -487,11 +488,11 @@ class AuthActions(StrEnum):
 
 
 class TableBatch(BaseModel):
-    batch: Any
+    batch: DataFrame
     total: int
     min: int
     max: int
-    filter: str
+    filter: str | None
 
 
 class CodebookModel(BaseModel):

@@ -802,17 +802,16 @@ async def get_list_elements(
     """
     Get a table of elements
     """
-    extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
-    if "error" in extract:
-        raise HTTPException(status_code=500, detail=extract["error"])
-    df = extract["batch"].fillna(" ")
-    table = (df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]).to_dict(
-        orient="records"
-    )
-    return TableOutModel(
-        items=table,
-        total=extract["total"],
-    )
+    try:
+        extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
+    except Exception as e:
+        raise HTTPException(status_code=400) from e
+
+    df = extract.batch.fillna(" ")
+    table = (
+        df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]
+    ).to_dict(orient="records")
+    return TableOutModel(items=table, total=extract.total)
 
 
 @app.post("/annotation/table", dependencies=[Depends(verified_user)])
@@ -918,16 +917,18 @@ async def postgenerate(
     """
 
     # get subset of unlabelled elements
-    extract = project.schemes.get_table(request.scheme, 0, request.n_batch, request.mode)
-
-    if "error" in extract:
-        raise HTTPException(status_code=500, detail=extract["error"])
+    try:
+        extract = project.schemes.get_table(
+            request.scheme, 0, request.n_batch, request.mode
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400) from e
 
     # create the independant process to manage the generation
     args = {
         "user": current_user.username,
         "project_name": project.name,
-        "df": extract["batch"],
+        "df": extract.batch,
         "api": request.api,
         "endpoint": request.endpoint,
         "prompt": request.prompt,
