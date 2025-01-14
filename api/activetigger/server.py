@@ -574,7 +574,7 @@ class Project(Server):
             project_slug,
             self.params.dir.joinpath(features_file),
             self.params.dir.joinpath(data_all),
-            self.params.dir.joinpath(self.path_models),
+            self.path_models,
             self.queue,
             self.computing,
             self.db_manager,
