@@ -1,5 +1,7 @@
 import { FC } from 'react';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 import logo from '../assets/at.png';
 import { useGetActiveUsers } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -71,6 +73,13 @@ export const HomePage: FC = () => {
                       />
                       <label className="form-check-label" htmlFor="devMode">
                         Dev mode
+                        <a className="batchsize mx-2">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".batchsize" place="top">
+                          Dev mode will display experimental features that have not been tested
+                          extensively.
+                        </Tooltip>
                       </label>
                     </div>
                   </div>
