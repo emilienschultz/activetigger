@@ -97,6 +97,7 @@ export const HomePage: FC = () => {
                 </div>
               </div>
             </center>
+            <div style={{ height: '50px' }}></div>
           </div>
         </div>
         <footer className="footer mt-auto py-1 bg-primary text-white fixed-bottom">
