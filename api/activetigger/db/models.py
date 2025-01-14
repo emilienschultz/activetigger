@@ -141,7 +141,9 @@ class Tokens(Base):
     )
     token: Mapped[str]
     status: Mapped[str]
-    time_revoked: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
+    time_revoked: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
 
 class Generations(Base):

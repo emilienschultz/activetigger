@@ -7,6 +7,7 @@ import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
   AvailableProjectsModel,
+  GenModels,
   LoginParams,
   ProjectDataModel,
   ProjectStateModel,
@@ -1440,6 +1441,18 @@ export function useTestModel(
   }, [projectSlug, scheme, notify, model]);
 
   return { testModel };
+}
+
+export function useGetGenModels() {
+  const { notify } = useNotifications();
+  const models = useCallback(async () => {
+    const res = await api.GET('/elements/generate/models');
+    if (res.error) {
+      notify({ type: 'error', message: 'Could not fetch available models' });
+      return [];
+    } else return res.data;
+  }, [notify]);
+  return { models };
 }
 
 /**

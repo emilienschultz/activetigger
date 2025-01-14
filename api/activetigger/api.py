@@ -23,7 +23,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
 
-import activetigger.functions as functions
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
@@ -34,7 +33,8 @@ from activetigger.datamodels import (
     DocumentationModel,
     ElementOutModel,
     FeatureModel,
-    GenerateModel,
+    GenerationModel,
+    GenerationRequest,
     NextInModel,
     ProjectAuthsModel,
     ProjectDataModel,
@@ -57,6 +57,7 @@ from activetigger.datamodels import (
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
+from activetigger.generations import Generations
 from activetigger.server import Project, Server
 
 # General comments
@@ -165,7 +166,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=server.path / "static"), name="static")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # defining the authentification object
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="token"
+)  # defining the authentification object
 
 
 async def check_processes(timer: float, step: int = 1) -> None:
@@ -198,7 +201,9 @@ async def check_processes(timer: float, step: int = 1) -> None:
 
 
 @app.middleware("http")
-async def middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]):
+async def middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+):
     """
     Middleware to take care of completed processes
     Executed at each action on the server
@@ -356,8 +361,12 @@ async def login_for_access_token(
         raise HTTPException(status_code=401, detail="Wrong username or password") from e
 
     # create new token for the user
-    access_token = server.create_access_token(data={"sub": user.username}, expires_min=120)
-    return TokenModel(access_token=access_token, token_type="bearer", status=user.status)
+    access_token = server.create_access_token(
+        data={"sub": user.username}, expires_min=120
+    )
+    return TokenModel(
+        access_token=access_token, token_type="bearer", status=user.status
+    )
 
 
 @app.post("/users/disconnect", dependencies=[Depends(verified_user)])
@@ -415,7 +424,9 @@ async def create_user(
     """
     test_rights("create user", current_user.username)
     try:
-        server.users.add_user(username_to_create, password, status, current_user.username, mail)
+        server.users.add_user(
+            username_to_create, password, status, current_user.username, mail
+        )
     except Exception as e:
         raise HTTPException(status_code=500) from e
     return None
@@ -495,7 +506,9 @@ async def get_auth(username: str) -> list:
 
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
-async def get_logs(username: str, project_slug: str = "all", limit: int = 100) -> TableOutModel:
+async def get_logs(
+    username: str, project_slug: str = "all", limit: int = 100
+) -> TableOutModel:
     """
     Get all logs for a username/project
     """
@@ -665,7 +678,9 @@ async def new_project(
         raise HTTPException(status_code=500, detail=r["error"])
 
     # log action
-    server.log_action(current_user.username, "INFO create project", project.project_name)
+    server.log_action(
+        current_user.username, "INFO create project", project.project_name
+    )
 
     return r["success"]
 
@@ -806,17 +821,16 @@ async def get_list_elements(
     """
     Get a table of elements
     """
-    extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
-    if "error" in extract:
-        raise HTTPException(status_code=500, detail=extract["error"])
-    df = extract["batch"].fillna(" ")
-    table = (df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]).to_dict(
-        orient="records"
-    )
-    return TableOutModel(
-        items=table,
-        total=extract["total"],
-    )
+    try:
+        extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
+    except Exception as e:
+        raise HTTPException(status_code=400) from e
+
+    df = extract.batch.fillna(" ")
+    table = (
+        df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]
+    ).to_dict(orient="records")
+    return TableOutModel(items=table, total=extract.total)
 
 
 @app.post("/annotation/table", dependencies=[Depends(verified_user)])
@@ -910,11 +924,19 @@ async def post_reconciliation(
     return None
 
 
+@app.get("/elements/generate/models", dependencies=[Depends(verified_user)])
+async def list_generation_models() -> list[GenerationModel]:
+    """
+    Returns the list of the available GenAI models for generation
+    """
+    return server.db_manager.generations_service.get_available_models()
+
+
 @app.post("/elements/generate/start", dependencies=[Depends(verified_user)])
 async def postgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    request: GenerateModel,
+    request: GenerationRequest,
 ) -> None:
     """
     Launch a call to generate from a prompt
@@ -922,22 +944,24 @@ async def postgenerate(
     """
 
     # get subset of unlabelled elements
-    extract = project.schemes.get_table(request.scheme, 0, request.n_batch, request.mode)
-
-    if "error" in extract:
-        raise HTTPException(status_code=500, detail=extract["error"])
+    try:
+        extract = project.schemes.get_table(
+            request.scheme, 0, request.n_batch, request.mode
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400) from e
 
     # create the independant process to manage the generation
     args = {
         "user": current_user.username,
         "project_name": project.name,
-        "df": extract["batch"],
+        "df": extract.batch,
         "api": request.api,
         "endpoint": request.endpoint,
         "prompt": request.prompt,
     }
 
-    unique_id = server.queue.add("generation", functions.generate, args)
+    unique_id = server.queue.add("generation", Generations.generate, args)
 
     if unique_id == "error":
         raise HTTPException(
@@ -980,7 +1004,9 @@ async def stop_generation(
     r = server.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "INFO stop generation", project.params.project_slug)
+    server.log_action(
+        current_user.username, "INFO stop generation", project.params.project_slug
+    )
     return None
 
 
@@ -994,7 +1020,9 @@ async def getgenerate(
     Get elements from prediction
     """
     try:
-        table = project.generations.get_generated(project.name, current_user.username, n_elements)
+        table = project.generations.get_generated(
+            project.name, current_user.username, n_elements
+        )
     except Exception:
         raise HTTPException(status_code=500, detail="Error in loading generated data")
 
@@ -1016,7 +1044,9 @@ async def get_element(
     """
     Get specific element
     """
-    r = project.get_element(element_id, scheme=scheme, user=current_user.username, dataset=dataset)
+    r = project.get_element(
+        element_id, scheme=scheme, user=current_user.username, dataset=dataset
+    )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return ElementOutModel(**r)
@@ -1107,7 +1137,9 @@ async def rename_label(
             raise HTTPException(status_code=500, detail=r["error"])
 
     # convert the tags from the previous label
-    r = project.schemes.convert_annotations(former_label, new_label, scheme, current_user.username)
+    r = project.schemes.convert_annotations(
+        former_label, new_label, scheme, current_user.username
+    )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
 
@@ -1221,7 +1253,9 @@ async def post_schemes(
         )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name)
+        server.log_action(
+            current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name
+        )
         return None
     if action == "delete":
         r = project.schemes.delete_scheme(scheme.name)
@@ -1281,7 +1315,9 @@ async def post_embeddings(
         raise HTTPException(status_code=500, detail=r["error"])
 
     # Log and return
-    server.log_action(current_user.username, f"INFO Compute feature {feature.type}", project.name)
+    server.log_action(
+        current_user.username, f"INFO Compute feature {feature.type}", project.name
+    )
     return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
 
@@ -1298,7 +1334,9 @@ async def delete_feature(
     r = project.features.delete(name)
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
-    server.log_action(current_user.username, f"INFO delete feature {name}", project.name)
+    server.log_action(
+        current_user.username, f"INFO delete feature {name}", project.name
+    )
     return None
 
 
@@ -1353,7 +1391,9 @@ async def get_simplemodel(
 
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
-async def get_bert(project: Annotated[Project, Depends(get_project)], name: str) -> dict[str, Any]:
+async def get_bert(
+    project: Annotated[Project, Depends(get_project)], name: str
+) -> dict[str, Any]:
     """
     Get Bert parameters and statistics
     """
@@ -1398,7 +1438,9 @@ async def predict(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"INFO predict bert {model_name}", project.name)
+    server.log_action(
+        current_user.username, f"INFO predict bert {model_name}", project.name
+    )
     return None
 
 
@@ -1440,7 +1482,9 @@ async def post_bert(
 
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"INFO train bert {bert.name}", project.name)
+    server.log_action(
+        current_user.username, f"INFO train bert {bert.name}", project.name
+    )
     return None
 
 
@@ -1490,7 +1534,9 @@ async def start_test(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "INFO predict bert for testing", project.name)
+    server.log_action(
+        current_user.username, "INFO predict bert for testing", project.name
+    )
     return None
 
 
@@ -1508,7 +1554,9 @@ async def delete_bert(
     r = project.bertmodels.delete(bert_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"INFO delete bert model {bert_name}", project.name)
+    server.log_action(
+        current_user.username, f"INFO delete bert model {bert_name}", project.name
+    )
     return None
 
 

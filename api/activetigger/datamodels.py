@@ -2,6 +2,7 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any
 
+from pandas import DataFrame
 from pydantic import BaseModel
 
 # Data model to use of the API
@@ -331,7 +332,7 @@ class LassoParams(BaseModel):
 class Multi_naivebayesParams(BaseModel):
     alpha: float
     fit_prior: bool = True
-    class_prior: str | None | None = None
+    class_prior: str | None = None
 
 
 class BertParams(BaseModel):
@@ -345,7 +346,17 @@ class BertParams(BaseModel):
     adapt: bool
 
 
-class GenerateModel(BaseModel):
+class GenerationModel(BaseModel):
+    """
+    GenAI model used in generation
+    """
+
+    id: str
+    name: str
+    endpoint: str | None = None
+
+
+class GenerationRequest(BaseModel):
     """
     To start a generating prompt
     """
@@ -487,11 +498,16 @@ class AuthActions(StrEnum):
 
 
 class TableBatch(BaseModel):
-    batch: Any
+    batch: DataFrame
     total: int
     min: int
     max: int
-    filter: str
+    filter: str | None
+
+    class Config:
+        arbitrary_types_allowed: bool = (
+            True  # Allow DataFrame type but switches off Pydantic here
+        )
 
 
 class CodebookModel(BaseModel):

@@ -119,3 +119,9 @@ export interface TestSetModel {
   col_text: string;
   n_test: number;
 }
+
+export interface GenModels {
+  id: string;
+  name: string;
+  endpoint?: string;
+}
