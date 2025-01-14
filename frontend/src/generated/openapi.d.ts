@@ -598,6 +598,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/elements/generate/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Generation Models
+         * @description Returns the list of the available GenAI models for generation
+         */
+        get: operations["list_generation_models_elements_generate_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/elements/generate/start": {
         parameters: {
             query?: never;
@@ -798,7 +818,7 @@ export interface paths {
         };
         /**
          * Get Features
-         * @description Available scheme of a project
+         * @description Available features for the project
          */
         get: operations["get_features_features_get"];
         put?: never;
@@ -947,7 +967,6 @@ export interface paths {
         /**
          * Post Bert
          * @description Compute bertmodel
-         *     TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
          */
         post: operations["post_bert_models_bert_train_post"];
         delete?: never;
@@ -1198,6 +1217,8 @@ export interface components {
             params: components["schemas"]["BertModelParametersModel"];
             /** Test Size */
             test_size: number;
+            /** Dichotomize */
+            dichotomize?: string | null;
         };
         /**
          * BertModelParametersModel
@@ -1313,7 +1334,7 @@ export interface components {
             /** Limit */
             limit: number | null;
             /** History */
-            history: unknown[];
+            history?: unknown[] | null;
             /** N Sample */
             n_sample?: number | null;
         };
@@ -1328,14 +1349,26 @@ export interface components {
             name: string;
             /** Parameters */
             parameters: {
-                [key: string]: (string | number) | undefined;
+                [key: string]: string | number;
             };
         };
         /**
-         * GenerateModel
+         * GenerationModel
+         * @description GenAI model used in generation
+         */
+        GenerationModel: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Endpoint */
+            endpoint?: string | null;
+        };
+        /**
+         * GenerationRequest
          * @description To start a generating prompt
          */
-        GenerateModel: {
+        GenerationRequest: {
             /** Api */
             api: string;
             /** Endpoint */
@@ -1387,7 +1420,7 @@ export interface components {
              * History
              * @default []
              */
-            history: unknown[];
+            history: string[];
             /** Filter */
             filter?: string | null;
         };
@@ -1553,7 +1586,7 @@ export interface components {
             /** Project Slug */
             project_slug: string;
             /** All Columns */
-            all_columns?: unknown[] | null;
+            all_columns?: string[] | null;
         };
         /**
          * ProjectStateModel
@@ -1621,14 +1654,14 @@ export interface components {
         };
         /**
          * ReconciliationModel
-         * @description List of elements to reconciliate
+         * @description list of elements to reconciliate
          */
         ReconciliationModel: {
             /** Table */
             table: {
-                [key: string]: (string | {
-                    [key: string]: string | undefined;
-                }) | undefined;
+                [key: string]: string | {
+                    [key: string]: string;
+                };
             }[];
             /** Users */
             users: string[];
@@ -1647,11 +1680,8 @@ export interface components {
              * @default multiclass
              */
             kind: string | null;
-            /**
-             * Labels
-             * @default []
-             */
-            labels: unknown[] | null;
+            /** Labels */
+            labels?: string[] | null;
         };
         /**
          * SimpleModelModel
@@ -1665,11 +1695,11 @@ export interface components {
             model: string;
             /** Params */
             params: {
-                [key: string]: (string | number | boolean | null) | undefined;
+                [key: string]: string | number | boolean | null;
             } | {
                 [key: string]: {
-                    [key: string]: (string | number | boolean | null) | undefined;
-                } | undefined;
+                    [key: string]: string | number | boolean | null;
+                };
             } | null;
             /** Scheme */
             scheme: string;
@@ -1692,11 +1722,11 @@ export interface components {
             model: string;
             /** Params */
             params: {
-                [key: string]: (string | number | boolean | null) | undefined;
+                [key: string]: string | number | boolean | null;
             } | {
                 [key: string]: {
-                    [key: string]: (string | number | boolean | null) | undefined;
-                } | undefined;
+                    [key: string]: string | number | boolean | null;
+                };
             } | null;
             /** Scheme */
             scheme: string;
@@ -1793,14 +1823,14 @@ export interface components {
         };
         /**
          * UsersServerModel
-         * @description List of users on the server
+         * @description list of users on the server
          */
         UsersServerModel: {
             /** Users */
             users: {
                 [key: string]: {
-                    [key: string]: string | undefined;
-                } | undefined;
+                    [key: string]: string;
+                };
             };
             /** Auth */
             auth: string[];
@@ -2712,6 +2742,26 @@ export interface operations {
             };
         };
     };
+    list_generation_models_elements_generate_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationModel"][];
+                };
+            };
+        };
+    };
     postgenerate_elements_generate_start_post: {
         parameters: {
             query: {
@@ -2723,7 +2773,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GenerateModel"];
+                "application/json": components["schemas"]["GenerationRequest"];
             };
         };
         responses: {

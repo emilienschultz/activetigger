@@ -6,11 +6,13 @@ import {
   useGenerate,
   useGeneratedElements,
   useGetGenerationsFile,
+  useGetGenModels,
   useStopGenerate,
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
+import { GenModels } from 'src/types';
 
 // TODO
 // interrupt button using event
@@ -57,6 +59,10 @@ export const GenPage: FC = () => {
   // call api to get a sample of elements
   const { generated } = useGeneratedElements(projectName || null, 10, isGenerating || false);
 
+  // GenModels
+  const { models } = useGetGenModels();
+  const [availableModels, setAvailableModels] = useState<GenModels[]>([]);
+
   // call api to download a batch of elements
   const { getGenerationsFile } = useGetGenerationsFile(projectName || null);
   const [numberElements, setNumberElements] = useState<number>(10);
@@ -67,9 +73,12 @@ export const GenPage: FC = () => {
         ...prev,
         generateConfig: { ...generateConfig, api: 'ollama' },
       }));
-  }, [generateConfig, setAppContext]);
 
-  // console.log(generateConfig);
+    const fetchModels = async () => {
+      setAvailableModels(await models());
+    };
+    fetchModels();
+  }, [generateConfig, setAppContext, models]);
 
   const columns: readonly Column<Row>[] = [
     {
@@ -114,7 +123,9 @@ export const GenPage: FC = () => {
           <div className="col-6">
             <div className="form-floating mt-3">
               <select className="form-control" id="api">
-                <option key="ollama">Ollama</option>
+                {availableModels.map((model) => (
+                  <option key={model.id}>{model.name}</option>
+                ))}
               </select>
               <label htmlFor="api">API </label>
             </div>

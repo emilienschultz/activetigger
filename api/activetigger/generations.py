@@ -7,8 +7,8 @@ import requests
 from pandas import DataFrame
 from pydantic import BaseModel
 
+from activetigger.db.generations import GenerationsService
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.projects import ProjectsService
 
 
 class GenerationResult(BaseModel):
@@ -26,7 +26,7 @@ class Generations:
     """
 
     computing: list
-    projects_service: ProjectsService
+    generations_service: GenerationsService
 
     @staticmethod
     def generate(
@@ -98,7 +98,7 @@ class Generations:
             raise Exception(f"HTTP call responded with code {response.status_code}")
 
     def __init__(self, db_manager: DatabaseManager, computing: list) -> None:
-        self.projects_service = db_manager.projects_service
+        self.generations_service = db_manager.generations_service
         self.computing = computing  # user:{"unique_id", "number","api"}
 
     def add(
@@ -113,7 +113,7 @@ class Generations:
         """
         Add a generated element in the database
         """
-        self.projects_service.add_generated(
+        self.generations_service.add_generated(
             user=user,
             project_slug=project_slug,
             element_id=element_id,
@@ -127,12 +127,12 @@ class Generations:
         self,
         project_slug: str,
         username: str,
-        n_elements: str,
+        n_elements: int,
     ) -> DataFrame:
         """
         Get generated elements from the database
         """
-        result = self.projects_service.get_generated(
+        result = self.generations_service.get_generated(
             project_slug=project_slug, username=username, n_elements=n_elements
         )
         df = pd.DataFrame(

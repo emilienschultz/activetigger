@@ -332,7 +332,7 @@ class LassoParams(BaseModel):
 class Multi_naivebayesParams(BaseModel):
     alpha: float
     fit_prior: bool = True
-    class_prior: str | None | None = None
+    class_prior: str | None = None
 
 
 class BertParams(BaseModel):
@@ -346,7 +346,17 @@ class BertParams(BaseModel):
     adapt: bool
 
 
-class GenerateModel(BaseModel):
+class GenerationModel(BaseModel):
+    """
+    GenAI model used in generation
+    """
+
+    id: str
+    name: str
+    endpoint: str | None = None
+
+
+class GenerationRequest(BaseModel):
     """
     To start a generating prompt
     """
