@@ -23,7 +23,6 @@ import datasets
 import fasttext
 import numpy as np
 import pandas as pd
-import requests
 import spacy
 import torch
 import umap
@@ -739,90 +738,6 @@ def cat2num(df):
     encoded = pd.DataFrame(encoded, index=df.index)
     encoded.columns = ["col" + str(i) for i in encoded.columns]
     return encoded
-
-
-def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
-    """
-    Make a request to ollama
-    """
-    data = {"model": model, "prompt": request, "stream": False}
-    response = requests.post(endpoint, json=data, verify=False)
-    print(response.content)
-    if response.status_code == 200:
-        try:
-            return {"success": response.json()["response"]}
-        except Exception as e:
-            return {"error": f"Error in the content: {e}"}
-    else:
-        return {"error": "Error in the API call " + response.content.decode("utf8")}
-
-
-class GenerationResult(TypedDict):
-    user: str
-    project_slug: str
-    endpoint: str
-    element_id: Any
-    prompt: str
-    answer: str
-
-
-def generate(
-    user: str,
-    project_name: str,
-    df: DataFrame,
-    api: str,
-    endpoint: str,
-    prompt: str,
-    event: Optional[multiprocessing.synchronize.Event] = None,
-    unique_id: Optional[str] = None,
-    **kwargs,
-) -> None:
-    """
-    Manage batch generation request
-    Return table of results
-    """
-    # errors
-    errors = []
-    results: list[GenerationResult] = []
-
-    # loop on all elements
-    for _index, row in df.iterrows():
-        # test for interruption
-        if event is not None:
-            if event.is_set():
-                raise Exception("Process interrupted: %s", " ".join(str(results)))
-
-        # insert the content in the prompt (either at the end or where it is indicated)
-        if "#INSERTTEXT" in prompt:
-            prompt_with_text = prompt.replace("#INSERTTEXT", row["text"])
-        else:
-            prompt_with_text = prompt + "\n\n" + row["text"]
-
-        # make request to the client
-        if api == "ollama":
-            response = request_ollama(endpoint, prompt_with_text)
-        else:
-            errors.append("Model does not exist")
-            continue
-
-        if "error" in response:
-            errors.append("Error in the request " + response["error"])
-
-        if "success" in response:
-            results.append(
-                {
-                    "user": user,
-                    "project_slug": project_name,
-                    "endpoint": endpoint,
-                    "element_id": row["id"],
-                    "prompt": prompt_with_text,
-                    "answer": response["success"],
-                }
-            )
-        print("element generated ", row["id"], response["success"])
-
-    logging.info("Successful generation: %s", " ".join(str(results)))
-    return {"success": results}
 
 
 def clean_regex(text: str):

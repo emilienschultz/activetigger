@@ -1,8 +1,23 @@
+import logging
+from multiprocessing.synchronize import Event
+from typing import cast
+
 import pandas as pd
+import requests
 from pandas import DataFrame
+from pydantic import BaseModel
 
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import ProjectsService
+
+
+class GenerationResult(BaseModel):
+    user: str
+    project_slug: str
+    endpoint: str
+    element_id: str
+    prompt: str
+    answer: str
 
 
 class Generations:
@@ -12,6 +27,75 @@ class Generations:
 
     computing: list
     projects_service: ProjectsService
+
+    @staticmethod
+    def generate(
+        user: str,
+        project_name: str,
+        df: DataFrame,
+        api: str,
+        endpoint: str,
+        prompt: str,
+        event: Event | None = None,
+    ) -> list[GenerationResult]:
+        """
+        Manage batch generation request
+        Return table of results
+        """
+        # errors
+        errors: list[Exception] = []
+        results: list[GenerationResult] = []
+
+        # loop on all elements
+        for _index, row in df.iterrows():
+            # test for interruption
+            if event is not None:
+                if event.is_set():
+                    raise Exception("Process was interrupted")
+
+            # insert the content in the prompt (either at the end or where it is indicated)
+            if "#INSERTTEXT" in prompt:
+                prompt_with_text = prompt.replace("#INSERTTEXT", cast(str, row["text"]))
+            else:
+                prompt_with_text = prompt + "\n\n" + cast(str, row["text"])
+
+            # make request to the client
+            if api == "ollama":
+                try:
+                    response = Generations.request_ollama(endpoint, prompt_with_text)
+                    results.append(
+                        GenerationResult(
+                            user=user,
+                            project_slug=project_name,
+                            endpoint=endpoint,
+                            element_id=cast(str, row["id"]),
+                            prompt=prompt_with_text,
+                            answer=response,
+                        )
+                    )
+                    logging.debug(
+                        "element generated: %s, %s ", row["id"], response["success"]
+                    )
+                except Exception as e:
+                    errors.append(e)
+            else:
+                errors.append(Exception("Model does not exist"))
+                continue
+
+        return results
+
+    @staticmethod
+    def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
+        """
+        Make a request to ollama
+        """
+        data = {"model": model, "prompt": request, "stream": False}
+        response = requests.post(endpoint, json=data, verify=False)
+        print(response.content)
+        if response.status_code == 200:
+            return response.json()["response"]
+        else:
+            raise Exception(f"HTTP call responded with code {response.status_code}")
 
     def __init__(self, db_manager: DatabaseManager, computing: list) -> None:
         self.projects_service = db_manager.projects_service

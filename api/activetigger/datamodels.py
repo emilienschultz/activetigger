@@ -494,6 +494,11 @@ class TableBatch(BaseModel):
     max: int
     filter: str | None
 
+    class Config:
+        arbitrary_types_allowed: bool = (
+            True  # Allow DataFrame type but switches off Pydantic here
+        )
+
 
 class CodebookModel(BaseModel):
     content: str

@@ -6,6 +6,7 @@ import shutil
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import pytz
@@ -27,7 +28,7 @@ from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import cat2num, clean_regex
-from activetigger.generations import Generations
+from activetigger.generations import GenerationResult, Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
@@ -1227,15 +1228,18 @@ class Project(Server):
             if (e["kind"] == "generation") and is_done:
                 clean = True
                 try:
-                    r = self.queue.current[e["unique_id"]]["future"].result()
-                    for row in r["success"]:
+                    r = cast(
+                        list[GenerationResult],
+                        self.queue.current[e["unique_id"]]["future"].result(),
+                    )
+                    for row in r:
                         self.generations.add(
-                            user=row["user"],
-                            project_slug=row["project_slug"],
-                            element_id=row["element_id"],
-                            endpoint=row["endpoint"],
-                            prompt=row["prompt"],
-                            answer=row["answer"],
+                            user=row.user,
+                            project_slug=row.project_slug,
+                            element_id=row.element_id,
+                            endpoint=row.endpoint,
+                            prompt=row.prompt,
+                            answer=row.answer,
                         )
                 except Exception as ex:
                     self.errors.append(

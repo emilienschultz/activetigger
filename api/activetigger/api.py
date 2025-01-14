@@ -23,7 +23,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
 
-import activetigger.functions as functions
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
@@ -57,6 +56,7 @@ from activetigger.datamodels import (
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
+from activetigger.generations import Generations
 from activetigger.server import Project, Server
 
 # General comments
@@ -934,7 +934,7 @@ async def postgenerate(
         "prompt": request.prompt,
     }
 
-    unique_id = server.queue.add("generation", functions.generate, args)
+    unique_id = server.queue.add("generation", Generations.generate, args)
 
     if unique_id == "error":
         raise HTTPException(
