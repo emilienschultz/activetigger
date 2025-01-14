@@ -346,48 +346,50 @@ export const ProjectAnnotationPage: FC = () => {
         }
       </div>
 
-      <div className="row">
-        <div className="d-flex flex-wrap gap-2 justify-content-center">
-          <Link
-            to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
-            className="btn"
-            onClick={() => {
-              setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
-            }}
-          >
-            <IoMdSkipBackward />
-          </Link>
-          <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
-            <FaPencilAlt />
-          </button>
-          {kindScheme == 'multiclass' && (
-            <MulticlassInput
-              elementId={elementId || 'noelement'}
-              postAnnotation={postAnnotation}
-              labels={availableLabels}
-            />
-          )}
-          {kindScheme == 'multilabel' && (
-            <MultilabelInput
-              elementId={elementId || 'noelement'}
-              postAnnotation={postAnnotation}
-              labels={availableLabels}
-            />
+      {elementId !== 'noelement' && (
+        <div className="row">
+          <div className="d-flex flex-wrap gap-2 justify-content-center">
+            <Link
+              to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
+              className="btn"
+              onClick={() => {
+                setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
+              }}
+            >
+              <IoMdSkipBackward />
+            </Link>
+            <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
+              <FaPencilAlt />
+            </button>
+            {kindScheme == 'multiclass' && (
+              <MulticlassInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+              />
+            )}
+            {kindScheme == 'multilabel' && (
+              <MultilabelInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+              />
+            )}
+          </div>
+
+          {displayComment && (
+            <div className="m-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </div>
           )}
         </div>
-
-        {displayComment && (
-          <div className="m-3">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="mt-5">
         {phase != 'test' && (

@@ -1031,6 +1031,10 @@ async def post_annotation(
     - For the moment add == update
     - No information kept of selection process
     """
+
+    # manage rights
+    test_rights("modify project element", current_user.username, project.name)
+
     if action in ["add", "update"]:
         r = project.schemes.push_annotation(
             annotation.element_id,
