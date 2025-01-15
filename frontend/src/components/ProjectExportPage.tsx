@@ -68,7 +68,7 @@ export const ProjectExportPage: FC = () => {
                 if (currentScheme) getAnnotationsFile(currentScheme, format, 'train');
               }}
             >
-              Export train data
+              Export training data
             </button>
 
             {project?.params.test && (
@@ -78,7 +78,7 @@ export const ProjectExportPage: FC = () => {
                   if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
                 }}
               >
-                Export test data
+                Export testing data
               </button>
             )}
 
