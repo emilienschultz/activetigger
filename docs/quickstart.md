@@ -6,7 +6,7 @@ This guide explains the basics of all functionalities, but you do not have to us
 
 ## Table of contents
 1. [Creating a project](#creating-a-project)
-2. [Project tab](#project-tab)
+2. [Project tab](#project-page)
 3. [Explore](#explore)
 4. [Prepare](#prepare)
 5. [Annotate](#annotate)
@@ -18,26 +18,30 @@ This guide explains the basics of all functionalities, but you do not have to us
 
 You need a `csv`, `xlsx` or `Parquet` file with your texts separated at the level you wish to annotate (sentences, paragraphs, social media posts, articles...). These will be loaded as the elements that you can individually annotate.
 
-Specify the name of the column that contains the unique (numerical) IDs for each element, and the name of the column that contains the text. Specify the language of the texts. If the text is separated across several columns, you can indicate all relevant columns.
+Give your project a name. **Be aware that both the project name and the id will be transformed to be url-compatible. This means for instance that accentuated characters will be replaced by their non-accentuated equivalent, and spaces/underscores will be replaced by dash.**
+
+Specify the name of the column that contains the unique (numerical or textual) IDs for each element, and the name of the column that contains the text. Specify the language of the texts. If the text is separated across several columns, you can indicate all relevant columns.
 
 Optionally, if the file has already been annotated or contains important context elements that you want to see while annotating (for example the author, the date, the publication...), you can specify the relevant columns here.
 
-Specify the number of elements you want to annotate in the training set. For the moment, you cannot add additional elements later, so we recommend to import as many as possible. 
+Specify the number of elements you want to annotate in the training set. For the moment, you cannot add additional elements later, you will need to create a new project. 
 
 Importing a test set is not mandatory. Further down the line, if you would like to validate your model on a test set, this will be possible at a later stage.
 
 ![Create a project](img/createproject.png)
 
 
-## Project tab
+## Project page
 
 Click on the name of your project in the left-hand menu to see a summary of your annotations.
 
-Every project can have several coding schemes. A scheme is a set of specific labels that you can use to annotate the corpus. Each scheme works as a layer of annotation. 
+Every project can have several coding **schemes**. A scheme is a set of specific labels that you can use to annotate the corpus. Each scheme works as a layer of annotation. 
 
 You can create a new coding scheme or delete an old one in the menu at the top. Creating a new coding scheme means starting from zero, but will not modify previous coding schemes. You can toggle between schemes as you go.
 
-You can also see a summary of all your current annotations (per category), a history of all your actions in the project, and a summary of the parameters you set up while creating your project.
+You can also see a summary of all your current annotations (per category), a history of all your actions in the project, and a summary of the parameters you set up while creating your project. You can also delete the project in the Parameters tab.
+
+Once you entered the annotation phase, you will have an history of already annotated elements. This is the session history. *Be aware that you can only see once an element in a session, so if you need to re-annotate them, you will need to clear the history first.*
 
 ![Overview of project tab](img/project.png)
 

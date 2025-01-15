@@ -992,7 +992,6 @@ class Project(Server):
 
         # different treatment if the scheme is multilabel or multiclass
         r["train_annotated_n"] = len(df.dropna(subset=["labels"]))
-        print(df.dropna(subset=["labels"]))
         if kind == "multiclass":
             r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
         else:
