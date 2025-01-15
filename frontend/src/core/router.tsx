@@ -14,12 +14,12 @@ import { ProjectPreparePage } from '../components/ProjectPreparePage';
 import { ProjectTestPage } from '../components/ProjectTestPage';
 import { ProjectTrainPage } from '../components/ProjectTrainPage';
 import { ProjectsPage } from '../components/ProjectsPage';
-import { UsersPage } from '../components/UsersPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
 import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
+import { UsersPage } from '../components/pages/UsersPage';
 
 export function getRouter() {
   return createHashRouter([

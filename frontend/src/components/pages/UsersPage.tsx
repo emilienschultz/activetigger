@@ -11,10 +11,10 @@ import {
   useUserProjects,
   useUsers,
   useUsersAuth,
-} from '../core/api';
-import { useAuth } from '../core/auth';
-import { useNotifications } from '../core/notifications';
-import { PageLayout } from './layout/PageLayout';
+} from '../../core/api';
+import { useAuth } from '../../core/auth';
+import { useNotifications } from '../../core/notifications';
+import { PageLayout } from '../layout/PageLayout';
 
 interface newUser {
   username: string;
@@ -54,6 +54,11 @@ export const UsersPage: FC = () => {
         label: userKey,
       }))
     : [];
+
+  const projectOptions = (projects || []).map((project) => ({
+    value: project.parameters.project_slug,
+    label: project.parameters.project_slug,
+  }));
 
   return (
     <PageLayout currentPage="users">
@@ -120,19 +125,29 @@ export const UsersPage: FC = () => {
 
             <br></br>
             {
-              <select
+              // <select
+              //   className="form-select"
+              //   onChange={(e) => {
+              //     setCurrentProjectSlug(e.target.value);
+              //   }}
+              // >
+              //   <option></option>
+              //   {(projects || []).map((project) => (
+              //     <option key={project.parameters.project_slug}>
+              //       {project.parameters.project_slug}
+              //     </option>
+              //   ))}
+              // </select>
+              <Select
+                id="select-project"
                 className="form-select"
-                onChange={(e) => {
-                  setCurrentProjectSlug(e.target.value);
+                options={projectOptions}
+                onChange={(selectedOption) => {
+                  setCurrentProjectSlug(selectedOption ? selectedOption.value : null);
                 }}
-              >
-                <option></option>
-                {(projects || []).map((project) => (
-                  <option key={project.parameters.project_slug}>
-                    {project.parameters.project_slug}
-                  </option>
-                ))}
-              </select>
+                isClearable
+                placeholder="Select a project"
+              />
             }
             <div>
               {authUsers ? (
