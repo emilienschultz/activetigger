@@ -101,7 +101,7 @@ class Annotations(Base):
     element_id: Mapped[str]
     scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
     scheme: Mapped[Schemes] = relationship()
-    annotation: Mapped[str]
+    annotation: Mapped[str | None]
     comment: Mapped[str | None] = mapped_column(Text)
 
 
