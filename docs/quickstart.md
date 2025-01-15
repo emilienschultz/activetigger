@@ -24,7 +24,7 @@ Specify the name of the column that contains the unique (numerical or textual) I
 
 Optionally, if the file has already been annotated or contains important context elements that you want to see while annotating (for example the author, the date, the publication...), you can specify the relevant columns here.
 
-Specify the number of elements you want to annotate in the training set. For the moment, you cannot add additional elements later, you will need to create a new project. 
+Specify the number of elements you want to annotate in the training set. For the moment, you cannot add additional elements later, you will need to create a new project. Elements are picked randomly in the uploaded file, prioritizing elements that have already been annotated if any.
 
 Importing a test set is not mandatory. Further down the line, if you would like to validate your model on a test set, this will be possible at a later stage.
 
@@ -63,8 +63,8 @@ Enter the name of each label under "New label" and click the plus sign.
 
 You can also delete or replace labels. 
 
-If you want to delete a label, pick the relevant label under **Available labels** and then the trash bin.
-If you want to replace a label, pick the relevant label under **Available labels**, write the label's new name, and click the sign next to **Replace selected label**.
+- If you want to delete a label, pick the relevant label under **Available labels** and then the trash bin. All existing annotations will be deleted.
+- If you want to replace a label, pick the relevant label under **Available labels**, write the label's new name, and click the sign next to **Replace selected label**. All the existing annotations will be converted to the new label.
 
 Under the **Codebook** tab, you can also include written instructions on how to distinguish your categories.
 
@@ -74,12 +74,12 @@ In the **Annotate** section, the interface will pick out an element that you can
 
 By default, the selection modes "deterministic" and "random" are available:
 
-**Deterministic** mode means that ActiveTigger will pick out each element in the order of the original file.
-**Random** mode means that ActiveTigger will pick out the next element at random.
+- **Deterministic** mode means that ActiveTigger will pick out each element in the order of the database, created at the beginning.
+- **Random** mode means that ActiveTigger will pick out the next element at random.
 
 ![Overview of the Annotation tab](img/randomannotation.png)
 
-Click on **Get element** if you want a new element without annotating the current one, or if you want to change the selection mode.
+Click on **Get element** if you want to apply a new selection mode.
 
 You can search for elements with particular keywords or _regex_ patterns. This could mean fishing out all elements that contain certain symbols, for example. If you are unfamiliar with regex patterns, [this generator](https://regex-generator.olafneumann.org/) can be a useful reference.
 
