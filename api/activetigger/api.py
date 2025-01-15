@@ -633,17 +633,16 @@ async def add_testdata(
     """
     Add a dataset for test when there is none available
     """
-    r = project.add_testdata(testset)
-
-    # log action
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    # if success, update also parameters of the project
-    server.set_project_parameters(project.params, current_user.username)
-    # log action
-    server.log_action(current_user.username, "INFO add testdata project", project.name)
-
-    return None
+    try:
+        # add the data
+        project.add_testdata(testset)
+        # update parameters of the project
+        server.set_project_parameters(project.params, current_user.username)
+        # log action
+        server.log_action(current_user.username, "INFO add testdata project", project.name)
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @app.post("/projects/new", dependencies=[Depends(verified_user)])

@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import os
@@ -606,27 +607,44 @@ class Project(Server):
         Add a test dataset
         """
         if self.schemes.test is not None:
-            return {"error": "Already a test dataset"}
+            raise Exception("There is already a test dataset")
 
         if self.params.dir is None:
             raise Exception("Cannot add test data without a valid dir")
 
-        # write the buffer send by the frontend
-        with open(self.params.dir.joinpath("test_set_raw.csv"), "w") as f:
-            f.write(testset.csv)
-
-        # load it
+        csv_buffer = io.StringIO(testset.csv)
         df = pd.read_csv(
-            self.params.dir.joinpath("test_set_raw.csv"),
+            csv_buffer,
             dtype={testset.col_id: str, testset.col_text: str},
             nrows=testset.n_test,
         )
 
+        # # write the buffer send by the frontend
+        # with open(self.params.dir.joinpath("test_set_raw.csv"), "w") as f:
+        #     f.write(testset.csv)
+
+        # # load it
+        # df = pd.read_csv(
+        #     self.params.dir.joinpath("test_set_raw.csv"),
+        #     dtype={testset.col_id: str, testset.col_text: str},
+        #     nrows=testset.n_test,
+        # )
+
         # change names
-        df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"}).set_index("id")
+        if not testset.col_label:
+            df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"}).set_index("id")
+        else:
+            df = df.rename(
+                columns={
+                    testset.col_id: "id",
+                    testset.col_text: "text",
+                    testset.col_label: "label",
+                }
+            ).set_index("id")
 
         # write the dataset
         df[[testset.col_text]].to_parquet(self.params.dir.joinpath(self.test_file))
+        # TODO : add the labels to the database
         # load the data
         self.schemes.test = df[[testset.col_text]]
         # update parameters

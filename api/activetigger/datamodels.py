@@ -54,6 +54,7 @@ class TestSetDataModel(BaseModel):
     n_test: int
     filename: str
     csv: str
+    col_label: str | None = None
 
 
 class ActionModel(str, Enum):
