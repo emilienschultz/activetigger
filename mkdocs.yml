@@ -9,4 +9,6 @@ nav:
   - Contributors: contributors.md
 markdown_extensions:
   - footnotes
+  - admonition
+
 theme: readthedocs
