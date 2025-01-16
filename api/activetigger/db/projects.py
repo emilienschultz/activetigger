@@ -189,6 +189,13 @@ class ProjectsService:
     def delete_project(self, project_slug: str):
         with self.Session.begin() as session:
             _ = session.execute(delete(Projects).filter_by(project_slug=project_slug))
+            _ = session.execute(delete(Schemes).filter_by(project_id=project_slug))
+            _ = session.execute(delete(Auths).filter_by(project_id=project_slug))
+            _ = session.execute(delete(Generations).filter_by(project_id=project_slug))
+            _ = session.execute(delete(Features).filter_by(project_id=project_slug))
+            _ = session.execute(delete(Annotations).filter_by(project_id=project_slug))
+            _ = session.execute(delete(Logs).filter_by(project_id=project_slug))
+            _ = session.execute(delete(Models).filter_by(project_id=project_slug))
 
     def add_generated(
         self,
