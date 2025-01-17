@@ -134,7 +134,7 @@ export const ProjectTestPage: FC = () => {
                     <div className="alert alert-info m-3">
                       Now you can go back to the annotation panel to annotate the test dataset. Once
                       you have a test dataset, you will be able to compute test statistics (next
-                      tab. Exit test mode to go back to train dataset.)
+                      tab. Exit test mode to go back to training dataset.)
                     </div>
                   )}
                 </Tab>
