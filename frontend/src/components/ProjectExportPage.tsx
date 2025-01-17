@@ -78,7 +78,7 @@ export const ProjectExportPage: FC = () => {
                   if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
                 }}
               >
-                Export testing data
+                Export test data
               </button>
             )}
 

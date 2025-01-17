@@ -1,17 +1,18 @@
 # ActiveTigger Quickstart
 
-This is how to get started with your annotation project with ActiveTigger. It will be useful if you want :
+This is how to get started with your annotation project with ActiveTigger. It will be useful if you want to:
 
-- Annotate quickly a text dataset in a dedicated collaborative interfaces (multiclass/multilabel)[^span]
+- Quickly annotate a text-based dataset in a dedicated collaborative interface
 - Train a model on a small set of annotated data to extend it on a larger corpus
 
-[^span]: This interface is not designed for span annotation.
 
-This guide explains the basics of all functionalities, but you do not have to use all of them for your project. For example, if you only want to use ActiveTigger for manual annotation, you do not have to use the "Active Learning" or "Validation" functionalities.
+This guide explains the basics of all functionalities, but you do not have to use all of them for your project. For example, if you only want to use ActiveTigger for manual annotation, focus on the sections detailing how to set up and export your project data.
 
 !!! warning "ActiveTigger is in beta"
 
-    ActiveTigger is still in beta, and we are working on improving it. If you encounter any issues, please let us know on the [Github issues](https://github.com/emilienschultz/activetigger/issues)
+    ActiveTigger is still in beta, and we are working on improving it. If you encounter any issues, please let us know on [Github issues](https://github.com/emilienschultz/activetigger/issues)
+
+_Note: ActiveTigger currently only works for multiclass/multilabel annotation, not span annotation._
 
 ## Table of contents
 1. [Creating a project](#creating-a-project)
@@ -27,33 +28,33 @@ This guide explains the basics of all functionalities, but you do not have to us
 
 ## Creating a project
 
-Creating the project is the most important step since it will define the framework of your annotation process.
+Creating the project is the most important step, since it will define the framework of your annotation process.
 
-First, you need to import the **raw data** : a `csv`, `xlsx` or `parquet` file with your texts separated at the level you wish to annotate (sentences, paragraphs, social media posts, articles...). Each element should be a line. These will be loaded as the elements that you can individually annotate.
+First, you need to import the **raw data** : a `csv`, `xlsx` or `parquet` file with your texts separated at the level you wish to annotate (sentences, paragraphs, social media posts, articles...). Each element should be a row. These will be loaded as the elements that you can individually annotate.
 
-Give your project a name (the **project name**). Each name is unique in the application and will allow to identify your project.
+Give your project a name (the **project name**). Each name is unique in the application and will allow you to identify your project.
 
 !!! info "Name and id can be transformed"
 
-    Be aware that both the project name and the id will be transformed to be url-compatible. This means for instance that accentuated characters will be replaced by their non-accentuated equivalent, and spaces/underscores will be replaced by dash.
+    Both the project name and the ID will be transformed to be url-compatible. This means for instance that accentuated characters will be replaced by their non-accentuated equivalent, and spaces/underscores will be replaced by a dash.
 
 Specify the name of the column that contains the unique (numerical or textual) IDs for each element (**id columns**), and the name of the column (or columns) that contains the text (**text(s) columns**). Specify the language of the texts.
 
-If the file has already been annotated and you want to import it as annotations, you can specify the column of **existing annotations**.
+If the file has already been annotated and you want to import these annotations, you can specify the column of **existing annotations**.
 
 Optionally, if there are **context elements** that you want to see while annotating (for example the author, the date, the publication...), you can specify the relevant columns here.
 
-The next step is to define both the **train dataset** you will annotate and an optional **test dataset** that can be used for model evaluation.
+The next step is to define both the **training dataset** that you will annotate and an optional **test dataset** that can be used for model evaluation.
 
-The **train dataset** is the most important since it will be the elements that you will be able to see and annotate.
+The **training dataset** is the most important since it will be the elements that you will be able to see and annotate.
 
-You need to specify the number of elements you want in each dataset. Those elements will be picked randomly in the **raw data**, prioritizing elements that have already been annotated if any for the **train dataset**.
+You need to specify the number of elements you want in each dataset. Those elements will be picked randomly in the **raw data**, prioritizing elements that have already been annotated if any for the **training dataset**.
 
 Using a test set is not mandatory. Further down the line, if you would like to validate your model on a test set, this will be possible at a later stage.
 
 !!! info "Size of the dataset"
 
-    For the moment, you cannot add additional elements later, you will need to create a new project.
+    For the moment, you cannot add additional elements later. For  this, you will need to create a new project.
 
 
 ![Create a project](img/createproject.png)
@@ -75,7 +76,7 @@ You can create a new coding scheme or delete an old one in the menu at the top. 
 
 !!! info "Coding schemes"
 
-    There are 2 different coding schemes : multi-class and multi-label (experimental). Multi-class means one label per element ; multi-label means several labels per element. You can't switch between them, and multi-label are for the moment not completely implemented.
+    There are two different coding schemes : multi-class and multi-label (experimental). Multi-class means one label per element; multi-label means several labels per element. You cannot switch between them, and multi-label are for the moment not completely implemented in the interface.
 
 You can also see a summary of all your current annotations (per category), a history of all your actions in the project, and a summary of the parameters you set up while creating your project. You can also delete the project in the Parameters tab once you finished with it.
 
@@ -87,7 +88,7 @@ Once you entered the annotation phase, you will have an history of already annot
 
 !!! warning "Session history"
 
-    Be aware that you can only see once an element during a unique session (this is necessary to reannotate elements), so if you need to re-annotate them, you will need to clear the history first.
+    Be aware that you can only see any particular element once during a unique session, so if you need to re-annotate them, you will need to clear the history first.
 
 ![Overview of project tab](img/project.png)
 
@@ -118,7 +119,7 @@ You can also delete or replace labels.
 
 The **Prepare** tab also lets you define the **features** you want to use for your model. By default, we recommend using the `sbert` feature, which is a pre-trained model that converts your text into a numerical representation. This is a good starting point for most projects.
 
-Features means that each text element is represented by a numerical vector. This is necessary to train some models (especially for active learning) or do to projections.
+Features means that each text element is represented by a numerical vector. This is necessary to train certain models (especially for active learning) or to do projections.
 
 ### Write your codebook
 
@@ -134,18 +135,18 @@ In the Annotate section, the interface will pick out an element that you can ann
 
 By default, the selection modes "deterministic" and "random" are available:
 
-- **Deterministic** mode means that ActiveTigger will pick out each element in the order of the database, created at the beginning.
+- **Deterministic** mode means that ActiveTigger will pick out each element in the order of the database, as created when creating your project.
 - **Random** mode means that ActiveTigger will pick out the next element at random.
 
 ![Overview of the Annotation tab](img/randomannotation.png)
 
 Click on **Get element** if you want to apply a new selection mode.
 
-Selection mode is both the general rule and specific rules such as regex. You can search for elements with particular keywords or _regex_ patterns. This could mean fishing out all elements that contain certain symbols, for example. If you are unfamiliar with regex patterns, [this generator](https://regex-generator.olafneumann.org/) can be a useful reference.
+The selection mode refers both the general rule of getting new elements (e.g. random) and specific rules, such as specified regular expressions (_regex_) patterns. You can search for elements with particular keywords or particular syntax patterns (regex). This could mean fishing out all elements that contain certain symbols, for example. If you are unfamiliar with regex patterns, [this generator](https://regex-generator.olafneumann.org/) can be a useful reference.
 
-!!! info "Keyboard shorcuts"
+!!! info "Keyboard shortcuts"
 
-    You can use the keyboard shortcuts to annotate faster. The number keys correspond to the labels you have defined. You can move the labels if needed to change the order.
+    You can use the keyboard shortcuts to annotate faster. The number keys correspond to the labels you have defined. You can move the labels to change the order if needed.
 
 !!! info "Add comment"
 
@@ -163,7 +164,7 @@ First, make sure you have a _feature_ selected under the **Prepare** tab (by def
 
 ![Training a prediction model](img/featuretab.png)
 
-Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. Don't hesisate to keep basics parameters for the first model.
+Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. The basic parameters can be used for the first model, to fine-tune later.
 
 Once the prediction model is trained, you can now choose the _active_ and _maxprob_ selection modes when picking elements.
 
@@ -182,7 +183,7 @@ Above your available labels, the **Prediction** button indicates the model's pre
 
 ## Fine-tune your BERT classifier
 
-Active Tigger allows you to train a BERT classifier model on your annotated data with two goals : extending your annotation on the complete data set ; getting this classifier for other uses.
+Active Tigger allows you to train a BERT classifier model on your annotated data with two goals: extending your annotation on the complete dataset, or retrieving this classifier for other uses.
 
 This is done on the **Train** tab. Click on **New Model** to train a new model.
 
@@ -196,7 +197,7 @@ Leave some time for the training process. It can take some time depending on the
 
 ![Overview of the selecting models](img/existingmodels.png)
 
-For the mment, you only have the model. Now, you can decide to apply it on your data, either to get metrics of its performance, or to extend to the whole dataset.
+For the moment, you only have the model. Now, you can decide to apply it on your data, either to see metrics of its performance, or to extend it on the whole dataset.
 
 Choose the name of the model under **Existing models**, click on the **Scores tab**, and click **Predict using train set**. it will use the model on the train dataset (so on the elements you haven't annotated yet).
 
@@ -226,7 +227,7 @@ If you have a test set, you can also apply the model on it. This is useful to se
 
 !!! warning "Under development"
     
-        This feature is still under development and might not work as expected. We will complete the quickstart latter.
+        This feature is still under development and might not work as expected - watch this space!
 
 ## Export
 
@@ -242,7 +243,7 @@ You can add users to your project. This is useful if you want to work collaborat
 
 !!! note "Create user"
 
-    The right to create user is restricted.
+    The right to create users is restricted.
 
 ## Account
 

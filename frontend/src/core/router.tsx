@@ -19,6 +19,7 @@ import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
 import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
+import { ProjectPredictPage } from '../components/pages/PredictPage';
 import { UsersPage } from '../components/pages/UsersPage';
 
 export function getRouter() {
@@ -120,6 +121,10 @@ export function getRouter() {
         {
           path: '/projects/:projectName/test/',
           element: <ProjectTestPage />,
+        },
+        {
+          path: '/projects/:projectName/predict/',
+          element: <ProjectPredictPage />,
         },
         {
           path: '/projects/:projectName/export',
