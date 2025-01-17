@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Quickstart - ActiveTigger Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Quickstart";
+        var mkdocs_page_input_path = "quickstart.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> ActiveTigger Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Quickstart</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of contents</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#creating-a-project">Creating a project</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#project-page">Project page</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#explore">Explore</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prepare">Prepare</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#define-labels">Define labels</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#define-features">Define features</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#write-your-codebook">Write your codebook</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#annotate">Annotate</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#selection-mode">Selection mode</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#active-learning">Active learning</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fine-tune-your-bert-classifier">Fine-tune your BERT classifier</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#test-your-model">Test your model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#export">Export</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#users-management">Users management</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#account">Account</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../usecases/">Use Cases</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../documentation/">User Guide</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../access/">Get Access</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../software/">Software</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../contributors/">Contributors</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">ActiveTigger Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="activetigger-quickstart">ActiveTigger Quickstart</h1>
+<p>This is how to get started with your annotation project with ActiveTigger. It will be useful if you want to:</p>
+<ul>
+<li>Quickly annotate a text-based dataset in a dedicated collaborative interface</li>
+<li>Train a model on a small set of annotated data to extend it on a larger corpus</li>
+</ul>
+<p>This guide explains the basics of all functionalities, but you do not have to use all of them for your project. For example, if you only want to use ActiveTigger for manual annotation, focus on the sections detailing how to set up and export your project data.</p>
+<div class="admonition warning">
+<p class="admonition-title">ActiveTigger is in beta</p>
+<p>ActiveTigger is still in beta, and we are working on improving it. If you encounter any issues, please let us know on <a href="https://github.com/emilienschultz/activetigger/issues">Github issues</a></p>
+</div>
+<p><em>Note: ActiveTigger currently only works for multiclass/multilabel annotation, not span annotation.</em></p>
+<h2 id="table-of-contents">Table of contents</h2>
+<ol>
+<li><a href="#creating-a-project">Creating a project</a></li>
+<li><a href="#project-page">Project tab</a></li>
+<li><a href="#explore">Explore</a></li>
+<li><a href="#prepare">Prepare</a></li>
+<li><a href="#annotate">Annotate</a></li>
+<li><a href="#validation">Validation</a></li>
+<li><a href="#export">Export</a></li>
+<li><a href="#users-management">Users management</a></li>
+<li><a href="#account">Account</a></li>
+</ol>
+<h2 id="creating-a-project">Creating a project</h2>
+<p>Creating the project is the most important step, since it will define the framework of your annotation process.</p>
+<p>First, you need to import the <strong>raw data</strong> : a <code>csv</code>, <code>xlsx</code> or <code>parquet</code> file with your texts separated at the level you wish to annotate (sentences, paragraphs, social media posts, articles...). Each element should be a row. These will be loaded as the elements that you can individually annotate.</p>
+<p>Give your project a name (the <strong>project name</strong>). Each name is unique in the application and will allow you to identify your project.</p>
+<div class="admonition info">
+<p class="admonition-title">Name and id can be transformed</p>
+<p>Both the project name and the ID will be transformed to be url-compatible. This means for instance that accentuated characters will be replaced by their non-accentuated equivalent, and spaces/underscores will be replaced by a dash.</p>
+</div>
+<p>Specify the name of the column that contains the unique (numerical or textual) IDs for each element (<strong>id columns</strong>), and the name of the column (or columns) that contains the text (<strong>text(s) columns</strong>). Specify the language of the texts.</p>
+<p>If the file has already been annotated and you want to import these annotations, you can specify the column of <strong>existing annotations</strong>.</p>
+<p>Optionally, if there are <strong>context elements</strong> that you want to see while annotating (for example the author, the date, the publication...), you can specify the relevant columns here.</p>
+<p>The next step is to define both the <strong>training dataset</strong> that you will annotate and an optional <strong>test dataset</strong> that can be used for model evaluation.</p>
+<p>The <strong>training dataset</strong> is the most important since it will be the elements that you will be able to see and annotate.</p>
+<p>You need to specify the number of elements you want in each dataset. Those elements will be picked randomly in the <strong>raw data</strong>, prioritizing elements that have already been annotated if any for the <strong>training dataset</strong>.</p>
+<p>Using a test set is not mandatory. Further down the line, if you would like to validate your model on a test set, this will be possible at a later stage.</p>
+<div class="admonition info">
+<p class="admonition-title">Size of the dataset</p>
+<p>For the moment, you cannot add additional elements later. For  this, you will need to create a new project.</p>
+</div>
+<p><img alt="Create a project" src="../img/createproject.png" /></p>
+<p>Once the project is created, you can start working on it.</p>
+<div class="admonition info">
+<p class="admonition-title">Visibility</p>
+<p>By default, a project is only visible to the user who created it. You can add users on a project if you want to work collaboratively.</p>
+</div>
+<h2 id="project-page">Project page</h2>
+<p>Click on the name of your project in the left-hand menu to see a summary of your situation.</p>
+<p>Every project can have several <strong>coding schemes</strong>. A scheme is a set of specific labels that you can use to annotate the corpus. Each scheme works as a layer of annotation. One is created by default when you create a project.</p>
+<p>You can create a new coding scheme or delete an old one in the menu at the top. Creating a new coding scheme means starting from zero, but will not modify previous coding schemes. You can toggle between schemes as you go.</p>
+<div class="admonition info">
+<p class="admonition-title">Coding schemes</p>
+<p>There are two different coding schemes : multi-class and multi-label (experimental). Multi-class means one label per element; multi-label means several labels per element. You cannot switch between them, and multi-label are for the moment not completely implemented in the interface.</p>
+</div>
+<p>You can also see a summary of all your current annotations (per category), a history of all your actions in the project, and a summary of the parameters you set up while creating your project. You can also delete the project in the Parameters tab once you finished with it.</p>
+<div class="admonition info">
+<p class="admonition-title">Destroy a project</p>
+<p>Be aware that deleting a project will delete all the annotations and the project itself. But it will also release space for other projects, so please don't hesitate to clean.</p>
+</div>
+<p>Once you entered the annotation phase, you will have an history of already annotated elements. This is the session history. </p>
+<div class="admonition warning">
+<p class="admonition-title">Session history</p>
+<p>Be aware that you can only see any particular element once during a unique session, so if you need to re-annotate them, you will need to clear the history first.</p>
+</div>
+<p><img alt="Overview of project tab" src="../img/project.png" /></p>
+<h2 id="explore">Explore</h2>
+<p>The <strong>Explore tab</strong>  gives you an overview of your data. You can filter to see elements with certain keywords or regex patterns and get an overview of your annotations so far.</p>
+<p><img alt="Overview of the Project tab" src="../img/explore.png" /></p>
+<h2 id="prepare">Prepare</h2>
+<h3 id="define-labels">Define labels</h3>
+<p>Before annotating, you need to define your labels.</p>
+<p>We recommend keeping your labels simple. If you are aiming to train a model, binary categorizations tend to be easier to handle. For example, if you are annotating newspaper headlines, it is easier to classify it as "politics/not politics", rather than to include all possible subjects as multiple categories. You can layer different binary categorizations as different coding scheme, or add labels at a later stage.</p>
+<p>Enter the name of each label under "New label" and click the plus sign.</p>
+<p><img alt="Overview of the Prepare tab" src="../img/picklabels.png" /></p>
+<p>You can also delete or replace labels. </p>
+<ul>
+<li>If you want to delete a label, pick the relevant label under <strong>Available labels</strong> and then the trash bin. All existing annotations will be deleted.</li>
+<li>If you want to replace a label, pick the relevant label under <strong>Available labels</strong>, write the label's new name, and click the sign next to <strong>Replace selected label</strong>. All the existing annotations will be converted to the new label.</li>
+</ul>
+<h3 id="define-features">Define features</h3>
+<p>The <strong>Prepare</strong> tab also lets you define the <strong>features</strong> you want to use for your model. By default, we recommend using the <code>sbert</code> feature, which is a pre-trained model that converts your text into a numerical representation. This is a good starting point for most projects.</p>
+<p>Features means that each text element is represented by a numerical vector. This is necessary to train certain models (especially for active learning) or to do projections.</p>
+<h3 id="write-your-codebook">Write your codebook</h3>
+<p>Under the <strong>Codebook</strong> tab, you can also include written instructions on how to distinguish your categories.</p>
+<h2 id="annotate">Annotate</h2>
+<p>The <strong>Annotate</strong> tab is where you will spend most of your time.</p>
+<h3 id="selection-mode">Selection mode</h3>
+<p>In the Annotate section, the interface will pick out an element that you can annotate according to your pre-defined labels. Once you have picked a label, the interface will pick the next element for you following the <strong>selection mode</strong> that is configured.</p>
+<p>By default, the selection modes "deterministic" and "random" are available:</p>
+<ul>
+<li><strong>Deterministic</strong> mode means that ActiveTigger will pick out each element in the order of the database, as created when creating your project.</li>
+<li><strong>Random</strong> mode means that ActiveTigger will pick out the next element at random.</li>
+</ul>
+<p><img alt="Overview of the Annotation tab" src="../img/randomannotation.png" /></p>
+<p>Click on <strong>Get element</strong> if you want to apply a new selection mode.</p>
+<p>The selection mode refers both the general rule of getting new elements (e.g. random) and specific rules, such as specified regular expressions (<em>regex</em>) patterns. You can search for elements with particular keywords or particular syntax patterns (regex). This could mean fishing out all elements that contain certain symbols, for example. If you are unfamiliar with regex patterns, <a href="https://regex-generator.olafneumann.org/">this generator</a> can be a useful reference.</p>
+<div class="admonition info">
+<p class="admonition-title">Keyboard shortcuts</p>
+<p>You can use the keyboard shortcuts to annotate faster. The number keys correspond to the labels you have defined. You can move the labels to change the order if needed.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Add comment</p>
+<p>You can add a comment to each annotation. This can be useful to explain why you chose a certain label, or to note any particularities about the text.</p>
+</div>
+<h3 id="active-learning">Active learning</h3>
+<p>Often, we want to classify imbalanced datasets, i.e. where one category is much less represented in the data than the other. This can mean very lengthy annotation processes, if you go through each element in a random order hoping to stumble upon both of your categories. </p>
+<p><strong>Active learning</strong> is a method to accelerate the process.</p>
+<p>Using the already annotated data, ActiveTigger can find the elements that your current model is either <em>most certain</em> or <em>most uncertain</em> that it knows how to predict, given your existing coding scheme and annotations. Here is how to set it up:</p>
+<p>First, make sure you have a <em>feature</em> selected under the <strong>Prepare</strong> tab (by default, we recommend sbert).</p>
+<p><img alt="Training a prediction model" src="../img/featuretab.png" /></p>
+<p>Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. The basic parameters can be used for the first model, to fine-tune later.</p>
+<p>Once the prediction model is trained, you can now choose the <em>active</em> and <em>maxprob</em> selection modes when picking elements.</p>
+<p><img alt="Overview of the selection modes" src="../img/selectionmode.png" /></p>
+<ul>
+<li><strong>Active</strong> mode means that Active Tigger will pick the elements on which it is most uncertain (where, based on previous annotations, it could be classified either way)</li>
+<li><strong>Maxprob</strong> mode means that Active Tigger will pick the elements on which it is most certain (where, based on previous annotations, the model guesses where to categorize it with the highest levels of confidence).</li>
+</ul>
+<p>When constructing your training dataset, we recommend starting in random mode in order to create a base of annotations on which to train a prediction model. There is no absolute minimum number. A couple dozen annotations representing both of your labels can serve as a base.</p>
+<p>If the aim is to train a model, we recommend alternating between active and maxprob mode in order to maximize the number of examples from both of your categories prioritizing on the <em>uncertain</em> elements.</p>
+<p><img alt="Overview of the Annotation tab" src="../img/activeannotation.png" /></p>
+<p>Above your available labels, the <strong>Prediction</strong> button indicates the model's prediction of a certain label (given previous annotations) and its level of certainty (you can deactivate it in <strong>Display parameters</strong>)</p>
+<h2 id="fine-tune-your-bert-classifier">Fine-tune your BERT classifier</h2>
+<p>Active Tigger allows you to train a BERT classifier model on your annotated data with two goals: extending your annotation on the complete dataset, or retrieving this classifier for other uses.</p>
+<p>This is done on the <strong>Train</strong> tab. Click on <strong>New Model</strong> to train a new model.</p>
+<p>Name it and pick which BERT model base you would like to use (note that some are language-specific).</p>
+<p>You can adjust the parameters for the model, or leave it at default values.</p>
+<p><img alt="Overview of the model training tab" src="../img/trainmodel.png" /></p>
+<p>Leave some time for the training process. It can take some time depending on the number of elements. Once the model is available, you can consult it under the <strong>Models</strong> tab.</p>
+<p><img alt="Overview of the selecting models" src="../img/existingmodels.png" /></p>
+<p>For the moment, you only have the model. Now, you can decide to apply it on your data, either to see metrics of its performance, or to extend it on the whole dataset.</p>
+<p>Choose the name of the model under <strong>Existing models</strong>, click on the <strong>Scores tab</strong>, and click <strong>Predict using train set</strong>. it will use the model on the train dataset (so on the elements you haven't annotated yet).</p>
+<p>Once the prediction is done, you will see a series of scores that allows you to evaluate the model's performance.:</p>
+<ul>
+<li><em>F1 micro</em>: The harmonic mean of precision and recall, calculated globally without considering category imbalance.</li>
+<li><em>F1 macro</em>: The harmonic mean of precision and recall calculated per class, treating all categories equally regardless of their size.</li>
+<li><em>F1 weighted</em>: The harmonic mean of precision and recall calculated per class, weighted by the number of true instances in each category to account for imbalance.</li>
+<li><em>F1</em>: The harmonic mean of precision and recall (shown per each label)</li>
+<li><em>Precision</em>: Proportion of correctly predicted positive cases out of all predicted positives.</li>
+<li><em>Recall</em>:  Proportion of correctly predicted positive cases out of all actual positives.</li>
+<li><em>Accuracy</em>: Proportion of correctly classified elements out of total elements.</li>
+</ul>
+<p>All of these variables tell you useful information about how your model performs, but the way you assess them depends on your research question. </p>
+<p>For example, say that you are classifying social media posts according to whether they express support for climate policies or not. A low precision score means many posts labeled as "supportive" are actually irrelevant or against climate change policies (false positives). A low recall means the model misses many supportive posts (false negatives). Improving precision might involve stricter rules for classifying posts as supportive (e.g., requiring multiple positive keywords). However, this could hurt recall, as subtle supportive posts might be overlooked.</p>
+<p>The generic <strong>F1 score</strong> is often the variable most of interest, as it indicate how precision and recall are balanced. The closer the F1 score is to 1, the better the model performs according to the coding scheme you have trained it on. </p>
+<p>If you find yourself with low scores, it is a good idea to first consider your coding scheme. Are your categories clear? Several rounds of iterative annotations are often necessary as you refine your approach.</p>
+<p>Once you find the model satisfactory, you can apply it to the whole dataset in the tab <strong>Compute prediction</strong>. This will apply the model to all the elements in the dataset, and you can then export the results.</p>
+<h2 id="test-your-model">Test your model</h2>
+<p>If you have a test set, you can also apply the model on it. This is useful to see how the model performs on unseen data.</p>
+<div class="admonition warning">
+<p class="admonition-title">Under development</p>
+<pre><code>This feature is still under development and might not work as expected - watch this space!
+</code></pre>
+</div>
+<h2 id="export">Export</h2>
+<p>You can export your total annotations in <code>csv</code>, <code>xlsx</code> or <code>parquet</code> format.</p>
+<p>On the Export tab, select the desired format and click <strong>Export training data</strong>.</p>
+<p>You can also export the features and models you have trained if you wish to use them elsewhere.</p>
+<h2 id="users-management">Users management</h2>
+<p>You can add users to your project. This is useful if you want to work collaboratively on a project.</p>
+<div class="admonition note">
+<p class="admonition-title">Create user</p>
+<p>The right to create users is restricted.</p>
+</div>
+<h2 id="account">Account</h2>
+<p>You can change your password.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../usecases/" class="btn btn-neutral float-right" title="Use Cases">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../usecases/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
