@@ -60,11 +60,6 @@ export const ProjectTrainPage: FC = () => {
       ? (project.schemes.available[currentScheme]['kind'] as string)
       : 'multiclass';
 
-  const availablePrediction =
-    currentScheme && currentModel && project?.bertmodels.available[currentScheme][currentModel]
-      ? project?.bertmodels.available[currentScheme][currentModel]['predicted']
-      : false;
-
   // available models
   const availableModels =
     currentScheme && project?.bertmodels.available[currentScheme]
@@ -322,7 +317,7 @@ export const ProjectTrainPage: FC = () => {
                                 className="btn btn-primary me-2 mt-2"
                                 onClick={() => computeModelPrediction(currentModel, 'train')}
                               >
-                                Predict on train dataset
+                                Predict on training dataset
                               </button>
                             )}
                             {isComputing && (
@@ -391,32 +386,6 @@ export const ProjectTrainPage: FC = () => {
                                   )}
                                 </details>
                               </div>
-                            )}
-                          </details>
-
-                          <details className="custom-details">
-                            <summary>Compute prediction</summary>
-                            {availablePrediction ? (
-                              <div className="explanations">
-                                Prediction computed, you can export it
-                              </div>
-                            ) : isComputing ? (
-                              <div>
-                                <button
-                                  key="stop"
-                                  className="btn btn-primary mt-3 d-flex align-items-center"
-                                  onClick={stopTraining}
-                                >
-                                  <PulseLoader color={'white'} /> Stop current process
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                className="btn btn-info m-4"
-                                onClick={() => computeModelPrediction(currentModel, 'all')}
-                              >
-                                Launch prediction complete dataset
-                              </button>
                             )}
                           </details>
                         </div>
