@@ -696,7 +696,8 @@ def predict_bert(
         pred.to_parquet(path / file_name)
         print("Written", file_name)
         print("function prediction : finished")
-        return {"success": True, "prediction": pred.copy()}
+        # return {"success": True, "prediction": pred.copy()}
+        return {"success": True}
     except Exception as e:
         print("Error in prediction", e)
         return {"error": str(e)}

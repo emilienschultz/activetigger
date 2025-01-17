@@ -1185,8 +1185,11 @@ class Project(Server):
                         self.errors.append([datetime.now(TIMEZONE), "bert training", r["error"]])
                         # return {"error": r["error"]}
                     if "prediction" in r:
-                        predictions["predict_" + e["model"].name] = r["prediction"]
+                        # predictions["predict_" + e["model"].name] = r["prediction"]
+                        # print("Prediction added")
+                        continue
                     self.bertmodels.add(e)
+                    print("Bertmodel treatment achieved")
 
                 except Exception as ex:
                     self.errors.append(
