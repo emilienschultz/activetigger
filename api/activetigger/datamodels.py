@@ -370,6 +370,14 @@ class GenerationRequest(BaseModel):
     mode: str = "all"
 
 
+class UserComputing(BaseModel):
+    user: str
+    unique_id: str
+    number: str
+    api: str
+    kind: str
+
+
 class TableOutModel(BaseModel):
     """
     Response for table of elements
@@ -505,9 +513,7 @@ class TableBatch(BaseModel):
     filter: str | None
 
     class Config:
-        arbitrary_types_allowed: bool = (
-            True  # Allow DataFrame type but switches off Pydantic here
-        )
+        arbitrary_types_allowed: bool = True  # Allow DataFrame type but switches off Pydantic here
 
 
 class CodebookModel(BaseModel):

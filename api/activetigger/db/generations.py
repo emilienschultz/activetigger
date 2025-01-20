@@ -49,10 +49,7 @@ class GenerationsService:
                 .limit(n_elements)
             ).all()
             print(generated)
-            return [
-                [el.time, el.element_id, el.prompt, el.answer, el.endpoint]
-                for el in generated
-            ]
+            return [[el.time, el.element_id, el.prompt, el.answer, el.endpoint] for el in generated]
 
     def get_available_models(self):
         """
@@ -60,4 +57,7 @@ class GenerationsService:
 
         Currently, this is hardwired in code
         """
-        return [GenerationModel(id="ollama", name="Ollama")]
+        return [
+            GenerationModel(id="ollama", name="Ollama"),
+            GenerationModel(id="gpt-4o-mini", name="ChatGPT 4o mini"),
+        ]

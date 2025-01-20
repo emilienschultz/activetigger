@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -142,9 +143,9 @@ class Features:
             project=self.project_slug,
             kind=kind,
             name=name,
-            parameters=parameters,
+            parameters=json.dumps(parameters),
             user=username,
-            data=list(new_content.columns),
+            data=json.dumps(list(new_content.columns)),
         )
 
         # refresh the map
@@ -212,8 +213,8 @@ class Features:
             "name": name,
             "kind": feature.kind,
             "username": feature.user,
-            "parameters": feature.parameters,
-            "columns": feature.data,
+            "parameters": json.loads(feature.parameters),
+            "columns": json.loads(feature.data),
         }
 
     def get_available(self):

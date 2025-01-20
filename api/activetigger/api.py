@@ -57,7 +57,7 @@ from activetigger.datamodels import (
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
-from activetigger.generations import Generations
+from activetigger.generation.generations import Generations
 from activetigger.server import Project, Server
 
 # General comments

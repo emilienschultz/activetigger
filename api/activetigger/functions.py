@@ -6,7 +6,7 @@ import os
 import shutil
 from logging import Logger
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import bcrypt
 
@@ -119,7 +119,11 @@ def compare_to_hash(text: str, hash: str | bytes):
     Compare string to its hash
     """
 
-    bytes_hash: bytes = hash.encode() if isinstance(hash, str) else hash
+    bytes_hash: bytes
+    if type(hash) is str:
+        bytes_hash = hash.encode()
+    else:
+        bytes_hash = cast(bytes, hash)
     r = bcrypt.checkpw(text.encode(), bytes_hash)
     return r
 
@@ -186,7 +190,7 @@ def tokenize(texts: Series, language: str = "fr") -> Series:
     elif language == "fr":
         model = "fr_core_news_sm"
     else:
-        return {"error": "Language not supported"}
+        raise Exception(f"Language {language} is not supported")
 
     nlp = spacy.load(model, disable=["ner", "tagger"])
     docs = nlp.pipe(texts, batch_size=1000)
@@ -219,7 +223,7 @@ def get_gpu_estimate():
     return None
 
 
-def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> DataFrame:
+def to_fasttext(texts: Series, language: str, path_models: Path) -> DataFrame:
     """
     Compute fasttext embedding
     Download the model if needed
@@ -231,7 +235,7 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
     """
     # TODO check language
     if not path_models.exists():
-        return {"error": f"path {str(path_models)} does not exist"}
+        raise Exception(f"path {str(path_models)} does not exist")
     os.chdir(path_models)
     print(
         "If the model doesn't exist, it will be downloaded first. It could talke some time."
@@ -242,8 +246,9 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
     ft = fasttext.load_model(model_name)
     emb = [ft.get_sentence_vector(t.replace("\n", " ")) for t in texts_tk]
     df = pd.DataFrame(emb, index=texts.index)
-    df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
-    return {"success": df}
+    # WARN: this seems strange. Maybe replace with a more explicit syntax
+    df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]  # type: ignore[assignment]
+    return df
 
 
 def to_sbert(
@@ -288,11 +293,11 @@ def to_sbert(
             emb = sbert.encode(list(texts), batch_size=batch_size, device=str(device))
         emb = pd.DataFrame(emb, index=texts.index)
         emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
-        print("computation end")
-        return {"success": emb}
+        logging.debug("computation end")
+        return emb
     except Exception as e:
-        print(e)
-        return {"error": e}
+        logging.error(e)
+        raise e
     finally:
         # cleaning
         del sbert, texts
@@ -504,8 +509,9 @@ def train_bert(
             batched=True,
         )
 
-    # Build test dataset
-    df = df.train_test_split(test_size=test_size)  # stratify_by_column="label"
+    # Bui
+    # HACK: Mypy report a strange error here
+    df = df.train_test_split(test_size=test_size)  # type: ignore[operator]
     logger.info("Train/test dataset created")
 
     # Model
