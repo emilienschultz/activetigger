@@ -30,3 +30,6 @@ jobs:
       - name: Static typing check
         run: |
           mypy --ignore-missing-imports
+      - name: Test
+        run: |
+          python -m pytest tests/test_projects.py

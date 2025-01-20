@@ -77,19 +77,21 @@ class ProjectsService:
         else:
             return None
 
-    def add_project(self, project_slug: str, parameters: dict[str, Any], username: str):
-        session = self.Session()
-        project = Projects(
-            project_slug=project_slug,
-            parameters=parameters,
-            time_created=datetime.datetime.now(),
-            time_modified=datetime.datetime.now(),
-            user_id=username,
-        )
-        session.add(project)
-        session.commit()
-        session.close()
-        print("CREATE PROJECT", datetime.datetime.now())
+    def add_project(
+        self, project_slug: str, parameters: dict[str, Any], username: str
+    ) -> str:
+        with self.Session.begin() as session:
+            now = datetime.datetime.now()
+            project = Projects(
+                project_slug=project_slug,
+                parameters=parameters,
+                time_created=now,
+                time_modified=now,
+                user_id=username,
+            )
+            session.add(project)
+        logging.debug("CREATE PROJECT %s", now)
+        return project_slug
 
     def update_project(self, project_slug: str, parameters: dict[str, Any]):
         session = self.Session()
@@ -110,7 +112,9 @@ class ProjectsService:
 
     def add_token(self, token: str, status: str):
         with self.Session.begin() as session:
-            new_token = Tokens(token=token, status=status, time_created=datetime.datetime.now())
+            new_token = Tokens(
+                token=token, status=status, time_created=datetime.datetime.now()
+            )
             session.add(new_token)
 
     def get_token_status(self, token: str):
@@ -128,7 +132,9 @@ class ProjectsService:
                 .values(time_revoked=datetime.datetime.now(), status="revoked")
             )
 
-    def add_scheme(self, project_slug: str, name: str, labels: list[str], kind: str, username: str):
+    def add_scheme(
+        self, project_slug: str, name: str, labels: list[str], kind: str, username: str
+    ):
         if not labels:
             labels = []
         params = {"labels": labels, "codebook": None, "kind": kind}
@@ -158,7 +164,9 @@ class ProjectsService:
             scheme.params = params
             scheme.time_modified = datetime.datetime.now()
 
-    def update_scheme_codebook(self, project_slug: str, scheme: str, codebook: str) -> None:
+    def update_scheme_codebook(
+        self, project_slug: str, scheme: str, codebook: str
+    ) -> None:
         """
         Update the codebook in the database
         """
@@ -188,14 +196,10 @@ class ProjectsService:
 
     def delete_project(self, project_slug: str):
         with self.Session.begin() as session:
-            _ = session.execute(delete(Projects).filter_by(project_slug=project_slug))
-            _ = session.execute(delete(Schemes).filter_by(project_id=project_slug))
-            _ = session.execute(delete(Auths).filter_by(project_id=project_slug))
-            _ = session.execute(delete(Generations).filter_by(project_id=project_slug))
-            _ = session.execute(delete(Features).filter_by(project_id=project_slug))
-            _ = session.execute(delete(Annotations).filter_by(project_id=project_slug))
-            _ = session.execute(delete(Logs).filter_by(project_id=project_slug))
-            _ = session.execute(delete(Models).filter_by(project_id=project_slug))
+            project = session.scalars(
+                select(Projects).filter_by(project_slug=project_slug)
+            ).first()
+            session.delete(project)
 
     def add_generated(
         self,
@@ -227,15 +231,22 @@ class ProjectsService:
         session = self.Session()
         generated = (
             session.query(Generations)
-            .filter(Generations.project_id == project_slug, Generations.user_id == username)
+            .filter(
+                Generations.project_id == project_slug, Generations.user_id == username
+            )
             .order_by(Generations.time.desc())
             .limit(n_elements)
             .all()
         )
         session.close()
-        return [[el.time, el.element_id, el.prompt, el.answer, el.endpoint] for el in generated]
+        return [
+            [el.time, el.element_id, el.prompt, el.answer, el.endpoint]
+            for el in generated
+        ]
 
-    def get_distinct_users(self, project_slug: str, timespan: int | None) -> Sequence[Users]:
+    def get_distinct_users(
+        self, project_slug: str, timespan: int | None
+    ) -> Sequence[Users]:
         with self.Session() as session:
             stmt = (
                 select(Projects.user)
@@ -244,7 +255,9 @@ class ProjectsService:
                 .distinct()
             )
             if timespan:
-                time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
+                time_threshold = datetime.datetime.now() - datetime.timedelta(
+                    seconds=timespan
+                )
                 stmt = stmt.join(Annotations).where(
                     Annotations.time > time_threshold,
                 )
@@ -264,7 +277,9 @@ class ProjectsService:
 
     def get_project_auth(self, project_slug: str):
         with self.Session() as session:
-            auth = session.scalars(select(Auths).filter_by(project_id=project_slug)).all()
+            auth = session.scalars(
+                select(Auths).filter_by(project_id=project_slug)
+            ).all()
             return {el.user_id: el.status for el in auth}
 
     def add_auth(self, project_slug: str, user: str, status: str):
@@ -280,7 +295,9 @@ class ProjectsService:
 
     def delete_auth(self, project_slug: str, user: str):
         with self.Session.begin() as session:
-            _ = session.execute(delete(Auths).filter_by(project_id=project_slug, user_id=user))
+            _ = session.execute(
+                delete(Auths).filter_by(project_id=project_slug, user_id=user)
+            )
 
     def get_user_projects(self, username: str):
         with self.Session() as session:
@@ -301,7 +318,9 @@ class ProjectsService:
         session = self.Session()
         if project_slug is None:
             result = (
-                session.query(Auths.user_id, Auths.status).filter(Auths.user_id == username).all()
+                session.query(Auths.user_id, Auths.status)
+                .filter(Auths.user_id == username)
+                .all()
             )
         else:
             result = (
@@ -351,7 +370,9 @@ class ProjectsService:
             ).all()
             return distinct_users
 
-    def get_recent_annotations(self, project_slug: str, user: str, scheme: str, limit: int):
+    def get_recent_annotations(
+        self, project_slug: str, user: str, scheme: str, limit: int
+    ):
         with self.Session() as session:
             stmt = (
                 select(Annotations.element_id)
@@ -396,7 +417,9 @@ class ProjectsService:
         user: str,
         project_slug: str,
         scheme: str,
-        elements: list[dict],  # [{"element_id": str, "annotation": str, "comment": str}]
+        elements: list[
+            dict
+        ],  # [{"element_id": str, "annotation": str, "comment": str}]
     ):
         session = self.Session()
         for e in elements:
@@ -440,12 +463,16 @@ class ProjectsService:
     def available_schemes(self, project_slug: str):
         with self.Session() as session:
             schemes = session.execute(
-                select(Schemes.name, Schemes.params).filter_by(project_id=project_slug).distinct()
+                select(Schemes.name, Schemes.params)
+                .filter_by(project_id=project_slug)
+                .distinct()
             ).all()
         r = []
         for s in schemes:
             params = s.params
-            kind = params["kind"] if "kind" in params else "multiclass"  # temporary hack
+            kind = (
+                params["kind"] if "kind" in params else "multiclass"
+            )  # temporary hack
             r.append(
                 {
                     "name": s.name,
@@ -458,7 +485,9 @@ class ProjectsService:
 
     def delete_scheme(self, project_slug: str, name: str):
         with self.Session.begin() as session:
-            _ = session.execute(delete(Schemes).filter_by(name=name, project_id=project_slug))
+            _ = session.execute(
+                delete(Schemes).filter_by(name=name, project_id=project_slug)
+            )
 
     def get_table_annotations_users(self, project_slug: str, scheme: str):
         with self.Session() as session:
@@ -480,7 +509,10 @@ class ProjectsService:
             ).join(subquery, Annotations.id == subquery.c.id)
 
             results = session.execute(query).fetchall()
-            return [[row.element_id, row.annotation, row.user_id, row.time] for row in results]
+            return [
+                [row.element_id, row.annotation, row.user_id, row.time]
+                for row in results
+            ]
 
     # feature management
 
@@ -527,7 +559,9 @@ class ProjectsService:
 
     def get_project_features(self, project: str):
         with self.Session() as session:
-            features = session.scalars(select(Features).filter_by(project_id=project)).all()
+            features = session.scalars(
+                select(Features).filter_by(project_id=project)
+            ).all()
             return {
                 i.name: {
                     "time": i.time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -579,7 +613,9 @@ class ProjectsService:
     def change_model_status(self, project: str, name: str, status: str):
         with self.Session.begin() as session:
             _ = session.execute(
-                update(Models).filter_by(name=name, project_id=project).values(status=status)
+                update(Models)
+                .filter_by(name=name, project_id=project)
+                .values(status=status)
             )
 
     def available_models(self, project: str):
@@ -605,7 +641,9 @@ class ProjectsService:
     def model_exists(self, project: str, name: str):
         session = self.Session()
         models = (
-            session.query(Models).filter(Models.name == name, Models.project_id == project).all()
+            session.query(Models)
+            .filter(Models.name == name, Models.project_id == project)
+            .all()
         )
         session.close()
         return len(models) > 0
@@ -614,13 +652,17 @@ class ProjectsService:
         session = self.Session()
         # test if the name does not exist
         models = (
-            session.query(Models).filter(Models.name == name, Models.project_id == project).all()
+            session.query(Models)
+            .filter(Models.name == name, Models.project_id == project)
+            .all()
         )
         if len(models) == 0:
             print("Model does not exist")
             return False
         # delete the model
-        session.query(Models).filter(Models.name == name, Models.project_id == project).delete()
+        session.query(Models).filter(
+            Models.name == name, Models.project_id == project
+        ).delete()
         session.commit()
         session.close()
         return True
@@ -628,7 +670,9 @@ class ProjectsService:
     def get_model(self, project: str, name: str):
         session = self.Session()
         model = (
-            session.query(Models).filter(Models.name == name, Models.project_id == project).first()
+            session.query(Models)
+            .filter(Models.name == name, Models.project_id == project)
+            .first()
         )
         session.close()
         return model
@@ -662,7 +706,9 @@ class ProjectsService:
     def set_model_params(self, project: str, name: str, flag: str, value):
         session = self.Session()
         model = (
-            session.query(Models).filter(Models.name == name, Models.project_id == project).first()
+            session.query(Models)
+            .filter(Models.name == name, Models.project_id == project)
+            .first()
         )
         if model is None:
             raise DBException("Model not found")
