@@ -29,6 +29,7 @@ jobs:
           black --check api
       - name: Static typing check
         run: |
+          cd api
           mypy --ignore-missing-imports
       - name: Test
         run: |
