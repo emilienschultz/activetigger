@@ -7,13 +7,12 @@ import {
   useGeneratedElements,
   useGetGenerationsFile,
   useGetGenModels,
-  useGetProjectGenModels,
   useStopGenerate,
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
-import { GenModels } from '../types';
+import { GenModel } from '../types';
 import { IoIosAddCircle } from 'react-icons/io';
 import { GenModelSetupForm } from './forms/GenModelSetupForm';
 
@@ -30,6 +29,13 @@ interface Row {
   answer: string;
   endpoint: string;
 }
+
+const AddButton: FC = ({ showAddForm }) => (
+  <button className="btn btn-primary" onClick={showAddForm}>
+    <IoIosAddCircle className="m-1" size={30} />
+    Add a generative model
+  </button>
+);
 
 export const GenPage: FC = () => {
   const { projectName } = useParams();
@@ -112,6 +118,15 @@ export const GenPage: FC = () => {
     setShowForm(true);
   };
 
+  const hideForm = () => {
+    setShowForm(false);
+  };
+
+  const addModel = (model: GenModel) => {
+    setConfigureModels([...configuredModels, model]);
+    setShowForm(false);
+  };
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="generate">
       <div className="container-fluid mt-3">
@@ -125,43 +140,32 @@ export const GenPage: FC = () => {
         {configuredModels.length === 0 ? (
           <>
             {showForm ? (
-              <GenModelSetupForm />
+              <GenModelSetupForm add={addModel} cancel={hideForm} />
             ) : (
               <>
                 <p>No generative models assigned to this project</p>
-                <button className="btn btn-primary" onClick={showAddForm}>
-                  <IoIosAddCircle className="m-1" size={30} />
-                  Add a generative model
-                </button>
+                <AddButton showAddForm={showAddForm}></AddButton>
               </>
             )}
           </>
         ) : (
           <>
-            <div className="row">
+            <div className="row row-gap-2">
               <div className="col-6">
-                <div className="form-floating mt-3">
-                  <input
-                    type="text"
-                    id="endpoint"
-                    className="form-control  mt-3"
-                    placeholder="enter the url of the endpoint"
-                    value={generateConfig.endpoint || undefined}
-                    onChange={(e) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        generateConfig: { ...generateConfig, endpoint: e.target.value },
-                      }));
-                    }}
-                  />
-                  <label htmlFor="endpoint">Endpoint </label>
+                <div className="form-floating">
+                  <select id="model" className="form-select">
+                    {configuredModels.map((model) => (
+                      <option key="{model.id}">{model.name}</option>
+                    ))}
+                  </select>
+                  <label htmlFor="model">Model</label>
                 </div>
               </div>
               <div className="col-6">
-                <div className="form-floating mt-3">
+                <div className="form-floating">
                   <select
                     id="mode"
-                    className="form-control mt-3"
+                    className="form-select"
                     onChange={(e) => {
                       setAppContext((prev) => ({
                         ...prev,
@@ -174,11 +178,16 @@ export const GenPage: FC = () => {
                   </select>
                   <label htmlFor="mode">Sample </label>
                 </div>
-                <div className="form-floating mt-3">
+              </div>
+              <div className="col-6">
+                <AddButton showAddForm={showAddForm}></AddButton>
+              </div>
+              <div className="col-6">
+                <div className="form-floating">
                   <input
                     type="number"
                     id="batch"
-                    className="form-control mt-3"
+                    className="form-control"
                     value={generateConfig.n_batch}
                     onChange={(e) => {
                       setAppContext((prev) => ({
