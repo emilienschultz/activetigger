@@ -120,8 +120,25 @@ export interface TestSetModel {
   n_test: number;
 }
 
-export interface GenModels {
+export type GenModelAPI = { models: GenModel[] } & (
+  | {
+      name: 'Ollama';
+      endpoint: string;
+    }
+  | {
+      name: 'OpenAI';
+      credentials: string;
+    }
+  | {
+      name: 'HuggingFace';
+      endpoint: string;
+      credentials: string;
+    }
+);
+
+export interface GenModel {
   id: string;
   name: string;
   endpoint?: string;
+  credentials?: string;
 }

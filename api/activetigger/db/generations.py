@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
-from activetigger.datamodels import GenerationModel
+from activetigger.datamodels import GenerationModel, GenerationModelApi
 from activetigger.db.models import Generations
 
 
@@ -51,13 +51,23 @@ class GenerationsService:
             print(generated)
             return [[el.time, el.element_id, el.prompt, el.answer, el.endpoint] for el in generated]
 
-    def get_available_models(self):
+    def get_available_models(self) -> list[GenerationModelApi]:
         """
         Get the available models for generation
 
         Currently, this is hardwired in code
         """
         return [
-            GenerationModel(id="ollama", name="Ollama"),
-            GenerationModel(id="gpt-4o-mini", name="ChatGPT 4o mini"),
+            GenerationModelApi(
+                name="Ollama",
+                models=[GenerationModel(id="llama3.1:70b", name="Llama3.1 - 70b")],
+            ),
+            GenerationModelApi(
+                name="OpenAI",
+                models=[
+                    GenerationModel(id="gpt-4o-mini", name="ChatGPT 4o mini"),
+                    GenerationModel(id="gpt-4o", name="ChatGPT 4o"),
+                ],
+            ),
+            GenerationModelApi(name="HuggingFace", models=[]),
         ]

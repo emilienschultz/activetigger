@@ -7,12 +7,15 @@ import {
   useGeneratedElements,
   useGetGenerationsFile,
   useGetGenModels,
+  useGetProjectGenModels,
   useStopGenerate,
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
-import { GenModels } from 'src/types';
+import { GenModels } from '../types';
+import { IoIosAddCircle } from 'react-icons/io';
+import { GenModelSetupForm } from './forms/GenModelSetupForm';
 
 // TODO
 // interrupt button using event
@@ -61,7 +64,8 @@ export const GenPage: FC = () => {
 
   // GenModels
   const { models } = useGetGenModels();
-  const [availableModels, setAvailableModels] = useState<GenModels[]>([]);
+  const [configuredModels, setConfigureModels] = useState<GenModels[]>([]);
+  const [showForm, setShowForm] = useState<boolean>(false);
 
   // call api to download a batch of elements
   const { getGenerationsFile } = useGetGenerationsFile(projectName || null);
@@ -73,12 +77,7 @@ export const GenPage: FC = () => {
         ...prev,
         generateConfig: { ...generateConfig, api: 'ollama' },
       }));
-
-    const fetchModels = async () => {
-      setAvailableModels(await models());
-    };
-    fetchModels();
-  }, [generateConfig, setAppContext, models]);
+  }, [generateConfig, setAppContext]);
 
   const columns: readonly Column<Row>[] = [
     {
@@ -109,6 +108,10 @@ export const GenPage: FC = () => {
     },
   ];
 
+  const showAddForm = () => {
+    setShowForm(true);
+  };
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="generate">
       <div className="container-fluid mt-3">
@@ -119,124 +122,141 @@ export const GenPage: FC = () => {
           <div className="row"> Current scheme : {currentScheme}</div>
         </div>
 
-        <div className="row">
-          <div className="col-6">
-            <div className="form-floating mt-3">
-              <select className="form-control" id="api">
-                {availableModels.map((model) => (
-                  <option key={model.id}>{model.name}</option>
-                ))}
-              </select>
-              <label htmlFor="api">API </label>
+        {configuredModels.length === 0 ? (
+          <>
+            {showForm ? (
+              <GenModelSetupForm />
+            ) : (
+              <>
+                <p>No generative models assigned to this project</p>
+                <button className="btn btn-primary" onClick={showAddForm}>
+                  <IoIosAddCircle className="m-1" size={30} />
+                  Add a generative model
+                </button>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="row">
+              <div className="col-6">
+                <div className="form-floating mt-3">
+                  <input
+                    type="text"
+                    id="endpoint"
+                    className="form-control  mt-3"
+                    placeholder="enter the url of the endpoint"
+                    value={generateConfig.endpoint || undefined}
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        generateConfig: { ...generateConfig, endpoint: e.target.value },
+                      }));
+                    }}
+                  />
+                  <label htmlFor="endpoint">Endpoint </label>
+                </div>
+              </div>
+              <div className="col-6">
+                <div className="form-floating mt-3">
+                  <select
+                    id="mode"
+                    className="form-control mt-3"
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        generateConfig: { ...generateConfig, selection_mode: e.target.value },
+                      }));
+                    }}
+                  >
+                    <option key="all">all</option>
+                    <option key="untagged">untagged</option>
+                  </select>
+                  <label htmlFor="mode">Sample </label>
+                </div>
+                <div className="form-floating mt-3">
+                  <input
+                    type="number"
+                    id="batch"
+                    className="form-control mt-3"
+                    value={generateConfig.n_batch}
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        generateConfig: { ...generateConfig, n_batch: Number(e.target.value) },
+                      }));
+                    }}
+                  />
+                  <label htmlFor="batch">N elements to annotate </label>
+                </div>
+              </div>
+              <hr className="mt-3" />
+              <div className="explanations mt-3">
+                Craft your prompt with the element #INSERTTEXT to insert text
+              </div>
+              <div className="form-floating mt-2">
+                <textarea
+                  id="prompt"
+                  rows={5}
+                  placeholder="Enter your prompt"
+                  className="form-control"
+                  style={{ height: '200px' }}
+                  value={generateConfig.prompt || ''}
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      generateConfig: { ...generateConfig, prompt: e.target.value },
+                    }));
+                  }}
+                />
+                <label htmlFor="prompt">Prompt </label>
+              </div>
+              <div className="col-12 text-center">
+                {isGenerating ? (
+                  <div>
+                    <PulseLoader />
+                    <button className="btn btn-primary mt-3" onClick={stopGenerate}>
+                      Stop
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="btn btn-primary mt-3"
+                    onClick={generate}
+                    disabled={!!isGenerating}
+                  >
+                    Generate
+                  </button>
+                )}
+                <div className="explanations"> It can take some time if you have a large batch</div>
+              </div>
             </div>
-            <div className="form-floating mt-3">
-              <input
-                type="text"
-                id="endpoint"
-                className="form-control  mt-3"
-                placeholder="enter the url of the endpoint"
-                value={generateConfig.endpoint || undefined}
-                onChange={(e) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    generateConfig: { ...generateConfig, endpoint: e.target.value },
-                  }));
-                }}
-              />
-              <label htmlFor="endpoint">Endpoint </label>
-            </div>
-          </div>
-          <div className="col-6">
-            <div className="form-floating mt-3">
-              <select
-                id="mode"
-                className="form-control mt-3"
-                onChange={(e) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    generateConfig: { ...generateConfig, selection_mode: e.target.value },
-                  }));
-                }}
-              >
-                <option key="all">all</option>
-                <option key="untagged">untagged</option>
-              </select>
-              <label htmlFor="mode">Sample </label>
-            </div>
-            <div className="form-floating mt-3">
+            <hr />
+            <div className="col-12 d-flex align-items-center justify-content-center">
+              <span>Number of last generated elements to download</span>
               <input
                 type="number"
-                id="batch"
-                className="form-control mt-3"
-                value={generateConfig.n_batch}
-                onChange={(e) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    generateConfig: { ...generateConfig, n_batch: Number(e.target.value) },
-                  }));
-                }}
+                placeholder="Number of last generated elements to download"
+                className="form-control m-4"
+                style={{ width: '100px' }}
+                value={numberElements || 10}
+                onChange={(e) => setNumberElements(Number(e.target.value))}
               />
-              <label htmlFor="batch">N elements to annotate </label>
-            </div>
-          </div>
-          <hr className="mt-3" />
-          <div className="explanations mt-3">
-            Craft your prompt with the element #INSERTTEXT to insert text
-          </div>
-          <div className="form-floating mt-2">
-            <textarea
-              id="prompt"
-              rows={5}
-              placeholder="Enter your prompt"
-              className="form-control"
-              style={{ height: '200px' }}
-              value={generateConfig.prompt || ''}
-              onChange={(e) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  generateConfig: { ...generateConfig, prompt: e.target.value },
-                }));
-              }}
-            />
-            <label htmlFor="prompt">Prompt </label>
-          </div>
-          <div className="col-12 text-center">
-            {isGenerating ? (
-              <div>
-                <PulseLoader />
-                <button className="btn btn-primary mt-3" onClick={stopGenerate}>
-                  Stop
-                </button>
-              </div>
-            ) : (
-              <button className="btn btn-primary mt-3" onClick={generate} disabled={!!isGenerating}>
-                Generate
+              <button
+                className="btn btn-secondary"
+                onClick={() => getGenerationsFile(numberElements)}
+              >
+                Download
               </button>
-            )}
-            <div className="explanations"> It can take some time if you have a large batch</div>
-          </div>
-        </div>
-        <hr />
-        <div className="col-12 d-flex align-items-center justify-content-center">
-          <span>Number of last generated elements to download</span>
-          <input
-            type="number"
-            placeholder="Number of last generated elements to download"
-            className="form-control m-4"
-            style={{ width: '100px' }}
-            value={numberElements || 10}
-            onChange={(e) => setNumberElements(Number(e.target.value))}
-          />
-          <button className="btn btn-secondary" onClick={() => getGenerationsFile(numberElements)}>
-            Download
-          </button>
-        </div>
-        <div className="explanations">Last generated content for the current user</div>
-        <DataGrid
-          className="fill-grid"
-          columns={columns}
-          rows={(generated as unknown as Row[]) || []}
-        />
+            </div>
+            <div className="explanations">Last generated content for the current user</div>
+            <DataGrid
+              className="fill-grid"
+              columns={columns}
+              rows={(generated as unknown as Row[]) || []}
+            />
+          </>
+        )}
       </div>
     </ProjectPageLayout>
   );

@@ -2,8 +2,6 @@ import { FC, useState } from 'react';
 
 import { useReconciliate, useTableDisagreement } from '../core/api';
 
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-quartz.css';
 import Select from 'react-select';
 import { useAppContext } from '../core/context';
 

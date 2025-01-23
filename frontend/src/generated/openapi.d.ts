@@ -1363,6 +1363,18 @@ export interface components {
             name: string;
             /** Endpoint */
             endpoint?: string | null;
+            /** Credentials */
+            credentials?: string | null;
+        };
+        /**
+         * GenerationModelApi
+         * @description GenAI API available for generation
+         */
+        GenerationModelApi: {
+            /** Name */
+            name: string;
+            /** Models */
+            models: components["schemas"]["GenerationModel"][];
         };
         /**
          * GenerationRequest
@@ -2757,7 +2769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GenerationModel"][];
+                    "application/json": components["schemas"]["GenerationModelApi"][];
                 };
             };
         };

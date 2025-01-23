@@ -354,6 +354,16 @@ class GenerationModel(BaseModel):
     id: str
     name: str
     endpoint: str | None = None
+    credentials: str | None = None
+
+
+class GenerationModelApi(BaseModel):
+    """
+    GenAI API available for generation
+    """
+
+    name: str
+    models: list[GenerationModel]
 
 
 class GenerationRequest(BaseModel):
