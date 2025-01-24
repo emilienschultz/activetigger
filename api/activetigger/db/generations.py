@@ -1,11 +1,17 @@
 import datetime
+import logging
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
-from activetigger.datamodels import GenerationModel, GenerationModelApi
-from activetigger.db.models import Generations
+from activetigger.datamodels import (
+    GenerationAvailableModel,
+    GenerationCreationModel,
+    GenerationModel,
+    GenerationModelApi,
+)
+from activetigger.db.models import GenModels, Generations
 
 
 class GenerationsService:
@@ -19,7 +25,7 @@ class GenerationsService:
         user: str,
         project_slug: str,
         element_id: str,
-        endpoint: str,
+        model_id: int,
         prompt: str,
         answer: str,
     ):
@@ -29,7 +35,7 @@ class GenerationsService:
             time=datetime.datetime.now(),
             project_id=project_slug,
             element_id=element_id,
-            endpoint=endpoint,
+            model_id=model_id,
             prompt=prompt,
             answer=answer,
         )
@@ -49,7 +55,10 @@ class GenerationsService:
                 .limit(n_elements)
             ).all()
             print(generated)
-            return [[el.time, el.element_id, el.prompt, el.answer, el.endpoint] for el in generated]
+            return [
+                [el.time, el.element_id, el.prompt, el.answer, el.endpoint]
+                for el in generated
+            ]
 
     def get_available_models(self) -> list[GenerationModelApi]:
         """
@@ -60,14 +69,67 @@ class GenerationsService:
         return [
             GenerationModelApi(
                 name="Ollama",
-                models=[GenerationModel(id="llama3.1:70b", name="Llama3.1 - 70b")],
+                models=[
+                    GenerationAvailableModel(
+                        slug="llama3.1:70b", api="Ollama", name="Llama3.1 - 70b"
+                    )
+                ],
             ),
             GenerationModelApi(
                 name="OpenAI",
                 models=[
-                    GenerationModel(id="gpt-4o-mini", name="ChatGPT 4o mini"),
-                    GenerationModel(id="gpt-4o", name="ChatGPT 4o"),
+                    GenerationAvailableModel(
+                        slug="gpt-4o-mini", api="OpenAI", name="ChatGPT 4o mini"
+                    ),
+                    GenerationAvailableModel(
+                        slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"
+                    ),
                 ],
             ),
             GenerationModelApi(name="HuggingFace", models=[]),
         ]
+
+    def get_project_gen_models(self, project_slug: str) -> list[GenerationModel]:
+        """
+        Get the GenAI model configured for the given project
+
+        Returns a list of GenerationModel
+        """
+        with self.Session() as session:
+            models = session.scalars(
+                select(GenModels).filter_by(project_id=project_slug)
+            ).all()
+        return models
+
+    def get_gen_model(self, model_id: int) -> GenerationModel:
+        with self.Session() as session:
+            return session.scalars(select(GenModels).filter_by(id=model_id)).first()
+
+    def add_project_gen_model(
+        self, project_slug: str, model: GenerationCreationModel
+    ) -> int:
+        """
+        Add a new GenAI model for the given project
+        """
+        with self.Session() as session:
+            new_model = GenModels(
+                project_id=project_slug,
+                slug=model.slug,
+                name=model.name,
+                api=model.api,
+                endpoint=model.endpoint,
+                credentials=model.credentials,
+            )
+            session.add(new_model)
+            session.commit()
+            session.refresh(new_model)
+            return new_model.id
+
+    def delete_project_gen_model(self, project_slug: str, model_id: int) -> None:
+        """
+        Delete a GenAI model from the given project
+        """
+        with self.Session.begin() as session:
+            session.execute(
+                delete(GenModels).filter_by(project_id=project_slug, id=model_id)
+            )

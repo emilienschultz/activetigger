@@ -618,6 +618,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/elements/{project_slug}/generate/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Project Generation Models
+         * @description Returns the list of the available GenAI models configure for a project
+         */
+        get: operations["list_project_generation_models_elements__project_slug__generate_models_get"];
+        put?: never;
+        /**
+         * Add Project Generation Models
+         * @description Add a new GenAI model for the project
+         */
+        post: operations["add_project_generation_models_elements__project_slug__generate_models_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elements/{project_slug}/generate/models/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Project Generation Models
+         * @description Delete a GenAI model from the project
+         */
+        delete: operations["delete_project_generation_models_elements__project_slug__generate_models__model_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/elements/generate/start": {
         parameters: {
             query?: never;
@@ -1353,18 +1397,50 @@ export interface components {
             };
         };
         /**
-         * GenerationModel
+         * GenerationAvailableModel
+         * @description GenAI models available for generation
+         */
+        GenerationAvailableModel: {
+            /** Slug */
+            slug: string;
+            /** Api */
+            api: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * GenerationCreationModel
          * @description GenAI model used in generation
          */
-        GenerationModel: {
-            /** Id */
-            id: string;
+        GenerationCreationModel: {
+            /** Slug */
+            slug: string;
+            /** Api */
+            api: string;
             /** Name */
             name: string;
             /** Endpoint */
             endpoint?: string | null;
             /** Credentials */
             credentials?: string | null;
+        };
+        /**
+         * GenerationModel
+         * @description GenAI model used in generation
+         */
+        GenerationModel: {
+            /** Slug */
+            slug: string;
+            /** Api */
+            api: string;
+            /** Name */
+            name: string;
+            /** Endpoint */
+            endpoint?: string | null;
+            /** Credentials */
+            credentials?: string | null;
+            /** Id */
+            id: number;
         };
         /**
          * GenerationModelApi
@@ -1374,17 +1450,15 @@ export interface components {
             /** Name */
             name: string;
             /** Models */
-            models: components["schemas"]["GenerationModel"][];
+            models: components["schemas"]["GenerationAvailableModel"][];
         };
         /**
          * GenerationRequest
          * @description To start a generating prompt
          */
         GenerationRequest: {
-            /** Api */
-            api: string;
-            /** Endpoint */
-            endpoint: string;
+            /** Model Id */
+            model_id: number;
             /** Token */
             token?: string | null;
             /** Prompt */
@@ -2770,6 +2844,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GenerationModelApi"][];
+                };
+            };
+        };
+    };
+    list_project_generation_models_elements__project_slug__generate_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_project_generation_models_elements__project_slug__generate_models_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationCreationModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_generation_models_elements__project_slug__generate_models__model_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_slug: string;
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

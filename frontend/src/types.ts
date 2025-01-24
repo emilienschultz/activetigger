@@ -120,6 +120,8 @@ export interface TestSetModel {
   n_test: number;
 }
 
+export type SupportedAPI = 'Ollama' | 'OpenAI' | 'HuggingFace';
+
 export type GenModelAPI = { models: GenModel[] } & (
   | {
       name: 'Ollama';
@@ -137,7 +139,8 @@ export type GenModelAPI = { models: GenModel[] } & (
 );
 
 export interface GenModel {
-  id: string;
+  id: number;
+  slug: string;
   name: string;
   endpoint?: string;
   credentials?: string;

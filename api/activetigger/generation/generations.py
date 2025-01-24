@@ -17,7 +17,7 @@ from activetigger.generation.openai import OpenAI
 class GenerationResult(BaseModel):
     user: str
     project_slug: str
-    # endpoint: str
+    model_id: int
     element_id: str
     prompt: str
     answer: str
@@ -31,15 +31,63 @@ class Generations:
     computing: list[UserComputing]
     generations_service: GenerationsService
 
-    @staticmethod
+    def __init__(
+        self, db_manager: DatabaseManager, computing: list[UserComputing]
+    ) -> None:
+        self.generations_service = db_manager.generations_service
+        self.computing = computing
+
+    def add(
+        self,
+        user: str,
+        project_slug: str,
+        element_id: str,
+        model_id: int,
+        prompt: str,
+        answer: str,
+    ) -> None:
+        """
+        Add a generated element in the database
+        """
+        self.generations_service.add_generated(
+            user=user,
+            project_slug=project_slug,
+            element_id=element_id,
+            model_id=model_id,
+            prompt=prompt,
+            answer=answer,
+        )
+        return None
+
+    def get_generated(
+        self,
+        project_slug: str,
+        username: str,
+        n_elements: int,
+    ) -> DataFrame:
+        """
+        Get generated elements from the database
+        """
+        result = self.generations_service.get_generated(
+            project_slug=project_slug, username=username, n_elements=n_elements
+        )
+        df = pd.DataFrame(
+            result, columns=["time", "index", "prompt", "answer", "endpoint"]
+        )
+        df["time"] = pd.to_datetime(df["time"])
+        df["time"] = df["time"].dt.tz_localize("UTC")
+        df["time"] = df["time"].dt.tz_convert("Europe/Paris")
+        return df
+
+    def current_users_generating(self) -> list[UserComputing]:
+        return [e for e in self.computing if e.kind == "generation"]
+
     def generate(
+        self,
         user: str,
         project_name: str,
         df: DataFrame,
-        api: str,
-        endpoint: str | None,
-        credentials: str | None,
-        model: str | None,
+        model_id: int,
         prompt: str,
         event: Event | None = None,
     ) -> list[GenerationResult]:
@@ -65,16 +113,21 @@ class Generations:
             else:
                 prompt_with_text = prompt + "\n\n" + cast(str, row["text"])
 
+            # Get configured model
+            model = self.generations_service.get_gen_model(model_id)
+
             # make request to the client
             gen_model: GenerationModelClient
-            if api == "ollama":
-                if endpoint is None:
+            if model.api == "Ollama":
+                if model.endpoint is None:
                     raise Exception("You need to give an endpoint for the Ollama model")
-                gen_model = Ollama(endpoint)
-            elif api == "openai":
-                if credentials is None:
-                    raise Exception("You need to give your API key to call an OpenAI model")
-                gen_model = OpenAI(credentials)
+                gen_model = Ollama(model.endpoint)
+            elif model.api == "openai":
+                if model.credentials is None:
+                    raise Exception(
+                        "You need to give your API key to call an OpenAI model"
+                    )
+                gen_model = OpenAI(model.credentials)
             else:
                 errors.append(Exception("Model does not exist"))
                 continue
@@ -84,7 +137,7 @@ class Generations:
                     GenerationResult(
                         user=user,
                         project_slug=project_name,
-                        # endpoint=endpoint,
+                        model_id=model_id,
                         element_id=cast(str, row["id"]),
                         prompt=prompt_with_text,
                         answer=response,
@@ -95,50 +148,3 @@ class Generations:
                 errors.append(e)
 
         return results
-
-    def __init__(self, db_manager: DatabaseManager, computing: list[UserComputing]) -> None:
-        self.generations_service = db_manager.generations_service
-        self.computing = computing
-
-    def add(
-        self,
-        user: str,
-        project_slug: str,
-        element_id: str,
-        endpoint: str,
-        prompt: str,
-        answer: str,
-    ) -> None:
-        """
-        Add a generated element in the database
-        """
-        self.generations_service.add_generated(
-            user=user,
-            project_slug=project_slug,
-            element_id=element_id,
-            endpoint=endpoint,
-            prompt=prompt,
-            answer=answer,
-        )
-        return None
-
-    def get_generated(
-        self,
-        project_slug: str,
-        username: str,
-        n_elements: int,
-    ) -> DataFrame:
-        """
-        Get generated elements from the database
-        """
-        result = self.generations_service.get_generated(
-            project_slug=project_slug, username=username, n_elements=n_elements
-        )
-        df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "endpoint"])
-        df["time"] = pd.to_datetime(df["time"])
-        df["time"] = df["time"].dt.tz_localize("UTC")
-        df["time"] = df["time"].dt.tz_convert("Europe/Paris")
-        return df
-
-    def current_users_generating(self) -> list[UserComputing]:
-        return [e for e in self.computing if e.kind == "generation"]

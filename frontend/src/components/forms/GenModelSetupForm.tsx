@@ -1,8 +1,11 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { useGetGenModels } from '../../core/api';
-import { GenModelAPI } from '../../types';
+import { GenModel, GenModelAPI, SupportedAPI } from '../../types';
 
-export const GenModelSetupForm: FC = ({ add, cancel }) => {
+export const GenModelSetupForm: FC<{
+  add: (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => void;
+  cancel: () => void;
+}> = ({ add, cancel }) => {
   const [availableAPIs, setAvailableAPIs] = useState<GenModelAPI[]>([]);
   const [selectedAPI, setSelectedAPI] = useState<GenModelAPI>(availableAPIs[0]);
   const { models } = useGetGenModels();
@@ -25,11 +28,18 @@ export const GenModelSetupForm: FC = ({ add, cancel }) => {
   };
 
   const onSubmit = (model: FormData) => {
+    const name = model.get('model');
+    const endpoint = model.get('endpoint') || undefined;
+    const credentials = model.get('credentials') || undefined;
+    if (name === null) throw new Error('You should provide a name');
+    if (name instanceof File || endpoint instanceof File || credentials instanceof File)
+      throw new Error('You cannot provide a File here');
     add({
-      id: `${model.get('api')}-${model.get('model')}`,
-      name: model.get('model'),
-      endpoint: model.get('endpoint'),
-      credentials: model.get('credentials'),
+      slug: `${model.get('api')}-${model.get('model')}`,
+      name,
+      api: selectedAPI.name,
+      endpoint,
+      credentials,
     });
   };
 
@@ -59,8 +69,8 @@ export const GenModelSetupForm: FC = ({ add, cancel }) => {
               inputs.push(
                 <div className="form-floating col-5" key="model-select">
                   <select className="form-control" id="model" name="model">
-                    {selectedAPI.models.map((model) => (
-                      <option key={model.id}>{model.name}</option>
+                    {selectedAPI.models.map((model, idx) => (
+                      <option key={idx}>{model.name}</option>
                     ))}
                   </select>
                   {/* mt-0 is needed because a rule in the CSS file add a margin to .form-label. Maybe it should be removed*/}

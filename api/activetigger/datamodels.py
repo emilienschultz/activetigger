@@ -346,15 +346,34 @@ class BertParams(BaseModel):
     adapt: bool
 
 
-class GenerationModel(BaseModel):
+class GenerationCreationModel(BaseModel):
     """
     GenAI model used in generation
     """
 
-    id: str
+    slug: str
+    api: str
     name: str
     endpoint: str | None = None
     credentials: str | None = None
+
+
+class GenerationModel(GenerationCreationModel):
+    """
+    GenAI model used in generation
+    """
+
+    id: int
+
+
+class GenerationAvailableModel(BaseModel):
+    """
+    GenAI models available for generation
+    """
+
+    slug: str
+    api: str
+    name: str
 
 
 class GenerationModelApi(BaseModel):
@@ -363,7 +382,7 @@ class GenerationModelApi(BaseModel):
     """
 
     name: str
-    models: list[GenerationModel]
+    models: list[GenerationAvailableModel]
 
 
 class GenerationRequest(BaseModel):
@@ -371,8 +390,7 @@ class GenerationRequest(BaseModel):
     To start a generating prompt
     """
 
-    api: str
-    endpoint: str
+    model_id: int
     token: str | None = None
     prompt: str
     n_batch: int = 1
@@ -384,7 +402,7 @@ class UserComputing(BaseModel):
     user: str
     unique_id: str
     number: str
-    api: str
+    model_id: int
     kind: str
 
 
@@ -523,7 +541,9 @@ class TableBatch(BaseModel):
     filter: str | None
 
     class Config:
-        arbitrary_types_allowed: bool = True  # Allow DataFrame type but switches off Pydantic here
+        arbitrary_types_allowed: bool = (
+            True  # Allow DataFrame type but switches off Pydantic here
+        )
 
 
 class CodebookModel(BaseModel):

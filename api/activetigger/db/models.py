@@ -46,6 +46,9 @@ class Projects(Base):
     models: Mapped[list["Models"]] = relationship(
         "Models", cascade="all, delete-orphan", back_populates="project"
     )
+    gen_models: Mapped[list["GenModels"]] = relationship(
+        "GenModels", cascade="all, delete-orphan", back_populates="project"
+    )
 
 
 class Users(Base):
@@ -205,3 +208,17 @@ class Models(Base):
     status: Mapped[str]
     statistics: Mapped[str | None]
     test: Mapped[str | None]
+
+
+class GenModels(Base):
+    __tablename__ = "gen_models"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
+    project: Mapped[Projects] = relationship(back_populates="gen_models")
+    slug: Mapped[str]
+    name: Mapped[str]
+    api: Mapped[str]
+    endpoint: Mapped[str | None]
+    credentials: Mapped[str | None]
