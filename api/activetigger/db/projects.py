@@ -76,19 +76,21 @@ class ProjectsService:
         else:
             return None
 
-    def add_project(self, project_slug: str, parameters: dict[str, Any], username: str):
-        session = self.Session()
-        project = Projects(
-            project_slug=project_slug,
-            parameters=parameters,
-            time_created=datetime.datetime.now(),
-            time_modified=datetime.datetime.now(),
-            user_id=username,
-        )
-        session.add(project)
-        session.commit()
-        session.close()
-        print("CREATE PROJECT", datetime.datetime.now())
+    def add_project(
+        self, project_slug: str, parameters: dict[str, Any], username: str
+    ) -> str:
+        with self.Session.begin() as session:
+            now = datetime.datetime.now()
+            project = Projects(
+                project_slug=project_slug,
+                parameters=parameters,
+                time_created=now,
+                time_modified=now,
+                user_id=username,
+            )
+            session.add(project)
+        logging.debug("CREATE PROJECT %s", now)
+        return project_slug
 
     def update_project(self, project_slug: str, parameters: dict[str, Any]):
         session = self.Session()
@@ -193,7 +195,10 @@ class ProjectsService:
 
     def delete_project(self, project_slug: str):
         with self.Session.begin() as session:
-            _ = session.execute(delete(Projects).filter_by(project_slug=project_slug))
+            project = session.scalars(
+                select(Projects).filter_by(project_slug=project_slug)
+            ).first()
+            session.delete(project)
 
     def get_distinct_users(
         self, project_slug: str, timespan: int | None

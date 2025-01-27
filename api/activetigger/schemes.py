@@ -374,6 +374,9 @@ class Schemes:
         mode : train, predict, test
         """
 
+        if element_id == "noelement":
+            return {"error": "no element"}
+
         # test if the action is possible
         a = self.available()
         if scheme not in a:
@@ -390,7 +393,7 @@ class Schemes:
             if label not in a[scheme]["labels"]:
                 return {"error": "this tag doesn't belong to this scheme"}
 
-        # TODO : add a test also for testing
+        # TODO : add test if the element index really exist
         # if (not element_id in self.content.index):
         #    return {"error":"element doesn't exist"}
 

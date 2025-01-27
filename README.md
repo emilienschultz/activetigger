@@ -33,7 +33,14 @@ Clone the repository
 git clone https://github.com/emilienschultz/activetigger.git
 ```
 
-Create a virtual environnement with Python 3.11 and install requirements
+Create a virtual environnement with Python 3.11, for instance with Anaconda 
+
+```bash
+conda create -n activetigger python=3.11
+conda activate activetigger
+```
+
+Install requirements
 
 ```bash
 pip install -r activetigger/api/requirements.txt
@@ -73,8 +80,16 @@ The requirements contain the clone of the repository.
 
 The frontend is written in React/Typescript. To run the dev version and to build the app, you need first to install node.js and npm (version > 20).
 
+For linux :
+
 ```bash
 sudo apt-get install nodejs npm
+```
+
+For mac, you can install brew https://brew.sh/ and
+
+```bash
+brew install node
 ```
 
 Then you can install the npm packages

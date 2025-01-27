@@ -1856,6 +1856,10 @@ export interface components {
             filename: string;
             /** Csv */
             csv: string;
+            /** Col Label */
+            col_label?: string | null;
+            /** Scheme */
+            scheme?: string | null;
         };
         /**
          * TokenModel

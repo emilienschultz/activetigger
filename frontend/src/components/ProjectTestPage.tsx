@@ -63,7 +63,7 @@ export const ProjectTestPage: FC = () => {
         <div className="container-fluid">
           <div className="explanations">
             Select a scheme and a model, switch to the test mode to annotate the testset, and
-            compute test statistics
+            compute test statistics.
           </div>
           {
             // possibility to switch to test mode only if test dataset available
@@ -134,7 +134,7 @@ export const ProjectTestPage: FC = () => {
                     <div className="alert alert-info m-3">
                       Now you can go back to the annotation panel to annotate the test dataset. Once
                       you have a test dataset, you will be able to compute test statistics (next
-                      tab. Exit test mode to go back to train dataset.)
+                      tab. Exit test mode to go back to training dataset.)
                     </div>
                   )}
                 </Tab>

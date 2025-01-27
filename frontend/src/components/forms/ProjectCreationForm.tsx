@@ -95,7 +95,7 @@ export const ProjectCreationForm: FC = () => {
         return;
       }
     }
-  }, [files, maxSize, notify]);
+  }, [files, maxSize, notify, setValue]);
 
   // action when form validated
   const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {

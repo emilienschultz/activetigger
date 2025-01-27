@@ -117,6 +117,8 @@ export interface newBertModel {
 export interface TestSetModel {
   col_id: string;
   col_text: string;
+  col_label?: string | null;
+  scheme?: string | null;
   n_test: number;
 }
 

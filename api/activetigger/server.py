@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import os
@@ -622,31 +623,77 @@ class Project(Server):
         else:
             raise NameError(f"{project_slug} does not exist.")
 
-    def add_testdata(self, testset: TestSetDataModel):
+    def add_testdata(self, testset: TestSetDataModel, username: str, project_slug: str):
         """
         Add a test dataset
+
+        The test dataset should :
+        - not contains NA
+        - have a unique id different from the complete dataset
+
+        The id will be modified to indicate imported
+
         """
         if self.schemes.test is not None:
-            return {"error": "Already a test dataset"}
+            raise Exception("There is already a test dataset")
 
         if self.params.dir is None:
             raise Exception("Cannot add test data without a valid dir")
 
-        # write the buffer send by the frontend
-        with open(self.params.dir.joinpath("test_set_raw.csv"), "w") as f:
-            f.write(testset.csv)
-
-        # load it
+        csv_buffer = io.StringIO(testset.csv)
         df = pd.read_csv(
-            self.params.dir.joinpath("test_set_raw.csv"),
+            csv_buffer,
             dtype={testset.col_id: str, testset.col_text: str},
             nrows=testset.n_test,
         )
 
+        if len(df) > 10000:
+            raise Exception("You testset is too large")
+
         # change names
-        df = df.rename(
-            columns={testset.col_id: "id", testset.col_text: "text"}
-        ).set_index("id")
+        if not testset.col_label:
+            df = df.rename(
+                columns={testset.col_id: "id", testset.col_text: "text"}
+            ).set_index("id")
+        else:
+            df = df.rename(
+                columns={
+                    testset.col_id: "id",
+                    testset.col_text: "text",
+                    testset.col_label: "label",
+                }
+            )
+
+        # deal with non-unique id
+        # TODO : compare with the general dataset ???
+        if not ((df["id"].astype(str).apply(slugify)).nunique() == len(df)):
+            df["id"] = [str(i) for i in range(len(df))]
+            print("ID not unique, changed to default id")
+
+        # identify the dataset as imported and set the id
+        df["id"] = df["id"].apply(lambda x: f"imported-{x}")
+        df = df.set_index("id")
+
+        # import labels if specified + scheme
+        if testset.col_label and testset.scheme:
+            # Check the label columns if they match the scheme or raise error
+            scheme = self.schemes.available()[testset.scheme]
+            for label in df[testset.col_label].unique():
+                if label not in scheme:
+                    raise Exception(f"Label {label} not in the scheme {testset.scheme}")
+
+            elements = [
+                {"element_id": element_id, "annotation": label, "comment": ""}
+                for element_id, label in df[testset.col_label].dropna().items()
+            ]
+            self.db_manager.projects_service.add_annotations(
+                dataset="test",
+                user=username,
+                project_slug=project_slug,
+                scheme=testset.scheme,
+                elements=elements,
+            )
+            print("Testset labels imported")
 
         # write the dataset
         df[[testset.col_text]].to_parquet(self.params.dir.joinpath(self.test_file))
@@ -1209,15 +1256,18 @@ class Project(Server):
                         print("Error in model training/predicting", r["error"])
                         self.computing.remove(e)
                         self.queue.delete(e.unique_id)
+
                         self.errors.append(
                             [datetime.now(TIMEZONE), "bert training", r["error"]]
                         )
                         # return {"error": r["error"]}
                     if "prediction" in r:
-                        predictions["predict_" + computation.model.name] = r[
-                            "prediction"
-                        ]
+
+                        # predictions["predict_" + e["model"].name] = r["prediction"]
+                        # print("Prediction added")
+                        continue
                     self.bertmodels.add(e)
+                    print("Bertmodel treatment achieved")
 
                 except Exception as ex:
                     self.errors.append(
