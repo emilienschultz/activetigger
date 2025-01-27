@@ -1282,13 +1282,11 @@ class Project(Server):
             # case for generations
             if (e.kind == "generation") and is_done:
                 clean = True
-                print("+++ Generation case", e)
                 try:
                     r = cast(
                         list[GenerationResult],
                         self.queue.current[e.unique_id]["future"].result(),
                     )
-                    print("---- r", r, self.queue.current)
                     for row in r:
                         self.generations.add(
                             user=row.user,

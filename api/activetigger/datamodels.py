@@ -422,6 +422,7 @@ class UserFeatureComputing(BaseModel):
 class UserModelComputing(BaseModel):
     unique_id: str
     model: BertModelModel
+    kind: str
 
 
 class TableOutModel(BaseModel):
