@@ -6,7 +6,7 @@ import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { omit } from 'lodash';
 import { unparse } from 'papaparse';
 import { useCreateTestSet } from '../../core/api';
-import { loadParquetFile } from '../../core/utils';
+import { loadCSVFile, loadParquetFile } from '../../core/utils';
 import { TestSetModel } from '../../types';
 
 // format of the data table
@@ -39,6 +39,12 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
     console.log('checking file', files);
     if (files && files.length > 0) {
       const file = files[0];
+      if (file.name.includes('csv')) {
+        console.log('csv');
+        loadCSVFile(file).then((data) => {
+          setData(data);
+        });
+      }
       if (file.name.includes('parquet')) {
         console.log('parquet');
         loadParquetFile(file).then((data) => {
@@ -64,8 +70,10 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
     <div className="container-fluid">
       <div className="row">
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
-          <div>
-            No test data set has been created. Do you want to upload your own test set?
+          <div className="explanations">
+            No test data set has been created. Do you want to upload your own test set? Be careful,
+            if you upload a testset, its id will be modified with "imported_". You need to take care
+            of the coherence for the labels.
             <label className="form-label" htmlFor="csvFile">
               File to upload
             </label>
@@ -75,6 +83,9 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
               data !== null && (
                 <div>
                   <div>Preview</div>
+                  <div className="m-3">
+                    Size of the dataset : <b>{data.data.length - 1}</b>
+                  </div>
                   <DataTable<Record<DataType['headers'][number], string | number>>
                     columns={data.headers.map((h) => ({
                       name: h,
@@ -122,6 +133,19 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
                     {...register('col_text')}
                   >
                     <option key="none"></option>
+
+                    {columns}
+                  </select>
+                  <label className="form-label" htmlFor="col_label">
+                    Column for label (optional)
+                  </label>
+                  <select
+                    className="form-control"
+                    id="col_label"
+                    disabled={data === null}
+                    {...register('col_label')}
+                  >
+                    <option key="none">No label to import</option>
 
                     {columns}
                   </select>

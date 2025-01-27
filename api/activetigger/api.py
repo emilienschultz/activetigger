@@ -635,7 +635,7 @@ async def add_testdata(
     """
     try:
         # add the data
-        project.add_testdata(testset)
+        project.add_testdata(testset, current_user.username, project.name)
         # update parameters of the project
         server.set_project_parameters(project.params, current_user.username)
         # log action

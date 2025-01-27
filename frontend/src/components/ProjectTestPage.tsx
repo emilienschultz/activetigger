@@ -63,7 +63,7 @@ export const ProjectTestPage: FC = () => {
         <div className="container-fluid">
           <div className="explanations">
             Select a scheme and a model, switch to the test mode to annotate the testset, and
-            compute test statistics
+            compute test statistics.
           </div>
           {
             // possibility to switch to test mode only if test dataset available

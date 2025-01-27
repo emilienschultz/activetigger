@@ -798,7 +798,7 @@ export interface paths {
         };
         /**
          * Get Features
-         * @description Available scheme of a project
+         * @description Available features for the project
          */
         get: operations["get_features_features_get"];
         put?: never;
@@ -947,7 +947,6 @@ export interface paths {
         /**
          * Post Bert
          * @description Compute bertmodel
-         *     TODO : améliorer la gestion du nom du projet/scheme à la base du modèle
          */
         post: operations["post_bert_models_bert_train_post"];
         delete?: never;
@@ -1198,6 +1197,8 @@ export interface components {
             params: components["schemas"]["BertModelParametersModel"];
             /** Test Size */
             test_size: number;
+            /** Dichotomize */
+            dichotomize?: string | null;
         };
         /**
          * BertModelParametersModel
@@ -1313,7 +1314,7 @@ export interface components {
             /** Limit */
             limit: number | null;
             /** History */
-            history: unknown[];
+            history?: unknown[] | null;
             /** N Sample */
             n_sample?: number | null;
         };
@@ -1387,7 +1388,7 @@ export interface components {
              * History
              * @default []
              */
-            history: unknown[];
+            history: string[];
             /** Filter */
             filter?: string | null;
         };
@@ -1553,7 +1554,7 @@ export interface components {
             /** Project Slug */
             project_slug: string;
             /** All Columns */
-            all_columns?: unknown[] | null;
+            all_columns?: string[] | null;
         };
         /**
          * ProjectStateModel
@@ -1621,7 +1622,7 @@ export interface components {
         };
         /**
          * ReconciliationModel
-         * @description List of elements to reconciliate
+         * @description list of elements to reconciliate
          */
         ReconciliationModel: {
             /** Table */
@@ -1647,11 +1648,8 @@ export interface components {
              * @default multiclass
              */
             kind: string | null;
-            /**
-             * Labels
-             * @default []
-             */
-            labels: unknown[] | null;
+            /** Labels */
+            labels?: string[] | null;
         };
         /**
          * SimpleModelModel
@@ -1740,6 +1738,10 @@ export interface components {
             filename: string;
             /** Csv */
             csv: string;
+            /** Col Label */
+            col_label?: string | null;
+            /** Scheme */
+            scheme?: string | null;
         };
         /**
          * TokenModel
@@ -1793,7 +1795,7 @@ export interface components {
         };
         /**
          * UsersServerModel
-         * @description List of users on the server
+         * @description list of users on the server
          */
         UsersServerModel: {
             /** Users */
