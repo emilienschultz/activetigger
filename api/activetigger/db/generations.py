@@ -1,7 +1,6 @@
 import datetime
-import logging
 
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
@@ -11,7 +10,7 @@ from activetigger.datamodels import (
     GenerationModel,
     GenerationModelApi,
 )
-from activetigger.db.models import GenModels, Generations
+from activetigger.db.models import Generations, GenModels
 
 
 class GenerationsService:

@@ -8,6 +8,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 from pandas import DataFrame, Series
 
+from activetigger.datamodels import UserFeatureComputing
 from activetigger.db.projects import ProjectsService
 from activetigger.functions import to_dtm, to_fasttext, to_sbert
 from activetigger.queue import Queue
@@ -33,7 +34,7 @@ class Features:
     informations: dict
     content: DataFrame
     map: dict
-    computing: dict
+    computing: list[UserFeatureComputing]
     options: dict
     lang: str
     projects_service: ProjectsService
@@ -46,7 +47,7 @@ class Features:
         path_all: Path,
         models_path: Path,
         queue: Any,
-        computing: dict,
+        computing: list[UserFeatureComputing],
         db_manager,
         lang: str,
     ) -> None:
@@ -105,7 +106,7 @@ class Features:
         name: str,
         kind: str,
         username: str,
-        parameters: dict,
+        parameters: dict[str, Any],
         new_content: DataFrame | Series,
     ) -> dict:
         """
@@ -143,7 +144,7 @@ class Features:
             project=self.project_slug,
             kind=kind,
             name=name,
-            parameters=json.dumps(parameters),
+            parameters=parameters,
             user=username,
             data=json.dumps(list(new_content.columns)),
         )
@@ -213,7 +214,7 @@ class Features:
             "name": name,
             "kind": feature.kind,
             "username": feature.user,
-            "parameters": json.loads(feature.parameters),
+            "parameters": feature.parameters,
             "columns": json.loads(feature.data),
         }
 
@@ -243,10 +244,10 @@ class Features:
             return {"error": "Wrong index"}
 
     def current_user_processes(self, user: str):
-        return [e for e in self.computing if e["user"] == user]
+        return [e for e in self.computing if e.user == user]
 
     def current_computing(self):
-        return [e["name"] for e in self.computing if e["kind"] == "feature"]
+        return [e.name for e in self.computing if e.kind == "feature"]
 
     def compute(
         self, df: pd.Series, name: str, kind: str, parameters: dict, username: str
@@ -320,15 +321,15 @@ class Features:
                 return "error"
 
             self.computing.append(
-                {
-                    "unique_id": unique_id,
-                    "kind": "feature",
-                    "parameters": parameters,
-                    "type": kind,
-                    "user": username,
-                    "name": name,
-                    "time": datetime.now(),
-                }
+                UserFeatureComputing(
+                    unique_id=unique_id,
+                    kind="feature",
+                    parameters=parameters,
+                    type=kind,
+                    user=username,
+                    name=name,
+                    time=datetime.now(),
+                )
             )
 
         return {"success": "Feature in training"}

@@ -23,6 +23,9 @@ from activetigger.datamodels import (
     ProjectSummaryModel,
     SimpleModelModel,
     TestSetDataModel,
+    UserFeatureComputing,
+    UserGenerationComputing,
+    UserModelComputing,
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
@@ -537,7 +540,7 @@ class Project(Server):
     starting_time: float
     name: str
     queue: Queue
-    computing: list
+    computing: list[UserGenerationComputing | UserFeatureComputing | UserModelComputing]
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
@@ -592,7 +595,7 @@ class Project(Server):
             self.params.dir.joinpath(data_all),
             self.path_models,
             self.queue,
-            self.computing,
+            cast(list[UserFeatureComputing], self.computing),
             self.db_manager,
             self.params.language,
         )
@@ -600,7 +603,9 @@ class Project(Server):
             project_slug, self.params.dir, self.queue, self.computing, self.db_manager
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
-        self.generations = Generations(self.db_manager, self.computing)
+        self.generations = Generations(
+            self.db_manager, cast(list[UserGenerationComputing], self.computing)
+        )
         self.projections = Projections(self.computing)
         self.errors = []  # Move to specific class / db in the future
 
@@ -1174,23 +1179,24 @@ class Project(Server):
             clean = False
 
             # case of not in queue
-            if e["unique_id"] not in self.queue.current:
+            if e.unique_id not in self.queue.current:
                 print("Problem : id in computing not in queue")
                 self.computing.remove(e)
                 continue
 
-            is_done = self.queue.current[e["unique_id"]]["future"].done()
+            is_done = self.queue.current[e.unique_id]["future"].done()
 
             # case for bertmodels
-            if (e["kind"] == "bert") and is_done:
+            if (e.kind == "bert") and is_done:
+                computation = cast(UserModelComputing, e)
                 clean = True
                 try:
                     # case there is a prediction
-                    r = self.queue.current[e["unique_id"]]["future"].result()
+                    r = self.queue.current[e.unique_id]["future"].result()
                     if not isinstance(r, dict):
                         print("Probleme with the function")
                         self.computing.remove(e)
-                        self.queue.delete(e["unique_id"])
+                        self.queue.delete(e.unique_id)
                         self.errors.append(
                             [
                                 datetime.now(TIMEZONE),
@@ -1202,13 +1208,15 @@ class Project(Server):
                     if "error" in r:
                         print("Error in model training/predicting", r["error"])
                         self.computing.remove(e)
-                        self.queue.delete(e["unique_id"])
+                        self.queue.delete(e.unique_id)
                         self.errors.append(
                             [datetime.now(TIMEZONE), "bert training", r["error"]]
                         )
                         # return {"error": r["error"]}
                     if "prediction" in r:
-                        predictions["predict_" + e["model"].name] = r["prediction"]
+                        predictions["predict_" + computation.model.name] = r[
+                            "prediction"
+                        ]
                     self.bertmodels.add(e)
 
                 except Exception as ex:
@@ -1222,10 +1230,10 @@ class Project(Server):
                     print("Error in model training/predicting", ex)
 
             # case for simplemodels
-            if (e["kind"] == "simplemodel") and is_done:
+            if (e.kind == "simplemodel") and is_done:
                 clean = True
                 try:
-                    results = self.queue.current[e["unique_id"]]["future"].result()
+                    results = self.queue.current[e.unique_id]["future"].result()
                     self.simplemodels.add(e, results)
                     print("Simplemodel trained")
                 except Exception as ex:
@@ -1235,14 +1243,19 @@ class Project(Server):
                     print("Simplemodel failed", ex)
 
             # case for features
-            if (e["kind"] == "feature") and is_done:
+            if (e.kind == "feature") and is_done:
+                computation = cast(UserFeatureComputing, e)
                 clean = True
                 try:
-                    r = self.queue.current[e["unique_id"]]["future"].result()
+                    r = self.queue.current[e.unique_id]["future"].result()
                     self.features.add(
-                        e["name"], e["type"], e["user"], e["parameters"], r["success"]
+                        computation.name,
+                        computation.type,
+                        computation.user,
+                        computation.parameters,
+                        r["success"],
                     )
-                    print("Feature added", e["name"])
+                    print("Feature added", computation.name)
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(TIMEZONE), "Error in feature processing", str(ex)]
@@ -1250,10 +1263,10 @@ class Project(Server):
                     print("Error in feature processing", ex)
 
             # case for projections
-            if (e["kind"] == "projection") and is_done:
+            if (e.kind == "projection") and is_done:
                 clean = True
                 try:
-                    df = self.queue.current[e["unique_id"]]["future"].result()
+                    df = self.queue.current[e.unique_id]["future"].result()
                     self.projections.add(e, df)
                     print("projection added")
                 except Exception as ex:
@@ -1267,13 +1280,15 @@ class Project(Server):
                     print("Error in feature projections queue", ex)
 
             # case for generations
-            if (e["kind"] == "generation") and is_done:
+            if (e.kind == "generation") and is_done:
                 clean = True
+                print("+++ Generation case", e)
                 try:
                     r = cast(
                         list[GenerationResult],
-                        self.queue.current[e["unique_id"]]["future"].result(),
+                        self.queue.current[e.unique_id]["future"].result(),
                     )
+                    print("---- r", r, self.queue.current)
                     for row in r:
                         self.generations.add(
                             user=row.user,
@@ -1292,7 +1307,7 @@ class Project(Server):
             # delete from computing & queue
             if clean:
                 self.computing.remove(e)
-                self.queue.delete(e["unique_id"])
+                self.queue.delete(e.unique_id)
 
         # if predictions, add them
         for f in predictions:

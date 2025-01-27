@@ -84,6 +84,7 @@ class Queue:
 
         # send the process to the executor
         try:
+            print("===// Execution")
             future = self.executor.submit(func, **args)
         except Exception as e:
             logger.error(f"Error submitting task: {e}")
@@ -91,6 +92,7 @@ class Queue:
 
         # save in the stack
         self.current[unique_id] = {"kind": kind, "future": future, "event": event}
+        print(self.current[unique_id])
         return unique_id
 
     def kill(self, unique_id: str) -> dict:

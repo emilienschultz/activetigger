@@ -1,3 +1,4 @@
+import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any
@@ -398,12 +399,29 @@ class GenerationRequest(BaseModel):
     mode: str = "all"
 
 
-class UserComputing(BaseModel):
+class UserGenerationComputing(BaseModel):
     user: str
     unique_id: str
-    number: str
+    project: str
+    number: int
     model_id: int
     kind: str
+    time: datetime.datetime
+
+
+class UserFeatureComputing(BaseModel):
+    user: str
+    unique_id: str
+    name: str
+    type: str
+    parameters: dict
+    kind: str
+    time: datetime.datetime
+
+
+class UserModelComputing(BaseModel):
+    unique_id: str
+    model: BertModelModel
 
 
 class TableOutModel(BaseModel):

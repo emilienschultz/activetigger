@@ -9,7 +9,7 @@ class OpenAI(GenerationModelClient):
     def __init__(self, credentials: str):
         self.client = OpenAIClient(api_key=credentials)
 
-    def generate(self, prompt: str, model: str | None) -> str:
+    def generate(self, prompt: str, model: str) -> str:
         m = model if model is not None else "gpt-4o-mini"
         response = self.client.chat.completions.create(
             model=m,

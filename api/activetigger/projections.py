@@ -43,15 +43,13 @@ class Projections:
         return {"error": "Unknown method"}
 
     def current_computing(self):
-        return [e["name"] for e in self.computing if e["kind"] == "projection"]
+        return [e.name for e in self.computing if e.kind == "projection"]
 
     def training(self) -> dict:
         """
         Currently under training
         """
-        r = {
-            e["user"]: e["method"] for e in self.computing if e["kind"] == "projection"
-        }
+        r = {e.user: e.method for e in self.computing if e.kind == "projection"}
         return r
 
     def add(self, element, results):

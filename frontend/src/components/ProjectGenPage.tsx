@@ -172,8 +172,10 @@ export const GenPage: FC = () => {
                   <div className="col-6">
                     <div className="form-floating">
                       <select id="model" className="form-select" onChange={handleChange}>
-                        {configuredModels.map((model) => (
-                          <option key={model.id}>{model.name}</option>
+                        {configuredModels.map((model, idx) => (
+                          <option key={idx} value={idx}>
+                            {model.name}
+                          </option>
                         ))}
                       </select>
                       <label htmlFor="model">Model</label>
