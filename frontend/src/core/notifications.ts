@@ -20,9 +20,11 @@ export function useNotifications() {
             // but we update the notifications key with it's new value
             notifications: [
               { id, createdAt: now, ...notif },
-              ...state.notifications.filter((e) => {
-                return (Number(now) - Number(e.createdAt)) / 1000 <= 20;
-              }),
+              ...state.notifications
+                .filter((e) => {
+                  return (Number(now) - Number(e.createdAt)) / 1000 <= 20;
+                })
+                .slice(0, 4),
             ],
           }),
       );
