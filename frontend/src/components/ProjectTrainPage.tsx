@@ -117,7 +117,7 @@ export const ProjectTrainPage: FC = () => {
   const valEvalLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_eval_loss[i] }));
 
   const LossChart = () => (
-    <VictoryChart theme={VictoryTheme.material}>
+    <VictoryChart theme={VictoryTheme.material} minDomain={{ y: 0 }}>
       <VictoryAxis
         label="Epoch"
         style={{
