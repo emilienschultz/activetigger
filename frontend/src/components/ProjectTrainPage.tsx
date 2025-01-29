@@ -187,6 +187,12 @@ export const ProjectTrainPage: FC = () => {
     },
   ];
 
+  const displayAdvancement = (val: number | string) => {
+    const v = Math.round(Number(val));
+    if (v >= 100) return 'completed, please wait';
+    return v + '%';
+  };
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -247,7 +253,7 @@ export const ProjectTrainPage: FC = () => {
                             <li key={v.name}>
                               {v.name} - {v.status} :{' '}
                               <span style={{ fontWeight: 'bold' }}>
-                                {Math.round(Number(v.progress))} %
+                                {displayAdvancement(v.progress)}
                               </span>
                             </li>
                           ))}
