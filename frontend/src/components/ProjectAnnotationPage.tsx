@@ -180,7 +180,7 @@ export const ProjectAnnotationPage: FC = () => {
   const textOutFrame = element?.text.slice(element?.limit as number) || '';
 
   const lastTag =
-    element?.history.length && element?.history.length > 0
+    element?.history?.length && element?.history.length > 0
       ? (element?.history[0] as string[])[0]
       : null;
 
@@ -192,6 +192,15 @@ export const ProjectAnnotationPage: FC = () => {
         navigate(`/projects/${projectName}/annotate/noelement`);
       }
     });
+  };
+
+  const isValidRegex = (pattern: string) => {
+    try {
+      new RegExp(pattern);
+      return true;
+    } catch (e) {
+      return false;
+    }
   };
 
   return (
@@ -258,6 +267,11 @@ export const ProjectAnnotationPage: FC = () => {
       {
         // display content
       }
+
+      {!isValidRegex(selectionConfig.filter || '') && (
+        <div className="alert alert-danger">Regex not valid</div>
+      )}
+
       <div className="row">
         {element?.text && (
           <div
@@ -273,7 +287,7 @@ export const ProjectAnnotationPage: FC = () => {
             <Highlighter
               highlightClassName="Search"
               searchWords={
-                selectionConfig.filter && selectionConfig.filter.slice(-1) != '\\'
+                selectionConfig.filter && isValidRegex(selectionConfig.filter)
                   ? [selectionConfig.filter]
                   : []
               }
@@ -292,7 +306,7 @@ export const ProjectAnnotationPage: FC = () => {
               <Highlighter
                 highlightClassName="Search"
                 searchWords={
-                  selectionConfig.filter && selectionConfig.filter.slice(-1) != '\\'
+                  selectionConfig.filter && isValidRegex(selectionConfig.filter)
                     ? [selectionConfig.filter]
                     : []
                 }

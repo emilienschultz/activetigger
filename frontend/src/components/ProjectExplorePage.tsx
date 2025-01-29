@@ -117,7 +117,7 @@ export const ProjectExplorePage: FC = () => {
         >
           <Highlighter
             highlightClassName="Search"
-            searchWords={search && search.slice(-1) != '\\' ? [search] : []}
+            searchWords={search && isValidRegex(search) ? [search] : []}
             autoEscape={false}
             textToHighlight={props.row.text}
             highlightStyle={{
@@ -186,6 +186,15 @@ export const ProjectExplorePage: FC = () => {
     return Array.from({ length: end - start }, (_, i) => start + i);
   }
 
+  const isValidRegex = (pattern: string) => {
+    try {
+      new RegExp(pattern);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   if (!projectName) return null;
   if (!project) return null;
 
@@ -199,6 +208,9 @@ export const ProjectExplorePage: FC = () => {
             </div>
           )}
           <div className="col-12">
+            {!isValidRegex(search || '') && (
+              <div className="alert alert-danger">Regex not valid</div>
+            )}
             {currentScheme && table && (
               <div>
                 <div className="d-flex align-items-center justify-content-between mb-3">
