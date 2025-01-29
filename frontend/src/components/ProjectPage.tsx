@@ -42,9 +42,9 @@ export const ProjectPage: FC = () => {
 
   // function to delete project
   const deleteProject = useDeleteProject();
-  const actionDelete = () => {
+  const actionDelete = async () => {
     if (projectName) {
-      deleteProject(projectName);
+      await deleteProject(projectName);
       navigate(`/projects/`);
     }
   };
