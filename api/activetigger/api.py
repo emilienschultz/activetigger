@@ -1233,12 +1233,13 @@ async def post_schemes(
         server.log_action(current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name)
         return None
     if action == "delete":
-        r = project.schemes.delete_scheme(scheme.name)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(
-            current_user.username, f"DELETE SCHEME: scheme {scheme.name}", project.name
-        )
+        try:
+            r = project.schemes.delete_scheme(scheme.name)
+            server.log_action(
+                current_user.username, f"DELETE SCHEME: scheme {scheme.name}", project.name
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
         return None
     if action == "update":
         r = project.schemes.update_scheme(scheme.name, scheme.labels)
