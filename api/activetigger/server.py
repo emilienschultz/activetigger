@@ -1253,10 +1253,13 @@ class Project(Server):
                             [datetime.now(TIMEZONE), "bert training", r["error"]]
                         )
                         # return {"error": r["error"]}
-                    if "prediction" in r:
-                        # predictions["predict_" + e["model"].name] = r["prediction"]
-                        # print("Prediction added")
-                        continue
+                    # get the prediction in the trainset
+                    if "path" in r and "predict_train.parquet" in r["path"]:
+                        predictions["predict_" + e["model"].name] = pd.read_parquet(
+                            r["path"]
+                        )
+                        print("Prediction added")
+
                     self.bertmodels.add(e)
                     print("Bertmodel treatment achieved")
 

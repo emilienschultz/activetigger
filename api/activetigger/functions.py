@@ -709,7 +709,10 @@ def predict_bert(
         print("Written", file_name)
         print("function prediction : finished")
         # return {"success": True, "prediction": pred.copy()}
-        return {"success": True}
+        return {
+            "success": True,
+            "path": str(path / file_name),
+        }
     except Exception as e:
         print("Error in prediction", e)
         return {"error": str(e)}
