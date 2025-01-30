@@ -108,6 +108,13 @@ export const ProjectCreationForm: FC = () => {
         notify({ type: 'error', message: 'Please select a text column' });
         return;
       }
+      if (formData.n_train + formData.n_test > data.data.length) {
+        notify({
+          type: 'warning',
+          message: 'The sum of train and test set is too big, the train set is set to N - testset',
+        });
+        formData.n_train = data.data.length - formData.n_test;
+      }
       setSpinner(true);
       try {
         // ERROR : problème avec gros parquet unparse marche pas
