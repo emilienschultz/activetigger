@@ -568,7 +568,7 @@ def train_bert(
         except KeyboardInterrupt:
             logger.info("Training interrupted by user.")
             shutil.rmtree(current_path)
-            return {"error": "Interrupted by user"}
+            raise Exception("Training interrupted by user.")
 
         # save model
         bert.save_pretrained(current_path)

@@ -1459,39 +1459,39 @@ async def post_bert(
     """
     Compute bertmodel
     """
-    df = project.schemes.get_scheme_data(bert.scheme, complete=True)
 
-    # remove non tag data
-    df = df[["text", "labels"]].dropna()
+    try:
+        # get data
+        df = project.schemes.get_scheme_data(bert.scheme, complete=True)
+        df = df[["text", "labels"]].dropna()
 
-    # management for multilabels / dichotomize
-    if bert.dichotomize is not None:
-        df["labels"] = df["labels"].apply(
-            lambda x: project.schemes.dichotomize(x, bert.dichotomize)
+        # management for multilabels / dichotomize
+        if bert.dichotomize is not None:
+            df["labels"] = df["labels"].apply(
+                lambda x: project.schemes.dichotomize(x, bert.dichotomize)
+            )
+            bert.name = f"{bert.name}_multilabel_on_{bert.dichotomize}"
+
+        # launch training process
+        project.bertmodels.start_training_process(
+            name=bert.name,
+            project=project.name,
+            user=current_user.username,
+            scheme=bert.scheme,
+            df=df,
+            col_text=df.columns[0],
+            col_label=df.columns[1],
+            base_model=bert.base_model,
+            params=bert.params,
+            test_size=bert.test_size,
         )
-        bert.name = f"{bert.name}_multilabel_on_{bert.dichotomize}"
+        server.log_action(
+            current_user.username, f"INFO train bert {bert.name}", project.name
+        )
+        return None
 
-    print(df["labels"])
-
-    r = project.bertmodels.start_training_process(
-        name=bert.name,
-        project=project.name,
-        user=current_user.username,
-        scheme=bert.scheme,
-        df=df,
-        col_text=df.columns[0],
-        col_label=df.columns[1],
-        base_model=bert.base_model,
-        params=bert.params,
-        test_size=bert.test_size,
-    )
-
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
-        current_user.username, f"INFO train bert {bert.name}", project.name
-    )
-    return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/models/bert/stop", dependencies=[Depends(verified_user)])
@@ -1502,11 +1502,16 @@ async def stop_bert(
     """
     Stop user process
     """
+    # get BERT process for username
     p = project.get_process("bert", current_user.username)
     if len(p) == 0:
         raise HTTPException(status_code=400, detail="No process found")
+    # get id
     unique_id = p[0]["unique_id"]
+    # kill the process
     r = server.queue.kill(unique_id)
+    # delete it in the database
+    project.bertmodels.projects_service.delete_model(project.name, p[0]["model"].name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     server.log_action(current_user.username, "INFO stop bert training", project.name)

@@ -1264,6 +1264,11 @@ class Project(Server):
                     print("Bertmodel treatment achieved")
 
                 except Exception as ex:
+                    # delete the model in the db
+                    self.bertmodels.projects_service.delete_model(
+                        self.name, e["model"].name
+                    )
+                    # add an error message for the user
                     self.errors.append(
                         [
                             datetime.now(TIMEZONE),

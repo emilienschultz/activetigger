@@ -515,7 +515,7 @@ class BertModels:
             path=str(self.path / name),
             status="training",
         ):
-            raise Exception("Problem in database")
+            raise Exception("Problem to add in database")
 
         return {"success": "bert model on training"}
 
