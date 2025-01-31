@@ -11,7 +11,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from pydantic import ValidationError
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
@@ -431,9 +430,18 @@ class BertModels:
         """
         # Check if there is no other competing processes : 1 active process by user
         if len(self.current_user_processes(user)) > 0:
-            return {
-                "error": "User already has a process launched, please wait before launching another one"
-            }
+            raise Exception(
+                "User already has a process launched, please wait before launching another one"
+            )
+
+        # check the size of training data
+        if len(df.dropna()) < 10:
+            raise Exception("Less than 10 elements annotated")
+
+        # check the number of elements
+        counts = df[col_label].value_counts()
+        if not (counts >= 5).all():
+            raise Exception("Less than 5 elements per label")
 
         # name integrating the scheme & user + date
         current_date = datetime.now()
@@ -444,27 +452,23 @@ class BertModels:
 
         # check if a project not already exist
         if self.projects_service.model_exists(project, name):
-            return {"error": "A model with this name already exists"}
+            raise Exception("A model with this name already exists")
 
         # set default parameters if needed
         if params is None:
             params = self.params_default
 
         # test parameters format
-        try:
-            params = params.dict()
-            e = BertParams(**params)
-        except ValidationError as e:
-            print("Validation error")
-            return {"error": e.json()}
+        params = params.dict()
+        e = BertParams(**params)
 
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
         if params["gpu"]:
             mem = functions.get_gpu_memory_info()
             if self.estimate_memory_use(name, kind="train") > mem["available_memory"]:
-                return {
-                    "error": "Not enough GPU memory available. Wait or reduce batch."
-                }
+                raise Exception(
+                    "Not enough GPU memory available. Wait or reduce batch."
+                )
 
         # launch as a independant process
         args = {
@@ -511,7 +515,7 @@ class BertModels:
             path=str(self.path / name),
             status="training",
         ):
-            return {"error": "An error occured in database"}
+            raise Exception("Problem in database")
 
         return {"success": "bert model on training"}
 

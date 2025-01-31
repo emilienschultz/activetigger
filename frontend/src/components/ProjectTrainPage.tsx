@@ -413,6 +413,9 @@ export const ProjectTrainPage: FC = () => {
                       </div>
                     )}
 
+                    <div className="explanations">
+                      Before training a model, be sure to have annotated enough elements
+                    </div>
                     <label htmlFor="new-model-type"></label>
                     <div>
                       <label>Name for the model</label>
