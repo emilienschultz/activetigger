@@ -9,6 +9,7 @@ import {
   useGetPredictionsFile,
   useGetPredictionsSimplemodelFile,
 } from '../core/api';
+import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
@@ -19,9 +20,11 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 export const ProjectExportPage: FC = () => {
   const { projectName } = useParams();
 
+  // get the current state of the project
   const {
     appContext: { currentProject: project, currentScheme },
   } = useAppContext();
+  const { authenticatedUser } = useAuth();
 
   const [format, setFormat] = useState<string>('csv');
   const [features, setFeatures] = useState<string[] | null>(null);
@@ -43,6 +46,11 @@ export const ProjectExportPage: FC = () => {
   const { modelUrl } = useGetModelUrl(projectName || null, model);
 
   const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
+
+  const isSimpleModel =
+    authenticatedUser &&
+    currentScheme &&
+    project?.simplemodel.available[authenticatedUser.username]?.[currentScheme];
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="export">
@@ -114,14 +122,16 @@ export const ProjectExportPage: FC = () => {
               </div>
               <h4 className="subsection">Fine-tuned models and predictions</h4>
 
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  if (currentScheme) getPredictionsSimpleModelFile(currentScheme, format);
-                }}
-              >
-                Export simplepredictions
-              </button>
+              {isSimpleModel && (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    if (currentScheme) getPredictionsSimpleModelFile(currentScheme, format);
+                  }}
+                >
+                  Export simplemodel predictions
+                </button>
+              )}
 
               <div className="explanations">For BERT, select first a model</div>
               <div>
