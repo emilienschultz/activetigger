@@ -158,8 +158,11 @@ export const ProjectCreationForm: FC = () => {
             </li>
             <li>Validate to create</li>
           </ul>
-          Comment : both project name and index will be modified to be compatible with URLs
-          (slugify).
+          <div className="alert alert-warning" role="alert">
+            Both project name and index will be modified to be compatible with URLs (slugify). For
+            instance, '_' and ' ' will be replaced by '-'. Please be careful, especially if you need
+            to later join the data with other tables.
+          </div>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>

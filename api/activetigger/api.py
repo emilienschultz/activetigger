@@ -5,7 +5,7 @@ from collections.abc import Awaitable
 from contextlib import asynccontextmanager
 from datetime import datetime
 from importlib.abc import Traversable
-from io import StringIO
+from io import BytesIO, StringIO
 from typing import Annotated, Any, Callable
 
 import pandas as pd
@@ -18,7 +18,7 @@ from fastapi import (
     Response,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
@@ -1624,6 +1624,55 @@ async def export_features(
     return FileResponse(r["path"], filename=r["name"])
 
 
+@app.get("/export/prediction/simplemodel", dependencies=[Depends(verified_user)])
+async def export_simplemodel_predictions(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    scheme: str,
+    format: str = "csv",
+) -> FileResponse:
+    """
+    Export prediction simplemodel for the project/user/scheme if any
+    """
+    try:
+        table = project.simplemodels.get_prediction(scheme, current_user.username)
+
+        # convert to payload
+        if format == "csv":
+            output = StringIO()
+            pd.DataFrame(table).to_csv(output, index=False)
+            data = output.getvalue()
+            output.close()
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.csv"',
+                "Content-Type": "text/csv",
+            }
+            return Response(content=data, media_type="text/csv", headers=headers)
+        elif format == "xlsx":
+            output = BytesIO()
+            pd.DataFrame(table).to_excel(output, index=False)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.xlsx"',
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }
+            return StreamingResponse(output, headers=headers)
+        elif format == "parquet":
+            output = BytesIO()
+            pd.DataFrame(table).to_parquet(output, index=False)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.parquet"',
+                "Content-Type": "application/octet-stream",
+            }
+            return StreamingResponse(output, headers=headers)
+        else:
+            raise HTTPException(status_code=500, detail="Format not available")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/export/prediction", dependencies=[Depends(verified_user)])
 async def export_prediction(
     project: Annotated[Project, Depends(get_project)],
@@ -1682,7 +1731,6 @@ async def export_generations(
     pd.DataFrame(table).to_csv(output, index=False)
     csv_data = output.getvalue()
     output.close()
-
     headers = {
         "Content-Disposition": 'attachment; filename="data.csv"',
         "Content-Type": "text/csv",

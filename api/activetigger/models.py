@@ -678,6 +678,12 @@ class BertModels:
             file_name = "predict.csv"
             path = self.path / name / file_name
             df.to_csv(path)
+        # change format if needed
+        if format == "xlsx":
+            df = pd.read_parquet(path)
+            file_name = "predict.xlsx"
+            path = self.path / name / file_name
+            df.to_excel(path)
 
         if not path.exists():
             return {"error": "file does not exist"}
@@ -757,7 +763,7 @@ class SimpleModels:
             "multi_naivebayes": Multi_naivebayesParams,
         }
         self.existing: dict = {}  # computed simplemodels
-        self.computing: list = computing  # curently under computation
+        self.computing: list = computing  # currently under computation
         self.path: Path = path  # path to operate
         self.queue = queue  # access to executor for multiprocessing
         self.save_file: str = "simplemodels.pickle"  # file to save current state
@@ -801,6 +807,17 @@ class SimpleModels:
                     }
                 }
         return {"error": "No model for this user and scheme"}
+
+    def get_prediction(self, scheme: str, username: str) -> DataFrame:
+        """
+        Get a specific simplemodel
+        """
+        if username not in self.existing:
+            raise ValueError("No model for this user")
+        if scheme not in self.existing[username]:
+            raise ValueError("No model for this scheme")
+        sm = self.existing[username][scheme]
+        return sm.proba
 
     def training(self) -> dict:
         """

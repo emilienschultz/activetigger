@@ -7,6 +7,7 @@ import {
   useGetFeaturesFile,
   useGetModelUrl,
   useGetPredictionsFile,
+  useGetPredictionsSimplemodelFile,
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
@@ -40,6 +41,8 @@ export const ProjectExportPage: FC = () => {
   const { getAnnotationsFile } = useGetAnnotationsFile(projectName || null);
   const { getPredictionsFile } = useGetPredictionsFile(projectName || null);
   const { modelUrl } = useGetModelUrl(projectName || null, model);
+
+  const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="export">
@@ -110,7 +113,17 @@ export const ProjectExportPage: FC = () => {
                 </button>
               </div>
               <h4 className="subsection">Fine-tuned models and predictions</h4>
-              <div className="explanations">Select first a model</div>
+
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  if (currentScheme) getPredictionsSimpleModelFile(currentScheme, format);
+                }}
+              >
+                Export simplepredictions
+              </button>
+
+              <div className="explanations">For BERT, select first a model</div>
               <div>
                 <div>
                   <select
