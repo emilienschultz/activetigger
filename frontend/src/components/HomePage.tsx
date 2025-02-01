@@ -1,11 +1,12 @@
 import { FC } from 'react';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import logo from '../assets/at.png';
 import { useGetActiveUsers } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
+import { LoginParams } from '../types';
 import { LoginForm } from './forms/LoginForm';
 import Notifications from './layout/Notifications';
 
@@ -22,6 +23,21 @@ export const HomePage: FC = () => {
   const actionDevelopmentMode = () => {
     setAppContext((prev) => ({ ...prev, developmentMode: !prev.developmentMode }));
   };
+
+  // possibility to log directly from the URL
+  const navigate = useNavigate();
+  const params = new URLSearchParams(window.location.search);
+  const { login } = useAuth();
+  if (params.get('username') && params.get('password')) {
+    login({
+      username: params.get('username'),
+      password: params.get('password'),
+    } as LoginParams).then(() => {
+      navigate('/projects');
+      console.log('Connect');
+    });
+  }
+
   return (
     <>
       <main className="container-fluid">
