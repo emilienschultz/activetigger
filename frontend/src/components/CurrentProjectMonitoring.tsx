@@ -18,7 +18,7 @@ export const CurrentProjectMonitoring: FC = () => {
   // reset context if project change
   useEffect(() => {
     if (projectName != appContext.currentProject?.params.project_slug) {
-      console.log('PROJECT CHANGED');
+      console.log('Reset context');
       resetContext();
     }
   }, [projectName, appContext.currentProject?.params.project_slug, resetContext]);

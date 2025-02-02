@@ -3714,7 +3714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string;
+                    "application/json": Record<string, never>;
                 };
             };
             /** @description Validation Error */

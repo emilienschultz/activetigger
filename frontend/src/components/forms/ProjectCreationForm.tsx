@@ -27,18 +27,18 @@ export const ProjectCreationForm: FC = () => {
   const maxSizeMo = 400;
   const maxTrainSet = 100000;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
-  const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
-    {
-      defaultValues: {
-        project_name: 'New project',
-        n_train: 100,
-        n_test: 0,
-        language: 'en',
-        clear_test: false,
-        random_selection: true,
-      },
+  const { register, control, handleSubmit, setValue, getValues } = useForm<
+    ProjectModel & { files: FileList }
+  >({
+    defaultValues: {
+      project_name: 'New project',
+      n_train: 100,
+      n_test: 0,
+      language: 'en',
+      clear_test: false,
+      random_selection: true,
     },
-  );
+  });
   const { notify } = useNotifications();
 
   const [spinner, setSpinner] = useState<boolean>(false); // state for the data
@@ -111,12 +111,12 @@ export const ProjectCreationForm: FC = () => {
         notify({ type: 'error', message: 'Please select a text column' });
         return;
       }
-      if (formData.n_train + formData.n_test > data.data.length) {
+      if (Number(formData.n_train) + Number(formData.n_test) > data.data.length) {
         notify({
           type: 'warning',
           message: 'The sum of train and test set is too big, the train set is set to N - testset',
         });
-        formData.n_train = data.data.length - formData.n_test;
+        setValue('n_train', Math.max(0, data.data.length - Number(formData.n_test) - 1));
       }
       setSpinner(true);
       try {

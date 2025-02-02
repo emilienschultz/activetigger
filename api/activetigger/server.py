@@ -184,7 +184,7 @@ class Server:
                 created_by=i[3],
                 created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
             )
-            for i in projects_auth
+            for i in list(reversed(projects_auth))
         ]
 
     def get_project_params(self, project_slug: str) -> ProjectModel | None:
