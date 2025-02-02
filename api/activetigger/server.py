@@ -299,13 +299,13 @@ class Server:
 
         # test if possible to create the project
         if self.exists(params.project_name):
-            return {"error": "Project name already exist"}
+            raise Exception("This project already exists")
 
         # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
-            return {"error": "Probleme with the id column: empty name"}
+            raise Exception("No column selected for the id")
         if params.cols_text is None or len(params.cols_text) == 0:
-            return {"error": "There is no column selected for the text"}
+            raise Exception("No column selected for the text")
 
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
@@ -339,12 +339,13 @@ class Server:
         # test if the size of the sample requested is possible
         if len(content) < params.n_test + params.n_train:
             shutil.rmtree(params.dir)
-            return {
-                "error": f"Not enough data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
-            }
+            raise Exception(
+                f"Not enough data for creating the train/test dataset. Current : {len(content)} ; Selected : {params.n_test + params.n_train}"
+            )
 
         # create the index
         keep_id = []  # keep unchanged the index to avoid desindexing
+
         # case of the index should be the row number
         if params.col_id == "dataset_row_number":
             print("Use the row number as index")
@@ -358,7 +359,9 @@ class Server:
                 == len(content)
             ):
                 shutil.rmtree(params.dir)
-                return {"error": "The column selected for index has not unique values."}
+                raise Exception(
+                    "The id column is not unique after slugify, please change it"
+                )
             content["id"] = content[params.col_id].astype(str).apply(slugify)
             keep_id.append(params.col_id)
             content.set_index("id", inplace=True)
@@ -415,12 +418,15 @@ class Server:
         f_notna = content["label"].notna()
         f_na = content["label"].isna()
 
-        if (
-            f_notna.sum() > params.n_train
-        ):  # case where there is more labelled data than needed
+        # case where the order is kept and no testset
+        if not params.random_selection and params.n_test == 0:
+            trainset = content[0 : params.n_train]
+        # case where there is more labelled data than needed
+        elif f_notna.sum() > params.n_train:
             trainset = content[f_notna].sample(params.n_train)
+        # case where there is less labelled data than needed so complete with random
         else:
-            n_train_random = params.n_train - f_notna.sum()  # number of element to pick
+            n_train_random = params.n_train - f_notna.sum()
             trainset = pd.concat(
                 [content[f_notna], content[f_na].sample(n_train_random)]
             )

@@ -29,6 +29,7 @@ class BaseProjectModel(BaseModel):
     test: bool = False
     n_total: int | None = None
     clear_test: bool = False
+    random_selection: bool = False
 
 
 class ProjectModel(BaseProjectModel):

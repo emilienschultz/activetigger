@@ -1483,6 +1483,11 @@ export interface components {
              * @default false
              */
             clear_test: boolean;
+            /**
+             * Random Selection
+             * @default false
+             */
+            random_selection: boolean;
             /** Csv */
             csv: string;
         };
@@ -1571,6 +1576,11 @@ export interface components {
              * @default false
              */
             clear_test: boolean;
+            /**
+             * Random Selection
+             * @default false
+             */
+            random_selection: boolean;
             /** Project Slug */
             project_slug: string;
             /** All Columns */

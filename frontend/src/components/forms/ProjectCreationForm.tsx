@@ -7,6 +7,8 @@ import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 
 import { stringify } from 'csv-stringify/browser/esm/sync';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
+import { Tooltip } from 'react-tooltip';
 import { useCreateProject } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadCSVFile, loadExcelFile, loadParquetFile } from '../../core/utils';
@@ -33,6 +35,7 @@ export const ProjectCreationForm: FC = () => {
         n_test: 0,
         language: 'en',
         clear_test: false,
+        random_selection: true,
       },
     },
   );
@@ -328,6 +331,22 @@ export const ProjectCreationForm: FC = () => {
                       id="clear_test"
                       type="checkbox"
                       {...register('clear_test')}
+                      className="mx-3"
+                    />
+                  </label>
+
+                  <label className="form-label" htmlFor="random_selection">
+                    Random selection of elements{' '}
+                    <a className="randomselection">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".randomselection" place="top">
+                      If not, will keep the order (minus empty elements) only if testset = 0
+                    </Tooltip>
+                    <input
+                      id="random_selection"
+                      type="checkbox"
+                      {...register('random_selection')}
                       className="mx-3"
                     />
                   </label>
