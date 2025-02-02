@@ -88,14 +88,16 @@ export const MonitorPage: FC = () => {
             ))}
 
             <hr />
-            <h2 className="subtitle">Recent activity on this project</h2>
-            <DataGrid<Row>
-              className="fill-grid mt-2"
-              columns={columns}
-              rows={(logs as unknown as Row[]) || []}
-            />
-
-            {JSON.stringify(logs)}
+            <h2 className="subtitle">Recent activity on all projects</h2>
+            {logs ? (
+              <DataGrid<Row>
+                className="fill-grid mt-2"
+                columns={columns}
+                rows={(logs as unknown as Row[]) || []}
+              />
+            ) : (
+              <div>No rights</div>
+            )}
           </div>
         </div>
       </div>{' '}

@@ -52,12 +52,12 @@ class ProjectsService:
         """
         with self.Session() as session:
             stmt = select(Logs).order_by(Logs.time.desc()).limit(limit)
-        if project_slug != "all":
-            stmt = stmt.filter_by(project_id=project_slug)
-        if username != "all":
-            stmt = stmt.filter_by(user_id=username)
+            if project_slug != "all":
+                stmt = stmt.filter_by(project_id=project_slug)
+            if username != "all":
+                stmt = stmt.filter_by(user_id=username)
 
-        logs = session.scalars(stmt).all()
+            logs = session.scalars(stmt).all()
 
         return [
             {
