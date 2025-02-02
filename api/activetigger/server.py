@@ -1221,7 +1221,7 @@ class Project(Server):
         path_target = self.path.joinpath("static").joinpath(name)
         if not path_target.exists():
             shutil.copyfile(path_origin, path_target)
-        return {"name": name, "path": path_target}
+        return {"name": name, "path": f"/static/{name}"}
 
     def update_processes(self) -> dict:
         """

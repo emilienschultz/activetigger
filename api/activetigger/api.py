@@ -1735,14 +1735,13 @@ async def export_bert(
 async def export_raw(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> str:
+) -> dict:
     """
     Export raw data of the project
     """
     test_rights("modify project", current_user.username, project.name)
     try:
-        r = project.export_raw(project.name)
-        return "/static/" + r["name"]
+        return project.export_raw(project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
