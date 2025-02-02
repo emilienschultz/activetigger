@@ -2,7 +2,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from activetigger.db import DBException
-from activetigger.db.models import Users
+from activetigger.db.models import Auths, Users
 
 
 class UsersService:
@@ -51,8 +51,20 @@ class UsersService:
             return {row[0]: {"contact": row[1]} for row in session.execute(stmt).all()}
 
     def delete_user(self, username: str) -> None:
+        """
+        When you delete a user you need to delete :
+        - the user itself
+        - all auth granted to this user
+        But what to do of:
+        - elements annotated
+        - projects created
+        - schemes created
+        - etc.
+
+        """
         with self.SessionMaker.begin() as session:
             _ = session.execute(delete(Users).filter_by(user=username))
+            _ = session.execute(delete(Auths).filter_by(user_id=username))
 
     def change_password(self, username: str, password: str) -> None:
         with self.SessionMaker.begin() as session:
