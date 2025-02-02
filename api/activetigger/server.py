@@ -162,6 +162,7 @@ class Server:
     ) -> pd.DataFrame:
         """
         Get logs for a user/project
+        project_slug: project slug or "all"
         """
         logs = self.db_manager.projects_service.get_logs("all", project_slug, limit)
         df = pd.DataFrame(

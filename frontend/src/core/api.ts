@@ -1569,13 +1569,15 @@ export function useGeneratedElements(
 /**
  * Get logs
  */
-export function useGetLogs(project_slug: string | null, username: string | null, limit: number) {
+export function useGetLogs(project_slug: string | null, limit: number) {
   const getLogs = useAsyncMemo(async () => {
-    if (limit && project_slug && username) {
+    console.log(project_slug);
+    console.log(limit);
+    if (limit && project_slug) {
+      console.log(limit);
       const res = await api.GET('/logs', {
         params: {
           query: {
-            username: username,
             project_slug: project_slug,
             limit: limit,
           },
@@ -1586,7 +1588,7 @@ export function useGetLogs(project_slug: string | null, username: string | null,
       }
     }
     return null;
-  }, [project_slug, username, limit]);
+  }, [project_slug, limit]);
   return { logs: getAsyncMemoData(getLogs) };
 }
 

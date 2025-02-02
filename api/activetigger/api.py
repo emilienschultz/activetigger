@@ -115,6 +115,13 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
         else:
             raise HTTPException(500, "No rights for this action")
 
+    # get all information
+    if action == "get all server information":
+        if status == "root":
+            return True
+        else:
+            raise HTTPException(500, "No rights for this action")
+
     if not project_slug:
         raise HTTPException(500, "Project name missing")
 
@@ -137,6 +144,15 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
 
     # possibility to add/update annotations : everyone
     if action == "modify annotation":
+        if (auth == "manager") or (status == "root"):
+            return True
+        elif auth == "annotator":
+            return True
+        else:
+            raise HTTPException(500, "No rights for this action")
+
+    # get project information
+    if action == "get project information":
         if (auth == "manager") or (status == "root"):
             return True
         elif auth == "annotator":
@@ -516,11 +532,17 @@ async def get_auth(username: str) -> list:
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
 async def get_logs(
-    username: str, project_slug: str = "all", limit: int = 100
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project_slug: str = "all",
+    limit: int = 100,
 ) -> TableOutModel:
     """
     Get all logs for a username/project
     """
+    if project_slug == "all":
+        test_rights("get all server information", current_user.username)
+    else:
+        test_rights("get project information", current_user.username, project_slug)
     df = server.get_logs(project_slug, limit)
     return TableOutModel(
         items=df.to_dict(orient="records"),

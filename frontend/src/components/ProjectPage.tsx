@@ -9,7 +9,6 @@ import Modal from 'react-bootstrap/Modal';
 import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
-import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { ProjectStatistics } from './ProjectStatistics';
@@ -35,10 +34,8 @@ export const ProjectPage: FC = () => {
 
   const navigate = useNavigate();
 
-  const { authenticatedUser } = useAuth();
-
   // get logs
-  const { logs } = useGetLogs(projectName || null, authenticatedUser?.username || null, 100);
+  const { logs } = useGetLogs(projectName || null, 100);
 
   // function to delete project
   const deleteProject = useDeleteProject();

@@ -47,6 +47,9 @@ class ProjectsService:
         session.close()
 
     def get_logs(self, username: str, project_slug: str, limit: int):
+        """
+        TODO : secure the log through the project_slug auth
+        """
         with self.Session() as session:
             stmt = select(Logs).order_by(Logs.time.desc()).limit(limit)
         if project_slug != "all":
@@ -59,7 +62,7 @@ class ProjectsService:
         return [
             {
                 "id": log.id,
-                "time": log.time,
+                "time": log.time.strftime("%Y-%m-%d %H:%M:%S"),
                 "user": log.user_id,
                 "project": log.project_id,
                 "action": log.action,

@@ -2187,8 +2187,7 @@ export interface operations {
     };
     get_logs_logs_get: {
         parameters: {
-            query: {
-                username: string;
+            query?: {
                 project_slug?: string;
                 limit?: number;
             };
