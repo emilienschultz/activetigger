@@ -1246,6 +1246,30 @@ export function useGetModelUrl(projectSlug: string | null, model: string | null)
 }
 
 /**
+ * Get dataset file static url
+ */
+export function useGetDatasetUrl(projectSlug: string | null) {
+  const getDatasetUrl = useAsyncMemo(async () => {
+    if (projectSlug) {
+      const res = await api.GET('/export/raw', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+          },
+        },
+      });
+
+      if (!res.error) {
+        return config.api.url + res.data;
+      }
+      return null;
+    }
+    return null;
+  }, [projectSlug]);
+  return { datasetUrl: getAsyncMemoData(getDatasetUrl) };
+}
+
+/**
  * Get table of elements
  */
 interface PageInfo {

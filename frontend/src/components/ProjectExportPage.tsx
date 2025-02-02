@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import {
   useGetAnnotationsFile,
+  useGetDatasetUrl,
   useGetFeaturesFile,
   useGetModelUrl,
   useGetPredictionsFile,
@@ -44,6 +45,7 @@ export const ProjectExportPage: FC = () => {
   const { getAnnotationsFile } = useGetAnnotationsFile(projectName || null);
   const { getPredictionsFile } = useGetPredictionsFile(projectName || null);
   const { modelUrl } = useGetModelUrl(projectName || null, model);
+  const { datasetUrl } = useGetDatasetUrl(projectName || null);
 
   const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
 
@@ -181,6 +183,11 @@ export const ProjectExportPage: FC = () => {
                 </div>
               </div>
             </div>
+            {datasetUrl && (
+              <Link to={datasetUrl} target="_blank" download className="btn btn-primary mt-3">
+                Export raw dataset in parquet
+              </Link>
+            )}
           </div>
         </div>
       </div>

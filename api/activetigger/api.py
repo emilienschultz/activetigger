@@ -1723,10 +1723,28 @@ async def export_bert(
     """
     Export fine-tuned BERT model
     """
-    r = project.bertmodels.export_bert(name=name)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return "/static/" + r["name"]
+    test_rights("modify project", current_user.username, project.name)
+    try:
+        r = project.bertmodels.export_bert(name=name)
+        return "/static/" + r["name"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/export/raw", dependencies=[Depends(verified_user)])
+async def export_raw(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> str:
+    """
+    Export raw data of the project
+    """
+    test_rights("modify project", current_user.username, project.name)
+    try:
+        r = project.export_raw(project.name)
+        return "/static/" + r["name"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/export/generations", dependencies=[Depends(verified_user)])

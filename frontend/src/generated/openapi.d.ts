@@ -1136,6 +1136,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/export/raw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Raw
+         * @description Export raw data of the project
+         */
+        get: operations["export_raw_export_raw_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/export/generations": {
         parameters: {
             query?: never;
@@ -3649,6 +3669,37 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_raw_export_raw_get: {
+        parameters: {
+            query: {
                 project_slug: string;
             };
             header?: never;

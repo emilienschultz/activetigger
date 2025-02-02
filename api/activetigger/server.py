@@ -1211,6 +1211,18 @@ class Project(Server):
         """
         return [e for e in self.computing if e["user"] == user and e["kind"] == kind]
 
+    def export_raw(self, project_slug: str):
+        """
+        Export raw data
+        """
+        # copy in the static folder
+        name = f"{project_slug}_{data_all}"
+        path_origin = self.path.joinpath(project_slug).joinpath(data_all)
+        path_target = self.path.joinpath("static").joinpath(name)
+        if not path_target.exists():
+            shutil.copyfile(path_origin, path_target)
+        return {"name": name, "path": path_target}
+
     def update_processes(self) -> dict:
         """
         Update completed processes and do specific operations regarding their kind

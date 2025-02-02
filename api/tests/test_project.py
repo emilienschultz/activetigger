@@ -88,7 +88,6 @@ def project(start_server, new_project):
 
 
 def test_scheme(project):
-
     # DEFAULT
     available = project.schemes.available()
     assert isinstance(available, dict)

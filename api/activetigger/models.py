@@ -701,7 +701,7 @@ class BertModels:
         """
         file_name = f"{name}.tar.gz"
         if not (self.path / "../../static" / file_name).exists():
-            return {"error": "file does not exist"}
+            raise FileNotFoundError("file does not exist")
         r = {"name": file_name, "path": self.path / "../../static" / file_name}
         return r
 
