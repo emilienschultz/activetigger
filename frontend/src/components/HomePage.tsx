@@ -46,7 +46,7 @@ export const HomePage: FC = () => {
           <div className="col-12 col-lg-6">
             <center>
               <h1>Active Tigger</h1>
-              <h3>Explore, Classify & Analyze Text</h3>
+              <h3>Explore, Annotate & Classify Text</h3>
 
               <img
                 src={logo}
