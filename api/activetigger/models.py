@@ -292,19 +292,81 @@ class BertModels:
             "gpu": False,
             "adapt": True,
         }
+
         self.base_models = [
-            "answerdotai/ModernBERT-base",
-            "camembert/camembert-base",
-            "camembert/camembert-large",
-            "flaubert/flaubert_small_cased",
-            "flaubert/flaubert_base_cased",
-            "flaubert/flaubert_large_cased",
-            "distilbert-base-cased",
-            "roberta-base",
-            "microsoft/deberta-base",
-            "distilbert-base-multilingual-cased",
-            "microsoft/Multilingual-MiniLM-L12-H384",
-            "xlm-roberta-base",
+            {
+                "name": "answerdotai/ModernBERT-base",
+                "priority": 10,
+                "comment": "",
+                "language": "en",
+            },
+            {
+                "name": "camembert/camembert-base",
+                "priority": 0,
+                "comment": "",
+                "language": "fr",
+            },
+            {
+                "name": "camembert/camembert-large",
+                "priority": 0,
+                "comment": "",
+                "language": "fr",
+            },
+            {
+                "name": "flaubert/flaubert_small_cased",
+                "priority": 5,
+                "comment": "",
+                "language": "fr",
+            },
+            {
+                "name": "flaubert/flaubert_base_cased",
+                "priority": 7,
+                "comment": "",
+                "language": "fr",
+            },
+            {
+                "name": "flaubert/flaubert_large_cased",
+                "priority": 9,
+                "comment": "",
+                "language": "fr",
+            },
+            {
+                "name": "distilbert-base-cased",
+                "priority": 0,
+                "comment": "",
+                "language": "en",
+            },
+            {"name": "roberta-base", "priority": 0, "comment": "", "language": "en"},
+            {
+                "name": "microsoft/deberta-base",
+                "priority": 0,
+                "comment": "",
+                "language": "en",
+            },
+            {
+                "name": "distilbert-base-multilingual-cased",
+                "priority": 0,
+                "comment": "",
+                "language": "multi",
+            },
+            {
+                "name": "microsoft/Multilingual-MiniLM-L12-H384",
+                "priority": 0,
+                "comment": "",
+                "language": "multi",
+            },
+            {
+                "name": "ckiplab/bert-base-chinese-ws",
+                "priority": 5,
+                "comment": "",
+                "language": "cn",
+            },
+            {
+                "name": "hfl/chinese-roberta-wwm-ext",
+                "priority": 5,
+                "comment": "",
+                "language": "cn",
+            },
         ]
         self.project_slug = project_slug
         self.queue = queue
