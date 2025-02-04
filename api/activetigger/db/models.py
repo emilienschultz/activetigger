@@ -228,3 +228,28 @@ class Models(Base):
     status: Mapped[str]
     statistics: Mapped[str | None]
     test: Mapped[str | None]
+
+
+class Prompts(Base):
+    __tablename__ = "prompts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    time_modified: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped[Users] = relationship()
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
+    project: Mapped[Projects] = relationship(back_populates="models")
+    scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
+    scheme: Mapped[Schemes] = relationship(back_populates="models")
+    kind: Mapped[str]
+    name: Mapped[str]
+    parameters: Mapped[dict[str, Any]]
