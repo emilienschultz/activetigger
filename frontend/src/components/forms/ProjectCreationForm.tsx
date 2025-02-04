@@ -27,18 +27,18 @@ export const ProjectCreationForm: FC = () => {
   const maxSizeMo = 400;
   const maxTrainSet = 100000;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
-  const { register, control, handleSubmit, setValue, getValues } = useForm<
-    ProjectModel & { files: FileList }
-  >({
-    defaultValues: {
-      project_name: 'New project',
-      n_train: 100,
-      n_test: 0,
-      language: 'en',
-      clear_test: false,
-      random_selection: true,
+  const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
+    {
+      defaultValues: {
+        project_name: 'New project',
+        n_train: 100,
+        n_test: 0,
+        language: 'en',
+        clear_test: false,
+        random_selection: true,
+      },
     },
-  });
+  );
   const { notify } = useNotifications();
 
   const [spinner, setSpinner] = useState<boolean>(false); // state for the data
