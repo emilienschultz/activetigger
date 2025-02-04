@@ -1,0 +1,14 @@
+name,priority,comment,language
+answerdotai/ModernBERT-base,10,,en
+camembert/camembert-base,0,,fr
+camembert/camembert-large,0,,fr
+flaubert/flaubert_small_cased,5,,fr
+flaubert/flaubert_base_cased,7,,fr
+flaubert/flaubert_large_cased,9,,fr
+distilbert-base-cased,0,,en
+roberta-base,0,,en
+microsoft/deberta-base,0,,en
+distilbert-base-multilingual-cased,0,,multi
+microsoft/Multilingual-MiniLM-L12-H384,0,,multi
+ckiplab/bert-base-chinese-ws,5,,cn
+hfl/chinese-roberta-wwm-ext,5,,cn

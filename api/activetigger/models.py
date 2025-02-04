@@ -280,6 +280,7 @@ class BertModels:
         queue: Any,
         computing: list,
         db_manager: DatabaseManager,
+        list_models: str | None = None,
     ) -> None:
         self.params_default = {
             "batchsize": 4,
@@ -293,81 +294,78 @@ class BertModels:
             "adapt": True,
         }
 
-        self.base_models = [
-            {
-                "name": "answerdotai/ModernBERT-base",
-                "priority": 10,
-                "comment": "",
-                "language": "en",
-            },
-            {
-                "name": "camembert/camembert-base",
-                "priority": 0,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "camembert/camembert-large",
-                "priority": 0,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "flaubert/flaubert_small_cased",
-                "priority": 5,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "flaubert/flaubert_base_cased",
-                "priority": 7,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "flaubert/flaubert_large_cased",
-                "priority": 9,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "distilbert-base-cased",
-                "priority": 0,
-                "comment": "",
-                "language": "en",
-            },
-            {"name": "roberta-base", "priority": 0, "comment": "", "language": "en"},
-            {
-                "name": "microsoft/deberta-base",
-                "priority": 0,
-                "comment": "",
-                "language": "en",
-            },
-            {
-                "name": "distilbert-base-multilingual-cased",
-                "priority": 0,
-                "comment": "",
-                "language": "multi",
-            },
-            {
-                "name": "microsoft/Multilingual-MiniLM-L12-H384",
-                "priority": 0,
-                "comment": "",
-                "language": "multi",
-            },
-            {
-                "name": "ckiplab/bert-base-chinese-ws",
-                "priority": 5,
-                "comment": "",
-                "language": "cn",
-            },
-            {
-                "name": "hfl/chinese-roberta-wwm-ext",
-                "priority": 5,
-                "comment": "",
-                "language": "cn",
-            },
-        ]
+        # load the list of models
+        if list_models is not None:
+            self.base_models = pd.read_csv(list_models).to_dict(orient="records")
+        else:
+            self.base_models = [
+                {
+                    "name": "answerdotai/ModernBERT-base",
+                    "priority": 10,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "camembert/camembert-base",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "camembert/camembert-large",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "flaubert/flaubert_small_cased",
+                    "priority": 5,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "flaubert/flaubert_base_cased",
+                    "priority": 7,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "flaubert/flaubert_large_cased",
+                    "priority": 9,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "distilbert-base-cased",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "roberta-base",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "microsoft/deberta-base",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "distilbert-base-multilingual-cased",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "multi",
+                },
+                {
+                    "name": "microsoft/Multilingual-MiniLM-L12-H384",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "multi",
+                },
+            ]
         self.project_slug = project_slug
         self.queue = queue
         self.computing = computing

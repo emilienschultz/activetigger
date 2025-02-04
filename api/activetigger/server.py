@@ -49,6 +49,7 @@ ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
 N_WORKERS = 2
 TIMEZONE = pytz.timezone("Europe/Paris")
+MODELS = "bert_models.csv"
 
 
 class Server:
@@ -604,7 +605,12 @@ class Project(Server):
             self.params.language,
         )
         self.bertmodels = BertModels(
-            project_slug, self.params.dir, self.queue, self.computing, self.db_manager
+            project_slug,
+            self.params.dir,
+            self.queue,
+            self.computing,
+            self.db_manager,
+            MODELS,
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
         self.generations = Generations(self.db_manager, self.computing)
