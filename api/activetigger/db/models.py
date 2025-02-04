@@ -242,14 +242,7 @@ class Prompts(Base):
         server_default=func.current_timestamp(),
         onupdate=func.current_timestamp(),
     )
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(
-        ForeignKey("projects.project_slug", ondelete="CASCADE")
-    )
-    project: Mapped[Projects] = relationship(back_populates="models")
-    scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
-    scheme: Mapped[Schemes] = relationship(back_populates="models")
-    kind: Mapped[str]
+    user: Mapped[str]
+    project: Mapped[str]
     name: Mapped[str]
     parameters: Mapped[dict[str, Any]]
