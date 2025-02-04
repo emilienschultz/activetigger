@@ -37,6 +37,13 @@ interface Row {
   text: string;
 }
 
+type BertModel = {
+  name: string;
+  priority: number;
+  comment: string;
+  language: string;
+};
+
 export const ProjectTrainPage: FC = () => {
   const { projectName: projectSlug } = useParams();
 
@@ -104,6 +111,7 @@ export const ProjectTrainPage: FC = () => {
   });
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
+    console.log(data);
     await trainBertModel(data);
   };
 
@@ -192,6 +200,10 @@ export const ProjectTrainPage: FC = () => {
     if (v >= 100) return 'completed, please wait';
     return v + '%';
   };
+
+  const filteredModels = ((project?.bertmodels.options as unknown as BertModel[]) ?? []).sort(
+    (a, b) => b.priority - a.priority,
+  );
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
@@ -435,8 +447,10 @@ export const ProjectTrainPage: FC = () => {
                         {...registerNewModel('base')}
                         className="form-select"
                       >
-                        {(project?.bertmodels.options || []).map((e) => (
-                          <option key={e}>{e}</option>
+                        {(filteredModels || []).map((e) => (
+                          <option key={e.name} value={e.name}>
+                            [{e.language}] {e.name}
+                          </option>
                         ))}
                       </select>
                     </div>
