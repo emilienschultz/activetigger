@@ -451,7 +451,15 @@ export const ProjectTrainPage: FC = () => {
                     </div>
 
                     <div>
-                      <label>Model base</label>
+                      <label>
+                        Model base{' '}
+                        <a className="basemodel">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".basemodel" place="top">
+                          The pre-trained model to be used for fine-tuning.
+                        </Tooltip>
+                      </label>
 
                       <Controller
                         name="base"
