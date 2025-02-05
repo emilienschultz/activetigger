@@ -249,7 +249,7 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
 
 def to_sbert(
     texts: Series,
-    model: str = "distiluse-base-multilingual-cased-v1",
+    model: str = "all-mpnet-base-v2",
     batch_size: int = 32,
     **kwargs,
 ) -> DataFrame:

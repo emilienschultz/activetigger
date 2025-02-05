@@ -45,6 +45,8 @@ annotations_file = "annotations.parquet"
 train_file = "train.parquet"
 test_file = "test.parquet"
 default_user = "root"
+
+# conf deployment
 ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
 N_WORKERS = 2

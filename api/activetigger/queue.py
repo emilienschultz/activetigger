@@ -38,6 +38,7 @@ class Queue:
         """
         Close the executor
         """
+        # TODO : tuer les workers
         self.executor.shutdown(cancel_futures=True, wait=False)
         self.manager.shutdown()
         logger.info("Close queue")
@@ -99,8 +100,8 @@ class Queue:
         """
         if unique_id not in self.current:
             return {"error": "Id does not exist"}
-        self.current[unique_id]["event"].set()
-        self.delete(unique_id)
+        self.current[unique_id]["event"].set()  # TODO update status to flag the killing
+        self.delete(unique_id)  # TODOmove this to the cleaning method
         return {"success": "Process killed"}
 
     def delete(self, ids: str | list) -> None:

@@ -126,6 +126,19 @@ export const ProjectPreparePage: FC = () => {
                       ))}{' '}
                     </select>
 
+                    {/* {selectedFeatureToCreate === 'sbert' && (
+                      <div>
+                        <label htmlFor="dfm_norm">Model to use</label>
+                        <select id="dfm_norm" {...register('parameters.dfm_norm')}>
+                          {(project?.features.options.sbert.models || []).map((element) => (
+                            <option key={element as string} value={element as string}>
+                              {element as string}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )} */}
+
                     {selectedFeatureToCreate === 'regex' && (
                       <input
                         type="text"
