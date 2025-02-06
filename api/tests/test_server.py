@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 import sqlalchemy
+from api.activetigger.orchestrator import Queue, Server, Users
 
 from activetigger.datamodels import ProjectDataModel
-from activetigger.server import Queue, Server, Users
 
 
 @pytest.fixture
