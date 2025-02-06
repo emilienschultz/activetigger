@@ -62,6 +62,8 @@ export const ProjectPreparePage: FC = () => {
   const kindScheme =
     currentScheme && project ? project.schemes.available[currentScheme]['kind'] : '';
 
+  console.log(featuresInfo);
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="prepare">
       {project && projectName && (
