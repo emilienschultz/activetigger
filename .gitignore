@@ -28,3 +28,4 @@ site/
 **/*.sql
 .vscode
 api/activetigger/db/__pycache__/
+api/key.yaml

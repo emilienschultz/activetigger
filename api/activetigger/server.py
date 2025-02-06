@@ -11,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 import pytz
 import yaml
+from cryptography.fernet import Fernet
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
 from pandas import DataFrame
@@ -45,6 +46,7 @@ annotations_file = "annotations.parquet"
 train_file = "train.parquet"
 test_file = "test.parquet"
 default_user = "root"
+key_file = "key.yaml"
 
 # conf deployment
 ALGORITHM = "HS256"
@@ -103,11 +105,13 @@ class Server:
         self.n_workers = N_WORKERS
 
         self.starting_time = time.time()
-        self.secret_key = secrets.token_hex(32)
 
         # Define path
         self.path = Path(path)
         self.path_models = Path(path_models)
+
+        # create or load a key
+        self.secret_key = self.get_secret_key()
 
         # if a YAML configuration file exists, overwrite
         if Path("config.yaml").exists():
@@ -146,6 +150,38 @@ class Server:
         self.queue.executor.shutdown()
         self.queue.close()
         print("Server off")
+
+    def get_secret_key(self) -> str:
+        """
+        Get the secret key used for tokens
+        - if key.yaml exists, load the key
+        - if not, create a new key and the file
+        """
+        if (self.path.joinpath(key_file)).exists():
+            with open(self.path.joinpath(key_file), "r") as f:
+                conf = yaml.safe_load(f)
+            return conf["key"]
+        else:
+            key = secrets.token_hex(32)
+            with open(self.path.joinpath(key_file), "w") as f:
+                yaml.safe_dump({"key": key}, f)
+            return key
+
+    def encrypt(self, text: str) -> str:
+        """
+        Encrypt a string
+        """
+        cipher = Fernet(self.secret_key)
+        encrypted_token = cipher.encrypt(text.encode())
+        return encrypted_token.decode()
+
+    def decrypt(self, text: str) -> str:
+        """
+        Decrypt a string
+        """
+        cipher = Fernet(self.secret_key)
+        decrypted_token = cipher.decrypt(text.encode())
+        return decrypted_token.decode()
 
     def log_action(
         self,
