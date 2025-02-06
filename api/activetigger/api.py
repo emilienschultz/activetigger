@@ -5,7 +5,7 @@ from collections.abc import Awaitable
 from contextlib import asynccontextmanager
 from datetime import datetime
 from importlib.abc import Traversable
-from io import BytesIO, StringIO
+from io import StringIO
 from typing import Annotated, Any, Callable
 
 import pandas as pd
@@ -1660,40 +1660,10 @@ async def export_simplemodel_predictions(
     Export prediction simplemodel for the project/user/scheme if any
     """
     try:
-        table = project.simplemodels.get_prediction(scheme, current_user.username)
-
-        # convert to payload
-        if format == "csv":
-            output = StringIO()
-            pd.DataFrame(table).to_csv(output, index=False)
-            data = output.getvalue()
-            output.close()
-            headers = {
-                "Content-Disposition": 'attachment; filename="data.csv"',
-                "Content-Type": "text/csv",
-            }
-            return Response(content=data, media_type="text/csv", headers=headers)
-        elif format == "xlsx":
-            output = BytesIO()
-            pd.DataFrame(table).to_excel(output, index=False)
-            output.seek(0)
-            headers = {
-                "Content-Disposition": 'attachment; filename="data.xlsx"',
-                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            }
-            return StreamingResponse(output, headers=headers)
-        elif format == "parquet":
-            output = BytesIO()
-            pd.DataFrame(table).to_parquet(output, index=False)
-            output.seek(0)
-            headers = {
-                "Content-Disposition": 'attachment; filename="data.parquet"',
-                "Content-Type": "application/octet-stream",
-            }
-            return StreamingResponse(output, headers=headers)
-        else:
-            raise HTTPException(status_code=500, detail="Format not available")
-
+        output, headers = project.simplemodels.export_prediction(
+            scheme, current_user.username, format
+        )
+        return StreamingResponse(output, headers=headers)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -4,6 +4,7 @@ import os
 import pickle
 import shutil
 from datetime import datetime
+from io import BytesIO
 from multiprocessing import Process
 from pathlib import Path
 from typing import Any
@@ -1064,6 +1065,40 @@ class SimpleModels:
             self.existing[element["user"]] = {}
         self.existing[element["user"]][element["scheme"]] = sm
         self.dumps()
+
+    def export_prediction(self, scheme: str, username: str, format: str = "csv"):
+        # get data
+        table = self.get_prediction(scheme, username)
+        # convert to payload
+        if format == "csv":
+            output = BytesIO()
+            pd.DataFrame(table).to_csv(output)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.csv"',
+                "Content-Type": "text/csv",
+            }
+            return output, headers
+        elif format == "xlsx":
+            output = BytesIO()
+            pd.DataFrame(table).to_excel(output)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.xlsx"',
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }
+            return output, headers
+        elif format == "parquet":
+            output = BytesIO()
+            pd.DataFrame(table).to_parquet(output)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.parquet"',
+                "Content-Type": "application/octet-stream",
+            }
+            return output, headers
+        else:
+            raise ValueError("Format not supported")
 
 
 class SimpleModel:
