@@ -243,7 +243,7 @@ class BertModelModel(BaseModel):
     name: str
     base_model: str
     params: BertModelParametersModel
-    test_size: float
+    test_size: float = 0.2
     dichotomize: str | None = None
     class_min_freq: int = 1
     class_balance: bool = False

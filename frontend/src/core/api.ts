@@ -906,7 +906,7 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
             scheme: scheme,
             base_model: dataForm.base,
             name: dataForm.name || '',
-            test_size: 0.2,
+            test_size: dataForm.test_size || 0.2,
             params: dataForm.parameters,
             dichotomize: dataForm.dichotomize,
             class_balance: dataForm.class_balance || false,
