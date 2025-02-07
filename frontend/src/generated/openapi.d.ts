@@ -1239,6 +1239,16 @@ export interface components {
             test_size: number;
             /** Dichotomize */
             dichotomize?: string | null;
+            /**
+             * Class Min Freq
+             * @default 1
+             */
+            class_min_freq: number;
+            /**
+             * Class Balance
+             * @default false
+             */
+            class_balance: boolean;
         };
         /**
          * BertModelParametersModel

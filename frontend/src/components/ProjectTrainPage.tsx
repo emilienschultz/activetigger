@@ -93,6 +93,15 @@ export const ProjectTrainPage: FC = () => {
     } else notify({ type: 'error', message: 'New name is void' });
   };
 
+  const filteredModels = ((project?.bertmodels.options as unknown as BertModel[]) ?? []).sort(
+    (a, b) => b.priority - a.priority,
+  );
+  const availableBaseModels =
+    filteredModels.map((e) => ({
+      value: e.name as string,
+      label: `[${e.language as string}] ${e.name as string}`,
+    })) || ([] as { value: string; label: string }[]);
+
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
   const { stopTraining } = useStopTrainBertModel(projectSlug || null);
@@ -102,6 +111,8 @@ export const ProjectTrainPage: FC = () => {
     control,
   } = useForm<newBertModel>({
     defaultValues: {
+      class_balance: false,
+      class_min_freq: 1,
       parameters: {
         batchsize: 4,
         gradacc: 1.0,
@@ -206,15 +217,6 @@ export const ProjectTrainPage: FC = () => {
     if (v >= 100) return 'completed, please wait';
     return v + '%';
   };
-
-  const filteredModels = ((project?.bertmodels.options as unknown as BertModel[]) ?? []).sort(
-    (a, b) => b.priority - a.priority,
-  );
-  const availableBaseModels =
-    filteredModels.map((e) => ({
-      value: e.name as string,
-      label: `[${e.language as string}] ${e.name as string}`,
-    })) || ([] as { value: string; label: string }[]);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
@@ -464,10 +466,15 @@ export const ProjectTrainPage: FC = () => {
                       <Controller
                         name="base"
                         control={control}
+                        defaultValue={availableBaseModels?.[0]?.value}
                         render={({ field }) => (
                           <Select
+                            {...field}
                             options={availableBaseModels}
                             classNamePrefix="react-select"
+                            value={availableBaseModels.find(
+                              (option) => option.value === field.value,
+                            )}
                             onChange={(selectedOption) => field.onChange(selectedOption?.value)}
                           />
                         )}
@@ -562,6 +569,29 @@ export const ProjectTrainPage: FC = () => {
                       </label>
                       <input type="number" {...registerNewModel('parameters.eval')} />
                     </div>
+
+                    <label>
+                      Class threshold{' '}
+                      <a className="class_min_freq">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".class_min_freq" place="top">
+                        Drop classses with less than this number of elements
+                      </Tooltip>
+                    </label>
+                    <input type="number" step="1" {...registerNewModel('class_min_freq')} />
+                    <div className="form-group d-flex align-items-center">
+                      <label>
+                        Balance classes
+                        <a className="class_balance">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".class_balance" place="top">
+                          Downsize classes to the lowest one.
+                        </Tooltip>
+                      </label>
+                      <input type="checkbox" {...registerNewModel('class_balance')} />
+                    </div>
                     <div className="form-group d-flex align-items-center">
                       <label>Best</label>
                       <input type="checkbox" {...registerNewModel('parameters.best')} />
@@ -571,10 +601,6 @@ export const ProjectTrainPage: FC = () => {
                       <label>GPU</label>
                       <input type="checkbox" {...registerNewModel('parameters.gpu')} />
                     </div>
-                    {/* <div className="form-group d-flex align-items-center" style={{ display: 'none' }}>
-                    <label>Adapt:</label>
-                    <input type="checkbox" {...registerNewModel('parameters.adapt')} />
-                  </div> */}
                     {!isComputing && (
                       <button key="start" className="btn btn-primary me-2 mt-2">
                         Train the model

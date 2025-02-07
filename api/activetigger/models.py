@@ -410,19 +410,6 @@ class BertModels:
                     # start compression
                     self.start_compression(m["name"])
 
-            # if Path(m["path"]).exists():
-            #     predict = False
-            #     compressed = False
-            #     if (Path(m["path"]) / "predict_all.parquet").exists():
-            #         predict = True
-            #     if (self.path / "../../static" / f"{m['name']}.tar.gz").exists():
-            #         compressed = True
-            #     else:
-            #         self.start_compression(m["name"])
-            #     r[m["scheme"]][m["name"]] = {
-            #         "predicted": predict,
-            #         "compressed": compressed,
-            #     }
         return r
 
     def training(self) -> dict:

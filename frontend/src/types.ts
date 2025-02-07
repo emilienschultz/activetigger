@@ -112,6 +112,8 @@ export interface newBertModel {
   base: string;
   parameters: BertModelParametersModel;
   dichotomize?: string;
+  class_balance?: boolean;
+  class_min_freq?: number;
 }
 
 export interface TestSetModel {
