@@ -1660,10 +1660,11 @@ async def export_features(
     """
     Export features
     """
-    r = project.export_features(features=features, format=format)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return FileResponse(r["path"], filename=r["name"])
+    try:
+        r = project.export_features(features=features, format=format)
+        return FileResponse(r["path"], filename=r["name"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/export/prediction/simplemodel", dependencies=[Depends(verified_user)])

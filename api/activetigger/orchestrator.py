@@ -550,6 +550,6 @@ class Orchestrator:
         except Exception as e:
             raise Exception from e
 
-        # clean memory
+        # clean current memory
         if project_slug in self.projects:
             del self.projects[project_slug]

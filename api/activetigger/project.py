@@ -19,7 +19,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import cat2num, clean_regex
+from activetigger.functions import clean_regex
 from activetigger.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
@@ -665,7 +665,7 @@ class Project:
         Export features data in different formats
         """
         if len(features) == 0:
-            return {"error": "No features selected"}
+            raise ValueError("No feature selected")
 
         path = self.params.dir  # path of the data
         if path is None:
@@ -737,10 +737,8 @@ class Project:
         """
         # copy in the static folder
         name = f"{project_slug}_data_all.parquet"
-        path_origin = self.params.dir.joinpath(project_slug).joinpath(
-            "data_all.parquet"
-        )
-        path_target = self.params.dir.joinpath("static").joinpath(name)
+        path_origin = self.params.dir.joinpath("data_all.parquet")
+        path_target = self.params.dir.joinpath("..").joinpath("static").joinpath(name)
         if not path_target.exists():
             shutil.copyfile(path_origin, path_target)
         return {"name": name, "path": f"/static/{name}"}
@@ -752,7 +750,7 @@ class Project:
         - add the result if needed
         - manage error if needed
         """
-        predictions = {}
+        add_predictions = {}
 
         # TODO : clean old errors from the message list
 
@@ -796,9 +794,7 @@ class Project:
                         # return {"error": r["error"]}
                     # get the prediction in the trainset
                     if "path" in r and "predict_train.parquet" in r["path"]:
-                        predictions["predict_" + e["model"].name] = pd.read_parquet(
-                            r["path"]
-                        )
+                        add_predictions["predict_" + e["model"].name] = r["path"]
                         print("Prediction added")
 
                     self.bertmodels.add(e)
@@ -890,16 +886,20 @@ class Project:
                 self.queue.delete(e["unique_id"])
 
         # if predictions, add them
-        for f in predictions:
-            df_num = cat2num(predictions[f])
-            name = f.replace("__", "_")
+        for f in add_predictions:
+            # load the prediction probabilities minus one
+            df = pd.read_parquet(add_predictions[f])
+            df = df.drop(columns=["entropy", "prediction"])
+            df = df[df.columns[0:-1]]
+            print(df)
+            name = f.replace("__", "_")  # avoid __ in the name for features
             self.features.add(
                 name=name,
                 kind="prediction",
                 parameters={},
                 username="system",
-                new_content=df_num,
-            )  # avoid __ in the name for features
+                new_content=df,
+            )
             print("Add feature", name)
 
         return None

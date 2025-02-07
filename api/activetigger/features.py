@@ -199,6 +199,7 @@ class Features:
             print("Missing features:", missing)
 
         # load only needed data from file
+        print("read parquet")
         data = pd.read_parquet(self.path_train, columns=cols)
 
         return data

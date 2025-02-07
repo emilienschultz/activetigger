@@ -12,3 +12,5 @@ distilbert-base-multilingual-cased,0,,multi
 microsoft/Multilingual-MiniLM-L12-H384,0,,multi
 ckiplab/bert-base-chinese-ws,5,,cn
 hfl/chinese-roberta-wwm-ext,5,,cn
+deepset/gbert-base,5,,de
+deepset/gbert-large,4,,de
