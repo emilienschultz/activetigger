@@ -485,7 +485,7 @@ export function useGetNextElementId(
           scheme: currentScheme,
           selection: phase == 'test' ? 'test' : selectionConfig.mode,
           sample: selectionConfig.sample,
-          tag: selectionConfig.label,
+          label: selectionConfig.label,
           filter: selectionConfig.filter,
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected

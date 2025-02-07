@@ -101,6 +101,7 @@ export interface GenerateConfig {
 }
 
 export interface DisplayConfig {
+  displayAnnotation: boolean;
   displayPrediction: boolean;
   displayContext: boolean;
   displayHistory: boolean;

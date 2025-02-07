@@ -19,11 +19,11 @@ import {
   useRenameBertModel,
   useStopTrainBertModel,
   useTrainBertModel,
-} from '../core/api';
-import { useAppContext } from '../core/context';
-import { useNotifications } from '../core/notifications';
-import { newBertModel } from '../types';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
+} from '../../core/api';
+import { useAppContext } from '../../core/context';
+import { useNotifications } from '../../core/notifications';
+import { newBertModel } from '../../types';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
 /**
  * Component to manage model training
@@ -46,7 +46,7 @@ type BertModel = {
   language: string;
 };
 
-export const ProjectTrainPage: FC = () => {
+export const TrainPage: FC = () => {
   const { projectName: projectSlug } = useParams();
 
   const { notify } = useNotifications();
@@ -93,14 +93,18 @@ export const ProjectTrainPage: FC = () => {
     } else notify({ type: 'error', message: 'New name is void' });
   };
 
-  const filteredModels = ((project?.bertmodels.options as unknown as BertModel[]) ?? []).sort(
-    (a, b) => b.priority - a.priority,
-  );
-  const availableBaseModels =
-    filteredModels.map((e) => ({
-      value: e.name as string,
-      label: `[${e.language as string}] ${e.name as string}`,
-    })) || ([] as { value: string; label: string }[]);
+  // available base models suited for the project : sorted by language + priority
+  const filteredModels = ((project?.bertmodels.options as unknown as BertModel[]) ?? [])
+    .sort((a, b) => b.priority - a.priority)
+    .sort((a, b) => {
+      const aHasFr = a.language === project?.params.language ? -1 : 1;
+      const bHasFr = b.language === project?.params.language ? -1 : 1;
+      return aHasFr - bHasFr;
+    });
+  const availableBaseModels = filteredModels.map((e) => ({
+    value: e.name as string,
+    label: `[${e.language as string}] ${e.name as string}`,
+  }));
 
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);

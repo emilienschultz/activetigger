@@ -12,7 +12,6 @@ import { ProjectNewPage } from '../components/ProjectNewPage';
 import { ProjectPage } from '../components/ProjectPage';
 import { ProjectPreparePage } from '../components/ProjectPreparePage';
 import { ProjectTestPage } from '../components/ProjectTestPage';
-import { ProjectTrainPage } from '../components/ProjectTrainPage';
 import { ProjectsPage } from '../components/ProjectsPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 import { AccountPage } from '../components/pages/AccountPage';
@@ -20,6 +19,7 @@ import { CuratePage } from '../components/pages/CurationPage';
 import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
 import { ProjectPredictPage } from '../components/pages/PredictPage';
+import { TrainPage } from '../components/pages/TrainPage';
 import { UsersPage } from '../components/pages/UsersPage';
 
 export function getRouter() {
@@ -116,7 +116,7 @@ export function getRouter() {
         },
         {
           path: '/projects/:projectName/train/',
-          element: <ProjectTrainPage />,
+          element: <TrainPage />,
         },
         {
           path: '/projects/:projectName/test/',
