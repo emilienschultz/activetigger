@@ -113,6 +113,7 @@ export const ProjectTrainPage: FC = () => {
     defaultValues: {
       class_balance: false,
       class_min_freq: 1,
+      test_size: 0.2,
       parameters: {
         batchsize: 4,
         gradacc: 1.0,
@@ -569,17 +570,30 @@ export const ProjectTrainPage: FC = () => {
                       </label>
                       <input type="number" {...registerNewModel('parameters.eval')} />
                     </div>
-
-                    <label>
-                      Class threshold{' '}
-                      <a className="class_min_freq">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".class_min_freq" place="top">
-                        Drop classses with less than this number of elements
-                      </Tooltip>
-                    </label>
-                    <input type="number" step="1" {...registerNewModel('class_min_freq')} />
+                    <div>
+                      <label>
+                        Test size{' '}
+                        <a className="test_size">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".test_size" place="top">
+                          Eval size for the test set in the dev test to compute metrics.
+                        </Tooltip>
+                      </label>
+                      <input type="number" step="0.1" {...registerNewModel('test_size')} />
+                    </div>
+                    <div>
+                      <label>
+                        Class threshold{' '}
+                        <a className="class_min_freq">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".class_min_freq" place="top">
+                          Drop classses with less than this number of elements
+                        </Tooltip>
+                      </label>
+                      <input type="number" step="1" {...registerNewModel('class_min_freq')} />
+                    </div>
                     <div className="form-group d-flex align-items-center">
                       <label>
                         Balance classes

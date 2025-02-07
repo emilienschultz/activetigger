@@ -1521,7 +1521,6 @@ async def post_bert(
                 .apply(lambda x: x.sample(min_freq))
                 .reset_index(level=0, drop=True)
             )
-            print(df.shape, df)
 
         # launch training process
         project.bertmodels.start_training_process(
