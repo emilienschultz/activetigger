@@ -1126,41 +1126,42 @@ async def post_annotation(
     test_rights("modify annotation", current_user.username, project.name)
 
     if action in ["add", "update"]:
-        r = project.schemes.push_annotation(
-            annotation.element_id,
-            annotation.label,
-            annotation.scheme,
-            current_user.username,
-            annotation.dataset,
-            annotation.comment,
-        )
+        try:
+            r = project.schemes.push_annotation(
+                annotation.element_id,
+                annotation.label,
+                annotation.scheme,
+                current_user.username,
+                annotation.dataset,
+                annotation.comment,
+            )
 
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-
-        orchestrator.log_action(
-            current_user.username,
-            f"ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
-            project.name,
-        )
-        return None
+            orchestrator.log_action(
+                current_user.username,
+                f"ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     if action == "delete":
-        r = project.schemes.delete_annotation(
-            annotation.element_id,
-            annotation.scheme,
-            annotation.dataset,
-            current_user.username,
-        )
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
+        try:
+            r = project.schemes.delete_annotation(
+                annotation.element_id,
+                annotation.scheme,
+                annotation.dataset,
+                current_user.username,
+            )
 
-        orchestrator.log_action(
-            current_user.username,
-            f"DELETE ANNOTATION in {annotation.scheme}: id {annotation.element_id}",
-            project.name,
-        )
-        return None
+            orchestrator.log_action(
+                current_user.username,
+                f"DELETE ANNOTATION in {annotation.scheme}: id {annotation.element_id}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     raise HTTPException(status_code=400, detail="Wrong action")
 

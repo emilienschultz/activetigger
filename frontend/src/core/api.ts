@@ -536,7 +536,7 @@ export function useAddAnnotation(
   dataset: string,
 ) {
   const addAnnotation = useCallback(
-    async (element_id: string, label: string, comment: string | null) => {
+    async (element_id: string, label: string | null, comment: string | null) => {
       // do the new projects POST call
       if (projectSlug && scheme) {
         await api.POST('/annotation/{action}', {

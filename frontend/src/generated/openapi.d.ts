@@ -341,6 +341,7 @@ export interface paths {
          * @description Get the state of the server
          *     - queue
          *     - gpu use
+         *     TODO : maybe add a buffer ?
          */
         get: operations["get_queue_server_get"];
         put?: never;
@@ -1199,7 +1200,7 @@ export interface components {
             /** Element Id */
             element_id: string;
             /** Label */
-            label: string;
+            label: string | null;
             /**
              * Dataset
              * @default train

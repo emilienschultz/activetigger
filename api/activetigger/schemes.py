@@ -408,12 +408,12 @@ class Schemes:
         """
 
         if element_id == "noelement":
-            return {"error": "no element"}
+            raise Exception("No element id")
 
         # test if the action is possible
         a = self.available()
         if scheme not in a:
-            return {"error": "scheme unavailable"}
+            raise Exception("Scheme doesn't exist")
 
         # test if the labels used exist in the scheme
         if label is None:
@@ -421,10 +421,10 @@ class Schemes:
         elif "|" in label:
             er = [i for i in label.split("|") if i not in a[scheme]["labels"]]
             if len(er) > 0:
-                return {"error": f"labels don't belong to this scheme : {er}"}
+                raise Exception(f"Labels {er} not in the scheme")
         else:
             if label not in a[scheme]["labels"]:
-                return {"error": "this tag doesn't belong to this scheme"}
+                raise Exception(f"Label {label} not in the scheme")
 
         # TODO : add test if the element index really exist
         # if (not element_id in self.content.index):
