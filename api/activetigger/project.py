@@ -891,7 +891,6 @@ class Project:
             df = pd.read_parquet(add_predictions[f])
             df = df.drop(columns=["entropy", "prediction"])
             df = df[df.columns[0:-1]]
-            print(df)
             name = f.replace("__", "_")  # avoid __ in the name for features
             self.features.add(
                 name=name,

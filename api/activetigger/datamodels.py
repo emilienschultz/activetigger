@@ -245,6 +245,8 @@ class BertModelModel(BaseModel):
     params: BertModelParametersModel
     test_size: float
     dichotomize: str | None = None
+    class_min_freq: int = 1
+    class_balance: bool = False
 
 
 class UmapModel(BaseModel):
