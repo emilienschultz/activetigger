@@ -761,7 +761,7 @@ async def get_next(
         selection=next.selection,
         sample=next.sample,
         user=current_user.username,
-        label=next.tag,
+        label=next.label,
         history=next.history,
         frame=next.frame,
         filter=next.filter,

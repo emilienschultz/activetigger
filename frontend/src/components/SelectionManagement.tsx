@@ -30,11 +30,6 @@ export const SelectionManagement: FC = () => {
     project,
   );
 
-  // labels for maxprob : either all labels (multiclass) or one label (binary)
-  // const availableLabels = useMemo(() => {
-  //   return currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
-  // }, [currentScheme, project]);
-
   const [availableLabels, setAvailableLabels] = useState<string[]>(
     currentScheme && project ? project.schemes.available[currentScheme]['labels'] : [],
   );
@@ -60,12 +55,14 @@ export const SelectionManagement: FC = () => {
     }
   }, [availableLabels, selectionConfig, setAppContext]);
 
+  console.log(selectionConfig);
+
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
   ) : (
     <div className="w-100">
       <div className="d-flex align-items-center">
-        <div className="mx-2">
+        <div className="mx-2 w-25">
           <label>Selection</label>
           <select
             className="form-select"
@@ -82,25 +79,29 @@ export const SelectionManagement: FC = () => {
             ))}
           </select>
         </div>
-        {selectionConfig.mode == 'maxprob' && (
-          <div className="mx-2 w-25">
-            <label>Label</label>
-            <select
-              onChange={(e) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: { ...selectionConfig, label: e.target.value },
-                }));
-              }}
-              className="form-select"
-              value={selectionConfig.label}
-            >
-              {availableLabels.map((e, i) => (
-                <option key={i}>{e}</option>
-              ))}{' '}
-            </select>
-          </div>
-        )}
+        {
+          // label selection for maxprob OR when sample is tagged
+          (selectionConfig.mode == 'maxprob' || selectionConfig.sample == 'tagged') && (
+            <div className="mx-2 w-25">
+              <label>Label</label>
+              <select
+                onChange={(e) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: { ...selectionConfig, label: e.target.value },
+                  }));
+                }}
+                className="form-select"
+                value={selectionConfig.label}
+              >
+                {selectionConfig.sample == 'tagged' && <option key="">All</option>}
+                {availableLabels.map((e, i) => (
+                  <option key={i}>{e}</option>
+                ))}{' '}
+              </select>
+            </div>
+          )
+        }
         <div className="mx-2 w-25">
           <label>On</label>
           <select

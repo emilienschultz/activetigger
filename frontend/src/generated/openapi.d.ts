@@ -947,6 +947,7 @@ export interface paths {
         /**
          * Post Bert
          * @description Compute bertmodel
+         *     TODO : move the methods to specific class
          */
         post: operations["post_bert_models_bert_train_post"];
         delete?: never;
@@ -1235,7 +1236,10 @@ export interface components {
             /** Base Model */
             base_model: string;
             params: components["schemas"]["BertModelParametersModel"];
-            /** Test Size */
+            /**
+             * Test Size
+             * @default 0.2
+             */
             test_size: number;
             /** Dichotomize */
             dichotomize?: string | null;
@@ -1430,8 +1434,8 @@ export interface components {
              * @default untagged
              */
             sample: string;
-            /** Tag */
-            tag?: string | null;
+            /** Label */
+            label?: string | null;
             /** Frame */
             frame?: unknown[] | null;
             /**

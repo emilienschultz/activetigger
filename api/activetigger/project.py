@@ -349,12 +349,16 @@ class Project:
         # select the current state of annotation
         df = self.schemes.get_scheme_data(scheme, complete=True)
 
-        # build filters regarding the selection mode
-        f = df["labels"].apply(lambda x: True)
+        # build first filter from the sample
         if sample == "untagged":
             f = df["labels"].isna()
-        if sample == "tagged":
-            f = df["labels"].notna()
+        elif sample == "tagged":
+            if label is not None and label in df["labels"].unique():
+                f = df["labels"] == label
+            else:
+                f = df["labels"].notna()
+        else:
+            f = df["labels"].apply(lambda x: True)
 
         # add a regex condition to the selection
         if filter:

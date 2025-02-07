@@ -30,6 +30,7 @@ export const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
 export const DEFAULT_CONTEXT: AppContextValue = {
   notifications: [],
   displayConfig: {
+    displayAnnotation: true,
     displayContext: false,
     displayPrediction: true,
     displayHistory: false,

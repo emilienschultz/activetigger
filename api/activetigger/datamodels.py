@@ -77,7 +77,7 @@ class NextInModel(BaseModel):
     scheme: str
     selection: str = "deterministic"
     sample: str = "untagged"
-    tag: str | None = None
+    label: str | None = None
     frame: list[Any] | None = None
     history: list[str] = []
     filter: str | None = None

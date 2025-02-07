@@ -281,7 +281,9 @@ export const ProjectAnnotationPage: FC = () => {
           >
             {lastTag && (
               <div>
-                <span className="badge bg-info  ">Last tag: {lastTag}</span>
+                <span className="badge bg-info  ">
+                  {displayConfig.displayAnnotation ? `Last tag: ${lastTag}` : 'Annotated'}
+                </span>
               </div>
             )}
             <Highlighter
@@ -426,6 +428,23 @@ export const ProjectAnnotationPage: FC = () => {
               <label style={{ display: 'block', marginBottom: '10px' }}>
                 <input
                   type="checkbox"
+                  checked={displayConfig.displayAnnotation}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      displayConfig: {
+                        ...displayConfig,
+                        displayAnnotation: !displayConfig.displayAnnotation,
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                Existing annotation
+              </label>
+              <label style={{ display: 'block', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
                   checked={displayConfig.displayPrediction}
                   onChange={(_) => {
                     setAppContext((prev) => ({
@@ -438,7 +457,7 @@ export const ProjectAnnotationPage: FC = () => {
                   }}
                   style={{ marginRight: '10px' }}
                 />
-                Display prediction
+                Prediction
               </label>
               <label style={{ display: 'block', marginBottom: '10px' }}>
                 <input
@@ -455,7 +474,7 @@ export const ProjectAnnotationPage: FC = () => {
                   }}
                   style={{ marginRight: '10px' }}
                 />
-                Display information
+                Contextual information
               </label>
               <label style={{ display: 'block', marginBottom: '10px' }}>
                 <input
@@ -472,7 +491,7 @@ export const ProjectAnnotationPage: FC = () => {
                   }}
                   style={{ marginRight: '10px' }}
                 />
-                Display annotation history
+                Element history
               </label>
               <label style={{ display: 'block', marginBottom: '10px' }}>
                 Text frame size
