@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import DataGrid, { Column } from 'react-data-grid';
-import { useGetLogs, useGetQueue, useStopProcess } from '../../core/api';
+import { useGetLogs, useGetServer, useStopProcess } from '../../core/api';
 import { PageLayout } from '../layout/PageLayout';
 
 interface Computation {
@@ -17,7 +17,7 @@ interface Row {
 }
 
 export const MonitorPage: FC = () => {
-  const { activeProjects, reFetchQueueState } = useGetQueue(null);
+  const { activeProjects, gpu, cpu, memory, disk, reFetchQueueState } = useGetServer(null);
   const { stopProcess } = useStopProcess();
   const { logs } = useGetLogs('all', 500);
 
@@ -43,6 +43,10 @@ export const MonitorPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
+            <h2 className="subtitle">Monitor ressources</h2>
+
+            {JSON.stringify({ gpu, cpu, memory, disk })}
+
             <h2 className="subtitle">Monitor the active project processes</h2>
             {Object.keys(activeProjects || {}).map((project) => (
               <div key={project}>

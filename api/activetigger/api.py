@@ -9,6 +9,7 @@ from io import StringIO
 from typing import Annotated, Any, Callable
 
 import pandas as pd
+import psutil
 from fastapi import (
     Depends,
     FastAPI,
@@ -616,6 +617,7 @@ async def get_queue() -> dict:
     Get the state of the server
     - queue
     - gpu use
+    TODO : maybe add a buffer ?
     """
 
     active_projects = {}
@@ -635,8 +637,26 @@ async def get_queue() -> dict:
     queue = {i: q[i] for i in q if q[i]["state"] == "running"}
 
     gpu = get_gpu_memory_info()
+    cpu = psutil.cpu_percent()
+    cpu_count = psutil.cpu_count()
+    memory_info = psutil.virtual_memory()
+    disk_info = psutil.disk_usage("/")
 
-    r = {"queue": queue, "gpu": gpu, "active_projects": active_projects}
+    r = {
+        "queue": queue,
+        "active_projects": active_projects,
+        "gpu": gpu,
+        "cpu": {"proportion": cpu, "total": cpu_count},
+        "memory": {
+            "proportion": memory_info.percent,
+            "total": memory_info.total / (1024**3),
+            "available": memory_info.available / (1024**3),
+        },
+        "disk": {
+            "proportion": disk_info.percent,
+            "total": disk_info.total / (1024**3),
+        },
+    }
 
     return r
 
