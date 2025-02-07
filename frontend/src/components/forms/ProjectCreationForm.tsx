@@ -26,6 +26,12 @@ export const ProjectCreationForm: FC = () => {
   // form management
   const maxSizeMo = 400;
   const maxTrainSet = 100000;
+  const langages = [
+    { value: 'en', label: 'English' },
+    { value: 'fr', label: 'French' },
+    { value: 'de', label: 'German' },
+    { value: 'cn', label: 'Chinese' },
+  ];
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
   const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
     {
@@ -262,12 +268,11 @@ export const ProjectCreationForm: FC = () => {
                     disabled={data === null}
                     {...register('language')}
                   >
-                    <option key="en" value={'en'}>
-                      English
-                    </option>
-                    <option key="fr" value={'fr'}>
-                      French
-                    </option>
+                    {langages.map((lang) => (
+                      <option key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </option>
+                    ))}
                   </select>
 
                   <label className="form-label" htmlFor="col_label">

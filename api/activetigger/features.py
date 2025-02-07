@@ -65,7 +65,7 @@ class Features:
 
         # options
         self.options: dict = {
-            "sbert": {},
+            "sbert": {"models": ["all-mpnet-base-v2"]},
             "fasttext": {},
             "dfm": {
                 "tfidf": False,
@@ -199,6 +199,7 @@ class Features:
             print("Missing features:", missing)
 
         # load only needed data from file
+        print("read parquet")
         data = pd.read_parquet(self.path_train, columns=cols)
 
         return data
@@ -297,7 +298,7 @@ class Features:
             return {"success": "Feature added"}
         else:
             if kind == "sbert":
-                args = {"texts": df, "model": "distiluse-base-multilingual-cased-v1"}
+                args = {"texts": df, "model": "all-mpnet-base-v2"}
                 func = to_sbert
             elif kind == "fasttext":
                 args = {

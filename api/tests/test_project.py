@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 from activetigger.datamodels import ProjectDataModel
-from activetigger.server import Server
+from activetigger.orchestrator import Orchestrator
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def start_server(monkeypatch, root_pwd, create_and_change_directory):
     Start a server
     """
     monkeypatch.setattr("builtins.input", lambda _: root_pwd)
-    s = Server()
+    s = Orchestrator()
     yield s
 
 

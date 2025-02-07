@@ -9,7 +9,9 @@ import { Tooltip } from 'react-tooltip';
 import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
 
 import { Tab, Tabs } from 'react-bootstrap';
+import { Controller } from 'react-hook-form';
 import { FaTools } from 'react-icons/fa';
+import Select from 'react-select';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
@@ -94,7 +96,11 @@ export const ProjectTrainPage: FC = () => {
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
   const { stopTraining } = useStopTrainBertModel(projectSlug || null);
-  const { handleSubmit: handleSubmitNewModel, register: registerNewModel } = useForm<newBertModel>({
+  const {
+    handleSubmit: handleSubmitNewModel,
+    register: registerNewModel,
+    control,
+  } = useForm<newBertModel>({
     defaultValues: {
       parameters: {
         batchsize: 4,
@@ -204,6 +210,11 @@ export const ProjectTrainPage: FC = () => {
   const filteredModels = ((project?.bertmodels.options as unknown as BertModel[]) ?? []).sort(
     (a, b) => b.priority - a.priority,
   );
+  const availableBaseModels =
+    filteredModels.map((e) => ({
+      value: e.name as string,
+      label: `[${e.language as string}] ${e.name as string}`,
+    })) || ([] as { value: string; label: string }[]);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
@@ -440,19 +451,27 @@ export const ProjectTrainPage: FC = () => {
                     </div>
 
                     <div>
-                      <label>Model base</label>
+                      <label>
+                        Model base{' '}
+                        <a className="basemodel">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".basemodel" place="top">
+                          The pre-trained model to be used for fine-tuning.
+                        </Tooltip>
+                      </label>
 
-                      <select
-                        id="new-model-type"
-                        {...registerNewModel('base')}
-                        className="form-select"
-                      >
-                        {(filteredModels || []).map((e) => (
-                          <option key={e.name} value={e.name}>
-                            [{e.language}] {e.name}
-                          </option>
-                        ))}
-                      </select>
+                      <Controller
+                        name="base"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            options={availableBaseModels}
+                            classNamePrefix="react-select"
+                            onChange={(selectedOption) => field.onChange(selectedOption?.value)}
+                          />
+                        )}
+                      />
                     </div>
 
                     <div>

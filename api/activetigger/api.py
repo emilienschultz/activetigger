@@ -5,7 +5,7 @@ from collections.abc import Awaitable
 from contextlib import asynccontextmanager
 from datetime import datetime
 from importlib.abc import Traversable
-from io import BytesIO, StringIO
+from io import StringIO
 from typing import Annotated, Any, Callable
 
 import pandas as pd
@@ -57,7 +57,8 @@ from activetigger.datamodels import (
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
-from activetigger.server import Project, Server
+from activetigger.orchestrator import Orchestrator
+from activetigger.project import Project
 
 # General comments
 # - all post are logged
@@ -78,7 +79,7 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
     - relation to the project
     """
     try:
-        user = server.users.get_user(name=username)
+        user = orchestrator.users.get_user(name=username)
     except Exception as e:
         raise HTTPException(404) from e
 
@@ -125,7 +126,7 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
     if not project_slug:
         raise HTTPException(500, "Project name missing")
 
-    auth = server.users.auth(username, project_slug)
+    auth = orchestrator.users.auth(username, project_slug)
     # print(auth)
 
     # possibility to modify project (create/delete)
@@ -172,7 +173,7 @@ logger = logging.getLogger("api")
 logger_simplemodel = logging.getLogger("simplemodel")
 
 # starting the server
-server = Server()
+orchestrator = Orchestrator()
 timer = time.time()
 
 
@@ -184,12 +185,12 @@ async def lifespan(app: FastAPI):
     print("Active Tigger starting")
     yield
     print("Active Tigger closing")
-    server.queue.close()
+    orchestrator.queue.close()
 
 
 # starting the app
 app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory=server.path / "static"), name="static")
+app.mount("/static", StaticFiles(directory=orchestrator.path / "static"), name="static")
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token"
@@ -210,11 +211,11 @@ async def check_processes(timer: float, step: int = 1) -> None:
     timer = time.time()
 
     # check the queue to see if it is still running
-    server.queue.check()
+    orchestrator.queue.check()
 
     # update processes for each active projects
     to_del = []
-    for p, project in server.projects.items():
+    for p, project in orchestrator.projects.items():
         # if project existing since one day, remove it from memory
         if (timer - project.starting_time) > 86400:
             to_del.append(p)
@@ -222,7 +223,7 @@ async def check_processes(timer: float, step: int = 1) -> None:
         project.update_processes()
 
     for p in to_del:
-        del server.projects[p]
+        del orchestrator.projects[p]
 
 
 @app.middleware("http")
@@ -261,24 +262,27 @@ async def get_project(project_slug: str) -> ProjectModel:
     """
 
     # if project doesn't exist
-    if not server.exists(project_slug):
+    if not orchestrator.exists(project_slug):
         raise HTTPException(status_code=404, detail="Project not found")
 
     # if the project is already loaded
-    if project_slug in server.projects:
-        return server.projects[project_slug]
+    if project_slug in orchestrator.projects:
+        return orchestrator.projects[project_slug]
 
     # Manage a FIFO queue when there is too many projects
     try:
-        if len(server.projects) >= server.max_projects:
+        if len(orchestrator.projects) >= orchestrator.max_projects:
             old_element = sorted(
-                [[p, server.projects[p].starting_time] for p in server.projects],
+                [
+                    [p, orchestrator.projects[p].starting_time]
+                    for p in orchestrator.projects
+                ],
                 key=lambda x: x[1],
             )[0]
             if (
                 old_element[1] < time.time() - 3600
             ):  # check if the project has a least one hour old to avoid destroying current projects
-                del server.projects[old_element[0]]
+                del orchestrator.projects[old_element[0]]
                 print(f"Delete project {old_element[0]} to gain memory")
             else:
                 print("Too many projects in the current memory")
@@ -290,10 +294,10 @@ async def get_project(project_slug: str) -> ProjectModel:
         print("PROBLEM IN THE FIFO QUEUE", e)
 
     # load the project
-    server.start_project(project_slug)
+    orchestrator.start_project(project_slug)
 
     # return loaded project
-    return server.projects[project_slug]
+    return orchestrator.projects[project_slug]
 
 
 async def verified_user(
@@ -304,7 +308,7 @@ async def verified_user(
     """
     # decode token
     try:
-        payload = server.decode_access_token(token)
+        payload = orchestrator.decode_access_token(token)
         username = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Problem with token")
@@ -315,7 +319,7 @@ async def verified_user(
 
     # get user caracteristics
     try:
-        user = server.users.get_user(name=username)
+        user = orchestrator.users.get_user(name=username)
         return user
     except Exception as e:
         raise HTTPException(status_code=404) from e
@@ -330,7 +334,7 @@ async def check_auth_exists(
     Check if a user is associated to a project
     """
     # print("route", request.url.path, request.method)
-    auth = server.users.auth(current_user.username, project_slug)
+    auth = orchestrator.users.auth(current_user.username, project_slug)
     if not auth or "error" in auth:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
     return None
@@ -381,12 +385,14 @@ async def login_for_access_token(
     """
     # authentificate the user
     try:
-        user = server.users.authenticate_user(form_data.username, form_data.password)
+        user = orchestrator.users.authenticate_user(
+            form_data.username, form_data.password
+        )
     except Exception as e:
         raise HTTPException(status_code=401, detail="Wrong username or password") from e
 
     # create new token for the user
-    access_token = server.create_access_token(
+    access_token = orchestrator.create_access_token(
         data={"sub": user.username}, expires_min=120
     )
     return TokenModel(
@@ -399,7 +405,7 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
     """
     Revoke user connexion
     """
-    server.revoke_access_token(token)
+    orchestrator.revoke_access_token(token)
     return None
 
 
@@ -420,7 +426,7 @@ async def existing_users(
     """
     Get existing users
     """
-    users = server.users.existing_users()
+    users = orchestrator.users.existing_users()
     return UsersServerModel(
         users=users,
         auth=["manager", "annotator"],
@@ -432,7 +438,7 @@ async def recent_users() -> list[str]:
     """
     Get recently connected users
     """
-    users = server.db_manager.projects_service.get_current_users(300)
+    users = orchestrator.db_manager.projects_service.get_current_users(300)
     return users
 
 
@@ -449,7 +455,7 @@ async def create_user(
     """
     test_rights("create user", current_user.username)
     try:
-        server.users.add_user(
+        orchestrator.users.add_user(
             username_to_create, password, status, current_user.username, mail
         )
     except Exception as e:
@@ -469,7 +475,7 @@ async def delete_user(
     # manage rights
     test_rights("modify user", current_user.username)
     try:
-        server.users.delete_user(user_to_delete, current_user.username)
+        orchestrator.users.delete_user(user_to_delete, current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500) from e
     return None
@@ -485,7 +491,7 @@ async def change_password(
     """
     Change password for an account
     """
-    server.users.change_password(current_user.username, pwdold, pwd1, pwd2)
+    orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
     return None
 
 
@@ -505,18 +511,22 @@ async def set_auth(
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")
         try:
-            server.users.set_auth(username, project_slug, status)
+            orchestrator.users.set_auth(username, project_slug, status)
         except Exception as e:
             raise HTTPException(status_code=500) from e
-        server.log_action(current_user.username, f"INFO add user {username}", "all")
+        orchestrator.log_action(
+            current_user.username, f"INFO add user {username}", "all"
+        )
         return None
 
     if action == "delete":
         try:
-            server.users.delete_auth(username, project_slug)
+            orchestrator.users.delete_auth(username, project_slug)
         except Exception as e:
             raise HTTPException(status_code=500) from e
-        server.log_action(current_user.username, f"INFO delete user {username}", "all")
+        orchestrator.log_action(
+            current_user.username, f"INFO delete user {username}", "all"
+        )
         return None
 
     raise HTTPException(status_code=400, detail="Action not found")
@@ -527,7 +537,7 @@ async def get_auth(username: str) -> list:
     """
     Get all user auth
     """
-    return server.users.get_auth(username, "all")
+    return orchestrator.users.get_auth(username, "all")
 
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
@@ -543,7 +553,7 @@ async def get_logs(
         test_rights("get all server information", current_user.username)
     else:
         test_rights("get project information", current_user.username, project_slug)
-    df = server.get_logs(project_slug, limit)
+    df = orchestrator.get_logs(project_slug, limit)
     return TableOutModel(
         items=df.to_dict(orient="records"),
         total=limit,
@@ -594,7 +604,7 @@ async def get_projects(
     depending of the status of connected user
     """
     try:
-        r = server.get_auth_projects(current_user.username)
+        r = orchestrator.get_auth_projects(current_user.username)
         return AvailableProjectsModel(projects=r)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -609,7 +619,7 @@ async def get_queue() -> dict:
     """
 
     active_projects = {}
-    for p in server.projects:
+    for p in orchestrator.projects:
         active_projects[p] = [
             {
                 "unique_id": c["unique_id"],
@@ -617,11 +627,11 @@ async def get_queue() -> dict:
                 "kind": c["kind"],
                 "time": c["time"],
             }
-            for c in server.projects[p].computing
+            for c in orchestrator.projects[p].computing
         ]
 
     # only running processes for the moment
-    q = server.queue.state()
+    q = orchestrator.queue.state()
     queue = {i: q[i] for i in q if q[i]["state"] == "running"}
 
     gpu = get_gpu_memory_info()
@@ -636,7 +646,7 @@ async def get_nb_queue() -> int:
     """
     Get the number of element active in the server queue
     """
-    return server.queue.get_nb_active_processes()
+    return orchestrator.queue.get_nb_active_processes()
 
 
 @app.post("/kill", dependencies=[Depends(verified_user)])
@@ -648,10 +658,10 @@ async def kill_process(
     Stop current generation
     """
     test_rights("kill process", current_user.username)
-    r = server.queue.kill(unique_id)
+    r = orchestrator.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, f"kill process {unique_id}", "all")
+    orchestrator.log_action(current_user.username, f"kill process {unique_id}", "all")
     return None
 
 
@@ -660,10 +670,10 @@ async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
     """
     Users auth on a project
     """
-    if not server.exists(project_slug):
+    if not orchestrator.exists(project_slug):
         raise HTTPException(status_code=404, detail="Project doesn't exist")
     try:
-        r = server.users.get_project_auth(project_slug)
+        r = orchestrator.users.get_project_auth(project_slug)
         return ProjectAuthsModel(auth=r)
     except Exception as e:
         raise HTTPException(status_code=500) from e
@@ -682,9 +692,9 @@ async def add_testdata(
         # add the data
         project.add_testdata(testset, current_user.username, project.name)
         # update parameters of the project
-        server.set_project_parameters(project.params, current_user.username)
+        orchestrator.set_project_parameters(project.params, current_user.username)
         # log action
-        server.log_action(
+        orchestrator.log_action(
             current_user.username, "INFO add testdata project", project.name
         )
         return None
@@ -705,9 +715,9 @@ async def new_project(
 
     try:
         # create the project
-        r = server.create_project(project, current_user.username)
+        r = orchestrator.create_project(project, current_user.username)
         # log action
-        server.log_action(
+        orchestrator.log_action(
             current_user.username, "INFO create project", project.project_name
         )
         return r["success"]
@@ -727,11 +737,14 @@ async def delete_project(
     Delete a project
     """
     test_rights("modify project", current_user.username, project_slug)
-    r = server.delete_project(project_slug)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "INFO delete project", project_slug)
-    return None
+    try:
+        orchestrator.delete_project(project_slug)
+        orchestrator.log_action(
+            current_user.username, "INFO delete project", project_slug
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/elements/next", dependencies=[Depends(verified_user)])
@@ -815,7 +828,7 @@ async def compute_projection(
         raise HTTPException(status_code=500, detail=r["error"])
 
     # add to queue
-    unique_id = server.queue.add(
+    unique_id = orchestrator.queue.add(
         "projection", r["func"], {"features": features, "params": r["params"]}
     )
     if unique_id == "error":
@@ -830,7 +843,7 @@ async def compute_projection(
             "params": projection,
         }
     )
-    server.log_action(
+    orchestrator.log_action(
         current_user.username,
         f"INFO compute projection {projection.method}",
         project.params.project_slug,
@@ -890,7 +903,7 @@ async def post_list_elements(
         if "error" in r:
             errors.append(annotation)
             continue
-        server.log_action(
+        orchestrator.log_action(
             current_user.username,
             f"UPDATE ANNOTATION in {annotation.scheme}: {annotation.element_id} as {annotation.label}",
             project.name,
@@ -947,7 +960,7 @@ async def post_reconciliation(
     )
 
     # log
-    server.log_action(
+    orchestrator.log_action(
         current_user.username,
         f"RECONCILIATE ANNOTATION in {scheme}: {element_id} as {label}",
         project.name,
@@ -984,7 +997,7 @@ async def postgenerate(
         "prompt": request.prompt,
     }
 
-    unique_id = server.queue.add("generation", functions.generate, args)
+    unique_id = orchestrator.queue.add("generation", functions.generate, args)
 
     if unique_id == "error":
         raise HTTPException(
@@ -1003,7 +1016,7 @@ async def postgenerate(
         }
     )
 
-    server.log_action(
+    orchestrator.log_action(
         current_user.username,
         "INFO Start generating process",
         project.params.project_slug,
@@ -1024,10 +1037,10 @@ async def stop_generation(
     if len(p) == 0:
         raise HTTPException(status_code=400, detail="No process found for this user")
     unique_id = p[0]["unique_id"]
-    r = server.queue.kill(unique_id)
+    r = orchestrator.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
+    orchestrator.log_action(
         current_user.username, "INFO stop generation", project.params.project_slug
     )
     return None
@@ -1105,7 +1118,7 @@ async def post_annotation(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
-        server.log_action(
+        orchestrator.log_action(
             current_user.username,
             f"ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
             project.name,
@@ -1122,7 +1135,7 @@ async def post_annotation(
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
-        server.log_action(
+        orchestrator.log_action(
             current_user.username,
             f"DELETE ANNOTATION in {annotation.scheme}: id {annotation.element_id}",
             project.name,
@@ -1174,7 +1187,7 @@ async def rename_label(
     print("old label deleted")
 
     # log
-    server.log_action(
+    orchestrator.log_action(
         current_user.username,
         f"RENAME LABEL in {scheme}: label {former_label} to {new_label}",
         project.name,
@@ -1199,7 +1212,7 @@ async def add_label(
         r = project.schemes.add_label(label, scheme, current_user.username)
         if "error" in r:
             raise HTTPException(status_code=400, detail=r["error"])
-        server.log_action(
+        orchestrator.log_action(
             current_user.username, f"ADD LABEL in {scheme}: label {label}", project.name
         )
         return None
@@ -1208,7 +1221,7 @@ async def add_label(
         r = project.schemes.delete_label(label, scheme, current_user.username)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(
+        orchestrator.log_action(
             current_user.username,
             f"DELETE LABEL in {scheme}: label {label}",
             project.name,
@@ -1232,7 +1245,7 @@ async def post_codebook(
     r = project.schemes.add_codebook(codebook.scheme, codebook.content, codebook.time)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
+    orchestrator.log_action(
         current_user.username,
         f"MODIFY CODEBOOK: codebook {codebook.scheme}",
         project.name,
@@ -1276,14 +1289,14 @@ async def post_schemes(
         )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(
+        orchestrator.log_action(
             current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name
         )
         return None
     if action == "delete":
         try:
             r = project.schemes.delete_scheme(scheme.name)
-            server.log_action(
+            orchestrator.log_action(
                 current_user.username,
                 f"DELETE SCHEME: scheme {scheme.name}",
                 project.name,
@@ -1295,7 +1308,7 @@ async def post_schemes(
         r = project.schemes.update_scheme(scheme.name, scheme.labels)
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
-        server.log_action(
+        orchestrator.log_action(
             current_user.username, f"UPDATE SCHEME: scheme {scheme.name}", project.name
         )
         return None
@@ -1341,7 +1354,7 @@ async def post_embeddings(
         raise HTTPException(status_code=500, detail=r["error"])
 
     # Log and return
-    server.log_action(
+    orchestrator.log_action(
         current_user.username, f"INFO Compute feature {feature.type}", project.name
     )
     return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
@@ -1360,7 +1373,7 @@ async def delete_feature(
     r = project.features.delete(name)
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
-    server.log_action(
+    orchestrator.log_action(
         current_user.username, f"INFO delete feature {name}", project.name
     )
     return None
@@ -1396,7 +1409,9 @@ async def post_simplemodel(
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "INFO compute simplemodel", project.name)
+    orchestrator.log_action(
+        current_user.username, "INFO compute simplemodel", project.name
+    )
     logger_simplemodel.info("Start computing simplemodel")
     return None
 
@@ -1464,7 +1479,7 @@ async def predict(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
+    orchestrator.log_action(
         current_user.username, f"INFO predict bert {model_name}", project.name
     )
     return None
@@ -1505,7 +1520,7 @@ async def post_bert(
             params=bert.params,
             test_size=bert.test_size,
         )
-        server.log_action(
+        orchestrator.log_action(
             current_user.username, f"INFO train bert {bert.name}", project.name
         )
         return None
@@ -1529,12 +1544,14 @@ async def stop_bert(
     # get id
     unique_id = p[0]["unique_id"]
     # kill the process
-    r = server.queue.kill(unique_id)
+    r = orchestrator.queue.kill(unique_id)
     # delete it in the database
     project.bertmodels.projects_service.delete_model(project.name, p[0]["model"].name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(current_user.username, "INFO stop bert training", project.name)
+    orchestrator.log_action(
+        current_user.username, "INFO stop bert training", project.name
+    )
     return None
 
 
@@ -1565,7 +1582,7 @@ async def start_test(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
+    orchestrator.log_action(
         current_user.username, "INFO predict bert for testing", project.name
     )
     return None
@@ -1585,7 +1602,7 @@ async def delete_bert(
     r = project.bertmodels.delete(bert_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
+    orchestrator.log_action(
         current_user.username, f"INFO delete bert model {bert_name}", project.name
     )
     return None
@@ -1606,7 +1623,7 @@ async def save_bert(
     r = project.bertmodels.rename(former_name, new_name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    server.log_action(
+    orchestrator.log_action(
         current_user.username,
         f"INFO rename bert model {former_name} - {new_name}",
         project.name,
@@ -1643,10 +1660,11 @@ async def export_features(
     """
     Export features
     """
-    r = project.export_features(features=features, format=format)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return FileResponse(r["path"], filename=r["name"])
+    try:
+        r = project.export_features(features=features, format=format)
+        return FileResponse(r["path"], filename=r["name"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/export/prediction/simplemodel", dependencies=[Depends(verified_user)])
@@ -1660,40 +1678,10 @@ async def export_simplemodel_predictions(
     Export prediction simplemodel for the project/user/scheme if any
     """
     try:
-        table = project.simplemodels.get_prediction(scheme, current_user.username)
-
-        # convert to payload
-        if format == "csv":
-            output = StringIO()
-            pd.DataFrame(table).to_csv(output, index=False)
-            data = output.getvalue()
-            output.close()
-            headers = {
-                "Content-Disposition": 'attachment; filename="data.csv"',
-                "Content-Type": "text/csv",
-            }
-            return Response(content=data, media_type="text/csv", headers=headers)
-        elif format == "xlsx":
-            output = BytesIO()
-            pd.DataFrame(table).to_excel(output, index=False)
-            output.seek(0)
-            headers = {
-                "Content-Disposition": 'attachment; filename="data.xlsx"',
-                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            }
-            return StreamingResponse(output, headers=headers)
-        elif format == "parquet":
-            output = BytesIO()
-            pd.DataFrame(table).to_parquet(output, index=False)
-            output.seek(0)
-            headers = {
-                "Content-Disposition": 'attachment; filename="data.parquet"',
-                "Content-Type": "application/octet-stream",
-            }
-            return StreamingResponse(output, headers=headers)
-        else:
-            raise HTTPException(status_code=500, detail="Format not available")
-
+        output, headers = project.simplemodels.export_prediction(
+            scheme, current_user.username, format
+        )
+        return StreamingResponse(output, headers=headers)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

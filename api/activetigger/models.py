@@ -4,6 +4,7 @@ import os
 import pickle
 import shutil
 from datetime import datetime
+from io import BytesIO
 from multiprocessing import Process
 from pathlib import Path
 from typing import Any
@@ -280,6 +281,7 @@ class BertModels:
         queue: Any,
         computing: list,
         db_manager: DatabaseManager,
+        list_models: str | None = None,
     ) -> None:
         self.params_default = {
             "batchsize": 4,
@@ -293,81 +295,78 @@ class BertModels:
             "adapt": True,
         }
 
-        self.base_models = [
-            {
-                "name": "answerdotai/ModernBERT-base",
-                "priority": 10,
-                "comment": "",
-                "language": "en",
-            },
-            {
-                "name": "camembert/camembert-base",
-                "priority": 0,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "camembert/camembert-large",
-                "priority": 0,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "flaubert/flaubert_small_cased",
-                "priority": 5,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "flaubert/flaubert_base_cased",
-                "priority": 7,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "flaubert/flaubert_large_cased",
-                "priority": 9,
-                "comment": "",
-                "language": "fr",
-            },
-            {
-                "name": "distilbert-base-cased",
-                "priority": 0,
-                "comment": "",
-                "language": "en",
-            },
-            {"name": "roberta-base", "priority": 0, "comment": "", "language": "en"},
-            {
-                "name": "microsoft/deberta-base",
-                "priority": 0,
-                "comment": "",
-                "language": "en",
-            },
-            {
-                "name": "distilbert-base-multilingual-cased",
-                "priority": 0,
-                "comment": "",
-                "language": "multi",
-            },
-            {
-                "name": "microsoft/Multilingual-MiniLM-L12-H384",
-                "priority": 0,
-                "comment": "",
-                "language": "multi",
-            },
-            {
-                "name": "ckiplab/bert-base-chinese-ws",
-                "priority": 5,
-                "comment": "",
-                "language": "cn",
-            },
-            {
-                "name": "hfl/chinese-roberta-wwm-ext",
-                "priority": 5,
-                "comment": "",
-                "language": "cn",
-            },
-        ]
+        # load the list of models
+        if list_models is not None:
+            self.base_models = pd.read_csv(list_models).to_dict(orient="records")
+        else:
+            self.base_models = [
+                {
+                    "name": "answerdotai/ModernBERT-base",
+                    "priority": 10,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "camembert/camembert-base",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "camembert/camembert-large",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "flaubert/flaubert_small_cased",
+                    "priority": 5,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "flaubert/flaubert_base_cased",
+                    "priority": 7,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "flaubert/flaubert_large_cased",
+                    "priority": 9,
+                    "comment": "",
+                    "language": "fr",
+                },
+                {
+                    "name": "distilbert-base-cased",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "roberta-base",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "microsoft/deberta-base",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "en",
+                },
+                {
+                    "name": "distilbert-base-multilingual-cased",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "multi",
+                },
+                {
+                    "name": "microsoft/Multilingual-MiniLM-L12-H384",
+                    "priority": 0,
+                    "comment": "",
+                    "language": "multi",
+                },
+            ]
         self.project_slug = project_slug
         self.queue = queue
         self.computing = computing
@@ -1066,6 +1065,40 @@ class SimpleModels:
             self.existing[element["user"]] = {}
         self.existing[element["user"]][element["scheme"]] = sm
         self.dumps()
+
+    def export_prediction(self, scheme: str, username: str, format: str = "csv"):
+        # get data
+        table = self.get_prediction(scheme, username)
+        # convert to payload
+        if format == "csv":
+            output = BytesIO()
+            pd.DataFrame(table).to_csv(output)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.csv"',
+                "Content-Type": "text/csv",
+            }
+            return output, headers
+        elif format == "xlsx":
+            output = BytesIO()
+            pd.DataFrame(table).to_excel(output)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.xlsx"',
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }
+            return output, headers
+        elif format == "parquet":
+            output = BytesIO()
+            pd.DataFrame(table).to_parquet(output)
+            output.seek(0)
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.parquet"',
+                "Content-Type": "application/octet-stream",
+            }
+            return output, headers
+        else:
+            raise ValueError("Format not supported")
 
 
 class SimpleModel:

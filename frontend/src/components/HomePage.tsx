@@ -54,40 +54,29 @@ export const HomePage: FC = () => {
                 className="me-2"
                 style={{ width: '200px', height: '200px' }}
               />
-              <div className="alert alert-warning fw-bold mt-3">
-                ⚠️ Warning: This interface is in beta testing.
-                <br></br>
-                Continuity of service is not guaranteed, please save your data. <br></br>
-                <a href="https://github.com/emilienschultz/activetigger/issues">
-                  Please report any bug or problem on the Github of the project
-                </a>
-                .
+              <div className="justify-content-center">
+                <Link to="/projects" className="btn btn-primary btn-lg shadow-sm rounded-pill m-3">
+                  Go to your projects
+                </Link>
               </div>
+
               {!authenticatedUser ? (
                 <LoginForm />
               ) : (
                 <div>
                   <div className="user-info">
-                    You're logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
-                    {authenticatedUser.status})
-                  </div>
-                  <div className="d-flex d-flex justify-content-center d-flex align-items-center">
-                    <Link
-                      to="/projects"
-                      className="btn btn-primary btn-lg shadow-sm rounded-pill m-3"
-                    >
-                      Go to your projects
-                    </Link>
-                    <div className="d-flex form-check form-switch">
-                      <input
-                        className="form-check-input mx-2"
-                        type="checkbox"
-                        role="switch"
-                        id="devMode"
-                        checked={developmentMode}
-                        onChange={actionDevelopmentMode}
-                      />
+                    You are logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
+                    {authenticatedUser.status}){' '}
+                    <div className="form-check form-switch">
                       <label className="form-check-label" htmlFor="devMode">
+                        <input
+                          className="form-check-input mx-2"
+                          type="checkbox"
+                          role="switch"
+                          id="devMode"
+                          checked={developmentMode}
+                          onChange={actionDevelopmentMode}
+                        />
                         Dev mode
                         <a className="batchsize mx-2">
                           <HiOutlineQuestionMarkCircle />
@@ -98,19 +87,25 @@ export const HomePage: FC = () => {
                         </Tooltip>
                       </label>
                     </div>
+                    <div className="explanations">Active users : {users?.length}</div>
                   </div>
-                  <div className="explanations">Active users : {users?.length}</div>
                 </div>
               )}
+              <div className="alert alert-warning fw-bold mt-3">
+                ⚠️ Warning: This interface is in beta testing.
+                <br></br>
+                Continuity of service is not guaranteed, please save your data. <br></br>
+                <a href="https://github.com/emilienschultz/activetigger/issues">
+                  Please report any bug or problem on the Github of the project
+                </a>
+                .
+              </div>
 
               <div className="general-info mt-3">
                 <div>
                   Last update of the frontend<b> {__BUILD_DATE__}</b>
                 </div>
                 <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
-                <div className="text-muted">
-                  Credits : Julien Boelaert & Étienne Ollion & Émilien Schultz & Ouestware
-                </div>
               </div>
             </center>
             <div style={{ height: '50px' }}></div>
@@ -120,7 +115,17 @@ export const HomePage: FC = () => {
           <div className="container text-center">
             <i className="fas fa-info-circle"></i>
             <span className="ml-2">
-              CREST / CSS @ IPP © 2025 - <i>beta version - under development -</i>
+              CREST / CSS @ IPP © 2025 -{' '}
+              <i>
+                credits : Julien Boelaert & Étienne Ollion &{' '}
+                <a href="https://www.ouestware.com/" style={{ all: 'unset', cursor: 'pointer' }}>
+                  Ouestware
+                </a>{' '}
+                &{' '}
+                <a href="http://eschultz.fr" style={{ all: 'unset', cursor: 'pointer' }}>
+                  Émilien Schultz
+                </a>{' '}
+              </i>
             </span>
           </div>
         </footer>

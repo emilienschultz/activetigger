@@ -570,7 +570,7 @@ class ProjectsService:
                     "time": i.time.strftime("%Y-%m-%d %H:%M:%S"),
                     "kind": i.kind,
                     "parameters": i.parameters,
-                    "user": i.user,
+                    "user": i.user_id,
                     "data": i.data,
                 }
                 for i in features
