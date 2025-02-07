@@ -8,7 +8,8 @@ import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
-import { useGetQueue } from '../../core/api';
+import { useGetServer } from '../../core/api';
+import { useNotifications } from '../../core/notifications';
 import { ProjectStateModel } from '../../types';
 import { ModalErrors } from '../ModalError';
 import { PossibleProjectActions } from './ProjectPageLayout';
@@ -41,7 +42,16 @@ export const ProjectActionsSidebar: FC<{
     : false;
 
   // display the number of current processes on the server
-  const { queueState, gpu } = useGetQueue(projectState || null);
+  const { queueState, gpu, disk } = useGetServer(projectState || null);
+
+  // notify if disk is full
+  const { notify } = useNotifications();
+  if (disk ? Number(disk['proportion']) > 98 : false) {
+    notify({
+      message: 'Disk is almost full, please delete some files or alert the admin',
+      type: 'warning',
+    });
+  }
 
   const errors = projectState?.errors?.map((arr) => arr.join(' - ')) || [];
 

@@ -1383,10 +1383,10 @@ export function useGetProjectionData(
 /**
  * Get queue
  */
-export function useGetQueue(projectState: ProjectStateModel | null) {
+export function useGetServer(projectState: ProjectStateModel | null) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
-  const getQueueState = useAsyncMemo(async () => {
+  const getServerState = useAsyncMemo(async () => {
     const res = await api.GET('/server', {});
     if (!res.error) {
       if ('data' in res) return res.data;
@@ -1397,12 +1397,15 @@ export function useGetQueue(projectState: ProjectStateModel | null) {
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  const data = getAsyncMemoData(getQueueState);
+  const data = getAsyncMemoData(getServerState);
 
   return {
     queueState: data?.queue,
     activeProjects: data?.active_projects,
     gpu: data?.gpu['gpu_available'] ? data?.gpu : undefined,
+    cpu: data?.cpu,
+    memory: data?.memory,
+    disk: data?.disk,
     reFetchQueueState: reFetch,
   };
 }
