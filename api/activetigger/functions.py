@@ -74,6 +74,7 @@ class CustomLoggingCallback(TrainerCallback):
             if self.event.is_set():
                 self.logger.info("Event set, stopping training.")
                 control.should_training_stop = True
+                raise Exception("Process interrupted by user")
 
 
 def get_root_pwd() -> str:
@@ -562,13 +563,7 @@ def train_bert(
             ],
         )
 
-        try:
-            print("Start training")
-            trainer.train()
-        except KeyboardInterrupt:
-            logger.info("Training interrupted by user.")
-            shutil.rmtree(current_path)
-            raise Exception("Training interrupted by user.")
+        trainer.train()
 
         # save model
         bert.save_pretrained(current_path)
