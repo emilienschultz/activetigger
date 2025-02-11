@@ -1224,7 +1224,7 @@ class SimpleModel:
         X = X[f]
         Y = Y[f]
         num_folds = 10
-        kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+        kf = KFold(n_splits=num_folds, shuffle=True)
         # predicted_labels = cross_val_predict(model, X, Y, cv=kf)
         Y_pred = cross_val_predict(model, X, Y, cv=kf)
         weighted_f1 = f1_score(Y, Y_pred, average="weighted")
