@@ -16,6 +16,17 @@ import { ProjectPageLayout } from './layout/ProjectPageLayout';
 /**
  * Component to display the features page
  */
+interface FastTextOptions {
+  models?: string[];
+}
+
+interface FeaturesOptions {
+  fasttext?: FastTextOptions;
+}
+
+interface Features {
+  options?: FeaturesOptions;
+}
 
 export const ProjectPreparePage: FC = () => {
   const { projectName } = useParams();
@@ -138,6 +149,25 @@ export const ProjectPreparePage: FC = () => {
                         </select>
                       </div>
                     )} */}
+
+                    {selectedFeatureToCreate === 'fasttext' && (
+                      <div>
+                        <label htmlFor="dataset_col">Optional, model to use</label>
+                        <select id="dataset_col" {...register('parameters.model')}>
+                          <option key={null} value={''}>
+                            Generic model
+                          </option>
+
+                          {((project?.features as Features).options?.fasttext?.models || []).map(
+                            (element) => (
+                              <option key={element as string} value={element as string}>
+                                {element as string}
+                              </option>
+                            ),
+                          )}
+                        </select>
+                      </div>
+                    )}
 
                     {selectedFeatureToCreate === 'regex' && (
                       <input

@@ -5,6 +5,7 @@ import Highlighter from 'react-highlight-words';
 import { FaPencilAlt } from 'react-icons/fa';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
+import { PiEraser } from 'react-icons/pi';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   useAddAnnotation,
@@ -22,7 +23,6 @@ import { MultilabelInput } from './MultilabelInput';
 import { ProjectionManagement } from './ProjectionManagement';
 import { SelectionManagement } from './SelectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
-
 /**
  * Annotation page
  */
@@ -159,7 +159,7 @@ export const ProjectAnnotationPage: FC = () => {
 
   // post an annotation
   const postAnnotation = useCallback(
-    (label: string, elementId?: string) => {
+    (label: string | null, elementId?: string) => {
       if (elementId) {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
         addAnnotation(elementId, label, comment).then(() =>
@@ -377,6 +377,7 @@ export const ProjectAnnotationPage: FC = () => {
             <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
               <FaPencilAlt />
             </button>
+
             {kindScheme == 'multiclass' && (
               <MulticlassInput
                 elementId={elementId || 'noelement'}
@@ -391,6 +392,19 @@ export const ProjectAnnotationPage: FC = () => {
                 labels={availableLabels}
               />
             )}
+            {
+              // erase button to remove last annotation
+              lastTag && (
+                <button
+                  className="btn"
+                  onClick={(e) => {
+                    postAnnotation(null, elementId);
+                  }}
+                >
+                  <PiEraser />
+                </button>
+              )
+            }
           </div>
 
           {displayComment && (

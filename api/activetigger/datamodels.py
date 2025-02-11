@@ -144,7 +144,7 @@ class AnnotationModel(BaseModel):
     project_slug: str
     scheme: str
     element_id: str
-    label: str
+    label: str | None
     dataset: str | None = "train"
     comment: str | None = None
 

@@ -849,7 +849,10 @@ async def compute_projection(
 
     # add to queue
     unique_id = orchestrator.queue.add(
-        "projection", r["func"], {"features": features, "params": r["params"]}
+        "projection",
+        project.name,
+        r["func"],
+        {"features": features, "params": r["params"]},
     )
     if unique_id == "error":
         raise HTTPException(status_code=500, detail="Error in adding in the queue")
@@ -1017,7 +1020,9 @@ async def postgenerate(
         "prompt": request.prompt,
     }
 
-    unique_id = orchestrator.queue.add("generation", functions.generate, args)
+    unique_id = orchestrator.queue.add(
+        "generation", project.name, functions.generate, args
+    )
 
     if unique_id == "error":
         raise HTTPException(
@@ -1126,41 +1131,42 @@ async def post_annotation(
     test_rights("modify annotation", current_user.username, project.name)
 
     if action in ["add", "update"]:
-        r = project.schemes.push_annotation(
-            annotation.element_id,
-            annotation.label,
-            annotation.scheme,
-            current_user.username,
-            annotation.dataset,
-            annotation.comment,
-        )
+        try:
+            r = project.schemes.push_annotation(
+                annotation.element_id,
+                annotation.label,
+                annotation.scheme,
+                current_user.username,
+                annotation.dataset,
+                annotation.comment,
+            )
 
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-
-        orchestrator.log_action(
-            current_user.username,
-            f"ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
-            project.name,
-        )
-        return None
+            orchestrator.log_action(
+                current_user.username,
+                f"ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     if action == "delete":
-        r = project.schemes.delete_annotation(
-            annotation.element_id,
-            annotation.scheme,
-            annotation.dataset,
-            current_user.username,
-        )
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
+        try:
+            r = project.schemes.delete_annotation(
+                annotation.element_id,
+                annotation.scheme,
+                annotation.dataset,
+                current_user.username,
+            )
 
-        orchestrator.log_action(
-            current_user.username,
-            f"DELETE ANNOTATION in {annotation.scheme}: id {annotation.element_id}",
-            project.name,
-        )
-        return None
+            orchestrator.log_action(
+                current_user.username,
+                f"DELETE ANNOTATION in {annotation.scheme}: id {annotation.element_id}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     raise HTTPException(status_code=400, detail="Wrong action")
 
@@ -1365,19 +1371,19 @@ async def post_embeddings(
     df = project.content["text"]
 
     # compute the feature
-    r = project.features.compute(
-        df, feature.name, feature.type, feature.parameters, current_user.username
-    )
+    try:
+        project.features.compute(
+            df, feature.name, feature.type, feature.parameters, current_user.username
+        )
+        orchestrator.log_action(
+            current_user.username, f"INFO Compute feature {feature.type}", project.name
+        )
+        return WaitingModel(
+            detail=f"computing {feature.type}, it could take a few minutes"
+        )
 
-    # manage error
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-
-    # Log and return
-    orchestrator.log_action(
-        current_user.username, f"INFO Compute feature {feature.type}", project.name
-    )
-    return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/features/delete", dependencies=[Depends(verified_user)])

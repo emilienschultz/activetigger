@@ -530,7 +530,7 @@ class BertModels:
             "test_size": test_size,
         }
 
-        unique_id = self.queue.add("training", functions.train_bert, args)
+        unique_id = self.queue.add("training", project, functions.train_bert, args)
         del args
 
         # Update the queue state
@@ -613,7 +613,9 @@ class BertModels:
             "file_name": "predict_test.parquet",
             "batch": 32,
         }
-        unique_id = self.queue.add("prediction", functions.predict_bert, args)
+        unique_id = self.queue.add(
+            "prediction", "project", functions.predict_bert, args
+        )  # TODO ADD PROJECT
         b.status = "testing"
         self.computing.append(
             {
@@ -659,7 +661,9 @@ class BertModels:
             "dataset": dataset,
             "batch": batch_size,
         }
-        unique_id = self.queue.add("prediction", functions.predict_bert, args)
+        unique_id = self.queue.add(
+            "prediction", "project", functions.predict_bert, args
+        )  # TODO ADD PROJECT
         b.status = f"predicting {dataset}"
         self.computing.append(
             {
@@ -1006,7 +1010,9 @@ class SimpleModels:
         # launch the compuation (model + statistics) as a future process
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
-        unique_id = self.queue.add("simplemodel", functions.fit_model, args)
+        unique_id = self.queue.add(
+            "simplemodel", "project", functions.fit_model, args
+        )  # TODO ADD PROJECT
         sm = SimpleModel(
             name, user, X, Y, labels, "computing", features, standardize, model_params
         )
