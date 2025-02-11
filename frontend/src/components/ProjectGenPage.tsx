@@ -53,10 +53,15 @@ export const GenPage: FC = () => {
   const [showForm, setShowForm] = useState<boolean>(false);
 
   // currently generating for the user
-  const isGenerating =
-    authenticatedUser?.username &&
-    currentProject?.generations.training &&
-    Object.keys(currentProject?.generations.training).includes(authenticatedUser?.username);
+  const [isGenerating, setGenerating] = useState<boolean>(false);
+  useEffect(() => {
+    const trainings: Array<{ user: string }> = currentProject?.generations.training || [];
+    setGenerating(
+      authenticatedUser?.username !== undefined &&
+        trainings.length !== 0 &&
+        trainings.some((training) => training.user === authenticatedUser?.username),
+    );
+  }, [authenticatedUser, currentProject]);
 
   // call api to post generation
   const { generate } = useGenerate(
@@ -72,7 +77,7 @@ export const GenPage: FC = () => {
   const { stopGenerate } = useStopGenerate(projectName || null);
 
   // call api to get a sample of elements
-  const { generated } = useGeneratedElements(projectName || null, 10, isGenerating || false);
+  const { generated } = useGeneratedElements(projectName || null, 10, isGenerating);
 
   // call api to download a batch of elements
   const { getGenerationsFile } = useGetGenerationsFile(projectName || null);
