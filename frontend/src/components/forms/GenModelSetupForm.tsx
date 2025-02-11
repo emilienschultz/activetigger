@@ -54,7 +54,7 @@ export const GenModelSetupForm: FC<{
     setModelName(e.target.value);
   };
 
-  const onModelChange = (e: ChangeEvent<HTMLSelectElement>) => {
+  const onModelChange = (e: ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     setModelName(selectedAPI.name + '-' + e.target.value);
   };
 
@@ -90,7 +90,7 @@ export const GenModelSetupForm: FC<{
                       </option>
                     ))}
                   </select>
-                  {/* mt-0 is needed because a rule in the CSS file add a margin to .form-label. Maybe it should be removed*/}
+                  {/* HACK: mt-0 is needed because a rule in the CSS file add a margin to .form-label. Maybe it should be removed*/}
                   <label htmlFor="model" className="mt-0">
                     Model
                   </label>
@@ -105,6 +105,7 @@ export const GenModelSetupForm: FC<{
                     className="form-control"
                     placeholder="ID of the model"
                     name="model"
+                    onChange={onModelChange}
                   />
                   <label htmlFor="model" className="mt-0">
                     Model
