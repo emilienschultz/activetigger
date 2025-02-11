@@ -233,6 +233,8 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
     """
     if not path_models.exists():
         raise FileNotFoundError(f"Models folder {path_models} not found")
+
+    # move to models folder
     os.chdir(path_models)
 
     # if no model is specified, try to dl the language model
@@ -243,11 +245,10 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
         model_name = download_model(language, if_exists="ignore")
     else:
         model_name = kwargs["model"]
-    model_path = path_models.joinpath(model_name)
-    if not model_path.exists():
-        raise FileNotFoundError(f"Model {model_name} not found in {path_models}")
+        if not Path(model_name).exists():
+            raise FileNotFoundError(f"Model {model_name} not found")
     texts_tk = tokenize(texts)
-    ft = fasttext.load_model(str(model_path))
+    ft = fasttext.load_model(model_name)
     emb = [ft.get_sentence_vector(t.replace("\n", " ")) for t in texts_tk]
     df = pd.DataFrame(emb, index=texts.index)
     df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
