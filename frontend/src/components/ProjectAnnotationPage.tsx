@@ -397,7 +397,7 @@ export const ProjectAnnotationPage: FC = () => {
               lastTag && (
                 <button
                   className="btn"
-                  onClick={(e) => {
+                  onClick={() => {
                     postAnnotation(null, elementId);
                   }}
                 >
