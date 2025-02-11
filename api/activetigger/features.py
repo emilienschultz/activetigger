@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -66,7 +67,11 @@ class Features:
         # options
         self.options: dict = {
             "sbert": {"models": ["all-mpnet-base-v2"]},
-            "fasttext": {},
+            "fasttext": {
+                "models": [
+                    f for f in os.listdir(self.path_models) if f.endswith(".bin")
+                ]
+            },
             "dfm": {
                 "tfidf": False,
                 "ngrams": 1,
@@ -255,15 +260,15 @@ class Features:
         Compute new feature
         """
         if len(self.current_user_processes(username)) > 0:
-            return {"error": "There is already a process launched by the user"}
+            raise ValueError("You have already a process running")
 
         if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
-            return {"error": "Not implemented"}
+            raise ValueError("Kind not recognized")
 
         # different types of features
         if kind == "regex":
             if "value" not in parameters:
-                return {"error": "Parameters missing for the regex"}
+                raise ValueError("No value for regex")
 
             regex_name = f"regex_[{parameters['value']}]_by_{username}"
             pattern = re.compile(parameters["value"])
@@ -296,39 +301,52 @@ class Features:
             dataset_name = f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
             self.add(dataset_name, kind, username, parameters, column)
             return {"success": "Feature added"}
-        else:
-            if kind == "sbert":
-                args = {"texts": df, "model": "all-mpnet-base-v2"}
-                func = to_sbert
-            elif kind == "fasttext":
-                args = {
-                    "texts": df,
-                    "language": self.lang,
-                    "path_models": self.path_models,
-                }
-                func = to_fasttext
 
-            elif kind == "dfm":
-                args = parameters.copy()
-                args["texts"] = df
-                args["language"] = self.lang
-                func = to_dtm
+        elif kind == "sbert":
+            args = {"texts": df, "model": "all-mpnet-base-v2"}
+            func = to_sbert
+        elif kind == "fasttext":
+            args = {
+                "texts": df,
+                "language": self.lang,
+                "path_models": self.path_models,
+                "model": parameters["model"],
+            }
+            if parameters["model"] is not None and parameters["model"] != "":
+                name = f"{name}_{parameters['model']}"
+            func = to_fasttext
 
-            # add the computation to queue
-            unique_id = self.queue.add("feature", func, args)
-            if unique_id == "error":
-                return "error"
+        elif kind == "dfm":
+            args = parameters.copy()
+            args["texts"] = df
+            args["language"] = self.lang
+            func = to_dtm
 
-            self.computing.append(
-                {
-                    "unique_id": unique_id,
-                    "kind": "feature",
-                    "parameters": parameters,
-                    "type": kind,
-                    "user": username,
-                    "name": name,
-                    "time": datetime.now(),
-                }
-            )
+        # add the computation to queue
+        unique_id = self.queue.add("feature", self.project_slug, func, args)
+        if unique_id == "error":
+            raise ValueError("Error in adding in the queue")
+        print(
+            {
+                "unique_id": unique_id,
+                "kind": "feature",
+                "parameters": parameters,
+                "type": kind,
+                "user": username,
+                "name": name,
+                "time": datetime.now(),
+            }
+        )
+        self.computing.append(
+            {
+                "unique_id": unique_id,
+                "kind": "feature",
+                "parameters": parameters,
+                "type": kind,
+                "user": username,
+                "name": name,
+                "time": datetime.now(),
+            }
+        )
 
         return {"success": "Feature in training"}

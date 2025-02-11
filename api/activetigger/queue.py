@@ -1,4 +1,5 @@
 import concurrent.futures
+import datetime
 import logging
 import uuid
 from multiprocessing import Manager
@@ -69,7 +70,7 @@ class Queue:
             logger.error("Restart executor")
             print("Problem with executor ; restart")
 
-    def add(self, kind: str, func: Callable, args: dict) -> str:
+    def add(self, kind: str, project_slug: str, func: Callable, args: dict) -> str:
         """
         Add new element to queue
         - launch the function func and args as a subprocess
@@ -91,7 +92,13 @@ class Queue:
             return "error"
 
         # save in the stack
-        self.current[unique_id] = {"kind": kind, "future": future, "event": event}
+        self.current[unique_id] = {
+            "kind": kind,
+            "project_slug": project_slug,
+            "future": future,
+            "event": event,
+            "starting_time": datetime.datetime.now(),
+        }
         return unique_id
 
     def kill(self, unique_id: str) -> dict:
