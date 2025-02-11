@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, Optional
 
 from pandas import DataFrame
 from pydantic import BaseModel
@@ -404,30 +404,39 @@ class GenerationRequest(BaseModel):
     mode: str = "all"
 
 
-class UserGenerationComputing(BaseModel):
+class UserComputing(BaseModel):
     user: str
     unique_id: str
+    time: datetime.datetime
+    kind: str
+
+
+class UserGenerationComputing(UserComputing):
+    kind: Literal["generation"]
     project: str
     number: int
     model_id: int
-    kind: str
-    time: datetime.datetime
 
 
-class UserFeatureComputing(BaseModel):
-    user: str
-    unique_id: str
+class UserFeatureComputing(UserComputing):
+    kind: Literal["feature"]
     name: str
     type: str
     parameters: dict
-    kind: str
-    time: datetime.datetime
 
 
-class UserModelComputing(BaseModel):
-    unique_id: str
-    model: BertModelModel
-    kind: str
+class UserModelComputing(UserComputing):
+    kind: Literal["simplemodel", "bert"]
+    model_name: str
+    status: Literal["training", "testing", "predicting"]
+    scheme: Optional[str] = None
+    dataset: Optional[str] = None
+
+
+class UserProjectionComputing(UserComputing):
+    kind: Literal["projection"]
+    method: str
+    params: ProjectionInStrictModel
 
 
 class TableOutModel(BaseModel):
@@ -565,9 +574,7 @@ class TableBatch(BaseModel):
     filter: str | None
 
     class Config:
-        arbitrary_types_allowed: bool = (
-            True  # Allow DataFrame type but switches off Pydantic here
-        )
+        arbitrary_types_allowed: bool = True  # Allow DataFrame type but switches off Pydantic here
 
 
 class CodebookModel(BaseModel):

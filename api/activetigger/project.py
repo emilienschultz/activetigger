@@ -17,9 +17,11 @@ from activetigger.datamodels import (
     ProjectModel,
     SimpleModelModel,
     TestSetDataModel,
+    UserComputing,
     UserFeatureComputing,
     UserGenerationComputing,
     UserModelComputing,
+    UserProjectionComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
@@ -42,7 +44,7 @@ class Project:
     starting_time: float
     name: str
     queue: Queue
-    computing: list[UserGenerationComputing | UserFeatureComputing | UserModelComputing]
+    computing: list[UserComputing]
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
@@ -730,7 +732,7 @@ class Project:
             shutil.copyfile(path_origin, path_target)
         return {"name": name, "path": f"/static/{name}"}
 
-    def update_processes(self) -> dict:
+    def update_processes(self) -> None:
         """
         Update completed processes and do specific operations regarding their kind
         - get the result from the queue
@@ -747,7 +749,7 @@ class Project:
 
             # case of not in queue
             if e.unique_id not in self.queue.current:
-                print("Problem : id in computing not in queue")
+                logging.warning("Problem : id in computing not in queue")
                 self.computing.remove(e)
                 continue
 
@@ -759,11 +761,11 @@ class Project:
                 clean = True
                 try:
                     # case there is a prediction
-                    r = self.queue.current[e.unique_id]["future"].result()
+                    r = self.queue.current[computation.unique_id]["future"].result()
                     if not isinstance(r, dict):
-                        print("Probleme with the function")
-                        self.computing.remove(e)
-                        self.queue.delete(e.unique_id)
+                        logging.warning("Probleme with the function")
+                        self.computing.remove(computation)
+                        self.queue.delete(computation.unique_id)
                         self.errors.append(
                             [
                                 datetime.now(TIMEZONE),
@@ -771,24 +773,22 @@ class Project:
                                 "Probleme with the function",
                             ]
                         )
-                        # return {"error": "Probleme with the function"}
                     if "error" in r:
-                        print("Error in model training/predicting", r["error"])
-                        self.computing.remove(e)
-                        self.queue.delete(e.unique_id)
+                        logging.error("Error in model training/predicting", r["error"])
+                        self.computing.remove(computation)
+                        self.queue.delete(computation.unique_id)
                         self.errors.append([datetime.now(TIMEZONE), "bert training", r["error"]])
-                        # return {"error": r["error"]}
                     # get the prediction in the trainset
                     if "path" in r and "predict_train.parquet" in r["path"]:
-                        add_predictions["predict_" + e["model"].name] = r["path"]
-                        print("Prediction added")
+                        add_predictions["predict_" + computation.model_name] = r["path"]
+                        logging.debug("Prediction added")
 
-                    self.bertmodels.add(e)
-                    print("Bertmodel treatment achieved")
+                    self.bertmodels.add(computation)
+                    logging.debug("Bertmodel treatment achieved")
 
                 except Exception as ex:
                     # delete the model in the db
-                    self.bertmodels.projects_service.delete_model(self.name, e["model"].name)
+                    self.bertmodels.projects_service.delete_model(self.name, computation.model_name)
                     # add an error message for the user
                     self.errors.append(
                         [
@@ -797,33 +797,34 @@ class Project:
                             str(ex),
                         ]
                     )
-                    print("Error in model training/predicting", ex)
+                    logging.error("Error in model training/predicting", ex)
 
             # case for simplemodels
             if (e.kind == "simplemodel") and is_done:
+                computation = cast(UserModelComputing, e)
                 clean = True
                 try:
-                    results = self.queue.current[e.unique_id]["future"].result()
+                    results = self.queue.current[computation.unique_id]["future"].result()
                     self.simplemodels.add(e, results)
-                    print("Simplemodel trained")
+                    logging.debug("Simplemodel trained")
                 except Exception as ex:
                     self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
-                    print("Simplemodel failed", ex)
+                    logging.error("Simplemodel failed", ex)
 
             # case for features
             if (e.kind == "feature") and is_done:
-                computation = cast(UserFeatureComputing, e)
+                feature_computation = cast(UserFeatureComputing, e)
                 clean = True
                 try:
-                    r = self.queue.current[e.unique_id]["future"].result()
+                    r = self.queue.current[feature_computation.unique_id]["future"].result()
                     self.features.add(
-                        computation.name,
-                        computation.type,
-                        computation.user,
-                        computation.parameters,
+                        feature_computation.name,
+                        feature_computation.type,
+                        feature_computation.user,
+                        feature_computation.parameters,
                         r["success"],
                     )
-                    print("Feature added", computation.name)
+                    print("Feature added", feature_computation.name)
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(TIMEZONE), "Error in feature processing", str(ex)]
@@ -832,11 +833,12 @@ class Project:
 
             # case for projections
             if (e.kind == "projection") and is_done:
+                projection_computing = cast(UserProjectionComputing, e)
                 clean = True
                 try:
-                    df = self.queue.current[e.unique_id]["future"].result()
-                    self.projections.add(e, df)
-                    print("projection added")
+                    df = self.queue.current[projection_computing.unique_id]["future"].result()
+                    self.projections.add(projection_computing, df)
+                    logging.debug("projection added")
                 except Exception as ex:
                     self.errors.append(
                         [
@@ -845,7 +847,7 @@ class Project:
                             str(ex),
                         ]
                     )
-                    print("Error in feature projections queue", ex)
+                    logging.error("Error in feature projections queue", ex)
 
             # case for generations
             if (e.kind == "generation") and is_done:
@@ -893,6 +895,6 @@ class Project:
                 username="system",
                 new_content=df,
             )
-            print("Add feature", name)
+            logging.debug("Add feature", name)
 
         return None

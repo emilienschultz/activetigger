@@ -29,9 +29,11 @@ from activetigger.datamodels import (
     LiblinearParams,
     Multi_naivebayesParams,
     RandomforestParams,
+    UserModelComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import ProjectsService
+from activetigger.queue import Queue
 
 
 class BertModel:
@@ -242,9 +244,7 @@ class BertModel:
                 "f1_micro": round(f1_score(Y, Y_pred, average="micro"), decimals),
                 "f1_macro": round(f1_score(Y, Y_pred, average="macro"), decimals),
                 "f1_weighted": round(f1_score(Y, Y_pred, average="weighted"), decimals),
-                "f1": [
-                    round(i, decimals) for i in list(f1_score(Y, Y_pred, average=None))
-                ],
+                "f1": [round(i, decimals) for i in list(f1_score(Y, Y_pred, average=None))],
                 "precision": round(
                     precision_score(list(Y), list(Y_pred), average="micro"), decimals
                 ),
@@ -271,7 +271,7 @@ class BertModels:
     project_slug: str
     path: Path
     queue: Any
-    computing: list
+    computing: list[UserModelComputing]
     projects_service: ProjectsService
 
     def __init__(
@@ -403,9 +403,7 @@ class BertModels:
                     )
                 else:
                     # create a flag
-                    with open(
-                        self.path / "../../static" / f"{m['name']}.tar.gz", "w"
-                    ) as f:
+                    with open(self.path / "../../static" / f"{m['name']}.tar.gz", "w") as f:
                         f.write("process started")
                     # start compression
                     self.start_compression(m["name"])
@@ -514,9 +512,7 @@ class BertModels:
         if params["gpu"]:
             mem = functions.get_gpu_memory_info()
             if self.estimate_memory_use(name, kind="train") > mem["available_memory"]:
-                raise Exception(
-                    "Not enough GPU memory available. Wait or reduce batch."
-                )
+                raise Exception("Not enough GPU memory available. Wait or reduce batch.")
 
         # launch as a independant process
         args = {
@@ -537,15 +533,16 @@ class BertModels:
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
         self.computing.append(
-            {
-                "user": user,
-                "model": b,
-                "unique_id": unique_id,
-                "time": current_date,
-                "kind": "bert",
-                "status": "training",
-                "scheme": scheme,
-            }
+            UserModelComputing(
+                user=user,
+                model_name=b.name,
+                unique_id=unique_id,
+                time=current_date,
+                kind="bert",
+                status="training",
+                scheme=scheme,
+                dataset=None,
+            )
         )
 
         # add flags in params
@@ -616,14 +613,14 @@ class BertModels:
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = "testing"
         self.computing.append(
-            {
-                "user": user,
-                "model": b,
-                "unique_id": unique_id,
-                "time": datetime.now(),
-                "kind": "bert",
-                "status": "testing",
-            }
+            UserModelComputing(
+                user=user,
+                model_name=b.name,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="bert",
+                status="testing",
+            )
         )
 
         return {"success": "bert testing predicting"}
@@ -662,15 +659,15 @@ class BertModels:
         unique_id = self.queue.add("prediction", functions.predict_bert, args)
         b.status = f"predicting {dataset}"
         self.computing.append(
-            {
-                "user": user,
-                "model": b,
-                "unique_id": unique_id,
-                "time": datetime.now(),
-                "kind": "bert",
-                "dataset": dataset,
-                "status": "predicting",
-            }
+            UserModelComputing(
+                user=user,
+                model_name=b.name,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="bert",
+                dataset=dataset,
+                status="predicting",
+            )
         )
         return {"success": "bert model predicting"}
 
@@ -790,7 +787,7 @@ class SimpleModels:
     existing: dict
     computing: list
     path: Path
-    queue: Any
+    queue: Queue
     save_file: str
 
     def __init__(self, path: Path, queue: Any, computing: list) -> None:
@@ -954,9 +951,7 @@ class SimpleModels:
 
         # Select model
         if name == "knn":
-            model = KNeighborsClassifier(
-                n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1
-            )
+            model = KNeighborsClassifier(n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1)
 
         if name == "lasso":
             model = LogisticRegression(
@@ -978,9 +973,7 @@ class SimpleModels:
                 n_estimators=int(model_params["n_estimators"]),
                 random_state=42,
                 max_features=(
-                    int(model_params["max_features"])
-                    if model_params["max_features"]
-                    else None
+                    int(model_params["max_features"]) if model_params["max_features"] else None
                 ),
                 n_jobs=-1,
             )
@@ -1003,19 +996,17 @@ class SimpleModels:
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
         unique_id = self.queue.add("simplemodel", functions.fit_model, args)
-        sm = SimpleModel(
-            name, user, X, Y, labels, "computing", features, standardize, model_params
-        )
+        sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
         self.computing.append(
-            {
-                "user": user,
-                "model": sm,
-                "unique_id": unique_id,
-                "time": datetime.now(),
-                "kind": "simplemodel",
-                "status": "training",
-                "scheme": scheme,
-            }
+            UserModelComputing(
+                user=user,
+                model_name=sm.name,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="simplemodel",
+                status="training",
+                scheme=scheme,
+            )
         )
 
     def dumps(self):
@@ -1145,9 +1136,7 @@ class SimpleModel:
 
     def compute_stats(self):
         self.proba = self.compute_proba(self.model, self.X)
-        self.statistics = self.compute_statistics(
-            self.model, self.X, self.Y, self.labels
-        )
+        self.statistics = self.compute_statistics(self.model, self.X, self.Y, self.labels)
         self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
 
     def compute_proba(self, model, X):
