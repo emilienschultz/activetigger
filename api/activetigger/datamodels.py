@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 from pandas import DataFrame
 from pydantic import BaseModel
@@ -431,6 +431,7 @@ class UserModelComputing(UserComputing):
     status: Literal["training", "testing", "predicting"]
     scheme: Optional[str] = None
     dataset: Optional[str] = None
+    get_training_progress: Optional[Callable[[], float]] = None
 
 
 class UserProjectionComputing(UserComputing):

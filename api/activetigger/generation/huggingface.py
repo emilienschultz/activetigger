@@ -8,10 +8,10 @@ from activetigger.generation.client import GenerationModelClient
 
 class HuggingFace(GenerationModelClient):
     endpoint: str
-    credentials: str
+    credentials: str | None
     client: InferenceClient
 
-    def __init__(self, endpoint: str | None, credentials: str):
+    def __init__(self, endpoint: str | None, credentials: str | None):
         self.endpoint = endpoint or ""
         self.credentials = credentials
         self.client = InferenceClient(token=credentials, timeout=30)

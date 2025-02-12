@@ -118,7 +118,7 @@ class BertModel:
             r = json.load(f)
         return list(r["id2label"].values())
 
-    def get_training_progress(self):
+    def get_training_progress(self) -> float:
         """
         Get progress when training
         (different cases)
@@ -418,9 +418,9 @@ class BertModels:
         """
         r = {
             e.user: {
-                "name": e.model.name,
-                "status": e.model.status,
-                "progress": e.model.get_training_progress(),
+                "name": e.model_name,
+                "status": e.status,
+                "progress": e.get_training_progress() if e.get_training_progress is not None else 0,
             }
             for e in self.computing
             if e.kind == "bert"
@@ -442,7 +442,7 @@ class BertModels:
             return {"error": "Problem in model deletion"}
         return {"success": "Bert model deleted"}
 
-    def current_user_processes(self, user: str):
+    def current_user_processes(self, user: str) -> UserModelComputing:
         """
         Get the user current processes
         """
@@ -542,6 +542,7 @@ class BertModels:
                 status="training",
                 scheme=scheme,
                 dataset=None,
+                get_training_progress=b.get_training_progress,
             )
         )
 
@@ -620,6 +621,7 @@ class BertModels:
                 time=datetime.now(),
                 kind="bert",
                 status="testing",
+                get_training_progress=b.get_training_progress,
             )
         )
 
@@ -667,6 +669,7 @@ class BertModels:
                 kind="bert",
                 dataset=dataset,
                 status="predicting",
+                get_training_progress=b.get_training_progress,
             )
         )
         return {"success": "bert model predicting"}

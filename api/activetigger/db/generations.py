@@ -1,4 +1,5 @@
 import datetime
+from typing import Sequence
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as SessionType
@@ -55,8 +56,7 @@ class GenerationsService:
                 .limit(n_elements)
             ).all()
             return [
-                [el.time, el.element_id, el.prompt, el.answer, el.model.name]
-                for el in generated
+                [el.time, el.element_id, el.prompt, el.answer, el.model.name] for el in generated
             ]
 
     def get_available_models(self) -> list[GenerationModelApi]:
@@ -80,33 +80,30 @@ class GenerationsService:
                     GenerationAvailableModel(
                         slug="gpt-4o-mini", api="OpenAI", name="ChatGPT 4o mini"
                     ),
-                    GenerationAvailableModel(
-                        slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"
-                    ),
+                    GenerationAvailableModel(slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"),
                 ],
             ),
             GenerationModelApi(name="HuggingFace", models=[]),
         ]
 
-    def get_project_gen_models(self, project_slug: str) -> list[GenerationModel]:
+    def get_project_gen_models(self, project_slug: str) -> Sequence[GenModels]:
         """
         Get the GenAI model configured for the given project
 
         Returns a list of GenerationModel
         """
         with self.Session() as session:
-            models = session.scalars(
-                select(GenModels).filter_by(project_id=project_slug)
-            ).all()
+            models = session.scalars(select(GenModels).filter_by(project_id=project_slug)).all()
         return models
 
-    def get_gen_model(self, model_id: int) -> GenerationModel:
+    def get_gen_model(self, model_id: int) -> GenModels:
         with self.Session() as session:
-            return session.scalars(select(GenModels).filter_by(id=model_id)).first()
+            result = session.scalars(select(GenModels).filter_by(id=model_id)).first()
+            if result is None:
+                raise Exception("Generation model not found")
+            return result
 
-    def add_project_gen_model(
-        self, project_slug: str, model: GenerationCreationModel
-    ) -> int:
+    def add_project_gen_model(self, project_slug: str, model: GenerationCreationModel) -> int:
         """
         Add a new GenAI model for the given project
         """
@@ -129,6 +126,4 @@ class GenerationsService:
         Delete a GenAI model from the given project
         """
         with self.Session.begin() as session:
-            session.execute(
-                delete(GenModels).filter_by(project_id=project_slug, id=model_id)
-            )
+            session.execute(delete(GenModels).filter_by(project_id=project_slug, id=model_id))
