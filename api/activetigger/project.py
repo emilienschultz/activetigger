@@ -79,13 +79,16 @@ class Project:
         Delete project
         """
         # remove folder
-        if self.params.dir.exists():
+        try:
             shutil.rmtree(self.params.dir)
-        else:
-            raise ValueError("No directory to delete")
+        except Exception as e:
+            raise ValueError("No directory to delete", str(e))
 
         # remove from database
-        self.db_manager.projects_service.delete_project(self.name)
+        try:
+            self.db_manager.projects_service.delete_project(self.name)
+        except Exception as e:
+            raise ValueError("Problem with the database", str(e))
 
     def load_project(self, project_slug: str):
         """

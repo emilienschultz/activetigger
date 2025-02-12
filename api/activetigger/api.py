@@ -758,7 +758,9 @@ async def delete_project(
     """
     test_rights("modify project", current_user.username, project_slug)
     try:
+        print("start delete")
         orchestrator.delete_project(project_slug)
+        print("end delete")
         orchestrator.log_action(
             current_user.username, "INFO delete project", project_slug
         )
