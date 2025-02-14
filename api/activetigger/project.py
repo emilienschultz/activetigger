@@ -720,7 +720,7 @@ class Project:
         """
         Get current processes
         """
-        return [e for e in self.computing if e["user"] == user and e["kind"] == kind]
+        return [e for e in self.computing if e.user == user and e.kind == kind]
 
     def export_raw(self, project_slug: str):
         """
