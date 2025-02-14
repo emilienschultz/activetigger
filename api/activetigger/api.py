@@ -208,23 +208,8 @@ async def check_processes(timer: float, step: int = 1) -> None:
     if (time.time() - timer) < step:
         return None
 
-    # update last update
-    timer = time.time()
-
-    # check the queue to see if it is still running
-    orchestrator.queue.check()
-
     # update processes for each active projects
-    to_del = []
-    for p, project in orchestrator.projects.items():
-        # if project existing since one day, remove it from memory
-        if (timer - project.starting_time) > 86400:
-            to_del.append(p)
-            continue
-        project.update_processes()
-
-    for p in to_del:
-        del orchestrator.projects[p]
+    orchestrator.update()
 
 
 @app.middleware("http")

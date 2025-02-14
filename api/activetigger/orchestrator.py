@@ -554,3 +554,21 @@ class Orchestrator:
         # clean current memory
         if project_slug in self.projects:
             del self.projects[project_slug]
+
+    def update(self):
+        """
+        Update state of projects from the queue
+        """
+        # check the queue
+        self.queue.check()
+        timer = time.time()
+        to_del = []
+        for p, project in self.projects.items():
+            # if project existing since one day, remove it from memory
+            if (timer - project.starting_time) > 86400:
+                to_del.append(p)
+                continue
+            project.update_processes()
+
+        for p in to_del:
+            del self.projects[p]
