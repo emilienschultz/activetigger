@@ -85,7 +85,7 @@ class Project:
         Delete project
         """
         # remove folder
-        if self.params.dir.exists():
+        if self.params.dir is not None and self.params.dir.exists():
             shutil.rmtree(self.params.dir)
         else:
             raise ValueError("No directory to delete")
@@ -136,10 +136,12 @@ class Project:
             MODELS,
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
+        # TODO: Computings should be filtered here based on their type, each type in a different list given to the appropriate class.
+        # It would render the cast here and the for-loop in the class unecessary
         self.generations = Generations(
             self.db_manager, cast(list[UserGenerationComputing], self.computing)
         )
-        self.projections = Projections(self.computing)
+        self.projections = Projections(cast(list[UserProjectionComputing], self.computing))
         self.errors = []  # Move to specific class / db in the future
 
     def load_params(self, project_slug: str) -> ProjectModel:
@@ -726,8 +728,9 @@ class Project:
         """
         # copy in the static folder
         name = f"{project_slug}_data_all.parquet"
-        path_origin = self.params.dir.joinpath("data_all.parquet")
-        path_target = self.params.dir.joinpath("..").joinpath("static").joinpath(name)
+        target_dir = self.params.dir if self.params.dir is not None else Path(".")
+        path_origin = target_dir.joinpath("data_all.parquet")
+        path_target = target_dir.joinpath("..").joinpath("static").joinpath(name)
         if not path_target.exists():
             shutil.copyfile(path_origin, path_target)
         return {"name": name, "path": f"/static/{name}"}

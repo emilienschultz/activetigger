@@ -535,6 +535,7 @@ class BertModels:
         self.computing.append(
             UserModelComputing(
                 user=user,
+                model=b,
                 model_name=b.name,
                 unique_id=unique_id,
                 time=current_date,
@@ -616,6 +617,7 @@ class BertModels:
         self.computing.append(
             UserModelComputing(
                 user=user,
+                model=b,
                 model_name=b.name,
                 unique_id=unique_id,
                 time=datetime.now(),
@@ -663,6 +665,7 @@ class BertModels:
         self.computing.append(
             UserModelComputing(
                 user=user,
+                model=b,
                 model_name=b.name,
                 unique_id=unique_id,
                 time=datetime.now(),
@@ -1003,6 +1006,7 @@ class SimpleModels:
         self.computing.append(
             UserModelComputing(
                 user=user,
+                model=sm,
                 model_name=sm.name,
                 unique_id=unique_id,
                 time=datetime.now(),
@@ -1029,18 +1033,18 @@ class SimpleModels:
             self.existing = pickle.load(file)
         return True
 
-    def add(self, element, results):
+    def add(self, element: UserModelComputing, results):
         """
         Add simplemodel after computation
         """
-        sm = element["model"]
+        sm = element.model
         sm.model = results["model"]
         sm.proba = results["proba"]
         sm.cv10 = results["cv10"]
         sm.statistics = results["statistics"]
-        if element["user"] not in self.existing:
-            self.existing[element["user"]] = {}
-        self.existing[element["user"]][element["scheme"]] = sm
+        if element.user not in self.existing:
+            self.existing[element.user] = {}
+        self.existing[element.user][element.scheme] = sm
         self.dumps()
 
     def export_prediction(self, scheme: str, username: str, format: str = "csv"):

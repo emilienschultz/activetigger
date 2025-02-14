@@ -825,9 +825,10 @@ async def compute_projection(
     features = project.features.get(projection.features)
 
     # get func and validate parameters for projection
-    r = project.projections.validate(projection.method, projection.params.__dict__)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    try:
+        r = project.projections.validate(projection.method, projection.params.__dict__)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=getattr(e, "message", repr(e))) from e
 
     # add to queue
     unique_id = orchestrator.queue.add(
@@ -838,6 +839,7 @@ async def compute_projection(
     project.computing.append(
         UserProjectionComputing(
             unique_id=unique_id,
+            name=f"Projection by {current_user.username}",  # TODO: What to put here?
             user=current_user.username,
             time=datetime.now(),
             kind="projection",

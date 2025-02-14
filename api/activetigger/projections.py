@@ -1,4 +1,5 @@
-from activetigger.datamodels import TsneModel, UmapModel
+from pandas import DataFrame
+from activetigger.datamodels import TsneModel, UmapModel, UserProjectionComputing
 from activetigger.functions import compute_tsne, compute_umap
 
 
@@ -7,14 +8,17 @@ class Projections:
     Manage projections
     """
 
+    # TODO: Transform available type to dict[str, UserProjection]
     available: dict
+    # TODO: Transform options type to ProjectionOptions (to create in datamodels).
+    # Also, I don't see it use anywhere else, did I miss it?
     options: dict
-    computing: dict
+    computing: list[UserProjectionComputing]
 
-    def __init__(self, computing: list) -> None:
-        self.computing: list = computing
-        self.available: dict = {}
-        self.options: dict = {
+    def __init__(self, computing: list[UserProjectionComputing]) -> None:
+        self.computing = computing
+        self.available = {}
+        self.options = {
             "umap": {
                 "n_neighbors": 15,
                 "min_dist": 0.1,
@@ -52,13 +56,13 @@ class Projections:
         r = {e.user: e.method for e in self.computing if e.kind == "projection"}
         return r
 
-    def add(self, element, results):
+    def add(self, element: UserProjectionComputing, results: DataFrame):
         """
         Add projection after computation
         """
-        self.available[element["user"]] = {
+        self.available[element.user] = {
             "data": results,
-            "method": element["method"],
-            "params": element["params"],
-            "id": element["unique_id"],
+            "method": element.method,
+            "params": element.params,
+            "id": element.unique_id,
         }

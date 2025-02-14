@@ -427,6 +427,7 @@ class UserFeatureComputing(UserComputing):
 
 class UserModelComputing(UserComputing):
     kind: Literal["simplemodel", "bert"]
+    model: Any  # TODO: Type it with an abstract model interface
     model_name: str
     status: Literal["training", "testing", "predicting"]
     scheme: Optional[str] = None
@@ -436,6 +437,7 @@ class UserModelComputing(UserComputing):
 
 class UserProjectionComputing(UserComputing):
     kind: Literal["projection"]
+    name: str
     method: str
     params: ProjectionInStrictModel
 
