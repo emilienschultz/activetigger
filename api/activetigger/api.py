@@ -24,7 +24,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
 
-import activetigger.functions as functions
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
@@ -35,7 +34,10 @@ from activetigger.datamodels import (
     DocumentationModel,
     ElementOutModel,
     FeatureModel,
-    GenerateModel,
+    GenerationCreationModel,
+    GenerationModel,
+    GenerationModelApi,
+    GenerationRequest,
     NextInModel,
     ProjectAuthsModel,
     ProjectDataModel,
@@ -52,12 +54,15 @@ from activetigger.datamodels import (
     TableOutModel,
     TestSetDataModel,
     TokenModel,
+    UserGenerationComputing,
     UserInDBModel,
     UserModel,
+    UserProjectionComputing,
     UsersServerModel,
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
+from activetigger.generation.generations import Generations
 from activetigger.orchestrator import Orchestrator
 from activetigger.project import Project
 
@@ -193,9 +198,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=orchestrator.path / "static"), name="static")
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="token"
-)  # defining the authentification object
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # defining the authentification object
 
 
 async def check_processes(timer: float, step: int = 1) -> None:
@@ -228,9 +231,7 @@ async def check_processes(timer: float, step: int = 1) -> None:
 
 
 @app.middleware("http")
-async def middleware(
-    request: Request, call_next: Callable[[Request], Awaitable[Response]]
-):
+async def middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]):
     """
     Middleware to take care of completed processes
     Executed at each action on the server
@@ -274,10 +275,7 @@ async def get_project(project_slug: str) -> ProjectModel:
     try:
         if len(orchestrator.projects) >= orchestrator.max_projects:
             old_element = sorted(
-                [
-                    [p, orchestrator.projects[p].starting_time]
-                    for p in orchestrator.projects
-                ],
+                [[p, orchestrator.projects[p].starting_time] for p in orchestrator.projects],
                 key=lambda x: x[1],
             )[0]
             if (
@@ -386,19 +384,13 @@ async def login_for_access_token(
     """
     # authentificate the user
     try:
-        user = orchestrator.users.authenticate_user(
-            form_data.username, form_data.password
-        )
+        user = orchestrator.users.authenticate_user(form_data.username, form_data.password)
     except Exception as e:
         raise HTTPException(status_code=401, detail="Wrong username or password") from e
 
     # create new token for the user
-    access_token = orchestrator.create_access_token(
-        data={"sub": user.username}, expires_min=120
-    )
-    return TokenModel(
-        access_token=access_token, token_type="bearer", status=user.status
-    )
+    access_token = orchestrator.create_access_token(data={"sub": user.username}, expires_min=120)
+    return TokenModel(access_token=access_token, token_type="bearer", status=user.status)
 
 
 @app.post("/users/disconnect", dependencies=[Depends(verified_user)])
@@ -515,9 +507,7 @@ async def set_auth(
             orchestrator.users.set_auth(username, project_slug, status)
         except Exception as e:
             raise HTTPException(status_code=500) from e
-        orchestrator.log_action(
-            current_user.username, f"INFO add user {username}", "all"
-        )
+        orchestrator.log_action(current_user.username, f"INFO add user {username}", "all")
         return None
 
     if action == "delete":
@@ -525,9 +515,7 @@ async def set_auth(
             orchestrator.users.delete_auth(username, project_slug)
         except Exception as e:
             raise HTTPException(status_code=500) from e
-        orchestrator.log_action(
-            current_user.username, f"INFO delete user {username}", "all"
-        )
+        orchestrator.log_action(current_user.username, f"INFO delete user {username}", "all")
         return None
 
     raise HTTPException(status_code=400, detail="Action not found")
@@ -624,10 +612,10 @@ async def get_queue() -> dict:
     for p in orchestrator.projects:
         active_projects[p] = [
             {
-                "unique_id": c["unique_id"],
-                "user": c["user"],
-                "kind": c["kind"],
-                "time": c["time"],
+                "unique_id": c.unique_id,
+                "user": c.user,
+                "kind": c.kind,
+                "time": c.time,
             }
             for c in orchestrator.projects[p].computing
         ]
@@ -714,9 +702,7 @@ async def add_testdata(
         # update parameters of the project
         orchestrator.set_project_parameters(project.params, current_user.username)
         # log action
-        orchestrator.log_action(
-            current_user.username, "INFO add testdata project", project.name
-        )
+        orchestrator.log_action(current_user.username, "INFO add testdata project", project.name)
         return None
     except Exception as e:
         raise HTTPException(status_code=500) from e
@@ -737,9 +723,7 @@ async def new_project(
         # create the project
         r = orchestrator.create_project(project, current_user.username)
         # log action
-        orchestrator.log_action(
-            current_user.username, "INFO create project", project.project_name
-        )
+        orchestrator.log_action(current_user.username, "INFO create project", project.project_name)
         return r["success"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -760,10 +744,7 @@ async def delete_project(
     try:
         print("start delete")
         orchestrator.delete_project(project_slug)
-        print("end delete")
-        orchestrator.log_action(
-            current_user.username, "INFO delete project", project_slug
-        )
+        orchestrator.log_action(current_user.username, "INFO delete project", project_slug)
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -845,9 +826,10 @@ async def compute_projection(
     features = project.features.get(projection.features)
 
     # get func and validate parameters for projection
-    r = project.projections.validate(projection.method, projection.params.__dict__)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+    try:
+        r = project.projections.validate(projection.method, projection.params.__dict__)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=getattr(e, "message", repr(e))) from e
 
     # add to queue
     unique_id = orchestrator.queue.add(
@@ -859,14 +841,15 @@ async def compute_projection(
     if unique_id == "error":
         raise HTTPException(status_code=500, detail="Error in adding in the queue")
     project.computing.append(
-        {
-            "unique_id": unique_id,
-            "user": current_user.username,
-            "time": datetime.now(),
-            "kind": "projection",
-            "method": projection.method,
-            "params": projection,
-        }
+        UserProjectionComputing(
+            unique_id=unique_id,
+            name=f"Projection by {current_user.username}",  # TODO: What to put here?
+            user=current_user.username,
+            time=datetime.now(),
+            kind="projection",
+            method=projection.method,
+            params=projection,
+        )
     )
     orchestrator.log_action(
         current_user.username,
@@ -889,17 +872,18 @@ async def get_list_elements(
     """
     Get a table of elements
     """
-    extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
-    if "error" in extract:
-        raise HTTPException(status_code=500, detail=extract["error"])
-    df = extract["batch"].fillna(" ")
-    table = (
-        df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]
-    ).to_dict(orient="records")
-    return TableOutModel(
-        items=table,
-        total=extract["total"],
-    )
+    try:
+        extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
+        df = extract.batch.fillna(" ")
+        table = (df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]).to_dict(
+            orient="records"
+        )
+        return TableOutModel(
+            items=table,
+            total=extract.total,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @app.post("/annotation/table", dependencies=[Depends(verified_user)])
@@ -993,11 +977,48 @@ async def post_reconciliation(
     return None
 
 
+@app.get("/elements/generate/models", dependencies=[Depends(verified_user)])
+async def list_generation_models() -> list[GenerationModelApi]:
+    """
+    Returns the list of the available GenAI models for generation
+    """
+    return orchestrator.db_manager.generations_service.get_available_models()
+
+
+@app.get("/elements/{project_slug}/generate/models", dependencies=[Depends(verified_user)])
+async def list_project_generation_models(project_slug: str) -> list[GenerationModel]:
+    """
+    Returns the list of the available GenAI models configure for a project
+    """
+    return orchestrator.db_manager.generations_service.get_project_gen_models(project_slug)
+
+
+@app.post("/elements/{project_slug}/generate/models", dependencies=[Depends(verified_user)])
+async def add_project_generation_models(project_slug: str, model: GenerationCreationModel) -> int:
+    """
+    Add a new GenAI model for the project
+    """
+    return orchestrator.db_manager.generations_service.add_project_gen_model(project_slug, model)
+
+
+@app.delete(
+    "/elements/{project_slug}/generate/models/{model_id}",
+    dependencies=[Depends(verified_user)],
+)
+async def delete_project_generation_models(project_slug: str, model_id: int) -> None:
+    """
+    Delete a GenAI model from the project
+    """
+    return orchestrator.db_manager.generations_service.delete_project_gen_model(
+        project_slug, model_id
+    )
+
+
 @app.post("/elements/generate/start", dependencies=[Depends(verified_user)])
 async def postgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    request: GenerateModel,
+    request: GenerationRequest,
 ) -> None:
     """
     Launch a call to generate from a prompt
@@ -1005,26 +1026,25 @@ async def postgenerate(
     """
 
     # get subset of unlabelled elements
-    extract = project.schemes.get_table(
-        request.scheme, 0, request.n_batch, request.mode
-    )
+    try:
+        extract = project.schemes.get_table(request.scheme, 0, request.n_batch, request.mode)
 
-    if "error" in extract:
-        raise HTTPException(status_code=500, detail=extract["error"])
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
+
+    model = orchestrator.db_manager.generations_service.get_gen_model(request.model_id)
 
     # create the independant process to manage the generation
     args = {
         "user": current_user.username,
         "project_name": project.name,
-        "df": extract["batch"],
-        "api": request.api,
-        "endpoint": request.endpoint,
+        "df": extract.batch,
         "prompt": request.prompt,
+        "model": model,
     }
 
-    unique_id = orchestrator.queue.add(
-        "generation", project.name, functions.generate, args
-    )
+    unique_id = orchestrator.queue.add("generation", Generations.generate, args)
+
 
     if unique_id == "error":
         raise HTTPException(
@@ -1032,15 +1052,15 @@ async def postgenerate(
         )
 
     project.computing.append(
-        {
-            "unique_id": unique_id,
-            "user": current_user.username,
-            "project": project.name,
-            "api": request.api,
-            "number": request.n_batch,
-            "time": datetime.now(),
-            "kind": "generation",
-        }
+        UserGenerationComputing(
+            unique_id=unique_id,
+            user=current_user.username,
+            project=project.name,
+            model_id=request.model_id,
+            number=request.n_batch,
+            time=datetime.now(),
+            kind="generation",
+        )
     )
 
     orchestrator.log_action(
@@ -1063,7 +1083,7 @@ async def stop_generation(
     p = project.get_process("generation", current_user.username)
     if len(p) == 0:
         raise HTTPException(status_code=400, detail="No process found for this user")
-    unique_id = p[0]["unique_id"]
+    unique_id = p[0].unique_id
     r = orchestrator.queue.kill(unique_id)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
@@ -1083,9 +1103,7 @@ async def getgenerate(
     Get elements from prediction
     """
     try:
-        table = project.generations.get_generated(
-            project.name, current_user.username, n_elements
-        )
+        table = project.generations.get_generated(project.name, current_user.username, n_elements)
     except Exception:
         raise HTTPException(status_code=500, detail="Error in loading generated data")
 
@@ -1107,9 +1125,7 @@ async def get_element(
     """
     Get specific element
     """
-    r = project.get_element(
-        element_id, scheme=scheme, user=current_user.username, dataset=dataset
-    )
+    r = project.get_element(element_id, scheme=scheme, user=current_user.username, dataset=dataset)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
     return ElementOutModel(**r)
@@ -1201,9 +1217,7 @@ async def rename_label(
             raise HTTPException(status_code=500, detail=r["error"])
 
     # convert the tags from the previous label
-    r = project.schemes.convert_annotations(
-        former_label, new_label, scheme, current_user.username
-    )
+    r = project.schemes.convert_annotations(former_label, new_label, scheme, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
 
@@ -1401,9 +1415,7 @@ async def delete_feature(
     r = project.features.delete(name)
     if "error" in r:
         raise HTTPException(status_code=400, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, f"INFO delete feature {name}", project.name
-    )
+    orchestrator.log_action(current_user.username, f"INFO delete feature {name}", project.name)
     return None
 
 
@@ -1437,9 +1449,7 @@ async def post_simplemodel(
     r = project.update_simplemodel(simplemodel, current_user.username)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, "INFO compute simplemodel", project.name
-    )
+    orchestrator.log_action(current_user.username, "INFO compute simplemodel", project.name)
     logger_simplemodel.info("Start computing simplemodel")
     return None
 
@@ -1460,9 +1470,7 @@ async def get_simplemodel(
 
 
 @app.get("/models/bert", dependencies=[Depends(verified_user)])
-async def get_bert(
-    project: Annotated[Project, Depends(get_project)], name: str
-) -> dict[str, Any]:
+async def get_bert(project: Annotated[Project, Depends(get_project)], name: str) -> dict[str, Any]:
     """
     Get Bert parameters and statistics
     """
@@ -1507,9 +1515,7 @@ async def predict(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, f"INFO predict bert {model_name}", project.name
-    )
+    orchestrator.log_action(current_user.username, f"INFO predict bert {model_name}", project.name)
     return None
 
 
@@ -1537,9 +1543,7 @@ async def post_bert(
 
         # remove class under the threshold
         label_counts = df["labels"].value_counts()
-        df = df[
-            df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)
-        ]
+        df = df[df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)]
 
         # balance the dataset based on the min class
         if bert.class_balance:
@@ -1563,9 +1567,7 @@ async def post_bert(
             params=bert.params,
             test_size=bert.test_size,
         )
-        orchestrator.log_action(
-            current_user.username, f"INFO train bert {bert.name}", project.name
-        )
+        orchestrator.log_action(current_user.username, f"INFO train bert {bert.name}", project.name)
         return None
 
     except Exception as e:
@@ -1592,9 +1594,7 @@ async def stop_bert(
     project.bertmodels.projects_service.delete_model(project.name, p[0]["model"].name)
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, "INFO stop bert training", project.name
-    )
+    orchestrator.log_action(current_user.username, "INFO stop bert training", project.name)
     return None
 
 
@@ -1625,9 +1625,7 @@ async def start_test(
     )
     if "error" in r:
         raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, "INFO predict bert for testing", project.name
-    )
+    orchestrator.log_action(current_user.username, "INFO predict bert for testing", project.name)
     return None
 
 

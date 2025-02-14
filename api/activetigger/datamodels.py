@@ -1,7 +1,9 @@
+import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Literal, Optional
 
+from pandas import DataFrame
 from pydantic import BaseModel
 
 # Data model to use of the API
@@ -336,7 +338,7 @@ class LassoParams(BaseModel):
 class Multi_naivebayesParams(BaseModel):
     alpha: float
     fit_prior: bool = True
-    class_prior: str | None | None = None
+    class_prior: str | None = None
 
 
 class BertParams(BaseModel):
@@ -350,18 +352,94 @@ class BertParams(BaseModel):
     adapt: bool
 
 
-class GenerateModel(BaseModel):
+class GenerationCreationModel(BaseModel):
+    """
+    GenAI model used in generation
+    """
+
+    slug: str
+    api: str
+    name: str
+    endpoint: str | None = None
+    credentials: str | None = None
+
+
+class GenerationModel(GenerationCreationModel):
+    """
+    GenAI model used in generation
+    """
+
+    id: int
+
+
+class GenerationAvailableModel(BaseModel):
+    """
+    GenAI models available for generation
+    """
+
+    slug: str
+    api: str
+    name: str
+
+
+class GenerationModelApi(BaseModel):
+    """
+    GenAI API available for generation
+    """
+
+    name: str
+    models: list[GenerationAvailableModel]
+
+
+class GenerationRequest(BaseModel):
     """
     To start a generating prompt
     """
 
-    api: str
-    endpoint: str
+    model_id: int
     token: str | None = None
     prompt: str
     n_batch: int = 1
     scheme: str
     mode: str = "all"
+
+
+class UserComputing(BaseModel):
+    user: str
+    unique_id: str
+    time: datetime.datetime
+    kind: str
+
+
+class UserGenerationComputing(UserComputing):
+    kind: Literal["generation"]
+    project: str
+    number: int
+    model_id: int
+
+
+class UserFeatureComputing(UserComputing):
+    kind: Literal["feature"]
+    name: str
+    type: str
+    parameters: dict
+
+
+class UserModelComputing(UserComputing):
+    kind: Literal["simplemodel", "bert"]
+    model: Any  # TODO: Type it with an abstract model interface
+    model_name: str
+    status: Literal["training", "testing", "predicting"]
+    scheme: Optional[str] = None
+    dataset: Optional[str] = None
+    get_training_progress: Optional[Callable[[], float]] = None
+
+
+class UserProjectionComputing(UserComputing):
+    kind: Literal["projection"]
+    name: str
+    method: str
+    params: ProjectionInStrictModel
 
 
 class TableOutModel(BaseModel):
@@ -492,11 +570,14 @@ class AuthActions(StrEnum):
 
 
 class TableBatch(BaseModel):
-    batch: Any
+    batch: DataFrame
     total: int
     min: int
     max: int
-    filter: str
+    filter: str | None
+
+    class Config:
+        arbitrary_types_allowed: bool = True  # Allow DataFrame type but switches off Pydantic here
 
 
 class CodebookModel(BaseModel):

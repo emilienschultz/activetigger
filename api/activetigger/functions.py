@@ -6,7 +6,7 @@ import os
 import shutil
 from logging import Logger
 from pathlib import Path
-from typing import Any, Optional, TypedDict
+from typing import Optional, cast
 
 import bcrypt
 
@@ -23,7 +23,6 @@ import datasets
 import fasttext
 import numpy as np
 import pandas as pd
-import requests
 import spacy
 import torch
 import umap
@@ -121,7 +120,11 @@ def compare_to_hash(text: str, hash: str | bytes):
     Compare string to its hash
     """
 
-    bytes_hash: bytes = hash.encode() if isinstance(hash, str) else hash
+    bytes_hash: bytes
+    if type(hash) is str:
+        bytes_hash = hash.encode()
+    else:
+        bytes_hash = cast(bytes, hash)
     r = bcrypt.checkpw(text.encode(), bytes_hash)
     return r
 
@@ -188,7 +191,7 @@ def tokenize(texts: Series, language: str = "fr") -> Series:
     elif language == "fr":
         model = "fr_core_news_sm"
     else:
-        return {"error": "Language not supported"}
+        raise Exception(f"Language {language} is not supported")
 
     nlp = spacy.load(model, disable=["ner", "tagger"])
     docs = nlp.pipe(texts, batch_size=1000)
@@ -221,7 +224,7 @@ def get_gpu_estimate():
     return None
 
 
-def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> DataFrame:
+def to_fasttext(texts: Series, language: str, path_models: Path) -> DataFrame:
     """
     Compute fasttext embedding
     Download the model if needed
@@ -232,9 +235,8 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
         pandas.DataFrame: embeddings
     """
     if not path_models.exists():
-        raise FileNotFoundError(f"Models folder {path_models} not found")
+        raise Exception(f"path {str(path_models)} does not exist")
 
-    # move to models folder
     os.chdir(path_models)
 
     # if no model is specified, try to dl the language model
@@ -251,8 +253,9 @@ def to_fasttext(texts: Series, language: str, path_models: Path, **kwargs) -> Da
     ft = fasttext.load_model(model_name)
     emb = [ft.get_sentence_vector(t.replace("\n", " ")) for t in texts_tk]
     df = pd.DataFrame(emb, index=texts.index)
-    df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]
-    return {"success": df}
+    # WARN: this seems strange. Maybe replace with a more explicit syntax
+    df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]  # type: ignore[assignment]
+    return df
 
 
 def to_sbert(
@@ -297,11 +300,11 @@ def to_sbert(
             emb = sbert.encode(list(texts), batch_size=batch_size, device=str(device))
         emb = pd.DataFrame(emb, index=texts.index)
         emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
-        print("computation end")
-        return {"success": emb}
+        logging.debug("computation end")
+        return emb
     except Exception as e:
-        print(e)
-        return {"error": e}
+        logging.error(e)
+        raise e
     finally:
         # cleaning
         del sbert, texts
@@ -513,8 +516,9 @@ def train_bert(
             batched=True,
         )
 
-    # Build test dataset
-    df = df.train_test_split(test_size=test_size)  # stratify_by_column="label"
+    # Bui
+    # HACK: Mypy report a strange error here
+    df = df.train_test_split(test_size=test_size)  # type: ignore[operator]
     logger.info("Train/test dataset created")
 
     # Model
@@ -757,90 +761,6 @@ def cat2num(df):
     encoded = pd.DataFrame(encoded, index=df.index)
     encoded.columns = ["col" + str(i) for i in encoded.columns]
     return encoded
-
-
-def request_ollama(endpoint: str, request: str, model: str = "llama3.1:70b"):
-    """
-    Make a request to ollama
-    """
-    data = {"model": model, "prompt": request, "stream": False}
-    response = requests.post(endpoint, json=data, verify=False)
-    print(response.content)
-    if response.status_code == 200:
-        try:
-            return {"success": response.json()["response"]}
-        except Exception as e:
-            return {"error": f"Error in the content: {e}"}
-    else:
-        return {"error": "Error in the API call " + response.content.decode("utf8")}
-
-
-class GenerationResult(TypedDict):
-    user: str
-    project_slug: str
-    endpoint: str
-    element_id: Any
-    prompt: str
-    answer: str
-
-
-def generate(
-    user: str,
-    project_name: str,
-    df: DataFrame,
-    api: str,
-    endpoint: str,
-    prompt: str,
-    event: Optional[multiprocessing.synchronize.Event] = None,
-    unique_id: Optional[str] = None,
-    **kwargs,
-) -> None:
-    """
-    Manage batch generation request
-    Return table of results
-    """
-    # errors
-    errors = []
-    results: list[GenerationResult] = []
-
-    # loop on all elements
-    for _index, row in df.iterrows():
-        # test for interruption
-        if event is not None:
-            if event.is_set():
-                raise Exception("Process interrupted: %s", " ".join(str(results)))
-
-        # insert the content in the prompt (either at the end or where it is indicated)
-        if "#INSERTTEXT" in prompt:
-            prompt_with_text = prompt.replace("#INSERTTEXT", row["text"])
-        else:
-            prompt_with_text = prompt + "\n\n" + row["text"]
-
-        # make request to the client
-        if api == "ollama":
-            response = request_ollama(endpoint, prompt_with_text)
-        else:
-            errors.append("Model does not exist")
-            continue
-
-        if "error" in response:
-            errors.append("Error in the request " + response["error"])
-
-        if "success" in response:
-            results.append(
-                {
-                    "user": user,
-                    "project_slug": project_name,
-                    "endpoint": endpoint,
-                    "element_id": row["id"],
-                    "prompt": prompt_with_text,
-                    "answer": response["success"],
-                }
-            )
-        print("element generated ", row["id"], response["success"])
-
-    logging.info("Successful generation: %s", " ".join(str(results)))
-    return {"success": results}
 
 
 def clean_regex(text: str):

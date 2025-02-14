@@ -12,7 +12,6 @@ from activetigger.db.models import (
     Annotations,
     Auths,
     Features,
-    Generations,
     Logs,
     Models,
     Projects,
@@ -204,49 +203,6 @@ class ProjectsService:
             ).first()
             session.delete(project)
 
-    def add_generated(
-        self,
-        user: str,
-        project_slug: str,
-        element_id: str,
-        endpoint: str,
-        prompt: str,
-        answer: str,
-    ):
-        session = self.Session()
-        generation = Generations(
-            user_id=user,
-            time=datetime.datetime.now(),
-            project_id=project_slug,
-            element_id=element_id,
-            endpoint=endpoint,
-            prompt=prompt,
-            answer=answer,
-        )
-        session.add(generation)
-        session.commit()
-        session.close()
-
-    def get_generated(self, project_slug: str, username: str, n_elements: int = 10):
-        """
-        Get elements from generated table by order desc
-        """
-        session = self.Session()
-        generated = (
-            session.query(Generations)
-            .filter(
-                Generations.project_id == project_slug, Generations.user_id == username
-            )
-            .order_by(Generations.time.desc())
-            .limit(n_elements)
-            .all()
-        )
-        session.close()
-        return [
-            [el.time, el.element_id, el.prompt, el.answer, el.endpoint]
-            for el in generated
-        ]
-
     def get_distinct_users(
         self, project_slug: str, timespan: int | None
     ) -> Sequence[Users]:
@@ -270,7 +226,7 @@ class ProjectsService:
         session = self.Session()
         time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
         users = (
-            session.query(Logs.user, Logs.user_id)
+            session.query(Logs.user_id)
             .filter(Logs.time > time_threshold)
             .distinct()
             .all()
@@ -306,7 +262,7 @@ class ProjectsService:
         with self.Session() as session:
             result = session.execute(
                 select(
-                    Auths.project,
+                    Auths.project_id,
                     Auths.status,
                     Projects.parameters,
                     Projects.user_id,
@@ -315,7 +271,7 @@ class ProjectsService:
                 .join(Auths.project)
                 .where(Auths.user_id == username)
             ).all()
-            return [row for row in result]
+            return result
 
     def get_user_auth(self, username: str, project_slug: str | None = None):
         session = self.Session()

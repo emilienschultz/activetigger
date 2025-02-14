@@ -25,20 +25,20 @@
     "lodash": "^4.17.21",
     "openapi-fetch": "^0.10.2",
     "papaparse": "^5.4.1",
-    "react": "^18.3.1",
+    "react": "^19.0.0",
     "react-bootstrap": "^2.10.4",
     "react-data-grid": "^7.0.0-beta.46",
     "react-data-table-component": "^7.6.2",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.0.0",
     "react-error-boundary": "^5.0.0",
-    "react-highlight-words": "^0.20.0",
+    "react-highlight-words": "^0.21.0",
     "react-hook-form": "^7.52.1",
     "react-icons": "^5.2.1",
     "react-router-dom": "^6.24.0",
     "react-router-typesafe": "^1.5.0",
     "react-select": "^5.8.1",
     "react-sortablejs": "^6.1.4",
-    "react-spinners": "^0.14.1",
+    "react-spinners": "^0.15.0",
     "react-tooltip": "^5.28.0",
     "rehype-sanitize": "^6.0.0",
     "sass": "^1.77.6",
@@ -69,5 +69,6 @@
     "prettier": "^3.3.2",
     "typescript": "^5.4.2",
     "vite": "^5.3.1"
-  }
+  },
+  "packageManager": "pnpm@9.15.3+sha512.1f79bc245a66eb0b07c5d4d83131240774642caaa86ef7d0434ab47c0d16f66b04e21e0c086eb61e62c77efc4d7f7ec071afad3796af64892fae66509173893a"
 }

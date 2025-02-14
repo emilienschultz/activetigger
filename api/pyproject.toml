@@ -83,6 +83,8 @@ unfixable = [
 [tool.mypy]
 python_version = "3.11"
 files = [
-	"activetigger/db/*.py" # Add files each time one is cleaned
+	"activetigger/db/*.py", # Add files each time one is cleaned
+	"activetigger/generation/*.py",
+	"activetigger/projections.py"
 ]
 incremental = true
