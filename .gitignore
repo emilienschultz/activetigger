@@ -29,3 +29,4 @@ site/
 .vscode
 api/activetigger/db/__pycache__/
 api/key.yaml
+api/activetigger/generation/__pycache__/
