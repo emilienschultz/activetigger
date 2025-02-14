@@ -526,7 +526,7 @@ class BertModels:
             "test_size": test_size,
         }
 
-        unique_id = self.queue.add("training", functions.train_bert, args)
+        unique_id = self.queue.add("training", project, functions.train_bert, args)
         del args
 
         # Update the queue state
@@ -612,7 +612,9 @@ class BertModels:
             "file_name": "predict_test.parquet",
             "batch": 32,
         }
-        unique_id = self.queue.add("prediction", functions.predict_bert, args)
+        unique_id = self.queue.add(
+            "prediction", "project", functions.predict_bert, args
+        )  # TODO ADD PROJECT
         b.status = "testing"
         self.computing.append(
             UserModelComputing(
@@ -660,7 +662,9 @@ class BertModels:
             "dataset": dataset,
             "batch": batch_size,
         }
-        unique_id = self.queue.add("prediction", functions.predict_bert, args)
+        unique_id = self.queue.add(
+            "prediction", "project", functions.predict_bert, args
+        )  # TODO ADD PROJECT
         b.status = f"predicting {dataset}"
         self.computing.append(
             UserModelComputing(
@@ -1210,7 +1214,7 @@ class SimpleModel:
         X = X[f]
         Y = Y[f]
         num_folds = 10
-        kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+        kf = KFold(n_splits=num_folds, shuffle=True)
         # predicted_labels = cross_val_predict(model, X, Y, cv=kf)
         Y_pred = cross_val_predict(model, X, Y, cv=kf)
         weighted_f1 = f1_score(Y, Y_pred, average="weighted")

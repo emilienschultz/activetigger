@@ -742,6 +742,7 @@ async def delete_project(
     """
     test_rights("modify project", current_user.username, project_slug)
     try:
+        print("start delete")
         orchestrator.delete_project(project_slug)
         orchestrator.log_action(current_user.username, "INFO delete project", project_slug)
         return None
@@ -832,7 +833,10 @@ async def compute_projection(
 
     # add to queue
     unique_id = orchestrator.queue.add(
-        "projection", r["func"], {"features": features, "params": r["params"]}
+        "projection",
+        project.name,
+        r["func"],
+        {"features": features, "params": r["params"]},
     )
     if unique_id == "error":
         raise HTTPException(status_code=500, detail="Error in adding in the queue")
@@ -1040,6 +1044,7 @@ async def postgenerate(
     }
 
     unique_id = orchestrator.queue.add("generation", Generations.generate, args)
+
 
     if unique_id == "error":
         raise HTTPException(
@@ -1382,19 +1387,19 @@ async def post_embeddings(
     df = project.content["text"]
 
     # compute the feature
-    r = project.features.compute(
-        df, feature.name, feature.type, feature.parameters, current_user.username
-    )
+    try:
+        project.features.compute(
+            df, feature.name, feature.type, feature.parameters, current_user.username
+        )
+        orchestrator.log_action(
+            current_user.username, f"INFO Compute feature {feature.type}", project.name
+        )
+        return WaitingModel(
+            detail=f"computing {feature.type}, it could take a few minutes"
+        )
 
-    # manage error
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-
-    # Log and return
-    orchestrator.log_action(
-        current_user.username, f"INFO Compute feature {feature.type}", project.name
-    )
-    return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/features/delete", dependencies=[Depends(verified_user)])

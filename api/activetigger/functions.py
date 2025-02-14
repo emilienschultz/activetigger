@@ -73,6 +73,7 @@ class CustomLoggingCallback(TrainerCallback):
             if self.event.is_set():
                 self.logger.info("Event set, stopping training.")
                 control.should_training_stop = True
+                raise Exception("Process interrupted by user")
 
 
 def get_root_pwd() -> str:
@@ -233,15 +234,21 @@ def to_fasttext(texts: Series, language: str, path_models: Path) -> DataFrame:
     Returns:
         pandas.DataFrame: embeddings
     """
-    # TODO check language
     if not path_models.exists():
         raise Exception(f"path {str(path_models)} does not exist")
+
     os.chdir(path_models)
-    print(
-        "If the model doesn't exist, it will be downloaded first. It could talke some time."
-    )
-    model_name = download_model(language, if_exists="ignore")
-    print("Model loaded")
+
+    # if no model is specified, try to dl the language model
+    if kwargs.get("model", None) is None or kwargs["model"] == "":
+        print(
+            "If the model doesn't exist, it will be downloaded first. It could talke some time."
+        )
+        model_name = download_model(language, if_exists="ignore")
+    else:
+        model_name = kwargs["model"]
+        if not Path(model_name).exists():
+            raise FileNotFoundError(f"Model {model_name} not found")
     texts_tk = tokenize(texts)
     ft = fasttext.load_model(model_name)
     emb = [ft.get_sentence_vector(t.replace("\n", " ")) for t in texts_tk]
@@ -567,13 +574,7 @@ def train_bert(
             ],
         )
 
-        try:
-            print("Start training")
-            trainer.train()
-        except KeyboardInterrupt:
-            logger.info("Training interrupted by user.")
-            shutil.rmtree(current_path)
-            raise Exception("Training interrupted by user.")
+        trainer.train()
 
         # save model
         bert.save_pretrained(current_path)

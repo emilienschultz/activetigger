@@ -542,7 +542,8 @@ class Orchestrator:
         if project_slug in self.projects:
             project = self.projects[project_slug]
         else:
-            project = self.start_project(project_slug)
+            self.start_project(project_slug)
+            project = self.projects[project_slug]
 
         # delete the project
         try:

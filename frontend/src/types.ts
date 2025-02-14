@@ -76,10 +76,19 @@ export interface FeatureDatasetParameters {
   dataset_col: string;
 }
 
+export interface FeatureFasttextParameters {
+  model?: string;
+}
+
 export interface FeatureModelExtended {
   name: string;
   type: string;
-  parameters: null | FeatureDfmParameters | FeatureRegexParameters | FeatureDatasetParameters;
+  parameters:
+    | null
+    | FeatureDfmParameters
+    | FeatureRegexParameters
+    | FeatureDatasetParameters
+    | FeatureFasttextParameters;
 }
 
 export interface SelectionConfig {
