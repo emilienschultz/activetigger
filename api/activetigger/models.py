@@ -756,24 +756,24 @@ class BertModels:
         r = {"name": file_name, "path": self.path / "../../static" / file_name}
         return r
 
-    def add(self, element):
+    def add(self, element: UserModelComputing):
         """
         Manage computed process for model
         """
-        if element["status"] == "training":
+        if element.status == "training":
             # update bdd status
             self.projects_service.change_model_status(
-                self.project_slug, element["model"].name, "trained"
+                self.project_slug, element.model_name, "trained"
             )
             print("Model trained")
-        if element["status"] == "testing":
+        if element.status == "testing":
             print("Model tested")
-        if element["status"] == "predicting":
+        if element.status == "predicting":
             # case of global prediction completed
-            if element["dataset"] == "all":
+            if element.dataset == "all":
                 self.projects_service.set_model_params(
                     self.project_slug,
-                    element["model"].name,
+                    element.model_name,
                     flag="predicted",
                     value=True,
                 )

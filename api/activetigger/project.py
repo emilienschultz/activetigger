@@ -825,7 +825,7 @@ class Project:
                         feature_computation.type,
                         feature_computation.user,
                         feature_computation.parameters,
-                        r["success"],
+                        r,
                     )
                     print("Feature added", feature_computation.name)
                 except Exception as ex:

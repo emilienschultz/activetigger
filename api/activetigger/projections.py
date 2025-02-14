@@ -35,16 +35,11 @@ class Projections:
 
     def validate(self, method: str, params: dict) -> dict:
         if method == "umap":
-            try:
-                return {"func": compute_umap, "params": UmapModel(**params).__dict__}
-            except Exception as e:
-                return {"error": str(e)}
-        if method == "tsne":
-            try:
-                return {"func": compute_tsne, "params": TsneModel(**params).__dict__}
-            except Exception as e:
-                return {"error": str(e)}
-        return {"error": "Unknown method"}
+            return {"func": compute_umap, "params": UmapModel(**params).__dict__}
+        elif method == "tsne":
+            return {"func": compute_tsne, "params": TsneModel(**params).__dict__}
+        else:
+            raise Exception("Unsupported method")
 
     def current_computing(self):
         return [e.name for e in self.computing if e.kind == "projection"]
@@ -56,7 +51,7 @@ class Projections:
         r = {e.user: e.method for e in self.computing if e.kind == "projection"}
         return r
 
-    def add(self, element: UserProjectionComputing, results: DataFrame):
+    def add(self, element: UserProjectionComputing, results: DataFrame) -> None:
         """
         Add projection after computation
         """
