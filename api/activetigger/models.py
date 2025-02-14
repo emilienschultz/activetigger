@@ -29,9 +29,11 @@ from activetigger.datamodels import (
     LiblinearParams,
     Multi_naivebayesParams,
     RandomforestParams,
+    UserModelComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import ProjectsService
+from activetigger.queue import Queue
 
 
 class BertModel:
@@ -116,7 +118,7 @@ class BertModel:
             r = json.load(f)
         return list(r["id2label"].values())
 
-    def get_training_progress(self):
+    def get_training_progress(self) -> float:
         """
         Get progress when training
         (different cases)
@@ -242,9 +244,7 @@ class BertModel:
                 "f1_micro": round(f1_score(Y, Y_pred, average="micro"), decimals),
                 "f1_macro": round(f1_score(Y, Y_pred, average="macro"), decimals),
                 "f1_weighted": round(f1_score(Y, Y_pred, average="weighted"), decimals),
-                "f1": [
-                    round(i, decimals) for i in list(f1_score(Y, Y_pred, average=None))
-                ],
+                "f1": [round(i, decimals) for i in list(f1_score(Y, Y_pred, average=None))],
                 "precision": round(
                     precision_score(list(Y), list(Y_pred), average="micro"), decimals
                 ),
@@ -271,7 +271,7 @@ class BertModels:
     project_slug: str
     path: Path
     queue: Any
-    computing: list
+    computing: list[UserModelComputing]
     projects_service: ProjectsService
 
     def __init__(
@@ -403,9 +403,7 @@ class BertModels:
                     )
                 else:
                     # create a flag
-                    with open(
-                        self.path / "../../static" / f"{m['name']}.tar.gz", "w"
-                    ) as f:
+                    with open(self.path / "../../static" / f"{m['name']}.tar.gz", "w") as f:
                         f.write("process started")
                     # start compression
                     self.start_compression(m["name"])
@@ -419,13 +417,13 @@ class BertModels:
         - progress if available
         """
         r = {
-            e["user"]: {
-                "name": e["model"].name,
-                "status": e["model"].status,
-                "progress": e["model"].get_training_progress(),
+            e.user: {
+                "name": e.model_name,
+                "status": e.status,
+                "progress": e.get_training_progress() if e.get_training_progress is not None else 0,
             }
             for e in self.computing
-            if e["kind"] == "bert"
+            if e.kind == "bert"
         }
         return r
 
@@ -444,11 +442,11 @@ class BertModels:
             return {"error": "Problem in model deletion"}
         return {"success": "Bert model deleted"}
 
-    def current_user_processes(self, user: str):
+    def current_user_processes(self, user: str) -> UserModelComputing:
         """
         Get the user current processes
         """
-        return [e for e in self.computing if e["user"] == user]
+        return [e for e in self.computing if e.user == user]
 
     def estimate_memory_use(self, model: str, kind: str = "train"):
         """
@@ -514,9 +512,7 @@ class BertModels:
         if params["gpu"]:
             mem = functions.get_gpu_memory_info()
             if self.estimate_memory_use(name, kind="train") > mem["available_memory"]:
-                raise Exception(
-                    "Not enough GPU memory available. Wait or reduce batch."
-                )
+                raise Exception("Not enough GPU memory available. Wait or reduce batch.")
 
         # launch as a independant process
         args = {
@@ -537,15 +533,18 @@ class BertModels:
         b = BertModel(name, self.path / name, base_model)
         b.status = "training"
         self.computing.append(
-            {
-                "user": user,
-                "model": b,
-                "unique_id": unique_id,
-                "time": current_date,
-                "kind": "bert",
-                "status": "training",
-                "scheme": scheme,
-            }
+            UserModelComputing(
+                user=user,
+                model=b,
+                model_name=b.name,
+                unique_id=unique_id,
+                time=current_date,
+                kind="bert",
+                status="training",
+                scheme=scheme,
+                dataset=None,
+                get_training_progress=b.get_training_progress,
+            )
         )
 
         # add flags in params
@@ -618,14 +617,16 @@ class BertModels:
         )  # TODO ADD PROJECT
         b.status = "testing"
         self.computing.append(
-            {
-                "user": user,
-                "model": b,
-                "unique_id": unique_id,
-                "time": datetime.now(),
-                "kind": "bert",
-                "status": "testing",
-            }
+            UserModelComputing(
+                user=user,
+                model=b,
+                model_name=b.name,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="bert",
+                status="testing",
+                get_training_progress=b.get_training_progress,
+            )
         )
 
         return {"success": "bert testing predicting"}
@@ -666,15 +667,17 @@ class BertModels:
         )  # TODO ADD PROJECT
         b.status = f"predicting {dataset}"
         self.computing.append(
-            {
-                "user": user,
-                "model": b,
-                "unique_id": unique_id,
-                "time": datetime.now(),
-                "kind": "bert",
-                "dataset": dataset,
-                "status": "predicting",
-            }
+            UserModelComputing(
+                user=user,
+                model=b,
+                model_name=b.name,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="bert",
+                dataset=dataset,
+                status="predicting",
+                get_training_progress=b.get_training_progress,
+            )
         )
         return {"success": "bert model predicting"}
 
@@ -757,24 +760,24 @@ class BertModels:
         r = {"name": file_name, "path": self.path / "../../static" / file_name}
         return r
 
-    def add(self, element):
+    def add(self, element: UserModelComputing):
         """
         Manage computed process for model
         """
-        if element["status"] == "training":
+        if element.status == "training":
             # update bdd status
             self.projects_service.change_model_status(
-                self.project_slug, element["model"].name, "trained"
+                self.project_slug, element.model_name, "trained"
             )
             print("Model trained")
-        if element["status"] == "testing":
+        if element.status == "testing":
             print("Model tested")
-        if element["status"] == "predicting":
+        if element.status == "predicting":
             # case of global prediction completed
-            if element["dataset"] == "all":
+            if element.dataset == "all":
                 self.projects_service.set_model_params(
                     self.project_slug,
-                    element["model"].name,
+                    element.model_name,
                     flag="predicted",
                     value=True,
                 )
@@ -794,7 +797,7 @@ class SimpleModels:
     existing: dict
     computing: list
     path: Path
-    queue: Any
+    queue: Queue
     save_file: str
 
     def __init__(self, path: Path, queue: Any, computing: list) -> None:
@@ -879,11 +882,7 @@ class SimpleModels:
         """
         Currently under training
         """
-        r = {
-            e["user"]: list(e["scheme"])
-            for e in self.computing
-            if e["kind"] == "simplemodel"
-        }
+        r = {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
         return r
 
     def exists(self, user: str, scheme: str):
@@ -962,9 +961,7 @@ class SimpleModels:
 
         # Select model
         if name == "knn":
-            model = KNeighborsClassifier(
-                n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1
-            )
+            model = KNeighborsClassifier(n_neighbors=int(model_params["n_neighbors"]), n_jobs=-1)
 
         if name == "lasso":
             model = LogisticRegression(
@@ -986,9 +983,7 @@ class SimpleModels:
                 n_estimators=int(model_params["n_estimators"]),
                 random_state=42,
                 max_features=(
-                    int(model_params["max_features"])
-                    if model_params["max_features"]
-                    else None
+                    int(model_params["max_features"]) if model_params["max_features"] else None
                 ),
                 n_jobs=-1,
             )
@@ -1010,22 +1005,19 @@ class SimpleModels:
         # launch the compuation (model + statistics) as a future process
         # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
-        unique_id = self.queue.add(
-            "simplemodel", "project", functions.fit_model, args
-        )  # TODO ADD PROJECT
-        sm = SimpleModel(
-            name, user, X, Y, labels, "computing", features, standardize, model_params
-        )
+        unique_id = self.queue.add("simplemodel", functions.fit_model, args)
+        sm = SimpleModel(name, user, X, Y, labels, "computing", features, standardize, model_params)
         self.computing.append(
-            {
-                "user": user,
-                "model": sm,
-                "unique_id": unique_id,
-                "time": datetime.now(),
-                "kind": "simplemodel",
-                "status": "training",
-                "scheme": scheme,
-            }
+            UserModelComputing(
+                user=user,
+                model=sm,
+                model_name=sm.name,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="simplemodel",
+                status="training",
+                scheme=scheme,
+            )
         )
 
     def dumps(self):
@@ -1045,18 +1037,18 @@ class SimpleModels:
             self.existing = pickle.load(file)
         return True
 
-    def add(self, element, results):
+    def add(self, element: UserModelComputing, results):
         """
         Add simplemodel after computation
         """
-        sm = element["model"]
+        sm = element.model
         sm.model = results["model"]
         sm.proba = results["proba"]
         sm.cv10 = results["cv10"]
         sm.statistics = results["statistics"]
-        if element["user"] not in self.existing:
-            self.existing[element["user"]] = {}
-        self.existing[element["user"]][element["scheme"]] = sm
+        if element.user not in self.existing:
+            self.existing[element.user] = {}
+        self.existing[element.user][element.scheme] = sm
         self.dumps()
 
     def export_prediction(self, scheme: str, username: str, format: str = "csv"):
@@ -1155,9 +1147,7 @@ class SimpleModel:
 
     def compute_stats(self):
         self.proba = self.compute_proba(self.model, self.X)
-        self.statistics = self.compute_statistics(
-            self.model, self.X, self.Y, self.labels
-        )
+        self.statistics = self.compute_statistics(self.model, self.X, self.Y, self.labels)
         self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
 
     def compute_proba(self, model, X):

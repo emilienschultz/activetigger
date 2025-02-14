@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 from pandas import DataFrame
@@ -37,9 +38,10 @@ class Schemes:
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
         self.content = pd.read_parquet(path_content)  # text + context
-        self.test = None
         if path_test.exists():
             self.test = pd.read_parquet(path_test)
+        else:
+            self.test = None
 
         available = self.available()
 
@@ -51,7 +53,7 @@ class Schemes:
         return f"Coding schemes available {self.available()}"
 
     def get_scheme_data(
-        self, scheme: str, complete: bool = False, kind: list | str = None
+        self, scheme: str, complete: bool = False, kind: list[str] = ["train"]
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -139,11 +141,14 @@ class Schemes:
             self.push_annotation(i, new_label, scheme, username, "train")
         return {"success": "All tags recoded"}
 
-    def get_total(self, dataset="train"):
+    def get_total(self, dataset: str = "train"):
         """
         Number of element in the dataset
         """
         if dataset == "test":
+            # TODO: I think it should be tested way before now
+            if self.test is None:
+                raise Exception("Test dataset is not defined")
             return len(self.test)
         return len(self.content)
 
@@ -163,7 +168,7 @@ class Schemes:
         min, max: the range
         mode: sample
         contains: search
-        user: select by user
+
         set: train or test
 
         Choice to order by index.
@@ -172,68 +177,35 @@ class Schemes:
         if mode not in ["tagged", "untagged", "all", "recent"]:
             mode = "all"
         if scheme not in self.available():
-            return {"error": "scheme not available"}
+            raise Exception(f"Scheme {scheme} is not available")
 
         # case of the test set, no fancy stuff
-        if set == "test":
-            print("test mode")
-            df = self.get_scheme_data(scheme, complete=True, kind="test")
-
-            # filter for contains
-            if contains:
-                try:
-                    f_contains = df["text"].str.contains(clean_regex(contains))
-                    df = df[f_contains]
-                except Exception:
-                    return {"error": "Problem with regex"}
-
-            # normalize size
-            if max == 0:
-                max = len(df)
-            if max > len(df):
-                max = len(df)
-
-            if min > len(df):
-                return {"error": "min value too high"}
-
-            # return df.sort_index().iloc[min:max].reset_index()
-            return {
-                "batch": df.sort_index().iloc[min:max].reset_index(),
-                "total": len(df),
-                "min": min,
-                "max": max,
-                "filter": contains,
-            }
-
-        df = self.get_scheme_data(scheme, complete=True)
+        df: DataFrame = self.get_scheme_data(
+            scheme, complete=True, kind=["test"] if set == "test" else [set]
+        )
 
         # case of recent annotations (no filter possible)
         if mode == "recent":
             list_ids = self.projects_service.get_recent_annotations(
                 self.project_slug, user, scheme, max - min
             )
-            df_r = df.loc[list(list_ids)].reset_index()
-            return {
-                "batch": df_r,
-                "total": len(df_r),
-                "min": 0,
-                "max": len(df_r),
-                "filter": "recent",
-            }
+            df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index())
+            return TableBatch(
+                batch=df_r,
+                total=len(df_r),
+                min=0,
+                max=len(df_r),
+                filter="recent",
+            )
 
         # filter for contains
         if contains:
-            try:
-                f_contains = df["text"].str.contains(clean_regex(contains))
-                df = df[f_contains]
-            except Exception:
-                return {"error": "Problem with regex"}
+            f_contains = df["text"].str.contains(clean_regex(contains))
+            df = cast(DataFrame, df[f_contains])
 
         # build dataset
-        if mode == "tagged":
-            df = df[df["labels"].notnull()]
-        if mode == "untagged":
-            df = df[df["labels"].isnull()]
+        if mode == "tagged" or mode == "untagged":
+            df = cast(DataFrame, df[df["labels"].notnull()])
 
         # normalize size
         if max == 0:
@@ -242,15 +214,18 @@ class Schemes:
             max = len(df)
 
         if min > len(df):
-            return {"error": "min value too high"}
+            raise Exception(
+                f"Minimal value {min} is too high. It should not exced the size of the data ({len(df)})"
+            )
 
-        return {
-            "batch": df.sort_index().iloc[min:max].reset_index(),
-            "total": len(df),
-            "min": min,
-            "max": max,
-            "filter": contains,
-        }
+        # return df.sort_index().iloc[min:max].reset_index()
+        return TableBatch(
+            batch=df.sort_index().iloc[min:max].reset_index(),
+            total=len(df),
+            min=min,
+            max=max,
+            filter=contains,
+        )
 
     def add_scheme(
         self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
@@ -309,12 +284,12 @@ class Schemes:
         labels.remove(label)
         # push empty entry for tagged elements
         # both for train
-        df = self.get_scheme_data(scheme, kind="train")
+        df = self.get_scheme_data(scheme, kind=["train"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             self.push_annotation(i, None, scheme, user, "train")
         # and test
-        df = self.get_scheme_data(scheme, kind="test")
+        df = self.get_scheme_data(scheme, kind=["test"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             self.push_annotation(i, None, scheme, user, "test")
@@ -352,7 +327,7 @@ class Schemes:
             return True
         return False
 
-    def available(self) -> dict:
+    def available(self) -> dict[str, Any]:
         """
         Available schemes {scheme:[labels]}
         """

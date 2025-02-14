@@ -3,6 +3,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from activetigger.db import DBException
+from activetigger.db.generations import GenerationsService
 from activetigger.db.models import Base
 from activetigger.db.projects import ProjectsService
 from activetigger.db.users import UsersService
@@ -29,6 +30,7 @@ class DatabaseManager:
         self.default_user = "server"
         self.users_service = UsersService(self.SessionMaker)
         self.projects_service = ProjectsService(self.SessionMaker)
+        self.generations_service = GenerationsService(self.SessionMaker)
 
         # Create tables if not already present
         Base.metadata.create_all(self.engine)
