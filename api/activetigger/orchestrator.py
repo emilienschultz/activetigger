@@ -567,7 +567,9 @@ class Orchestrator:
             if (timer - project.starting_time) > 86400:
                 to_del.append(p)
                 continue
+            # update the project
             project.update_processes()
 
+        # remove the projects
         for p in to_del:
             del self.projects[p]

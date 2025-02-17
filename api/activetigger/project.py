@@ -3,7 +3,7 @@ import json
 import logging
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import cast
 
@@ -773,7 +773,8 @@ class Project:
         - add the result if needed
         - manage error if needed
 
-        # TODO : clean old errors from the message list
+        # TODO : move error management to dedictated functions
+
         """
         add_predictions = {}
 
@@ -794,6 +795,8 @@ class Project:
             future = self.queue.current[e.unique_id]["future"]
 
             # manage different tasks
+
+            # case for bert fine-tuning
             if e.kind == "train_bert":
                 model = cast(UserModelComputing, e)
                 try:
@@ -818,6 +821,7 @@ class Project:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)
 
+            # case for bertmodel prediction
             if e.kind == "predict_bert":
                 prediction = cast(UserModelComputing, e)
                 try:
@@ -918,9 +922,10 @@ class Project:
             # case for generations
             if e.kind == "generation":
                 try:
+                    results = future.result()
                     r = cast(
                         list[GenerationResult],
-                        self.queue.current[e.unique_id]["future"].result(),
+                        results,
                     )
                     for row in r:
                         self.generations.add(
@@ -946,7 +951,7 @@ class Project:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)
 
-        # if predictions, add them
+        # if there are predictions, add them
         for f in add_predictions:
             # load the prediction probabilities minus one
             df = pd.read_parquet(add_predictions[f])
@@ -961,5 +966,9 @@ class Project:
                 new_content=df,
             )
             logging.debug("Add feature" + str(name))
+
+        # clean errors older than 15 minutes
+        delta = datetime.now(TIMEZONE) - timedelta(minutes=15)
+        self.errors = [error for error in self.errors if error[0] >= delta]
 
         return None
