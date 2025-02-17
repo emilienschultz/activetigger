@@ -559,10 +559,9 @@ class Orchestrator:
         """
         Update state of projects from the queue
         """
-        # check the queue
-        self.queue.check()
         timer = time.time()
         to_del = []
+        self.queue.check()  # check if the queue is still up
         for p, project in self.projects.items():
             # if project existing since one day, remove it from memory
             if (timer - project.starting_time) > 86400:
