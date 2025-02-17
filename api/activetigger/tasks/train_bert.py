@@ -71,6 +71,8 @@ class TrainBert(BaseTask):
     unique_id : unique id for the current task
     """
 
+    kind = "train_bert"
+
     def __init__(
         self,
         path: Path,
@@ -143,7 +145,7 @@ class TrainBert(BaseTask):
         labels = sorted(list(self.df[self.col_label].dropna().unique()))
         label2id = {j: i for i, j in enumerate(labels)}
         id2label = {i: j for i, j in enumerate(labels)}
-        training_data = self.df[[self.col_label, self.col_label]]
+        training_data = self.df[[self.col_text, self.col_label]]
         self.df["labels"] = self.df[self.col_label].copy().replace(label2id)
         self.df["text"] = self.df[self.col_text]
         self.df = datasets.Dataset.from_pandas(self.df[["text", "labels"]])
@@ -216,7 +218,6 @@ class TrainBert(BaseTask):
                 load_best_model_at_end=self.params["best"],
                 metric_for_best_model="eval_loss",
                 use_cpu=not bool(self.params["gpu"]),  # deactivate gpu
-                # optim="adamw_torch_fused", # improved optimizer
             )
 
             # Train
@@ -231,12 +232,12 @@ class TrainBert(BaseTask):
                     )
                 ],
             )
+
             trainer.train()
 
             # save model
             bert.save_pretrained(current_path)
             logger.info(f"Model trained {current_path}")
-
             # save training data in a file
             training_data.to_parquet(current_path.joinpath("training_data.parquet"))
 
@@ -259,6 +260,7 @@ class TrainBert(BaseTask):
         except Exception as e:
             print("Error in training", e)
             shutil.rmtree(current_path)
+            raise e
         finally:
             del trainer, bert, self.df, device, self.event
             gc.collect()
@@ -266,11 +268,3 @@ class TrainBert(BaseTask):
                 torch.cuda.synchronize()
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
-
-    def clean(self, result):
-        if not isinstance(result, dict):
-            raise Exception("Probleme with the function")
-        pass
-
-        if "path" in result and "predict_train.parquet" in result["path"]:
-            return result["path"]

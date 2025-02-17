@@ -426,7 +426,7 @@ class UserFeatureComputing(UserComputing):
 
 
 class UserModelComputing(UserComputing):
-    kind: Literal["simplemodel", "bert"]
+    kind: Literal["train_bert", "predict_bert", "simplemodel", "bert"]
     model: Any  # TODO: Type it with an abstract model interface
     model_name: str
     status: Literal["training", "testing", "predicting"]
@@ -577,7 +577,9 @@ class TableBatch(BaseModel):
     filter: str | None
 
     class Config:
-        arbitrary_types_allowed: bool = True  # Allow DataFrame type but switches off Pydantic here
+        arbitrary_types_allowed: bool = (
+            True  # Allow DataFrame type but switches off Pydantic here
+        )
 
 
 class CodebookModel(BaseModel):

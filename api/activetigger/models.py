@@ -34,6 +34,8 @@ from activetigger.datamodels import (
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
+from activetigger.tasks.fit_model import FitModel
+from activetigger.tasks.predict_bert import PredictBert
 from activetigger.tasks.train_bert import TrainBert
 
 
@@ -85,37 +87,38 @@ class BertModel:
         - either lazy (only parameters)
         - or complete (the weights of the model)
         """
-        if not (self.path / "config.json").exists():
+        if not (self.path.joinpath("config.json")).exists():
             raise FileNotFoundError("model not defined")
 
         # Load parameters
-        with open(self.path / "parameters.json", "r") as jsonfile:
+        with open(self.path.joinpath("parameters.json"), "r") as jsonfile:
             self.params = json.load(jsonfile)
 
         # Load training data
-        self.data = pd.read_parquet(self.path / "training_data.parquet")
+        self.data = pd.read_parquet(self.path.joinpath("training_data.parquet"))
 
         # Load train history
-        with open(self.path / "log_history.txt", "r") as f:
+        with open(self.path.joinpath("log_history.txt"), "r") as f:
             self.log_history = json.load(f)
 
         # Load prediction if available
-        if (self.path / "predict_train.parquet").exists():
-            self.pred = pd.read_parquet(self.path / "predict_train.parquet")
+        if (self.path.joinpath("predict_train.parquet")).exists():
+            self.pred = pd.read_parquet(self.path.joinpath("predict_train.parquet"))
+
+        with open(self.path.joinpath("config.json"), "r") as jsonfile:
+            modeltype = json.load(jsonfile)["_name_or_path"]
+        self.base_model = modeltype
 
         # Only load the model if not lazy mode
         if lazy:
             self.status = "lazy"
         else:
-            with open(self.path / "config.json", "r") as jsonfile:
-                modeltype = json.load(jsonfile)["_name_or_path"]
-            self.base_model = modeltype
             self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
             self.model = AutoModelForSequenceClassification.from_pretrained(self.path)
             self.status = "loaded"
 
     def get_labels(self):
-        with open(self.path / "config.json", "r") as f:
+        with open(self.path.joinpath("config.json"), "r") as f:
             r = json.load(f)
         return list(r["id2label"].values())
 
@@ -125,17 +128,19 @@ class BertModel:
         (different cases)
         """
         # case of training
-        if (self.status == "training") & (self.path / "train/progress").exists():
-            with open(self.path / "train/progress", "r") as f:
+        if (self.status == "training") & (
+            self.path.joinpath("train/progress")
+        ).exists():
+            with open(self.path.joinpath("train/progress"), "r") as f:
                 r = f.read()
                 if r == "":
                     r = 0
             return float(r)
         # case for prediction (predicting/testing)
         if (("predicting" in self.status) or (self.status == "testing")) & (
-            self.path / "progress_predict"
+            self.path.joinpath("progress_predict")
         ).exists():
-            with open(self.path / "progress_predict", "r") as f:
+            with open(self.path.joinpath("progress_predict"), "r") as f:
                 r = f.read()
                 if r == "":
                     r = 0
@@ -152,8 +157,8 @@ class BertModel:
             - test scores
         """
         flag_modification = False
-        if (self.path / "statistics.json").exists():
-            with open(self.path / "statistics.json", "r") as f:
+        if (self.path.joinpath("statistics.json")).exists():
+            with open(self.path.joinpath("statistics.json"), "r") as f:
                 r = json.load(f)
         else:
             r = {}
@@ -183,7 +188,9 @@ class BertModel:
             flag_modification = True
 
         # add train scores
-        if ("train_scores" not in r) and (self.path / "predict_train.parquet").exists():
+        if ("train_scores" not in r) and (
+            self.path.joinpath("predict_train.parquet")
+        ).exists():
             df = self.data.copy()
             df["prediction"] = self.pred["prediction"]
             Y_pred = df["prediction"]
@@ -234,8 +241,10 @@ class BertModel:
             flag_modification = True
 
         # add test scores
-        if ("test_scores" not in r) and (self.path / "predict_test.parquet").exists():
-            df = pd.read_parquet(self.path / "predict_test.parquet")[
+        if ("test_scores" not in r) and (
+            self.path.joinpath("predict_test.parquet")
+        ).exists():
+            df = pd.read_parquet(self.path.joinpath("predict_test.parquet"))[
                 ["prediction", "labels"]
             ].dropna()
             Y_pred = df["prediction"]
@@ -261,7 +270,7 @@ class BertModel:
 
         # if modifications
         if flag_modification:
-            with open(self.path / "statistics.json", "w") as f:
+            with open(self.path.joinpath("statistics.json"), "w") as f:
                 json.dump(r, f)
         return r
 
@@ -432,7 +441,7 @@ class BertModels:
                 ),
             }
             for e in self.computing
-            if e.kind == "bert"
+            if e.kind in ["bert", "train_bert", "predict_bert"]
         }
         return r
 
@@ -537,7 +546,6 @@ class BertModels:
             "test_size": test_size,
         }
 
-        # unique_id = self.queue.add("training", project, functions.train_bert, args)
         unique_id = self.queue.add_task("training", project, TrainBert(**args))
         del args
 
@@ -551,7 +559,7 @@ class BertModels:
                 model_name=b.name,
                 unique_id=unique_id,
                 time=current_date,
-                kind="bert",
+                kind="train_bert",
                 status="training",
                 scheme=scheme,
                 dataset=None,
@@ -600,7 +608,7 @@ class BertModels:
 
         # load model
         b = BertModel(name, self.path / name)
-        b.load()
+        b.load(lazy=True)
 
         # test if the testset and the model have the same labels
         if set(b.get_labels()) != set(df["labels"].dropna().unique()):
@@ -645,6 +653,7 @@ class BertModels:
 
     def start_predicting_process(
         self,
+        project_slug: str,
         name: str,
         user: str,
         df: DataFrame,
@@ -660,11 +669,12 @@ class BertModels:
                 "error": "User already has a process launched, please wait before launching another one"
             }
 
-        if not (self.path / name).exists():
-            return {"error": "This model does not exist"}
+        if not (self.path.joinpath(name)).exists():
+            return {"error": "The model does not exist"}
 
+        # load the model
         b = BertModel(name, self.path / name)
-        b.load()
+        b.load(lazy=True)
         args = {
             "df": df,
             "col_text": col_text,
@@ -674,9 +684,8 @@ class BertModels:
             "dataset": dataset,
             "batch": batch_size,
         }
-        unique_id = self.queue.add(
-            "prediction", "project", functions.predict_bert, args
-        )  # TODO ADD PROJECT
+        unique_id = self.queue.add_task("prediction", project_slug, PredictBert(**args))
+        del args
         b.status = f"predicting {dataset}"
         self.computing.append(
             UserModelComputing(
@@ -685,7 +694,7 @@ class BertModels:
                 model_name=b.name,
                 unique_id=unique_id,
                 time=datetime.now(),
-                kind="bert",
+                kind="predict_bert",
                 dataset=dataset,
                 status="predicting",
                 get_training_progress=b.get_training_progress,
@@ -950,14 +959,15 @@ class SimpleModels:
 
     def compute_simplemodel(
         self,
-        user,
-        scheme,
-        features,
-        name,
-        df,
-        col_labels,
-        col_features,
-        standardize,
+        project_slug: str,
+        user: str,
+        scheme: str,
+        features: list,
+        name: str,
+        df: DataFrame,
+        col_labels: str,
+        col_features: list,
+        standardize: bool = True,
         model_params: dict | None = None,
     ):
         """
@@ -1019,9 +1029,10 @@ class SimpleModels:
             )
 
         # launch the compuation (model + statistics) as a future process
-        # TODO: refactore the SimpleModel class / move to API the executor call ?
         args = {"model": model, "X": X, "Y": Y, "labels": labels}
-        unique_id = self.queue.add("simplemodel", "project", functions.fit_model, args)
+        unique_id = self.queue.add_task("simplemodel", project_slug, FitModel(**args))
+        del args
+
         sm = SimpleModel(
             name, user, X, Y, labels, "computing", features, standardize, model_params
         )

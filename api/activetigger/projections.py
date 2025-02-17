@@ -1,6 +1,10 @@
+from datetime import datetime
+
 from pandas import DataFrame
-from activetigger.datamodels import TsneModel, UmapModel, UserProjectionComputing
-from activetigger.functions import compute_tsne, compute_umap
+
+from activetigger.datamodels import ProjectionInStrictModel, UserProjectionComputing
+from activetigger.queue import Queue
+from activetigger.tasks.compute_projection import ComputeProjection
 
 
 class Projections:
@@ -10,13 +14,13 @@ class Projections:
 
     # TODO: Transform available type to dict[str, UserProjection]
     available: dict
-    # TODO: Transform options type to ProjectionOptions (to create in datamodels).
-    # Also, I don't see it use anywhere else, did I miss it?
     options: dict
     computing: list[UserProjectionComputing]
+    queue: Queue
 
-    def __init__(self, computing: list[UserProjectionComputing]) -> None:
+    def __init__(self, computing: list, queue: Queue) -> None:
         self.computing = computing
+        self.queue = queue
         self.available = {}
         self.options = {
             "umap": {
@@ -32,14 +36,6 @@ class Projections:
                 "perplexity": 3,
             },
         }
-
-    def validate(self, method: str, params: dict) -> dict:
-        if method == "umap":
-            return {"func": compute_umap, "params": UmapModel(**params).__dict__}
-        elif method == "tsne":
-            return {"func": compute_tsne, "params": TsneModel(**params).__dict__}
-        else:
-            raise Exception("Unsupported method")
 
     def current_computing(self):
         return [e.name for e in self.computing if e.kind == "projection"]
@@ -61,3 +57,32 @@ class Projections:
             "params": element.params,
             "id": element.unique_id,
         }
+
+    def compute(
+        self,
+        project_slug: str,
+        username: str,
+        projection: ProjectionInStrictModel,
+        features: DataFrame,
+    ) -> None:
+        """
+        Launch the projection computation in the queue
+        """
+        unique_id = self.queue.add_task(
+            "projection",
+            project_slug,
+            ComputeProjection(
+                kind=projection.method, features=features, params=projection.params
+            ),
+        )
+        self.computing.append(
+            UserProjectionComputing(
+                unique_id=unique_id,
+                name=f"Projection by {username}",
+                user=username,
+                time=datetime.now(),
+                kind="projection",
+                method=projection.method,
+                params=projection,
+            )
+        )

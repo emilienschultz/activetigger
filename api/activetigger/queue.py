@@ -81,11 +81,7 @@ class Queue:
         task.unique_id = unique_id
 
         # send the process to the executor
-        try:
-            future = self.executor.submit(task)
-        except Exception as e:
-            logger.error(f"Error submitting task: {e}")
-            return "error"
+        future = self.executor.submit(task)
 
         # save in the stack
         self.current[unique_id] = {

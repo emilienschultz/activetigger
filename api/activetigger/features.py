@@ -11,8 +11,10 @@ from pandas import DataFrame, Series
 
 from activetigger.datamodels import UserFeatureComputing
 from activetigger.db.projects import ProjectsService
-from activetigger.functions import to_dtm, to_fasttext, to_sbert
 from activetigger.queue import Queue
+from activetigger.tasks.compute_dfm import ComputeDfm
+from activetigger.tasks.compute_fasttext import ComputeFasttext
+from activetigger.tasks.compute_sbert import ComputeSbert
 
 # Use parquet files to save features
 # In the future : database ?
@@ -32,10 +34,10 @@ class Features:
     path_model: Path
     path_all: Path
     queue: Queue
+    computing: list
     informations: dict
     content: DataFrame
     map: dict
-    computing: list[UserFeatureComputing]
     options: dict
     lang: str
     projects_service: ProjectsService
@@ -267,7 +269,8 @@ class Features:
         if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
             raise ValueError("Kind not recognized")
 
-        # different types of features
+        # features without queue
+
         if kind == "regex":
             if "value" not in parameters:
                 raise ValueError("No value for regex")
@@ -279,7 +282,7 @@ class Features:
             r = self.add(regex_name, kind, username, parameters, f)
             return {"success": "regex added"}
 
-        elif kind == "dataset":
+        if kind == "dataset":
             # get the raw column for the train set
             r = self.get_column_raw(parameters["dataset_col"])
             if "error" in r:
@@ -303,42 +306,52 @@ class Features:
             dataset_name = f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
             self.add(dataset_name, kind, username, parameters, column)
             return {"success": "Feature added"}
-        elif kind == "sbert":
-            args = {"texts": df, "model": "all-mpnet-base-v2"}
-            func = to_sbert
-        elif kind == "fasttext":
-            args = {
-                "texts": df,
-                "language": self.lang,
-                "path_models": self.path_models,
-                "model": parameters["model"],
-            }
+
+        # features with queue
+
+        unique_id = None
+
+        if kind == "sbert":
+            unique_id = self.queue.add_task(
+                "feature",
+                self.project_slug,
+                ComputeSbert(texts=df, model="all-mpnet-base-v2"),
+            )
+
+        if kind == "fasttext":
+            unique_id = self.queue.add_task(
+                "feature",
+                self.project_slug,
+                ComputeFasttext(
+                    texts=df,
+                    language=self.lang,
+                    path_models=self.path_models,
+                    model=parameters["model"],
+                ),
+            )
             if parameters["model"] is not None and parameters["model"] != "":
                 name = f"{name}_{parameters['model']}"
-            func = to_fasttext
 
-        elif kind == "dfm":
+        if kind == "dfm":
             args = parameters.copy()
             args["texts"] = df
             args["language"] = self.lang
-            func = to_dtm
-
-        # add the computation to queue
-        unique_id = self.queue.add("feature", self.project_slug, func, args)
-
-        if unique_id == "error":
-            return "error"
-
-        self.computing.append(
-            UserFeatureComputing(
-                unique_id=unique_id,
-                kind="feature",
-                parameters=parameters,
-                type=kind,
-                user=username,
-                name=name,
-                time=datetime.now(),
+            unique_id = self.queue.add_task(
+                "feature", self.project_slug, ComputeDfm(**args)
             )
-        )
+            del args
 
-        return {"success": "Feature in training"}
+        if unique_id:
+            self.computing.append(
+                UserFeatureComputing(
+                    unique_id=unique_id,
+                    kind="feature",
+                    parameters=parameters,
+                    type=kind,
+                    user=username,
+                    name=name,
+                    time=datetime.now(),
+                )
+            )
+            return {"success": "Feature in training"}
+        raise ValueError("Error in the process")
