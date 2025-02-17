@@ -1,6 +1,9 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { useGetGenModels } from '../../core/api';
 import { GenModel, GenModelAPI, SupportedAPI } from '../../types';
+import { SubmitHandler, useForm } from 'react-hook-form';
+
+type FormValues = { model: string; name?: string; endpoint?: string; credentials?: string };
 
 export const GenModelSetupForm: FC<{
   add: (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => void;
@@ -8,8 +11,9 @@ export const GenModelSetupForm: FC<{
 }> = ({ add, cancel }) => {
   const [availableAPIs, setAvailableAPIs] = useState<GenModelAPI[]>([]);
   const [selectedAPI, setSelectedAPI] = useState<GenModelAPI>(availableAPIs[0]);
-  const [modelName, setModelName] = useState<str>('');
+  const [modelName, setModelName] = useState<string>('');
   const { models } = useGetGenModels();
+  const { register, handleSubmit } = useForm<FormValues>();
   useEffect(() => {
     const fetchModels = async () => {
       setAvailableAPIs(await models());
@@ -28,19 +32,12 @@ export const GenModelSetupForm: FC<{
     setSelectedAPI(availableAPIs[index]);
   };
 
-  const onSubmit = (model: FormData) => {
-    const slug = model.get('model');
-    const name = model.get('name') || `${slug}`;
-    const endpoint = model.get('endpoint') || undefined;
-    const credentials = model.get('credentials') || undefined;
+  const onSubmit: SubmitHandler<FormValues> = (data: FormValues) => {
+    const slug = data.model;
+    const name = modelName;
+    const endpoint = data.endpoint;
+    const credentials = data.credentials;
     if (slug === null) throw new Error('You should provide a model');
-    if (
-      slug instanceof File ||
-      name instanceof File ||
-      endpoint instanceof File ||
-      credentials instanceof File
-    )
-      throw new Error('You cannot provide a File here');
     add({
       slug,
       name,
@@ -59,7 +56,7 @@ export const GenModelSetupForm: FC<{
   };
 
   return (
-    <form action={onSubmit}>
+    <form onSubmit={handleSubmit(onSubmit)}>
       <div className="d-flex flex-wrap gap-3 mb-3">
         <div className="form-floating col-5">
           <select
@@ -83,7 +80,11 @@ export const GenModelSetupForm: FC<{
             if (selectedAPI.name === 'OpenAI')
               inputs.push(
                 <div className="form-floating col-5" key="model-select">
-                  <select className="form-control" id="model" name="model" onChange={onModelChange}>
+                  <select
+                    className="form-control"
+                    id="model"
+                    {...register('model', { onChange: onModelChange })}
+                  >
                     {selectedAPI.models.map((model) => (
                       <option key={model.id} value={model.slug}>
                         {model.name}
@@ -104,8 +105,7 @@ export const GenModelSetupForm: FC<{
                     id="model"
                     className="form-control"
                     placeholder="ID of the model"
-                    name="model"
-                    onChange={onModelChange}
+                    {...register('model', { onChange: onModelChange })}
                   />
                   <label htmlFor="model" className="mt-0">
                     Model
@@ -119,7 +119,7 @@ export const GenModelSetupForm: FC<{
                     id="endpoint"
                     className="form-control"
                     placeholder="enter the url of the endpoint"
-                    name="endpoint"
+                    {...register('endpoint')}
                   />
                   <label htmlFor="endpoint" className="mt-0">
                     Endpoint
@@ -136,7 +136,7 @@ export const GenModelSetupForm: FC<{
                     id="credentials"
                     className="form-control"
                     placeholder="API key"
-                    name="credentials"
+                    {...register('credentials')}
                   />
                   <label htmlFor="credentials" className="mt-0">
                     API Credentials
@@ -150,10 +150,9 @@ export const GenModelSetupForm: FC<{
           <input
             type="text"
             className="form-control"
-            name="name"
             id="name"
             value={modelName}
-            onChange={onNameChange}
+            {...register('name', { onChange: onNameChange })}
           />
           <label htmlFor="name" className="mt-0">
             Name
