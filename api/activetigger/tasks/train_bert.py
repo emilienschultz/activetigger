@@ -4,6 +4,7 @@ import logging
 import multiprocessing
 import os
 import shutil
+from logging import Logger
 from pathlib import Path
 from typing import Optional
 
@@ -14,10 +15,42 @@ from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     Trainer,
+    TrainerCallback,
+    TrainerControl,
+    TrainerState,
     TrainingArguments,
 )
 
-from activetigger.tasks.base_task import BaseTask, CustomLoggingCallback
+from activetigger.tasks.base_task import BaseTask
+
+
+class CustomLoggingCallback(TrainerCallback):
+    event: Optional[multiprocessing.synchronize.Event]
+    current_path: Path
+    logger: Logger
+
+    def __init__(self, event, logger, current_path):
+        self.event = event
+        self.current_path = current_path
+        self.logger = logger
+
+    def on_step_end(
+        self,
+        args: TrainingArguments,
+        state: TrainerState,
+        control: TrainerControl,
+        **kwargs,
+    ):
+        self.logger.info(f"Step {state.global_step}")
+        progress_percentage = (state.global_step / state.max_steps) * 100
+        with open(self.current_path.joinpath("train/progress"), "w") as f:
+            f.write(str(progress_percentage))
+        # end if event set
+        if self.event is not None:
+            if self.event.is_set():
+                self.logger.info("Event set, stopping training.")
+                control.should_training_stop = True
+                raise Exception("Process interrupted by user")
 
 
 class TrainBert(BaseTask):
@@ -63,7 +96,7 @@ class TrainBert(BaseTask):
         self.event = event
         self.unique_id = unique_id
 
-    def process(self):
+    def __call__(self):
         """
         Main process to the task
         """

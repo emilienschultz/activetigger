@@ -70,6 +70,33 @@ class Queue:
             logger.error("Restart executor")
             print("Problem with executor ; restart")
 
+    def add_task(self, kind: str, project_slug: str, task: Callable) -> str:
+        """
+        Temporary
+        """
+        # generate a unique id
+        unique_id = str(uuid.uuid4())
+        event = self.manager.Event()
+        task.event = event
+        task.unique_id = unique_id
+
+        # send the process to the executor
+        try:
+            future = self.executor.submit(task)
+        except Exception as e:
+            logger.error(f"Error submitting task: {e}")
+            return "error"
+
+        # save in the stack
+        self.current[unique_id] = {
+            "kind": kind,
+            "project_slug": project_slug,
+            "future": future,
+            "event": event,
+            "starting_time": datetime.datetime.now(),
+        }
+        return unique_id
+
     def add(self, kind: str, project_slug: str, func: Callable, args: dict) -> str:
         """
         Add new element to queue

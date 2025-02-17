@@ -34,6 +34,7 @@ from activetigger.datamodels import (
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
+from activetigger.tasks.train_bert import TrainBert
 
 
 class BertModel:
@@ -536,7 +537,8 @@ class BertModels:
             "test_size": test_size,
         }
 
-        unique_id = self.queue.add("training", project, functions.train_bert, args)
+        # unique_id = self.queue.add("training", project, functions.train_bert, args)
+        unique_id = self.queue.add_task("training", project, TrainBert(**args))
         del args
 
         # Update the queue state
