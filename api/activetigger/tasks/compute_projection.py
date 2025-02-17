@@ -27,6 +27,7 @@ class ComputeProjection(BaseTask):
     kind = "projection"
 
     def __init__(self, kind: str, features: DataFrame, params: TsneModel | UmapModel):
+        super().__init__()
         self.kind = kind
         self.features = features
         self.params = params

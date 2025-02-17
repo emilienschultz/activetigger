@@ -30,6 +30,7 @@ class CustomLoggingCallback(TrainerCallback):
     logger: Logger
 
     def __init__(self, event, logger, current_path):
+        super().__init__()
         self.event = event
         self.current_path = current_path
         self.logger = logger

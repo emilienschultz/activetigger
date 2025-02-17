@@ -50,6 +50,7 @@ class PredictBert(BaseTask):
         unique_id: Optional[str] = None,
         **kwargs,
     ):
+        super().__init__()
         self.path = path
         self.df = df
         self.col_text = col_text

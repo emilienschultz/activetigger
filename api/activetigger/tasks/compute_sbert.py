@@ -19,6 +19,7 @@ class ComputeSbert(BaseTask):
     def __init__(
         self, texts: Series, model: str = "all-mpnet-base-v2", batch_size: int = 32
     ):
+        super().__init__()
         self.texts = texts
         self.model = model
         self.batch_size = batch_size

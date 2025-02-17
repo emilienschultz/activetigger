@@ -1,5 +1,5 @@
-import json
 import logging
+
 from huggingface_hub import InferenceClient, InferenceTimeoutError
 from huggingface_hub.errors import HTTPError
 

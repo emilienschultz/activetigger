@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from slugify import slugify
 
 from activetigger.datamodels import (
+    GenerationResult,
     ProjectModel,
     SimpleModelModel,
     TestSetDataModel,
@@ -26,7 +27,7 @@ from activetigger.datamodels import (
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import clean_regex
-from activetigger.generation.generations import GenerationResult, Generations
+from activetigger.generation.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue

@@ -1,4 +1,5 @@
 import logging
+
 import requests
 
 from activetigger.generation.client import GenerationModelClient

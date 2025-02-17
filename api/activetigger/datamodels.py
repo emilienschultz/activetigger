@@ -586,3 +586,12 @@ class CodebookModel(BaseModel):
     content: str
     scheme: str
     time: str | None = None
+
+
+class GenerationResult(BaseModel):
+    user: str
+    project_slug: str
+    model_id: int
+    element_id: str
+    prompt: str
+    answer: str

@@ -61,9 +61,9 @@ from activetigger.datamodels import (
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
-from activetigger.generation.generations import Generations
 from activetigger.orchestrator import Orchestrator
 from activetigger.project import Project
+from activetigger.tasks.generate_call import GenerateCall
 
 # General comments
 # - all post are logged
@@ -1022,54 +1022,52 @@ async def postgenerate(
     Only one possible by user
     """
 
-    # get subset of unlabelled elements
+    # get subset of elements
     try:
         extract = project.schemes.get_table(
             request.scheme, 0, request.n_batch, request.mode
         )
 
+        model = orchestrator.db_manager.generations_service.get_gen_model(
+            request.model_id
+        )
+
+        # create the independant process to manage the generation
+        args = {
+            "username": current_user.username,
+            "project_slug": project.name,
+            "df": extract.batch,
+            "prompt": request.prompt,
+            "model": model,
+        }
+
+        unique_id = orchestrator.queue.add_task(
+            "generation", project.name, GenerateCall(**args)
+        )
+
+        del args
+
+        project.computing.append(
+            UserGenerationComputing(
+                unique_id=unique_id,
+                user=current_user.username,
+                project=project.name,
+                model_id=request.model_id,
+                number=request.n_batch,
+                time=datetime.now(),
+                kind="generation",
+            )
+        )
+
+        orchestrator.log_action(
+            current_user.username,
+            "INFO Start generating process",
+            project.params.project_slug,
+        )
+        return None
+
     except Exception as e:
-        raise HTTPException(status_code=500) from e
-
-    model = orchestrator.db_manager.generations_service.get_gen_model(request.model_id)
-
-    # create the independant process to manage the generation
-    args = {
-        "user": current_user.username,
-        "project_name": project.name,
-        "df": extract.batch,
-        "prompt": request.prompt,
-        "model": model,
-    }
-
-    unique_id = orchestrator.queue.add(
-        "generation", project.name, Generations.generate, args
-    )
-
-    if unique_id == "error":
-        raise HTTPException(
-            status_code=500, detail="Error in adding the generation call in the queue"
-        )
-
-    project.computing.append(
-        UserGenerationComputing(
-            unique_id=unique_id,
-            user=current_user.username,
-            project=project.name,
-            model_id=request.model_id,
-            number=request.n_batch,
-            time=datetime.now(),
-            kind="generation",
-        )
-    )
-
-    orchestrator.log_action(
-        current_user.username,
-        "INFO Start generating process",
-        project.params.project_slug,
-    )
-
-    return None
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/elements/generate/stop", dependencies=[Depends(verified_user)])

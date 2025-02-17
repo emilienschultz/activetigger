@@ -25,6 +25,7 @@ class ComputeDfm(BaseTask):
         norm=None,
         **kwargs,
     ):
+        super().__init__()
         self.texts = texts
         self.tfidf = tfidf
         self.ngrams = ngrams

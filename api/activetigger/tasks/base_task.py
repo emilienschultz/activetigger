@@ -2,10 +2,8 @@ from abc import ABC, abstractmethod
 
 
 class BaseTask(ABC):
-    def __init__(self, **kwargs):
+    def __init__(self):
         """Initialize the task with given parameters."""
-        self.kind
-        self.params = kwargs
         self.event = None
         self.unique_id = None
 

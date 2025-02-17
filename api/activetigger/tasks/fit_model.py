@@ -15,6 +15,7 @@ class FitModel(BaseTask):
     kind = "fit_model"
 
     def __init__(self, model: BaseEstimator, X: pd.DataFrame, Y: pd.Series, **kwargs):
+        super().__init__()
         self.model = model
         self.X = X
         self.Y = Y

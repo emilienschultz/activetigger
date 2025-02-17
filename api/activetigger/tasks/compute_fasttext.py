@@ -20,6 +20,7 @@ class ComputeFasttext(BaseTask):
     def __init__(
         self, texts: Series, language: str, path_models: Path, model: str = ""
     ):
+        super().__init__()
         self.texts = texts
         self.path_models = path_models
         self.language = language
