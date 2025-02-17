@@ -1626,28 +1626,30 @@ async def start_test(
 ) -> None:
     """
     Start testing the model on the test set
-    TODO : get scheme from bert model name
     """
     if project.schemes.test is None:
         raise HTTPException(status_code=500, detail="No test dataset for this project")
 
-    # get data labels + text
-    df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
+    try:
+        # get data labels + text
+        df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
 
-    # launch testing process : prediction
-    r = project.bertmodels.start_testing_process(
-        name=model,
-        user=current_user.username,
-        df=df,
-        col_text="text",
-        col_labels="labels",
-    )
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, "INFO predict bert for testing", project.name
-    )
-    return None
+        # launch testing process : prediction
+        project.bertmodels.start_testing_process(
+            project_slug=project.name,
+            name=model,
+            user=current_user.username,
+            df=df,
+            col_text="text",
+            col_labels="labels",
+        )
+        orchestrator.log_action(
+            current_user.username, "INFO predict bert for testing", project.name
+        )
+        return None
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/models/bert/delete", dependencies=[Depends(verified_user)])

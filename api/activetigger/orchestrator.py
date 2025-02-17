@@ -570,6 +570,6 @@ class Orchestrator:
             # update the project
             project.update_processes()
 
-        # remove the projects
+        # remove the projects from memory
         for p in to_del:
             del self.projects[p]

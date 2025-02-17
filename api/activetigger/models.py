@@ -587,7 +587,13 @@ class BertModels:
         return {"success": "bert model on training"}
 
     def start_testing_process(
-        self, name: str, user: str, df: DataFrame, col_text: str, col_labels: str
+        self,
+        project_slug: str,
+        name: str,
+        user: str,
+        df: DataFrame,
+        col_text: str,
+        col_labels: str,
     ):
         """
         Start testing process
@@ -595,16 +601,16 @@ class BertModels:
         - once computed, sync with the queue
         """
         if len(self.current_user_processes(user)) > 0:
-            return {
-                "error": "User already has a process launched, please wait before launching another one"
-            }
+            raise Exception(
+                "User already has a process launched, please wait before launching another one"
+            )
 
         if not (self.path / name).exists():
-            return {"error": "This model does not exist"}
+            raise Exception("The model does not exist")
 
         # test number of elements in the test set
         if len(df["labels"].dropna()) < 10:
-            return {"error": "Less than 10 elements annotated"}
+            raise Exception("Less than 10 elements annotated")
 
         # load model
         b = BertModel(name, self.path / name)
@@ -612,29 +618,28 @@ class BertModels:
 
         # test if the testset and the model have the same labels
         if set(b.get_labels()) != set(df["labels"].dropna().unique()):
-            return {"error": "The testset and the model have different labels"}
+            raise Exception("The testset and the model have different labels")
 
         # delete previous files
-        if (self.path / name / "predict_test.parquet").exists():
-            os.remove(self.path / name / "predict_test.parquet")
-        if (self.path / name / "statistics.json").exists():
-            os.remove(self.path / name / "statistics.json")
+        if (self.path.joinpath(name).joinpath("predict_test.parquet")).exists():
+            os.remove(self.path.joinpath(name).joinpath("predict_test.parquet"))
+        if (self.path.joinpath(name).joinpath("statistics.json")).exists():
+            os.remove(self.path.joinpath(name).joinpath("statistics.json"))
 
         # start prediction on the test set
         args = {
             "df": df,
             "col_text": col_text,
             "col_labels": col_labels,
-            # "model": b.model,
-            # "tokenizer": b.tokenizer,
             "path": b.path,
             "basemodel": b.base_model,
             "file_name": "predict_test.parquet",
             "batch": 32,
         }
-        unique_id = self.queue.add(
-            "prediction", "project", functions.predict_bert, args
-        )  # TODO ADD PROJECT
+
+        unique_id = self.queue.add_task("prediction", project_slug, PredictBert(**args))
+        del args
+
         b.status = "testing"
         self.computing.append(
             UserModelComputing(
