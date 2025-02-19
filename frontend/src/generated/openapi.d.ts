@@ -329,6 +329,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Version
+         * @description Get the version of the server
+         */
+        get: operations["get_version_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/server": {
         parameters: {
             query?: never;
@@ -1053,7 +1073,6 @@ export interface paths {
         /**
          * Start Test
          * @description Start testing the model on the test set
-         *     TODO : get scheme from bert model name
          */
         post: operations["start_test_models_bert_test_post"];
         delete?: never;
@@ -1448,7 +1467,7 @@ export interface components {
             name: string;
             /** Parameters */
             parameters: {
-                [key: string]: string | number;
+                [key: string]: (string | number) | undefined;
             };
         };
         /**
@@ -1810,9 +1829,9 @@ export interface components {
         ReconciliationModel: {
             /** Table */
             table: {
-                [key: string]: string | {
-                    [key: string]: string;
-                };
+                [key: string]: (string | {
+                    [key: string]: string | undefined;
+                }) | undefined;
             }[];
             /** Users */
             users: string[];
@@ -1846,11 +1865,11 @@ export interface components {
             model: string;
             /** Params */
             params: {
-                [key: string]: string | number | boolean | null;
+                [key: string]: (string | number | boolean | null) | undefined;
             } | {
                 [key: string]: {
-                    [key: string]: string | number | boolean | null;
-                };
+                    [key: string]: (string | number | boolean | null) | undefined;
+                } | undefined;
             } | null;
             /** Scheme */
             scheme: string;
@@ -1873,11 +1892,11 @@ export interface components {
             model: string;
             /** Params */
             params: {
-                [key: string]: string | number | boolean | null;
+                [key: string]: (string | number | boolean | null) | undefined;
             } | {
                 [key: string]: {
-                    [key: string]: string | number | boolean | null;
-                };
+                    [key: string]: (string | number | boolean | null) | undefined;
+                } | undefined;
             } | null;
             /** Scheme */
             scheme: string;
@@ -1984,8 +2003,8 @@ export interface components {
             /** Users */
             users: {
                 [key: string]: {
-                    [key: string]: string;
-                };
+                    [key: string]: string | undefined;
+                } | undefined;
             };
             /** Auth */
             auth: string[];
@@ -2450,6 +2469,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AvailableProjectsModel"];
+                };
+            };
+        };
+    };
+    get_version_version_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

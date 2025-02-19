@@ -7,16 +7,16 @@ import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
   AvailableProjectsModel,
-  GenModelAPI,
   GenModel,
+  GenModelAPI,
   LoginParams,
   ProjectDataModel,
   ProjectStateModel,
   ProjectionInStrictModel,
   SimpleModelModel,
+  SupportedAPI,
   TestSetDataModel,
   newBertModel,
-  SupportedAPI,
 } from '../types';
 import { HttpError } from './HTTPError';
 import { getAuthHeaders } from './auth';
@@ -1383,8 +1383,18 @@ export function useGetProjectionData(
   return { projectionData: getAsyncMemoData(getProjectionData), reFetchProjectionData: reFetch };
 }
 
+/** get version number */
+export function useGetVersion() {
+  const getVersion = useAsyncMemo(async () => {
+    const res = await api.GET('/version', {});
+    if (!res.error) return res.data;
+    return null;
+  }, []);
+  return { version: getAsyncMemoData(getVersion) };
+}
+
 /**
- * Get queue
+ * Get server situation for a project
  */
 export function useGetServer(projectState: ProjectStateModel | null) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
@@ -1402,7 +1412,10 @@ export function useGetServer(projectState: ProjectStateModel | null) {
 
   const data = getAsyncMemoData(getServerState);
 
+  console.log(data);
+
   return {
+    version: data?.version,
     queueState: data?.queue,
     activeProjects: data?.active_projects,
     gpu: data?.gpu['gpu_available'] ? data?.gpu : undefined,

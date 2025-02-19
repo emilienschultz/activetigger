@@ -24,6 +24,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
 
+from activetigger import __version__
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
@@ -600,6 +601,14 @@ async def get_projects(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/version")
+async def get_version() -> str:
+    """
+    Get the version of the server
+    """
+    return __version__
+
+
 @app.get("/server")
 async def get_queue() -> dict:
     """
@@ -632,6 +641,7 @@ async def get_queue() -> dict:
     disk_info = psutil.disk_usage("/")
 
     r = {
+        "version": __version__,
         "queue": queue,
         "active_projects": active_projects,
         "gpu": gpu,
@@ -646,7 +656,6 @@ async def get_queue() -> dict:
             "total": disk_info.total / (1024**3),
         },
     }
-
     return r
 
 

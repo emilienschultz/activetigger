@@ -36,4 +36,6 @@ path_models: ./models
         with open("./config.yaml", "w") as f:
             f.write(content)
 
-    uvicorn.run("activetigger.api:app", host="0.0.0.0", port=args.portapi, reload=True)
+    uvicorn.run(
+        "activetigger.api.client:app", host="0.0.0.0", port=args.portapi, reload=True
+    )
