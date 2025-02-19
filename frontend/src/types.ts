@@ -53,6 +53,8 @@ export type TestSetDataModel = components['schemas']['TestSetDataModel'];
 
 export type ProjectionInStrictModel = components['schemas']['ProjectionInStrictModel'];
 
+export type GenerationModelApi = components['schemas']['GenerationModelApi'];
+
 export type ProjectionModelParams =
   | components['schemas']['TsneModel']
   | components['schemas']['UmapModel'];
