@@ -1,4 +1,5 @@
 import datetime
+import os
 from typing import Sequence
 
 from sqlalchemy import delete, select
@@ -8,10 +9,10 @@ from sqlalchemy.orm import joinedload, sessionmaker
 from activetigger.datamodels import (
     GenerationAvailableModel,
     GenerationCreationModel,
-    GenerationModel,
     GenerationModelApi,
 )
 from activetigger.db.models import Generations, GenModels
+from activetigger.functions import decrypt, encrypt
 
 
 class GenerationsService:
@@ -51,12 +52,13 @@ class GenerationsService:
             generated = session.scalars(
                 select(Generations)
                 .filter_by(project_id=project_slug, user_id=username)
-                .options(joinedload(Generations.model))
+                .options(joinedload(Generations.model))  # join with the model table
                 .order_by(Generations.time.desc())
                 .limit(n_elements)
             ).all()
             return [
-                [el.time, el.element_id, el.prompt, el.answer, el.model.name] for el in generated
+                [el.time, el.element_id, el.prompt, el.answer, el.model.name]
+                for el in generated
             ]
 
     def get_available_models(self) -> list[GenerationModelApi]:
@@ -80,7 +82,9 @@ class GenerationsService:
                     GenerationAvailableModel(
                         slug="gpt-4o-mini", api="OpenAI", name="ChatGPT 4o mini"
                     ),
-                    GenerationAvailableModel(slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"),
+                    GenerationAvailableModel(
+                        slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"
+                    ),
                 ],
             ),
             GenerationModelApi(name="HuggingFace", models=[]),
@@ -93,7 +97,9 @@ class GenerationsService:
         Returns a list of GenerationModel
         """
         with self.Session() as session:
-            models = session.scalars(select(GenModels).filter_by(project_id=project_slug)).all()
+            models = session.scalars(
+                select(GenModels).filter_by(project_id=project_slug)
+            ).all()
         return models
 
     def get_gen_model(self, model_id: int) -> GenModels:
@@ -101,9 +107,12 @@ class GenerationsService:
             result = session.scalars(select(GenModels).filter_by(id=model_id)).first()
             if result is None:
                 raise Exception("Generation model not found")
+            result.credentials = decrypt(result.credentials, os.environ["SECRET_KEY"])
             return result
 
-    def add_project_gen_model(self, project_slug: str, model: GenerationCreationModel) -> int:
+    def add_project_gen_model(
+        self, project_slug: str, model: GenerationCreationModel
+    ) -> int:
         """
         Add a new GenAI model for the given project
         """
@@ -114,7 +123,7 @@ class GenerationsService:
                 name=model.name,
                 api=model.api,
                 endpoint=model.endpoint,
-                credentials=model.credentials,
+                credentials=encrypt(model.credentials, os.environ["SECRET_KEY"]),
             )
             session.add(new_model)
             session.commit()
@@ -126,4 +135,6 @@ class GenerationsService:
         Delete a GenAI model from the given project
         """
         with self.Session.begin() as session:
-            session.execute(delete(GenModels).filter_by(project_id=project_slug, id=model_id))
+            session.execute(
+                delete(GenModels).filter_by(project_id=project_slug, id=model_id)
+            )

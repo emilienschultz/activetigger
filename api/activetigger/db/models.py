@@ -7,6 +7,8 @@ from sqlalchemy.types import JSON
 
 
 class Base(DeclarativeBase):
+    # convert to JSON the types [dict[str], Any] to be able to directly store objets
+    # allow to search on JSON
     type_annotation_map = {dict[str, Any]: JSON}
     metadata = MetaData(
         naming_convention={
@@ -91,7 +93,9 @@ class Schemes(Base):
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug", ondelete="CASCADE"))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
     project: Mapped[Projects] = relationship(back_populates="schemes")
     models: Mapped[list["Models"]] = relationship()
     name: Mapped[str]
@@ -108,7 +112,9 @@ class Annotations(Base):
     dataset: Mapped[str]
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug", ondelete="CASCADE"))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
     project: Mapped[Projects] = relationship(back_populates="annotations")
     element_id: Mapped[str]
     scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
@@ -123,7 +129,9 @@ class Auths(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug", ondelete="CASCADE"))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
     project: Mapped[Projects] = relationship(back_populates="auths")
     status: Mapped[str]
     created_by: Mapped[str | None]
@@ -138,7 +146,9 @@ class Logs(Base):
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug", ondelete="CASCADE"))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
     project: Mapped[Projects] = relationship(back_populates="logs")
     action: Mapped[str | None]
     connect: Mapped[str | None]
@@ -153,7 +163,9 @@ class Tokens(Base):
     )
     token: Mapped[str]
     status: Mapped[str]
-    time_revoked: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
+    time_revoked: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
 
 class GenModels(Base):
@@ -179,7 +191,9 @@ class Generations(Base):
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug", ondelete="CASCADE"))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
     project: Mapped[Projects] = relationship(back_populates="generations")
     element_id: Mapped[str]
     model_id: Mapped[int] = mapped_column(ForeignKey("gen_models.id"))
@@ -197,7 +211,9 @@ class Features(Base):
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug", ondelete="CASCADE"))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
     project: Mapped[Projects] = relationship(back_populates="features")
     name: Mapped[str]
     kind: Mapped[str]
@@ -219,7 +235,9 @@ class Models(Base):
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship()
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_slug", ondelete="CASCADE"))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
     project: Mapped[Projects] = relationship(back_populates="models")
     scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
     scheme: Mapped[Schemes] = relationship(back_populates="models")

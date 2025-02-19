@@ -7,6 +7,7 @@ import bcrypt
 import pandas as pd
 import spacy
 import torch
+from cryptography.fernet import Fernet
 from pandas import Series
 from sklearn.preprocessing import OneHotEncoder
 from transformers import (
@@ -176,3 +177,26 @@ def clean_regex(text: str):
     if len(text) > 1 and text[-1] == "\\":
         text = text[:-1]
     return text
+
+
+def encrypt(text: str | None, secret_key: str | None) -> str:
+    """
+    Encrypt a string
+    """
+    if text is None or secret_key is None:
+        raise Exception("Text or secret key is None")
+    print(secret_key)
+    cipher = Fernet(secret_key)
+    encrypted_token = cipher.encrypt(text.encode())
+    return encrypted_token.decode()
+
+
+def decrypt(text: str | None, secret_key: str | None) -> str:
+    """
+    Decrypt a string
+    """
+    if text is None or secret_key is None:
+        raise Exception("Text or secret key is None")
+    cipher = Fernet(secret_key)
+    decrypted_token = cipher.decrypt(text.encode())
+    return decrypted_token.decode()

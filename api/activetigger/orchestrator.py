@@ -1,6 +1,5 @@
 import logging
 import os
-import secrets
 import shutil
 import time
 from datetime import datetime, timedelta, timezone
@@ -48,7 +47,6 @@ class Orchestrator:
     algorithm: str
     n_workers: int
     starting_time: float
-    secret_key: str
     path: Path
     path_models: Path
     db: Path
@@ -88,7 +86,7 @@ class Orchestrator:
         self.path_models = Path(path_models)
 
         # create or load a key
-        self.secret_key = self.get_secret_key()
+        self.load_secret_key()
 
         # if a YAML configuration file exists, overwrite
         if Path("config.yaml").exists():
@@ -128,37 +126,21 @@ class Orchestrator:
         self.queue.close()
         print("Server off")
 
-    def get_secret_key(self) -> str:
+    def load_secret_key(self) -> None:
         """
-        Get the secret key used for tokens
+        Load secret key in the environment
         - if key.yaml exists, load the key
         - if not, create a new key and the file
         """
         if (self.path.joinpath("key.yaml")).exists():
             with open(self.path.joinpath("key.yaml"), "r") as f:
                 conf = yaml.safe_load(f)
-            return conf["key"]
+            key = conf["key"]
         else:
-            key = secrets.token_hex(32)
+            key = Fernet.generate_key().decode()
             with open(self.path.joinpath("key.yaml"), "w") as f:
                 yaml.safe_dump({"key": key}, f)
-            return key
-
-    def encrypt(self, text: str) -> str:
-        """
-        Encrypt a string
-        """
-        cipher = Fernet(self.secret_key)
-        encrypted_token = cipher.encrypt(text.encode())
-        return encrypted_token.decode()
-
-    def decrypt(self, text: str) -> str:
-        """
-        Decrypt a string
-        """
-        cipher = Fernet(self.secret_key)
-        decrypted_token = cipher.decrypt(text.encode())
-        return decrypted_token.decode()
+        os.environ["SECRET_KEY"] = key
 
     def log_action(
         self,
@@ -228,7 +210,9 @@ class Orchestrator:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        encoded_jwt = jwt.encode(
+            to_encode, os.environ["SECRET_KEY"], algorithm=self.algorithm
+        )
 
         # add it in the database as active
         self.db_manager.projects_service.add_token(encoded_jwt, "active")
@@ -257,7 +241,9 @@ class Orchestrator:
             raise Exception("Token is invalid")
 
         # decode payload
-        payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+        payload = jwt.decode(
+            token, os.environ["SECRET_KEY"], algorithms=[self.algorithm]
+        )
         return payload
 
     def start_project(self, project_slug: str) -> dict:
