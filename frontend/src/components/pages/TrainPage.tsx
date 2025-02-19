@@ -54,6 +54,8 @@ export const TrainPage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
+  const [activeKey, setActiveKey] = useState<string>('models');
+
   // available labels from context
   const availableLabels =
     currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
@@ -134,6 +136,8 @@ export const TrainPage: FC = () => {
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     console.log(data);
+    setActiveKey('models');
+    console.log(activeKey);
     await trainBertModel(data);
   };
 
@@ -241,8 +245,13 @@ export const TrainPage: FC = () => {
             {
               /* Temporary disable multi-class fine-tuning */
 
-              <Tabs id="panel" className="mb-3" defaultActiveKey={'models'}>
-                <Tab eventKey="models" title="Models">
+              <Tabs
+                id="panel"
+                className="mb-3"
+                activeKey={activeKey}
+                onSelect={(k) => setActiveKey(k || 'models')}
+              >
+                <Tab eventKey="models" title="Models" onSelect={() => setActiveKey('models')}>
                   <label htmlFor="selected-model">Existing models</label>
                   <div className="d-flex align-items-center">
                     <select
@@ -290,18 +299,6 @@ export const TrainPage: FC = () => {
                         </ul>
                       </div>
                     )}
-
-                  {isComputing && (
-                    <div>
-                      <button
-                        key="stop"
-                        className="btn btn-primary mt-3 d-flex align-items-center"
-                        onClick={stopTraining}
-                      >
-                        <PulseLoader color={'white'} /> Stop current process
-                      </button>
-                    </div>
-                  )}
 
                   {currentModel && (
                     <div>
@@ -354,17 +351,7 @@ export const TrainPage: FC = () => {
                                 Predict on training dataset
                               </button>
                             )}
-                            {isComputing && (
-                              <div>
-                                <button
-                                  key="stop"
-                                  className="btn btn-primary mt-3 d-flex align-items-center"
-                                  onClick={stopTraining}
-                                >
-                                  <PulseLoader color={'white'} /> Stop current process
-                                </button>
-                              </div>
-                            )}
+                            {isComputing && <div>Computation in progress</div>}
                             {model.train_scores && (
                               <div>
                                 <table className="table">
@@ -427,7 +414,7 @@ export const TrainPage: FC = () => {
                     </div>
                   )}
                 </Tab>
-                <Tab eventKey="new" title="New model">
+                <Tab eventKey="new" title="New model" onSelect={() => setActiveKey('new')}>
                   <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
                     {kindScheme == 'multilabel' && (
                       <div role="alert" className="alert alert-warning">
@@ -625,19 +612,12 @@ export const TrainPage: FC = () => {
                       </button>
                     )}
                   </form>
-                  {isComputing && (
-                    <div>
-                      <button
-                        key="stop"
-                        className="btn btn-primary mt-3 d-flex align-items-center"
-                        onClick={stopTraining}
-                      >
-                        <PulseLoader color={'white'} /> Stop current process
-                      </button>
-                    </div>
-                  )}
                 </Tab>
-                <Tab eventKey="parameters" title="Parameters">
+                <Tab
+                  eventKey="parameters"
+                  title="Parameters"
+                  onSelect={() => setActiveKey('parameters')}
+                >
                   <div>
                     <label>
                       Batch size for predictions{' '}
@@ -659,6 +639,17 @@ export const TrainPage: FC = () => {
                 </Tab>
               </Tabs>
             }
+            {isComputing && (
+              <div>
+                <button
+                  key="stop"
+                  className="btn btn-primary mt-3 d-flex align-items-center"
+                  onClick={stopTraining}
+                >
+                  <PulseLoader color={'white'} /> Stop current process
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -12,9 +12,9 @@ except ImportError:
     CUMl_AVAILABLE = False
 
 import pandas as pd
-import umap
-from sklearn.manifold import TSNE
-from sklearn.preprocessing import StandardScaler
+import umap  # type: ignore[import]
+from sklearn.manifold import TSNE  # type: ignore[import]
+from sklearn.preprocessing import StandardScaler  # type: ignore[import]
 
 from activetigger.datamodels import TsneModel, UmapModel
 
@@ -32,7 +32,7 @@ class ComputeProjection(BaseTask):
         self.features = features
         self.params = params
 
-    def __call__(self):
+    def __call__(self) -> DataFrame:
         """
         Compute projection
         """

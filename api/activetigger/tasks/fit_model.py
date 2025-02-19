@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator
-from sklearn.metrics import accuracy_score, f1_score, precision_score
-from sklearn.model_selection import KFold, cross_val_predict
+from sklearn.base import BaseEstimator  # type: ignore[import]
+from sklearn.metrics import accuracy_score, f1_score, precision_score  # type: ignore[import]
+from sklearn.model_selection import KFold, cross_val_predict  # type: ignore[import]
 
 from activetigger.tasks.base_task import BaseTask
 
@@ -20,7 +20,7 @@ class FitModel(BaseTask):
         self.X = X
         self.Y = Y
 
-    def __call__(self):
+    def __call__(self) -> dict:  # TODO : type
         """
         Fit simplemodel and calculate statistics
         """

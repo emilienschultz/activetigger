@@ -1,7 +1,7 @@
 import pandas as pd
 import spacy
 from pandas import DataFrame, Series
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer  # type: ignore[import]
 
 from activetigger.tasks.base_task import BaseTask
 
@@ -74,4 +74,4 @@ class ComputeDfm(BaseTask):
         dtm = vectorizer.fit_transform(self.texts)
         names = vectorizer.get_feature_names_out()
         dtm = pd.DataFrame(dtm.toarray(), columns=names, index=self.texts.index)
-        return {"success": dtm}
+        return dtm

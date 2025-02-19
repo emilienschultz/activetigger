@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 
-import fasttext
+import fasttext  # type: ignore[import]
 import pandas as pd
-from fasttext.util import download_model
+from fasttext.util import download_model  # type: ignore[import]
 from pandas import DataFrame, Series
 
 from activetigger.functions import tokenize
