@@ -2,6 +2,7 @@ import multiprocessing
 from logging import Logger
 from pathlib import Path
 from typing import Optional, cast
+from getpass import getpass
 
 import bcrypt
 import pandas as pd
@@ -60,14 +61,12 @@ def get_root_pwd() -> str:
     print("║  twice to confirm.              ║")
     print("╚═════════════════════════════════╝")
     while True:
-        func = input
-
-        root_password = func("Enter a root password : ")
+        root_password = getpass("Enter a root password : ")
 
         if len(root_password) < 6:
             print("The password need to have 6 character at minimum")
             continue
-        confirm_password = func("Re-enter the root password: ")
+        confirm_password = getpass("Re-enter the root password: ")
 
         if root_password != confirm_password:
             print("Error: The passwords do not match. Please try again.")
