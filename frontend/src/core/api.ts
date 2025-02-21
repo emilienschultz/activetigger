@@ -539,7 +539,12 @@ export function useAddAnnotation(
   dataset: string,
 ) {
   const addAnnotation = useCallback(
-    async (element_id: string, label: string | null, comment: string | null) => {
+    async (
+      element_id: string,
+      label: string | null,
+      comment: string | null,
+      selection: string | null,
+    ) => {
       // do the new projects POST call
       if (projectSlug && scheme) {
         await api.POST('/annotation/{action}', {
@@ -554,9 +559,9 @@ export function useAddAnnotation(
             scheme: scheme,
             dataset: dataset,
             comment: comment,
+            selection: selection,
           },
         });
-        //if (!res.error) notify({ type: 'success', message: 'Annotation added' });
 
         return true;
       }
@@ -1411,8 +1416,6 @@ export function useGetServer(projectState: ProjectStateModel | null) {
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
   const data = getAsyncMemoData(getServerState);
-
-  console.log(data);
 
   return {
     version: data?.version,

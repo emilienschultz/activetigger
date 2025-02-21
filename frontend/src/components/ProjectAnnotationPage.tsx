@@ -38,6 +38,7 @@ export const ProjectAnnotationPage: FC = () => {
       displayConfig,
       freqRefreshSimpleModel,
       history,
+      selectionHistory,
       phase,
     },
     setAppContext,
@@ -105,8 +106,19 @@ export const ProjectAnnotationPage: FC = () => {
     if (elementId === undefined) {
       getNextElementId().then((res) => {
         if (res && res.n_sample) setNSample(res.n_sample);
-        if (res && res.element_id) navigate(`/projects/${projectName}/annotate/${res.element_id}`);
-        else {
+        if (res && res.element_id) {
+          setAppContext((prev) => ({
+            ...prev,
+            selectionHistory: {
+              ...prev.selectionHistory,
+              [res.element_id]: JSON.stringify(selectionConfig),
+            },
+          }));
+          navigate(`/projects/${projectName}/annotate/${res.element_id}`);
+
+          console.log(res.element_id);
+          console.log(selectionConfig);
+        } else {
           navigate(`/projects/${projectName}/annotate/noelement`);
           setElement(null);
         }
@@ -129,6 +141,8 @@ export const ProjectAnnotationPage: FC = () => {
     phase,
     projectName,
     reFetchStatistics,
+    selectionConfig,
+    setAppContext,
   ]);
 
   // hooks to update simplemodel
@@ -162,7 +176,7 @@ export const ProjectAnnotationPage: FC = () => {
     (label: string | null, elementId?: string) => {
       if (elementId) {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-        addAnnotation(elementId, label, comment).then(() =>
+        addAnnotation(elementId, label, comment, selectionHistory[elementId]).then(() =>
           // redirect to next element by redirecting wihout any id
           // thus the getNextElementId query will be dont after the appcontext is reloaded
           {
@@ -173,7 +187,7 @@ export const ProjectAnnotationPage: FC = () => {
         // does not do nothing as we remount through navigate reFetchStatistics();
       }
     },
-    [setAppContext, addAnnotation, navigate, projectName, comment],
+    [setAppContext, addAnnotation, navigate, projectName, comment, selectionHistory],
   );
 
   const textInFrame = element?.text.slice(0, element?.limit as number) || '';
@@ -202,6 +216,8 @@ export const ProjectAnnotationPage: FC = () => {
       return false;
     }
   };
+
+  console.log(selectionHistory);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">

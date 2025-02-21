@@ -138,7 +138,7 @@ class Schemes:
         to_recode = df[df["labels"] == former_label].index
         # for each of them, push the new tag
         for i in to_recode:
-            self.push_annotation(i, new_label, scheme, username, "train")
+            self.push_annotation(i, new_label, scheme, username, "train", "recoding")
         return {"success": "All tags recoded"}
 
     def get_total(self, dataset: str = "train"):
@@ -287,12 +287,12 @@ class Schemes:
         df = self.get_scheme_data(scheme, kind=["train"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
-            self.push_annotation(i, None, scheme, user, "train")
+            self.push_annotation(i, None, scheme, user, "train", "delete")
         # and test
         df = self.get_scheme_data(scheme, kind=["test"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
-            self.push_annotation(i, None, scheme, user, "test")
+            self.push_annotation(i, None, scheme, user, "test", "delete")
         # update scheme
         self.update_scheme(scheme, labels)
         return {"success": "scheme updated removing a label"}
@@ -374,9 +374,10 @@ class Schemes:
         label: str | None,
         scheme: str,
         user: str = "server",
-        mode: str = "train",
-        comment: str = "",
-    ):
+        mode: str | None = "train",
+        comment: str | None = "",
+        selection: str | None = None,
+    ) -> None:
         """
         Record a tag in the database
         mode : train, predict, test
@@ -384,6 +385,9 @@ class Schemes:
 
         if element_id == "noelement":
             raise Exception("No element id")
+
+        if mode is None:
+            mode = "undefined"
 
         # test if the action is possible
         a = self.available()
@@ -401,10 +405,6 @@ class Schemes:
             if label not in a[scheme]["labels"]:
                 raise Exception(f"Label {label} not in the scheme")
 
-        # TODO : add test if the element index really exist
-        # if (not element_id in self.content.index):
-        #    return {"error":"element doesn't exist"}
-
         self.projects_service.add_annotation(
             dataset=mode,
             user=user,
@@ -413,20 +413,8 @@ class Schemes:
             scheme=scheme,
             annotation=label,
             comment=comment,
+            selection=selection,
         )
-        print(
-            (
-                "push annotation",
-                mode,
-                user,
-                self.project_slug,
-                element_id,
-                scheme,
-                label,
-                comment,
-            )
-        )
-        return {"success": "annotation added"}
 
     def get_coding_users(self, scheme: str):
         """

@@ -49,6 +49,7 @@ export const ProjectPage: FC = () => {
   // function to clear history
   const actionClearHistory = () => {
     setAppContext((prev) => ({ ...prev, history: [] }));
+    // setAppContext((prev) => ({ ...prev, selectionHistory: {} }));
   };
 
   const activeUsers = project?.users?.active ? project?.users?.active : [];

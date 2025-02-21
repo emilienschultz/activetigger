@@ -121,6 +121,7 @@ class Annotations(Base):
     scheme: Mapped[Schemes] = relationship()
     annotation: Mapped[str | None]
     comment: Mapped[str | None] = mapped_column(Text)
+    selection: Mapped[str | None] = mapped_column(Text)
 
 
 class Auths(Base):

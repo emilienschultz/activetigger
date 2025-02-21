@@ -149,6 +149,7 @@ class AnnotationModel(BaseModel):
     label: str | None
     dataset: str | None = "train"
     comment: str | None = None
+    selection: str | None = None
 
 
 class TableAnnotationsModel(BaseModel):

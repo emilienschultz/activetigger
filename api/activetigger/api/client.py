@@ -342,7 +342,7 @@ async def welcome() -> str:
     Welcome page at the root path for the API
     """
     data_path: Traversable = importlib.resources.files("activetigger")
-    with open(data_path.joinpath("html", "welcome.html"), "r") as f:
+    with open(str(data_path.joinpath("html", "welcome.html")), "r") as f:
         r = f.read()
     return r
 
@@ -354,13 +354,12 @@ async def get_documentation() -> DocumentationModel:
     Comments:
         For the moment, a dictionnary
     """
-    data = {
-        "credits": ["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
-        "contact": "emilien.schultz@ensae.fr",
-        "page": "https://github.com/emilienschultz/pyactivetigger",
-        "documentation": "To write ....",
-    }
-    return DocumentationModel(**data)
+    return DocumentationModel(
+        credits=["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
+        contact="emilien.schultz@ensae.fr",
+        page="https://github.com/emilienschultz/pyactivetigger",
+        documentation="To write ....",
+    )
 
 
 # Users
@@ -898,21 +897,23 @@ async def post_list_elements(
             errors.append(annotation)
             continue
 
-        r = project.schemes.push_annotation(
-            annotation.element_id,
-            annotation.label,
-            annotation.scheme,
-            current_user.username,
-            table.dataset,
-        )
-        if "error" in r:
+        try:
+            project.schemes.push_annotation(
+                annotation.element_id,
+                annotation.label,
+                annotation.scheme,
+                current_user.username,
+                table.dataset,
+                "table",
+            )
+            orchestrator.log_action(
+                current_user.username,
+                f"UPDATE ANNOTATION in {annotation.scheme}: {annotation.element_id} as {annotation.label}",
+                project.name,
+            )
+        except Exception:
             errors.append(annotation)
             continue
-        orchestrator.log_action(
-            current_user.username,
-            f"UPDATE ANNOTATION in {annotation.scheme}: {annotation.element_id} as {annotation.label}",
-            project.name,
-        )
 
     if len(errors) > 0:
         raise HTTPException(
@@ -955,13 +956,20 @@ async def post_reconciliation(
 
     # for each user
     for u in users:
-        r = project.schemes.push_annotation(element_id, label, scheme, u, "train")
+        r = project.schemes.push_annotation(
+            element_id, label, scheme, u, "train", "reconciliation"
+        )
         if "error" in r:
             raise HTTPException(status_code=500, detail=r["error"])
 
     # add a new tag for the reconciliator
     project.schemes.push_annotation(
-        element_id, label, scheme, current_user.username, "reconciliation"
+        element_id,
+        label,
+        scheme,
+        current_user.username,
+        "reconciliation",
+        "reconciliation",
     )
 
     # log
@@ -1161,13 +1169,14 @@ async def post_annotation(
 
     if action in ["add", "update"]:
         try:
-            r = project.schemes.push_annotation(
+            project.schemes.push_annotation(
                 annotation.element_id,
                 annotation.label,
                 annotation.scheme,
                 current_user.username,
                 annotation.dataset,
                 annotation.comment,
+                annotation.selection,
             )
 
             orchestrator.log_action(
@@ -1181,7 +1190,7 @@ async def post_annotation(
 
     if action == "delete":
         try:
-            r = project.schemes.delete_annotation(
+            project.schemes.delete_annotation(
                 annotation.element_id,
                 annotation.scheme,
                 annotation.dataset,

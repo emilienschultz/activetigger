@@ -403,8 +403,9 @@ class ProjectsService:
         project_slug: str,
         element_id: str,
         scheme: str,
-        annotation: str,
-        comment: str = "",
+        annotation: str | None,
+        comment: str | None = "",
+        selection: str | None = None,
     ):
         with self.Session.begin() as session:
             new_annotation = Annotations(
@@ -416,7 +417,9 @@ class ProjectsService:
                 scheme_id=scheme,
                 annotation=annotation,
                 comment=comment,
+                selection=selection,
             )
+            print(new_annotation.__dict__)
             session.add(new_annotation)
 
     def available_schemes(self, project_slug: str):

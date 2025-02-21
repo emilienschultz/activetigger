@@ -19,6 +19,7 @@ export type AppContextValue = {
   currentProjection?: string;
   freqRefreshSimpleModel: number; // freq to refresh active learning model
   history: string[]; // element annotated
+  selectionHistory: Record<string, string>; // history of the selection
   reFetchCurrentProject?: () => void; // update the state of the project
   phase: string;
   isComputing: boolean;
@@ -44,6 +45,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   },
   generateConfig: { n_batch: 1, selection_mode: 'all' },
   history: [],
+  selectionHistory: {},
   freqRefreshSimpleModel: 0,
   phase: 'train',
   isComputing: false,
