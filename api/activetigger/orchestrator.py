@@ -1,3 +1,7 @@
+"""
+Define the orchestrator and launch the instance
+"""
+
 import logging
 import os
 import shutil
@@ -559,3 +563,7 @@ class Orchestrator:
         # remove the projects from memory
         for p in to_del:
             del self.projects[p]
+
+
+# launch the instance
+orchestrator = Orchestrator()

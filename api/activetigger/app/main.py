@@ -20,15 +20,20 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
-from jose import JWTError
 
 from activetigger import __version__
+from activetigger.app.dependencies import (
+    check_auth_exists,
+    get_project,
+    test_rights,
+    verified_user,
+)
+from activetigger.app.routers import users
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
-    AuthActions,
     AvailableProjectsModel,
     BertModelModel,
     CodebookModel,
@@ -45,7 +50,6 @@ from activetigger.datamodels import (
     ProjectDescriptionModel,
     ProjectionInStrictModel,
     ProjectionOutModel,
-    ProjectModel,
     ProjectStateModel,
     ReconciliationModel,
     SchemeModel,
@@ -57,118 +61,12 @@ from activetigger.datamodels import (
     TokenModel,
     UserGenerationComputing,
     UserInDBModel,
-    UserModel,
-    UsersServerModel,
     WaitingModel,
 )
 from activetigger.functions import get_gpu_memory_info
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 from activetigger.tasks.generate_call import GenerateCall
-
-# General comments
-# - all post are logged
-# - header identification with token
-# - username is in the header
-
-
-def test_rights(action: str, username: str, project_slug: str | None = None) -> bool:
-    """
-    Management of rights on the routes
-    Different types of action:
-    - create project (only user status)
-    - modify user (only user status)
-    - modify project (user - project)
-    - modify project element (user - project)
-    Based on:
-    - status of the account
-    - relation to the project
-    """
-    try:
-        user = orchestrator.users.get_user(name=username)
-    except Exception as e:
-        raise HTTPException(404) from e
-
-    # general status
-    status = user.status
-
-    # TODO : check project auth
-
-    # possibility to create project
-    if action == "create project":
-        if status in ["root", "manager"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to create user
-    if action == "create user":
-        if status in ["root"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to kill a process directly
-    if action == "kill process":
-        if status in ["root"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to modify user
-    if action == "modify user":
-        if status in ["root"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # get all information
-    if action == "get all server information":
-        if status == "root":
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    if not project_slug:
-        raise HTTPException(500, "Project name missing")
-
-    auth = orchestrator.users.auth(username, project_slug)
-    # print(auth)
-
-    # possibility to modify project (create/delete)
-    if action == "modify project":
-        if (auth == "manager") or (status == "root"):
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to create elements of a project
-    if action == "modify project element":
-        if (auth == "manager") or (status == "root"):
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to add/update annotations : everyone
-    if action == "modify annotation":
-        if (auth == "manager") or (status == "root"):
-            return True
-        elif auth == "annotator":
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # get project information
-    if action == "get project information":
-        if (auth == "manager") or (status == "root"):
-            return True
-        elif auth == "annotator":
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    raise HTTPException(404, "No action found")
-
 
 #######
 # API #
@@ -179,7 +77,6 @@ logger = logging.getLogger("api")
 logger_simplemodel = logging.getLogger("simplemodel")
 
 # starting the server
-# orchestrator = Orchestrator()
 timer = time.time()
 
 
@@ -198,9 +95,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=orchestrator.path / "static"), name="static")
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="token"
-)  # defining the authentification object
+# add routers
+app.include_router(users.router)
 
 
 async def check_processes(timer: float, step: int = 1) -> None:
@@ -239,96 +135,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ------------
-# Dependencies
-# ------------
-
-
-async def get_project(project_slug: str) -> ProjectModel:
-    """
-    Dependency to get existing project
-    - if already loaded, return it
-    - if not loaded, load it first
-    """
-
-    # if project doesn't exist
-    if not orchestrator.exists(project_slug):
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # if the project is already loaded
-    if project_slug in orchestrator.projects:
-        return orchestrator.projects[project_slug]
-
-    # Manage a FIFO queue when there is too many projects
-    try:
-        if len(orchestrator.projects) >= orchestrator.max_projects:
-            old_element = sorted(
-                [
-                    [p, orchestrator.projects[p].starting_time]
-                    for p in orchestrator.projects
-                ],
-                key=lambda x: x[1],
-            )[0]
-            if (
-                old_element[1] < time.time() - 3600
-            ):  # check if the project has a least one hour old to avoid destroying current projects
-                del orchestrator.projects[old_element[0]]
-                print(f"Delete project {old_element[0]} to gain memory")
-            else:
-                print("Too many projects in the current memory")
-                raise HTTPException(
-                    status_code=500,
-                    detail="There is too many projects currently loaded in this server. Please wait",
-                )
-    except Exception as e:
-        print("PROBLEM IN THE FIFO QUEUE", e)
-
-    # load the project
-    orchestrator.start_project(project_slug)
-
-    # return loaded project
-    return orchestrator.projects[project_slug]
-
-
-async def verified_user(
-    request: Request, token: Annotated[str, Depends(oauth2_scheme)]
-) -> UserInDBModel:
-    """
-    Dependency to test if the user is authentified with its token
-    """
-    # decode token
-    try:
-        payload = orchestrator.decode_access_token(token)
-        username = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Problem with token")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Problem with token")
-    except Exception as e:
-        raise HTTPException(status_code=403) from e
-
-    # get user caracteristics
-    try:
-        user = orchestrator.users.get_user(name=username)
-        return user
-    except Exception as e:
-        raise HTTPException(status_code=404) from e
-
-
-async def check_auth_exists(
-    request: Request,
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    project_slug: str,
-) -> None:
-    """
-    Check if a user is associated to a project
-    """
-    # print("route", request.url.path, request.method)
-    auth = orchestrator.users.auth(current_user.username, project_slug)
-    if not auth or "error" in auth:
-        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
-    return None
 
 
 # ------
@@ -388,146 +194,6 @@ async def login_for_access_token(
     return TokenModel(
         access_token=access_token, token_type="bearer", status=user.status
     )
-
-
-@app.post("/users/disconnect", dependencies=[Depends(verified_user)])
-async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None:
-    """
-    Revoke user connexion
-    """
-    orchestrator.revoke_access_token(token)
-    return None
-
-
-@app.get("/users/me")
-async def read_users_me(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> UserModel:
-    """
-    Information on current user
-    """
-    return UserModel(username=current_user.username, status=current_user.status)
-
-
-@app.get("/users")
-async def existing_users(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> UsersServerModel:
-    """
-    Get existing users
-    """
-    users = orchestrator.users.existing_users()
-    return UsersServerModel(
-        users=users,
-        auth=["manager", "annotator"],
-    )
-
-
-@app.get("/users/recent")
-async def recent_users() -> list[str]:
-    """
-    Get recently connected users
-    """
-    users = orchestrator.db_manager.projects_service.get_current_users(300)
-    return users
-
-
-@app.post("/users/create", dependencies=[Depends(verified_user)])
-async def create_user(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    username_to_create: str = Query(),
-    password: str = Query(),
-    status: str = Query(),
-    mail: str = Query(),
-) -> None:
-    """
-    Create user
-    """
-    test_rights("create user", current_user.username)
-    try:
-        orchestrator.users.add_user(
-            username_to_create, password, status, current_user.username, mail
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500) from e
-    return None
-
-
-@app.post("/users/delete", dependencies=[Depends(verified_user)])
-async def delete_user(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)], user_to_delete: str
-) -> None:
-    """
-    Delete user
-    - root can delete all
-    - users can only delete account they created
-    """
-    # manage rights
-    test_rights("modify user", current_user.username)
-    try:
-        orchestrator.users.delete_user(user_to_delete, current_user.username)
-    except Exception as e:
-        raise HTTPException(status_code=500) from e
-    return None
-
-
-@app.post("/users/changepwd", dependencies=[Depends(verified_user)])
-async def change_password(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    pwdold: str = Query(),
-    pwd1: str = Query(),
-    pwd2: str = Query(),
-):
-    """
-    Change password for an account
-    """
-    orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
-    return None
-
-
-@app.post("/users/auth/{action}", dependencies=[Depends(verified_user)])
-async def set_auth(
-    action: AuthActions,
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    username: str = Query(),
-    project_slug: str = Query(),
-    status: str = Query(None),
-) -> None:
-    """
-    Modify user auth on a specific project
-    """
-    test_rights("modify project", current_user.username, project_slug)
-    if action == "add":
-        if not status:
-            raise HTTPException(status_code=400, detail="Missing status")
-        try:
-            orchestrator.users.set_auth(username, project_slug, status)
-        except Exception as e:
-            raise HTTPException(status_code=500) from e
-        orchestrator.log_action(
-            current_user.username, f"INFO add user {username}", "all"
-        )
-        return None
-
-    if action == "delete":
-        try:
-            orchestrator.users.delete_auth(username, project_slug)
-        except Exception as e:
-            raise HTTPException(status_code=500) from e
-        orchestrator.log_action(
-            current_user.username, f"INFO delete user {username}", "all"
-        )
-        return None
-
-    raise HTTPException(status_code=400, detail="Action not found")
-
-
-@app.get("/users/auth", dependencies=[Depends(verified_user)])
-async def get_auth(username: str) -> list:
-    """
-    Get all user auth
-    """
-    return orchestrator.users.get_auth(username, "all")
 
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
