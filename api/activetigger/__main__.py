@@ -37,5 +37,5 @@ path_models: ./models
             f.write(content)
 
     uvicorn.run(
-        "activetigger.api.client:app", host="0.0.0.0", port=args.portapi, reload=True
+        "activetigger.app.main:app", host="0.0.0.0", port=args.portapi, reload=True
     )

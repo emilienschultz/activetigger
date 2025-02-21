@@ -23,6 +23,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 import activetigger.functions as functions
 from activetigger.datamodels import (
+    BertModelParametersModel,
     BertParams,
     KnnParams,
     LassoParams,
@@ -485,9 +486,9 @@ class BertModels:
         df: DataFrame,
         col_text: str,
         col_label: str,
+        params: BertModelParametersModel,
         base_model: str = "almanach/camembert-base",
         test_size: float = 0.2,
-        params: dict | None = None,
     ) -> dict:
         """
         Manage the training of a model from the API

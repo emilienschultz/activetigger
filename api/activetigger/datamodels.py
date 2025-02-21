@@ -168,8 +168,8 @@ class SchemeModel(BaseModel):
 
     project_slug: str
     name: str
-    kind: str | None = "multiclass"
-    labels: list[str] | None = None
+    kind: str = "multiclass"
+    labels: list[str] = []
 
 
 class RegexModel(BaseModel):
@@ -533,7 +533,7 @@ class ProjectAuthsModel(BaseModel):
     Auth description for a project
     """
 
-    auth: dict[str, Any]
+    auth: dict[str, str]
 
 
 class WaitingModel(BaseModel):
@@ -586,7 +586,7 @@ class TableBatch(BaseModel):
 class CodebookModel(BaseModel):
     content: str
     scheme: str
-    time: str | None = None
+    time: str
 
 
 class GenerationResult(BaseModel):

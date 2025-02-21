@@ -228,7 +228,11 @@ class Schemes:
         )
 
     def add_scheme(
-        self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
+        self,
+        name: str,
+        labels: list[str],
+        kind: str = "multiclass",
+        user: str = "server",
     ):
         """
         Add new scheme
@@ -342,7 +346,7 @@ class Schemes:
         return r
 
     def delete_annotation(
-        self, element_id: str, scheme: str, dataset: str, user: str = "server"
+        self, element_id: str, scheme: str, dataset: str | None, user: str = "server"
     ) -> bool:
         """
         Delete a recorded tag
@@ -466,9 +470,13 @@ class Schemes:
         except DBException as e:
             raise Exception from e
 
-    def dichotomize(self, annotation: str, label: str):
+    def dichotomize(self, annotation: str | None, label: str | None) -> str:
         """
         check if the label is in the annotation
         current situation : separator |
         """
+        if annotation is None:
+            raise Exception("No annotation")
+        if label is None:
+            raise Exception("No label")
         return label if label in annotation.split("|") else "not-" + label

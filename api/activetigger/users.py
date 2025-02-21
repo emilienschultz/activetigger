@@ -6,7 +6,6 @@ import yaml
 
 from activetigger.datamodels import UserInDBModel
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.models import Users as UserEntity
 from activetigger.functions import compare_to_hash, get_hash
 
 
@@ -40,12 +39,12 @@ class Users:
             # rename the file
             os.rename("add_users.yaml", "add_users_processed.yaml")
 
-    def get_project_auth(self, project_slug: str) -> dict[UserEntity, str]:
+    def get_project_auth(self, project_slug: str) -> dict[str, str]:
         """
         Get user auth for a project
         """
-        auth = self.db_manager.projects_service.get_project_auth(project_slug)
-        return auth
+        print("function")
+        return self.db_manager.projects_service.get_project_auth(project_slug)
 
     def set_auth(self, username: str, project_slug: str, status: str) -> None:
         """
