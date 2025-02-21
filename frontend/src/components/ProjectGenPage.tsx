@@ -1,22 +1,22 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import DataGrid, { Column } from 'react-data-grid';
+import { IoIosAddCircle, IoMdRemoveCircle } from 'react-icons/io';
 import { useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
 import {
   createGenModel,
+  deleteGenModel,
+  getProjectGenModels,
   useGenerate,
   useGeneratedElements,
   useGetGenerationsFile,
-  getProjectGenModels,
   useStopGenerate,
-  deleteGenModel,
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { GenModel, SupportedAPI } from '../types';
-import { IoIosAddCircle, IoMdRemoveCircle } from 'react-icons/io';
 import { GenModelSetupForm } from './forms/GenModelSetupForm';
+import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
 // TODO
 // interrupt button using event

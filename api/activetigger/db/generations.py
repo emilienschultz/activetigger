@@ -56,6 +56,7 @@ class GenerationsService:
                 .order_by(Generations.time.desc())
                 .limit(n_elements)
             ).all()
+            print(generated)
             return [
                 [el.time, el.element_id, el.prompt, el.answer, el.model.name]
                 for el in generated

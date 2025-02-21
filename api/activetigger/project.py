@@ -927,6 +927,7 @@ class Project:
                         list[GenerationResult],
                         results,
                     )
+                    print("RESULTS", r)
                     for row in r:
                         self.generations.add(
                             user=row.user,
@@ -947,6 +948,7 @@ class Project:
                     logging.warning(
                         "Error in generation queue", getattr(ex, "message", repr(ex))
                     )
+                    print("Error in generation queue", getattr(ex, "message", repr(ex)))
                 finally:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)

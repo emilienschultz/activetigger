@@ -331,7 +331,7 @@ export function useDeleteScheme(projectSlug: string, schemeName: string | null) 
           path: { action: 'delete' },
           query: { project_slug: projectSlug },
         },
-        body: { project_slug: projectSlug, name: schemeName, kind: null, labels: null },
+        body: { project_slug: projectSlug, name: schemeName, kind: '', labels: [] },
       });
       if (!res.error) notify({ type: 'success', message: 'Scheme deleted' });
     }
@@ -1527,7 +1527,7 @@ export function useTestModel(
 export function useGetGenModels() {
   const { notify } = useNotifications();
   const models = useCallback(async () => {
-    const res = await api.GET('/elements/generate/models');
+    const res = await api.GET('/generate/models/available');
     if (res.error) {
       notify({ type: 'error', message: 'Could not fetch available models' });
       return [];
@@ -1539,8 +1539,10 @@ export function useGetGenModels() {
 export async function getProjectGenModels(
   project: string,
 ): Promise<Array<GenModel & { api: string }>> {
-  const res = await api.GET(`/elements/{project_slug}/generate/models`, {
-    params: { path: { project_slug: project } },
+  const res = await api.GET(`/generate/models`, {
+    params: {
+      query: { project_slug: project },
+    },
   });
   if (res.error) {
     console.error(res.error);
@@ -1558,8 +1560,8 @@ export async function createGenModel(
   project: string,
   model: Omit<GenModel & { api: SupportedAPI }, 'id'>,
 ): Promise<number> {
-  const res = await api.POST(`/elements/{project_slug}/generate/models`, {
-    params: { path: { project_slug: project } },
+  const res = await api.POST(`/generate/models`, {
+    params: { query: { project_slug: project } },
     body: model,
   });
   if (res.error) throw new Error(res.error.detail?.join() || 'Unable to create model');
@@ -1567,8 +1569,8 @@ export async function createGenModel(
 }
 
 export async function deleteGenModel(project: string, modelId: number) {
-  const res = await api.DELETE(`/elements/{project_slug}/generate/models/{model_id}`, {
-    params: { path: { project_slug: project, model_id: modelId } },
+  const res = await api.DELETE(`/generate/models/{model_id}`, {
+    params: { path: { model_id: modelId }, query: { project_slug: project } },
   });
   if (res.error) console.error(res.error);
 }
@@ -1588,7 +1590,7 @@ export function useGenerate(
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
     if (projectSlug && modelId && prompt && n_batch && currentScheme && mode) {
-      const res = await api.POST('/elements/generate/start', {
+      const res = await api.POST('/generate/start', {
         params: {
           query: {
             project_slug: projectSlug,
@@ -1619,7 +1621,7 @@ export function useStopGenerate(projectSlug: string | null) {
   const { notify } = useNotifications();
   const stopGenerate = useCallback(async () => {
     if (projectSlug) {
-      const res = await api.POST('/elements/generate/stop', {
+      const res = await api.POST('/generate/stop', {
         params: {
           query: {
             project_slug: projectSlug,
@@ -1645,7 +1647,7 @@ export function useGeneratedElements(
 ) {
   const getGeneratedElements = useAsyncMemo(async () => {
     if (n_elements && project_slug) {
-      const res = await api.GET('/elements/generate/elements', {
+      const res = await api.GET('/generate/elements', {
         params: {
           query: {
             project_slug: project_slug,
@@ -1653,6 +1655,8 @@ export function useGeneratedElements(
           },
         },
       });
+      console.log('generate');
+      console.log(res);
       if (!res.error && res.data && 'items' in res.data) {
         return res.data.items;
       }
