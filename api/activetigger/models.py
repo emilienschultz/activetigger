@@ -877,7 +877,7 @@ class SimpleModels:
                 }
         return r
 
-    def get(self, scheme: str, username: str) -> SimpleModelOutModel:
+    def get(self, scheme: str, username: str) -> SimpleModelOutModel | None:
         """
         Get a specific simplemodel
         """
@@ -893,7 +893,7 @@ class SimpleModels:
                     username=username,
                 )
 
-        raise ValueError("No model for this user/scheme")
+        return None
 
     def get_prediction(self, scheme: str, username: str) -> DataFrame:
         """
