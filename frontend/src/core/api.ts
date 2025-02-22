@@ -1247,7 +1247,7 @@ export function useGetModelUrl(projectSlug: string | null, model: string | null)
       });
 
       if (!res.error) {
-        return config.api.url + res.data;
+        return config.api.url + res.data.path;
       }
       return null;
     }

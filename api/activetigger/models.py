@@ -30,6 +30,7 @@ from activetigger.datamodels import (
     LiblinearParams,
     Multi_naivebayesParams,
     RandomforestParams,
+    StaticFileModel,
     UserModelComputing,
 )
 from activetigger.db.manager import DatabaseManager
@@ -772,20 +773,22 @@ class BertModels:
             df.to_excel(path)
 
         if not path.exists():
-            return {"error": "file does not exist"}
+            raise FileNotFoundError("file does not exist")
 
         r = {"name": file_name, "path": path}
         return r
 
-    def export_bert(self, name: str):
+    def export_bert(self, name: str) -> StaticFileModel:
         """
         Export bert archive if exists
         """
         file_name = f"{name}.tar.gz"
         if not (self.path / "../../static" / file_name).exists():
             raise FileNotFoundError("file does not exist")
-        r = {"name": file_name, "path": self.path / "../../static" / file_name}
-        return r
+        return StaticFileModel(
+            name=file_name,
+            path=str(self.path.joinpath("../../static").joinpath(file_name)),
+        )
 
     def add(self, element: UserModelComputing):
         """

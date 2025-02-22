@@ -17,6 +17,7 @@ from activetigger.datamodels import (
     GenerationResult,
     ProjectModel,
     SimpleModelModel,
+    StaticFileModel,
     TestSetDataModel,
     UserComputing,
     UserFeatureComputing,
@@ -718,7 +719,7 @@ class Project:
         # test or train
         if dataset == "test":
             if not self.params.test:
-                return {"error": "No test data"}
+                raise Exception("No test data available")
             data = self.schemes.get_scheme_data(
                 scheme=scheme, complete=True, kind="test"
             )
@@ -764,7 +765,7 @@ class Project:
         path_target = target_dir.joinpath("..").joinpath("static").joinpath(name)
         if not path_target.exists():
             shutil.copyfile(path_origin, path_target)
-        return {"name": name, "path": f"/static/{name}"}
+        return StaticFileModel(name=name, path=f"/static/{name}")
 
     def update_processes(self) -> None:
         """

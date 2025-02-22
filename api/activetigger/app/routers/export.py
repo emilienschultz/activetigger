@@ -16,9 +16,7 @@ from activetigger.app.dependencies import (
     test_rights,
     verified_user,
 )
-from activetigger.datamodels import (
-    UserInDBModel,
-)
+from activetigger.datamodels import StaticFileModel, UserInDBModel
 from activetigger.project import Project
 
 router = APIRouter(tags=["export"])
@@ -34,10 +32,11 @@ async def export_data(
     """
     Export labelled data
     """
-    r = project.export_data(format=format, scheme=scheme, dataset=dataset)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return FileResponse(r["path"], filename=r["name"])
+    try:
+        r = project.export_data(format=format, scheme=scheme, dataset=dataset)
+        return FileResponse(r["path"], filename=r["name"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/export/features", dependencies=[Depends(verified_user)])
@@ -84,12 +83,13 @@ async def export_prediction(
     """
     Export annotations
     """
-    r = project.bertmodels.export_prediction(
-        name=name, file_name="predict_all.parquet", format=format
-    )
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return FileResponse(r["path"], filename=r["name"])
+    try:
+        r = project.bertmodels.export_prediction(
+            name=name, file_name="predict_all.parquet", format=format
+        )
+        return FileResponse(r["path"], filename=r["name"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/export/bert", dependencies=[Depends(verified_user)])
@@ -97,14 +97,13 @@ async def export_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(),
-) -> str:
+) -> StaticFileModel:
     """
     Export fine-tuned BERT model
     """
     test_rights("modify project", current_user.username, project.name)
     try:
-        r = project.bertmodels.export_bert(name=name)
-        return "/static/" + r["name"]
+        return project.bertmodels.export_bert(name=name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -113,7 +112,7 @@ async def export_bert(
 async def export_raw(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> dict:
+) -> StaticFileModel:
     """
     Export raw data of the project
     """
@@ -133,26 +132,26 @@ async def export_generations(
     """
     Export annotations
     """
-    table = project.generations.get_generated(
-        project_slug=project.name,
-        username=current_user.username,
-        n_elements=number,
-    )
+    try:
+        table = project.generations.get_generated(
+            project_slug=project.name,
+            username=current_user.username,
+            n_elements=number,
+        )
 
-    if "error" in table:
-        raise HTTPException(status_code=500, detail=table["error"])
+        # join the text
+        table = table.join(project.content["text"], on="index")
 
-    # join the text
-    table = table.join(project.content["text"], on="index")
+        # convert to payload
+        output = StringIO()
+        pd.DataFrame(table).to_csv(output, index=False)
+        csv_data = output.getvalue()
+        output.close()
+        headers = {
+            "Content-Disposition": 'attachment; filename="data.csv"',
+            "Content-Type": "text/csv",
+        }
 
-    # convert to payload
-    output = StringIO()
-    pd.DataFrame(table).to_csv(output, index=False)
-    csv_data = output.getvalue()
-    output.close()
-    headers = {
-        "Content-Disposition": 'attachment; filename="data.csv"',
-        "Content-Type": "text/csv",
-    }
-
-    return Response(content=csv_data, media_type="text/csv", headers=headers)
+        return Response(content=csv_data, media_type="text/csv", headers=headers)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

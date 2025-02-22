@@ -606,3 +606,8 @@ class ServerStateModel(BaseModel):
     cpu: dict
     memory: dict
     disk: dict
+
+
+class StaticFileModel(BaseModel):
+    name: str
+    path: str
