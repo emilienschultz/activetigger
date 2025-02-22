@@ -307,6 +307,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/auth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project Auth
+         * @description Users auth on a project
+         */
+        get: operations["get_project_auth_projects_auth_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/elements/next": {
         parameters: {
             query?: never;
@@ -1201,26 +1221,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/queue/num": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Nb Queue
-         * @description Get the number of element active in the server queue
-         */
-        get: operations["get_nb_queue_queue_num_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/kill": {
         parameters: {
             query?: never;
@@ -1235,26 +1235,6 @@ export interface paths {
          * @description Stop current generation
          */
         post: operations["kill_process_kill_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/project": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Project Auth
-         * @description Users auth on a project
-         */
-        get: operations["get_project_auth_auth_project_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1860,6 +1840,31 @@ export interface components {
              */
             labels: string[];
         };
+        /** ServerStateModel */
+        ServerStateModel: {
+            /** Version */
+            version: string;
+            /** Queue */
+            queue: {
+                [key: string]: {
+                    [key: string]: string | undefined;
+                } | undefined;
+            };
+            /** Active Projects */
+            active_projects: {
+                [key: string]: {
+                    [key: string]: string | undefined;
+                } | undefined;
+            };
+            /** Gpu */
+            gpu: Record<string, never>;
+            /** Cpu */
+            cpu: Record<string, never>;
+            /** Memory */
+            memory: Record<string, never>;
+            /** Disk */
+            disk: Record<string, never>;
+        };
         /**
          * SimpleModelModel
          * @description Request Simplemodel
@@ -2461,6 +2466,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_auth_projects_auth_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAuthsModel"];
                 };
             };
             /** @description Validation Error */
@@ -3971,27 +4007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    get_nb_queue_queue_num_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number;
+                    "application/json": components["schemas"]["ServerStateModel"];
                 };
             };
         };
@@ -4014,37 +4030,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_project_auth_auth_project_get: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectAuthsModel"];
                 };
             };
             /** @description Validation Error */

@@ -765,7 +765,7 @@ export function useUsersAuth(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getProjectUsers = useAsyncMemo(async () => {
     if (projectSlug) {
-      const res = await api.GET('/auth/project', {
+      const res = await api.GET('/projects/auth', {
         params: { query: { project_slug: projectSlug } },
       });
       console.log(res);

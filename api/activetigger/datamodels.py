@@ -596,3 +596,13 @@ class GenerationResult(BaseModel):
     element_id: str
     prompt: str
     answer: str
+
+
+class ServerStateModel(BaseModel):
+    version: str
+    queue: dict[str, dict[str, str]]
+    active_projects: dict[Any, list[dict[str, Any]]]
+    gpu: dict
+    cpu: dict
+    memory: dict
+    disk: dict

@@ -35,8 +35,7 @@ from activetigger.app.routers import (
     users,
 )
 from activetigger.datamodels import (
-    DocumentationModel,
-    ProjectAuthsModel,
+    ServerStateModel,
     TableOutModel,
     TokenModel,
     UserInDBModel,
@@ -48,7 +47,7 @@ from activetigger.orchestrator import orchestrator
 logger = logging.getLogger("api")
 logger_simplemodel = logging.getLogger("simplemodel")
 
-# starting the server
+# starting time for the app
 timer = time.time()
 
 
@@ -65,6 +64,8 @@ async def lifespan(app: FastAPI):
 
 # starting the app
 app = FastAPI(lifespan=lifespan)
+
+# add static folder
 app.mount("/static", StaticFiles(directory=orchestrator.path / "static"), name="static")
 
 # add routers
@@ -108,7 +109,6 @@ async def middleware(
 # allow multiple servers (avoir CORS error)
 app.add_middleware(
     CORSMiddleware,
-    # TODO: move origins in config
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -121,6 +121,14 @@ app.add_middleware(
 # --------------
 
 
+@app.get("/version")
+async def get_version() -> str:
+    """
+    Get the version of the server
+    """
+    return __version__
+
+
 @app.get("/", response_class=HTMLResponse)
 async def welcome() -> str:
     """
@@ -130,21 +138,6 @@ async def welcome() -> str:
     with open(str(data_path.joinpath("html", "welcome.html")), "r") as f:
         r = f.read()
     return r
-
-
-@app.get("/documentation")
-async def get_documentation() -> DocumentationModel:
-    """
-    Path for documentation
-    Comments:
-        For the moment, a dictionnary
-    """
-    return DocumentationModel(
-        credits=["Julien Boelaert", "Étienne Ollion", "Émilien Schultz"],
-        contact="emilien.schultz@ensae.fr",
-        page="https://github.com/emilienschultz/pyactivetigger",
-        documentation="To write ....",
-    )
 
 
 @app.post("/token")
@@ -191,16 +184,8 @@ async def get_logs(
     )
 
 
-@app.get("/version")
-async def get_version() -> str:
-    """
-    Get the version of the server
-    """
-    return __version__
-
-
 @app.get("/server")
-async def get_queue() -> dict:
+async def get_queue() -> ServerStateModel:
     """
     Get the state of the server
     - queue
@@ -208,6 +193,7 @@ async def get_queue() -> dict:
     TODO : maybe add a buffer ?
     """
 
+    # active projects
     active_projects = {}
     for p in orchestrator.projects:
         active_projects[p] = [
@@ -220,41 +206,33 @@ async def get_queue() -> dict:
             for c in orchestrator.projects[p].computing
         ]
 
-    # only running processes for the moment
+    # running processes
     q = orchestrator.queue.state()
     queue = {i: q[i] for i in q if q[i]["state"] == "running"}
 
+    # server state
     gpu = get_gpu_memory_info()
     cpu = psutil.cpu_percent()
     cpu_count = psutil.cpu_count()
     memory_info = psutil.virtual_memory()
     disk_info = psutil.disk_usage("/")
 
-    r = {
-        "version": __version__,
-        "queue": queue,
-        "active_projects": active_projects,
-        "gpu": gpu,
-        "cpu": {"proportion": cpu, "total": cpu_count},
-        "memory": {
+    return ServerStateModel(
+        version=__version__,
+        active_projects=active_projects,
+        queue=queue,
+        gpu=gpu,
+        cpu={"proportion": cpu, "total": cpu_count},
+        memory={
             "proportion": memory_info.percent,
             "total": memory_info.total / (1024**3),
             "available": memory_info.available / (1024**3),
         },
-        "disk": {
+        disk={
             "proportion": disk_info.percent,
             "total": disk_info.total / (1024**3),
         },
-    }
-    return r
-
-
-@app.get("/queue/num")
-async def get_nb_queue() -> int:
-    """
-    Get the number of element active in the server queue
-    """
-    return orchestrator.queue.get_nb_active_processes()
+    )
 
 
 @app.post("/kill", dependencies=[Depends(verified_user)])
@@ -271,17 +249,3 @@ async def kill_process(
         raise HTTPException(status_code=500, detail=r["error"])
     orchestrator.log_action(current_user.username, f"kill process {unique_id}", "all")
     return None
-
-
-@app.get("/auth/project", dependencies=[Depends(verified_user)])
-async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
-    """
-    Users auth on a project
-    """
-    if not orchestrator.exists(project_slug):
-        raise HTTPException(status_code=404, detail="Project doesn't exist")
-    try:
-        r = orchestrator.users.get_project_auth(project_slug)
-        return ProjectAuthsModel(auth=r)
-    except Exception as e:
-        raise HTTPException(status_code=500) from e

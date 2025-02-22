@@ -14,6 +14,7 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     AvailableProjectsModel,
+    ProjectAuthsModel,
     ProjectDataModel,
     ProjectDescriptionModel,
     ProjectStateModel,
@@ -141,3 +142,17 @@ async def delete_project(
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/projects/auth", dependencies=[Depends(verified_user)])
+async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
+    """
+    Users auth on a project
+    """
+    if not orchestrator.exists(project_slug):
+        raise HTTPException(status_code=404, detail="Project doesn't exist")
+    try:
+        r = orchestrator.users.get_project_auth(project_slug)
+        return ProjectAuthsModel(auth=r)
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
