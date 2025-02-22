@@ -337,7 +337,7 @@ class Project:
         """
 
         if scheme not in self.schemes.available():
-            return {"error": "Scheme doesn't exist"}
+            raise ValueError("Scheme doesn't exist")
 
         # size of the subsample
 
@@ -346,7 +346,7 @@ class Project:
             df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
             f = df["labels"].isnull()
             if len(df[f]) == 0:
-                return {"error": "No element to annotate"}
+                raise ValueError("No element available with this selection mode.")
             element_id = df[f].sample(random_state=42).index[0]
             element = {
                 "element_id": str(element_id),
@@ -410,18 +410,18 @@ class Project:
                     )
                     f = f & f_frame
                 else:
-                    return {"error": "Data projection doesn't exist for this user"}
+                    raise ValueError("No projection data available")
             else:
-                return {"error": "Projection model doesn't exist for this user"}
+                raise ValueError("No projection available")
 
         # test if there is at least one element available
         if sum(f) == 0:
-            return {"error": "No element available with this selection mode."}
+            raise ValueError("No element available with this selection mode.")
 
         # Take into account the session history
         ss = df[f].drop(history, errors="ignore")
         if len(ss) == 0:
-            return {"error": "No element available with this selection mode."}
+            raise ValueError("No element available with this selection mode.")
         indicator = None
         n_sample = f.sum()  # use len(ss) for adding history
 
@@ -453,7 +453,7 @@ class Project:
         # higher entropy, only possible if the model has been trained
         if selection == "active":
             if not self.simplemodels.exists(user, scheme):
-                return {"error": "Simplemodel doesn't exist"}
+                raise ValueError("Simplemodel doesn't exist")
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
@@ -514,7 +514,7 @@ class Project:
         """
         if dataset == "test":
             if element_id not in self.schemes.test.index:
-                return {"error": "Element does not exist."}
+                raise Exception("Element does not exist.")
             data = {
                 "element_id": element_id,
                 "text": self.schemes.test.loc[element_id, "text"],
@@ -529,7 +529,7 @@ class Project:
             return data
         if dataset == "train":
             if element_id not in self.content.index:
-                return {"error": "Element does not exist."}
+                raise Exception("Element does not exist.")
 
             # get prediction if it exists
             predict = {"label": None, "proba": None}
@@ -564,7 +564,7 @@ class Project:
             }
 
             return data
-        return {"error": "wrong set"}
+        raise Exception("Dataset does not exist.")
 
     def get_params(self) -> ProjectModel:
         """

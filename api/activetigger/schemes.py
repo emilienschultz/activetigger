@@ -99,7 +99,7 @@ class Schemes:
         TODO : add the filter on action
         """
         if scheme not in self.available():
-            return {"error": "Scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
 
         results = self.projects_service.get_table_annotations_users(
             self.project_slug, scheme

@@ -31,6 +31,7 @@ from activetigger.project import Project
 
 logger = logging.getLogger(__name__)
 
+# declare router
 router = APIRouter()
 
 
@@ -43,20 +44,21 @@ async def get_next(
     """
     Get next element
     """
-    r = project.get_next(
-        scheme=next.scheme,
-        selection=next.selection,
-        sample=next.sample,
-        user=current_user.username,
-        label=next.label,
-        history=next.history,
-        frame=next.frame,
-        filter=next.filter,
-    )
+    try:
+        r = project.get_next(
+            scheme=next.scheme,
+            selection=next.selection,
+            sample=next.sample,
+            user=current_user.username,
+            label=next.label,
+            history=next.history,
+            frame=next.frame,
+            filter=next.filter,
+        )
+        return ElementOutModel(**r)
 
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return ElementOutModel(**r)
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.get("/elements/projection", dependencies=[Depends(verified_user)])
@@ -202,11 +204,9 @@ async def get_reconciliation_table(
     """
     try:
         df, users = project.schemes.get_reconciliation_table(scheme)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Problem with the reconciliation")
-    if "error" in df:
-        raise HTTPException(status_code=500, detail=df["error"])
-    return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
+        return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
@@ -262,12 +262,13 @@ async def get_element(
     """
     Get specific element
     """
-    r = project.get_element(
-        element_id, scheme=scheme, user=current_user.username, dataset=dataset
-    )
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return ElementOutModel(**r)
+    try:
+        r = project.get_element(
+            element_id, scheme=scheme, user=current_user.username, dataset=dataset
+        )
+        return ElementOutModel(**r)
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.post("/annotation/{action}", dependencies=[Depends(verified_user)])
