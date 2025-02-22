@@ -10,7 +10,6 @@ from typing import cast
 import pandas as pd
 import pytz
 from pandas import DataFrame
-from pydantic import ValidationError
 from slugify import slugify
 
 from activetigger.datamodels import (
@@ -249,27 +248,24 @@ class Project:
         n_min: minimal number of elements annotated
         """
         if simplemodel.features is None or len(simplemodel.features) == 0:
-            return {"error": "No feature selected"}
+            raise Exception("No features selected")
         if simplemodel.model not in list(self.simplemodels.available_models.keys()):
-            return {"error": "Model doesn't exist"}
+            raise Exception("Model not available")
         if simplemodel.scheme not in self.schemes.available():
-            return {"error": "Scheme doesn't exist"}
+            raise Exception("Scheme not available")
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
-            return {"error": "2 different labels needed"}
+            raise Exception("Scheme not available")
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
         if simplemodel.model == "multi_naivebayes":
             if "dfm" not in self.features.map:
-                return {"error": "dfm feature not available for multi_naivebayes"}
+                raise Exception("No dfm feature available")
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
 
         # test if the parameters have the correct format
-        try:
-            validation = self.simplemodels.validation[simplemodel.model]
-            params = validation(**simplemodel.params).dict()
-        except ValidationError as e:
-            return {"error": e.json()}
+        validation = self.simplemodels.validation[simplemodel.model]
+        params = validation(**simplemodel.params).dict()
 
         # add information on the target of the model
         if simplemodel.dichotomize is not None:
@@ -289,9 +285,7 @@ class Project:
         counts = df_scheme["labels"].value_counts()
         valid_categories = counts[counts >= 3]
         if len(valid_categories) < 2:
-            return {
-                "error": "there are less than 2 categories with 3 annotated elements"
-            }
+            raise Exception("Not enough annotated elements")
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -580,11 +574,11 @@ class Project:
             JSON
         """
         if scheme is None:
-            return {"error": "Scheme not defined"}
+            raise Exception("Scheme is required")
 
         schemes = self.schemes.available()
         if scheme not in schemes:
-            return {"error": "Scheme does not exist"}
+            raise Exception("Scheme not available")
         kind = schemes[scheme]["kind"]
 
         # part train

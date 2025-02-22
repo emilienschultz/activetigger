@@ -600,9 +600,9 @@ class GenerationResult(BaseModel):
 
 class ServerStateModel(BaseModel):
     version: str
-    queue: dict[str, dict[str, str]]
+    queue: dict[str, dict[str, str | None]]
     active_projects: dict[Any, list[dict[str, Any]]]
-    gpu: dict
+    gpu: dict[str, Any]
     cpu: dict
     memory: dict
     disk: dict
@@ -611,3 +611,12 @@ class ServerStateModel(BaseModel):
 class StaticFileModel(BaseModel):
     name: str
     path: str
+
+
+class FeatureDescriptionModel(BaseModel):
+    name: str
+    parameters: dict[str, Any]
+    user: str
+    time: str
+    kind: str
+    data: str

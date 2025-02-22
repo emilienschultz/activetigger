@@ -30,6 +30,7 @@ from activetigger.datamodels import (
     LiblinearParams,
     Multi_naivebayesParams,
     RandomforestParams,
+    SimpleModelOutModel,
     StaticFileModel,
     UserModelComputing,
 )
@@ -157,6 +158,7 @@ class BertModel:
             - only training information
             - train scores
             - test scores
+        TODO : build a datatype
         """
         flag_modification = False
         if (self.path.joinpath("statistics.json")).exists():
@@ -453,13 +455,12 @@ class BertModels:
         """
         r = self.projects_service.delete_model(self.project_slug, bert_name)
         if not r:
-            return {"error": "Problem in model deletion in database"}
+            raise FileNotFoundError("Model does not exist")
         try:
             shutil.rmtree(self.path / bert_name)
             os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
         except Exception as e:
-            print(e)
-            return {"error": "Problem in model deletion"}
+            raise Exception(f"Problem to delete model : {e}")
         return {"success": "Bert model deleted"}
 
     def current_user_processes(self, user: str) -> UserModelComputing:
@@ -672,12 +673,12 @@ class BertModels:
         Start predicting process
         """
         if len(self.current_user_processes(user)) > 0:
-            return {
-                "error": "User already has a process launched, please wait before launching another one"
-            }
+            raise Exception(
+                "User already has a process launched, please wait before launching another one"
+            )
 
         if not (self.path.joinpath(name)).exists():
-            return {"error": "The model does not exist"}
+            raise Exception("The model does not exist")
 
         # load the model
         b = BertModel(name, self.path / name)
@@ -727,12 +728,10 @@ class BertModels:
         # get model
         model = self.projects_service.get_model(self.project_slug, former_name)
         if model is None:
-            return {"error": "model does not exist"}
+            raise Exception("Model does not exist")
         if (Path(model.path) / "status.log").exists():
-            return {"error": "model not trained completly"}
-        r = self.projects_service.rename_model(self.project_slug, former_name, new_name)
-        if "error" in r:
-            return r
+            raise Exception("Model is currently computing")
+        self.projects_service.rename_model(self.project_slug, former_name, new_name)
         os.rename(model.path, model.path.replace(former_name, new_name))
         return {"success": "model renamed"}
 
@@ -878,24 +877,23 @@ class SimpleModels:
                 }
         return r
 
-    def get(self, scheme: str, username: str):
+    def get(self, scheme: str, username: str) -> SimpleModelOutModel:
         """
         Get a specific simplemodel
         """
         if username in self.existing:
             if scheme in self.existing[username]:
                 sm = self.existing[username][scheme]
-                return {
-                    "success": {
-                        "model": sm.name,
-                        "params": sm.model_params,
-                        "features": sm.features,
-                        "statistics": sm.statistics,
-                        "scheme": scheme,
-                        "username": username,
-                    }
-                }
-        return {"error": "No model for this user and scheme"}
+                return SimpleModelOutModel(
+                    model=sm.name,
+                    params=sm.model_params,
+                    features=sm.features,
+                    statistics=sm.statistics,
+                    scheme=scheme,
+                    username=username,
+                )
+
+        raise ValueError("No model for this user/scheme")
 
     def get_prediction(self, scheme: str, username: str) -> DataFrame:
         """

@@ -54,10 +54,11 @@ async def get_project_statistics(
     """
     Statistics for a scheme and a user
     """
-    r = project.get_statistics(scheme=scheme, user=current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    return ProjectDescriptionModel(**r)
+    try:
+        r = project.get_statistics(scheme=scheme, user=current_user.username)
+        return ProjectDescriptionModel(**r)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/projects")

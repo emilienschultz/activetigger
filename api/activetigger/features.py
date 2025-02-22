@@ -9,7 +9,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 from pandas import DataFrame, Series
 
-from activetigger.datamodels import UserFeatureComputing
+from activetigger.datamodels import FeatureDescriptionModel, UserFeatureComputing
 from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
 from activetigger.tasks.compute_dfm import ComputeDfm
@@ -166,10 +166,10 @@ class Features:
         Delete feature
         """
         if name not in self.map:
-            return {"error": "feature doesn't exist in mapping"}
+            raise Exception("Feature doesn't exist")
 
         if self.projects_service.get_feature(self.project_slug, name) is None:
-            return {"error": "feature doesn't exist in database"}
+            raise Exception("Feature doesn't exist in database")
 
         col = self.get([name])
         # read data, delete columns and save
@@ -184,8 +184,6 @@ class Features:
 
         # refresh the map
         self.map = self.get_map()[0]
-
-        return {"success": "feature deleted"}
 
     def get(self, features: list | str = "all"):
         """
@@ -226,15 +224,14 @@ class Features:
             "columns": json.loads(feature.data),
         }
 
-    def get_available(self):
+    def get_available(self) -> dict[str, FeatureDescriptionModel]:
         """
         Informations on features + update
         Comments:
             Maybe not the best solution
             Database ? How to avoid a loop ...
         """
-        features = self.projects_service.get_project_features(self.project_slug)
-        return features
+        return self.projects_service.get_project_features(self.project_slug)
 
     def get_column_raw(self, column_name: str, index: str = "train") -> dict:
         """

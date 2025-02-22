@@ -238,7 +238,7 @@ class Schemes:
         Add new scheme
         """
         if self.exists(name):
-            return {"error": "scheme name already exists"}
+            raise Exception("Scheme already exists")
 
         self.projects_service.add_scheme(self.project_slug, name, labels, kind, user)
 
@@ -250,13 +250,13 @@ class Schemes:
         """
         available = self.available()
         if (label is None) or (label == ""):
-            return {"error": "the name is void"}
+            raise Exception("Label cannot be empty")
         if scheme not in available:
-            return {"error": "scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
         if available[scheme] is None:
             available[scheme] = []
         if label in available[scheme]:
-            return {"error": "label already exist"}
+            raise Exception("Label already exists")
         labels = available[scheme]["labels"]
         labels.append(label)
         self.update_scheme(scheme, labels)
@@ -278,12 +278,10 @@ class Schemes:
         Delete a label in a scheme
         """
         available = self.available()
-        print("available", available, available[scheme]["labels"])
-        print("label", label)
         if scheme not in available:
-            return {"error": "scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
         if label not in available[scheme]["labels"]:
-            return {"error": "label does not exist"}
+            raise Exception("Label doesn't exist")
         labels = available[scheme]["labels"]
         labels.remove(label)
         # push empty entry for tagged elements

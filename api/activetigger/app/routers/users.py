@@ -24,8 +24,11 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
     """
     Revoke user connexion
     """
-    orchestrator.revoke_access_token(token)
-    return None
+    try:
+        orchestrator.revoke_access_token(token)
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.get("/users/me", tags=["users"])
@@ -35,7 +38,10 @@ async def read_users_me(
     """
     Information on current user
     """
-    return UserModel(username=current_user.username, status=current_user.status)
+    try:
+        return UserModel(username=current_user.username, status=current_user.status)
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.get("/users", tags=["users"])
@@ -45,11 +51,14 @@ async def existing_users(
     """
     Get existing users
     """
-    users = orchestrator.users.existing_users()
-    return UsersServerModel(
-        users=users,
-        auth=["manager", "annotator"],
-    )
+    try:
+        users = orchestrator.users.existing_users()
+        return UsersServerModel(
+            users=users,
+            auth=["manager", "annotator"],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.get("/users/recent", tags=["users"])
@@ -57,8 +66,7 @@ async def recent_users() -> list[str]:
     """
     Get recently connected users
     """
-    users = orchestrator.db_manager.projects_service.get_current_users(300)
-    return users
+    return orchestrator.db_manager.projects_service.get_current_users(300)
 
 
 @router.post("/users/create", dependencies=[Depends(verified_user)], tags=["users"])
@@ -91,7 +99,6 @@ async def delete_user(
     - root can delete all
     - users can only delete account they created
     """
-    # manage rights
     test_rights("modify user", current_user.username)
     try:
         orchestrator.users.delete_user(user_to_delete, current_user.username)
@@ -110,8 +117,11 @@ async def change_password(
     """
     Change password for an account
     """
-    orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
-    return None
+    try:
+        orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.post(
@@ -133,21 +143,23 @@ async def set_auth(
             raise HTTPException(status_code=400, detail="Missing status")
         try:
             orchestrator.users.set_auth(username, project_slug, status)
+            orchestrator.log_action(
+                current_user.username, f"INFO add user {username}", "all"
+            )
         except Exception as e:
             raise HTTPException(status_code=500) from e
-        orchestrator.log_action(
-            current_user.username, f"INFO add user {username}", "all"
-        )
+
         return None
 
     if action == "delete":
         try:
             orchestrator.users.delete_auth(username, project_slug)
+            orchestrator.log_action(
+                current_user.username, f"INFO delete user {username}", "all"
+            )
         except Exception as e:
             raise HTTPException(status_code=500) from e
-        orchestrator.log_action(
-            current_user.username, f"INFO delete user {username}", "all"
-        )
+
         return None
 
     raise HTTPException(status_code=400, detail="Action not found")
@@ -158,4 +170,7 @@ async def get_auth(username: str) -> list:
     """
     Get all user auth
     """
-    return orchestrator.users.get_auth(username, "all")
+    try:
+        return orchestrator.users.get_auth(username, "all")
+    except Exception as e:
+        raise HTTPException(status_code=500) from e

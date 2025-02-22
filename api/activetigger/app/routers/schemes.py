@@ -39,34 +39,29 @@ async def rename_label(
     """
     test_rights("modify project element", current_user.username, project.name)
 
-    # test if the new label exist, either create it
-    exists = project.schemes.exists_label(scheme, new_label)
-    if not exists:
-        r = project.schemes.add_label(new_label, scheme, current_user.username)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
+    try:
+        # test if the new label exist, either create it
+        exists = project.schemes.exists_label(scheme, new_label)
+        if not exists:
+            project.schemes.add_label(new_label, scheme, current_user.username)
 
-    # convert the tags from the previous label
-    r = project.schemes.convert_annotations(
-        former_label, new_label, scheme, current_user.username
-    )
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+        # convert the tags from the previous label
+        project.schemes.convert_annotations(
+            former_label, new_label, scheme, current_user.username
+        )
 
-    # delete previous label in the scheme
-    r = project.schemes.delete_label(former_label, scheme, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
+        # delete previous label in the scheme
+        project.schemes.delete_label(former_label, scheme, current_user.username)
 
-    print("old label deleted")
-
-    # log
-    orchestrator.log_action(
-        current_user.username,
-        f"RENAME LABEL in {scheme}: label {former_label} to {new_label}",
-        project.name,
-    )
-    return None
+        # log
+        orchestrator.log_action(
+            current_user.username,
+            f"RENAME LABEL in {scheme}: label {former_label} to {new_label}",
+            project.name,
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/schemes/label/{action}", dependencies=[Depends(verified_user)])
@@ -83,24 +78,29 @@ async def add_label(
     test_rights("modify project element", current_user.username, project.name)
 
     if action == "add":
-        r = project.schemes.add_label(label, scheme, current_user.username)
-        if "error" in r:
-            raise HTTPException(status_code=400, detail=r["error"])
-        orchestrator.log_action(
-            current_user.username, f"ADD LABEL in {scheme}: label {label}", project.name
-        )
-        return None
+        try:
+            project.schemes.add_label(label, scheme, current_user.username)
+
+            orchestrator.log_action(
+                current_user.username,
+                f"ADD LABEL in {scheme}: label {label}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     if action == "delete":
-        r = project.schemes.delete_label(label, scheme, current_user.username)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-        orchestrator.log_action(
-            current_user.username,
-            f"DELETE LABEL in {scheme}: label {label}",
-            project.name,
-        )
-        return None
+        try:
+            project.schemes.delete_label(label, scheme, current_user.username)
+            orchestrator.log_action(
+                current_user.username,
+                f"DELETE LABEL in {scheme}: label {label}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     raise HTTPException(status_code=500, detail="Wrong action")
 
@@ -161,32 +161,37 @@ async def post_schemes(
     test_rights("modify project element", current_user.username, project.name)
 
     if action == "add":
-        r = project.schemes.add_scheme(
-            scheme.name, scheme.labels, scheme.kind, current_user.username
-        )
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-        orchestrator.log_action(
-            current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name
-        )
-        return None
+        try:
+            project.schemes.add_scheme(
+                scheme.name, scheme.labels, scheme.kind, current_user.username
+            )
+            orchestrator.log_action(
+                current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name
+            )
+            return None
+        except Exception:
+            raise HTTPException(status_code=500, detail=str)
     if action == "delete":
         try:
-            r = project.schemes.delete_scheme(scheme.name)
+            project.schemes.delete_scheme(scheme.name)
             orchestrator.log_action(
                 current_user.username,
                 f"DELETE SCHEME: scheme {scheme.name}",
                 project.name,
             )
+            return None
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-        return None
+
     if action == "update":
-        r = project.schemes.update_scheme(scheme.name, scheme.labels)
-        if "error" in r:
-            raise HTTPException(status_code=500, detail=r["error"])
-        orchestrator.log_action(
-            current_user.username, f"UPDATE SCHEME: scheme {scheme.name}", project.name
-        )
-        return None
+        try:
+            project.schemes.update_scheme(scheme.name, scheme.labels)
+            orchestrator.log_action(
+                current_user.username,
+                f"UPDATE SCHEME: scheme {scheme.name}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
     raise HTTPException(status_code=400, detail="Wrong route")

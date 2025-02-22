@@ -7,6 +7,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
+from activetigger.datamodels import FeatureDescriptionModel
 from activetigger.db import DBException
 from activetigger.db.models import (
     Annotations,
@@ -519,19 +520,20 @@ class ProjectsService:
         session.close()
         return feature
 
-    def get_project_features(self, project: str):
+    def get_project_features(self, project: str) -> dict[str, FeatureDescriptionModel]:
         with self.Session() as session:
             features = session.scalars(
                 select(Features).filter_by(project_id=project)
             ).all()
             return {
-                i.name: {
-                    "time": i.time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "kind": i.kind,
-                    "parameters": i.parameters,
-                    "user": i.user_id,
-                    "data": i.data,
-                }
+                i.name: FeatureDescriptionModel(
+                    time=i.time.strftime("%Y-%m-%d %H:%M:%S"),
+                    kind=i.kind,
+                    parameters=i.parameters,
+                    user=str(i.user_id),  # check
+                    data=i.data,
+                    name=i.name,
+                )
                 for i in features
             }
 

@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
@@ -13,6 +13,7 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.datamodels import (
+    FeatureDescriptionModel,
     FeatureModel,
     UserInDBModel,
     WaitingModel,
@@ -74,24 +75,24 @@ async def delete_feature(
     Delete a specific feature
     """
     test_rights("modify project", current_user.username, project.name)
-    r = project.features.delete(name)
-    if "error" in r:
-        raise HTTPException(status_code=400, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, f"INFO delete feature {name}", project.name
-    )
-    return None
+    try:
+        project.features.delete(name)
+        orchestrator.log_action(
+            current_user.username, f"INFO delete feature {name}", project.name
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/features/available", dependencies=[Depends(verified_user)])
 async def get_feature_info(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> dict[str, Any]:
+) -> dict[str, FeatureDescriptionModel]:
     """
     Get feature info
     """
-    r = project.features.get_available()
-    if "error" in r:
-        raise HTTPException(status_code=400, detail=r["error"])
-    return r
+    try:
+        return project.features.get_available()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

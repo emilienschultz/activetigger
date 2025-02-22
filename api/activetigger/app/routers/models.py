@@ -33,13 +33,13 @@ async def post_simplemodel(
     """
     Compute simplemodel
     """
-    r = project.update_simplemodel(simplemodel, current_user.username)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, "INFO compute simplemodel", project.name
-    )
-    return None
+    try:
+        project.update_simplemodel(simplemodel, current_user.username)
+        orchestrator.log_action(
+            current_user.username, "INFO compute simplemodel", project.name
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/models/simplemodel", dependencies=[Depends(verified_user)])
@@ -51,10 +51,10 @@ async def get_simplemodel(
     """
     Get available simplemodel for the project/user/scheme if any
     """
-    r = project.simplemodels.get(scheme, current_user.username)
-    if "error" in r:  # case where there is no model
-        return None
-    return SimpleModelOutModel(**r["success"])
+    try:
+        return project.simplemodels.get(scheme, current_user.username)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/models/bert", dependencies=[Depends(verified_user)])
@@ -95,21 +95,21 @@ async def predict(
         raise Exception(f"dataset {dataset} not found")
 
     # start process to predict
-    r = project.bertmodels.start_predicting_process(
-        project_slug=project.name,
-        name=model_name,
-        user=current_user.username,
-        df=df,
-        col_text="text",
-        dataset=dataset,
-        batch_size=batch_size,
-    )
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, f"INFO predict bert {model_name}", project.name
-    )
-    return None
+    try:
+        project.bertmodels.start_predicting_process(
+            project_slug=project.name,
+            name=model_name,
+            user=current_user.username,
+            df=df,
+            col_text="text",
+            dataset=dataset,
+            batch_size=batch_size,
+        )
+        orchestrator.log_action(
+            current_user.username, f"INFO predict bert {model_name}", project.name
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/bert/train", dependencies=[Depends(verified_user)])
@@ -180,21 +180,22 @@ async def stop_bert(
     Stop user process
     """
     # get BERT process for username
-    p = project.get_process(["train_bert", "predict_bert"], current_user.username)
-    if len(p) == 0:
-        raise HTTPException(status_code=400, detail="No process found")
-    # get id
-    unique_id = p[0].unique_id
-    # kill the process
-    r = orchestrator.queue.kill(unique_id)
-    # delete it in the database
-    project.bertmodels.projects_service.delete_model(project.name, p[0].model.name)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, "INFO stop bert training", project.name
-    )
-    return None
+    try:
+        p = project.get_process(["train_bert", "predict_bert"], current_user.username)
+        if len(p) == 0:
+            raise HTTPException(status_code=400, detail="No process found")
+        # get id
+        unique_id = p[0].unique_id
+        # kill the process
+        orchestrator.queue.kill(unique_id)
+        # delete it in the database
+        project.bertmodels.projects_service.delete_model(project.name, p[0].model.name)
+        orchestrator.log_action(
+            current_user.username, "INFO stop bert training", project.name
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/bert/test", dependencies=[Depends(verified_user)])
@@ -243,13 +244,13 @@ async def delete_bert(
     """
     test_rights("modify project", current_user.username, project.name)
 
-    r = project.bertmodels.delete(bert_name)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, f"INFO delete bert model {bert_name}", project.name
-    )
-    return None
+    try:
+        project.bertmodels.delete(bert_name)
+        orchestrator.log_action(
+            current_user.username, f"INFO delete bert model {bert_name}", project.name
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/bert/rename", dependencies=[Depends(verified_user)])
@@ -264,12 +265,12 @@ async def save_bert(
     """
     test_rights("modify project", current_user.username, project.name)
 
-    r = project.bertmodels.rename(former_name, new_name)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username,
-        f"INFO rename bert model {former_name} - {new_name}",
-        project.name,
-    )
-    return None
+    try:
+        project.bertmodels.rename(former_name, new_name)
+        orchestrator.log_action(
+            current_user.username,
+            f"INFO rename bert model {former_name} - {new_name}",
+            project.name,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
