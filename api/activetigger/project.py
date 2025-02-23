@@ -430,9 +430,9 @@ class Project:
         # higher prob, only possible if the model has been trained
         if selection == "maxprob":
             if not self.simplemodels.exists(user, scheme):
-                return {"error": "Simplemodel doesn't exist"}
+                raise Exception("Simplemodel doesn't exist")
             if label is None:  # default label to first
-                return {"error": "Select a tag"}
+                raise Exception("Label is required")
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data

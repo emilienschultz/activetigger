@@ -103,10 +103,12 @@ async def check_auth_exists(
     Check if a user is associated to a project
     """
     # print("route", request.url.path, request.method)
-    auth = orchestrator.users.auth(current_user.username, project_slug)
-    if not auth or "error" in auth:
-        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
-    return None
+    try:
+        auth = orchestrator.users.auth(current_user.username, project_slug)
+        if not auth:
+            raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
+    except Exception as e:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid rights") from e
 
 
 def test_rights(action: str, username: str, project_slug: str | None = None) -> bool:

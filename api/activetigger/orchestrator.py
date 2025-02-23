@@ -255,7 +255,7 @@ class Orchestrator:
         Load project in server
         """
         if not self.exists(project_slug):
-            return {"error": "Project does not exist"}
+            raise Exception("This project does not exist")
 
         self.projects[project_slug] = Project(
             project_slug, self.queue, self.db_manager, path_models=self.path_models
@@ -320,7 +320,7 @@ class Orchestrator:
         # create dedicated directory
         params.dir = self.path.joinpath(project_slug)
         if params.dir is None:
-            return {"error": "This name is already used"}
+            raise Exception("Error in the creation of the directory")
         os.makedirs(params.dir)
 
         # copy total dataset as a copy (csv for the moment)

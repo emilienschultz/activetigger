@@ -124,15 +124,14 @@ class Queue:
         }
         return unique_id
 
-    def kill(self, unique_id: str) -> dict:
+    def kill(self, unique_id: str) -> None:
         """
         Send a kill process with the event manager
         """
         if unique_id not in self.current:
-            return {"error": "Id does not exist"}
+            raise Exception("Process not found")
         self.current[unique_id]["event"].set()  # TODO update status to flag the killing
         self.delete(unique_id)  # TODOmove this to the cleaning method
-        return {"success": "Process killed"}
 
     def delete(self, ids: str | list) -> None:
         """

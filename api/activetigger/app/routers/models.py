@@ -82,20 +82,17 @@ async def predict(
     """
     Start prediction with a model
     """
-    # get the data
-    if dataset == "train":
-        df = project.content[["text"]]  # get data
-    elif dataset == "all":
-        r = project.features.get_column_raw("text", index="all")
-        if "success" in r:
-            df = pd.DataFrame(r["success"])
-        else:
-            raise Exception("Problem with full dataset")
-    else:
-        raise Exception(f"dataset {dataset} not found")
 
-    # start process to predict
     try:
+        # get the data
+        if dataset == "train":
+            df = project.content[["text"]]  # get data
+        elif dataset == "all":
+            df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
+        else:
+            raise Exception(f"dataset {dataset} not found")
+
+        # start process to predict
         project.bertmodels.start_predicting_process(
             project_slug=project.name,
             name=model_name,

@@ -140,17 +140,20 @@ async def stop_generation(
     """
     Stop current generation
     """
-    p = project.get_process("generation", current_user.username)
-    if len(p) == 0:
-        raise HTTPException(status_code=400, detail="No process found for this user")
-    unique_id = p[0].unique_id
-    r = orchestrator.queue.kill(unique_id)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(
-        current_user.username, "INFO stop generation", project.params.project_slug
-    )
-    return None
+    try:
+        p = project.get_process("generation", current_user.username)
+        if len(p) == 0:
+            raise HTTPException(
+                status_code=400, detail="No process found for this user"
+            )
+        unique_id = p[0].unique_id
+        orchestrator.queue.kill(unique_id)
+        orchestrator.log_action(
+            current_user.username, "INFO stop generation", project.params.project_slug
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/generate/elements", dependencies=[Depends(verified_user)])

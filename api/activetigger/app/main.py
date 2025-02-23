@@ -244,8 +244,11 @@ async def kill_process(
     Stop current generation
     """
     test_rights("kill process", current_user.username)
-    r = orchestrator.queue.kill(unique_id)
-    if "error" in r:
-        raise HTTPException(status_code=500, detail=r["error"])
-    orchestrator.log_action(current_user.username, f"kill process {unique_id}", "all")
-    return None
+    try:
+        orchestrator.queue.kill(unique_id)
+        orchestrator.log_action(
+            current_user.username, f"kill process {unique_id}", "all"
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -651,7 +651,7 @@ class ProjectsService:
             .all()
         )
         if len(models) > 0:
-            return {"error": "The new name already exists"}
+            raise Exception("Model already exists")
         # get and rename
         model = (
             session.query(Models)

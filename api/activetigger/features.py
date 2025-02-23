@@ -121,7 +121,7 @@ class Features:
         """
         # test name
         if name in self.map:
-            return {"error": "feature name already exists for this project"}
+            raise Exception("Feature already exists")
 
         # test length
         if len(new_content) != self.n:
@@ -214,7 +214,7 @@ class Features:
     def info(self, name: str):
         feature = self.projects_service.get_feature(self.project_slug, name)
         if feature is None:
-            return {"error": "feature doesn't exist in database"}
+            raise Exception("Feature doesn't exist in database")
         return {
             "time": feature.time,
             "name": name,
@@ -233,20 +233,20 @@ class Features:
         """
         return self.projects_service.get_project_features(self.project_slug)
 
-    def get_column_raw(self, column_name: str, index: str = "train") -> dict:
+    def get_column_raw(self, column_name: str, index: str = "train") -> Series:
         """
         Get column raw dataset
         """
         df = pd.read_parquet(self.path_all)
         df_train = pd.read_parquet(self.path_train, columns=[])  # only the index
         if column_name not in list(df.columns):
-            return {"error": "Column doesn't exist"}
+            raise Exception("Column doesn't exist")
         if index == "train":  # filter only train id
-            return {"success": df.loc[df_train.index][column_name]}
+            return df.loc[df_train.index][column_name]
         elif index == "all":
-            return {"success": df[column_name]}
+            return df[column_name]
         else:
-            return {"error": "Wrong index"}
+            raise Exception("Index not recognized")
 
     def current_user_processes(self, user: str):
         return [e for e in self.computing if e.user == user]
@@ -281,21 +281,18 @@ class Features:
 
         if kind == "dataset":
             # get the raw column for the train set
-            r = self.get_column_raw(parameters["dataset_col"])
-            if "error" in r:
-                return r
-            column = r["success"]
+            column = self.get_column_raw(parameters["dataset_col"])
 
             # convert the column to a specific format
             if len(column.dropna()) != len(column):
-                return {"error": "Column contains null values"}
+                raise ValueError("Column contains null values")
             if parameters["dataset_type"] == "Numeric":
                 try:
                     column = column.apply(float)
                 except Exception:
-                    return {
-                        "error": "The column can't be transform into numerical feature"
-                    }
+                    raise Exception(
+                        "The column can't be transform into numerical feature"
+                    )
             else:
                 column = column.apply(str)
 

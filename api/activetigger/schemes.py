@@ -65,7 +65,7 @@ class Schemes:
         if kind is None:
             kind = ["train"]
         if scheme not in self.available():
-            return {"error": "Scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
 
         if isinstance(kind, str):
             kind = [kind]
@@ -85,7 +85,7 @@ class Schemes:
         if complete:  # all the elements
             if "test" in kind:
                 if len(kind) > 1:
-                    return {"error": "Test data cannot be mixed with train data"}
+                    raise Exception("Cannot ask for both train and test")
                 # case if the test, join the text data
                 t = self.test[["text"]].join(df)
                 return t
@@ -268,7 +268,7 @@ class Schemes:
         """
         available = self.available()
         if scheme not in available:
-            return {"error": "scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
         if label in available[scheme]:
             return True
         return False
@@ -457,7 +457,7 @@ class Schemes:
                 )
             except DBException as e:
                 raise Exception("Codebook not added") from e
-            return {"error": "Codebook in conflict, please refresh and arbitrate"}
+            raise Exception("Codebook in conflict, please refresh and arbitrate")
 
     def get_codebook(self, scheme: str) -> Codebook:
         """
