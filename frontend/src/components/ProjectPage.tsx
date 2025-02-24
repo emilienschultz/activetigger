@@ -190,7 +190,7 @@ export const ProjectPage: FC = () => {
                   </tbody>
                 </table>
 
-                <div className="mt-2">
+                <div className="col-9 alert alert-warning fw-bold mt-3">
                   <span className="explanations">
                     Add empty elements in the trainset. Be careful, it will erase all features.
                   </span>
@@ -214,7 +214,7 @@ export const ProjectPage: FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-2">
+                <div className="col-9  alert alert-warning fw-bold mt-3">
                   <div className="explanations">Delete the project</div>
                   <button onClick={handleShow} className="delete-button mt-1">
                     Delete project now
