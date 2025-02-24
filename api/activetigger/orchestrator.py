@@ -43,7 +43,6 @@ class Orchestrator:
 
     db_name: str
     features_file: str
-    annotations_file: str
     data_all: str
     train_file: str
     test_file: str
@@ -76,7 +75,6 @@ class Orchestrator:
         self.db_name = "activetigger.db"
         self.data_all = "data_all.parquet"
         self.features_file = "features.parquet"
-        self.annotations_file = "annotations.parquet"
         self.train_file = "train.parquet"
         self.test_file = "test.parquet"
         self.default_user = "root"
@@ -438,9 +436,8 @@ class Orchestrator:
                 [content[f_notna], content[f_na].sample(n_train_random)]
             )
 
-        trainset.to_parquet(params.dir.joinpath(self.train_file), index=True)
         trainset[list(set(["text"] + params.cols_context + keep_id))].to_parquet(
-            params.dir.joinpath("annotations.parquet"), index=True
+            params.dir.joinpath(self.train_file), index=True
         )
         trainset[[]].to_parquet(params.dir.joinpath(self.features_file), index=True)
 

@@ -61,29 +61,6 @@ async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
         raise HTTPException(status_code=500) from e
 
 
-@router.post("/projects/testset", dependencies=[Depends(verified_user)])
-async def add_testdata(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    testset: TestSetDataModel,
-) -> None:
-    """
-    Add a dataset for test when there is none available
-    """
-    try:
-        # add the data
-        project.add_testdata(testset, current_user.username, project.name)
-        # update parameters of the project
-        orchestrator.set_project_parameters(project.params, current_user.username)
-        # log action
-        orchestrator.log_action(
-            current_user.username, "INFO add testdata project", project.name
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500) from e
-
-
 @router.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -128,6 +105,56 @@ async def delete_project(
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/projects/trainset/add", dependencies=[Depends(verified_user)])
+async def expand_project(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    n_elements: int,
+) -> None:
+    """
+    Expand a project
+    """
+    test_rights("modify project", current_user.username, project.name)
+    try:
+
+        # get index for existing elements
+        # get random elements
+        # add them in the trainset with correct columns name
+        # drop features
+
+        data_all = orchestrator.path.joinpath(project.name).joinpath("data_all.parquet")
+        print(data_all)
+        # pd.read_parquet(data_all)
+
+        print("Add", n_elements, "elements to", project.name)
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.post("/projects/testset/create", dependencies=[Depends(verified_user)])
+async def add_testdata(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    testset: TestSetDataModel,
+) -> None:
+    """
+    Add a dataset for test when there is none available
+    """
+    try:
+        # add the data
+        project.add_testdata(testset, current_user.username, project.name)
+        # update parameters of the project
+        orchestrator.set_project_parameters(project.params, current_user.username)
+        # log action
+        orchestrator.log_action(
+            current_user.username, "INFO add testdata project", project.name
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500) from e
 
 
 @router.get("/projects")

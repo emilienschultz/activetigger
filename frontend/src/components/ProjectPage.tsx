@@ -9,6 +9,7 @@ import Modal from 'react-bootstrap/Modal';
 import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
+import { useExpandTrainSet } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { ProjectStatistics } from './ProjectStatistics';
@@ -75,6 +76,10 @@ export const ProjectPage: FC = () => {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+
+  // expand trainset
+  const expandTrainSet = useExpandTrainSet(projectName || null);
+  const [nElements, setNElements] = useState<number | undefined>(undefined);
 
   return (
     projectName && (
@@ -184,20 +189,45 @@ export const ProjectPage: FC = () => {
                     </tr>
                   </tbody>
                 </table>
-                {/* <div>{JSON.stringify(project.params, null, 2)}</div> */}
-                <button onClick={handleShow} className="delete-button mt-5">
-                  Delete project now
-                </button>
-                <Modal show={show} onHide={actionDelete}>
-                  <Modal.Header>
-                    <Modal.Title>Delete the project</Modal.Title>
-                  </Modal.Header>
-                  <Modal.Body>Do you really want to delete this project</Modal.Body>
-                  <Modal.Footer>
-                    <button onClick={handleClose}>No</button>
-                    <button onClick={actionDelete}>Delete</button>
-                  </Modal.Footer>
-                </Modal>
+
+                <div className="mt-2">
+                  <span className="explanations">Add elements in the trainset</span>
+                  <div className="d-flex inline my-2">
+                    <input
+                      type="number"
+                      placeholder="Add N"
+                      className="input-number mx-2"
+                      onChange={(el) => setNElements(Number(el.target.value))}
+                      value={nElements}
+                    />
+                    <button
+                      onClick={() => {
+                        expandTrainSet(nElements);
+                        setNElements(0);
+                      }}
+                      className="btn btn-primary"
+                    >
+                      Add elements in trainset
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-2">
+                  <div className="explanations">Delete the project</div>
+                  <button onClick={handleShow} className="delete-button mt-1">
+                    Delete project now
+                  </button>
+                  <Modal show={show} onHide={actionDelete}>
+                    <Modal.Header>
+                      <Modal.Title>Delete the project</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>Do you really want to delete this project</Modal.Body>
+                    <Modal.Footer>
+                      <button onClick={handleClose}>No</button>
+                      <button onClick={actionDelete}>Delete</button>
+                    </Modal.Footer>
+                  </Modal>
+                </div>
               </Tab>
             </Tabs>
           </div>

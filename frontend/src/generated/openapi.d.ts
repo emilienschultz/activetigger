@@ -186,26 +186,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{project_slug}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Project State
-         * @description Get the state of a specific project
-         */
-        get: operations["get_project_state_projects__project_slug__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/projects/{project_slug}/statistics": {
         parameters: {
             query?: never;
@@ -226,7 +206,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects": {
+    "/projects/auth": {
         parameters: {
             query?: never;
             header?: never;
@@ -234,33 +214,12 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Projects
-         * @description Get general informations on the server
-         *     depending of the status of connected user
+         * Get Project Auth
+         * @description Users auth on a project
          */
-        get: operations["get_projects_projects_get"];
+        get: operations["get_project_auth_projects_auth_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/projects/testset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Testdata
-         * @description Add a dataset for test when there is none available
-         */
-        post: operations["add_testdata_projects_testset_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -307,15 +266,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/auth": {
+    "/projects/trainset/add": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Project Auth */
-        get: operations["get_project_auth_projects_auth_get"];
+        get?: never;
+        put?: never;
+        /**
+         * Expand Project
+         * @description Expand a project
+         */
+        post: operations["expand_project_projects_trainset_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/testset/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Testdata
+         * @description Add a dataset for test when there is none available
+         */
+        post: operations["add_testdata_projects_testset_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projects
+         * @description Get general informations on the server
+         *     depending of the status of connected user
+         */
+        get: operations["get_projects_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project State
+         * @description Get the state of a specific project
+         */
+        get: operations["get_project_state_projects__project_slug__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1576,6 +1599,16 @@ export interface components {
             filter?: string | null;
         };
         /**
+         * ProjectAuthsModel
+         * @description Auth description for a project
+         */
+        ProjectAuthsModel: {
+            /** Auth */
+            auth: {
+                [key: string]: string | undefined;
+            };
+        };
+        /**
          * ProjectDataModel
          * @description To create a new project
          */
@@ -2300,37 +2333,6 @@ export interface operations {
             };
         };
     };
-    get_project_state_projects__project_slug__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectStateModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_project_statistics_projects__project_slug__statistics_get: {
         parameters: {
             query?: {
@@ -2364,9 +2366,11 @@ export interface operations {
             };
         };
     };
-    get_projects_projects_get: {
+    get_project_auth_projects_auth_get: {
         parameters: {
-            query?: never;
+            query: {
+                project_slug: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2379,33 +2383,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AvailableProjectsModel"];
-                };
-            };
-        };
-    };
-    add_testdata_projects_testset_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestSetDataModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ProjectAuthsModel"];
                 };
             };
             /** @description Validation Error */
@@ -2483,7 +2461,74 @@ export interface operations {
             };
         };
     };
-    get_project_auth_projects_auth_get: {
+    expand_project_projects_trainset_add_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+                n_elements: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_testdata_projects_testset_create_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestSetDataModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_projects_projects_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2498,7 +2543,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["AvailableProjectsModel"];
+                };
+            };
+        };
+    };
+    get_project_state_projects__project_slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectStateModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

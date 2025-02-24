@@ -118,7 +118,7 @@ class Project:
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
-            self.params.dir.joinpath("annotations.parquet"),
+            self.params.dir.joinpath("train.parquet"),
             self.params.dir.joinpath("test.parquet"),
             self.db_manager,
         )
