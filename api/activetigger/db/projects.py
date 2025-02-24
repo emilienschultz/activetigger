@@ -95,15 +95,16 @@ class ProjectsService:
         return project_slug
 
     def update_project(self, project_slug: str, parameters: dict[str, Any]):
-        session = self.Session()
-        project = session.query(Projects).filter_by(project_slug=project_slug).first()
-        if project is None:
-            raise DBException("Project not found")
+        with self.Session.begin() as session:
+            project = (
+                session.query(Projects).filter_by(project_slug=project_slug).first()
+            )
+            if project is None:
+                raise DBException("Project not found")
 
-        project.time_modified = datetime.datetime.now()
-        project.parameters = parameters
-        session.commit()
-        session.close()
+            project.time_modified = datetime.datetime.now()
+            project.parameters = parameters
+            session.commit()
 
     def existing_projects(self) -> list[str]:
         session = self.Session()
@@ -462,6 +463,10 @@ class ProjectsService:
         ).delete()
         session.commit()
         session.close()
+
+    def delete_all_features(self, project: str):
+        with self.Session.begin() as session:
+            session.query(Features).filter(Features.project_id == project).delete()
 
     def get_feature(self, project: str, name: str):
         session = self.Session()

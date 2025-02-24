@@ -191,7 +191,9 @@ export const ProjectPage: FC = () => {
                 </table>
 
                 <div className="mt-2">
-                  <span className="explanations">Add elements in the trainset</span>
+                  <span className="explanations">
+                    Add empty elements in the trainset. Be careful, it will erase all features.
+                  </span>
                   <div className="d-flex inline my-2">
                     <input
                       type="number"

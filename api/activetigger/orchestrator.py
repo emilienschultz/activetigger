@@ -436,9 +436,9 @@ class Orchestrator:
                 [content[f_notna], content[f_na].sample(n_train_random)]
             )
 
-        trainset[list(set(["text"] + params.cols_context + keep_id))].to_parquet(
-            params.dir.joinpath(self.train_file), index=True
-        )
+        trainset[
+            list(set(["text", "limit"] + params.cols_context + keep_id))
+        ].to_parquet(params.dir.joinpath(self.train_file), index=True)
         trainset[[]].to_parquet(params.dir.joinpath(self.features_file), index=True)
 
         # if the case, add existing annotations in the database
@@ -560,6 +560,59 @@ class Orchestrator:
         # remove the projects from memory
         for p in to_del:
             del self.projects[p]
+
+    def add_elements_to_trainset(
+        self, project_slug: str, n_elements: int, username: str
+    ) -> None:
+        """
+        Add elements to the trainset
+        WARNING : EXPERIMENTAL
+        """
+        # fetch the project
+        if project_slug not in self.projects:
+            self.start_project(project_slug)
+        project = self.projects[project_slug]
+
+        if not project.params.dir:
+            raise Exception("Problem with project parameters - dir not found")
+
+        data_all = project.params.dir.joinpath("data_all.parquet")
+
+        # read only the columns
+        df_all = pd.read_parquet(
+            data_all, columns=list(project.schemes.content.columns)
+        )
+
+        # index of elements used
+        elements_index = list(project.schemes.content.index)
+        if project.schemes.test:
+            elements_index += list(project.schemes.test.index)
+
+        # take elements that are not in index
+        df_all = df_all[~df_all.index.isin(elements_index)]
+
+        # sample
+        elements_to_add = df_all.sample(n_elements)
+
+        # add them to the project
+        project.content = pd.concat([project.content, elements_to_add])
+
+        # write the new trainset
+        project.content.to_parquet(project.params.dir.joinpath("train.parquet"))
+
+        # update params
+        project.params.n_train = len(project.content)
+        self.set_project_parameters(project.params, username)
+
+        # rebuild database + filesystem
+        project.content[[]].to_parquet(
+            project.params.dir.joinpath("features.parquet"), index=True
+        )
+        project.features.projects_service.delete_all_features(project.name)
+
+        # restart the project
+        del df_all, elements_to_add
+        del self.projects[project.name]
 
 
 # launch the instance

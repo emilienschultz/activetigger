@@ -30,7 +30,7 @@ class Features:
     """
 
     project_slug: str
-    path_train: Path
+    path_features: Path
     path_model: Path
     path_all: Path
     queue: Queue
@@ -46,7 +46,7 @@ class Features:
     def __init__(
         self,
         project_slug: str,
-        path_train: Path,
+        path_features: Path,
         path_all: Path,
         models_path: Path,
         queue: Any,
@@ -59,7 +59,7 @@ class Features:
         """
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
-        self.path_train = path_train
+        self.path_features = path_features
         self.path_all = path_all
         self.path_models = models_path
         self.queue = queue
@@ -94,7 +94,7 @@ class Features:
         return f"Available features : {self.map}"
 
     def get_map(self) -> tuple[dict, int]:
-        parquet_file = pq.ParquetFile(self.path_train)
+        parquet_file = pq.ParquetFile(self.path_features)
         column_names = parquet_file.schema.names
 
         def find_strings_with_pattern(strings, pattern):
@@ -135,7 +135,7 @@ class Features:
         new_content.columns = [f"{name}__{i}" for i in new_content.columns]
 
         # read data, add the feature to the dataset and save
-        content = pd.read_parquet(self.path_train)
+        content = pd.read_parquet(self.path_features)
         content = pd.concat(
             [
                 content[[i for i in content.columns if i not in new_content.columns]],
@@ -143,7 +143,7 @@ class Features:
             ],
             axis=1,
         )
-        content.to_parquet(self.path_train)
+        content.to_parquet(self.path_features)
         del content
 
         # add informations to database
@@ -173,9 +173,9 @@ class Features:
 
         col = self.get([name])
         # read data, delete columns and save
-        content = pd.read_parquet(self.path_train)
+        content = pd.read_parquet(self.path_features)
         content[[i for i in content.columns if i not in col]].to_parquet(
-            self.path_train
+            self.path_features
         )
         del content
 
@@ -207,7 +207,7 @@ class Features:
 
         # load only needed data from file
         print("read parquet")
-        data = pd.read_parquet(self.path_train, columns=cols)
+        data = pd.read_parquet(self.path_features, columns=cols)
 
         return data
 
@@ -238,7 +238,7 @@ class Features:
         Get column raw dataset
         """
         df = pd.read_parquet(self.path_all)
-        df_train = pd.read_parquet(self.path_train, columns=[])  # only the index
+        df_train = pd.read_parquet(self.path_features, columns=[])  # only the index
         if column_name not in list(df.columns):
             raise Exception("Column doesn't exist")
         if index == "train":  # filter only train id
