@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
+  AnnotationsDataModel,
   AvailableProjectsModel,
   GenModel,
   GenerationModelApi,
@@ -1813,4 +1814,29 @@ export function useStopProcess() {
   );
 
   return { stopProcess };
+}
+
+/**
+ * Post annotation file
+ */
+export function usePostAnnotationsFile(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const postAnnotationsFile = useCallback(
+    async (annotationsset: AnnotationsDataModel) => {
+      if (!projectSlug) return;
+      const res = await api.POST('/annotation/file', {
+        params: {
+          query: { project_slug: projectSlug },
+        },
+        body: annotationsset,
+      });
+      if (!res.error) notify({ type: 'success', message: 'Annotations set uploaded' });
+      else
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+    },
+    [notify, projectSlug],
+  );
+  return postAnnotationsFile;
 }

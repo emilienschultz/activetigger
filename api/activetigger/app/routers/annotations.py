@@ -16,6 +16,7 @@ from activetigger.app.dependencies import (
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
+    AnnotationsDataModel,
     ElementOutModel,
     NextInModel,
     ProjectionInStrictModel,
@@ -192,6 +193,17 @@ async def post_list_elements(
             detail="Error with some of the annotations - " + str(errors),
         )
 
+    return None
+
+
+@router.post("/annotation/file", dependencies=[Depends(verified_user)])
+async def post_annotation_file(
+    project: Annotated[Project, Depends(get_project)],
+    annotationsdata: AnnotationsDataModel,
+) -> None:
+    """
+    Load annotations file
+    """
     return None
 
 

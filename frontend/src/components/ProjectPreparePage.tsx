@@ -10,6 +10,7 @@ import { useAddFeature, useDeleteFeature, useGetFeatureInfo } from '../core/api'
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { FeatureModelExtended } from '../types';
+import { ImportAnnotations } from './ImportAnnotations';
 import { LabelsManagement } from './LabelsManagement';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 
@@ -93,23 +94,21 @@ export const ProjectPreparePage: FC = () => {
                   <span className="explanations">Create and delete features.</span>
                   <h4 className="mt-3 subsection">Existing features</h4>
                   {/* Display existing features */}
-                  {Object.keys(featuresInfo || {}).map((element) => (
-                    <div className="card text-bg-light mt-3" key={element as string}>
+                  {Object.entries(featuresInfo || {}).map(([key, value]) => (
+                    <div className="card text-bg-light mt-3" key={key}>
                       <div className="d-flex m-2 align-items-center">
                         <button
                           className="btn btn p-0 mx-4"
                           onClick={() => {
-                            deleteSelectedFeature(element as string);
+                            deleteSelectedFeature(key);
                           }}
                         >
                           <MdOutlineDeleteOutline size={20} />
                         </button>
-                        <span className="w-25">{element as string}</span>
-                        <span className="mx-2">{featuresInfo?.[element as string]['time']}</span>
-                        <span className="mx-2">by {featuresInfo?.[element as string]['user']}</span>
-                        {featuresInfo?.[element as string]['kind'] === 'regex' && (
-                          <span>N={featuresInfo?.[element as string]['parameters']['count']}</span>
-                        )}
+                        <span className="w-25">{key}</span>
+                        <span className="mx-2">{value?.time}</span>
+                        <span className="mx-2">by {value?.user}</span>
+                        {value?.kind === 'regex' && <span>N={value.parameters['count']}</span>}
                       </div>
                     </div>
                   ))}{' '}
@@ -254,6 +253,12 @@ export const ProjectPreparePage: FC = () => {
                 </Tab>
                 <Tab eventKey="codebook" title="Codebook">
                   <CodebookManagement
+                    projectName={projectName}
+                    currentScheme={currentScheme || null}
+                  />
+                </Tab>
+                <Tab eventKey="imports" title="Import annotations">
+                  <ImportAnnotations
                     projectName={projectName}
                     currentScheme={currentScheme || null}
                   />

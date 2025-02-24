@@ -51,6 +51,8 @@ export type BertModelParametersModel = components['schemas']['BertModelParameter
 
 export type TestSetDataModel = components['schemas']['TestSetDataModel'];
 
+export type AnnotationsDataModel = components['schemas']['AnnotationsDataModel'];
+
 export type ProjectionInStrictModel = components['schemas']['ProjectionInStrictModel'];
 
 export type GenerationModelApi = components['schemas']['GenerationModelApi'];

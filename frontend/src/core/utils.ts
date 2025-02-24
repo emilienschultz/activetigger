@@ -128,6 +128,24 @@ export async function loadExcelFile(file: File): Promise<DataType> {
 //   return { data, headers, filename: file.name };
 // }
 
+export async function loadFile(file: File): Promise<DataType | null> {
+  let data;
+
+  if (file.name.includes('parquet')) {
+    console.log('parquet');
+    data = await loadParquetFile(file);
+  } else if (file.name.includes('csv')) {
+    console.log('csv');
+    data = await loadCSVFile(file);
+  } else if (file.name.includes('xlsx')) {
+    console.log('xlsx');
+    data = await loadExcelFile(file);
+  } else {
+    return null;
+  }
+  return data;
+}
+
 /**
  * Display the date to the "from ago" format.
  */

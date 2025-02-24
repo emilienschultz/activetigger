@@ -51,6 +51,14 @@ class ProjectDataModel(BaseProjectModel):
     csv: str
 
 
+class AnnotationsDataModel(BaseModel):
+    col_id: str
+    col_label: str
+    scheme: str
+    csv: str
+    filename: str | None = None
+
+
 class TestSetDataModel(BaseModel):
     col_text: str
     col_id: str

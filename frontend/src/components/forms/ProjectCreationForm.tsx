@@ -11,7 +11,7 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useCreateProject } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
-import { loadCSVFile, loadExcelFile, loadParquetFile } from '../../core/utils';
+import { loadFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
 
 // format of the data table
@@ -25,6 +25,8 @@ export interface DataType {
 export const ProjectCreationForm: FC = () => {
   // form management
   const maxSizeMo = 400;
+  const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
+
   const maxTrainSet = 100000;
   const langages = [
     { value: 'en', label: 'English' },
@@ -32,7 +34,6 @@ export const ProjectCreationForm: FC = () => {
     { value: 'de', label: 'German' },
     { value: 'cn', label: 'Chinese' },
   ];
-  const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
   const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
     {
       defaultValues: {
@@ -81,28 +82,14 @@ export const ProjectCreationForm: FC = () => {
         });
         return;
       }
-      if (file.name.includes('parquet')) {
-        console.log('parquet');
-        loadParquetFile(file).then((data) => {
-          setData(data);
-          setValue('n_train', Math.min(data.data.length, 100));
-        });
-      } else if (file.name.includes('csv')) {
-        console.log('csv');
-        loadCSVFile(file).then((data) => {
-          setData(data);
-          setValue('n_train', Math.min(data.data.length, 100));
-        });
-      } else if (file.name.includes('xlsx')) {
-        console.log('xlsx');
-        loadExcelFile(file).then((data) => {
-          setData(data);
-          setValue('n_train', Math.min(data.data.length, 100));
-        });
-      } else {
-        notify({ type: 'error', message: 'Only csv or parquet files are allowed for now' });
-        return;
-      }
+      loadFile(file).then((data) => {
+        if (data === null) {
+          notify({ type: 'error', message: 'Error reading the file' });
+          return;
+        }
+        setData(data);
+        setValue('n_train', Math.min(data?.data.length || 0, 100));
+      });
     }
   }, [files, maxSize, notify, setValue]);
 

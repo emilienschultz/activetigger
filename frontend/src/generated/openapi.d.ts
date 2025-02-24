@@ -497,6 +497,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/annotation/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Annotation File
+         * @description Load annotations file
+         */
+        post: operations["post_annotation_file_annotation_file_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schemes/label/rename": {
         parameters: {
             query?: never;
@@ -1116,7 +1136,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/documentation": {
+    "/version": {
         parameters: {
             query?: never;
             header?: never;
@@ -1124,12 +1144,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Documentation
-         * @description Path for documentation
-         *     Comments:
-         *         For the moment, a dictionnary
+         * Get Version
+         * @description Get the version of the server
          */
-        get: operations["get_documentation_documentation_get"];
+        get: operations["get_version_version_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1170,26 +1188,6 @@ export interface paths {
          * @description Get all logs for a username/project
          */
         get: operations["get_logs_logs_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/version": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Version
-         * @description Get the version of the server
-         */
-        get: operations["get_version_version_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1273,6 +1271,19 @@ export interface components {
             comment?: string | null;
             /** Selection */
             selection?: string | null;
+        };
+        /** AnnotationsDataModel */
+        AnnotationsDataModel: {
+            /** Col Id */
+            col_id: string;
+            /** Col Label */
+            col_label: string;
+            /** Scheme */
+            scheme: string;
+            /** Csv */
+            csv: string;
+            /** Filename */
+            filename?: string | null;
         };
         /**
          * AuthActions
@@ -1399,20 +1410,6 @@ export interface components {
             time: string;
         };
         /**
-         * DocumentationModel
-         * @description Documentation model
-         */
-        DocumentationModel: {
-            /** Credits */
-            credits: string[];
-            /** Page */
-            page: string;
-            /** Documentation */
-            documentation: string;
-            /** Contact */
-            contact: string;
-        };
-        /**
          * ElementOutModel
          * @description Posting element to annotate
          */
@@ -1437,6 +1434,21 @@ export interface components {
             history?: unknown[] | null;
             /** N Sample */
             n_sample?: number | null;
+        };
+        /** FeatureDescriptionModel */
+        FeatureDescriptionModel: {
+            /** Name */
+            name: string;
+            /** Parameters */
+            parameters: Record<string, never>;
+            /** User */
+            user: string;
+            /** Time */
+            time: string;
+            /** Kind */
+            kind: string;
+            /** Data */
+            data: string;
         };
         /**
          * FeatureModel
@@ -1847,14 +1859,12 @@ export interface components {
             /** Queue */
             queue: {
                 [key: string]: {
-                    [key: string]: string | undefined;
+                    [key: string]: (string | null) | undefined;
                 } | undefined;
             };
             /** Active Projects */
             active_projects: {
-                [key: string]: {
-                    [key: string]: string | undefined;
-                } | undefined;
+                [key: string]: Record<string, never>[] | undefined;
             };
             /** Gpu */
             gpu: Record<string, never>;
@@ -1916,6 +1926,13 @@ export interface components {
             username: string;
             /** Statistics */
             statistics: Record<string, never>;
+        };
+        /** StaticFileModel */
+        StaticFileModel: {
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
         };
         /**
          * TableAnnotationsModel
@@ -2823,6 +2840,41 @@ export interface operations {
             };
         };
     };
+    post_annotation_file_annotation_file_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationsDataModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     rename_label_schemes_label_rename_post: {
         parameters: {
             query: {
@@ -3111,7 +3163,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": {
+                        [key: string]: components["schemas"]["FeatureDescriptionModel"] | undefined;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -3276,7 +3330,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string;
+                    "application/json": components["schemas"]["StaticFileModel"];
                 };
             };
             /** @description Validation Error */
@@ -3307,7 +3361,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["StaticFileModel"];
                 };
             };
             /** @description Validation Error */
@@ -3887,7 +3941,7 @@ export interface operations {
             };
         };
     };
-    get_documentation_documentation_get: {
+    get_version_version_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3902,7 +3956,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocumentationModel"];
+                    "application/json": string;
                 };
             };
         };
@@ -3968,26 +4022,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_version_version_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
                 };
             };
         };
