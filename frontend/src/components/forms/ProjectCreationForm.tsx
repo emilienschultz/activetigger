@@ -345,6 +345,13 @@ export const ProjectCreationForm: FC = () => {
 
                   <label className="form-label" htmlFor="cols_test">
                     Stratify the test set by
+                    <a className="stratify">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".stratify" place="top">
+                      If not empty, will stratify the test set by the selected column (try to
+                      equilibrate the number of elements regarding each category)
+                    </Tooltip>
                   </label>
                   <Controller
                     name="cols_test"
