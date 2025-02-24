@@ -59,7 +59,7 @@ async def get_next(
         return ElementOutModel(**r)
 
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/elements/projection", dependencies=[Depends(verified_user)])
@@ -123,7 +123,7 @@ async def compute_projection(
         return WaitingModel(detail=f"Projection {projection.method} is computing")
     except Exception as e:
         print("coucou")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/elements/table", dependencies=[Depends(verified_user)])
@@ -150,7 +150,7 @@ async def get_list_elements(
             total=extract.total,
         )
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/annotation/table", dependencies=[Depends(verified_user)])
@@ -199,12 +199,25 @@ async def post_list_elements(
 @router.post("/annotation/file", dependencies=[Depends(verified_user)])
 async def post_annotation_file(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     annotationsdata: AnnotationsDataModel,
 ) -> None:
     """
     Load annotations file
     """
-    return None
+    try:
+        project.schemes.add_file_annotations(
+            annotationsdata=annotationsdata, user=current_user.username, dataset="train"
+        )
+        orchestrator.log_action(
+            current_user.username,
+            "LOAD ANNOTATION FROM FILE FOR SCHEME " + annotationsdata.scheme,
+            project.name,
+        )
+        return None
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
@@ -218,7 +231,7 @@ async def get_reconciliation_table(
         df, users = project.schemes.get_reconciliation_table(scheme)
         return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
@@ -260,7 +273,7 @@ async def post_reconciliation(
         )
         return None
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
@@ -280,7 +293,7 @@ async def get_element(
         )
         return ElementOutModel(**r)
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/annotation/{action}", dependencies=[Depends(verified_user)])
@@ -319,7 +332,7 @@ async def post_annotation(
             )
             return None
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     if action == "delete":
         try:
@@ -337,6 +350,6 @@ async def post_annotation(
             )
             return None
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     raise HTTPException(status_code=400, detail="Wrong action")

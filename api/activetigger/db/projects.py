@@ -420,7 +420,6 @@ class ProjectsService:
                 comment=comment,
                 selection=selection,
             )
-            print(new_annotation.__dict__)
             session.add(new_annotation)
 
     def available_schemes(self, project_slug: str):

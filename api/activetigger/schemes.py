@@ -1,10 +1,11 @@
+from io import StringIO
 from pathlib import Path
 from typing import Any, cast
 
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.datamodels import TableBatch
+from activetigger.datamodels import AnnotationsDataModel, TableBatch
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import Codebook, ProjectsService
@@ -478,3 +479,51 @@ class Schemes:
         if label is None:
             raise Exception("No label")
         return label if label in annotation.split("|") else "not-" + label
+
+    def add_file_annotations(
+        self, annotationsdata: AnnotationsDataModel, user: str, dataset: str
+    ):
+        """
+        Add annotations from a file
+        Create labels if not exist
+        """
+        # check if the scheme exist
+        if annotationsdata.scheme not in self.available():
+            raise Exception("Scheme doesn't exist")
+        else:
+            labels = self.available()[annotationsdata.scheme]["labels"]
+
+        # convert the data, set the index, drop empty
+        df = pd.read_csv(StringIO(annotationsdata.csv))
+        df = df.set_index(annotationsdata.col_id)
+        df = df[df[annotationsdata.col_label].notna()]
+        col = df[annotationsdata.col_label]
+
+        # only elements existing in the dataset
+        common_id = [i for i in col.index if i in self.content.index]
+
+        # if needed, create the labels
+        for i in col.unique():
+            if i not in labels:
+                self.add_label(i, annotationsdata.scheme, user)
+                print("add label ", i)
+
+        # add annotations
+        for i, v in col.loc[common_id].items():
+            self.push_annotation(
+                str(i),
+                v,
+                annotationsdata.scheme,
+                user,
+                dataset,
+                "from file",
+                "from file",
+            )
+
+        if len(common_id) < len(df):
+            raise Exception(
+                f"Some elements annoted in the dataset where not added (index mismatch) or not in the trainset. \
+                    Number of elements added : {len(common_id)} (total annotated : {len(df)})"
+            )
+
+        return {"success": "Annotations added"}

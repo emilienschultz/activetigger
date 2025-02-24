@@ -84,11 +84,15 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
   return (
     <div className="container mt-3">
       <div className="row">
+        <div className="alert alert-warning" role="alert">
+          This feature is still in beta. Please report any issue to the developers.
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div className="explanations">
             You can import annotations for existing elements in the train set. Be sure to have
             exactly the same id for the elements. If elements are already labelled, this annotation
-            will prevail
+            will prevail. Labels are not checked for existance.
             <label className="form-label" htmlFor="csvFile">
               File to upload
             </label>
