@@ -442,19 +442,17 @@ class ProjectsService:
         user: str,
         data: list[dict[str, Any]] | None = None,
     ):
-        session = self.Session()
-        feature = Features(
-            project_id=project,
-            time=datetime.datetime.now(),
-            kind=kind,
-            name=name,
-            parameters=parameters,
-            user_id=user,
-            data=data,
-        )
-        session.add(feature)
-        session.commit()
-        session.close()
+        with self.Session.begin() as session:
+            feature = Features(
+                project_id=project,
+                time=datetime.datetime.now(),
+                kind=kind,
+                name=name,
+                parameters=parameters,
+                user_id=user,
+                data=data,
+            )
+            session.add(feature)
 
     def delete_feature(self, project: str, name: str):
         session = self.Session()
@@ -489,7 +487,7 @@ class ProjectsService:
                     kind=i.kind,
                     parameters=i.parameters,
                     user=str(i.user_id),  # check
-                    data=i.data,
+                    cols=list(i.data),
                     name=i.name,
                 )
                 for i in features

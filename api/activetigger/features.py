@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import pyarrow.parquet as pq
+import pyarrow.parquet as pq  # type: ignore[import]
 from pandas import DataFrame, Series
 
 from activetigger.datamodels import FeatureDescriptionModel, UserFeatureComputing
@@ -153,7 +153,7 @@ class Features:
             name=name,
             parameters=parameters,
             user=username,
-            data=json.dumps(list(new_content.columns)),
+            data=list(new_content.columns),
         )
 
         # refresh the map

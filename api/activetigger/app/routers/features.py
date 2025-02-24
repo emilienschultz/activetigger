@@ -93,6 +93,7 @@ async def get_feature_info(
     Get feature info
     """
     try:
-        return project.features.get_available()
+        r = project.features.get_available()
+        return r
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

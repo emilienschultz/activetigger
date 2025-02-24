@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
-import yaml
+import yaml  # type: ignore[import]
 from cryptography.fernet import Fernet
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
@@ -329,8 +329,9 @@ class Orchestrator:
         content = pd.read_csv(params.dir.joinpath("data_raw.csv"), dtype=str)
 
         # rename columns both for data & params to avoid confusion
-        content.columns = ["dataset_" + i for i in content.columns]
-        params.col_id = "dataset_" + params.col_id if params.col_id else None
+        content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
+        if params.col_id:
+            params.col_id = "dataset_" + params.col_id
         params.cols_text = ["dataset_" + i for i in params.cols_text if i]
         params.cols_context = ["dataset_" + i for i in params.cols_context if i]
         params.col_label = "dataset_" + params.col_label if params.col_label else None

@@ -627,4 +627,4 @@ class FeatureDescriptionModel(BaseModel):
     user: str
     time: str
     kind: str
-    data: str
+    cols: list[str]
