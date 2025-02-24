@@ -1,8 +1,8 @@
 import multiprocessing
+from getpass import getpass
 from logging import Logger
 from pathlib import Path
 from typing import Optional, cast
-from getpass import getpass
 
 import bcrypt
 import pandas as pd
@@ -10,14 +10,22 @@ import spacy
 import torch
 from cryptography.fernet import Fernet
 from pandas import Series
-from sklearn.preprocessing import OneHotEncoder
-from transformers import (
+from sklearn.metrics import (  # type: ignore[import]
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+)
+from sklearn.preprocessing import OneHotEncoder  # type: ignore[import]
+from transformers import (  # type: ignore[import]
     BertTokenizer,
     TrainerCallback,
     TrainerControl,
     TrainerState,
     TrainingArguments,
 )
+
+from activetigger.datamodels import MLStatisticsModel
 
 
 class CustomLoggingCallback(TrainerCallback):
@@ -199,3 +207,58 @@ def decrypt(text: str | None, secret_key: str | None) -> str:
     cipher = Fernet(secret_key)
     decrypted_token = cipher.decrypt(text.encode())
     return decrypted_token.decode()
+
+
+def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisticsModel:
+    """
+    Compute metrics for a prediction
+    """
+    labels = list(Y_true.unique())
+    statistics = MLStatisticsModel(
+        f1_label=dict(
+            zip(
+                labels,
+                [
+                    round(i, decimals)
+                    for i in f1_score(
+                        list(Y_true), list(Y_pred), average=None, labels=labels
+                    )
+                ],
+            )
+        ),
+        f1_weighted=round(f1_score(Y_true, Y_pred, average="weighted"), decimals),
+        f1_macro=round(f1_score(Y_true, Y_pred, average="macro"), decimals),
+        f1_micro=round(f1_score(Y_true, Y_pred, average="micro"), decimals),
+        accuracy=round(accuracy_score(Y_true, Y_pred), decimals),
+        precision=round(
+            precision_score(
+                list(Y_true),
+                list(Y_pred),
+                average="micro",
+            ),
+            decimals,
+        ),
+        precision_label=dict(
+            zip(
+                labels,
+                [
+                    round(i, decimals)
+                    for i in precision_score(
+                        list(Y_true), list(Y_pred), average=None, labels=labels
+                    )
+                ],
+            )
+        ),
+        recall_label=dict(
+            zip(
+                labels,
+                [
+                    round(i, decimals)
+                    for i in recall_score(
+                        list(Y_true), list(Y_pred), average=None, labels=labels
+                    )
+                ],
+            )
+        ),
+    )
+    return statistics

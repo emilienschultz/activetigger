@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Optional
 
 from pandas import DataFrame
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict  # for dataframe
 
 # Data model to use of the API
 
@@ -208,23 +208,6 @@ class SimpleModelModel(BaseModel):
     scheme: str
     standardize: bool | None = True
     dichotomize: str | None = None
-
-
-class SimpleModelOutModel(BaseModel):
-    """
-    Trained simplemodel
-    """
-
-    features: list
-    model: str
-    params: (
-        dict[str, str | float | bool | None]
-        | dict[str, dict[str, str | float | bool | None]]
-        | None
-    )
-    scheme: str
-    username: str
-    statistics: dict
 
 
 class BertModelParametersModel(BaseModel):
@@ -628,3 +611,40 @@ class FeatureDescriptionModel(BaseModel):
     time: str
     kind: str
     cols: list[str]
+
+
+class MLStatisticsModel(BaseModel):
+    f1_label: dict[str, float] | None = None
+    precision_label: dict[str, float] | None = None
+    recall_label: dict[str, float] | None = None
+    f1_weighted: float | None = None
+    f1_micro: float | None = None
+    f1_macro: float | None = None
+    accuracy: float | dict[str, float] | None = None
+    precision: float | dict[str, float] | None = None
+
+
+class FitModelResults(BaseModel):
+    model: Any
+    proba: DataFrame
+    statistics: MLStatisticsModel
+    cv10: MLStatisticsModel
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class SimpleModelOutModel(BaseModel):
+    """
+    Trained simplemodel
+    """
+
+    features: list
+    model: str
+    params: (
+        dict[str, str | float | bool | None]
+        | dict[str, dict[str, str | float | bool | None]]
+        | None
+    )
+    scheme: str
+    username: str
+    statistics: MLStatisticsModel
+    statistics_cv10: MLStatisticsModel

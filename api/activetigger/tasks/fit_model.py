@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator  # type: ignore[import]
-from sklearn.metrics import accuracy_score, f1_score, precision_score  # type: ignore[import]
 from sklearn.model_selection import KFold, cross_val_predict  # type: ignore[import]
 
+from activetigger.datamodels import FitModelResults
+from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -20,7 +21,7 @@ class FitModel(BaseTask):
         self.X = X
         self.Y = Y
 
-    def __call__(self) -> dict:  # TODO : type
+    def __call__(self) -> FitModelResults:
         """
         Fit simplemodel and calculate statistics
         """
@@ -40,43 +41,18 @@ class FitModel(BaseTask):
 
         # compute statistics
         Y_pred = self.model.predict(Xf)
-        f1 = f1_score(Yf.values, Y_pred, average=None)
-        weighted_f1 = f1_score(Yf, Y_pred, average="weighted")
-        accuracy = accuracy_score(Yf, Y_pred)
-        precision = precision_score(
-            list(Yf),
-            list(Y_pred),
-            average="micro",
-        )
-        macro_f1 = f1_score(Yf, Y_pred, average="macro")
-        statistics = {
-            "f1": [round(i, 3) for i in list(f1)],
-            "weighted_f1": round(weighted_f1, 3),
-            "macro_f1": round(macro_f1, 3),
-            "accuracy": round(accuracy, 3),
-            "precision": round(precision, 3),
-        }
+
+        statistics = get_metrics(Yf, Y_pred)
 
         # compute 10-crossvalidation
         num_folds = 10
         kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
-        Y_pred = cross_val_predict(self.model, Xf, Yf, cv=kf)
-        weighted_f1 = f1_score(Yf, Y_pred, average="weighted")
-        accuracy = accuracy_score(Yf, Y_pred)
-        macro_f1 = f1_score(Yf, Y_pred, average="macro")
-        cv10 = {
-            "weighted_f1": round(weighted_f1, 3),
-            "macro_f1": round(macro_f1, 3),
-            "accuracy": round(accuracy, 3),
-        }
+        Y_pred_10cv = cross_val_predict(self.model, Xf, Yf, cv=kf)
+        cv10 = get_metrics(Yf, Y_pred_10cv)
 
-        r = {
-            "model": self.model,
-            "proba": proba,
-            "statistics": statistics,
-            "cv10": cv10,
-        }
-
-        print("STATISTICS", statistics)
-
-        return r
+        return FitModelResults(
+            model=self.model,
+            proba=proba,
+            statistics=statistics,
+            cv10=cv10,
+        )

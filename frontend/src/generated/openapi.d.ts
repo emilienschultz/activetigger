@@ -1467,8 +1467,8 @@ export interface components {
             time: string;
             /** Kind */
             kind: string;
-            /** Data */
-            data: string;
+            /** Cols */
+            cols: string[];
         };
         /**
          * FeatureModel
@@ -1568,6 +1568,35 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** MLStatisticsModel */
+        MLStatisticsModel: {
+            /** F1 Label */
+            f1_label?: {
+                [key: string]: number | undefined;
+            } | null;
+            /** Precision Label */
+            precision_label?: {
+                [key: string]: number | undefined;
+            } | null;
+            /** Recall Label */
+            recall_label?: {
+                [key: string]: number | undefined;
+            } | null;
+            /** F1 Weighted */
+            f1_weighted?: number | null;
+            /** F1 Micro */
+            f1_micro?: number | null;
+            /** F1 Macro */
+            f1_macro?: number | null;
+            /** Accuracy */
+            accuracy?: number | {
+                [key: string]: number | undefined;
+            } | null;
+            /** Precision */
+            precision?: number | {
+                [key: string]: number | undefined;
+            } | null;
         };
         /**
          * NextInModel
@@ -1944,8 +1973,8 @@ export interface components {
             scheme: string;
             /** Username */
             username: string;
-            /** Statistics */
-            statistics: Record<string, never>;
+            statistics: components["schemas"]["MLStatisticsModel"];
+            statistics_cv10: components["schemas"]["MLStatisticsModel"];
         };
         /** StaticFileModel */
         StaticFileModel: {

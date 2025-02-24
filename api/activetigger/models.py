@@ -15,7 +15,6 @@ from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
@@ -28,6 +27,7 @@ from activetigger.datamodels import (
     KnnParams,
     LassoParams,
     LiblinearParams,
+    MLStatisticsModel,
     Multi_naivebayesParams,
     RandomforestParams,
     SimpleModelOutModel,
@@ -889,6 +889,7 @@ class SimpleModels:
                     params=sm.model_params,
                     features=sm.features,
                     statistics=sm.statistics,
+                    statistics_cv10=sm.cv10,
                     scheme=scheme,
                     username=username,
                 )
@@ -1073,15 +1074,15 @@ class SimpleModels:
             self.existing = pickle.load(file)
         return True
 
-    def add(self, element: UserModelComputing, results):
+    def add(self, element: UserModelComputing, results) -> None:
         """
         Add simplemodel after computation
         """
         sm = element.model
-        sm.model = results["model"]
-        sm.proba = results["proba"]
-        sm.cv10 = results["cv10"]
-        sm.statistics = results["statistics"]
+        sm.model = results.model
+        sm.proba = results.proba
+        sm.cv10 = results.cv10
+        sm.statistics = results.statistics
         if element.user not in self.existing:
             self.existing[element.user] = {}
         self.existing[element.user][element.scheme] = sm
@@ -1131,9 +1132,9 @@ class SimpleModel:
     labels: list
     model_params: dict
     standardize: bool
-    proba: DataFrame
-    statistics: dict
-    cv10: DataFrame
+    proba: DataFrame | None
+    statistics: MLStatisticsModel | None
+    cv10: MLStatisticsModel | None
     # model
 
     def __init__(
@@ -1165,10 +1166,10 @@ class SimpleModel:
         self.proba = None
         self.statistics = None
         self.cv10 = None
-        if type(model) is not str:  # TODO : tester si c'est un modèle
-            self.proba = self.compute_proba(model, X)
-            self.statistics = self.compute_statistics(model, X, Y, labels)
-            self.cv10 = self.compute_10cv(model, X, Y)
+        # if type(model) is not str:  # TODO : tester si c'est un modèle
+        #     self.proba = self.compute_proba(model, X)
+        #     self.statistics = self.compute_statistics(model, X, Y, labels)
+        #     self.cv10 = self.compute_10cv(model, X, Y)
 
     def json(self):
         """
@@ -1215,52 +1216,52 @@ class SimpleModel:
         )
         return precision
 
-    def compute_statistics(self, model, X, Y, labels):
-        """
-        Compute statistics simplemodel
-        """
-        f = Y.notna()
-        X = X[f]
-        Y = Y[f]
-        Y_pred = model.predict(X)
-        f1 = f1_score(Y, Y_pred, average=None)
-        weighted_f1 = f1_score(Y, Y_pred, average="weighted")
-        accuracy = accuracy_score(Y, Y_pred)
-        precision = precision_score(
-            list(Y[f]),
-            list(Y_pred),
-            average="micro",
-            # pos_label=labels[0]
-        )
-        macro_f1 = f1_score(Y, Y_pred, average="macro")
-        statistics = {
-            "f1": [round(i, 3) for i in list(f1)],
-            "weighted_f1": round(weighted_f1, 3),
-            "macro_f1": round(macro_f1, 3),
-            "accuracy": round(accuracy, 3),
-            "precision": round(precision, 3),
-        }
-        print("statistics", statistics)
-        return statistics
+    # def compute_statistics(self, model, X, Y, labels):
+    #     """
+    #     Compute statistics simplemodel
+    #     """
+    #     f = Y.notna()
+    #     X = X[f]
+    #     Y = Y[f]
+    #     Y_pred = model.predict(X)
+    #     f1 = f1_score(Y, Y_pred, average=None)
+    #     weighted_f1 = f1_score(Y, Y_pred, average="weighted")
+    #     accuracy = accuracy_score(Y, Y_pred)
+    #     precision = precision_score(
+    #         list(Y[f]),
+    #         list(Y_pred),
+    #         average="micro",
+    #         # pos_label=labels[0]
+    #     )
+    #     macro_f1 = f1_score(Y, Y_pred, average="macro")
+    #     statistics = {
+    #         "f1": [round(i, 3) for i in list(f1)],
+    #         "weighted_f1": round(weighted_f1, 3),
+    #         "macro_f1": round(macro_f1, 3),
+    #         "accuracy": round(accuracy, 3),
+    #         "precision": round(precision, 3),
+    #     }
+    #     print("statistics", statistics)
+    #     return statistics
 
-    def compute_10cv(self, model, X, Y):
-        """
-        Compute 10-CV for simplemodel
-        TODO : check if ok
-        """
-        f = Y.notna()
-        X = X[f]
-        Y = Y[f]
-        num_folds = 10
-        kf = KFold(n_splits=num_folds, shuffle=True)
-        # predicted_labels = cross_val_predict(model, X, Y, cv=kf)
-        Y_pred = cross_val_predict(model, X, Y, cv=kf)
-        weighted_f1 = f1_score(Y, Y_pred, average="weighted")
-        accuracy = accuracy_score(Y, Y_pred)
-        macro_f1 = f1_score(Y, Y_pred, average="macro")
-        r = {
-            "weighted_f1": round(weighted_f1, 3),
-            "macro_f1": round(macro_f1, 3),
-            "accuracy": round(accuracy, 3),
-        }
-        return r
+    # def compute_10cv(self, model, X, Y):
+    #     """
+    #     Compute 10-CV for simplemodel
+    #     TODO : check if ok
+    #     """
+    #     f = Y.notna()
+    #     X = X[f]
+    #     Y = Y[f]
+    #     num_folds = 10
+    #     kf = KFold(n_splits=num_folds, shuffle=True)
+    #     # predicted_labels = cross_val_predict(model, X, Y, cv=kf)
+    #     Y_pred = cross_val_predict(model, X, Y, cv=kf)
+    #     weighted_f1 = f1_score(Y, Y_pred, average="weighted")
+    #     accuracy = accuracy_score(Y, Y_pred)
+    #     macro_f1 = f1_score(Y, Y_pred, average="macro")
+    #     r = {
+    #         "weighted_f1": round(weighted_f1, 3),
+    #         "macro_f1": round(macro_f1, 3),
+    #         "accuracy": round(accuracy, 3),
+    #     }
+    #     return r

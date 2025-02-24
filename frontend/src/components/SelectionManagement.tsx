@@ -168,7 +168,8 @@ export const SelectionManagement: FC = () => {
                 <thead>
                   <tr>
                     <th>Indicators</th>
-                    <th></th>
+                    <th>Exact</th>
+                    <th>CV10</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -178,6 +179,17 @@ export const SelectionManagement: FC = () => {
                         <tr key={i}>
                           <td>{key}</td>
                           <td> {JSON.stringify(value)}</td>
+                          <td>
+                            {' '}
+                            {JSON.stringify(
+                              (
+                                currentModel.statistics_cv10 as Record<
+                                  string,
+                                  string | Record<string, number>
+                                >
+                              )[key],
+                            )}
+                          </td>
                         </tr>
                       ),
                     )}
