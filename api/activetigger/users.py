@@ -138,10 +138,10 @@ class Users:
 
     def get_user(self, name: str) -> UserInDBModel:
         """
-        Get user from database
+        Get active user from database
         """
         if name not in self.existing_users():
-            raise Exception("Username doesn't exist")
+            raise Exception("Username doesn't exist or is deactivated")
         user = self.db_manager.users_service.get_user(name)
         return UserInDBModel(
             username=name, hashed_password=user.key, status=user.description

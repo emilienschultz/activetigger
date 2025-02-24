@@ -144,7 +144,7 @@ async def login_for_access_token(
             form_data.username, form_data.password
         )
     except Exception as e:
-        raise HTTPException(status_code=401, detail="Wrong username or password") from e
+        raise HTTPException(status_code=401, detail=str(e)) from e
 
     # create new token for the user
     access_token = orchestrator.create_access_token(
