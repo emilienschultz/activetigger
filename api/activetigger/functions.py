@@ -12,6 +12,7 @@ from cryptography.fernet import Fernet
 from pandas import Series
 from sklearn.metrics import (  # type: ignore[import]
     accuracy_score,
+    confusion_matrix,
     f1_score,
     precision_score,
     recall_score,
@@ -260,5 +261,6 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
                 ],
             )
         ),
+        confusion_matrix=confusion_matrix(Y_true, Y_pred).tolist(),
     )
     return statistics

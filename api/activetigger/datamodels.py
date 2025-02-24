@@ -622,6 +622,7 @@ class MLStatisticsModel(BaseModel):
     f1_macro: float | None = None
     accuracy: float | dict[str, float] | None = None
     precision: float | dict[str, float] | None = None
+    confusion_matrix: list[list[int]] | None = None
 
 
 class FitModelResults(BaseModel):
