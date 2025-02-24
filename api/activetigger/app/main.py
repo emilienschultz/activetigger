@@ -47,9 +47,6 @@ from activetigger.orchestrator import orchestrator
 logger = logging.getLogger("api")
 logger_simplemodel = logging.getLogger("simplemodel")
 
-# starting time for the app
-timer = time.time()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -79,29 +76,23 @@ app.include_router(models.router)
 app.include_router(generation.router)
 
 
-async def check_processes(timer: float, step: int = 1) -> None:
-    """
-    Function to update server state
-    (i.e. joining parallel processes)
-    Limited to once per time interval
-    """
-    # max one update alllowed per step
-    if (time.time() - timer) < step:
-        return None
-
-    # update processes for each active projects
-    orchestrator.update()
+# update the orchestrator at each action
+last_update_time: float = 0.0
 
 
 @app.middleware("http")
 async def middleware(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
-):
+) -> Response:
     """
     Middleware to take care of completed processes
     Executed at each action on the server
     """
-    await check_processes(timer)
+    global last_update_time
+    current_time = time.time()
+    if current_time - last_update_time >= 1:
+        orchestrator.update()
+        last_update_time = current_time
     response = await call_next(request)
     return response
 
@@ -121,14 +112,6 @@ app.add_middleware(
 # --------------
 
 
-@app.get("/version")
-async def get_version() -> str:
-    """
-    Get the version of the server
-    """
-    return __version__
-
-
 @app.get("/", response_class=HTMLResponse)
 async def welcome() -> str:
     """
@@ -138,6 +121,14 @@ async def welcome() -> str:
     with open(str(data_path.joinpath("html", "welcome.html")), "r") as f:
         r = f.read()
     return r
+
+
+@app.get("/version")
+async def get_version() -> str:
+    """
+    Get the version of the server
+    """
+    return __version__
 
 
 @app.post("/token")
