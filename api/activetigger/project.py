@@ -585,7 +585,7 @@ class Project:
         r = {"train_set_n": len(self.schemes.content)}
         r["users"] = [
             i[0]
-            for i in self.db_manager.projects_service.get_coding_users(
+            for i in self.db_manager.users_service.get_coding_users(
                 scheme, self.params.project_slug
             )
         ]
@@ -737,7 +737,7 @@ class Project:
         """
         Get current active users on the time period
         """
-        users = self.db_manager.projects_service.get_distinct_users(self.name, period)
+        users = self.db_manager.users_service.get_distinct_users(self.name, period)
         return users
 
     def get_process(self, kind: str | list, user: str):

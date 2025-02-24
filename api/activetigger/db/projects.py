@@ -1,6 +1,5 @@
 import datetime
 import logging
-from collections.abc import Sequence
 from typing import Any, TypedDict
 
 from sqlalchemy import delete, func, select, update
@@ -18,7 +17,6 @@ from activetigger.db.models import (
     Projects,
     Schemes,
     Tokens,
-    Users,
 )
 
 
@@ -204,37 +202,6 @@ class ProjectsService:
             ).first()
             session.delete(project)
 
-    def get_distinct_users(
-        self, project_slug: str, timespan: int | None
-    ) -> Sequence[Users]:
-        with self.Session() as session:
-            stmt = (
-                select(Projects.user)
-                .join_from(Projects, Users)
-                .where(Projects.project_slug == project_slug)
-                .distinct()
-            )
-            if timespan:
-                time_threshold = datetime.datetime.now() - datetime.timedelta(
-                    seconds=timespan
-                )
-                stmt = stmt.join(Annotations).where(
-                    Annotations.time > time_threshold,
-                )
-        return session.scalars(stmt).all()
-
-    def get_current_users(self, timespan: int = 600):
-        session = self.Session()
-        time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
-        users = (
-            session.query(Logs.user_id)
-            .filter(Logs.time > time_threshold)
-            .distinct()
-            .all()
-        )
-        session.close()
-        return [u.user_id for u in users]
-
     def get_project_auth(self, project_slug: str):
         with self.Session() as session:
             auth = session.scalars(
@@ -316,19 +283,6 @@ class ProjectsService:
                 [row.element_id, row.annotation, row.user_id, row.time, row.comment]
                 for row in results
             ]
-
-    def get_coding_users(self, scheme: str, project_slug: str) -> Sequence[Users]:
-        with self.Session() as session:
-            distinct_users = session.scalars(
-                select(Annotations.user)
-                .join_from(Annotations, Users)
-                .where(
-                    Annotations.project_id == project_slug,
-                    Annotations.scheme_id == scheme,
-                )
-                .distinct()
-            ).all()
-            return distinct_users
 
     def get_recent_annotations(
         self, project_slug: str, user: str, scheme: str, limit: int

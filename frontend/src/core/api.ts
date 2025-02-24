@@ -769,7 +769,6 @@ export function useUsersAuth(projectSlug: string | null) {
       const res = await api.GET('/projects/auth', {
         params: { query: { project_slug: projectSlug } },
       });
-      console.log(res);
       if (!res.error) return res.data.auth;
     }
     return null;

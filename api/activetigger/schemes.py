@@ -38,6 +38,7 @@ class Schemes:
         """
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
+        self.db_manager = db_manager
         self.content = pd.read_parquet(path_content)  # text + context
         if path_test.exists():
             self.test = pd.read_parquet(path_test)
@@ -423,7 +424,9 @@ class Schemes:
         """
         Get users action for a scheme
         """
-        results = self.projects_service.get_coding_users(scheme, self.project_slug)
+        results = self.db_manager.users_service.get_coding_users(
+            scheme, self.project_slug
+        )
         return results
 
     def add_codebook(self, scheme: str, codebook: str, time: str):

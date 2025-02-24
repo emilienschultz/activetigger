@@ -77,6 +77,9 @@ class Users(Base):
     projects: Mapped[list[Projects]] = relationship(
         back_populates="user", cascade="all,delete,delete-orphan"
     )
+    deactivated: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
 
 class Schemes(Base):

@@ -28,7 +28,7 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
         orchestrator.revoke_access_token(token)
         return None
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/users/me", tags=["users"])
@@ -41,7 +41,7 @@ async def read_users_me(
     try:
         return UserModel(username=current_user.username, status=current_user.status)
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/users", tags=["users"])
@@ -58,7 +58,7 @@ async def existing_users(
             auth=["manager", "annotator"],
         )
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/users/recent", tags=["users"])
@@ -66,7 +66,7 @@ async def recent_users() -> list[str]:
     """
     Get recently connected users
     """
-    return orchestrator.db_manager.projects_service.get_current_users(300)
+    return orchestrator.db_manager.users_service.get_current_users(300)
 
 
 @router.post("/users/create", dependencies=[Depends(verified_user)], tags=["users"])
@@ -86,7 +86,7 @@ async def create_user(
             username_to_create, password, status, current_user.username, mail
         )
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
     return None
 
 
@@ -103,7 +103,7 @@ async def delete_user(
     try:
         orchestrator.users.delete_user(user_to_delete, current_user.username)
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
     return None
 
 
@@ -121,7 +121,7 @@ async def change_password(
         orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
         return None
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post(
@@ -147,7 +147,7 @@ async def set_auth(
                 current_user.username, f"INFO add user {username}", "all"
             )
         except Exception as e:
-            raise HTTPException(status_code=500) from e
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
         return None
 
@@ -173,4 +173,4 @@ async def get_auth(username: str) -> list:
     try:
         return orchestrator.users.get_auth(username, "all")
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e

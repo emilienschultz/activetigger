@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import]
 
 from activetigger.datamodels import UserInDBModel
 from activetigger.db.manager import DatabaseManager
@@ -84,16 +84,16 @@ class Users:
             )
         return auth
 
-    def existing_users(self, username: str = "root") -> dict:
+    def existing_users(self, username: str = "root", active: bool = True) -> dict:
         """
         Get existing users which have been created by one user
         (except root which can't be modified)
         TODO : better rules
         """
         if username == "root":
-            users = self.db_manager.users_service.get_users_created_by("all")
+            users = self.db_manager.users_service.get_users_created_by("all", active)
         else:
-            users = self.db_manager.users_service.get_users_created_by(username)
+            users = self.db_manager.users_service.get_users_created_by(username, active)
         return users
 
     def add_user(
@@ -109,8 +109,8 @@ class Users:
         Comments:
             Default, users are managers
         """
-        # test if the user doesn't exist
-        if name in self.existing_users():
+        # test if the user doesn't exist, even among deactivated users
+        if name in self.existing_users(active=False):
             raise Exception("Username already exists")
         hash_pwd = get_hash(password)
         self.db_manager.users_service.add_user(

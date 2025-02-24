@@ -314,10 +314,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Project Auth
-         * @description Users auth on a project
-         */
+        /** Get Project Auth */
         get: operations["get_project_auth_projects_auth_get"];
         put?: never;
         post?: never;
@@ -429,6 +426,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/annotation/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Annotation File
+         * @description Load annotations file
+         */
+        post: operations["post_annotation_file_annotation_file_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/elements/reconciliate": {
         parameters: {
             query?: never;
@@ -491,26 +508,6 @@ export interface paths {
          *     - No information kept of selection process
          */
         post: operations["post_annotation_annotation__action__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/annotation/file": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Post Annotation File
-         * @description Load annotations file
-         */
-        post: operations["post_annotation_file_annotation_file_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1579,16 +1576,6 @@ export interface components {
             filter?: string | null;
         };
         /**
-         * ProjectAuthsModel
-         * @description Auth description for a project
-         */
-        ProjectAuthsModel: {
-            /** Auth */
-            auth: {
-                [key: string]: string | undefined;
-            };
-        };
-        /**
          * ProjectDataModel
          * @description To create a new project
          */
@@ -2498,9 +2485,7 @@ export interface operations {
     };
     get_project_auth_projects_auth_get: {
         parameters: {
-            query: {
-                project_slug: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2513,16 +2498,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectAuthsModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": unknown;
                 };
             };
         };
@@ -2701,6 +2677,41 @@ export interface operations {
             };
         };
     };
+    post_annotation_file_annotation_file_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationsDataModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reconciliation_table_elements_reconciliate_get: {
         parameters: {
             query: {
@@ -2817,41 +2828,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AnnotationModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_annotation_file_annotation_file_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnnotationsDataModel"];
             };
         };
         responses: {
