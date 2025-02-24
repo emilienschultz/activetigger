@@ -1,13 +1,12 @@
 import datetime
 from collections.abc import Sequence
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from activetigger.db import DBException
 from activetigger.db.models import (
     Annotations,
-    Auths,
     Logs,
     Projects,
     Users,
@@ -75,7 +74,7 @@ class UsersService:
                 .values(deactivated=datetime.datetime.now())
             )
             # delete his auths
-            session.execute(delete(Auths).filter_by(user_id=username))
+            # session.execute(delete(Auths).filter_by(user_id=username))
 
     def change_password(self, username: str, password: str) -> None:
         """
