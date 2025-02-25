@@ -14,6 +14,7 @@ from slugify import slugify
 
 from activetigger.datamodels import (
     GenerationResult,
+    MLStatisticsModel,
     ProjectModel,
     SimpleModelModel,
     StaticFileModel,
@@ -26,7 +27,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import clean_regex
+from activetigger.functions import clean_regex, get_metrics
 from activetigger.generation.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
@@ -761,6 +762,17 @@ class Project:
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"/static/{name}")
 
+    def compute_statistics(
+        self, scheme: str, predictions: DataFrame, decimals: int = 2
+    ) -> MLStatisticsModel:
+        """
+        Compute statistics for a specific scheme and prediction
+        """
+        Y_true = self.schemes.get_scheme_data(scheme)["labels"]
+        Y_pred = predictions["prediction"]
+        metrics = get_metrics(Y_true, Y_pred, decimals)
+        return metrics
+
     def update_processes(self) -> None:
         """
         Update completed processes and do specific operations regarding their kind
@@ -768,7 +780,7 @@ class Project:
         - add the result if needed
         - manage error if needed
 
-        # TODO : move error management to dedictated functions
+        # TODO : REFACTOR THIS FUNCTION
 
         """
         add_predictions = {}
@@ -824,15 +836,16 @@ class Project:
                     if error:
                         raise Exception(str(error))
                     results = future.result()
-                    # case of predict_train to feature
+
+                    # case of predict_train : transform to feature
                     if (
                         results is not None
-                        and "path" in results
-                        and "predict_train.parquet" in results["path"]
+                        and results.path
+                        and "predict_train.parquet" in results.path
                     ):
-                        add_predictions["predict_" + prediction.model_name] = results[
-                            "path"
-                        ]
+                        add_predictions["predict_" + prediction.model_name] = (
+                            results.path
+                        )
                     self.bertmodels.add(prediction)
                     print("Bert predicting achieved")
                     logging.debug("Bert predicting achieved")

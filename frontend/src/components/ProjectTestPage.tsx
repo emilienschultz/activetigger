@@ -1,7 +1,9 @@
 import { FC, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
+import DataGrid, { Column } from 'react-data-grid';
 
+import { Row } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
 import {
@@ -14,6 +16,13 @@ import { useAppContext } from '../core/context';
 import { TestSetCreationForm } from './forms/TestSetCreationForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { SelectCurrentScheme } from './SchemesManagement';
+
+interface Row {
+  id: string;
+  label: string;
+  prediction: string;
+  text: string;
+}
 
 /**
  * Component test page
@@ -51,6 +60,36 @@ export const ProjectTestPage: FC = () => {
 
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics } = useStatistics(projectName || null, currentScheme || null);
+
+  // display table false prediction
+  const falsePredictions =
+    model?.test_scores && model.test_scores['false_predictions']
+      ? model.test_scores['false_predictions']
+      : null;
+
+  const columns: readonly Column<Row>[] = [
+    {
+      name: 'Id',
+      key: 'id',
+      resizable: true,
+    },
+    {
+      name: 'Label',
+      key: 'label',
+      resizable: true,
+    },
+    {
+      name: 'Prediction',
+      key: 'prediction',
+      resizable: true,
+    },
+    {
+      name: 'Text',
+      key: 'text',
+      resizable: true,
+    },
+  ];
+
   if (!projectName) return null;
 
   return (
@@ -88,9 +127,7 @@ export const ProjectTestPage: FC = () => {
                         id="model-selected"
                         className="form-select"
                         onChange={(e) => {
-                          if (e.target.value) {
-                            setCurrentModel(e.target.value);
-                          }
+                          setCurrentModel(e.target.value);
                         }}
                       >
                         <option></option>
@@ -168,7 +205,7 @@ export const ProjectTestPage: FC = () => {
                   {!(currentModel && currentScheme) && (
                     <div>Select a scheme & a model to start computation</div>
                   )}
-                  {model && model.test_scores ? (
+                  {model && model.test_scores && (
                     <div>
                       <table className="table">
                         <thead>
@@ -178,17 +215,30 @@ export const ProjectTestPage: FC = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {Object.entries(model['test_scores']).map(([key, value]) => (
-                            <tr key={key}>
-                              <td>{key}</td>
-                              <td>{JSON.stringify(value)}</td>
-                            </tr>
-                          ))}
+                          {model.train_scores &&
+                            Object.entries(model.test_scores)
+                              .filter(([key]) => key !== 'false_predictions')
+                              .map(([key, value], i) => (
+                                <tr key={i}>
+                                  <td>{key}</td>
+                                  <td>{JSON.stringify(value)}</td>
+                                </tr>
+                              ))}
                         </tbody>
                       </table>
+                      <details className="m-3">
+                        <summary>False predictions</summary>
+                        {falsePredictions ? (
+                          <DataGrid<Row>
+                            className="fill-grid"
+                            columns={columns}
+                            rows={falsePredictions || []}
+                          />
+                        ) : (
+                          <div>Compute prediction first</div>
+                        )}
+                      </details>
                     </div>
-                  ) : (
-                    <div>No model selected</div>
                   )}
                 </Tab>
               </Tabs>

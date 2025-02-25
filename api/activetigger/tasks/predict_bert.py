@@ -10,11 +10,13 @@ import numpy as np
 import pandas as pd
 import torch
 from pandas import DataFrame
-from transformers import (
+from transformers import (  # type: ignore[import]
     AutoModelForSequenceClassification,
     AutoTokenizer,
 )
 
+from activetigger.datamodels import ReturnTaskPredictModel
+from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -28,12 +30,15 @@ class PredictBert(BaseTask):
     name (str): name of the model
     df (DataFrame): labelled data
     col_text (str): text column
-    col_label (str): label column
+    col_label (str, Optional): label column
     base_model (str): model to use
     params (dict) : training parameters
     test_size (dict): train/test distribution
     event : possibility to interrupt
     unique_id : unique id for the current task
+
+    if col_label, compute the statistics in a file
+
     """
 
     kind = "predict_bert"
@@ -60,7 +65,7 @@ class PredictBert(BaseTask):
         self.file_name = file_name
         self.batch = batch
 
-    def __call__(self) -> dict:
+    def __call__(self) -> ReturnTaskPredictModel:
         """
         Main process to predict
         """
@@ -145,17 +150,39 @@ class PredictBert(BaseTask):
             # calculate label
             pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
 
-            # if asked, add the label column for latter statistics
+            # if labels available, compute statistics
+            print("Prediction ended")
             if self.col_label:
-                pred[self.col_label] = self.df[self.col_label]
+                # add elements in the dataframe
+                pred["label"] = self.df[self.col_label]
+                pred["text"] = self.df[self.col_text]
+                # only non null values
+                filter = pred["label"].notna()
+                metrics = get_metrics(pred[filter]["label"], pred[filter]["prediction"])
+                # add full text disagreement
+                metrics.false_predictions = (
+                    pred[["label", "prediction", "text"]]
+                    .loc[list(metrics.false_predictions)]
+                    .reset_index()
+                ).to_dict(orient="records")
+                # save in a dedicated file
+                with open(
+                    str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w"
+                ) as f:
+                    json.dump(metrics.model_dump(mode="json"), f)
+                # drop the temporary text col
+                pred.drop(columns=["text"], inplace=True)
+                print("Add statistics")
+
+            else:
+                metrics = None
 
             # write the content in a parquet file
             pred.to_parquet(self.path / self.file_name)
             print("Written", self.file_name)
-            return {
-                "success": True,
-                "path": str(self.path.joinpath(self.file_name)),
-            }
+            return ReturnTaskPredictModel(
+                path=str(self.path.joinpath(self.file_name)), metrics=metrics
+            )
         except Exception as e:
             print("Error in prediction", e)
             raise e

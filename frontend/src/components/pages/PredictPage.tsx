@@ -106,7 +106,7 @@ export const ProjectPredictPage: FC = () => {
               </div>
             )}
 
-            {currentModel && (
+            {currentModel && currentScheme && (
               <div>
                 {model && (
                   <div>
@@ -117,7 +117,7 @@ export const ProjectPredictPage: FC = () => {
                     ) : (
                       <button
                         className="btn btn-info m-4"
-                        onClick={() => computeModelPrediction(currentModel, 'all')}
+                        onClick={() => computeModelPrediction(currentModel, 'all', currentScheme)}
                       >
                         Launch prediction complete dataset
                       </button>

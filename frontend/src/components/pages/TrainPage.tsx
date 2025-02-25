@@ -32,9 +32,10 @@ import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 interface renameModel {
   new_name: string;
 }
+
 interface Row {
-  labels: string;
-  index: string;
+  id: string;
+  label: string;
   prediction: string;
   text: string;
 }
@@ -142,10 +143,10 @@ export const TrainPage: FC = () => {
   };
 
   // loss chart shape data
-  const loss = model?.training['loss'] ? JSON.parse(model?.training['loss']) : null;
-  const val_epochs = model?.training['loss'] ? Object.values(loss['epoch']) : [];
-  const val_loss = model?.training['loss'] ? Object.values(loss['val_loss']) : [];
-  const val_eval_loss = model?.training['loss'] ? Object.values(loss['val_eval_loss']) : [];
+  const loss = model?.loss ? JSON.parse(model?.loss) : null;
+  const val_epochs = model?.loss ? Object.values(loss['epoch']) : [];
+  const val_loss = model?.loss ? Object.values(loss['val_loss']) : [];
+  const val_eval_loss = model?.loss ? Object.values(loss['val_eval_loss']) : [];
 
   const valLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_loss[i] }));
   const valEvalLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_eval_loss[i] }));
@@ -194,19 +195,20 @@ export const TrainPage: FC = () => {
   );
 
   // display table false prediction
-  const falsePredictions = model?.train_scores
-    ? (JSON.parse(model.train_scores['false_prediction']) as Row[])
-    : null;
+  const falsePredictions =
+    model?.train_scores && model.train_scores['false_predictions']
+      ? model.train_scores['false_predictions']
+      : null;
 
   const columns: readonly Column<Row>[] = [
     {
       name: 'Id',
-      key: 'index',
+      key: 'id',
       resizable: true,
     },
     {
       name: 'Label',
-      key: 'labels',
+      key: 'label',
       resizable: true,
     },
     {
@@ -226,6 +228,8 @@ export const TrainPage: FC = () => {
     if (v >= 100) return 'completed, please wait';
     return v + '%';
   };
+
+  console.log(model);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
@@ -327,14 +331,12 @@ export const TrainPage: FC = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {Object.entries(model.training['parameters']).map(
-                                  ([key, value]) => (
-                                    <tr key={key}>
-                                      <td>{key}</td>
-                                      <td>{JSON.stringify(value)}</td>
-                                    </tr>
-                                  ),
-                                )}
+                                {Object.entries(model.params).map(([key, value]) => (
+                                  <tr key={key}>
+                                    <td>{key}</td>
+                                    <td>{JSON.stringify(value)}</td>
+                                  </tr>
+                                ))}
                               </tbody>
                             </table>
                             <div className="col-6 col-lg-4">
@@ -343,10 +345,12 @@ export const TrainPage: FC = () => {
                           </details>
                           <details className="custom-details">
                             <summary>Scores</summary>
-                            {!model_scores && !isComputing && (
+                            {!model_scores && !isComputing && currentScheme && (
                               <button
                                 className="btn btn-primary me-2 mt-2"
-                                onClick={() => computeModelPrediction(currentModel, 'train')}
+                                onClick={() =>
+                                  computeModelPrediction(currentModel, 'train', currentScheme)
+                                }
                               >
                                 Predict on training dataset
                               </button>
@@ -363,41 +367,21 @@ export const TrainPage: FC = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    <tr>
-                                      <td>F1 micro</td>
-                                      <td>{model.train_scores['f1_micro']}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>F1 macro</td>
-                                      <td>{model.train_scores['f1_macro']}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>F1 weighted</td>
-                                      <td>{model.train_scores['f1_weighted']}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>F1</td>
-                                      <td>{JSON.stringify(model.train_scores['f1'])}</td>
-                                    </tr>
-
-                                    <tr>
-                                      <td>Precision</td>
-                                      <td>{JSON.stringify(model.train_scores['precision'])}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>Recall</td>
-                                      <td>{JSON.stringify(model.train_scores['recall'])}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>Accuracy</td>
-                                      <td>{model.train_scores['accuracy']}</td>
-                                    </tr>
+                                    {model.train_scores &&
+                                      Object.entries(model.train_scores)
+                                        .filter(([key]) => key !== 'false_predictions')
+                                        .map(([key, value], i) => (
+                                          <tr key={i}>
+                                            <td>{key}</td>
+                                            <td>{JSON.stringify(value)}</td>
+                                          </tr>
+                                        ))}
                                   </tbody>
                                 </table>
                                 <details className="m-3">
                                   <summary>False predictions</summary>
                                   {model_scores ? (
-                                    <DataGrid
+                                    <DataGrid<Row>
                                       className="fill-grid"
                                       columns={columns}
                                       rows={falsePredictions || []}

@@ -623,6 +623,7 @@ class MLStatisticsModel(BaseModel):
     accuracy: float | dict[str, float] | None = None
     precision: float | dict[str, float] | None = None
     confusion_matrix: list[list[int]] | None = None
+    false_predictions: dict[str, Any] | list[Any] | None = None
 
 
 class FitModelResults(BaseModel):
@@ -649,3 +650,15 @@ class SimpleModelOutModel(BaseModel):
     username: str
     statistics: MLStatisticsModel
     statistics_cv10: MLStatisticsModel
+
+
+class ReturnTaskPredictModel(BaseModel):
+    path: str
+    metrics: MLStatisticsModel | None = None
+
+
+class BertModelInformationsModel(BaseModel):
+    params: Any
+    loss: Any
+    train_scores: Any
+    test_scores: Any

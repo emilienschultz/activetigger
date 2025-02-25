@@ -1042,7 +1042,7 @@ export function useModelInformations(
 export function useComputeModelPrediction(projectSlug: string | null, batchSize: number) {
   const { notify } = useNotifications();
   const computeModelPrediction = useCallback(
-    async (model_name: string, dataset: string) => {
+    async (model_name: string, dataset: string, scheme: string) => {
       if (projectSlug) {
         const res = await api.POST('/models/bert/predict', {
           params: {
@@ -1051,6 +1051,7 @@ export function useComputeModelPrediction(projectSlug: string | null, batchSize:
               model_name: model_name,
               dataset: dataset,
               batch_size: batchSize,
+              scheme: scheme,
             },
           },
         });

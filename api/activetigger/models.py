@@ -9,12 +9,10 @@ from multiprocessing import Process
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
@@ -22,6 +20,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 import activetigger.functions as functions
 from activetigger.datamodels import (
+    BertModelInformationsModel,
     BertModelParametersModel,
     BertParams,
     KnnParams,
@@ -125,7 +124,7 @@ class BertModel:
             r = json.load(f)
         return list(r["id2label"].values())
 
-    def get_training_progress(self) -> float:
+    def get_training_progress(self) -> float | None:
         """
         Get progress when training
         (different cases)
@@ -150,133 +149,51 @@ class BertModel:
             return float(r)
         return None
 
-    def informations(self, decimals: int = 3) -> dict:
+    def informations(self) -> BertModelInformationsModel:
         """
-        Compute statistics for train & test
-        - load statistics if computed
-        - update them if possible
-            - only training information
-            - train scores
-            - test scores
-        TODO : build a datatype
+        Informations on the bert model from the files
+        TODO : avoid to read and create a cache
         """
-        flag_modification = False
-        if (self.path.joinpath("statistics.json")).exists():
-            with open(self.path.joinpath("statistics.json"), "r") as f:
-                r = json.load(f)
-        else:
-            r = {}
 
-        # all informations already computed
-        if len(r) == 3:
-            return r
-
-        # add training informations
-        if "training" not in r:
-            log = self.log_history
-            loss = pd.DataFrame(
+        # build loss
+        with open(self.path.joinpath("log_history.txt"), "r") as f:
+            log = json.load(f)
+        loss = pd.DataFrame(
+            [
                 [
-                    [
-                        log[2 * i]["epoch"],
-                        log[2 * i]["loss"],
-                        log[2 * i + 1]["eval_loss"],
-                    ]
-                    for i in range(0, int((len(log) - 1) / 2))
-                ],
-                columns=["epoch", "val_loss", "val_eval_loss"],
-            )
-            r["training"] = {
-                "loss": loss.to_json(orient="columns"),
-                "parameters": self.params,
-            }
-            flag_modification = True
+                    log[2 * i]["epoch"],
+                    log[2 * i]["loss"],
+                    log[2 * i + 1]["eval_loss"],
+                ]
+                for i in range(0, int((len(log) - 1) / 2))
+            ],
+            columns=["epoch", "val_loss", "val_eval_loss"],
+        ).to_json(orient="columns")
 
-        # add train scores
-        if ("train_scores" not in r) and (
-            self.path.joinpath("predict_train.parquet")
-        ).exists():
-            df = self.data.copy()
-            df["prediction"] = self.pred["prediction"]
-            Y_pred = df["prediction"]
-            Y = df["labels"]
-            labels = list(Y.unique())
-            print(labels)
-            f = df.apply(lambda x: x["prediction"] != x["labels"], axis=1)
-            r["train_scores"] = {
-                "f1_micro": round(f1_score(Y, Y_pred, average="micro"), decimals),
-                "f1_macro": round(f1_score(Y, Y_pred, average="macro"), decimals),
-                "f1_weighted": round(f1_score(Y, Y_pred, average="weighted"), decimals),
-                "f1": dict(
-                    zip(
-                        labels,
-                        [
-                            round(i, decimals)
-                            for i in f1_score(Y, Y_pred, average=None, labels=labels)
-                        ],
-                    )
-                ),
-                "precision": dict(
-                    zip(
-                        labels,
-                        [
-                            round(i, decimals)
-                            for i in precision_score(
-                                list(Y), list(Y_pred), average=None, labels=labels
-                            )
-                        ],
-                    )
-                ),
-                "recall": dict(
-                    zip(
-                        labels,
-                        [
-                            round(i, decimals)
-                            for i in recall_score(
-                                list(Y), list(Y_pred), average=None, labels=labels
-                            )
-                        ],
-                    )
-                ),
-                "accuracy": round(accuracy_score(Y, Y_pred), decimals),
-                "false_prediction": df[f][["text", "labels", "prediction"]]
-                .reset_index()
-                .to_json(orient="records"),
-            }
-            flag_modification = True
+        # train scores
+        if (self.path.joinpath("metrics_predict_train.parquet.json")).exists():
+            with open(
+                self.path.joinpath("metrics_predict_train.parquet.json"), "r"
+            ) as f:
+                train_scores = json.load(f)
+        else:
+            train_scores = None
 
-        # add test scores
-        if ("test_scores" not in r) and (
-            self.path.joinpath("predict_test.parquet")
-        ).exists():
-            df = pd.read_parquet(self.path.joinpath("predict_test.parquet"))[
-                ["prediction", "labels"]
-            ].dropna()
-            Y_pred = df["prediction"]
-            Y = df["labels"]
-            f = df.apply(lambda x: x["prediction"] != x["labels"], axis=1)
-            r["test_scores"] = {
-                "f1_micro": round(f1_score(Y, Y_pred, average="micro"), decimals),
-                "f1_macro": round(f1_score(Y, Y_pred, average="macro"), decimals),
-                "f1_weighted": round(f1_score(Y, Y_pred, average="weighted"), decimals),
-                "f1": [
-                    round(i, decimals) for i in list(f1_score(Y, Y_pred, average=None))
-                ],
-                "precision": round(
-                    precision_score(list(Y), list(Y_pred), average="micro"), decimals
-                ),
-                "recall": [
-                    round(i, decimals)
-                    for i in list(recall_score(list(Y), list(Y_pred), average=None))
-                ],
-                "accuracy": round(accuracy_score(Y, Y_pred), decimals),
-            }
-            flag_modification = True
+        # test scores
+        if (self.path.joinpath("metrics_predict_test.parquet.json")).exists():
+            with open(
+                self.path.joinpath("metrics_predict_test.parquet.json"), "r"
+            ) as f:
+                test_scores = json.load(f)
+        else:
+            test_scores = None
 
-        # if modifications
-        if flag_modification:
-            with open(self.path.joinpath("statistics.json"), "w") as f:
-                json.dump(r, f)
-        return r
+        return BertModelInformationsModel(
+            params=self.params,
+            loss=loss,
+            train_scores=train_scores,
+            test_scores=test_scores,
+        )
 
 
 class BertModels:
@@ -630,18 +547,20 @@ class BertModels:
             os.remove(self.path.joinpath(name).joinpath("statistics.json"))
 
         # start prediction on the test set
-        args = {
-            "df": df,
-            "col_text": col_text,
-            "col_labels": col_labels,
-            "path": b.path,
-            "basemodel": b.base_model,
-            "file_name": "predict_test.parquet",
-            "batch": 32,
-        }
 
-        unique_id = self.queue.add_task("prediction", project_slug, PredictBert(**args))
-        del args
+        unique_id = self.queue.add_task(
+            "prediction",
+            project_slug,
+            PredictBert(
+                df=df,
+                col_text=col_text,
+                col_label=col_labels,
+                path=b.path,
+                basemodel=b.base_model,
+                file_name="predict_test.parquet",
+                batch=32,
+            ),
+        )
 
         b.status = "testing"
         self.computing.append(
@@ -651,9 +570,10 @@ class BertModels:
                 model_name=b.name,
                 unique_id=unique_id,
                 time=datetime.now(),
-                kind="bert",
+                kind="predict_bert",
                 status="testing",
                 get_training_progress=b.get_training_progress,
+                dataset="test",
             )
         )
 
@@ -667,6 +587,7 @@ class BertModels:
         df: DataFrame,
         col_text: str,
         dataset: str,
+        col_label: str | None = None,
         batch_size: int = 32,
     ):
         """
@@ -683,17 +604,19 @@ class BertModels:
         # load the model
         b = BertModel(name, self.path / name)
         b.load(lazy=True)
-        args = {
-            "df": df,
-            "col_text": col_text,
-            "path": b.path,
-            "basemodel": b.base_model,
-            "file_name": f"predict_{dataset}.parquet",
-            "dataset": dataset,
-            "batch": batch_size,
-        }
-        unique_id = self.queue.add_task("prediction", project_slug, PredictBert(**args))
-        del args
+        unique_id = self.queue.add_task(
+            "prediction",
+            project_slug,
+            PredictBert(
+                df=df,
+                col_text=col_text,
+                col_label=col_label,
+                path=b.path,
+                basemodel=b.base_model,
+                file_name=f"predict_{dataset}.parquet",
+                batch=batch_size,
+            ),
+        )
         b.status = f"predicting {dataset}"
         self.computing.append(
             UserModelComputing(
@@ -1182,39 +1105,39 @@ class SimpleModel:
             "params": dict(self.model_params),
         }
 
-    def compute_stats(self):
-        self.proba = self.compute_proba(self.model, self.X)
-        self.statistics = self.compute_statistics(
-            self.model, self.X, self.Y, self.labels
-        )
-        self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
+    # def compute_stats(self):
+    #     self.proba = self.compute_proba(self.model, self.X)
+    #     self.statistics = self.compute_statistics(
+    #         self.model, self.X, self.Y, self.labels
+    #     )
+    #     self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
 
-    def compute_proba(self, model, X):
-        """
-        Compute proba + entropy
-        """
-        proba = model.predict_proba(X)
-        proba = pd.DataFrame(proba, columns=model.classes_, index=X.index)
-        proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
+    # def compute_proba(self, model, X):
+    #     """
+    #     Compute proba + entropy
+    #     """
+    #     proba = model.predict_proba(X)
+    #     proba = pd.DataFrame(proba, columns=model.classes_, index=X.index)
+    #     proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
 
-        # Calculate label
-        proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
+    #     # Calculate label
+    #     proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
 
-        return proba
+    #     return proba
 
-    def compute_precision(self, model, X, Y, labels):
-        """
-        Compute precision score
-        """
-        f = Y.notna()
-        y_pred = model.predict(X[f])
-        precision = precision_score(
-            list(Y[f]),
-            list(y_pred),
-            average="micro",
-            # pos_label=labels[0]
-        )
-        return precision
+    # def compute_precision(self, model, X, Y, labels):
+    #     """
+    #     Compute precision score
+    #     """
+    #     f = Y.notna()
+    #     y_pred = model.predict(X[f])
+    #     precision = precision_score(
+    #         list(Y[f]),
+    #         list(y_pred),
+    #         average="micro",
+    #         # pos_label=labels[0]
+    #     )
+    #     return precision
 
     # def compute_statistics(self, model, X, Y, labels):
     #     """

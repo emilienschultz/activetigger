@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 import pandas as pd
 from fastapi import (
@@ -13,6 +13,7 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.datamodels import (
+    BertModelInformationsModel,
     BertModelModel,
     SimpleModelModel,
     SimpleModelOutModel,
@@ -60,7 +61,7 @@ async def get_simplemodel(
 @router.get("/models/bert", dependencies=[Depends(verified_user)])
 async def get_bert(
     project: Annotated[Project, Depends(get_project)], name: str
-) -> dict[str, Any]:
+) -> BertModelInformationsModel:
     """
     Get Bert parameters and statistics
     """
@@ -76,6 +77,7 @@ async def predict(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_name: str,
+    scheme: str,
     dataset: str = "all",
     batch_size: int = 32,
 ) -> None:
@@ -86,9 +88,14 @@ async def predict(
     try:
         # get the data
         if dataset == "train":
-            df = project.content[["text"]]  # get data
+            df = project.schemes.get_scheme_data(
+                scheme=scheme, complete=True, kind=["train"]
+            )
+            col_label = "labels"
+            # df = project.content[["text"]]  # get data
         elif dataset == "all":
             df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
+            col_label = None
         else:
             raise Exception(f"dataset {dataset} not found")
 
@@ -99,12 +106,48 @@ async def predict(
             user=current_user.username,
             df=df,
             col_text="text",
+            col_label=col_label,
             dataset=dataset,
             batch_size=batch_size,
         )
         orchestrator.log_action(
             current_user.username, f"INFO predict bert {model_name}", project.name
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/models/bert/test", dependencies=[Depends(verified_user)])
+async def start_test(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    scheme: str,
+    model: str,
+) -> None:
+    """
+    Start testing the model on the test set
+    """
+    if project.schemes.test is None:
+        raise HTTPException(status_code=500, detail="No test dataset for this project")
+
+    try:
+        # get data labels + text
+        df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
+
+        # launch testing process : prediction
+        project.bertmodels.start_testing_process(
+            project_slug=project.name,
+            name=model,
+            user=current_user.username,
+            df=df,
+            col_text="text",
+            col_labels="labels",
+        )
+        orchestrator.log_action(
+            current_user.username, "INFO predict bert for testing", project.name
+        )
+        return None
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -191,41 +234,6 @@ async def stop_bert(
             current_user.username, "INFO stop bert training", project.name
         )
         return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/models/bert/test", dependencies=[Depends(verified_user)])
-async def start_test(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str,
-    model: str,
-) -> None:
-    """
-    Start testing the model on the test set
-    """
-    if project.schemes.test is None:
-        raise HTTPException(status_code=500, detail="No test dataset for this project")
-
-    try:
-        # get data labels + text
-        df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
-
-        # launch testing process : prediction
-        project.bertmodels.start_testing_process(
-            project_slug=project.name,
-            name=model,
-            user=current_user.username,
-            df=df,
-            col_text="text",
-            col_labels="labels",
-        )
-        orchestrator.log_action(
-            current_user.username, "INFO predict bert for testing", project.name
-        )
-        return None
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
