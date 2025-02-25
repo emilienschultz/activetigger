@@ -17,12 +17,17 @@ class ComputeSbert(BaseTask):
     kind = "compute_feature_sbert"
 
     def __init__(
-        self, texts: Series, model: str = "all-mpnet-base-v2", batch_size: int = 32
+        self,
+        texts: Series,
+        model: str = "all-mpnet-base-v2",
+        batch_size: int = 32,
+        min_gpu: int = 6,
     ):
         super().__init__()
         self.texts = texts
         self.model = model
         self.batch_size = batch_size
+        self.min_gpu = min_gpu
 
     def __call__(self) -> DataFrame:
         """
@@ -30,7 +35,14 @@ class ComputeSbert(BaseTask):
         """
 
         if torch.cuda.is_available():
-            device = torch.device("cuda")  # Use CUDA
+            if (
+                torch.cuda.get_device_properties(0).total_memory / (1024**3)
+                > self.min_gpu
+            ):
+                device = torch.device("cuda")  # Use CUDA
+            else:
+                print("Not enough GPU memory, fallback to CPU")
+                device = torch.device("cpu")
         elif torch.backends.mps.is_available():
             device = torch.device("mps")
         else:
