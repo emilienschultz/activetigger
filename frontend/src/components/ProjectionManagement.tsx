@@ -1,27 +1,17 @@
 import { pick } from 'lodash';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { FaLock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 import Select from 'react-select';
-import {
-  DomainTuple,
-  VictoryAxis,
-  VictoryChart,
-  VictoryLegend,
-  VictoryScatter,
-  VictoryTheme,
-  VictoryTooltip,
-  VictoryZoomContainer,
-} from 'victory';
+import { DomainTuple } from 'victory';
 
-import { LuZoomIn } from 'react-icons/lu';
 import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
+import { UmapViz } from './UmapViz';
 
 interface ZoomDomain {
   x?: DomainTuple;
@@ -67,16 +57,20 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     currentScheme,
   );
 
-  const projectionDataFormated = projectionData
-    ? projectionData.x.map((value, index) => {
-        return {
-          x: value,
-          y: projectionData.y[index],
-          labels: projectionData.labels[index],
-          index: projectionData.index[index],
-        };
-      })
-    : [];
+  const projectionDataFormated = useMemo(
+    () =>
+      projectionData
+        ? projectionData.x.map((value, index) => {
+            return {
+              x: value as number,
+              y: projectionData.y[index] as number,
+              labels: projectionData.labels[index] as string[],
+              index: projectionData.index[index] as number,
+            };
+          })
+        : [],
+    [projectionData],
+  );
 
   // form management
   const availableFeatures = project?.features.available ? project?.features.available : [];
@@ -178,155 +172,48 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     setAppContext,
   ]);
 
-  // zoom management
-  const initialZoomDomain = {
-    x: [-1.5, 1.5] as DomainTuple,
-    y: [-1.5, 1.5] as DomainTuple,
-  };
-  const step = 0.2;
-
-  const [zoomDomain, setZoomDomain] = useState<{ x?: DomainTuple; y?: DomainTuple } | null>(
-    initialZoomDomain,
-  );
-
-  const handleZoom = (domain: ZoomDomain) => {
-    if (!zoomDomain) setZoomDomain(initialZoomDomain);
-    setZoomDomain(domain);
-
-    if (domain.x && domain.y) {
-      setAppContext((prev) => ({
-        ...prev,
-        selectionConfig: {
-          ...selectionConfig,
-          frame: ([] as number[]).concat(
-            Object.values(domain.x || []),
-            Object.values(domain.y || []),
-          ),
-        },
-      }));
-    }
-  };
-  const handleZoomIn = () => {
-    if (zoomDomain && zoomDomain.x && zoomDomain.y) {
-      setZoomDomain({
-        x: [Number(zoomDomain.x[0]) + step, Number(zoomDomain.x[1]) - step],
-        y: [Number(zoomDomain.y[0]) + step, Number(zoomDomain.y[1]) - step],
-      });
-    }
-  };
-  const resetZoom = () => {
-    setZoomDomain(initialZoomDomain);
-  };
-
   // element to display
   const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
 
-  //  console.log(project);
-
   return (
     <div>
-      {projectionData && labelColorMapping && (
+      {projectionDataFormated && labelColorMapping && (
         <div className="row align-items-start">
-          <div className="col-8">
-            <div className="d-flex align-items-center justify-content-center">
-              <label className="d-flex align-items-center mx-4" style={{ display: 'block' }}>
-                <input
-                  type="checkbox"
-                  checked={selectionConfig.frameSelection}
-                  className="mx-2"
-                  onChange={(_) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      selectionConfig: {
-                        ...selectionConfig,
-                        frameSelection: !selectionConfig.frameSelection,
-                      },
-                    }));
-                    // console.log(selectionConfig.frameSelection);
-                  }}
-                />
-                <FaLock />
-                {/* Use visualisation frame to lock the selection */}
-              </label>
-              <button onClick={handleZoomIn} className="btn">
-                <LuZoomIn />
-              </button>
-              <button onClick={resetZoom}>Reset zoom</button>
-            </div>
-            {
-              <VictoryChart
-                theme={VictoryTheme.material}
-                domain={initialZoomDomain}
-                containerComponent={
-                  <VictoryZoomContainer
-                    zoomDomain={zoomDomain || initialZoomDomain}
-                    onZoomDomainChange={handleZoom}
-                  />
-                }
-                height={300}
-                width={300}
-              >
-                <VictoryAxis
-                  style={{
-                    axis: { stroke: 'transparent' },
-                    ticks: { stroke: 'transparent' },
-                    tickLabels: { fill: 'transparent' },
-                  }}
-                />
-                <VictoryScatter
-                  style={{
-                    data: {
-                      fill: ({ datum }) =>
-                        datum.index === currentElementId
-                          ? 'black'
-                          : labelColorMapping[datum.labels],
-                      opacity: ({ datum }) => (datum.index === currentElementId ? 1 : 0.5),
-                      cursor: 'pointer',
-                      strokeWidth: 0,
-                    },
-                  }}
-                  size={({ datum }) => (datum.index === currentElementId ? 5 : 2)}
-                  labels={({ datum }) => datum.index}
-                  labelComponent={
-                    <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />
-                  }
-                  data={projectionDataFormated}
-                  events={[
-                    {
-                      target: 'data',
-                      eventHandlers: {
-                        onClick: (_, props) => {
-                          const { datum } = props;
-                          getElementById(datum.index, 'train').then((element) => {
-                            setSelectedElement(element || null);
-                          });
-                        },
-                      },
-                    },
-                  ]}
-                  animate={false}
-                />
-
-                <VictoryLegend
-                  x={0}
-                  y={60}
-                  title="Legend"
-                  centerTitle
-                  orientation="vertical"
-                  gutter={10}
-                  style={{
-                    border: { stroke: 'black' },
-                    title: { fontSize: 5 },
-                    labels: { fontSize: 5 },
-                  }}
-                  data={Object.keys(labelColorMapping).map((label) => ({
-                    name: label,
-                    symbol: { fill: labelColorMapping[label] },
-                  }))}
-                />
-              </VictoryChart>
-            }
-          </div>
+          <UmapViz
+            className="col-8"
+            data={projectionDataFormated}
+            //selection
+            selectedId={selectedElement?.element_id}
+            setSelectedId={(id: string) => {
+              getElementById(id, 'train').then((element) => {
+                setSelectedElement(element || null);
+              });
+            }}
+            onZoom={(domain) => {
+              setAppContext((prev) => ({
+                ...prev,
+                selectionConfig: {
+                  ...selectionConfig,
+                  frame: ([] as number[]).concat(
+                    Object.values(domain.x || []),
+                    Object.values(domain.y || []),
+                  ),
+                },
+              }));
+            }}
+            // Frame
+            frameSelection={selectionConfig.frameSelection}
+            setFrameSelection={(frameSelection) => {
+              setAppContext((prev) => ({
+                ...prev,
+                selectionConfig: {
+                  ...selectionConfig,
+                  frameSelection,
+                },
+              }));
+            }}
+            labelColorMapping={labelColorMapping}
+          />
           <div className="col-4">
             {selectedElement && (
               <div className="mt-5">
