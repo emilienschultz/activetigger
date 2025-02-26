@@ -174,8 +174,9 @@ export const SelectionManagement: FC = () => {
                 </thead>
                 <tbody>
                   {currentModel.params &&
-                    (currentModel.statistics && Object.entries(currentModel.statistics)).map(
-                      ([key, value], i) => (
+                    (currentModel.statistics && Object.entries(currentModel.statistics))
+                      .filter(([key]) => key !== 'false_predictions')
+                      .map(([key, value], i) => (
                         <tr key={i}>
                           <td>{key}</td>
                           <td> {JSON.stringify(value)}</td>
@@ -191,8 +192,7 @@ export const SelectionManagement: FC = () => {
                             )}
                           </td>
                         </tr>
-                      ),
-                    )}
+                      ))}
                 </tbody>
               </table>
             </div>
