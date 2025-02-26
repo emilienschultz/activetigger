@@ -846,7 +846,12 @@ class Project:
             # take elements that are not in index
             df = df[~df.index.isin(elements_index)]
 
+            # sample elements
             elements_to_add = df.sample(update.add_n_train)
+
+            # drop na elements to avoid problems
+            elements_to_add = elements_to_add[elements_to_add["text"].notna()]
+
             self.content = pd.concat([self.content, elements_to_add])
             self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
 

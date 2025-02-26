@@ -34,6 +34,12 @@ class ComputeSbert(BaseTask):
         Compute sbert embedding
         """
 
+        # test the data
+        if self.texts.isnull().sum() > 0:
+            raise ValueError(
+                "There are missing values in the input data, so we can't proceed"
+            )
+
         if torch.cuda.is_available():
             if (
                 torch.cuda.get_device_properties(0).total_memory / (1024**3)
@@ -59,9 +65,12 @@ class ComputeSbert(BaseTask):
                         list(self.texts), device=str(device), batch_size=self.batch_size
                     )
             else:
+                print("start computation 2")
                 emb = sbert.encode(
                     list(self.texts), batch_size=self.batch_size, device=str(device)
                 )
+            print("Computation done")
+            print(emb)
             emb = DataFrame(emb, index=self.texts.index)
             emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
             logging.debug("computation end")
