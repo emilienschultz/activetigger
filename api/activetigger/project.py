@@ -840,7 +840,7 @@ class Project:
                 )
             # index of elements used
             elements_index = list(self.content.index)
-            if self.schemes.test:
+            if self.schemes.test is not None:
                 elements_index += list(self.schemes.test.index)
 
             # take elements that are not in index
