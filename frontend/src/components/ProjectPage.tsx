@@ -11,6 +11,7 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useExpandTrainSet } from '../core/api';
 import { useAppContext } from '../core/context';
+import { ProjectUpdateForm } from './forms/ProjectUpdateForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
 import { ProjectStatistics } from './ProjectStatistics';
 import { SchemesManagement } from './SchemesManagement';
@@ -189,6 +190,8 @@ export const ProjectPage: FC = () => {
                     </tr>
                   </tbody>
                 </table>
+
+                <ProjectUpdateForm />
 
                 <div className="col-9 alert alert-warning fw-bold mt-3">
                   <span className="explanations">

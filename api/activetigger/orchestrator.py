@@ -605,11 +605,8 @@ class Orchestrator:
         project.params.n_train = len(project.content)
         self.set_project_parameters(project.params, username)
 
-        # rebuild database + filesystem
-        project.content[[]].to_parquet(
-            project.params.dir.joinpath("features.parquet"), index=True
-        )
-        project.features.projects_service.delete_all_features(project.name)
+        # drop existing features
+        project.drop_features()
 
         # restart the project
         del df_all, elements_to_add

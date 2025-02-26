@@ -246,6 +246,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Project
+         * @description Update a project
+         *     - change the name
+         *     - change context cols
+         *     - change text cols
+         */
+        post: operations["update_project_projects_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/delete": {
         parameters: {
             query?: never;
@@ -910,6 +933,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/models/bert/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Test
+         * @description Start testing the model on the test set
+         */
+        post: operations["start_test_models_bert_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/models/bert/train": {
         parameters: {
             query?: never;
@@ -945,26 +988,6 @@ export interface paths {
          * @description Stop user process
          */
         post: operations["stop_bert_models_bert_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start Test
-         * @description Start testing the model on the test set
-         */
-        post: operations["start_test_models_bert_test_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1318,6 +1341,17 @@ export interface components {
             /** Projects */
             projects: components["schemas"]["ProjectSummaryModel"][];
         };
+        /** BertModelInformationsModel */
+        BertModelInformationsModel: {
+            /** Params */
+            params: unknown;
+            /** Loss */
+            loss: unknown;
+            /** Train Scores */
+            train_scores: unknown;
+            /** Test Scores */
+            test_scores: unknown;
+        };
         /**
          * BertModelModel
          * @description Request Bertmodel
@@ -1597,6 +1631,10 @@ export interface components {
             precision?: number | {
                 [key: string]: number | undefined;
             } | null;
+            /** Confusion Matrix */
+            confusion_matrix?: number[][] | null;
+            /** False Predictions */
+            false_predictions?: Record<string, never> | unknown[] | null;
         };
         /**
          * NextInModel
@@ -1838,6 +1876,17 @@ export interface components {
             created_by: string;
             /** Created At */
             created_at: string;
+        };
+        /** ProjectUpdateModel */
+        ProjectUpdateModel: {
+            /** Project Name */
+            project_name?: string | null;
+            /** Language */
+            language?: string | null;
+            /** Cols Text */
+            cols_text?: string[] | null;
+            /** Cols Context */
+            cols_context?: string[] | null;
         };
         /**
          * ProjectionInStrictModel
@@ -2446,6 +2495,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_project_projects_update_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -3573,7 +3657,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["BertModelInformationsModel"];
                 };
             };
             /** @description Validation Error */
@@ -3591,8 +3675,42 @@ export interface operations {
         parameters: {
             query: {
                 model_name: string;
+                scheme: string;
                 dataset?: string;
                 batch_size?: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_test_models_bert_test_post: {
+        parameters: {
+            query: {
+                scheme: string;
+                model: string;
                 project_slug: string;
             };
             header?: never;
@@ -3659,39 +3777,6 @@ export interface operations {
     stop_bert_models_bert_stop_post: {
         parameters: {
             query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_test_models_bert_test_post: {
-        parameters: {
-            query: {
-                scheme: string;
-                model: string;
                 project_slug: string;
             };
             header?: never;

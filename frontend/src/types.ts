@@ -57,6 +57,8 @@ export type ProjectionInStrictModel = components['schemas']['ProjectionInStrictM
 
 export type GenerationModelApi = components['schemas']['GenerationModelApi'];
 
+export type ProjectUpdateModel = components['schemas']['ProjectUpdateModel'];
+
 export type ProjectionModelParams =
   | components['schemas']['TsneModel']
   | components['schemas']['UmapModel'];

@@ -9,6 +9,7 @@ from typing import cast
 
 import pandas as pd
 import pytz
+from fastapi.encoders import jsonable_encoder
 from pandas import DataFrame
 from slugify import slugify
 
@@ -16,6 +17,7 @@ from activetigger.datamodels import (
     GenerationResult,
     MLStatisticsModel,
     ProjectModel,
+    ProjectUpdateModel,
     SimpleModelModel,
     StaticFileModel,
     TestSetDataModel,
@@ -772,6 +774,81 @@ class Project:
         Y_pred = predictions["prediction"]
         metrics = get_metrics(Y_true, Y_pred, decimals)
         return metrics
+
+    def update_project(self, update: ProjectUpdateModel) -> None:
+        """
+        Update project parameters
+
+        For text/contexts, it needs to draw from raw data
+        """
+
+        # flag if needed to drop features
+        drop_features = False
+
+        # update the name
+        if update.project_name and update.project_name != self.params.project_name:
+            self.params.project_name = update.project_name
+
+        # update the language
+        if update.language and update.language != self.params.language:
+            self.params.language = update.language
+            drop_features = True
+
+        # update the context columns by modifying the train data
+        if (
+            update.cols_context
+            and self.params.dir
+            and set(update.cols_context) != set(self.params.cols_context)
+        ):
+            df = pd.read_parquet(
+                self.params.dir.joinpath("data_all.parquet"),
+                columns=update.cols_context,
+            )
+            self.content.drop(columns=self.params.cols_context, inplace=True)
+            self.content = pd.concat([self.content, df], axis=1)
+            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.params.cols_context = update.cols_context
+            print("Context updated")
+
+        # update the text columns
+        if (
+            update.cols_text
+            and self.params.dir
+            and set(update.cols_text) != set(self.params.cols_text)
+        ):
+            df = pd.read_parquet(
+                self.params.dir.joinpath("data_all.parquet"),
+                columns=update.cols_text,
+            ).loc[self.content.index]
+            df["text"] = df[update.cols_text].apply(
+                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
+            )
+            self.content["text"] = df["text"]
+            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.params.cols_text = update.cols_text
+            drop_features = True
+            print("Texts updated")
+
+        # if needed, drop features
+        if drop_features:
+            self.drop_features()
+
+        # update the database
+        self.db_manager.projects_service.update_project(
+            self.params.project_slug, jsonable_encoder(self.params)
+        )
+        return None
+
+    def drop_features(self) -> None:
+        """
+        Clean all the features of the project
+        """
+        if not self.params.dir:
+            raise ValueError("No directory for project")
+        self.content[[]].to_parquet(
+            self.params.dir.joinpath("features.parquet"), index=True
+        )
+        self.features.projects_service.delete_all_features(self.name)
 
     def update_processes(self) -> None:
         """

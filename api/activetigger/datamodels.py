@@ -662,3 +662,10 @@ class BertModelInformationsModel(BaseModel):
     loss: Any
     train_scores: Any
     test_scores: Any
+
+
+class ProjectUpdateModel(BaseModel):
+    project_name: str | None = None
+    language: str | None = None
+    cols_text: list[str] | None = None
+    cols_context: list[str] | None = None

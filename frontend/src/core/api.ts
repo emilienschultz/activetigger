@@ -13,6 +13,7 @@ import {
   LoginParams,
   ProjectDataModel,
   ProjectStateModel,
+  ProjectUpdateModel,
   ProjectionInStrictModel,
   SimpleModelModel,
   SupportedAPI,
@@ -1864,4 +1865,26 @@ export function useExpandTrainSet(projectSlug: string | null) {
     [notify, projectSlug],
   );
   return postAnnotationsFile;
+}
+
+/**
+ * Post update project
+ */
+export function useUpdateProject(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const updateProject = useCallback(
+    async (formData: ProjectUpdateModel) => {
+      if (projectSlug) {
+        const res = await api.POST('/projects/update', {
+          params: {
+            query: { project_slug: projectSlug },
+          },
+          body: formData,
+        });
+        if (!res.error) notify({ type: 'success', message: 'Project updated' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return updateProject;
 }

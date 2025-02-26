@@ -18,6 +18,7 @@ from activetigger.datamodels import (
     ProjectDataModel,
     ProjectDescriptionModel,
     ProjectStateModel,
+    ProjectUpdateModel,
     TestSetDataModel,
     UserInDBModel,
 )
@@ -85,6 +86,32 @@ async def new_project(
 
 
 @router.post(
+    "/projects/update",
+    dependencies=[Depends(verified_user), Depends(check_auth_exists)],
+)
+async def update_project(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    update: ProjectUpdateModel,
+) -> None:
+    """
+    Update a project
+    - change the name
+    - change the language
+    - change context cols
+    - change text cols
+    """
+    try:
+        project.update_project(update)
+        orchestrator.log_action(
+            current_user.username, "INFO update project", project.name
+        )
+        del orchestrator.projects[project.name]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
     "/projects/delete",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
@@ -121,53 +148,6 @@ async def expand_project(
         orchestrator.add_elements_to_trainset(
             project_slug, n_elements, current_user.username
         )
-
-        # get index for existing elements
-        # get random elements
-        # add them in the trainset with correct columns name
-        # drop features
-
-        # if not project.params.dir:
-        #     raise Exception("Problem with project parameters - dir not found")
-
-        # data_all = project.params.dir.joinpath("data_all.parquet")
-
-        # # read only the columns
-        # df_all = pd.read_parquet(
-        #     data_all, columns=list(project.schemes.content.columns)
-        # )
-
-        # # index of elements used
-        # elements_index = list(project.schemes.content.index)
-        # if project.schemes.test:
-        #     elements_index += list(project.schemes.test.index)
-
-        # # take elements that are not in index
-        # df_all = df_all[~df_all.index.isin(elements_index)]
-
-        # # sample
-        # elements_to_add = df_all.sample(n_elements)
-
-        # # add them to the project
-        # project.content = pd.concat([project.content, elements_to_add])
-
-        # # write the new trainset
-        # project.content.to_parquet(project.params.dir.joinpath("train.parquet"))
-
-        # # update params
-        # project.params.n_train = len(project.content)
-        # orchestrator.set_project_parameters(project.params, current_user.username)
-        # print(project.params)
-
-        # # rebuild database + filesystem
-        # project.content[[]].to_parquet(
-        #     project.params.dir.joinpath("features.parquet"), index=True
-        # )
-        # project.features.projects_service.delete_all_features(project.name)
-
-        # # restart the project
-        # del df_all, elements_to_add
-        # del orchestrator.projects[project.name]
 
         return None
     except Exception as e:
