@@ -1,5 +1,5 @@
 import { pick } from 'lodash';
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,8 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
-import { UmapViz } from './UmapViz';
+import { ProjectionVizSigma } from './ProjectionVizSigma';
+import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
 interface ZoomDomain {
   x?: DomainTuple;
@@ -31,25 +32,29 @@ const colormap = [
   '#17becf', // tab:cyan
 ];
 
+interface ProjectionManagementProps {
+  projectName: string | null;
+  projectSlug?: string;
+  currentScheme: string | null;
+  availableFeatures: string[];
+}
+
 // define the component
-export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
-  currentElementId,
+export const ProjectionManagement: FC<ProjectionManagementProps> = ({
+  projectName,
+  currentScheme,
+  availableFeatures,
 }) => {
   // hook for all the parameters
   const {
-    appContext: { currentProject: project, currentScheme, currentProjection, selectionConfig },
+    appContext: { currentProject: project, currentProjection, selectionConfig },
     setAppContext,
   } = useAppContext();
   const navigate = useNavigate();
   const { notify } = useNotifications();
 
   const { authenticatedUser } = useAuth();
-  const { getElementById } = useGetElementById(
-    project?.params.project_slug || null,
-    currentScheme || null,
-  );
-
-  const projectName = project?.params.project_slug ? project?.params.project_slug : null;
+  const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -57,24 +62,8 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     currentScheme,
   );
 
-  const projectionDataFormated = useMemo(
-    () =>
-      projectionData
-        ? projectionData.x.map((value, index) => {
-            return {
-              x: value as number,
-              y: projectionData.y[index] as number,
-              labels: projectionData.labels[index] as string[],
-              index: projectionData.index[index] as number,
-            };
-          })
-        : [],
-    [projectionData],
-  );
-
   // form management
-  const availableFeatures = project?.features.available ? project?.features.available : [];
-  const availableProjections = project?.projections.options ? project?.projections.options : null;
+  const availableProjections = useMemo(() => project?.projections, [project?.projections]);
 
   const { register, handleSubmit, watch, control } = useForm<ProjectionInStrictModel>({
     defaultValues: {
@@ -127,7 +116,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   );
 
   useEffect(() => {
-    if (projectionData && !labelColorMapping) {
+    if (projectionData) {
       const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
       const labeledColors = uniqueLabels.reduce<Record<string, string>>(
         (acc, label, index: number) => {
@@ -138,16 +127,15 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
       );
       setLabelColorMapping(labeledColors);
     }
-  }, [projectionData, labelColorMapping]);
+  }, [projectionData]);
 
   // manage projection refresh (could be AMELIORATED)
   useEffect(() => {
     // case a first projection is added
     if (
-      project &&
       authenticatedUser &&
       !currentProjection &&
-      project?.projections.available[authenticatedUser?.username]
+      availableProjections?.available[authenticatedUser?.username]
     ) {
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
@@ -157,14 +145,14 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     if (
       authenticatedUser &&
       currentProjection &&
-      currentProjection != project?.projections.available[authenticatedUser?.username]
+      currentProjection != availableProjections?.available[authenticatedUser?.username]
     ) {
       console.log('Refetch projection data');
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
     }
   }, [
-    project,
+    availableProjections?.available,
     authenticatedUser,
     currentProjection,
     reFetchProjectionData,
@@ -174,30 +162,42 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
 
   // element to display
   const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
+  const setSelectedId = useCallback(
+    (id?: string) => {
+      if (id)
+        getElementById(id, 'train').then((element) => {
+          setSelectedElement(element || null);
+        });
+      else setSelectedElement(null);
+    },
+    [getElementById, setSelectedElement],
+  );
+
+  // transform frame type to bbox type
+  const bbox: MarqueBoundingBox | undefined = selectionConfig.frame
+    ? {
+        x: { min: selectionConfig.frame[0], max: selectionConfig.frame[1] },
+        y: { min: selectionConfig.frame[2], max: selectionConfig.frame[3] },
+      }
+    : undefined;
 
   return (
     <div>
-      {projectionDataFormated && labelColorMapping && (
+      {projectionData && labelColorMapping && (
         <div className="row align-items-start">
-          <UmapViz
+          <ProjectionVizSigma
             className="col-8"
-            data={projectionDataFormated}
+            data={projectionData}
             //selection
             selectedId={selectedElement?.element_id}
-            setSelectedId={(id: string) => {
-              getElementById(id, 'train').then((element) => {
-                setSelectedElement(element || null);
-              });
-            }}
-            onZoom={(domain) => {
+            setSelectedId={setSelectedId}
+            bbox={bbox}
+            setBbox={(bbox?: MarqueBoundingBox) => {
               setAppContext((prev) => ({
                 ...prev,
                 selectionConfig: {
                   ...selectionConfig,
-                  frame: ([] as number[]).concat(
-                    Object.values(domain.x || []),
-                    Object.values(domain.y || []),
-                  ),
+                  frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
                 },
               }));
             }}
@@ -240,7 +240,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
         <label htmlFor="model">Select a model</label>
         <select id="model" {...register('method')}>
           <option value=""></option>
-          {Object.keys(availableProjections ? availableProjections : []).map((e) => (
+          {Object.keys(availableProjections?.options || {}).map((e) => (
             <option key={e} value={e}>
               {e}
             </option>
@@ -263,7 +263,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
             )}
           />
         </div>
-        {availableProjections && selectedMethod == 'tsne' && (
+        {availableProjections?.options && selectedMethod == 'tsne' && (
           <div>
             <label htmlFor="perplexity">perplexity</label>
             <input
@@ -286,7 +286,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
             </select>
           </div>
         )}
-        {availableProjections && selectedMethod == 'umap' && (
+        {availableProjections?.options && selectedMethod == 'umap' && (
           <div>
             <label htmlFor="n_neighbors">n_neighbors</label>
             <input

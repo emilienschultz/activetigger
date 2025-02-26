@@ -217,8 +217,6 @@ export const ProjectAnnotationPage: FC = () => {
     }
   };
 
-  console.log(selectionHistory);
-
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -451,7 +449,11 @@ export const ProjectAnnotationPage: FC = () => {
               />
             </Tab>
             <Tab eventKey="visualization" title="Visualization">
-              <ProjectionManagement currentElementId={elementId || null} />
+              <ProjectionManagement
+                projectName={projectName || null}
+                currentScheme={currentScheme || null}
+                availableFeatures={availableFeatures}
+              />
             </Tab>
 
             <Tab eventKey="parameters" title="Display parameters">
