@@ -100,6 +100,7 @@ async def update_project(
     - change the language
     - change context cols
     - change text cols
+    - expand the number of elements in the trainset
     """
     try:
         project.update_project(update)
@@ -109,6 +110,26 @@ async def update_project(
         del orchestrator.projects[project.name]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.post("/projects/trainset/add", dependencies=[Depends(verified_user)])
+# async def expand_project(
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+#     project_slug: str,
+#     n_elements: int,
+# ) -> None:
+#     """
+#     Expand a project
+#     """
+#     test_rights("modify project", current_user.username, project_slug)
+#     try:
+#         orchestrator.add_elements_to_trainset(
+#             project_slug, n_elements, current_user.username
+#         )
+
+#         return None
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post(
@@ -132,26 +153,6 @@ async def delete_project(
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/projects/trainset/add", dependencies=[Depends(verified_user)])
-async def expand_project(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    project_slug: str,
-    n_elements: int,
-) -> None:
-    """
-    Expand a project
-    """
-    test_rights("modify project", current_user.username, project_slug)
-    try:
-        orchestrator.add_elements_to_trainset(
-            project_slug, n_elements, current_user.username
-        )
-
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/projects/testset/create", dependencies=[Depends(verified_user)])

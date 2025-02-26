@@ -35,6 +35,7 @@ export const ProjectUpdateForm: FC = () => {
       language: project ? project.params.language : '',
       cols_context: project ? project.params.cols_context : [],
       cols_text: project ? project.params.cols_text : [],
+      add_n_train: 0,
     },
   });
   const { notify } = useNotifications();
@@ -71,7 +72,7 @@ export const ProjectUpdateForm: FC = () => {
         <div>
           <div>
             <label className="form-label" htmlFor="cols_text">
-              Change text columns.
+              Change text columns
             </label>
             <Controller
               name="cols_text"
@@ -117,9 +118,19 @@ export const ProjectUpdateForm: FC = () => {
                 />
               )}
             />
+
+            <label className="form-label" htmlFor="add_n_trai">
+              Add N elements in the train set
+            </label>
+            <input
+              className="form-control"
+              id="add_n_train"
+              type="number"
+              {...register('add_n_train')}
+            />
           </div>
           <button type="submit" className="btn btn-primary form-button">
-            Modify
+            Validate modifications
           </button>
         </div>
       </form>

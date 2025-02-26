@@ -9,7 +9,6 @@ import Modal from 'react-bootstrap/Modal';
 import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
-import { useExpandTrainSet } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ProjectUpdateForm } from './forms/ProjectUpdateForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
@@ -79,8 +78,8 @@ export const ProjectPage: FC = () => {
   const handleShow = () => setShow(true);
 
   // expand trainset
-  const expandTrainSet = useExpandTrainSet(projectName || null);
-  const [nElements, setNElements] = useState<number | undefined>(undefined);
+  // const expandTrainSet = useExpandTrainSet(projectName || null);
+  // const [nElements, setNElements] = useState<number | undefined>(undefined);
 
   return (
     projectName && (
@@ -144,8 +143,10 @@ export const ProjectPage: FC = () => {
                 />
               </Tab>
               <Tab eventKey="parameters" title="Parameters">
-                <span className="explanations">Parameters of this project</span>
-
+                <div className="explanations">Parameters of this project</div>
+                <button onClick={handleShow} className="delete-button mt-1">
+                  Delete project now
+                </button>
                 <table className="table-statistics">
                   <tbody>
                     <tr className="table-delimiter">
@@ -191,37 +192,35 @@ export const ProjectPage: FC = () => {
                   </tbody>
                 </table>
 
-                <ProjectUpdateForm />
+                <details className="custom-details">
+                  <summary>Update project</summary>
+                  <ProjectUpdateForm />
+                  {/* <div className="col-9 alert alert-warning fw-bold mt-3">
+                    <span className="explanations">
+                      Add empty elements in the trainset. Be careful, it will erase all features.
+                    </span>
+                    <div className="d-flex inline my-2">
+                      <input
+                        type="number"
+                        placeholder="Add N"
+                        className="input-number mx-2"
+                        onChange={(el) => setNElements(Number(el.target.value))}
+                        value={nElements}
+                      />
+                      <button
+                        onClick={() => {
+                          expandTrainSet(nElements);
+                          setNElements(0);
+                        }}
+                        className="btn btn-primary"
+                      >
+                        Add elements in trainset
+                      </button>
+                    </div>
+                  </div> */}
+                </details>
 
-                <div className="col-9 alert alert-warning fw-bold mt-3">
-                  <span className="explanations">
-                    Add empty elements in the trainset. Be careful, it will erase all features.
-                  </span>
-                  <div className="d-flex inline my-2">
-                    <input
-                      type="number"
-                      placeholder="Add N"
-                      className="input-number mx-2"
-                      onChange={(el) => setNElements(Number(el.target.value))}
-                      value={nElements}
-                    />
-                    <button
-                      onClick={() => {
-                        expandTrainSet(nElements);
-                        setNElements(0);
-                      }}
-                      className="btn btn-primary"
-                    >
-                      Add elements in trainset
-                    </button>
-                  </div>
-                </div>
-
-                <div className="col-9  alert alert-warning fw-bold mt-3">
-                  <div className="explanations">Delete the project</div>
-                  <button onClick={handleShow} className="delete-button mt-1">
-                    Delete project now
-                  </button>
+                <div>
                   <Modal show={show} onHide={actionDelete}>
                     <Modal.Header>
                       <Modal.Title>Delete the project</Modal.Title>

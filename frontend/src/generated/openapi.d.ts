@@ -259,6 +259,7 @@ export interface paths {
          * Update Project
          * @description Update a project
          *     - change the name
+         *     - change the language
          *     - change context cols
          *     - change text cols
          */
@@ -1887,6 +1888,8 @@ export interface components {
             cols_text?: string[] | null;
             /** Cols Context */
             cols_context?: string[] | null;
+            /** Add N Train */
+            add_n_train?: number | null;
         };
         /**
          * ProjectionInStrictModel

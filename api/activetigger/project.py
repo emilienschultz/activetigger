@@ -779,11 +779,15 @@ class Project:
         """
         Update project parameters
 
-        For text/contexts, it needs to draw from raw data
+        For text/contexts/expand, it needs to draw from raw data
         """
+
+        if not self.params.dir:
+            raise ValueError("No directory for project")
 
         # flag if needed to drop features
         drop_features = False
+        df = None
 
         # update the name
         if update.project_name and update.project_name != self.params.project_name:
@@ -795,15 +799,14 @@ class Project:
             drop_features = True
 
         # update the context columns by modifying the train data
-        if (
-            update.cols_context
-            and self.params.dir
-            and set(update.cols_context) != set(self.params.cols_context)
+        if update.cols_context and set(update.cols_context) != set(
+            self.params.cols_context
         ):
-            df = pd.read_parquet(
-                self.params.dir.joinpath("data_all.parquet"),
-                columns=update.cols_context,
-            )
+            if df is None:
+                df = pd.read_parquet(
+                    self.params.dir.joinpath("data_all.parquet"),
+                    columns=update.cols_context,
+                )
             self.content.drop(columns=self.params.cols_context, inplace=True)
             self.content = pd.concat([self.content, df], axis=1)
             self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
@@ -811,25 +814,55 @@ class Project:
             print("Context updated")
 
         # update the text columns
-        if (
-            update.cols_text
-            and self.params.dir
-            and set(update.cols_text) != set(self.params.cols_text)
-        ):
-            df = pd.read_parquet(
-                self.params.dir.joinpath("data_all.parquet"),
-                columns=update.cols_text,
-            ).loc[self.content.index]
-            df["text"] = df[update.cols_text].apply(
+        if update.cols_text and set(update.cols_text) != set(self.params.cols_text):
+            if df is None:
+                df = pd.read_parquet(
+                    self.params.dir.joinpath("data_all.parquet"),
+                    columns=update.cols_text,
+                )
+            df_sub = df.loc[self.content.index]
+            df_sub["text"] = df_sub[update.cols_text].apply(
                 lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
             )
-            self.content["text"] = df["text"]
+            self.content["text"] = df_sub["text"]
             self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
             self.params.cols_text = update.cols_text
             drop_features = True
+            del df_sub
             print("Texts updated")
 
-        # if needed, drop features
+        # update the train set
+        if update.add_n_train and update.add_n_train > 0:
+            if df is None:
+                df = pd.read_parquet(
+                    self.params.dir.joinpath("data_all.parquet"),
+                    columns=list(self.content.columns),
+                )
+            # index of elements used
+            elements_index = list(self.content.index)
+            if self.schemes.test:
+                elements_index += list(self.schemes.test.index)
+
+            # take elements that are not in index
+            df = df[~df.index.isin(elements_index)]
+
+            elements_to_add = df.sample(update.add_n_train)
+            self.content = pd.concat([self.content, elements_to_add])
+            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+
+            # update params
+            self.params.n_train = len(self.content)
+
+            # drop existing features
+            drop_features = True
+
+            # restart the project
+            del elements_to_add
+            print("Train set updated")
+
+        if df is not None:
+            del df
+
         if drop_features:
             self.drop_features()
 

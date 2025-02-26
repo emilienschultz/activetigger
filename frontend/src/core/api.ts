@@ -1842,30 +1842,30 @@ export function usePostAnnotationsFile(projectSlug: string | null) {
   return postAnnotationsFile;
 }
 
-/**
- * Post trainset expand
- */
-export function useExpandTrainSet(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const postAnnotationsFile = useCallback(
-    async (n_elements: number | undefined | null) => {
-      if (!projectSlug) return;
-      if (!n_elements) return;
-      const res = await api.POST('/projects/trainset/add', {
-        params: {
-          query: { project_slug: projectSlug, n_elements: n_elements },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Trainset expanded' });
-      else
-        throw new Error(
-          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
-        );
-    },
-    [notify, projectSlug],
-  );
-  return postAnnotationsFile;
-}
+// /**
+//  * Post trainset expand
+//  */
+// export function useExpandTrainSet(projectSlug: string | null) {
+//   const { notify } = useNotifications();
+//   const postAnnotationsFile = useCallback(
+//     async (n_elements: number | undefined | null) => {
+//       if (!projectSlug) return;
+//       if (!n_elements) return;
+//       const res = await api.POST('/projects/trainset/add', {
+//         params: {
+//           query: { project_slug: projectSlug, n_elements: n_elements },
+//         },
+//       });
+//       if (!res.error) notify({ type: 'success', message: 'Trainset expanded' });
+//       else
+//         throw new Error(
+//           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+//         );
+//     },
+//     [notify, projectSlug],
+//   );
+//   return postAnnotationsFile;
+// }
 
 /**
  * Post update project

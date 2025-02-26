@@ -669,3 +669,4 @@ class ProjectUpdateModel(BaseModel):
     language: str | None = None
     cols_text: list[str] | None = None
     cols_context: list[str] | None = None
+    add_n_train: int | None = None

@@ -562,55 +562,55 @@ class Orchestrator:
         for p in to_del:
             del self.projects[p]
 
-    def add_elements_to_trainset(
-        self, project_slug: str, n_elements: int, username: str
-    ) -> None:
-        """
-        Add elements to the trainset
-        WARNING : EXPERIMENTAL
-        """
-        # fetch the project
-        if project_slug not in self.projects:
-            self.start_project(project_slug)
-        project = self.projects[project_slug]
+    # def add_elements_to_trainset(
+    #     self, project_slug: str, n_elements: int, username: str
+    # ) -> None:
+    #     """
+    #     Add elements to the trainset
+    #     WARNING : EXPERIMENTAL
+    #     """
+    #     # fetch the project
+    #     if project_slug not in self.projects:
+    #         self.start_project(project_slug)
+    #     project = self.projects[project_slug]
 
-        if not project.params.dir:
-            raise Exception("Problem with project parameters - dir not found")
+    #     if not project.params.dir:
+    #         raise Exception("Problem with project parameters - dir not found")
 
-        data_all = project.params.dir.joinpath("data_all.parquet")
+    #     data_all = project.params.dir.joinpath("data_all.parquet")
 
-        # read only the columns
-        df_all = pd.read_parquet(
-            data_all, columns=list(project.schemes.content.columns)
-        )
+    #     # read only the columns
+    #     df_all = pd.read_parquet(
+    #         data_all, columns=list(project.schemes.content.columns)
+    #     )
 
-        # index of elements used
-        elements_index = list(project.schemes.content.index)
-        if project.schemes.test:
-            elements_index += list(project.schemes.test.index)
+    #     # index of elements used
+    #     elements_index = list(project.schemes.content.index)
+    #     if project.schemes.test:
+    #         elements_index += list(project.schemes.test.index)
 
-        # take elements that are not in index
-        df_all = df_all[~df_all.index.isin(elements_index)]
+    #     # take elements that are not in index
+    #     df_all = df_all[~df_all.index.isin(elements_index)]
 
-        # sample
-        elements_to_add = df_all.sample(n_elements)
+    #     # sample
+    #     elements_to_add = df_all.sample(n_elements)
 
-        # add them to the project
-        project.content = pd.concat([project.content, elements_to_add])
+    #     # add them to the project
+    #     project.content = pd.concat([project.content, elements_to_add])
 
-        # write the new trainset
-        project.content.to_parquet(project.params.dir.joinpath("train.parquet"))
+    #     # write the new trainset
+    #     project.content.to_parquet(project.params.dir.joinpath("train.parquet"))
 
-        # update params
-        project.params.n_train = len(project.content)
-        self.set_project_parameters(project.params, username)
+    #     # update params
+    #     project.params.n_train = len(project.content)
+    #     self.set_project_parameters(project.params, username)
 
-        # drop existing features
-        project.drop_features()
+    #     # drop existing features
+    #     project.drop_features()
 
-        # restart the project
-        del df_all, elements_to_add
-        del self.projects[project.name]
+    #     # restart the project
+    #     del df_all, elements_to_add
+    #     del self.projects[project.name]
 
 
 # launch the instance
