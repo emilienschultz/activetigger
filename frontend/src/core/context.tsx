@@ -1,4 +1,12 @@
-import { FC, PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
+import {
+  FC,
+  PropsWithChildren,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 import {
   DisplayConfig,
@@ -73,9 +81,9 @@ const _useAppContext = () => {
   }, [appContext]);
 
   // Function to reset the context
-  const resetContext = () => {
+  const resetContext = useCallback(() => {
     setAppContext(DEFAULT_CONTEXT);
-  };
+  }, []);
 
   return {
     appContext,
