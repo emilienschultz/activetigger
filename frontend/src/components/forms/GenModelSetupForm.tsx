@@ -1,7 +1,7 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
-import { useGetGenModels } from '../../core/api';
-import { GenModel, GenModelAPI, SupportedAPI } from '../../types';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { useGetGenModels } from '../../core/api';
+import { GenerationModelApi, GenModel, SupportedAPI } from '../../types';
 
 type FormValues = { model: string; name?: string; endpoint?: string; credentials?: string };
 
@@ -9,8 +9,8 @@ export const GenModelSetupForm: FC<{
   add: (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => void;
   cancel: () => void;
 }> = ({ add, cancel }) => {
-  const [availableAPIs, setAvailableAPIs] = useState<GenModelAPI[]>([]);
-  const [selectedAPI, setSelectedAPI] = useState<GenModelAPI>(availableAPIs[0]);
+  const [availableAPIs, setAvailableAPIs] = useState<GenerationModelApi[]>([]);
+  const [selectedAPI, setSelectedAPI] = useState<GenerationModelApi>(availableAPIs[0]);
   const [modelName, setModelName] = useState<string>('');
   const { models } = useGetGenModels();
   const { register, handleSubmit } = useForm<FormValues>();
@@ -41,7 +41,7 @@ export const GenModelSetupForm: FC<{
     add({
       slug,
       name,
-      api: selectedAPI.name,
+      api: selectedAPI.name as SupportedAPI,
       endpoint,
       credentials,
     });
@@ -86,7 +86,7 @@ export const GenModelSetupForm: FC<{
                     {...register('model', { onChange: onModelChange })}
                   >
                     {selectedAPI.models.map((model) => (
-                      <option key={model.id} value={model.slug}>
+                      <option key={model.slug} value={model.slug}>
                         {model.name}
                       </option>
                     ))}

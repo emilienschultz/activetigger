@@ -119,6 +119,8 @@ class GenerationsService:
         Add a new GenAI model for the given project
         """
         with self.Session() as session:
+            if model.credentials is None:
+                model.credentials = ""
             new_model = GenModels(
                 project_id=project_slug,
                 slug=model.slug,

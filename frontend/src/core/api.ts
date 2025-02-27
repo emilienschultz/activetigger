@@ -9,7 +9,6 @@ import {
   AnnotationsDataModel,
   AvailableProjectsModel,
   GenModel,
-  GenerationModelApi,
   LoginParams,
   ProjectDataModel,
   ProjectStateModel,
@@ -1533,7 +1532,7 @@ export function useGetGenModels() {
     if (res.error) {
       notify({ type: 'error', message: 'Could not fetch available models' });
       return [];
-    } else return res.data as GenerationModelApi[];
+    } else return res.data;
   }, [notify]);
   return { models };
 }
