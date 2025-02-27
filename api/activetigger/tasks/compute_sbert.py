@@ -1,10 +1,12 @@
 import gc
 import logging
+import math
+import os
 
+import numpy as np
 import torch
 from pandas import DataFrame, Series
 from sentence_transformers import SentenceTransformer
-from torch import autocast
 
 from activetigger.tasks.base_task import BaseTask
 
@@ -59,21 +61,34 @@ class ComputeSbert(BaseTask):
             sbert.max_seq_length = 512
 
             print("start computation")
-            if device.type == "cuda":
-                with autocast(device_type=str(device)):
-                    emb = sbert.encode(
-                        list(self.texts), device=str(device), batch_size=self.batch_size
-                    )
-            else:
-                print("start computation 2")
-                emb = sbert.encode(
-                    list(self.texts), batch_size=self.batch_size, device=str(device)
-                )
-            print("Computation done")
-            print(emb)
-            emb = DataFrame(emb, index=self.texts.index)
-            emb.columns = ["sb%03d" % (x + 1) for x in range(len(emb.columns))]
+            embeddings = []
+            total_batches = math.ceil(len(self.texts) / self.batch_size)
+            # if device.type == "cuda":
+            #     with autocast(device_type=str(device)):
+            #         emb = sbert.encode(
+            #             list(self.texts),
+            #             device=str(device),
+            #             batch_size=self.batch_size,
+            #         )
+            # else:
+            for i, start in enumerate(range(0, len(self.texts), self.batch_size), 1):
+                batch_texts = list(self.texts.iloc[start : start + self.batch_size])
+                embeddings.append(sbert.encode(batch_texts, device=str(device)))
+
+                # manage progress
+                progress_percent = (i / total_batches) * 100
+                with open(self.path_process.joinpath(self.unique_id), "w") as f:
+                    f.write(str(round(progress_percent, 1)))
+                print(progress_percent)
+
+            # shape the data
+            emb = DataFrame(
+                np.vstack(embeddings),
+                index=self.texts.index,
+                columns=["sb%03d" % (x + 1) for x in range(len(embeddings[0][0]))],
+            )
             logging.debug("computation end")
+            os.remove(self.path_process.joinpath(self.unique_id))
             return emb
         except Exception as e:
             logging.error(e)

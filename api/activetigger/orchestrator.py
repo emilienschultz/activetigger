@@ -108,7 +108,7 @@ class Orchestrator:
         # attributes of the server
         self.projects = {}
         self.db_manager = DatabaseManager(str(self.db))
-        self.queue = Queue(self.n_workers)
+        self.queue = Queue(self.n_workers, self.path)
         self.users = Users(self.db_manager)
 
         # logging

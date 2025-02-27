@@ -6,6 +6,7 @@ class BaseTask(ABC):
         """Initialize the task with given parameters."""
         self.event = None
         self.unique_id = None
+        self.path_process = None
 
     @abstractmethod
     def __call__(self):

@@ -251,8 +251,12 @@ class Features:
     def current_user_processes(self, user: str):
         return [e for e in self.computing if e.user == user]
 
-    def current_computing(self):
-        return [e.name for e in self.computing if e.kind == "feature"]
+    def current_computing(self) -> dict[str, dict[str, Any]]:
+        return {
+            e.name: {"progress": self.computing_progress(e.unique_id), "name": e.name}
+            for e in self.computing
+            if e.kind == "feature"
+        }
 
     def compute(
         self, df: pd.Series, name: str, kind: str, parameters: dict, username: str
@@ -349,3 +353,14 @@ class Features:
             )
             return {"success": "Feature in training"}
         raise ValueError("Error in the process")
+
+    def computing_progress(self, unique_id: str) -> str | None:
+        """
+        Get the progress of a computing feature
+        """
+        try:
+            with open(self.path_all.parent.joinpath(unique_id), "r") as f:
+                r = f.read()
+            return r
+        except Exception:
+            return None

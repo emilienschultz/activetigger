@@ -4,7 +4,8 @@ import logging
 import uuid
 from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
-from typing import Callable
+from pathlib import Path
+from typing import Any, Callable
 
 logger = logging.getLogger("server")
 
@@ -21,12 +22,14 @@ class Queue:
     executor: concurrent.futures.ProcessPoolExecutor
     manager: SyncManager
     current: dict
+    path: Path
 
-    def __init__(self, nb_workers: int = 4) -> None:
+    def __init__(self, nb_workers: int = 4, path: Path = Path(".")) -> None:
         """
         Initiating the queue
         """
         self.nb_workers = nb_workers
+        self.path = path
         self.executor = concurrent.futures.ProcessPoolExecutor(
             max_workers=self.nb_workers
         )  # manage parallel processes
@@ -45,16 +48,6 @@ class Queue:
         logger.info("Close queue")
         print("Queue closes")
 
-    # def check_failed_processes(self, future):
-    #     """
-    #     Check if a future failed.
-    #     """
-    #     try:
-    #         result = future.result()  # Will raise if the task failed
-    #         return False
-    #     except Exception as e:
-    #         return True
-
     def check(self) -> None:
         """
         Check if the exector still works
@@ -70,7 +63,7 @@ class Queue:
             logger.error("Restart executor")
             print("Problem with executor ; restart")
 
-    def add_task(self, kind: str, project_slug: str, task: Callable) -> str:
+    def add_task(self, kind: str, project_slug: str, task: Any) -> str:
         """
         Temporary
         """
@@ -79,6 +72,7 @@ class Queue:
         event = self.manager.Event()
         task.event = event
         task.unique_id = unique_id
+        task.path_process = self.path.joinpath(project_slug)
 
         # send the process to the executor
         future = self.executor.submit(task)

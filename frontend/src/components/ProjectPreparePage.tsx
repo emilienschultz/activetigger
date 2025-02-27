@@ -29,6 +29,11 @@ interface Features {
   options?: FeaturesOptions;
 }
 
+interface FeatureComputingElement {
+  name: string;
+  progress: string | null;
+}
+
 export const ProjectPreparePage: FC = () => {
   const { projectName } = useParams();
 
@@ -74,6 +79,8 @@ export const ProjectPreparePage: FC = () => {
   const kindScheme =
     currentScheme && project ? project.schemes.available[currentScheme]['kind'] : '';
 
+  console.log(project?.features.training);
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="prepare">
       {project && projectName && (
@@ -113,10 +120,15 @@ export const ProjectPreparePage: FC = () => {
                     </div>
                   ))}{' '}
                   {/* Display computing features */}
-                  {Object.values(project?.features.training).map((element) => (
-                    <div className="card text-bg-light mt-3 bg-warning" key={element as string}>
+                  {Object.entries(project?.features.training).map(([key, element]) => (
+                    <div className="card text-bg-light mt-3 bg-warning" key={key}>
                       <div className="d-flex m-2 align-items-center">
-                        <span className="w-25">Currently computing {element as string}</span>
+                        <span className="w-25">
+                          Currently computing {(element as FeatureComputingElement).name as string}
+                          {(element as FeatureComputingElement).progress
+                            ? ` (${(element as FeatureComputingElement).progress}%)`
+                            : ''}
+                        </span>
                       </div>
                     </div>
                   ))}
