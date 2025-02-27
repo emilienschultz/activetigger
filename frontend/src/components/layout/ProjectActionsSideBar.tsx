@@ -2,7 +2,6 @@ import classNames from 'classnames';
 import { FC } from 'react';
 import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
 import { FiTarget } from 'react-icons/fi';
-import { GiChoice } from 'react-icons/gi';
 import { MdModelTraining, MdOutlineHomeMax, MdOutlineTransform } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
@@ -109,7 +108,7 @@ export const ProjectActionsSidebar: FC<{
             <span> Annotate</span>
           </Link>
         </li>
-        {developmentMode && (
+        {/* {developmentMode && (
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/curate`}
@@ -122,7 +121,7 @@ export const ProjectActionsSidebar: FC<{
               <span> Curate</span>
             </Link>
           </li>
-        )}
+        )} */}
         <li className="nav-item">
           <Link
             to={`/projects/${projectName}/train`}
@@ -174,6 +173,7 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
               aria-current="page"
               title="Generate"
+              style={{ color: 'darkorange', display: 'flex', alignItems: 'center' }}
             >
               <RiAiGenerate />
               <span> Generate</span>

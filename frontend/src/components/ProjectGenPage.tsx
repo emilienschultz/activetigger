@@ -2,6 +2,7 @@ import { ChangeEvent, FC, useEffect, useState } from 'react';
 import DataGrid, { Column } from 'react-data-grid';
 import { BsSave2 } from 'react-icons/bs';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
+import { HiOutlineSparkles } from 'react-icons/hi';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
@@ -166,6 +167,9 @@ export const GenPage: FC = () => {
     <ProjectPageLayout projectName={projectName} currentAction="generate">
       <div className="container-fluid mt-3">
         <div className="row"></div>
+        <div className="explanations">
+          You can configure LLM-as-service to use prompt-engineering on your data
+        </div>
 
         {showForm ? (
           <GenModelSetupForm add={addModel} cancel={hideForm} />
@@ -188,7 +192,7 @@ export const GenPage: FC = () => {
                           </option>
                         ))}
                       </select>
-                      <label htmlFor="model">Model</label>
+                      <label htmlFor="model">Select a model</label>
                     </div>
                   </div>
                   <div className="col-6">
@@ -290,7 +294,7 @@ export const GenPage: FC = () => {
                       rows={5}
                       placeholder="Enter your prompt"
                       className="form-control"
-                      style={{ height: '200px' }}
+                      style={{ height: '200px', backgroundColor: '#ffefc7' }}
                       value={generateConfig.prompt || ''}
                       onChange={(e) => {
                         setAppContext((prev) => ({
@@ -315,7 +319,7 @@ export const GenPage: FC = () => {
                         onClick={generate}
                         // disabled={!!isGenerating}
                       >
-                        Generate
+                        <HiOutlineSparkles size={30} /> Generate
                       </button>
                     )}
                     <Tooltip anchorSelect=".generatebutton" place="top">
@@ -325,7 +329,7 @@ export const GenPage: FC = () => {
                 </div>
                 <hr />
                 <div className="col-12 d-flex align-items-center justify-content-center">
-                  <span>Number of last generated elements to download</span>
+                  <span>Number elements to download</span>
                   <input
                     type="number"
                     placeholder="Number of last generated elements to download"
@@ -335,7 +339,7 @@ export const GenPage: FC = () => {
                     onChange={(e) => setNumberElements(Number(e.target.value))}
                   />
                   <button
-                    className="btn btn-secondary"
+                    className="btn btn-primary"
                     onClick={() => getGenerationsFile(numberElements)}
                   >
                     Download
