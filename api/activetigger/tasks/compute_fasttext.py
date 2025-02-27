@@ -13,6 +13,7 @@ from activetigger.tasks.base_task import BaseTask
 class ComputeFasttext(BaseTask):
     """
     Compute sbert feature
+    TODO : check of possible to avoid loop ?
     """
 
     kind = "compute_feature_sbert"
@@ -53,7 +54,17 @@ class ComputeFasttext(BaseTask):
                 raise FileNotFoundError(f"Model {model_name} not found")
         texts_tk = tokenize(self.texts)
         ft = fasttext.load_model(model_name)
-        emb = [ft.get_sentence_vector(t.replace("\n", " ")) for t in texts_tk]
+        emb = []
+        for t in texts_tk:
+            emb.append(ft.get_sentence_vector(t.replace("\n", " ")))
+            # manage progress
+            if len(emb) % 100 == 0:
+                progress_percent = len(emb) / len(texts_tk) * 100
+                with open(self.path_process.joinpath(self.unique_id), "w") as f:
+                    f.write(str(round(progress_percent, 1)))
+                print(progress_percent)
+
+        # emb = [ft.get_sentence_vector(t.replace("\n", " ")) for t in texts_tk]
         df = pd.DataFrame(emb, index=self.texts.index)
         # WARN: this seems strange. Maybe replace with a more explicit syntax
         df.columns = ["ft%03d" % (x + 1) for x in range(len(df.columns))]  # type: ignore[assignment]
