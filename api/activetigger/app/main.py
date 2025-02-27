@@ -93,6 +93,7 @@ async def middleware(
     if current_time - last_update_time >= 1:
         orchestrator.update()
         last_update_time = current_time
+    # await asyncio.sleep(1)
     response = await call_next(request)
     return response
 

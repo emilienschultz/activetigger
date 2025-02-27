@@ -315,6 +315,7 @@ async def post_annotation(
 
     if action in ["add", "update"]:
         try:
+            print(annotation)
             project.schemes.push_annotation(
                 annotation.element_id,
                 annotation.label,

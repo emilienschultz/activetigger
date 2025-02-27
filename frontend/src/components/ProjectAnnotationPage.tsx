@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
@@ -23,6 +24,7 @@ import { MultilabelInput } from './MultilabelInput';
 import { ProjectionManagement } from './ProjectionManagement';
 import { SelectionManagement } from './SelectionManagement';
 import { SimpleModelManagement } from './SimpleModelManagement';
+
 /**
  * Annotation page
  */
@@ -101,6 +103,7 @@ export const ProjectAnnotationPage: FC = () => {
   useEffect(() => {
     resetScroll();
     if (elementId === 'noelement') {
+      console.log('No element');
       return;
     }
     if (elementId === undefined) {
@@ -117,7 +120,6 @@ export const ProjectAnnotationPage: FC = () => {
           navigate(`/projects/${projectName}/annotate/${res.element_id}`);
 
           console.log(res.element_id);
-          console.log(selectionConfig);
         } else {
           navigate(`/projects/${projectName}/annotate/noelement`);
           setElement(null);
@@ -174,12 +176,13 @@ export const ProjectAnnotationPage: FC = () => {
   // post an annotation
   const postAnnotation = useCallback(
     (label: string | null, elementId?: string) => {
+      if (elementId === 'noelement') return; // forbid annotation on noelement
       if (elementId) {
-        setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
         addAnnotation(elementId, label, comment, selectionHistory[elementId]).then(() =>
           // redirect to next element by redirecting wihout any id
           // thus the getNextElementId query will be dont after the appcontext is reloaded
           {
+            setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
             setComment('');
             navigate(`/projects/${projectName}/annotate/`); // got to next element
           },
@@ -216,9 +219,6 @@ export const ProjectAnnotationPage: FC = () => {
       return false;
     }
   };
-
-  console.log(selectionHistory);
-
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -295,32 +295,18 @@ export const ProjectAnnotationPage: FC = () => {
             style={{ height: `${displayConfig.frameSize}vh` }}
             ref={frameRef}
           >
-            {lastTag && (
-              <div>
-                <span className="badge bg-info  ">
-                  {displayConfig.displayAnnotation ? `Last tag: ${lastTag}` : 'Annotated'}
-                </span>
-              </div>
-            )}
-            <Highlighter
-              highlightClassName="Search"
-              searchWords={
-                selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                  ? [selectionConfig.filter]
-                  : []
-              }
-              autoEscape={false}
-              textToHighlight={textInFrame}
-              highlightStyle={{
-                backgroundColor: 'yellow',
-                margin: '0px',
-                padding: '0px',
-              }}
-              caseSensitive={true}
-            />
+            <motion.div
+              animate={elementId ? { backgroundColor: ['#e8e9ff', '#ffffff'] } : {}}
+              transition={{ duration: 1 }}
+            >
+              {lastTag && (
+                <div>
+                  <span className="badge bg-info  ">
+                    {displayConfig.displayAnnotation ? `Last tag: ${lastTag}` : 'Already annotated'}
+                  </span>
+                </div>
+              )}
 
-            {/* text out of frame */}
-            <span className="text-out-context" title="Outside 512 token window ">
               <Highlighter
                 highlightClassName="Search"
                 searchWords={
@@ -329,10 +315,29 @@ export const ProjectAnnotationPage: FC = () => {
                     : []
                 }
                 autoEscape={false}
-                textToHighlight={textOutFrame}
+                textToHighlight={textInFrame}
+                highlightStyle={{
+                  backgroundColor: 'yellow',
+                  margin: '0px',
+                  padding: '0px',
+                }}
                 caseSensitive={true}
               />
-            </span>
+              {/* text out of frame */}
+              <span className="text-out-context" title="Outside 512 token window ">
+                <Highlighter
+                  highlightClassName="Search"
+                  searchWords={
+                    selectionConfig.filter && isValidRegex(selectionConfig.filter)
+                      ? [selectionConfig.filter]
+                      : []
+                  }
+                  autoEscape={false}
+                  textToHighlight={textOutFrame}
+                  caseSensitive={true}
+                />
+              </span>
+            </motion.div>
           </div>
         )}
 
@@ -342,6 +347,7 @@ export const ProjectAnnotationPage: FC = () => {
           phase != 'test' && displayConfig.displayPrediction && element?.predict.label && (
             <div className="d-flex mb-2 justify-content-center display-prediction">
               {/* Predicted label : {element?.predict.label} (proba: {element?.predict.proba}) */}
+
               <button
                 type="button"
                 key={element?.predict.label + '_predict'}
