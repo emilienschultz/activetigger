@@ -60,6 +60,9 @@ class Projects(Base):
     gen_models: Mapped[list["GenModels"]] = relationship(
         "GenModels", cascade="all, delete-orphan", back_populates="project"
     )
+    prompts: Mapped[list["Prompts"]] = relationship(
+        "Prompts", cascade="all,delete,delete-orphan", back_populates="project"
+    )
 
 
 class Users(Base):
@@ -266,7 +269,11 @@ class Prompts(Base):
         server_default=func.current_timestamp(),
         onupdate=func.current_timestamp(),
     )
-    user: Mapped[str]
-    project: Mapped[str]
-    name: Mapped[str]
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped[Users] = relationship()
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
+    project: Mapped[Projects] = relationship(back_populates="prompts")
+    value: Mapped[str]
     parameters: Mapped[dict[str, Any]]

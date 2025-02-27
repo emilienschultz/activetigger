@@ -677,3 +677,13 @@ class UserStatistics(BaseModel):
     projects: dict[str, str]
     # last_connexion
     # last_actions
+
+
+class PromptInputModel(BaseModel):
+    text: str
+
+
+class PromptModel(BaseModel):
+    id: int
+    text: str
+    parameters: dict[str, Any]

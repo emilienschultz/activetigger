@@ -131,7 +131,7 @@ class Schemes:
 
     def convert_annotations(
         self, former_label: str, new_label: str, scheme: str, username: str
-    ):
+    ) -> TableBatch:
         """
         Convert tags from a specific label to another
         """
@@ -153,6 +153,29 @@ class Schemes:
                 raise Exception("Test dataset is not defined")
             return len(self.test)
         return len(self.content)
+
+    def get_sample(
+        self, scheme: str, n_elements: int, mode: str, dataset: str = "train"
+    ) -> DataFrame:
+        """
+        Get a sample of element following a method
+        """
+        if mode not in ["tagged", "untagged", "all"]:
+            raise Exception("Mode not available")
+        if scheme not in self.available():
+            raise Exception("Scheme doesn't exist")
+        df = self.get_scheme_data(scheme, complete=True, kind=[dataset])
+        # build dataset
+        if mode == "tagged":
+            df = cast(DataFrame, df[df["labels"].notnull()])
+
+        if mode == "untagged":
+            df = cast(DataFrame, df[df["labels"].isnull()])
+
+        if n_elements > len(df):
+            n_elements = len(df)
+
+        return df.sample(n_elements).reset_index()
 
     def get_table(
         self,
@@ -206,8 +229,11 @@ class Schemes:
             df = cast(DataFrame, df[f_contains])
 
         # build dataset
-        if mode == "tagged" or mode == "untagged":
+        if mode == "tagged":
             df = cast(DataFrame, df[df["labels"].notnull()])
+
+        if mode == "untagged":
+            df = cast(DataFrame, df[df["labels"].isnull()])
 
         # normalize size
         if max == 0:
@@ -220,7 +246,6 @@ class Schemes:
                 f"Minimal value {min} is too high. It should not exced the size of the data ({len(df)})"
             )
 
-        # return df.sort_index().iloc[min:max].reset_index()
         return TableBatch(
             batch=df.sort_index().iloc[min:max].reset_index(),
             total=len(df),

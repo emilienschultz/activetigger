@@ -1,15 +1,21 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import DataGrid, { Column } from 'react-data-grid';
-import { IoIosAddCircle, IoMdRemoveCircle } from 'react-icons/io';
+import { BsSave2 } from 'react-icons/bs';
+import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 import { useParams } from 'react-router-dom';
+import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
+import { Tooltip } from 'react-tooltip';
 import {
   createGenModel,
   deleteGenModel,
   getProjectGenModels,
+  useDeletePrompts,
   useGenerate,
   useGeneratedElements,
   useGetGenerationsFile,
+  useGetPrompts,
+  useSavePrompts,
   useStopGenerate,
 } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -33,9 +39,8 @@ interface Row {
 }
 
 const AddButton: FC<{ showAddForm: () => void }> = ({ showAddForm }) => (
-  <button className="btn btn-primary" onClick={showAddForm}>
-    <IoIosAddCircle className="m-1" size={30} />
-    Add a generative model
+  <button onClick={showAddForm} className="btn btn-primary">
+    <FaPlusCircle size={20} /> Add model
   </button>
 );
 
@@ -82,6 +87,11 @@ export const GenPage: FC = () => {
   // call api to download a batch of elements
   const { getGenerationsFile } = useGetGenerationsFile(projectName || null);
   const [numberElements, setNumberElements] = useState<number>(10);
+
+  // call api for prompts
+  const { prompts, reFetchPrompts } = useGetPrompts(projectName || null);
+  const savePrompts = useSavePrompts(projectName || null);
+  const deletePrompts = useDeletePrompts(projectName || null);
 
   useEffect(() => {
     if (!generateConfig.api)
@@ -155,12 +165,7 @@ export const GenPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
       <div className="container-fluid mt-3">
-        <div className="row">
-          <div className="alert alert-warning" role="alert">
-            This page is under developement
-          </div>
-          <div className="row"> Current scheme : {currentScheme}</div>
-        </div>
+        <div className="row"></div>
 
         {showForm ? (
           <GenModelSetupForm add={addModel} cancel={hideForm} />
@@ -173,7 +178,7 @@ export const GenPage: FC = () => {
               </>
             ) : (
               <>
-                <div className="row row-gap-2">
+                <div className="row d-flex align-items-center">
                   <div className="col-6">
                     <div className="form-floating">
                       <select id="model" className="form-select" onChange={handleChange}>
@@ -187,30 +192,16 @@ export const GenPage: FC = () => {
                     </div>
                   </div>
                   <div className="col-6">
-                    <div className="form-floating">
-                      <select
-                        id="mode"
-                        className="form-select"
-                        onChange={(e) => {
-                          setAppContext((prev) => ({
-                            ...prev,
-                            generateConfig: { ...generateConfig, selection_mode: e.target.value },
-                          }));
-                        }}
-                      >
-                        <option key="all">all</option>
-                        <option key="untagged">untagged</option>
-                      </select>
-                      <label htmlFor="mode">Sample </label>
-                    </div>
-                  </div>
-                  <div className="col-6">
                     <AddButton showAddForm={showAddForm}></AddButton>
-                    <button className="btn btn-danger ms-2" onClick={removeModel}>
-                      <IoMdRemoveCircle className="m-1" size={30} />
-                      Remove model
+
+                    <button onClick={removeModel} className="btn btn-primary mx-2">
+                      <FaRegTrashAlt size={20} /> Delete
                     </button>
                   </div>
+                </div>
+                <hr />
+
+                <div className="row mt-3">
                   <div className="col-6">
                     <div className="form-floating">
                       <input
@@ -228,9 +219,70 @@ export const GenPage: FC = () => {
                       <label htmlFor="batch">N elements to annotate </label>
                     </div>
                   </div>
-                  <hr className="mt-3" />
+                  <div className="col-6">
+                    <div className="form-floating">
+                      <select
+                        id="mode"
+                        className="form-select"
+                        onChange={(e) => {
+                          setAppContext((prev) => ({
+                            ...prev,
+                            generateConfig: { ...generateConfig, selection_mode: e.target.value },
+                          }));
+                        }}
+                      >
+                        <option key="all">all</option>
+                        <option key="untagged">untagged</option>
+                      </select>
+                      <label htmlFor="mode">Select from </label>
+                    </div>
+                  </div>
+
                   <div className="explanations mt-3">
-                    Craft your prompt with the element #INSERTTEXT to insert text
+                    Select or craft your prompt with the element #INSERTTEXT to insert text
+                  </div>
+                  <div className="d-flex align-items-center justify-content-center">
+                    <Select
+                      id="select-prompt"
+                      className="form-select"
+                      options={(prompts || []).map((e) => ({
+                        value: e.id as unknown as string,
+                        label: e.text as unknown as string,
+                      }))}
+                      isClearable
+                      placeholder="Look for a recorded prompt"
+                      onChange={(e) => {
+                        setAppContext((prev) => ({
+                          ...prev,
+                          generateConfig: {
+                            ...generateConfig,
+                            prompt: e?.label || '',
+                            prompt_id: e?.value,
+                          },
+                        }));
+                      }}
+                    />
+                    <button
+                      className="btn btn-primary mx-2 savebutton"
+                      onClick={() => {
+                        savePrompts(generateConfig.prompt || null);
+                        reFetchPrompts();
+                      }}
+                    >
+                      <BsSave2 />
+                    </button>
+                    <Tooltip anchorSelect=".savebutton" place="top">
+                      Save the prompt
+                    </Tooltip>
+                    <button
+                      onClick={() => {
+                        deletePrompts(generateConfig.prompt_id || null);
+                        reFetchPrompts();
+                      }}
+                      className="btn btn-primary mx-2"
+                    >
+                      <FaRegTrashAlt size={20} />
+                    </button>
                   </div>
                   <div className="form-floating mt-2">
                     <textarea
@@ -253,22 +305,22 @@ export const GenPage: FC = () => {
                     {isGenerating ? (
                       <div>
                         <PulseLoader />
-                        <button className="btn btn-primary mt-3" onClick={stopGenerate}>
+                        <button className="btn btn-secondary mt-3" onClick={stopGenerate}>
                           Stop
                         </button>
                       </div>
                     ) : (
                       <button
-                        className="btn btn-primary mt-3"
+                        className="btn btn-secondary mt-3 generatebutton"
                         onClick={generate}
-                        disabled={!!isGenerating}
+                        // disabled={!!isGenerating}
                       >
                         Generate
                       </button>
                     )}
-                    <div className="explanations">
+                    <Tooltip anchorSelect=".generatebutton" place="top">
                       It can take some time if you have a large batch
-                    </div>
+                    </Tooltip>
                   </div>
                 </div>
                 <hr />

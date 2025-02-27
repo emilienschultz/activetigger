@@ -10,8 +10,9 @@ from activetigger.datamodels import (
     GenerationAvailableModel,
     GenerationCreationModel,
     GenerationModelApi,
+    PromptModel,
 )
-from activetigger.db.models import Generations, GenModels
+from activetigger.db.models import Generations, GenModels, Prompts
 from activetigger.functions import decrypt, encrypt
 
 
@@ -139,3 +140,38 @@ class GenerationsService:
             session.execute(
                 delete(GenModels).filter_by(project_id=project_slug, id=model_id)
             )
+
+    def add_prompt(
+        self,
+        project_slug: str,
+        username: str,
+        text: str,
+        parameters: dict = {},
+    ) -> None:
+        with self.Session() as session:
+            prompt = Prompts(
+                project_id=project_slug,
+                user_id=username,
+                value=text,
+                parameters=parameters,
+            )
+            session.add(prompt)
+            session.commit()
+
+    def delete_prompt(self, prompt_id: int) -> None:
+        with self.Session.begin() as session:
+            session.execute(delete(Prompts).filter_by(id=prompt_id))
+
+    def get_prompts(self, project_slug: str) -> list[PromptModel]:
+        with self.Session() as session:
+            elements = session.scalars(
+                select(Prompts).filter_by(project_id=project_slug)
+            ).all()
+        return [
+            PromptModel(
+                id=el.id,
+                text=el.value,
+                parameters=el.parameters,
+            )
+            for el in elements
+        ]

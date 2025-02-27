@@ -2,6 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (
+    PromptModel,
     UserGenerationComputing,
 )
 from activetigger.db.generations import GenerationsService
@@ -66,3 +67,25 @@ class Generations:
 
     def current_users_generating(self) -> list[UserGenerationComputing]:
         return [e for e in self.computing if e.kind == "generation"]
+
+    def save_prompt(self, user: str, project_slug: str, prompt: str) -> None:
+        """
+        Save a prompt in the database
+        """
+        self.generations_service.add_prompt(
+            username=user, project_slug=project_slug, text=prompt
+        )
+        return None
+
+    def delete_prompt(self, prompt_id: int) -> None:
+        """
+        Delete a prompt from the database
+        """
+        self.generations_service.delete_prompt(prompt_id)
+        return None
+
+    def get_prompts(self, project_slug: str) -> list[PromptModel]:
+        """
+        Get the list of prompts for the user
+        """
+        return self.generations_service.get_prompts(project_slug)

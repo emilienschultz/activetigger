@@ -17,6 +17,8 @@ from activetigger.datamodels import (
     GenerationModel,
     GenerationModelApi,
     GenerationRequest,
+    PromptInputModel,
+    PromptModel,
     TableOutModel,
     UserGenerationComputing,
     UserInDBModel,
@@ -89,8 +91,11 @@ async def postgenerate(
 
     # get subset of elements
     try:
-        extract = project.schemes.get_table(
-            request.scheme, 0, request.n_batch, request.mode
+        # extract = project.schemes.get_table(
+        #     request.scheme, 0, request.n_batch, request.mode
+        # )
+        extract = project.schemes.get_sample(
+            request.scheme, request.n_batch, request.mode
         )
 
         model = orchestrator.db_manager.generations_service.get_gen_model(
@@ -103,7 +108,8 @@ async def postgenerate(
             GenerateCall(
                 username=current_user.username,
                 project_slug=project.name,
-                df=extract.batch,
+                # df=extract.batch,
+                df=extract,
                 prompt=request.prompt,
                 model=GenerationModel(**model.__dict__),
             ),
@@ -165,7 +171,6 @@ async def getgenerate(
     """
     Get elements from prediction
     """
-    print("getgenerate", n_elements)
     try:
         table = project.generations.get_generated(
             project.name, current_user.username, n_elements
@@ -178,3 +183,51 @@ async def getgenerate(
 
     r = table.to_dict(orient="records")
     return TableOutModel(items=r, total=len(r))
+
+
+@router.get("/generate/prompts", dependencies=[Depends(verified_user)])
+async def get_prompts(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> list[PromptModel]:
+    """
+    Get the list of prompts for the user
+    """
+    try:
+        return project.generations.get_prompts(project.name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate/prompts/add", dependencies=[Depends(verified_user)])
+async def add_prompt(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    prompt: PromptInputModel,
+) -> None:
+    """
+    Add a prompt to the project
+    """
+    try:
+        project.generations.save_prompt(
+            current_user.username, project.name, prompt.text
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate/prompts/delete", dependencies=[Depends(verified_user)])
+async def delete_prompt(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    prompt_id: str,
+) -> None:
+    """
+    Delete a prompt from the project
+    """
+    try:
+        print(prompt_id, type(prompt_id))
+        project.generations.delete_prompt(int(prompt_id))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

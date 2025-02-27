@@ -1884,3 +1884,71 @@ export function useGetUserStatistics(username: string | null) {
 
   return { userStatistics: getAsyncMemoData(getUserStatistics), reFetchStatistics: reFetch };
 }
+
+/**
+ * Get prompts
+ */
+export function useGetPrompts(projectSlug: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getPrompts = useAsyncMemo(async () => {
+    if (projectSlug) {
+      const res = await api.GET('/generate/prompts', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+          },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { prompts: getAsyncMemoData(getPrompts), reFetchPrompts: reFetch };
+}
+
+/**
+ * Save prompts
+ */
+export function useSavePrompts(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const savePrompts = useCallback(
+    async (prompt: string | null) => {
+      if (projectSlug && prompt) {
+        const res = await api.POST('/generate/prompts/add', {
+          params: {
+            query: { project_slug: projectSlug },
+          },
+          body: { text: prompt },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Prompts saved' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return savePrompts;
+}
+
+/**
+ * Delete prompts
+ */
+export function useDeletePrompts(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const deletePrompts = useCallback(
+    async (prompt_id: string | null) => {
+      if (projectSlug && prompt_id) {
+        const res = await api.POST('/generate/prompts/delete', {
+          params: {
+            query: { project_slug: projectSlug, prompt_id: prompt_id },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Prompts deleted' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return deletePrompts;
+}
