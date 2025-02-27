@@ -149,26 +149,32 @@ class BertModel:
             return float(r)
         return None
 
+    def get_loss(self) -> dict:
+        try:
+            with open(self.path.joinpath("log_history.txt"), "r") as f:
+                log = json.load(f)
+            loss = pd.DataFrame(
+                [
+                    [
+                        log[2 * i]["epoch"],
+                        log[2 * i]["loss"],
+                        log[2 * i + 1]["eval_loss"],
+                    ]
+                    for i in range(0, int((len(log) - 1) / 2))
+                ],
+                columns=["epoch", "val_loss", "val_eval_loss"],
+            ).to_json()
+            return json.loads(loss)
+        except Exception:
+            return None
+
     def informations(self) -> BertModelInformationsModel:
         """
         Informations on the bert model from the files
         TODO : avoid to read and create a cache
         """
 
-        # build loss
-        with open(self.path.joinpath("log_history.txt"), "r") as f:
-            log = json.load(f)
-        loss = pd.DataFrame(
-            [
-                [
-                    log[2 * i]["epoch"],
-                    log[2 * i]["loss"],
-                    log[2 * i + 1]["eval_loss"],
-                ]
-                for i in range(0, int((len(log) - 1) / 2))
-            ],
-            columns=["epoch", "val_loss", "val_eval_loss"],
-        ).to_json(orient="columns")
+        loss = self.get_loss()
 
         # train scores
         if (self.path.joinpath("metrics_predict_train.parquet.json")).exists():
@@ -187,6 +193,8 @@ class BertModel:
                 test_scores = json.load(f)
         else:
             test_scores = None
+
+        print("INFORMATIONS", type(loss), loss)
 
         return BertModelInformationsModel(
             params=self.params,
@@ -350,16 +358,14 @@ class BertModels:
         Currently under training
         - name
         - progress if available
+        - loss if available
         """
         r = {
             e.user: {
                 "name": e.model_name,
                 "status": e.status,
-                "progress": (
-                    e.get_training_progress()
-                    if e.get_training_progress is not None
-                    else 0
-                ),
+                "progress": (e.get_training_progress()),
+                "loss": e.model.get_loss(),
             }
             for e in self.computing
             if e.kind in ["bert", "train_bert", "predict_bert"]

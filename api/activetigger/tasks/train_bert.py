@@ -46,6 +46,8 @@ class CustomLoggingCallback(TrainerCallback):
         progress_percentage = (state.global_step / state.max_steps) * 100
         with open(self.current_path.joinpath("train/progress"), "w") as f:
             f.write(str(progress_percentage))
+        with open(self.current_path.joinpath("log_history.txt"), "w") as f:
+            json.dump(state.log_history, f)
         # end if event set
         if self.event is not None:
             if self.event.is_set():
@@ -253,8 +255,8 @@ class TrainBert(BaseTask):
             os.rename(log_path, current_path.joinpath("finished"))
 
             # save log history of the training for statistics
-            with open(current_path.joinpath("log_history.txt"), "w") as f:
-                json.dump(trainer.state.log_history, f)
+            # with open(current_path.joinpath("log_history.txt"), "w") as f:
+            #    json.dump(trainer.state.log_history, f)
 
             return {"success": "Model trained"}
 

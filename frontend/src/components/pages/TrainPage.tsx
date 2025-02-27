@@ -1,17 +1,14 @@
 import { FC, useState } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { FaTools } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
+import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 import { Tooltip } from 'react-tooltip';
-import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
-
-import { Tab, Tabs } from 'react-bootstrap';
-import { Controller } from 'react-hook-form';
-import { FaTools } from 'react-icons/fa';
-import Select from 'react-select';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
@@ -24,6 +21,7 @@ import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { newBertModel } from '../../types';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
+import { LossChart } from '../vizualisation/lossChart';
 
 /**
  * Component to manage model training
@@ -142,57 +140,14 @@ export const TrainPage: FC = () => {
     await trainBertModel(data);
   };
 
+  interface LossData {
+    epoch: { [key: string]: number };
+    val_loss: { [key: string]: number };
+    val_eval_loss: { [key: string]: number };
+  }
+
   // loss chart shape data
-  const loss = model?.loss ? JSON.parse(model?.loss) : null;
-  const val_epochs = model?.loss ? Object.values(loss['epoch']) : [];
-  const val_loss = model?.loss ? Object.values(loss['val_loss']) : [];
-  const val_eval_loss = model?.loss ? Object.values(loss['val_eval_loss']) : [];
-
-  const valLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_loss[i] }));
-  const valEvalLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_eval_loss[i] }));
-
-  const LossChart = () => (
-    <VictoryChart theme={VictoryTheme.material} minDomain={{ y: 0 }}>
-      <VictoryAxis
-        label="Epoch"
-        style={{
-          axisLabel: { padding: 30 },
-        }}
-      />
-      <VictoryAxis
-        dependentAxis
-        label="Loss"
-        style={{
-          axisLabel: { padding: 40 },
-        }}
-      />
-      <VictoryLine
-        data={valLossData}
-        style={{
-          data: { stroke: '#c43a31' }, // Rouge pour val_loss
-        }}
-      />
-      <VictoryLine
-        data={valEvalLossData}
-        style={{
-          data: { stroke: '#0000ff' }, // Bleu pour val_eval_loss
-        }}
-      />
-      <VictoryLegend
-        x={125}
-        y={10}
-        title="Legend"
-        centerTitle
-        orientation="horizontal"
-        gutter={20}
-        style={{ border: { stroke: 'black' }, title: { fontSize: 10 } }}
-        data={[
-          { name: 'Loss', symbol: { fill: '#c43a31' } },
-          { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
-        ]}
-      />
-    </VictoryChart>
-  );
+  const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
 
   // display table false prediction
   const falsePredictions =
@@ -223,7 +178,8 @@ export const TrainPage: FC = () => {
     },
   ];
 
-  const displayAdvancement = (val: number | string) => {
+  const displayAdvancement = (val: number | string | null) => {
+    if (!val) return '';
     const v = Math.round(Number(val));
     if (v >= 100) return 'completed, please wait';
     return v + '%';
@@ -290,13 +246,14 @@ export const TrainPage: FC = () => {
                           {Object.entries(
                             project?.bertmodels.training as Record<
                               string,
-                              Record<string, string | number>
+                              Record<string, string | number | null>
                             >,
                           ).map(([_, v]) => (
                             <li key={v.name}>
                               {v.name} - {v.status} :{' '}
                               <span style={{ fontWeight: 'bold' }}>
                                 {displayAdvancement(v.progress)}
+                                {<LossChart loss={v.loss as unknown as LossData} />}
                               </span>
                             </li>
                           ))}
@@ -331,16 +288,18 @@ export const TrainPage: FC = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {Object.entries(model.params).map(([key, value]) => (
-                                  <tr key={key}>
-                                    <td>{key}</td>
-                                    <td>{JSON.stringify(value)}</td>
-                                  </tr>
-                                ))}
+                                {Object.entries(model.params as Record<string, unknown>).map(
+                                  ([key, value]) => (
+                                    <tr key={key}>
+                                      <td>{key}</td>
+                                      <td>{JSON.stringify(value)}</td>
+                                    </tr>
+                                  ),
+                                )}
                               </tbody>
                             </table>
                             <div className="col-6 col-lg-4">
-                              <LossChart />
+                              <LossChart loss={loss} />
                             </div>
                           </details>
                           <details className="custom-details">

@@ -658,10 +658,10 @@ class ReturnTaskPredictModel(BaseModel):
 
 
 class BertModelInformationsModel(BaseModel):
-    params: Any
-    loss: Any
-    train_scores: Any
-    test_scores: Any
+    params: dict | None = None
+    loss: dict | None = None
+    train_scores: dict | None = None
+    test_scores: dict | None = None
 
 
 class ProjectUpdateModel(BaseModel):

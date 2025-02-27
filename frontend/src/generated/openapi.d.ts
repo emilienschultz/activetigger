@@ -1346,13 +1346,13 @@ export interface components {
         /** BertModelInformationsModel */
         BertModelInformationsModel: {
             /** Params */
-            params: unknown;
+            params: Record<string, never>;
             /** Loss */
-            loss: unknown;
+            loss: Record<string, never>;
             /** Train Scores */
-            train_scores: unknown;
+            train_scores: Record<string, never>;
             /** Test Scores */
-            test_scores: unknown;
+            test_scores: Record<string, never>;
         };
         /**
          * BertModelModel
