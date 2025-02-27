@@ -186,6 +186,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Statistics
+         * @description Get statistics for specific user
+         */
+        get: operations["get_statistics_users_statistics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{project_slug}/statistics": {
         parameters: {
             query?: never;
@@ -262,6 +282,7 @@ export interface paths {
          *     - change the language
          *     - change context cols
          *     - change text cols
+         *     - expand the number of elements in the trainset
          */
         post: operations["update_project_projects_update_post"];
         delete?: never;
@@ -284,26 +305,6 @@ export interface paths {
          * @description Delete a project
          */
         post: operations["delete_project_projects_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/projects/trainset/add": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Expand Project
-         * @description Expand a project
-         */
-        post: operations["expand_project_projects_trainset_add_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2125,6 +2126,15 @@ export interface components {
             /** Status */
             status: string | null;
         };
+        /** UserStatistics */
+        UserStatistics: {
+            /** Username */
+            username: string;
+            /** Projects */
+            projects: {
+                [key: string]: string | undefined;
+            };
+        };
         /**
          * UsersServerModel
          * @description list of users on the server
@@ -2414,6 +2424,37 @@ export interface operations {
             };
         };
     };
+    get_statistics_users_statistics_get: {
+        parameters: {
+            query: {
+                username: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserStatistics"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_project_statistics_projects__project_slug__statistics_get: {
         parameters: {
             query?: {
@@ -2550,38 +2591,6 @@ export interface operations {
         parameters: {
             query: {
                 project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    expand_project_projects_trainset_add_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-                n_elements: number;
             };
             header?: never;
             path?: never;

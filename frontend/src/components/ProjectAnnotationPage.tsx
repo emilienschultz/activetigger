@@ -103,7 +103,6 @@ export const ProjectAnnotationPage: FC = () => {
   useEffect(() => {
     resetScroll();
     if (elementId === 'noelement') {
-      console.log('No element');
       return;
     }
     if (elementId === undefined) {
@@ -118,8 +117,6 @@ export const ProjectAnnotationPage: FC = () => {
             },
           }));
           navigate(`/projects/${projectName}/annotate/${res.element_id}`);
-
-          console.log(res.element_id);
         } else {
           navigate(`/projects/${projectName}/annotate/noelement`);
           setElement(null);

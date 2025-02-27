@@ -13,6 +13,7 @@ from activetigger.datamodels import (
     UserInDBModel,
     UserModel,
     UsersServerModel,
+    UserStatistics,
 )
 from activetigger.orchestrator import orchestrator
 
@@ -113,7 +114,7 @@ async def change_password(
     pwdold: str = Query(),
     pwd1: str = Query(),
     pwd2: str = Query(),
-):
+) -> None:
     """
     Change password for an account
     """
@@ -172,5 +173,16 @@ async def get_auth(username: str) -> list:
     """
     try:
         return orchestrator.users.get_auth(username, "all")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/users/statistics", dependencies=[Depends(verified_user)], tags=["users"])
+async def get_statistics(username: str) -> UserStatistics:
+    """
+    Get statistics for specific user
+    """
+    try:
+        return orchestrator.users.get_statistics(username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

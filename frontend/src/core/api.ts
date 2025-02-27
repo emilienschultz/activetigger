@@ -1724,12 +1724,7 @@ export function useGetActiveUsers() {
 
   const getActiveUsers = useAsyncMemo(async () => {
     const res = await api.GET('/users/recent', {});
-
-    //return res.data.params;
     return res.data;
-
-    // in this dependencies list we add projectSlug has a different API call will be made if it changes
-    // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
   }, [fetchTrigger]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
@@ -1842,31 +1837,6 @@ export function usePostAnnotationsFile(projectSlug: string | null) {
   return postAnnotationsFile;
 }
 
-// /**
-//  * Post trainset expand
-//  */
-// export function useExpandTrainSet(projectSlug: string | null) {
-//   const { notify } = useNotifications();
-//   const postAnnotationsFile = useCallback(
-//     async (n_elements: number | undefined | null) => {
-//       if (!projectSlug) return;
-//       if (!n_elements) return;
-//       const res = await api.POST('/projects/trainset/add', {
-//         params: {
-//           query: { project_slug: projectSlug, n_elements: n_elements },
-//         },
-//       });
-//       if (!res.error) notify({ type: 'success', message: 'Trainset expanded' });
-//       else
-//         throw new Error(
-//           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
-//         );
-//     },
-//     [notify, projectSlug],
-//   );
-//   return postAnnotationsFile;
-// }
-
 /**
  * Post update project
  */
@@ -1887,4 +1857,30 @@ export function useUpdateProject(projectSlug: string | null) {
     [notify, projectSlug],
   );
   return updateProject;
+}
+
+/**
+ * Get user statistics
+ * @param username
+ */
+export function useGetUserStatistics(username: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getUserStatistics = useAsyncMemo(async () => {
+    if (username) {
+      const res = await api.GET('/users/statistics', {
+        params: {
+          query: {
+            username: username,
+          },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { userStatistics: getAsyncMemoData(getUserStatistics), reFetchStatistics: reFetch };
 }

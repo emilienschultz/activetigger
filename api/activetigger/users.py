@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml  # type: ignore[import]
 
-from activetigger.datamodels import UserInDBModel
+from activetigger.datamodels import UserInDBModel, UserStatistics
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import compare_to_hash, get_hash
 
@@ -179,3 +179,13 @@ class Users:
         hash_pwd = get_hash(password1)
         self.db_manager.users_service.change_password(username, hash_pwd.decode("utf8"))
         return None
+
+    def get_statistics(self, username: str) -> UserStatistics:
+        """
+        Get statistics for specific user
+        """
+        try:
+            projects = {i[0]: i[1] for i in self.get_auth_projects(username)}
+            return UserStatistics(username=username, projects=projects)
+        except Exception as e:
+            raise Exception(f"Error in getting statistics for {username}") from e
