@@ -11,12 +11,12 @@ from typing import Any
 
 import pandas as pd
 from pandas import DataFrame
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
+from sklearn.linear_model import LogisticRegression  # type: ignore[import]
+from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
+from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
+from sklearn.preprocessing import StandardScaler  # type: ignore[import]
+from transformers import AutoModelForSequenceClassification, AutoTokenizer  # type: ignore[import]
 
 import activetigger.functions as functions
 from activetigger.datamodels import (

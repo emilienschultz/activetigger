@@ -40,6 +40,21 @@ interface NodeAttributesType {
   size?: number;
 }
 
+// function to quantify point size
+const getPointSize = (n: number) => {
+  if (n <= 100) {
+    return 8;
+  } else if (n <= 500) {
+    return 5;
+  } else if (n <= 1000) {
+    return 3;
+  } else if (n <= 5000) {
+    return 2;
+  } else {
+    return 1;
+  }
+};
+
 // Create the Component that listen to all events
 
 export const ProjectionVizSigma: FC<Props> = ({
@@ -68,7 +83,7 @@ export const ProjectionVizSigma: FC<Props> = ({
     const graph = new Graph<NodeAttributesType>();
     if (data) {
       //TODO: refine those simple heuristics
-      const size = data.x.length <= 100 ? 4 : data.x.length <= 500 ? 3 : 1;
+      const size = getPointSize(data.x.length);
       data.x.forEach((value, index) => {
         graph.addNode(data.index[index], {
           x: value as number,
