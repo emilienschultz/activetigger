@@ -70,9 +70,7 @@ async def new_project(
     """
     Load new project
     """
-    # test rights to create project
     test_rights("create project", current_user.username)
-
     try:
         # create the project
         r = orchestrator.create_project(project, current_user.username)
@@ -102,6 +100,7 @@ async def update_project(
     - change text cols
     - expand the number of elements in the trainset
     """
+    test_rights("modify project", current_user.username, project.name)
     try:
         project.update_project(update)
         orchestrator.log_action(
