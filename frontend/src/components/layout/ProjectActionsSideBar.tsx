@@ -8,6 +8,7 @@ import { RiAiGenerate } from 'react-icons/ri';
 import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
 import { useGetServer } from '../../core/api';
+import { useAuth } from '../../core/auth';
 import { useNotifications } from '../../core/notifications';
 import { ProjectStateModel } from '../../types';
 import { ModalErrors } from '../ModalError';
@@ -31,6 +32,11 @@ export const ProjectActionsSidebar: FC<{
   developmentMode,
 }) => {
   const projectName = projectState ? projectState.params.project_slug : null;
+  const { authenticatedUser } = useAuth();
+  console.log(authenticatedUser);
+
+  // 2 types of menu
+  const onlyAnnotator = authenticatedUser?.status === 'annotator';
 
   // test if computation is currently undergoing
   const currentComputation = projectState
@@ -58,57 +64,58 @@ export const ProjectActionsSidebar: FC<{
     <div
       className={`project-sidebar d-flex flex-column flex-shrink-0 ${currentMode == 'train' ? 'bg-light' : 'bg-info'}`}
     >
-      <ul className="nav nav-pills flex-column mb-auto">
-        <li className="nav-item mt-3">
-          <Link
-            to={`/projects/${projectName}`}
-            className={classNames('nav-link', !currentProjectAction && 'active')}
-            aria-current="page"
-            title="Project"
-          >
-            <MdOutlineHomeMax className="m-2" />
-            <span>
-              <b>{projectName}</b>
-            </span>
-            <span className="mx-2" style={{ fontSize: '0.875rem', color: 'grey' }}>
-              {currentScheme}
-            </span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/prepare`}
-            className={classNames('nav-link', currentProjectAction === 'prepare' && 'active')}
-            aria-current="page"
-            title="Prepare"
-          >
-            <MdOutlineTransform />
-            <span> Prepare</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/explore`}
-            className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
-            aria-current="page"
-            title="Explore"
-          >
-            <TbListSearch />
-            <span> Explore</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/annotate`}
-            className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
-            aria-current="page"
-            title="Annotate"
-          >
-            <PiTagDuotone />
-            <span> Annotate</span>
-          </Link>
-        </li>
-        {/* {developmentMode && (
+      {!onlyAnnotator && (
+        <ul className="nav nav-pills flex-column mb-auto">
+          <li className="nav-item mt-3">
+            <Link
+              to={`/projects/${projectName}`}
+              className={classNames('nav-link', !currentProjectAction && 'active')}
+              aria-current="page"
+              title="Project"
+            >
+              <MdOutlineHomeMax className="m-2" />
+              <span>
+                <b>{projectName}</b>
+              </span>
+              <span className="mx-2" style={{ fontSize: '0.875rem', color: 'grey' }}>
+                {currentScheme}
+              </span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/prepare`}
+              className={classNames('nav-link', currentProjectAction === 'prepare' && 'active')}
+              aria-current="page"
+              title="Prepare"
+            >
+              <MdOutlineTransform />
+              <span> Prepare</span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/explore`}
+              className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
+              aria-current="page"
+              title="Explore"
+            >
+              <TbListSearch />
+              <span> Explore</span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/annotate`}
+              className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
+              aria-current="page"
+              title="Annotate"
+            >
+              <PiTagDuotone />
+              <span> Annotate</span>
+            </Link>
+          </li>
+          {/* {developmentMode && (
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/curate`}
@@ -122,99 +129,131 @@ export const ProjectActionsSidebar: FC<{
             </Link>
           </li>
         )} */}
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/train`}
-            className={classNames('nav-link', currentProjectAction === 'train' && 'active')}
-            aria-current="page"
-            title="Training"
-          >
-            <MdModelTraining />
-            <span> Train</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/test`}
-            className={classNames('nav-link', currentProjectAction === 'test' && 'active')}
-            aria-current="page"
-            title="Test"
-          >
-            <FaClipboardCheck />
-            <span> Test</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/predict`}
-            className={classNames('nav-link', currentProjectAction === 'predict' && 'active')}
-            aria-current="page"
-            title="Predict"
-          >
-            <FiTarget />
-            <span> Predict</span>
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to={`/projects/${projectName}/export`}
-            className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
-            aria-current="page"
-            title="Export"
-          >
-            <FaCloudDownloadAlt />
-            <span> Export</span>
-          </Link>
-        </li>
-        {developmentMode && (
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/generate`}
-              className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
+              to={`/projects/${projectName}/train`}
+              className={classNames('nav-link', currentProjectAction === 'train' && 'active')}
               aria-current="page"
-              title="Generate"
-              style={{ color: 'darkorange', display: 'flex', alignItems: 'center' }}
+              title="Training"
             >
-              <RiAiGenerate />
-              <span> Generate</span>
+              <MdModelTraining />
+              <span> Train</span>
             </Link>
           </li>
-        )}
-        <li className="nav-item ">
-          <div className="nav-link">
-            <div className="badge text-bg-secondary" title="Number of processes running">
-              <span className="d-none d-md-inline">Process: </span>
-              {Object.values(queueState || []).length}
-            </div>
-            <br></br>
-            <div className="badge text-bg-warning" title="Used/Total">
-              <span className="d-none d-md-inline">
-                GPU:
-                {gpu
-                  ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
-                  : 'No'}
-              </span>
-            </div>
-
-            <br></br>
-            {projectState?.errors && projectState?.errors.length > 0 && (
-              <ModalErrors errors={errors} />
-            )}
-          </div>
-        </li>
-        {currentComputation && (
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/test`}
+              className={classNames('nav-link', currentProjectAction === 'test' && 'active')}
+              aria-current="page"
+              title="Test"
+            >
+              <FaClipboardCheck />
+              <span> Test</span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/predict`}
+              className={classNames('nav-link', currentProjectAction === 'predict' && 'active')}
+              aria-current="page"
+              title="Predict"
+            >
+              <FiTarget />
+              <span> Predict</span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/export`}
+              className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
+              aria-current="page"
+              title="Export"
+            >
+              <FaCloudDownloadAlt />
+              <span> Export</span>
+            </Link>
+          </li>
+          {developmentMode && (
+            <li className="nav-item">
+              <Link
+                to={`/projects/${projectName}/generate`}
+                className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
+                aria-current="page"
+                title="Generate"
+                style={{ color: 'darkorange', display: 'flex', alignItems: 'center' }}
+              >
+                <RiAiGenerate />
+                <span> Generate</span>
+              </Link>
+            </li>
+          )}
           <li className="nav-item ">
             <div className="nav-link">
-              <div className="d-flex justify-content-left align-items-center">
-                <div className="spinner-border spinner-border-sm text-warning" role="status">
-                  <span className="visually-hidden">Computing</span>
-                </div>
-                <span className="computing d-none d-md-inline">Computing</span>
+              <div className="badge text-bg-secondary" title="Number of processes running">
+                <span className="d-none d-md-inline">Process: </span>
+                {Object.values(queueState || []).length}
               </div>
+              <br></br>
+              <div className="badge text-bg-warning" title="Used/Total">
+                <span className="d-none d-md-inline">
+                  GPU:
+                  {gpu
+                    ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
+                    : 'No'}
+                </span>
+              </div>
+
+              <br></br>
+              {projectState?.errors && projectState?.errors.length > 0 && (
+                <ModalErrors errors={errors} />
+              )}
             </div>
           </li>
-        )}
-      </ul>
+          {currentComputation && (
+            <li className="nav-item ">
+              <div className="nav-link">
+                <div className="d-flex justify-content-left align-items-center">
+                  <div className="spinner-border spinner-border-sm text-warning" role="status">
+                    <span className="visually-hidden">Computing</span>
+                  </div>
+                  <span className="computing d-none d-md-inline">Computing</span>
+                </div>
+              </div>
+            </li>
+          )}
+        </ul>
+      )}
+      {onlyAnnotator && (
+        <ul className="nav nav-pills flex-column mb-auto">
+          <li className="nav-item mt-3">
+            <Link
+              to={`/projects/${projectName}`}
+              className={classNames('nav-link', !currentProjectAction && 'active')}
+              aria-current="page"
+              title="Project"
+            >
+              <MdOutlineHomeMax className="m-2" />
+              <span>
+                <b>{projectName}</b>
+              </span>
+              <span className="mx-2" style={{ fontSize: '0.875rem', color: 'grey' }}>
+                {currentScheme}
+              </span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/annotate`}
+              className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
+              aria-current="page"
+              title="Annotate"
+            >
+              <PiTagDuotone />
+              <span> Annotate</span>
+            </Link>
+          </li>
+        </ul>
+      )}
     </div>
   );
 };
