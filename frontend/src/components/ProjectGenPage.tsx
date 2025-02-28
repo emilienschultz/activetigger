@@ -245,6 +245,7 @@ export const GenPage: FC = () => {
                   <div className="explanations mt-3">
                     Select or craft your prompt with the element #INSERTTEXT to insert text
                   </div>
+
                   <div className="d-flex align-items-center justify-content-center">
                     <Select
                       id="select-prompt"
@@ -294,7 +295,7 @@ export const GenPage: FC = () => {
                       rows={5}
                       placeholder="Enter your prompt"
                       className="form-control"
-                      style={{ height: '200px', backgroundColor: '#ffefc7' }}
+                      style={{ height: '200px', backgroundColor: '#fff0fe' }}
                       value={generateConfig.prompt || ''}
                       onChange={(e) => {
                         setAppContext((prev) => ({
@@ -303,6 +304,10 @@ export const GenPage: FC = () => {
                         }));
                       }}
                     />
+                    <span style={{ color: 'gray' }}>
+                      The request will send the data to the external API. Be sure you can trust the
+                      API provider with the level of privacy of your data.
+                    </span>
                     <label htmlFor="prompt">Prompt </label>
                   </div>
                   <div className="col-12 text-center">
