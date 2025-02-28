@@ -311,7 +311,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/testset/create": {
+    "/projects/testset/{action}": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,7 +324,7 @@ export interface paths {
          * Add Testdata
          * @description Add a dataset for test when there is none available
          */
-        post: operations["add_testdata_projects_testset_create_post"];
+        post: operations["add_testdata_projects_testset__action__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2692,18 +2692,20 @@ export interface operations {
             };
         };
     };
-    add_testdata_projects_testset_create_post: {
+    add_testdata_projects_testset__action__post: {
         parameters: {
             query: {
                 project_slug: string;
             };
             header?: never;
-            path?: never;
+            path: {
+                action: string;
+            };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["TestSetDataModel"];
+                "application/json": components["schemas"]["TestSetDataModel"] | null;
             };
         };
         responses: {

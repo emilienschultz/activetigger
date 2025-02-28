@@ -135,25 +135,33 @@ async def delete_project(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/projects/testset/create", dependencies=[Depends(verified_user)])
+@router.post("/projects/testset/{action}", dependencies=[Depends(verified_user)])
 async def add_testdata(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    testset: TestSetDataModel,
+    action: str,
+    testset: TestSetDataModel | None = None,
 ) -> None:
     """
     Add a dataset for test when there is none available
     """
+    test_rights("modify project", current_user.username, project.name)
     try:
-        # add the data
-        project.add_testdata(testset, current_user.username, project.name)
-        # update parameters of the project
-        orchestrator.set_project_parameters(project.params, current_user.username)
-        # log action
-        orchestrator.log_action(
-            current_user.username, "INFO add testdata project", project.name
-        )
-        return None
+        if action == "create":
+            if testset is None:
+                raise Exception("No testset sent")
+            project.add_testset(testset, current_user.username, project.name)
+            orchestrator.log_action(
+                current_user.username, "INFO add testdata project", project.name
+            )
+            return None
+        if action == "delete":
+            project.drop_testset()
+            orchestrator.log_action(
+                current_user.username, "INFO delete testdata project", project.name
+            )
+            return None
+        raise Exception("action not found")
     except Exception as e:
         raise HTTPException(status_code=500) from e
 

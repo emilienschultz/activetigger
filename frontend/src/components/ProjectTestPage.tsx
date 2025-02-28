@@ -2,9 +2,10 @@ import { FC, useState } from 'react';
 import DataGrid, { Column } from 'react-data-grid';
 
 import { Row } from 'react-bootstrap';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import PulseLoader from 'react-spinners/PulseLoader';
 import {
+  useDropTestSet,
   useModelInformations,
   useStatistics,
   useStopTrainBertModel,
@@ -32,11 +33,13 @@ export const ProjectTestPage: FC = () => {
     appContext: { phase, currentScheme, currentProject, isComputing },
     setAppContext,
   } = useAppContext();
+  const navigate = useNavigate();
 
   const kindScheme =
     currentScheme && currentProject
       ? (currentProject.schemes.available[currentScheme]['kind'] as string)
       : 'multiclass';
+
   // available models
   const availableModels =
     currentScheme && currentProject?.bertmodels.available[currentScheme]
@@ -52,6 +55,7 @@ export const ProjectTestPage: FC = () => {
     currentScheme || null,
     currentModel || null,
   );
+  const dropTestSet = useDropTestSet(projectName || null);
   const { model } = useModelInformations(projectName || null, currentModel || null, isComputing);
   const { stopTraining } = useStopTrainBertModel(projectName || null);
 
@@ -105,7 +109,7 @@ export const ProjectTestPage: FC = () => {
           }
           {currentProject?.params.test && (
             <div className="row d-flex align-items-center">
-              <div className="col-6 form-check form-switch">
+              <div className="col-4 form-check form-switch">
                 <input
                   className="form-check-input bg-info"
                   type="checkbox"
@@ -123,13 +127,25 @@ export const ProjectTestPage: FC = () => {
                   Activate test mode
                 </label>
               </div>
-              <div className="col-6">
+              <div className="col-4">
                 {statistics && (
                   <span className="badge text-bg-light  m-3">
                     Test set annotations :{' '}
                     {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
                   </span>
                 )}
+              </div>
+              <div className="col-4">
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    dropTestSet().then(() => {
+                      navigate(`/projects/${projectName}/test`);
+                    });
+                  }}
+                >
+                  Drop existing testset
+                </button>
               </div>
               {phase == 'test' && (
                 <div className="alert alert-info m-3">

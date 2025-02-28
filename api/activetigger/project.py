@@ -1,6 +1,7 @@
 import io
 import json
 import logging
+import os
 import shutil
 import time
 from datetime import datetime, timedelta
@@ -162,7 +163,25 @@ class Project:
         else:
             raise NameError(f"{project_slug} does not exist.")
 
-    def add_testdata(self, testset: TestSetDataModel, username: str, project_slug: str):
+    def drop_testset(self) -> None:
+        """
+        Clean all the test data of the project
+        """
+        if not self.params.dir:
+            raise Exception("No directory for project")
+        path_testset = self.params.dir.joinpath("test.parquet")
+        if not path_testset.exists():
+            raise Exception("No test data available")
+        os.remove(path_testset)
+        self.schemes.test = None
+        self.params.test = False
+        self.db_manager.projects_service.update_project(
+            self.params.project_slug, jsonable_encoder(self.params)
+        )
+
+    def add_testset(
+        self, testset: TestSetDataModel, username: str, project_slug: str
+    ) -> None:
         """
         Add a test dataset
 
@@ -240,8 +259,10 @@ class Project:
         self.schemes.test = df[[testset.col_text]]
         # update parameters
         self.params.test = True
-
-        return {"success": "test dataset added"}
+        # update the database
+        self.db_manager.projects_service.update_project(
+            self.params.project_slug, jsonable_encoder(self.params)
+        )
 
     def update_simplemodel(self, simplemodel: SimpleModelModel, username: str) -> dict:
         """

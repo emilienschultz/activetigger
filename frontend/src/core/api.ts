@@ -201,9 +201,10 @@ export function useCreateTestSet() {
   const createTestSet = useCallback(
     async (projectSlug: string, testset: TestSetDataModel) => {
       // do the new projects POST call
-      const res = await api.POST('/projects/testset/create', {
+      const res = await api.POST('/projects/testset/{action}', {
         // POST has a body
         params: {
+          path: { action: 'create' },
           query: { project_slug: projectSlug },
         },
         body: testset,
@@ -217,6 +218,26 @@ export function useCreateTestSet() {
     [notify],
   );
   return createTestSet;
+}
+
+/**
+ * Drop test set
+ */
+export function useDropTestSet(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const dropTestSet = useCallback(async () => {
+    if (!projectSlug) return;
+    // do the new projects POST call
+    const res = await api.POST('/projects/testset/{action}', {
+      // POST has a body
+      params: {
+        path: { action: 'delete' },
+        query: { project_slug: projectSlug },
+      },
+    });
+    if (!res.error) notify({ type: 'success', message: 'Test data set dropped' });
+  }, [notify]);
+  return dropTestSet;
 }
 
 /**
