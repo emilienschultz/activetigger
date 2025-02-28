@@ -59,7 +59,7 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
   const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async (formData) => {
     if (data) {
       if (!formData.col_id || !formData.col_text || !formData.n_test) {
-        notify('error', 'Please fill all the fields');
+        notify({ type: 'error', message: 'Please fill all the fields' });
         return;
       }
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';

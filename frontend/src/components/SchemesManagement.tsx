@@ -56,7 +56,7 @@ export const SelectCurrentScheme: FC = () => {
     <div className="row">
       <div className="d-flex align-items-center mb-3">
         <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
-          Current scheme
+          Scheme to use
         </label>
         <select
           id="scheme-selected"
@@ -131,7 +131,7 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   };
 
   return (
-    <div>
+    <div className="alert alert-info container-fluid m-3 col-6">
       <div className="row">
         <div className="d-flex flex-wrap align-items-center">
           <div className="mt-3">

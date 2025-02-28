@@ -23,7 +23,6 @@ export const ProjectPredictPage: FC = () => {
   const { stopTraining } = useStopTrainBertModel(projectSlug || null);
 
   // available labels from context
-
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
 
@@ -93,7 +92,22 @@ export const ProjectPredictPage: FC = () => {
                   </ul>
                 </div>
               )}
-
+            <div className="d-flex align-items-center">
+              <label>Batch size</label>
+              <a className="batch">
+                <HiOutlineQuestionMarkCircle />
+              </a>
+              <Tooltip anchorSelect=".batch" place="top">
+                Batch used for predict. Keep it small (16 or 32) for small GPU.
+              </Tooltip>
+              <input
+                type="number"
+                step="1"
+                className="m-2 form-control w-25"
+                value={batchSize}
+                onChange={(e) => setBatchSize(Number(e.target.value))}
+              />
+            </div>
             {isComputing && (
               <div>
                 <button
@@ -111,7 +125,9 @@ export const ProjectPredictPage: FC = () => {
                 {model && (
                   <div>
                     {availablePrediction ? (
-                      <div className="explanations">Prediction computed, you can export it</div>
+                      <div className="alert alert-success m-4">
+                        Prediction computed for this model, you can export it
+                      </div>
                     ) : isComputing ? (
                       <div></div>
                     ) : (
@@ -126,22 +142,6 @@ export const ProjectPredictPage: FC = () => {
                 )}
               </div>
             )}
-            <div className="d-flex align-items-center">
-              <label>Batch size</label>
-              <a className="batch">
-                <HiOutlineQuestionMarkCircle />
-              </a>
-              <Tooltip anchorSelect=".batch" place="top">
-                Batch used for predict. Keep it small (16 or 32) for small GPU.
-              </Tooltip>
-              <input
-                type="number"
-                step="1"
-                className="m-2 form-control w-25"
-                value={batchSize}
-                onChange={(e) => setBatchSize(Number(e.target.value))}
-              />
-            </div>
           </div>
         </div>
       </div>
