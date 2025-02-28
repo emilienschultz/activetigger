@@ -251,7 +251,11 @@ export const TrainPage: FC = () => {
                               {v.name} - {v.status} :{' '}
                               <span style={{ fontWeight: 'bold' }}>
                                 {displayAdvancement(v.progress)}
-                                {<LossChart loss={v.loss as unknown as LossData} />}
+                                {
+                                  <div className="col-6 col-lg-4">
+                                    <LossChart loss={v.loss as unknown as LossData} />
+                                  </div>
+                                }
                               </span>
                             </li>
                           ))}

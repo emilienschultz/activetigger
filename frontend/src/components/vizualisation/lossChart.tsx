@@ -25,7 +25,12 @@ export const LossChart: React.FC<LossChartProps> = ({ loss }) => {
     y: val_eval_loss[i] as number,
   }));
 
-  if (valEvalLossData.length < 2) return null;
+  if (valEvalLossData.length < 2)
+    return (
+      <div className="alert alert-info m-3">
+        Loss chart will be displayed when enough data is available
+      </div>
+    );
 
   return (
     <VictoryChart theme={VictoryTheme.material} minDomain={{ y: 0 }}>
