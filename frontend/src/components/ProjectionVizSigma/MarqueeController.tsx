@@ -1,9 +1,11 @@
 import { useRegisterEvents, useSigma } from '@react-sigma/core';
 import { pick } from 'lodash';
-import { FC, useCallback, useEffect, useState } from 'react';
+import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from 'react';
 import { Coordinates } from 'sigma/types';
 
-import { PiSelectionBold, PiSelectionSlashBold } from 'react-icons/pi';
+import classNames from 'classnames';
+import { PiCursorFill, PiSelectionBold } from 'react-icons/pi';
+import { SigmaToolsType } from '.';
 
 export interface MarqueBoundingBox {
   x: { min: number; max: number };
@@ -11,59 +13,64 @@ export interface MarqueBoundingBox {
 }
 
 export const MarqueeController: FC<{
-  setMarqueeBoundingBox: (boundingBox?: MarqueBoundingBox) => void;
-}> = ({ setMarqueeBoundingBox }) => {
+  setBbox: Dispatch<SetStateAction<MarqueBoundingBox | undefined>>;
+  validateBoundingBox: (boundingBox?: MarqueBoundingBox) => void;
+  setActiveTool: Dispatch<SetStateAction<SigmaToolsType>>;
+}> = ({ setBbox, validateBoundingBox, setActiveTool }) => {
+  // sigma hooks
   const sigma = useSigma();
   const registerEvents = useRegisterEvents();
+
+  // internal state
   const [selectionState, setSelectionState] = useState<
     | { type: 'off' }
     | { type: 'idle' }
     | {
         type: 'marquee';
-        ctrlKeyDown: boolean;
         startCorner: Coordinates;
         mouseCorner: Coordinates;
         //capturedNodes: string[];
       }
   >({ type: 'off' });
 
-  const cleanup = useCallback(() => {
-    console.log('cleanup marquee');
+  // cleaning state when marquee closes
+  const backToIdle = useCallback(() => {
+    console.log('closing marquee');
     sigma.getCamera().enable();
     setSelectionState({ type: 'idle' });
-    setMarqueeBoundingBox(undefined);
     //TODO: setEmphasizedNodes(null);
-  }, [sigma, setMarqueeBoundingBox]);
+  }, [sigma]);
 
+  const closeMarkee = useCallback(() => {
+    console.log('stop marquee');
+    setBbox((prev) => {
+      validateBoundingBox(prev);
+      return prev;
+    });
+    backToIdle();
+  }, [validateBoundingBox, setBbox, backToIdle]);
+
+  // Keyboard events
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
       if (selectionState.type === 'idle') return;
-      if (e.key === 'Escape') cleanup();
-      if (e.key === 'Control') {
-        setSelectionState((state) => ({ ...state, ctrlKeyDown: true }));
-        // setEmphasizedNodes(
-        //   new Set(selectionState.capturedNodes.concat(Array.from(selection.items))),
-        // );
+      if (selectionState.type === 'marquee' && e.key === 'Escape') {
+        setBbox(undefined);
+        validateBoundingBox(undefined);
+        backToIdle();
       }
     };
-    const keyUpHandler = (e: KeyboardEvent) => {
-      if (selectionState.type === 'idle') return;
-      if (e.key === 'Control') {
-        setSelectionState((state) => ({ ...state, ctrlKeyDown: false }));
-        // setEmphasizedNodes(new Set(selectionState.capturedNodes));
-      }
-    };
+
     window.document.body.addEventListener('keydown', keyDownHandler);
-    window.document.body.addEventListener('keyup', keyUpHandler);
     return () => {
       window.document.body.removeEventListener('keydown', keyDownHandler);
-      window.document.body.removeEventListener('keyup', keyUpHandler);
     };
-  }, [cleanup, selectionState]);
+  }, [backToIdle, selectionState, validateBoundingBox, setBbox]);
 
   useEffect(() => {
     registerEvents({
       mousemovebody: (e) => {
+        // update bbox if ongoing marquee drawing
         if (selectionState.type === 'marquee') {
           const mousePosition = pick(e, 'x', 'y') as Coordinates;
 
@@ -76,8 +83,10 @@ export const MarqueeController: FC<{
           const maxX = Math.max(start.x, end.x);
           const maxY = Math.max(start.y, end.y);
 
-          setMarqueeBoundingBox({ x: { min: minX, max: maxX }, y: { min: minY, max: maxY } });
-          // TODO emphasized nodes ?
+          // update bbox state to update marquee display
+          setBbox({ x: { min: minX, max: maxX }, y: { min: minY, max: maxY } });
+
+          // TODO emphasized nodes ? If we want to highlight nodes in the bbox
           // const capturedNodes = graph.filterNodes((node, { x, y }) => {
           //   const size = sigma.getNodeDisplayData(node)!.size as number;
           //   return !(x + size < minX || x - size > maxX || y + size < minY || y - size > maxY);
@@ -91,6 +100,7 @@ export const MarqueeController: FC<{
           //     ),
           //   ),
           // );
+
           setSelectionState({
             ...selectionState,
             mouseCorner: mousePosition,
@@ -98,6 +108,7 @@ export const MarqueeController: FC<{
         }
       },
       clickStage: (e) => {
+        // start / stop Marquee drawing
         if (selectionState.type !== 'off') {
           e.preventSigmaDefault();
 
@@ -109,48 +120,62 @@ export const MarqueeController: FC<{
               type: 'marquee',
               startCorner: mousePosition,
               mouseCorner: mousePosition,
-              ctrlKeyDown: e.event.original.ctrlKey,
               //capturedNodes: [],
             });
             sigma.getCamera().disable();
           } else {
-            console.log('stop marquee');
-            console.log('stop marquee');
+            closeMarkee();
           }
         }
       },
       click: (e) => {
-        if (selectionState.type !== 'off') {
-          if (selectionState.type === 'marquee') {
-            e.preventSigmaDefault();
-            console.log('stop marquee');
-            setSelectionState({ type: 'idle' });
-          }
+        // to make sur a click elsewhere than stage closes the marquee
+        if (selectionState.type === 'marquee') {
+          e.preventSigmaDefault();
+          closeMarkee();
         }
       },
     });
-  }, [registerEvents, sigma, selectionState, cleanup, setMarqueeBoundingBox]);
-
-  console.log('marquee controller render');
+  }, [registerEvents, sigma, selectionState, backToIdle, setBbox, closeMarkee]);
 
   return (
-    <div className="react-sigma-control">
-      <button
-        className="btn btn-ico"
-        onClick={() => {
-          if (selectionState.type === 'off') {
-            setSelectionState({
-              type: 'idle',
-            });
-            sigma.getCamera().disable();
-          } else {
-            cleanup();
-            setSelectionState({ type: 'off' });
-          }
-        }}
-      >
-        {selectionState.type !== 'off' ? <PiSelectionSlashBold /> : <PiSelectionBold />}
-      </button>
-    </div>
+    <>
+      <div className="react-sigma-control">
+        {/* normal zoom-pan tool activation button*/}
+        <button
+          className={classNames(
+            selectionState.type === 'off' ? 'bg-primary text-light' : 'cursor-pointer',
+          )}
+          disabled={selectionState.type === 'off'}
+          onClick={() => {
+            if (selectionState.type !== 'off') {
+              setSelectionState({ type: 'off' });
+              setActiveTool('panZoom');
+            }
+          }}
+        >
+          <PiCursorFill />
+        </button>
+      </div>
+      <div className="react-sigma-control">
+        {/* normal marquee tool activation button */}
+        <button
+          className={classNames(
+            selectionState.type !== 'off' ? 'bg-primary text-light' : 'cursor-pointer',
+          )}
+          disabled={selectionState.type !== 'off'}
+          onClick={() => {
+            if (selectionState.type === 'off') {
+              setSelectionState({
+                type: 'idle',
+              });
+              setActiveTool('marquee');
+            }
+          }}
+        >
+          <PiSelectionBold />
+        </button>{' '}
+      </div>
+    </>
   );
 };

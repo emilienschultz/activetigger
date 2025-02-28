@@ -1,23 +1,37 @@
 import { useRegisterEvents } from '@react-sigma/core';
-import { useEffect } from 'react';
+import { Dispatch, SetStateAction, useEffect } from 'react';
+import { SigmaCursorTypes } from '.';
 
 const GraphEvents: React.FC<{
   setSelectedId: (id?: string) => void;
-}> = ({ setSelectedId }) => {
+  setSigmaCursor: Dispatch<SetStateAction<SigmaCursorTypes>>;
+}> = ({ setSelectedId, setSigmaCursor }) => {
   const registerEvents = useRegisterEvents();
 
-  /* eslint-disable no-console */
   useEffect(() => {
     // Register the events
     registerEvents({
-      // node events
+      // (un)Select node
       clickNode: (event) => {
         setSelectedId(event.node);
       },
-      // stage events
       clickStage: () => setSelectedId(undefined),
+      // pointer cursor
+      enterNode: () => {
+        setSigmaCursor('pointer');
+      },
+      leaveNode: () => {
+        setSigmaCursor(undefined);
+      },
+      // grabbing cursor
+      mousedown: () => {
+        setSigmaCursor('grabbing');
+      },
+      mouseup: () => {
+        setSigmaCursor(undefined);
+      },
     });
-  }, [registerEvents, setSelectedId]);
+  }, [registerEvents, setSelectedId, setSigmaCursor]);
 
   return null;
 };

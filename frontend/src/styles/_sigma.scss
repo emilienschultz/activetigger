@@ -4,3 +4,19 @@
 .react-sigma-controls {
     z-index: 140;
   }
+
+.cursor-pointer {
+  cursor: pointer;
+}
+.cursor-crosshair {
+  cursor: crosshair;
+}
+.cursor-grabbing {
+  cursor: grabbing
+}
+
+.node {
+  border-radius: 100%;
+  width: 0.5em;
+  height: 0.5em;
+}

@@ -4,7 +4,6 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import Select from 'react-select';
-import { DomainTuple } from 'victory';
 
 import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -13,11 +12,6 @@ import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
-
-interface ZoomDomain {
-  x?: DomainTuple;
-  y?: DomainTuple;
-}
 
 const colormap = [
   '#1f77b4', // tab:blue
@@ -174,25 +168,29 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   );
 
   // transform frame type to bbox type
-  const bbox: MarqueBoundingBox | undefined = selectionConfig.frame
-    ? {
-        x: { min: selectionConfig.frame[0], max: selectionConfig.frame[1] },
-        y: { min: selectionConfig.frame[2], max: selectionConfig.frame[3] },
-      }
-    : undefined;
+  const frameAsBbox: MarqueBoundingBox | undefined = useMemo(
+    () =>
+      selectionConfig.frame
+        ? {
+            x: { min: selectionConfig.frame[0], max: selectionConfig.frame[1] },
+            y: { min: selectionConfig.frame[2], max: selectionConfig.frame[3] },
+          }
+        : undefined,
+    [selectionConfig.frame],
+  );
 
   return (
     <div>
       {projectionData && labelColorMapping && (
-        <div className="row align-items-start">
+        <div className="row align-items-start m-0" style={{ height: '500px' }}>
           <ProjectionVizSigma
-            className="col-8"
+            className="col-8 border p-0 h-100"
             data={projectionData}
             //selection
             selectedId={selectedElement?.element_id}
             setSelectedId={setSelectedId}
-            bbox={bbox}
-            setBbox={(bbox?: MarqueBoundingBox) => {
+            frameBbox={frameAsBbox}
+            setFrameBbox={(bbox?: MarqueBoundingBox) => {
               setAppContext((prev) => ({
                 ...prev,
                 selectionConfig: {
@@ -201,22 +199,11 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 },
               }));
             }}
-            // Frame
-            frameSelection={selectionConfig.frameSelection}
-            setFrameSelection={(frameSelection) => {
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: {
-                  ...selectionConfig,
-                  frameSelection,
-                },
-              }));
-            }}
             labelColorMapping={labelColorMapping}
           />
-          <div className="col-4">
+          <div className="col-4 overflow-y-auto h-100">
             {selectedElement && (
-              <div className="mt-5">
+              <div>
                 Element:{' '}
                 <div className="badge bg-light text-dark">{selectedElement.element_id}</div>
                 <div className="mt-2">{selectedElement.text}</div>
