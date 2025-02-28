@@ -9,10 +9,10 @@ import {
   useGetModelUrl,
   useGetPredictionsFile,
   useGetPredictionsSimplemodelFile,
-} from '../core/api';
-import { useAuth } from '../core/auth';
-import { useAppContext } from '../core/context';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
+} from '../../core/api';
+import { useAuth } from '../../core/auth';
+import { useAppContext } from '../../core/context';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
 /**
  * Component to display the export page

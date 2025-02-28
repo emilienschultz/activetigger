@@ -10,10 +10,10 @@ import {
   useStatistics,
   useStopTrainBertModel,
   useTestModel,
-} from '../core/api';
-import { useAppContext } from '../core/context';
-import { TestSetCreationForm } from './forms/TestSetCreationForm';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
+} from '../../core/api';
+import { useAppContext } from '../../core/context';
+import { TestSetCreationForm } from '../forms/TestSetCreationForm';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
 interface Row {
   id: string;

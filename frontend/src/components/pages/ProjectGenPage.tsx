@@ -18,12 +18,12 @@ import {
   useGetPrompts,
   useSavePrompts,
   useStopGenerate,
-} from '../core/api';
-import { useAuth } from '../core/auth';
-import { useAppContext } from '../core/context';
-import { GenModel, SupportedAPI } from '../types';
-import { GenModelSetupForm } from './forms/GenModelSetupForm';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
+} from '../../core/api';
+import { useAuth } from '../../core/auth';
+import { useAppContext } from '../../core/context';
+import { GenModel, SupportedAPI } from '../../types';
+import { GenModelSetupForm } from './../forms/GenModelSetupForm';
+import { ProjectPageLayout } from './../layout/ProjectPageLayout';
 
 // TODO
 // interrupt button using event

@@ -36,7 +36,6 @@ export const UsersPage: FC = () => {
 
   // display boxes
   const [showCreateUser, setShowCreateUser] = useState<boolean>(false);
-  const [showCreateAuth, setShowCreateAuth] = useState<boolean>(false);
 
   const { authUsers, reFetchUsersAuth } = useUsersAuth(currentProjectSlug);
   const { users, reFetchUsers } = useUsers();

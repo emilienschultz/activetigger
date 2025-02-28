@@ -1,7 +1,7 @@
 import { FC } from 'react';
-import notfound from '../assets/notfound.png';
+import notfound from '../../assets/notfound.png';
 
-import { PageLayout } from './layout/PageLayout';
+import { PageLayout } from './../layout/PageLayout';
 
 export const NotFound: FC = () => {
   return (

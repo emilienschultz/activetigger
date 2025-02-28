@@ -3,17 +3,17 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
-import { useDeleteProject, useGetLogs } from '../core/api';
+import { useDeleteProject, useGetLogs } from '../../core/api';
 
 import Modal from 'react-bootstrap/Modal';
 import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
-import { useAppContext } from '../core/context';
-import { ProjectUpdateForm } from './forms/ProjectUpdateForm';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
-import { ProjectStatistics } from './ProjectStatistics';
-import { SchemesManagement } from './SchemesManagement';
+import { useAppContext } from '../../core/context';
+import { ProjectUpdateForm } from '../forms/ProjectUpdateForm';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
+import { ProjectStatistics } from '../ProjectStatistics';
+import { SchemesManagement } from '../SchemesManagement';
 
 /**
  * Component to display the project page

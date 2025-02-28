@@ -1,7 +1,7 @@
 import { FC } from 'react';
 
 import { IoWarning } from 'react-icons/io5';
-import { PageLayout } from './layout/PageLayout';
+import { PageLayout } from './../layout/PageLayout';
 
 export const DocPage: FC = () => {
   return (

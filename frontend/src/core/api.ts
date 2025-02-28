@@ -236,7 +236,7 @@ export function useDropTestSet(projectSlug: string | null) {
       },
     });
     if (!res.error) notify({ type: 'success', message: 'Test data set dropped' });
-  }, [notify]);
+  }, [notify, projectSlug]);
   return dropTestSet;
 }
 

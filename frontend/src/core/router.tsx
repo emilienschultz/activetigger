@@ -1,24 +1,24 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
-import { DocPage } from '../components/DocPage';
-import { NotFound } from '../components/NotFoundPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
-import { ProjectExplorePage } from '../components/ProjectExplorePage';
-import { ProjectExportPage } from '../components/ProjectExportPage';
-import { GenPage } from '../components/ProjectGenPage';
-import { ProjectNewPage } from '../components/ProjectNewPage';
-import { ProjectPage } from '../components/ProjectPage';
-import { ProjectPreparePage } from '../components/ProjectPreparePage';
-import { ProjectTestPage } from '../components/ProjectTestPage';
-import { ProjectsPage } from '../components/ProjectsPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
+import { DocPage } from '../components/pages/DocPage';
 import { HomePage } from '../components/pages/HomePage';
 import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
+import { NotFound } from '../components/pages/NotFoundPage';
 import { ProjectPredictPage } from '../components/pages/PredictPage';
+import { ProjectExplorePage } from '../components/pages/ProjectExplorePage';
+import { ProjectExportPage } from '../components/pages/ProjectExportPage';
+import { GenPage } from '../components/pages/ProjectGenPage';
+import { ProjectNewPage } from '../components/pages/ProjectNewPage';
+import { ProjectPage } from '../components/pages/ProjectPage';
+import { ProjectPreparePage } from '../components/pages/ProjectPreparePage';
+import { ProjectTestPage } from '../components/pages/ProjectTestPage';
+import { ProjectsPage } from '../components/pages/ProjectsPage';
 import { TrainPage } from '../components/pages/TrainPage';
 import { UsersPage } from '../components/pages/UsersPage';
 

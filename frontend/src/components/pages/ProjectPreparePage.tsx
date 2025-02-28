@@ -4,15 +4,15 @@ import Tabs from 'react-bootstrap/Tabs';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
-import { CodebookManagement } from './CodeBookManagement';
+import { CodebookManagement } from '../CodeBookManagement';
 
-import { useAddFeature, useDeleteFeature, useGetFeatureInfo } from '../core/api';
-import { useAppContext } from '../core/context';
-import { useNotifications } from '../core/notifications';
-import { FeatureModelExtended } from '../types';
-import { ImportAnnotations } from './ImportAnnotations';
-import { LabelsManagement } from './LabelsManagement';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
+import { useAddFeature, useDeleteFeature, useGetFeatureInfo } from '../../core/api';
+import { useAppContext } from '../../core/context';
+import { useNotifications } from '../../core/notifications';
+import { FeatureModelExtended } from '../../types';
+import { ImportAnnotations } from '../ImportAnnotations';
+import { LabelsManagement } from '../LabelsManagement';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
 /**
  * Component to display the features page
