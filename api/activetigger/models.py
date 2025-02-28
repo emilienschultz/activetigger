@@ -194,8 +194,6 @@ class BertModel:
         else:
             test_scores = None
 
-        print("INFORMATIONS", type(loss), loss)
-
         return BertModelInformationsModel(
             params=self.params,
             loss=loss,
@@ -543,8 +541,12 @@ class BertModels:
         b.load(lazy=True)
 
         # test if the testset and the model have the same labels
+        labels_model = set(b.get_labels())
+        labels_test = set(df["labels"].dropna().unique())
         if set(b.get_labels()) != set(df["labels"].dropna().unique()):
-            raise Exception("The testset and the model have different labels")
+            raise Exception(
+                f"The testset and the model have different labels {labels_model} vs {labels_test}"
+            )
 
         # delete previous files
         if (self.path.joinpath(name).joinpath("predict_test.parquet")).exists():

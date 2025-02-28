@@ -185,8 +185,6 @@ export const TrainPage: FC = () => {
     return v + '%';
   };
 
-  console.log(model);
-
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -241,7 +239,7 @@ export const TrainPage: FC = () => {
                   {project?.bertmodels.training &&
                     Object.keys(project.bertmodels.training).length > 0 && (
                       <div className="mt-3">
-                        Current training:
+                        Current process:
                         <ul>
                           {Object.entries(
                             project?.bertmodels.training as Record<
@@ -374,7 +372,7 @@ export const TrainPage: FC = () => {
                     )}
 
                     <div className="explanations">
-                      Before training a model, be sure to have annotated enough elements
+                      Before training a model, be sure to have annotated enough elements.
                     </div>
                     <label htmlFor="new-model-type"></label>
                     <div>

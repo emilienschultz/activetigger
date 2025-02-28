@@ -1,6 +1,4 @@
 import { FC, useState } from 'react';
-import Tab from 'react-bootstrap/Tab';
-import Tabs from 'react-bootstrap/Tabs';
 import DataGrid, { Column } from 'react-data-grid';
 
 import { Row } from 'react-bootstrap';
@@ -15,7 +13,6 @@ import {
 import { useAppContext } from '../core/context';
 import { TestSetCreationForm } from './forms/TestSetCreationForm';
 import { ProjectPageLayout } from './layout/ProjectPageLayout';
-import { SelectCurrentScheme } from './SchemesManagement';
 
 interface Row {
   id: string;
@@ -101,147 +98,138 @@ export const ProjectTestPage: FC = () => {
       ) : (
         <div className="container-fluid">
           <div className="explanations">
-            Select a scheme and a model, switch to the test mode to annotate the testset, and
-            compute test statistics.
+            Switch to the test mode to annotate the testset and compute test statistics.
           </div>
           {
             // possibility to switch to test mode only if test dataset available
           }
           {currentProject?.params.test && (
-            <div>
-              <div className="row">
-                <div className="col-6">
-                  <SelectCurrentScheme />
-
-                  {
-                    // Select current model
-                    <div className="d-flex align-items-center mb-3">
-                      <label
-                        htmlFor="model-selected"
-                        style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
-                      >
-                        Current model
-                      </label>
-
-                      <select
-                        id="model-selected"
-                        className="form-select"
-                        onChange={(e) => {
-                          setCurrentModel(e.target.value);
-                        }}
-                      >
-                        <option></option>
-                        {availableModels.map((e) => (
-                          <option key={e}>{e}</option>
-                        ))}
-                      </select>
-                    </div>
-                  }
-                </div>
+            <div className="row d-flex align-items-center">
+              <div className="col-6 form-check form-switch">
+                <input
+                  className="form-check-input bg-info"
+                  type="checkbox"
+                  role="switch"
+                  id="flexSwitchCheckDefault"
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      phase: e.target.checked ? 'test' : 'train',
+                    }));
+                  }}
+                  checked={phase == 'test' ? true : false}
+                />
+                <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
+                  Activate test mode
+                </label>
               </div>
-              <Tabs id="panel" className="mb-3" defaultActiveKey="annotation">
-                <Tab eventKey="annotation" title="1. Annotate test dataset">
-                  <div className="col-6">
-                    {statistics && (
-                      <span className="badge text-bg-light  m-3">
-                        Number of annotations :{' '}
-                        {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
-                      </span>
-                    )}
-                  </div>
-                  <div className="form-check form-switch">
-                    <input
-                      className="form-check-input bg-warning"
-                      type="checkbox"
-                      role="switch"
-                      id="flexSwitchCheckDefault"
-                      onChange={(e) => {
-                        setAppContext((prev) => ({
-                          ...prev,
-                          phase: e.target.checked ? 'test' : 'train',
-                        }));
-                      }}
-                      checked={phase == 'test' ? true : false}
-                    />
-                    <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
-                      Activate test mode
-                    </label>
-                  </div>
-                  {phase == 'test' && (
-                    <div className="alert alert-info m-3">
-                      Now you can go back to the annotation panel to annotate the test dataset. Once
-                      you have a test dataset, you will be able to compute test statistics (next
-                      tab. Exit test mode to go back to training dataset.)
-                    </div>
-                  )}
-                </Tab>
+              <div className="col-6">
+                {statistics && (
+                  <span className="badge text-bg-light  m-3">
+                    Test set annotations :{' '}
+                    {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
+                  </span>
+                )}
+              </div>
+              {phase == 'test' && (
+                <div className="alert alert-info m-3">
+                  Now you can go back to the annotation panel to annotate the test dataset. Once you
+                  have a test dataset, you will be able to compute test statistics (next tab. Exit
+                  test mode to go back to training dataset.)
+                </div>
+              )}
+              <hr></hr>
+              <div className="col-6">
+                {/* <SelectCurrentScheme /> */}
 
-                <Tab eventKey="statistics" title="2. Compute statistics">
-                  {isComputing && (
-                    <div>You already have a process launched. Wait for it to complete.</div>
-                  )}
-                  {currentModel && currentScheme && !isComputing && (
-                    <div className="col-12">
-                      <button
-                        className="btn btn-primary m-3"
-                        onClick={() => testModel()}
-                        disabled={isComputing}
-                      >
-                        Compute prediction testset
-                      </button>
-                    </div>
-                  )}
-                  {currentModel && currentScheme && isComputing && (
-                    <div>
-                      <button
-                        key="stop"
-                        className="btn btn-primary mt-3 d-flex align-items-center"
-                        onClick={stopTraining}
-                      >
-                        <PulseLoader color={'white'} /> Stop current process
-                      </button>
-                    </div>
-                  )}
-                  {!(currentModel && currentScheme) && (
-                    <div>Select a scheme & a model to start computation</div>
-                  )}
-                  {model && model.test_scores && (
-                    <div>
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th scope="col">Key</th>
-                            <th scope="col">Value</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {model.train_scores &&
-                            Object.entries(model.test_scores)
-                              .filter(([key]) => key !== 'false_predictions')
-                              .map(([key, value], i) => (
-                                <tr key={i}>
-                                  <td>{key}</td>
-                                  <td>{JSON.stringify(value)}</td>
-                                </tr>
-                              ))}
-                        </tbody>
-                      </table>
-                      <details className="m-3">
-                        <summary>False predictions</summary>
-                        {falsePredictions ? (
-                          <DataGrid<Row>
-                            className="fill-grid"
-                            columns={columns}
-                            rows={falsePredictions || []}
-                          />
-                        ) : (
-                          <div>Compute prediction first</div>
-                        )}
-                      </details>
-                    </div>
-                  )}
-                </Tab>
-              </Tabs>
+                {
+                  // Select current model
+                  <div className="d-flex align-items-center mb-3">
+                    <label
+                      htmlFor="model-selected"
+                      style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
+                    >
+                      Select model to test
+                    </label>
+
+                    <select
+                      id="model-selected"
+                      className="form-select"
+                      onChange={(e) => {
+                        setCurrentModel(e.target.value);
+                      }}
+                    >
+                      <option></option>
+                      {availableModels.map((e) => (
+                        <option key={e}>{e}</option>
+                      ))}
+                    </select>
+                  </div>
+                }
+              </div>
+              {isComputing && (
+                <div>You already have a process launched. Wait for it to complete.</div>
+              )}
+              {currentModel && currentScheme && !isComputing && (
+                <div className="col-12">
+                  <button
+                    className="btn btn-primary m-3"
+                    onClick={() => testModel()}
+                    disabled={isComputing}
+                  >
+                    Compute prediction testset
+                  </button>
+                </div>
+              )}
+              {currentModel && currentScheme && isComputing && (
+                <div>
+                  <button
+                    key="stop"
+                    className="btn btn-primary mt-3 d-flex align-items-center"
+                    onClick={stopTraining}
+                  >
+                    <PulseLoader color={'white'} /> Stop current process
+                  </button>
+                </div>
+              )}
+              {!(currentModel && currentScheme) && (
+                <div>Select a scheme & a model to start computation</div>
+              )}
+              {model && model.test_scores && (
+                <div>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Key</th>
+                        <th scope="col">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {model.test_scores &&
+                        Object.entries(model.test_scores)
+                          .filter(([key]) => key !== 'false_predictions')
+                          .map(([key, value], i) => (
+                            <tr key={i}>
+                              <td>{key}</td>
+                              <td>{JSON.stringify(value)}</td>
+                            </tr>
+                          ))}
+                    </tbody>
+                  </table>
+                  <details className="m-3">
+                    <summary>False predictions</summary>
+                    {falsePredictions ? (
+                      <DataGrid<Row>
+                        className="fill-grid"
+                        columns={columns}
+                        rows={falsePredictions || []}
+                      />
+                    ) : (
+                      <div>Compute prediction first</div>
+                    )}
+                  </details>
+                </div>
+              )}
             </div>
           )}
           {!currentProject?.params.test && (

@@ -56,7 +56,7 @@ export const ProjectActionsSidebar: FC<{
 
   return (
     <div
-      className={`project-sidebar d-flex flex-column flex-shrink-0 ${currentMode == 'train' ? 'bg-light' : 'bg-warning'}`}
+      className={`project-sidebar d-flex flex-column flex-shrink-0 ${currentMode == 'train' ? 'bg-light' : 'bg-info'}`}
     >
       <ul className="nav nav-pills flex-column mb-auto">
         <li className="nav-item mt-3">
@@ -182,7 +182,7 @@ export const ProjectActionsSidebar: FC<{
         )}
         <li className="nav-item ">
           <div className="nav-link">
-            <div className="badge text-bg-info" title="Number of processes running">
+            <div className="badge text-bg-secondary" title="Number of processes running">
               <span className="d-none d-md-inline">Process: </span>
               {Object.values(queueState || []).length}
             </div>

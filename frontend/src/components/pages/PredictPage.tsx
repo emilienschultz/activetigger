@@ -75,7 +75,7 @@ export const ProjectPredictPage: FC = () => {
             {project?.bertmodels.training &&
               Object.keys(project.bertmodels.training).length > 0 && (
                 <div className="mt-3">
-                  Current training:
+                  Current process:
                   <ul>
                     {Object.entries(
                       project?.bertmodels.training as Record<

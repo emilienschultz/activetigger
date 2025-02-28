@@ -25,6 +25,8 @@ export const LossChart: React.FC<LossChartProps> = ({ loss }) => {
     y: val_eval_loss[i] as number,
   }));
 
+  if (valEvalLossData.length < 2) return null;
+
   return (
     <VictoryChart theme={VictoryTheme.material} minDomain={{ y: 0 }}>
       <VictoryAxis

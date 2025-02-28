@@ -223,7 +223,7 @@ export const ProjectAnnotationPage: FC = () => {
           {
             // test mode
             phase == 'test' && (
-              <div className="alert alert-warning">
+              <div className="alert alert-info">
                 Test mode activated - you are annotating the test set
                 <div className="col-6">
                   {statistics && (
@@ -293,7 +293,7 @@ export const ProjectAnnotationPage: FC = () => {
             ref={frameRef}
           >
             <motion.div
-              animate={elementId ? { backgroundColor: ['#e8e9ff', '#ffffff'] } : {}}
+              animate={elementId ? { backgroundColor: ['#e8e9ff', '#f9f9f9'] } : {}}
               transition={{ duration: 1 }}
             >
               {lastTag && (
