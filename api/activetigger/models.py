@@ -1097,10 +1097,6 @@ class SimpleModel:
         self.proba = None
         self.statistics = None
         self.cv10 = None
-        # if type(model) is not str:  # TODO : tester si c'est un modèle
-        #     self.proba = self.compute_proba(model, X)
-        #     self.statistics = self.compute_statistics(model, X, Y, labels)
-        #     self.cv10 = self.compute_10cv(model, X, Y)
 
     def json(self):
         """
@@ -1112,87 +1108,3 @@ class SimpleModel:
             "labels": list(self.labels),
             "params": dict(self.model_params),
         }
-
-    # def compute_stats(self):
-    #     self.proba = self.compute_proba(self.model, self.X)
-    #     self.statistics = self.compute_statistics(
-    #         self.model, self.X, self.Y, self.labels
-    #     )
-    #     self.cv10 = self.compute_10cv(self.model, self.X, self.Y)
-
-    # def compute_proba(self, model, X):
-    #     """
-    #     Compute proba + entropy
-    #     """
-    #     proba = model.predict_proba(X)
-    #     proba = pd.DataFrame(proba, columns=model.classes_, index=X.index)
-    #     proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
-
-    #     # Calculate label
-    #     proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
-
-    #     return proba
-
-    # def compute_precision(self, model, X, Y, labels):
-    #     """
-    #     Compute precision score
-    #     """
-    #     f = Y.notna()
-    #     y_pred = model.predict(X[f])
-    #     precision = precision_score(
-    #         list(Y[f]),
-    #         list(y_pred),
-    #         average="micro",
-    #         # pos_label=labels[0]
-    #     )
-    #     return precision
-
-    # def compute_statistics(self, model, X, Y, labels):
-    #     """
-    #     Compute statistics simplemodel
-    #     """
-    #     f = Y.notna()
-    #     X = X[f]
-    #     Y = Y[f]
-    #     Y_pred = model.predict(X)
-    #     f1 = f1_score(Y, Y_pred, average=None)
-    #     weighted_f1 = f1_score(Y, Y_pred, average="weighted")
-    #     accuracy = accuracy_score(Y, Y_pred)
-    #     precision = precision_score(
-    #         list(Y[f]),
-    #         list(Y_pred),
-    #         average="micro",
-    #         # pos_label=labels[0]
-    #     )
-    #     macro_f1 = f1_score(Y, Y_pred, average="macro")
-    #     statistics = {
-    #         "f1": [round(i, 3) for i in list(f1)],
-    #         "weighted_f1": round(weighted_f1, 3),
-    #         "macro_f1": round(macro_f1, 3),
-    #         "accuracy": round(accuracy, 3),
-    #         "precision": round(precision, 3),
-    #     }
-    #     print("statistics", statistics)
-    #     return statistics
-
-    # def compute_10cv(self, model, X, Y):
-    #     """
-    #     Compute 10-CV for simplemodel
-    #     TODO : check if ok
-    #     """
-    #     f = Y.notna()
-    #     X = X[f]
-    #     Y = Y[f]
-    #     num_folds = 10
-    #     kf = KFold(n_splits=num_folds, shuffle=True)
-    #     # predicted_labels = cross_val_predict(model, X, Y, cv=kf)
-    #     Y_pred = cross_val_predict(model, X, Y, cv=kf)
-    #     weighted_f1 = f1_score(Y, Y_pred, average="weighted")
-    #     accuracy = accuracy_score(Y, Y_pred)
-    #     macro_f1 = f1_score(Y, Y_pred, average="macro")
-    #     r = {
-    #         "weighted_f1": round(weighted_f1, 3),
-    #         "macro_f1": round(macro_f1, 3),
-    #         "accuracy": round(accuracy, 3),
-    #     }
-    #     return r
