@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './auth';
 
 export interface RoleSelectorProps {
@@ -9,9 +9,11 @@ export interface RoleSelectorProps {
 export const RoleSelector: FC<RoleSelectorProps> = ({ allowedRoles }) => {
   const { authenticatedUser } = useAuth(); // Assuming `user` has a `role` property
   const { projectName } = useParams();
+  const navigate = useNavigate();
 
   if (!authenticatedUser || !allowedRoles.includes(authenticatedUser.status as string)) {
-    return <Navigate to={`/projects/${projectName}`} replace />;
+    navigate(`/projects/${projectName}`, { replace: true });
   }
+
   return null;
 };

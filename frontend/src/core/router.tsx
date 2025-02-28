@@ -21,7 +21,7 @@ import { ProjectTestPage } from '../components/pages/ProjectTestPage';
 import { ProjectsPage } from '../components/pages/ProjectsPage';
 import { TrainPage } from '../components/pages/TrainPage';
 import { UsersPage } from '../components/pages/UsersPage';
-import { RoleSelector } from './roleSelector';
+import { RoleSelector } from '../core/RoleSelector';
 
 export function getRouter() {
   return createHashRouter([
