@@ -2,12 +2,13 @@ import { ControlsContainer, SigmaContainer, ZoomControl } from '@react-sigma/cor
 import '@react-sigma/core/lib/style.css';
 import classNames from 'classnames';
 import Graph from 'graphology';
-import { FC, useEffect, useMemo } from 'react';
-import { FaLock } from 'react-icons/fa';
+import { FC, useCallback, useMemo, useState } from 'react';
+import { PiSelectionSlashBold } from 'react-icons/pi';
 import { NodeDisplayData } from 'sigma/types';
+import { Caption } from './Caption';
 import GraphEvents from './GraphEvents';
-import { MarqueeDisplay } from './MarqueDisplay';
 import { MarqueBoundingBox, MarqueeController } from './MarqueeController';
+import { MarqueeDisplay } from './MarqueeDisplay';
 
 interface Props {
   data: {
@@ -18,12 +19,9 @@ interface Props {
     labels: unknown[];
   };
   className?: string;
-  // frameSelection
-  frameSelection?: boolean;
-  setFrameSelection: (frameSelection: boolean) => void;
   // bbox
-  bbox?: MarqueBoundingBox;
-  setBbox: (bbox?: MarqueBoundingBox) => void;
+  frameBbox?: MarqueBoundingBox;
+  setFrameBbox: (bbox?: MarqueBoundingBox) => void;
   // selection
   selectedId?: string;
   setSelectedId: (id?: string) => void;
@@ -31,41 +29,43 @@ interface Props {
   labelColorMapping: { [key: string]: string };
 }
 
-const sigmaStyle = { height: '500px', width: '100%' };
+const sigmaStyle = { height: '100%', width: '100%' };
+
+export type SigmaCursorTypes = 'crosshair' | 'pointer' | 'grabbing' | undefined;
+export type SigmaToolsType = 'panZoom' | 'marquee';
+interface NodeAttributesType {
+  x: number;
+  y: number;
+  label: string;
+  size?: number;
+}
 
 // Create the Component that listen to all events
 
 export const ProjectionVizSigma: FC<Props> = ({
   data,
   className,
-  frameSelection,
-  setFrameSelection,
-  // TODO use internal state for drawing the bbox, update frame only once dragging is over
-  bbox,
-  setBbox,
+  // get/set frame from/to app state
+  frameBbox,
+  setFrameBbox,
+  // manage node selection
   selectedId,
   setSelectedId,
+  // color dictionary
   labelColorMapping,
 }) => {
-  console.log('ProjectionVizSigma render');
+  // internal bbox used by marquee. This state will be updated with setFrameBbox once drawing is done.
+  // app state is used as default value
+  const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);
 
-  useEffect(() => {
-    console.log('ProjectionVizSigma mounted');
-    return () => {
-      console.log('ProjectionVizSigma unmounted');
-    };
-  }, []);
+  // Special cursor to help interactivity affordances
+  const [sigmaCursor, setSigmaCursor] = useState<SigmaCursorTypes>(undefined);
+  const [activeTool, setActiveTool] = useState<SigmaToolsType>('panZoom');
 
+  // prepare graph for sigma from data props
   const graph = useMemo(() => {
     console.log('compute graph');
-    const graph = new Graph<{
-      x: number;
-      y: number;
-      labels: string;
-      label: string;
-      size?: number;
-      color: string;
-    }>();
+    const graph = new Graph<NodeAttributesType>();
     if (data) {
       //TODO: refine those simple heuristics
       const size = data.x.length <= 100 ? 4 : data.x.length <= 500 ? 3 : 1;
@@ -73,59 +73,76 @@ export const ProjectionVizSigma: FC<Props> = ({
         graph.addNode(data.index[index], {
           x: value as number,
           y: data.y[index] as number,
-          labels: data.labels[index] as string,
-          label: data.index[index] + '',
+          label: data.labels[index] as string,
           size,
-          color: labelColorMapping[data.labels[index] as string],
         });
       });
       return graph;
     }
     return undefined;
-  }, [data, labelColorMapping]);
+  }, [data]);
+
+  // nodeReducer change node appearance from colorMapping and selection state
+  const nodeReducer = useCallback(
+    (node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
+      const res: Partial<NodeDisplayData> = { ...data };
+
+      if (selectedId === node) {
+        // built-in appearance in Sigma which forces showing the label
+        res.highlighted = true;
+      }
+      // apply color
+      res.color = labelColorMapping[data.label];
+      // replace label by node id. Label is the default field in sigma to display the.. label
+      res.label = node;
+
+      return res;
+    },
+    [selectedId, labelColorMapping],
+  );
 
   return (
     <div className={className}>
-      <div className="d-flex align-items-center justify-content-center">
-        <label
-          className={classNames('d-flex align-items-center mx-4', !bbox && 'text-muted')}
-          style={{ display: 'block' }}
-        >
-          <input
-            type="checkbox"
-            checked={frameSelection}
-            className="mx-2"
-            onChange={(e) => {
-              setFrameSelection(e.target.checked);
-            }}
-            disabled={!bbox}
-          />
-          <FaLock className="me-1" /> Use current selection in annotations
-          {/* Use visualisation frame to lock the selection */}
-        </label>
-      </div>
-
       <SigmaContainer
+        className={classNames(
+          sigmaCursor ? `cursor-${sigmaCursor}` : activeTool === 'marquee' && 'cursor-crosshair',
+        )}
         style={sigmaStyle}
         graph={graph}
         settings={{
           allowInvalidContainer: true,
-          nodeReducer: (node, data) => {
-            const res: Partial<NodeDisplayData> = { ...data };
-
-            if (selectedId === node) {
-              res.highlighted = true;
-            }
-
-            return res;
-          },
+          nodeReducer,
         }}
       >
-        <GraphEvents setSelectedId={setSelectedId} />
-        <ControlsContainer position={'bottom-right'}>
-          <ZoomControl />
-          <MarqueeController setMarqueeBoundingBox={setBbox} />
+        <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
+        <ControlsContainer position="bottom-left">
+          <Caption labelColorMapping={labelColorMapping} />
         </ControlsContainer>
+        <ControlsContainer position={'bottom-right'}>
+          <div className="border-bottom">
+            {/* Active tools (zoom-pan or marquee)) buttons are managed by the marquee controller */}
+            <MarqueeController
+              setBbox={setBbox}
+              validateBoundingBox={setFrameBbox}
+              setActiveTool={setActiveTool}
+            />
+          </div>
+          <ZoomControl />
+          {/* delete bbox button */}
+          {bbox !== undefined && (
+            <div className="react-sigma-control">
+              <button
+                onClick={() => {
+                  setBbox(undefined);
+                  setFrameBbox(undefined);
+                }}
+              >
+                <PiSelectionSlashBold />
+              </button>
+            </div>
+          )}
+        </ControlsContainer>
+        {/* show a dashed line rectangle to render the current bbox */}
         <MarqueeDisplay bbox={bbox} />
       </SigmaContainer>
     </div>

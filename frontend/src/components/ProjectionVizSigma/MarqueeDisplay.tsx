@@ -3,21 +3,24 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import { MarqueBoundingBox } from './MarqueeController';
 
 export const MarqueeDisplay: FC<{ bbox?: MarqueBoundingBox }> = ({ bbox }) => {
+  // sigma instance to access position transformation methods
   const sigma = useSigma();
+  // sigma event hook to add update position handler
   const registerEvents = useRegisterEvents();
-  useEffect(() => {
-    console.log('sigma changed');
-  }, [sigma]);
 
+  // internal state: the Marquee position as SVG wants them to be
   const [rectPosition, setRectPosition] = useState<
     { x: number; y: number; width: number; height: number } | undefined
   >(undefined);
 
+  // callback to update the SVG position according to bbox positions and sigma camera state
   const updateRectPosition = useCallback(
     (bbox?: MarqueBoundingBox) => {
       if (bbox) {
+        // transform the bbox position into the viewport coordinates i.e. the coordinates we used to actually draw on the screen
         const { x, y } = sigma.graphToViewport({ x: bbox.x.min, y: bbox.y.min });
         const { x: xMax, y: yMax } = sigma.graphToViewport({ x: bbox.x.max, y: bbox.y.max });
+        // SVG wants one point + width and height where bbox is two points, let's transpose
         const width = xMax - x;
         const height = y - yMax;
         setRectPosition({ x, y: yMax, width, height });
@@ -28,14 +31,17 @@ export const MarqueeDisplay: FC<{ bbox?: MarqueBoundingBox }> = ({ bbox }) => {
 
   useEffect(() => {
     registerEvents({
-      updated: () => updateRectPosition(bbox),
+      // after each sigma render we update our SVG positions to follow camera (pan & zoom)
+      afterRender: () => updateRectPosition(bbox),
     });
   }, [registerEvents, updateRectPosition, bbox]);
 
   useEffect(() => {
+    // update SVG position if bbox changes i.e. at init or when the bbox is being drawn
     updateRectPosition(bbox);
   }, [bbox, updateRectPosition]);
 
+  // if no position, no SVG
   if (rectPosition === undefined) return null;
   else
     return (
