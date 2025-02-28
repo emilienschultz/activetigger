@@ -226,6 +226,22 @@ class BertModelParametersModel(BaseModel):
     adapt: bool = True
 
 
+class BertModelParametersDbModel(BertModelParametersModel):
+    predicted: bool = False
+    compressed: bool = False
+
+
+class BertParams(BaseModel):
+    batchsize: int
+    gradacc: float
+    epochs: int
+    lrate: float
+    wdecay: float
+    best: bool
+    eval: int
+    adapt: bool
+
+
 class BertModelModel(BaseModel):
     """
     Request Bertmodel
@@ -331,17 +347,6 @@ class Multi_naivebayesParams(BaseModel):
     alpha: float
     fit_prior: bool = True
     class_prior: str | None = None
-
-
-class BertParams(BaseModel):
-    batchsize: int
-    gradacc: float
-    epochs: int
-    lrate: float
-    wdecay: float
-    best: bool
-    eval: int
-    adapt: bool
 
 
 class GenerationCreationModel(BaseModel):

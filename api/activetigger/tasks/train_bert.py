@@ -21,6 +21,7 @@ from transformers import (
     TrainingArguments,
 )
 
+from activetigger.datamodels import BertModelParametersModel
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -84,7 +85,7 @@ class TrainBert(BaseTask):
         col_text: str,
         col_label: str,
         base_model: str,
-        params: dict,
+        params: BertModelParametersModel,
         test_size: float,
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,
@@ -155,7 +156,7 @@ class TrainBert(BaseTask):
 
         # Tokenizer
         tokenizer = AutoTokenizer.from_pretrained(self.base_model)
-        if self.params["adapt"]:
+        if self.params.adapt:
             self.df = self.df.map(
                 lambda e: tokenizer(
                     e["text"],
@@ -196,20 +197,20 @@ class TrainBert(BaseTask):
         print("Model loaded")
 
         try:
-            total_steps = (float(self.params["epochs"]) * len(self.df["train"])) // (
-                int(self.params["batchsize"]) * float(self.params["gradacc"])
+            total_steps = (float(self.params.epochs) * len(self.df["train"])) // (
+                int(self.params.batchsize) * float(self.params.gradacc)
             )
             warmup_steps = int((total_steps) // 10)
-            eval_steps = total_steps // self.params["eval"]
+            eval_steps = total_steps // self.params.eval
             training_args = TrainingArguments(
                 output_dir=current_path.joinpath("train"),
                 logging_dir=current_path.joinpath("logs"),
-                learning_rate=float(self.params["lrate"]),
-                weight_decay=float(self.params["wdecay"]),
-                num_train_epochs=float(self.params["epochs"]),
-                gradient_accumulation_steps=int(self.params["gradacc"]),
-                per_device_train_batch_size=int(self.params["batchsize"]),
-                per_device_eval_batch_size=int(self.params["batchsize"]),
+                learning_rate=float(self.params.lrate),
+                weight_decay=float(self.params.wdecay),
+                num_train_epochs=float(self.params.epochs),
+                gradient_accumulation_steps=int(self.params.gradacc),
+                per_device_train_batch_size=int(self.params.batchsize),
+                per_device_eval_batch_size=int(self.params.batchsize),
                 warmup_steps=int(warmup_steps),
                 eval_steps=eval_steps,
                 evaluation_strategy="steps",
@@ -218,9 +219,9 @@ class TrainBert(BaseTask):
                 logging_steps=int(eval_steps),
                 do_eval=True,
                 greater_is_better=False,
-                load_best_model_at_end=self.params["best"],
+                load_best_model_at_end=self.params.best,
                 metric_for_best_model="eval_loss",
-                use_cpu=not bool(self.params["gpu"]),  # deactivate gpu
+                use_cpu=not bool(self.params.gpu),  # deactivate gpu
             )
 
             # Train
@@ -245,10 +246,11 @@ class TrainBert(BaseTask):
             training_data.to_parquet(current_path.joinpath("training_data.parquet"))
 
             # save parameters in a file
-            self.params["test_size"] = self.test_size
-            self.params["base_model"] = self.base_model
+            params_to_save = self.params.model_dump()
+            params_to_save["test_size"] = self.test_size
+            params_to_save["base_model"] = self.base_model
             with open(current_path.joinpath("parameters.json"), "w") as f:
-                json.dump(self.params, f)
+                json.dump(params_to_save, f)
 
             # remove intermediate steps and logs if succeed
             shutil.rmtree(current_path.joinpath("train"))

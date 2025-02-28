@@ -21,8 +21,8 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import activetigger.functions as functions
 from activetigger.datamodels import (
     BertModelInformationsModel,
+    BertModelParametersDbModel,
     BertModelParametersModel,
-    BertParams,
     KnnParams,
     LassoParams,
     LiblinearParams,
@@ -136,7 +136,7 @@ class BertModel:
             with open(self.path.joinpath("train/progress"), "r") as f:
                 r = f.read()
                 if r == "":
-                    r = 0
+                    r = "0"
             return float(r)
         # case for prediction (predicting/testing)
         if (("predicting" in self.status) or (self.status == "testing")) & (
@@ -145,11 +145,11 @@ class BertModel:
             with open(self.path.joinpath("progress_predict"), "r") as f:
                 r = f.read()
                 if r == "":
-                    r = 0
+                    r = "0"
             return float(r)
         return None
 
-    def get_loss(self) -> dict:
+    def get_loss(self) -> dict | None:
         try:
             with open(self.path.joinpath("log_history.txt"), "r") as f:
                 log = json.load(f)
@@ -212,6 +212,9 @@ class BertModels:
     queue: Any
     computing: list[UserModelComputing]
     projects_service: ProjectsService
+    db_manager: DatabaseManager
+    base_models: list
+    params_default: BertModelParametersModel
 
     def __init__(
         self,
@@ -222,17 +225,7 @@ class BertModels:
         db_manager: DatabaseManager,
         list_models: str | None = None,
     ) -> None:
-        self.params_default = {
-            "batchsize": 4,
-            "gradacc": 1,
-            "epochs": 3,
-            "lrate": 5e-05,
-            "wdecay": 0.01,
-            "best": True,
-            "eval": 10,
-            "gpu": False,
-            "adapt": True,
-        }
+        self.params_default = BertModelParametersModel()
 
         # load the list of models
         if list_models is not None:
@@ -322,7 +315,7 @@ class BertModels:
         Information on available models for state
         """
         models = self.projects_service.available_models(self.project_slug)
-        r = {}
+        r: dict = {}
         for m in models:
             if m["scheme"] not in r:
                 r[m["scheme"]] = {}
@@ -362,7 +355,9 @@ class BertModels:
             e.user: {
                 "name": e.model_name,
                 "status": e.status,
-                "progress": (e.get_training_progress()),
+                "progress": (
+                    e.get_training_progress() if e.get_training_progress else None
+                ),
                 "loss": e.model.get_loss(),
             }
             for e in self.computing
@@ -384,7 +379,7 @@ class BertModels:
             raise Exception(f"Problem to delete model : {e}")
         return {"success": "Bert model deleted"}
 
-    def current_user_processes(self, user: str) -> UserModelComputing:
+    def current_user_processes(self, user: str) -> list[UserModelComputing]:
         """
         Get the user current processes
         """
@@ -442,16 +437,8 @@ class BertModels:
         if self.projects_service.model_exists(project, name):
             raise Exception("A model with this name already exists")
 
-        # set default parameters if needed
-        if params is None:
-            params = self.params_default
-
-        # test parameters format
-        params = params.dict()
-        e = BertParams(**params)
-
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
-        if params["gpu"]:
+        if params.gpu:
             mem = functions.get_gpu_memory_info()
             if self.estimate_memory_use(name, kind="train") > mem["available_memory"]:
                 raise Exception(
@@ -459,19 +446,20 @@ class BertModels:
                 )
 
         # launch as a independant process
-        args = {
-            "path": self.path,
-            "name": name,
-            "df": df.copy(deep=True),
-            "col_label": col_label,
-            "col_text": col_text,
-            "base_model": base_model,
-            "params": params,
-            "test_size": test_size,
-        }
-
-        unique_id = self.queue.add_task("training", project, TrainBert(**args))
-        del args
+        unique_id = self.queue.add_task(
+            "training",
+            project,
+            TrainBert(
+                path=self.path,
+                name=name,
+                df=df.copy(deep=True),
+                col_label=col_label,
+                col_text=col_text,
+                base_model=base_model,
+                params=params,
+                test_size=test_size,
+            ),
+        )
 
         # Update the queue state
         b = BertModel(name, self.path / name, base_model)
@@ -492,8 +480,7 @@ class BertModels:
         )
 
         # add flags in params
-        params["predicted"] = False
-        params["compressed"] = False
+        params = BertModelParametersDbModel(**params.model_dump())
 
         # add in database
         if not self.projects_service.add_model(
@@ -502,7 +489,7 @@ class BertModels:
             user=user,
             project=project,
             scheme=scheme,
-            params=params,
+            params=params.model_dump(),
             path=str(self.path / name),
             status="training",
         ):
