@@ -11,6 +11,7 @@
           display: none;
           @include media-breakpoint-up(md) {
             display: inline;
+            text-align: center;
             // className="d-none dmd-inline"
           }
         }
@@ -66,4 +67,19 @@ form button {
 
 form button:hover {
   background-color: #0056b3;
+}
+
+.scrollable-cell {
+  min-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.scrollable-cell:focus,
+.scrollable-cell:active {
+  white-space: normal;
+  max-height: 150px; /* Définit une hauteur max en mode scroll */
+  overflow: auto;
 }

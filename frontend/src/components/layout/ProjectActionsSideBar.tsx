@@ -180,7 +180,7 @@ export const ProjectActionsSidebar: FC<{
                 className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
                 aria-current="page"
                 title="Generate"
-                style={{ color: 'darkorange', display: 'flex', alignItems: 'center' }}
+                style={{ color: '#df31e8' }}
               >
                 <RiAiGenerate />
                 <span> Generate</span>

@@ -116,27 +116,59 @@ export const GenPage: FC = () => {
       name: 'Time',
       key: 'time',
       resizable: true,
+      width: '15%',
     },
     {
       name: 'Id',
       key: 'index',
       resizable: true,
+      width: '15%',
     },
     {
       name: 'Answer',
       key: 'answer',
       resizable: true,
+      width: '35%',
+      renderCell: ({ row }) => (
+        <div
+          style={{
+            maxHeight: '100%',
+            width: '100%',
+            whiteSpace: 'wrap',
+            overflowY: 'auto',
+            userSelect: 'none',
+          }}
+        >
+          {row.answer}
+        </div>
+      ),
     },
     {
       name: 'Prompt',
       key: 'prompt',
       resizable: true,
+      width: '25%',
+      renderCell: ({ row }) => (
+        <div
+          style={{
+            maxHeight: '100%',
+            width: '100%',
+            whiteSpace: 'wrap',
+            overflowY: 'auto',
+            userSelect: 'none',
+            backgroundColor: '#f0f0f0',
+          }}
+        >
+          {row.prompt}
+        </div>
+      ),
     },
 
     {
       name: 'Model name',
       key: 'model name',
       resizable: true,
+      width: '10%',
     },
   ];
 
@@ -246,10 +278,10 @@ export const GenPage: FC = () => {
                     Select or craft your prompt with the element #INSERTTEXT to insert text
                   </div>
 
-                  <div className="d-flex align-items-center justify-content-center">
+                  <div className="d-flex align-items-center ">
                     <Select
                       id="select-prompt"
-                      className="form-select"
+                      className="form-select w-75"
                       options={(prompts || []).map((e) => ({
                         value: e.id as unknown as string,
                         label: e.text as unknown as string,
@@ -321,8 +353,10 @@ export const GenPage: FC = () => {
                     ) : (
                       <button
                         className="btn btn-secondary mt-3 generatebutton"
-                        onClick={generate}
-                        // disabled={!!isGenerating}
+                        onClick={() => {
+                          console.log('generate');
+                          generate();
+                        }}
                       >
                         <HiOutlineSparkles size={30} /> Generate
                       </button>
@@ -355,6 +389,7 @@ export const GenPage: FC = () => {
                   className="fill-grid"
                   columns={columns}
                   rows={(generated as unknown as Row[]) || []}
+                  rowHeight={80}
                 />
               </>
             )}
