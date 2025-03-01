@@ -1,26 +1,37 @@
 import io
 import json
 import logging
+import os
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import pytz
+from fastapi.encoders import jsonable_encoder
 from pandas import DataFrame
-from pydantic import ValidationError
 from slugify import slugify
 
 from activetigger.datamodels import (
+    GenerationResult,
+    MLStatisticsModel,
     ProjectModel,
+    ProjectUpdateModel,
     SimpleModelModel,
+    StaticFileModel,
     TestSetDataModel,
+    UserComputing,
+    UserFeatureComputing,
+    UserGenerationComputing,
+    UserModelComputing,
+    UserProjectionComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import clean_regex
-from activetigger.generations import Generations
+from activetigger.functions import clean_regex, get_metrics
+from activetigger.generation.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
@@ -38,7 +49,7 @@ class Project:
     starting_time: float
     name: str
     queue: Queue
-    computing: list
+    computing: list[UserComputing]
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
@@ -79,13 +90,17 @@ class Project:
         Delete project
         """
         # remove folder
-        if self.params.dir.exists():
+
+        try:
             shutil.rmtree(self.params.dir)
-        else:
-            raise ValueError("No directory to delete")
+        except Exception as e:
+            raise ValueError("No directory to delete", str(e))
 
         # remove from database
-        self.db_manager.projects_service.delete_project(self.name)
+        try:
+            self.db_manager.projects_service.delete_project(self.name)
+        except Exception as e:
+            raise ValueError("Problem with the database", str(e))
 
     def load_project(self, project_slug: str):
         """
@@ -107,7 +122,7 @@ class Project:
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
-            self.params.dir.joinpath("annotations.parquet"),
+            self.params.dir.joinpath("train.parquet"),
             self.params.dir.joinpath("test.parquet"),
             self.db_manager,
         )
@@ -117,7 +132,7 @@ class Project:
             self.params.dir.joinpath("data_all.parquet"),
             self.path_models,
             self.queue,
-            self.computing,
+            cast(list[UserFeatureComputing], self.computing),
             self.db_manager,
             self.params.language,
         )
@@ -130,8 +145,12 @@ class Project:
             MODELS,
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
-        self.generations = Generations(self.db_manager, self.computing)
-        self.projections = Projections(self.computing)
+        # TODO: Computings should be filtered here based on their type, each type in a different list given to the appropriate class.
+        # It would render the cast here and the for-loop in the class unecessary
+        self.generations = Generations(
+            self.db_manager, cast(list[UserGenerationComputing], self.computing)
+        )
+        self.projections = Projections(self.computing, self.queue)
         self.errors = []  # Move to specific class / db in the future
 
     def load_params(self, project_slug: str) -> ProjectModel:
@@ -144,7 +163,25 @@ class Project:
         else:
             raise NameError(f"{project_slug} does not exist.")
 
-    def add_testdata(self, testset: TestSetDataModel, username: str, project_slug: str):
+    def drop_testset(self) -> None:
+        """
+        Clean all the test data of the project
+        """
+        if not self.params.dir:
+            raise Exception("No directory for project")
+        path_testset = self.params.dir.joinpath("test.parquet")
+        if not path_testset.exists():
+            raise Exception("No test data available")
+        os.remove(path_testset)
+        self.schemes.test = None
+        self.params.test = False
+        self.db_manager.projects_service.update_project(
+            self.params.project_slug, jsonable_encoder(self.params)
+        )
+
+    def add_testset(
+        self, testset: TestSetDataModel, username: str, project_slug: str
+    ) -> None:
         """
         Add a test dataset
 
@@ -217,13 +254,15 @@ class Project:
             print("Testset labels imported")
 
         # write the dataset
-        df[[testset.col_text]].to_parquet(self.params.dir.joinpath(self.test_file))
+        df[[testset.col_text]].to_parquet(self.params.dir.joinpath("test.parquet"))
         # load the data
         self.schemes.test = df[[testset.col_text]]
         # update parameters
         self.params.test = True
-
-        return {"success": "test dataset added"}
+        # update the database
+        self.db_manager.projects_service.update_project(
+            self.params.project_slug, jsonable_encoder(self.params)
+        )
 
     def update_simplemodel(self, simplemodel: SimpleModelModel, username: str) -> dict:
         """
@@ -233,27 +272,24 @@ class Project:
         n_min: minimal number of elements annotated
         """
         if simplemodel.features is None or len(simplemodel.features) == 0:
-            return {"error": "No feature selected"}
+            raise Exception("No features selected")
         if simplemodel.model not in list(self.simplemodels.available_models.keys()):
-            return {"error": "Model doesn't exist"}
+            raise Exception("Model not available")
         if simplemodel.scheme not in self.schemes.available():
-            return {"error": "Scheme doesn't exist"}
+            raise Exception("Scheme not available")
         if len(self.schemes.available()[simplemodel.scheme]) < 2:
-            return {"error": "2 different labels needed"}
+            raise Exception("Scheme not available")
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
         if simplemodel.model == "multi_naivebayes":
             if "dfm" not in self.features.map:
-                return {"error": "dfm feature not available for multi_naivebayes"}
+                raise Exception("No dfm feature available")
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
 
         # test if the parameters have the correct format
-        try:
-            validation = self.simplemodels.validation[simplemodel.model]
-            params = validation(**simplemodel.params).dict()
-        except ValidationError as e:
-            return {"error": e.json()}
+        validation = self.simplemodels.validation[simplemodel.model]
+        params = validation(**simplemodel.params).dict()
 
         # add information on the target of the model
         if simplemodel.dichotomize is not None:
@@ -273,9 +309,7 @@ class Project:
         counts = df_scheme["labels"].value_counts()
         valid_categories = counts[counts >= 3]
         if len(valid_categories) < 2:
-            return {
-                "error": "there are less than 2 categories with 3 annotated elements"
-            }
+            raise Exception("Not enough annotated elements")
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -283,6 +317,7 @@ class Project:
         logger_simplemodel = logging.getLogger("simplemodel")
         logger_simplemodel.info("Building the simplemodel request")
         self.simplemodels.compute_simplemodel(
+            project_slug=self.params.project_slug,
             user=username,
             scheme=simplemodel.scheme,
             features=simplemodel.features,
@@ -321,7 +356,7 @@ class Project:
         """
 
         if scheme not in self.schemes.available():
-            return {"error": "Scheme doesn't exist"}
+            raise ValueError("Scheme doesn't exist")
 
         # size of the subsample
 
@@ -330,7 +365,7 @@ class Project:
             df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
             f = df["labels"].isnull()
             if len(df[f]) == 0:
-                return {"error": "No element to annotate"}
+                raise ValueError("No element available with this selection mode.")
             element_id = df[f].sample(random_state=42).index[0]
             element = {
                 "element_id": str(element_id),
@@ -394,18 +429,18 @@ class Project:
                     )
                     f = f & f_frame
                 else:
-                    return {"error": "Data projection doesn't exist for this user"}
+                    raise ValueError("No projection data available")
             else:
-                return {"error": "Projection model doesn't exist for this user"}
+                raise ValueError("No projection available")
 
         # test if there is at least one element available
         if sum(f) == 0:
-            return {"error": "No element available with this selection mode."}
+            raise ValueError("No element available with this selection mode.")
 
         # Take into account the session history
         ss = df[f].drop(history, errors="ignore")
         if len(ss) == 0:
-            return {"error": "No element available with this selection mode."}
+            raise ValueError("No element available with this selection mode.")
         indicator = None
         n_sample = f.sum()  # use len(ss) for adding history
 
@@ -419,9 +454,9 @@ class Project:
         # higher prob, only possible if the model has been trained
         if selection == "maxprob":
             if not self.simplemodels.exists(user, scheme):
-                return {"error": "Simplemodel doesn't exist"}
+                raise Exception("Simplemodel doesn't exist")
             if label is None:  # default label to first
-                return {"error": "Select a tag"}
+                raise Exception("Label is required")
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
@@ -437,7 +472,7 @@ class Project:
         # higher entropy, only possible if the model has been trained
         if selection == "active":
             if not self.simplemodels.exists(user, scheme):
-                return {"error": "Simplemodel doesn't exist"}
+                raise ValueError("Simplemodel doesn't exist")
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
@@ -498,7 +533,7 @@ class Project:
         """
         if dataset == "test":
             if element_id not in self.schemes.test.index:
-                return {"error": "Element does not exist."}
+                raise Exception("Element does not exist.")
             data = {
                 "element_id": element_id,
                 "text": self.schemes.test.loc[element_id, "text"],
@@ -513,7 +548,7 @@ class Project:
             return data
         if dataset == "train":
             if element_id not in self.content.index:
-                return {"error": "Element does not exist."}
+                raise Exception("Element does not exist.")
 
             # get prediction if it exists
             predict = {"label": None, "proba": None}
@@ -548,7 +583,7 @@ class Project:
             }
 
             return data
-        return {"error": "wrong set"}
+        raise Exception("Dataset does not exist.")
 
     def get_params(self) -> ProjectModel:
         """
@@ -563,18 +598,18 @@ class Project:
             JSON
         """
         if scheme is None:
-            return {"error": "Scheme not defined"}
+            raise Exception("Scheme is required")
 
         schemes = self.schemes.available()
         if scheme not in schemes:
-            return {"error": "Scheme does not exist"}
+            raise Exception("Scheme not available")
         kind = schemes[scheme]["kind"]
 
         # part train
         r = {"train_set_n": len(self.schemes.content)}
         r["users"] = [
             i[0]
-            for i in self.db_manager.projects_service.get_coding_users(
+            for i in self.db_manager.users_service.get_coding_users(
                 scheme, self.params.project_slug
             )
         ]
@@ -702,7 +737,7 @@ class Project:
         # test or train
         if dataset == "test":
             if not self.params.test:
-                return {"error": "No test data"}
+                raise Exception("No test data available")
             data = self.schemes.get_scheme_data(
                 scheme=scheme, complete=True, kind="test"
             )
@@ -726,14 +761,16 @@ class Project:
         """
         Get current active users on the time period
         """
-        users = self.db_manager.projects_service.get_distinct_users(self.name, period)
+        users = self.db_manager.users_service.get_distinct_users(self.name, period)
         return users
 
-    def get_process(self, kind: str, user: str):
+    def get_process(self, kind: str | list, user: str):
         """
         Get current processes
         """
-        return [e for e in self.computing if e["user"] == user and e["kind"] == kind]
+        if isinstance(kind, str):
+            kind = [kind]
+        return [e for e in self.computing if e.user == user and e.kind in kind]
 
     def export_raw(self, project_slug: str):
         """
@@ -741,119 +778,278 @@ class Project:
         """
         # copy in the static folder
         name = f"{project_slug}_data_all.parquet"
-        path_origin = self.params.dir.joinpath("data_all.parquet")
-        path_target = self.params.dir.joinpath("..").joinpath("static").joinpath(name)
+        target_dir = self.params.dir if self.params.dir is not None else Path(".")
+        path_origin = target_dir.joinpath("data_all.parquet")
+        path_target = target_dir.joinpath("..").joinpath("static").joinpath(name)
         if not path_target.exists():
             shutil.copyfile(path_origin, path_target)
-        return {"name": name, "path": f"/static/{name}"}
+        return StaticFileModel(name=name, path=f"/static/{name}")
 
-    def update_processes(self) -> dict:
+    def compute_statistics(
+        self, scheme: str, predictions: DataFrame, decimals: int = 2
+    ) -> MLStatisticsModel:
+        """
+        Compute statistics for a specific scheme and prediction
+        """
+        Y_true = self.schemes.get_scheme_data(scheme)["labels"]
+        Y_pred = predictions["prediction"]
+        metrics = get_metrics(Y_true, Y_pred, decimals)
+        return metrics
+
+    def update_project(self, update: ProjectUpdateModel) -> None:
+        """
+        Update project parameters
+
+        For text/contexts/expand, it needs to draw from raw data
+        """
+
+        if not self.params.dir:
+            raise ValueError("No directory for project")
+
+        # flag if needed to drop features
+        drop_features = False
+        df = None
+
+        # update the name
+        if update.project_name and update.project_name != self.params.project_name:
+            self.params.project_name = update.project_name
+
+        # update the language
+        if update.language and update.language != self.params.language:
+            self.params.language = update.language
+            drop_features = True
+
+        # update the context columns by modifying the train data
+        if update.cols_context and set(update.cols_context) != set(
+            self.params.cols_context
+        ):
+            if df is None:
+                df = pd.read_parquet(
+                    self.params.dir.joinpath("data_all.parquet"),
+                    columns=update.cols_context,
+                )
+            self.content.drop(columns=self.params.cols_context, inplace=True)
+            self.content = pd.concat([self.content, df], axis=1)
+            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.params.cols_context = update.cols_context
+            print("Context updated")
+
+        # update the text columns
+        if update.cols_text and set(update.cols_text) != set(self.params.cols_text):
+            if df is None:
+                df = pd.read_parquet(
+                    self.params.dir.joinpath("data_all.parquet"),
+                    columns=update.cols_text,
+                )
+            df_sub = df.loc[self.content.index]
+            df_sub["text"] = df_sub[update.cols_text].apply(
+                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
+            )
+            self.content["text"] = df_sub["text"]
+            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.params.cols_text = update.cols_text
+            drop_features = True
+            del df_sub
+            print("Texts updated")
+
+        # update the train set
+        if update.add_n_train and update.add_n_train > 0:
+            if df is None:
+                df = pd.read_parquet(
+                    self.params.dir.joinpath("data_all.parquet"),
+                    columns=list(self.content.columns),
+                )
+            # index of elements used
+            elements_index = list(self.content.index)
+            if self.schemes.test is not None:
+                elements_index += list(self.schemes.test.index)
+
+            # take elements that are not in index
+            df = df[~df.index.isin(elements_index)]
+
+            # sample elements
+            elements_to_add = df.sample(update.add_n_train)
+
+            # drop na elements to avoid problems
+            elements_to_add = elements_to_add[elements_to_add["text"].notna()]
+
+            self.content = pd.concat([self.content, elements_to_add])
+            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+
+            # update params
+            self.params.n_train = len(self.content)
+
+            # drop existing features
+            drop_features = True
+
+            # restart the project
+            del elements_to_add
+            print("Train set updated")
+
+        if df is not None:
+            del df
+
+        if drop_features:
+            self.drop_features()
+
+        # update the database
+        self.db_manager.projects_service.update_project(
+            self.params.project_slug, jsonable_encoder(self.params)
+        )
+        return None
+
+    def drop_features(self) -> None:
+        """
+        Clean all the features of the project
+        """
+        if not self.params.dir:
+            raise ValueError("No directory for project")
+        self.content[[]].to_parquet(
+            self.params.dir.joinpath("features.parquet"), index=True
+        )
+        self.features.projects_service.delete_all_features(self.name)
+
+    def update_processes(self) -> None:
         """
         Update completed processes and do specific operations regarding their kind
         - get the result from the queue
         - add the result if needed
         - manage error if needed
+
+        # TODO : REFACTOR THIS FUNCTION
+
         """
         add_predictions = {}
 
-        # TODO : clean old errors from the message list
-
+        # loop on the current process
         for e in self.computing.copy():
-            # clean flag
-            clean = False
 
             # case of not in queue
-            if e["unique_id"] not in self.queue.current:
-                print("Problem : id in computing not in queue")
+            if e.unique_id not in self.queue.current:
+                logging.warning("Problem : id in computing not in queue")
                 self.computing.remove(e)
                 continue
 
-            is_done = self.queue.current[e["unique_id"]]["future"].done()
+            # check if the process is done, else continue
+            if not self.queue.current[e.unique_id]["future"].done():
+                continue
 
-            # case for bertmodels
-            if (e["kind"] == "bert") and is_done:
-                clean = True
+            # get the future
+            future = self.queue.current[e.unique_id]["future"]
+
+            # manage different tasks
+
+            # case for bert fine-tuning
+            if e.kind == "train_bert":
+                model = cast(UserModelComputing, e)
                 try:
-                    # case there is a prediction
-                    r = self.queue.current[e["unique_id"]]["future"].result()
-                    if not isinstance(r, dict):
-                        print("Probleme with the function")
-                        self.computing.remove(e)
-                        self.queue.delete(e["unique_id"])
-                        self.errors.append(
-                            [
-                                datetime.now(TIMEZONE),
-                                "bert training",
-                                "Probleme with the function",
-                            ]
-                        )
-                        # return {"error": "Probleme with the function"}
-                    if "error" in r:
-                        print("Error in model training/predicting", r["error"])
-                        self.computing.remove(e)
-                        self.queue.delete(e["unique_id"])
-                        self.errors.append(
-                            [datetime.now(TIMEZONE), "bert training", r["error"]]
-                        )
-                        # return {"error": r["error"]}
-                    # get the prediction in the trainset
-                    if "path" in r and "predict_train.parquet" in r["path"]:
-                        add_predictions["predict_" + e["model"].name] = r["path"]
-                        print("Prediction added")
-
-                    self.bertmodels.add(e)
-                    print("Bertmodel treatment achieved")
-
+                    error = future.exception()
+                    if error:
+                        raise Exception(str(error))
+                    self.bertmodels.add(model)
+                    print("Bert training achieved")
+                    logging.debug("Bert training achieved")
                 except Exception as ex:
-                    # delete the model in the db
                     self.bertmodels.projects_service.delete_model(
-                        self.name, e["model"].name
+                        self.name, model.model_name
                     )
-                    # add an error message for the user
                     self.errors.append(
                         [
                             datetime.now(TIMEZONE),
-                            "Error in model training/predicting",
+                            "Error in bert model training",
                             str(ex),
                         ]
                     )
-                    print("Error in model training/predicting", ex)
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
+
+            # case for bertmodel prediction
+            if e.kind == "predict_bert":
+                prediction = cast(UserModelComputing, e)
+                try:
+                    error = future.exception()
+                    if error:
+                        raise Exception(str(error))
+                    results = future.result()
+
+                    # case of predict_train : transform to feature
+                    if (
+                        results is not None
+                        and results.path
+                        and "predict_train.parquet" in results.path
+                    ):
+                        add_predictions["predict_" + prediction.model_name] = (
+                            results.path
+                        )
+                    self.bertmodels.add(prediction)
+                    print("Bert predicting achieved")
+                    logging.debug("Bert predicting achieved")
+                except Exception as ex:
+                    self.errors.append(
+                        [
+                            datetime.now(TIMEZONE),
+                            "Error in model predicting",
+                            str(ex),
+                        ]
+                    )
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
 
             # case for simplemodels
-            if (e["kind"] == "simplemodel") and is_done:
-                clean = True
+            if e.kind == "simplemodel":
+                model = cast(UserModelComputing, e)
                 try:
-                    results = self.queue.current[e["unique_id"]]["future"].result()
-                    self.simplemodels.add(e, results)
+                    error = future.exception()
+                    if error:
+                        raise Exception(str(error))
+                    results = future.result()
+                    self.simplemodels.add(model, results)
                     print("Simplemodel trained")
+                    logging.debug("Simplemodel trained")
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(TIMEZONE), "simplemodel failed", str(ex)]
                     )
-                    print("Simplemodel failed", ex)
+                    logging.error("Simplemodel failed", ex)
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
 
             # case for features
-            if (e["kind"] == "feature") and is_done:
-                clean = True
+            if e.kind == "feature":
+                feature_computation = cast(UserFeatureComputing, e)
                 try:
-                    r = self.queue.current[e["unique_id"]]["future"].result()
+                    error = future.exception()
+                    if error:
+                        raise Exception(str(error))
+                    results = future.result()
                     self.features.add(
-                        e["name"], e["type"], e["user"], e["parameters"], r["success"]
+                        feature_computation.name,
+                        feature_computation.type,
+                        feature_computation.user,
+                        feature_computation.parameters,
+                        results,
                     )
-                    print("Feature added", e["name"])
+                    print("Feature added", feature_computation.name)
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(TIMEZONE), "Error in feature processing", str(ex)]
                     )
                     print("Error in feature processing", ex)
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
 
             # case for projections
-            if (e["kind"] == "projection") and is_done:
-                clean = True
+            if e.kind == "projection":
+                projection = cast(UserProjectionComputing, e)
                 try:
-                    df = self.queue.current[e["unique_id"]]["future"].result()
-                    self.projections.add(e, df)
-                    print("projection added")
+                    results = future.result()
+                    self.projections.add(projection, results)
+                    print("Projection added", projection.name)
+                    logging.debug("projection added")
                 except Exception as ex:
                     self.errors.append(
                         [
@@ -862,34 +1058,46 @@ class Project:
                             str(ex),
                         ]
                     )
-                    print("Error in feature projections queue", ex)
+                    logging.error("Error in feature projections queue", ex)
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
 
             # case for generations
-            if (e["kind"] == "generation") and is_done:
-                clean = True
+            if e.kind == "generation":
                 try:
-                    r = self.queue.current[e["unique_id"]]["future"].result()
-                    for row in r["success"]:
+                    results = future.result()
+                    r = cast(
+                        list[GenerationResult],
+                        results,
+                    )
+                    print("RESULTS", r)
+                    for row in r:
                         self.generations.add(
-                            user=row["user"],
-                            project_slug=row["project_slug"],
-                            element_id=row["element_id"],
-                            endpoint=row["endpoint"],
-                            prompt=row["prompt"],
-                            answer=row["answer"],
+                            user=row.user,
+                            project_slug=row.project_slug,
+                            element_id=row.element_id,
+                            model_id=row.model_id,
+                            prompt=row.prompt,
+                            answer=row.answer,
                         )
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(TIMEZONE), "Error in generation queue", str(ex)]
+                        [
+                            datetime.now(TIMEZONE),
+                            "Error in generation queue",
+                            getattr(ex, "message", repr(ex)),
+                        ]
                     )
-                    print("Error in generation queue", ex)
+                    logging.warning(
+                        "Error in generation queue", getattr(ex, "message", repr(ex))
+                    )
+                    print("Error in generation queue", getattr(ex, "message", repr(ex)))
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
 
-            # delete from computing & queue
-            if clean:
-                self.computing.remove(e)
-                self.queue.delete(e["unique_id"])
-
-        # if predictions, add them
+        # if there are predictions, add them
         for f in add_predictions:
             # load the prediction probabilities minus one
             df = pd.read_parquet(add_predictions[f])
@@ -903,6 +1111,10 @@ class Project:
                 username="system",
                 new_content=df,
             )
-            print("Add feature", name)
+            logging.debug("Add feature" + str(name))
+
+        # clean errors older than 15 minutes
+        delta = datetime.now(TIMEZONE) - timedelta(minutes=15)
+        self.errors = [error for error in self.errors if error[0] >= delta]
 
         return None

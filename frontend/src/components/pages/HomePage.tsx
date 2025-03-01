@@ -2,13 +2,13 @@ import { FC } from 'react';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
-import logo from '../assets/at.png';
-import { useGetActiveUsers } from '../core/api';
-import { useAuth } from '../core/auth';
-import { useAppContext } from '../core/context';
-import { LoginParams } from '../types';
-import { LoginForm } from './forms/LoginForm';
-import Notifications from './layout/Notifications';
+import logo from '../../assets/at.png';
+import { useGetActiveUsers, useGetVersion } from '../../core/api';
+import { useAuth } from '../../core/auth';
+import { useAppContext } from '../../core/context';
+import { LoginParams } from '../../types';
+import { LoginForm } from './../forms/LoginForm';
+import Notifications from './../layout/Notifications';
 
 export const HomePage: FC = () => {
   const { authenticatedUser } = useAuth();
@@ -28,6 +28,7 @@ export const HomePage: FC = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const { login } = useAuth();
+  const { version } = useGetVersion();
   if (params.get('username') && params.get('password')) {
     login({
       username: params.get('username'),
@@ -103,7 +104,8 @@ export const HomePage: FC = () => {
 
               <div className="general-info mt-3">
                 <div>
-                  Last update of the frontend<b> {__BUILD_DATE__}</b>
+                  Backend version <b>{version}</b> - Last update of the frontend
+                  <b> {__BUILD_DATE__}</b>
                 </div>
                 <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
               </div>

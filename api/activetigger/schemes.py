@@ -1,9 +1,11 @@
+from io import StringIO
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.datamodels import TableBatch
+from activetigger.datamodels import AnnotationsDataModel, TableBatch
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import Codebook, ProjectsService
@@ -36,10 +38,12 @@ class Schemes:
         """
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
+        self.db_manager = db_manager
         self.content = pd.read_parquet(path_content)  # text + context
-        self.test = None
         if path_test.exists():
             self.test = pd.read_parquet(path_test)
+        else:
+            self.test = None
 
         available = self.available()
 
@@ -51,7 +55,7 @@ class Schemes:
         return f"Coding schemes available {self.available()}"
 
     def get_scheme_data(
-        self, scheme: str, complete: bool = False, kind: list | str = None
+        self, scheme: str, complete: bool = False, kind: list[str] = ["train"]
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -63,7 +67,7 @@ class Schemes:
         if kind is None:
             kind = ["train"]
         if scheme not in self.available():
-            return {"error": "Scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
 
         if isinstance(kind, str):
             kind = [kind]
@@ -83,7 +87,7 @@ class Schemes:
         if complete:  # all the elements
             if "test" in kind:
                 if len(kind) > 1:
-                    return {"error": "Test data cannot be mixed with train data"}
+                    raise Exception("Cannot ask for both train and test")
                 # case if the test, join the text data
                 t = self.test[["text"]].join(df)
                 return t
@@ -97,7 +101,7 @@ class Schemes:
         TODO : add the filter on action
         """
         if scheme not in self.available():
-            return {"error": "Scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
 
         results = self.projects_service.get_table_annotations_users(
             self.project_slug, scheme
@@ -127,7 +131,7 @@ class Schemes:
 
     def convert_annotations(
         self, former_label: str, new_label: str, scheme: str, username: str
-    ):
+    ) -> TableBatch:
         """
         Convert tags from a specific label to another
         """
@@ -136,16 +140,42 @@ class Schemes:
         to_recode = df[df["labels"] == former_label].index
         # for each of them, push the new tag
         for i in to_recode:
-            self.push_annotation(i, new_label, scheme, username, "train")
+            self.push_annotation(i, new_label, scheme, username, "train", "recoding")
         return {"success": "All tags recoded"}
 
-    def get_total(self, dataset="train"):
+    def get_total(self, dataset: str = "train"):
         """
         Number of element in the dataset
         """
         if dataset == "test":
+            # TODO: I think it should be tested way before now
+            if self.test is None:
+                raise Exception("Test dataset is not defined")
             return len(self.test)
         return len(self.content)
+
+    def get_sample(
+        self, scheme: str, n_elements: int, mode: str, dataset: str = "train"
+    ) -> DataFrame:
+        """
+        Get a sample of element following a method
+        """
+        if mode not in ["tagged", "untagged", "all"]:
+            raise Exception("Mode not available")
+        if scheme not in self.available():
+            raise Exception("Scheme doesn't exist")
+        df = self.get_scheme_data(scheme, complete=True, kind=[dataset])
+        # build dataset
+        if mode == "tagged":
+            df = cast(DataFrame, df[df["labels"].notnull()])
+
+        if mode == "untagged":
+            df = cast(DataFrame, df[df["labels"].isnull()])
+
+        if n_elements > len(df):
+            n_elements = len(df)
+
+        return df.sample(n_elements).reset_index()
 
     def get_table(
         self,
@@ -163,7 +193,7 @@ class Schemes:
         min, max: the range
         mode: sample
         contains: search
-        user: select by user
+
         set: train or test
 
         Choice to order by index.
@@ -172,68 +202,38 @@ class Schemes:
         if mode not in ["tagged", "untagged", "all", "recent"]:
             mode = "all"
         if scheme not in self.available():
-            return {"error": "scheme not available"}
+            raise Exception(f"Scheme {scheme} is not available")
 
         # case of the test set, no fancy stuff
-        if set == "test":
-            print("test mode")
-            df = self.get_scheme_data(scheme, complete=True, kind="test")
-
-            # filter for contains
-            if contains:
-                try:
-                    f_contains = df["text"].str.contains(clean_regex(contains))
-                    df = df[f_contains]
-                except Exception:
-                    return {"error": "Problem with regex"}
-
-            # normalize size
-            if max == 0:
-                max = len(df)
-            if max > len(df):
-                max = len(df)
-
-            if min > len(df):
-                return {"error": "min value too high"}
-
-            # return df.sort_index().iloc[min:max].reset_index()
-            return {
-                "batch": df.sort_index().iloc[min:max].reset_index(),
-                "total": len(df),
-                "min": min,
-                "max": max,
-                "filter": contains,
-            }
-
-        df = self.get_scheme_data(scheme, complete=True)
+        df: DataFrame = self.get_scheme_data(
+            scheme, complete=True, kind=["test"] if set == "test" else [set]
+        )
 
         # case of recent annotations (no filter possible)
         if mode == "recent":
             list_ids = self.projects_service.get_recent_annotations(
                 self.project_slug, user, scheme, max - min
             )
-            df_r = df.loc[list(list_ids)].reset_index()
-            return {
-                "batch": df_r,
-                "total": len(df_r),
-                "min": 0,
-                "max": len(df_r),
-                "filter": "recent",
-            }
+            df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index())
+            return TableBatch(
+                batch=df_r,
+                total=len(df_r),
+                min=0,
+                max=len(df_r),
+                filter="recent",
+            )
 
         # filter for contains
         if contains:
-            try:
-                f_contains = df["text"].str.contains(clean_regex(contains))
-                df = df[f_contains]
-            except Exception:
-                return {"error": "Problem with regex"}
+            f_contains = df["text"].str.contains(clean_regex(contains))
+            df = cast(DataFrame, df[f_contains])
 
         # build dataset
         if mode == "tagged":
-            df = df[df["labels"].notnull()]
+            df = cast(DataFrame, df[df["labels"].notnull()])
+
         if mode == "untagged":
-            df = df[df["labels"].isnull()]
+            df = cast(DataFrame, df[df["labels"].isnull()])
 
         # normalize size
         if max == 0:
@@ -242,24 +242,30 @@ class Schemes:
             max = len(df)
 
         if min > len(df):
-            return {"error": "min value too high"}
+            raise Exception(
+                f"Minimal value {min} is too high. It should not exced the size of the data ({len(df)})"
+            )
 
-        return {
-            "batch": df.sort_index().iloc[min:max].reset_index(),
-            "total": len(df),
-            "min": min,
-            "max": max,
-            "filter": contains,
-        }
+        return TableBatch(
+            batch=df.sort_index().iloc[min:max].reset_index(),
+            total=len(df),
+            min=min,
+            max=max,
+            filter=contains,
+        )
 
     def add_scheme(
-        self, name: str, labels: list, kind: str = "multiclass", user: str = "server"
+        self,
+        name: str,
+        labels: list[str],
+        kind: str = "multiclass",
+        user: str = "server",
     ):
         """
         Add new scheme
         """
         if self.exists(name):
-            return {"error": "scheme name already exists"}
+            raise Exception("Scheme already exists")
 
         self.projects_service.add_scheme(self.project_slug, name, labels, kind, user)
 
@@ -271,13 +277,13 @@ class Schemes:
         """
         available = self.available()
         if (label is None) or (label == ""):
-            return {"error": "the name is void"}
+            raise Exception("Label cannot be empty")
         if scheme not in available:
-            return {"error": "scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
         if available[scheme] is None:
             available[scheme] = []
         if label in available[scheme]:
-            return {"error": "label already exist"}
+            raise Exception("Label already exists")
         labels = available[scheme]["labels"]
         labels.append(label)
         self.update_scheme(scheme, labels)
@@ -289,7 +295,7 @@ class Schemes:
         """
         available = self.available()
         if scheme not in available:
-            return {"error": "scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
         if label in available[scheme]:
             return True
         return False
@@ -299,25 +305,23 @@ class Schemes:
         Delete a label in a scheme
         """
         available = self.available()
-        print("available", available, available[scheme]["labels"])
-        print("label", label)
         if scheme not in available:
-            return {"error": "scheme doesn't exist"}
+            raise Exception("Scheme doesn't exist")
         if label not in available[scheme]["labels"]:
-            return {"error": "label does not exist"}
+            raise Exception("Label doesn't exist")
         labels = available[scheme]["labels"]
         labels.remove(label)
         # push empty entry for tagged elements
         # both for train
-        df = self.get_scheme_data(scheme, kind="train")
+        df = self.get_scheme_data(scheme, kind=["train"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
-            self.push_annotation(i, None, scheme, user, "train")
+            self.push_annotation(i, None, scheme, user, "train", "delete")
         # and test
-        df = self.get_scheme_data(scheme, kind="test")
+        df = self.get_scheme_data(scheme, kind=["test"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
-            self.push_annotation(i, None, scheme, user, "test")
+            self.push_annotation(i, None, scheme, user, "test", "delete")
         # update scheme
         self.update_scheme(scheme, labels)
         return {"success": "scheme updated removing a label"}
@@ -352,7 +356,7 @@ class Schemes:
             return True
         return False
 
-    def available(self) -> dict:
+    def available(self) -> dict[str, Any]:
         """
         Available schemes {scheme:[labels]}
         """
@@ -367,7 +371,7 @@ class Schemes:
         return r
 
     def delete_annotation(
-        self, element_id: str, scheme: str, dataset: str, user: str = "server"
+        self, element_id: str, scheme: str, dataset: str | None, user: str = "server"
     ) -> bool:
         """
         Delete a recorded tag
@@ -399,9 +403,10 @@ class Schemes:
         label: str | None,
         scheme: str,
         user: str = "server",
-        mode: str = "train",
-        comment: str = "",
-    ):
+        mode: str | None = "train",
+        comment: str | None = "",
+        selection: str | None = None,
+    ) -> None:
         """
         Record a tag in the database
         mode : train, predict, test
@@ -409,6 +414,9 @@ class Schemes:
 
         if element_id == "noelement":
             raise Exception("No element id")
+
+        if mode is None:
+            mode = "undefined"
 
         # test if the action is possible
         a = self.available()
@@ -426,10 +434,6 @@ class Schemes:
             if label not in a[scheme]["labels"]:
                 raise Exception(f"Label {label} not in the scheme")
 
-        # TODO : add test if the element index really exist
-        # if (not element_id in self.content.index):
-        #    return {"error":"element doesn't exist"}
-
         self.projects_service.add_annotation(
             dataset=mode,
             user=user,
@@ -438,26 +442,16 @@ class Schemes:
             scheme=scheme,
             annotation=label,
             comment=comment,
+            selection=selection,
         )
-        print(
-            (
-                "push annotation",
-                mode,
-                user,
-                self.project_slug,
-                element_id,
-                scheme,
-                label,
-                comment,
-            )
-        )
-        return {"success": "annotation added"}
 
     def get_coding_users(self, scheme: str):
         """
         Get users action for a scheme
         """
-        results = self.projects_service.get_coding_users(scheme, self.project_slug)
+        results = self.db_manager.users_service.get_coding_users(
+            scheme, self.project_slug
+        )
         return results
 
     def add_codebook(self, scheme: str, codebook: str, time: str):
@@ -492,7 +486,7 @@ class Schemes:
                 )
             except DBException as e:
                 raise Exception("Codebook not added") from e
-            return {"error": "Codebook in conflict, please refresh and arbitrate"}
+            raise Exception("Codebook in conflict, please refresh and arbitrate")
 
     def get_codebook(self, scheme: str) -> Codebook:
         """
@@ -503,9 +497,61 @@ class Schemes:
         except DBException as e:
             raise Exception from e
 
-    def dichotomize(self, annotation: str, label: str):
+    def dichotomize(self, annotation: str | None, label: str | None) -> str:
         """
         check if the label is in the annotation
         current situation : separator |
         """
+        if annotation is None:
+            raise Exception("No annotation")
+        if label is None:
+            raise Exception("No label")
         return label if label in annotation.split("|") else "not-" + label
+
+    def add_file_annotations(
+        self, annotationsdata: AnnotationsDataModel, user: str, dataset: str
+    ):
+        """
+        Add annotations from a file
+        Create labels if not exist
+        """
+        # check if the scheme exist
+        if annotationsdata.scheme not in self.available():
+            raise Exception("Scheme doesn't exist")
+        else:
+            labels = self.available()[annotationsdata.scheme]["labels"]
+
+        # convert the data, set the index, drop empty
+        df = pd.read_csv(StringIO(annotationsdata.csv))
+        df = df.set_index(annotationsdata.col_id)
+        df = df[df[annotationsdata.col_label].notna()]
+        col = df[annotationsdata.col_label]
+
+        # only elements existing in the dataset
+        common_id = [i for i in col.index if i in self.content.index]
+
+        # if needed, create the labels
+        for i in col.unique():
+            if i not in labels:
+                self.add_label(i, annotationsdata.scheme, user)
+                print("add label ", i)
+
+        # add annotations
+        for i, v in col.loc[common_id].items():
+            self.push_annotation(
+                str(i),
+                v,
+                annotationsdata.scheme,
+                user,
+                dataset,
+                "from file",
+                "from file",
+            )
+
+        if len(common_id) < len(df):
+            raise Exception(
+                f"Some elements annoted in the dataset where not added (index mismatch) or not in the trainset. \
+                    Number of elements added : {len(common_id)} (total annotated : {len(df)})"
+            )
+
+        return {"success": "Annotations added"}

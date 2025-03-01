@@ -1,26 +1,27 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
-import { DocPage } from '../components/DocPage';
-import { HomePage } from '../components/HomePage';
-import { NotFound } from '../components/NotFoundPage';
 import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
-import { ProjectExplorePage } from '../components/ProjectExplorePage';
-import { ProjectExportPage } from '../components/ProjectExportPage';
-import { GenPage } from '../components/ProjectGenPage';
-import { ProjectNewPage } from '../components/ProjectNewPage';
-import { ProjectPage } from '../components/ProjectPage';
-import { ProjectPreparePage } from '../components/ProjectPreparePage';
-import { ProjectTestPage } from '../components/ProjectTestPage';
-import { ProjectsPage } from '../components/ProjectsPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
+import { DocPage } from '../components/pages/DocPage';
+import { HomePage } from '../components/pages/HomePage';
 import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
+import { NotFound } from '../components/pages/NotFoundPage';
 import { ProjectPredictPage } from '../components/pages/PredictPage';
+import { ProjectExplorePage } from '../components/pages/ProjectExplorePage';
+import { ProjectExportPage } from '../components/pages/ProjectExportPage';
+import { GenPage } from '../components/pages/ProjectGenPage';
+import { ProjectNewPage } from '../components/pages/ProjectNewPage';
+import { ProjectPage } from '../components/pages/ProjectPage';
+import { ProjectPreparePage } from '../components/pages/ProjectPreparePage';
+import { ProjectTestPage } from '../components/pages/ProjectTestPage';
+import { ProjectsPage } from '../components/pages/ProjectsPage';
 import { TrainPage } from '../components/pages/TrainPage';
 import { UsersPage } from '../components/pages/UsersPage';
+import { RoleSelector } from '../core/RoleSelector';
 
 export function getRouter() {
   return createHashRouter([
@@ -61,19 +62,18 @@ export function getRouter() {
       ),
     },
     {
-      path: '/projects/new',
-      element: (
-        //AuthRequired makes sure that the user is currently authenticated before rendering this route page
-        <AuthRequired>
-          <ProjectNewPage />
-        </AuthRequired>
-      ),
-    },
-    {
       path: '/projects/',
       element: (
         <AuthRequired>
           <ProjectsPage />
+        </AuthRequired>
+      ),
+    },
+    {
+      path: '/projects/new',
+      element: (
+        <AuthRequired>
+          <ProjectNewPage />
         </AuthRequired>
       ),
     },
@@ -96,39 +96,83 @@ export function getRouter() {
         },
         {
           path: '/projects/:projectName/prepare/',
-          element: <ProjectPreparePage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <ProjectPreparePage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/explore',
-          element: <ProjectExplorePage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <ProjectExplorePage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/annotate/',
-          element: <ProjectAnnotationPage />,
+          element: (
+            <>
+              <ProjectAnnotationPage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/curate/',
-          element: <CuratePage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <CuratePage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/generate/',
-          element: <GenPage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <GenPage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/train/',
-          element: <TrainPage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <TrainPage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/test/',
-          element: <ProjectTestPage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <ProjectTestPage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/predict/',
-          element: <ProjectPredictPage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <ProjectPredictPage />
+            </>
+          ),
         },
         {
           path: '/projects/:projectName/export',
-          element: <ProjectExportPage />,
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <ProjectExportPage />
+            </>
+          ),
         },
       ],
     },

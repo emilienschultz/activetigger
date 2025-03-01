@@ -6,12 +6,16 @@ import { useNavigate } from 'react-router-dom';
 import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
+  AnnotationsDataModel,
   AvailableProjectsModel,
+  GenModel,
   LoginParams,
   ProjectDataModel,
   ProjectStateModel,
+  ProjectUpdateModel,
   ProjectionInStrictModel,
   SimpleModelModel,
+  SupportedAPI,
   TestSetDataModel,
   newBertModel,
 } from '../types';
@@ -197,9 +201,10 @@ export function useCreateTestSet() {
   const createTestSet = useCallback(
     async (projectSlug: string, testset: TestSetDataModel) => {
       // do the new projects POST call
-      const res = await api.POST('/projects/testset', {
+      const res = await api.POST('/projects/testset/{action}', {
         // POST has a body
         params: {
+          path: { action: 'create' },
           query: { project_slug: projectSlug },
         },
         body: testset,
@@ -213,6 +218,26 @@ export function useCreateTestSet() {
     [notify],
   );
   return createTestSet;
+}
+
+/**
+ * Drop test set
+ */
+export function useDropTestSet(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const dropTestSet = useCallback(async () => {
+    if (!projectSlug) return;
+    // do the new projects POST call
+    const res = await api.POST('/projects/testset/{action}', {
+      // POST has a body
+      params: {
+        path: { action: 'delete' },
+        query: { project_slug: projectSlug },
+      },
+    });
+    if (!res.error) notify({ type: 'success', message: 'Test data set dropped' });
+  }, [notify, projectSlug]);
+  return dropTestSet;
 }
 
 /**
@@ -328,7 +353,7 @@ export function useDeleteScheme(projectSlug: string, schemeName: string | null) 
           path: { action: 'delete' },
           query: { project_slug: projectSlug },
         },
-        body: { project_slug: projectSlug, name: schemeName, kind: null, labels: null },
+        body: { project_slug: projectSlug, name: schemeName, kind: '', labels: [] },
       });
       if (!res.error) notify({ type: 'success', message: 'Scheme deleted' });
     }
@@ -536,7 +561,12 @@ export function useAddAnnotation(
   dataset: string,
 ) {
   const addAnnotation = useCallback(
-    async (element_id: string, label: string | null, comment: string | null) => {
+    async (
+      element_id: string,
+      label: string | null,
+      comment: string | null,
+      selection: string | null,
+    ) => {
       // do the new projects POST call
       if (projectSlug && scheme) {
         await api.POST('/annotation/{action}', {
@@ -551,9 +581,9 @@ export function useAddAnnotation(
             scheme: scheme,
             dataset: dataset,
             comment: comment,
+            selection: selection,
           },
         });
-        //if (!res.error) notify({ type: 'success', message: 'Annotation added' });
 
         return true;
       }
@@ -757,7 +787,7 @@ export function useUsersAuth(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getProjectUsers = useAsyncMemo(async () => {
     if (projectSlug) {
-      const res = await api.GET('/auth/project', {
+      const res = await api.GET('/projects/auth', {
         params: { query: { project_slug: projectSlug } },
       });
       if (!res.error) return res.data.auth;
@@ -1033,7 +1063,7 @@ export function useModelInformations(
 export function useComputeModelPrediction(projectSlug: string | null, batchSize: number) {
   const { notify } = useNotifications();
   const computeModelPrediction = useCallback(
-    async (model_name: string, dataset: string) => {
+    async (model_name: string, dataset: string, scheme: string) => {
       if (projectSlug) {
         const res = await api.POST('/models/bert/predict', {
           params: {
@@ -1042,6 +1072,7 @@ export function useComputeModelPrediction(projectSlug: string | null, batchSize:
               model_name: model_name,
               dataset: dataset,
               batch_size: batchSize,
+              scheme: scheme,
             },
           },
         });
@@ -1238,7 +1269,7 @@ export function useGetModelUrl(projectSlug: string | null, model: string | null)
       });
 
       if (!res.error) {
-        return config.api.url + res.data;
+        return config.api.url + res.data.path;
       }
       return null;
     }
@@ -1380,8 +1411,18 @@ export function useGetProjectionData(
   return { projectionData: getAsyncMemoData(getProjectionData), reFetchProjectionData: reFetch };
 }
 
+/** get version number */
+export function useGetVersion() {
+  const getVersion = useAsyncMemo(async () => {
+    const res = await api.GET('/version', {});
+    if (!res.error) return res.data;
+    return null;
+  }, []);
+  return { version: getAsyncMemoData(getVersion) };
+}
+
 /**
- * Get queue
+ * Get server situation for a project
  */
 export function useGetServer(projectState: ProjectStateModel | null) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
@@ -1400,6 +1441,7 @@ export function useGetServer(projectState: ProjectStateModel | null) {
   const data = getAsyncMemoData(getServerState);
 
   return {
+    version: data?.version,
     queueState: data?.queue,
     activeProjects: data?.active_projects,
     gpu: data?.gpu['gpu_available'] ? data?.gpu : undefined,
@@ -1504,14 +1546,64 @@ export function useTestModel(
   return { testModel };
 }
 
+export function useGetGenModels() {
+  const { notify } = useNotifications();
+  const models = useCallback(async () => {
+    const res = await api.GET('/generate/models/available');
+    if (res.error) {
+      notify({ type: 'error', message: 'Could not fetch available models' });
+      return [];
+    } else return res.data;
+  }, [notify]);
+  return { models };
+}
+
+export async function getProjectGenModels(
+  project: string,
+): Promise<Array<GenModel & { api: string }>> {
+  const res = await api.GET(`/generate/models`, {
+    params: {
+      query: { project_slug: project },
+    },
+  });
+  if (res.error) {
+    console.error(res.error);
+    return [];
+  } else
+    return res.data.map((model) => ({
+      ...model,
+      // Transform null to undefined
+      endpoint: model.endpoint || undefined,
+      credentials: model.credentials || undefined,
+    }));
+}
+
+export async function createGenModel(
+  project: string,
+  model: Omit<GenModel & { api: SupportedAPI }, 'id'>,
+): Promise<number> {
+  const res = await api.POST(`/generate/models`, {
+    params: { query: { project_slug: project } },
+    body: model,
+  });
+  if (res.error) throw new Error(res.error.detail?.join() || 'Unable to create model');
+  else return res.data;
+}
+
+export async function deleteGenModel(project: string, modelId: number) {
+  const res = await api.DELETE(`/generate/models/{model_id}`, {
+    params: { path: { model_id: modelId }, query: { project_slug: project } },
+  });
+  if (res.error) console.error(res.error);
+}
+
 /**
  * Post generate data
  */
 export function useGenerate(
   projectSlug: string | null,
   currentScheme: string | null,
-  api_name: string | null,
-  endpoint: string | null,
+  modelId: number | null,
   n_batch: number | null,
   prompt: string | null,
   mode: string | null,
@@ -1519,17 +1611,16 @@ export function useGenerate(
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
-    if (projectSlug && api_name && endpoint && prompt && n_batch && currentScheme && mode) {
-      const res = await api.POST('/elements/generate/start', {
+    if (projectSlug && modelId && prompt && n_batch && currentScheme && mode) {
+      const res = await api.POST('/generate/start', {
         params: {
           query: {
             project_slug: projectSlug,
           },
         },
         body: {
-          api: api_name,
+          model_id: modelId,
           prompt: prompt,
-          endpoint: endpoint,
           n_batch: n_batch,
           token: token,
           scheme: currentScheme,
@@ -1540,7 +1631,7 @@ export function useGenerate(
       return true;
     }
     return null;
-  }, [projectSlug, notify, n_batch, token, endpoint, prompt, api_name, mode, currentScheme]);
+  }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);
 
   return { generate };
 }
@@ -1552,7 +1643,7 @@ export function useStopGenerate(projectSlug: string | null) {
   const { notify } = useNotifications();
   const stopGenerate = useCallback(async () => {
     if (projectSlug) {
-      const res = await api.POST('/elements/generate/stop', {
+      const res = await api.POST('/generate/stop', {
         params: {
           query: {
             project_slug: projectSlug,
@@ -1578,7 +1669,7 @@ export function useGeneratedElements(
 ) {
   const getGeneratedElements = useAsyncMemo(async () => {
     if (n_elements && project_slug) {
-      const res = await api.GET('/elements/generate/elements', {
+      const res = await api.GET('/generate/elements', {
         params: {
           query: {
             project_slug: project_slug,
@@ -1586,6 +1677,8 @@ export function useGeneratedElements(
           },
         },
       });
+      console.log('generate');
+      console.log(res);
       if (!res.error && res.data && 'items' in res.data) {
         return res.data.items;
       }
@@ -1651,12 +1744,7 @@ export function useGetActiveUsers() {
 
   const getActiveUsers = useAsyncMemo(async () => {
     const res = await api.GET('/users/recent', {});
-
-    //return res.data.params;
     return res.data;
-
-    // in this dependencies list we add projectSlug has a different API call will be made if it changes
-    // we also add the fetchTrigger state in the dependencies list to make sur that any change to this boolean triggers a new API call
   }, [fetchTrigger]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
@@ -1742,4 +1830,145 @@ export function useStopProcess() {
   );
 
   return { stopProcess };
+}
+
+/**
+ * Post annotation file
+ */
+export function usePostAnnotationsFile(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const postAnnotationsFile = useCallback(
+    async (annotationsset: AnnotationsDataModel) => {
+      if (!projectSlug) return;
+      const res = await api.POST('/annotation/file', {
+        params: {
+          query: { project_slug: projectSlug },
+        },
+        body: annotationsset,
+      });
+      if (!res.error) notify({ type: 'success', message: 'Annotations set uploaded' });
+      else
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+    },
+    [notify, projectSlug],
+  );
+  return postAnnotationsFile;
+}
+
+/**
+ * Post update project
+ */
+export function useUpdateProject(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const updateProject = useCallback(
+    async (formData: ProjectUpdateModel) => {
+      if (projectSlug) {
+        const res = await api.POST('/projects/update', {
+          params: {
+            query: { project_slug: projectSlug },
+          },
+          body: formData,
+        });
+        if (!res.error) notify({ type: 'success', message: 'Project updated' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return updateProject;
+}
+
+/**
+ * Get user statistics
+ * @param username
+ */
+export function useGetUserStatistics(username: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getUserStatistics = useAsyncMemo(async () => {
+    if (username) {
+      const res = await api.GET('/users/statistics', {
+        params: {
+          query: {
+            username: username,
+          },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { userStatistics: getAsyncMemoData(getUserStatistics), reFetchStatistics: reFetch };
+}
+
+/**
+ * Get prompts
+ */
+export function useGetPrompts(projectSlug: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getPrompts = useAsyncMemo(async () => {
+    if (projectSlug) {
+      const res = await api.GET('/generate/prompts', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+          },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { prompts: getAsyncMemoData(getPrompts), reFetchPrompts: reFetch };
+}
+
+/**
+ * Save prompts
+ */
+export function useSavePrompts(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const savePrompts = useCallback(
+    async (prompt: string | null) => {
+      if (projectSlug && prompt) {
+        const res = await api.POST('/generate/prompts/add', {
+          params: {
+            query: { project_slug: projectSlug },
+          },
+          body: { text: prompt },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Prompts saved' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return savePrompts;
+}
+
+/**
+ * Delete prompts
+ */
+export function useDeletePrompts(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const deletePrompts = useCallback(
+    async (prompt_id: string | null) => {
+      if (projectSlug && prompt_id) {
+        const res = await api.POST('/generate/prompts/delete', {
+          params: {
+            query: { project_slug: projectSlug, prompt_id: prompt_id },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Prompts deleted' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return deletePrompts;
 }

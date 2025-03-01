@@ -1,32 +1,17 @@
 import { pick } from 'lodash';
-import { FC, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { FaLock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 import Select from 'react-select';
-import {
-  DomainTuple,
-  VictoryAxis,
-  VictoryChart,
-  VictoryLegend,
-  VictoryScatter,
-  VictoryTheme,
-  VictoryTooltip,
-  VictoryZoomContainer,
-} from 'victory';
 
-import { LuZoomIn } from 'react-icons/lu';
 import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
-
-interface ZoomDomain {
-  x?: DomainTuple;
-  y?: DomainTuple;
-}
+import { ProjectionVizSigma } from './ProjectionVizSigma';
+import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
 const colormap = [
   '#1f77b4', // tab:blue
@@ -41,25 +26,29 @@ const colormap = [
   '#17becf', // tab:cyan
 ];
 
+interface ProjectionManagementProps {
+  projectName: string | null;
+  projectSlug?: string;
+  currentScheme: string | null;
+  availableFeatures: string[];
+}
+
 // define the component
-export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
-  currentElementId,
+export const ProjectionManagement: FC<ProjectionManagementProps> = ({
+  projectName,
+  currentScheme,
+  availableFeatures,
 }) => {
   // hook for all the parameters
   const {
-    appContext: { currentProject: project, currentScheme, currentProjection, selectionConfig },
+    appContext: { currentProject: project, currentProjection, selectionConfig },
     setAppContext,
   } = useAppContext();
   const navigate = useNavigate();
   const { notify } = useNotifications();
 
   const { authenticatedUser } = useAuth();
-  const { getElementById } = useGetElementById(
-    project?.params.project_slug || null,
-    currentScheme || null,
-  );
-
-  const projectName = project?.params.project_slug ? project?.params.project_slug : null;
+  const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -67,20 +56,8 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     currentScheme,
   );
 
-  const projectionDataFormated = projectionData
-    ? projectionData.x.map((value, index) => {
-        return {
-          x: value,
-          y: projectionData.y[index],
-          labels: projectionData.labels[index],
-          index: projectionData.index[index],
-        };
-      })
-    : [];
-
   // form management
-  const availableFeatures = project?.features.available ? project?.features.available : [];
-  const availableProjections = project?.projections.options ? project?.projections.options : null;
+  const availableProjections = useMemo(() => project?.projections, [project?.projections]);
 
   const { register, handleSubmit, watch, control } = useForm<ProjectionInStrictModel>({
     defaultValues: {
@@ -133,7 +110,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
   );
 
   useEffect(() => {
-    if (projectionData && !labelColorMapping) {
+    if (projectionData) {
       const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
       const labeledColors = uniqueLabels.reduce<Record<string, string>>(
         (acc, label, index: number) => {
@@ -144,16 +121,15 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
       );
       setLabelColorMapping(labeledColors);
     }
-  }, [projectionData, labelColorMapping]);
+  }, [projectionData]);
 
   // manage projection refresh (could be AMELIORATED)
   useEffect(() => {
     // case a first projection is added
     if (
-      project &&
       authenticatedUser &&
       !currentProjection &&
-      project?.projections.available[authenticatedUser?.username]
+      availableProjections?.available[authenticatedUser?.username]
     ) {
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
@@ -163,14 +139,14 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     if (
       authenticatedUser &&
       currentProjection &&
-      currentProjection != project?.projections.available[authenticatedUser?.username]
+      currentProjection != availableProjections?.available[authenticatedUser?.username]
     ) {
       console.log('Refetch projection data');
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
     }
   }, [
-    project,
+    availableProjections?.available,
     authenticatedUser,
     currentProjection,
     reFetchProjectionData,
@@ -178,158 +154,56 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
     setAppContext,
   ]);
 
-  // zoom management
-  const initialZoomDomain = {
-    x: [-1.5, 1.5] as DomainTuple,
-    y: [-1.5, 1.5] as DomainTuple,
-  };
-  const step = 0.2;
-
-  const [zoomDomain, setZoomDomain] = useState<{ x?: DomainTuple; y?: DomainTuple } | null>(
-    initialZoomDomain,
-  );
-
-  const handleZoom = (domain: ZoomDomain) => {
-    if (!zoomDomain) setZoomDomain(initialZoomDomain);
-    setZoomDomain(domain);
-
-    if (domain.x && domain.y) {
-      setAppContext((prev) => ({
-        ...prev,
-        selectionConfig: {
-          ...selectionConfig,
-          frame: ([] as number[]).concat(
-            Object.values(domain.x || []),
-            Object.values(domain.y || []),
-          ),
-        },
-      }));
-    }
-  };
-  const handleZoomIn = () => {
-    if (zoomDomain && zoomDomain.x && zoomDomain.y) {
-      setZoomDomain({
-        x: [Number(zoomDomain.x[0]) + step, Number(zoomDomain.x[1]) - step],
-        y: [Number(zoomDomain.y[0]) + step, Number(zoomDomain.y[1]) - step],
-      });
-    }
-  };
-  const resetZoom = () => {
-    setZoomDomain(initialZoomDomain);
-  };
-
   // element to display
   const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
+  const setSelectedId = useCallback(
+    (id?: string) => {
+      if (id)
+        getElementById(id, 'train').then((element) => {
+          setSelectedElement(element || null);
+        });
+      else setSelectedElement(null);
+    },
+    [getElementById, setSelectedElement],
+  );
 
-  //  console.log(project);
+  // transform frame type to bbox type
+  const frameAsBbox: MarqueBoundingBox | undefined = useMemo(
+    () =>
+      selectionConfig.frame
+        ? {
+            x: { min: selectionConfig.frame[0], max: selectionConfig.frame[1] },
+            y: { min: selectionConfig.frame[2], max: selectionConfig.frame[3] },
+          }
+        : undefined,
+    [selectionConfig.frame],
+  );
 
   return (
     <div>
       {projectionData && labelColorMapping && (
-        <div className="row align-items-start">
-          <div className="col-8">
-            <div className="d-flex align-items-center justify-content-center">
-              <label className="d-flex align-items-center mx-4" style={{ display: 'block' }}>
-                <input
-                  type="checkbox"
-                  checked={selectionConfig.frameSelection}
-                  className="mx-2"
-                  onChange={(_) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      selectionConfig: {
-                        ...selectionConfig,
-                        frameSelection: !selectionConfig.frameSelection,
-                      },
-                    }));
-                    // console.log(selectionConfig.frameSelection);
-                  }}
-                />
-                <FaLock />
-                {/* Use visualisation frame to lock the selection */}
-              </label>
-              <button onClick={handleZoomIn} className="btn">
-                <LuZoomIn />
-              </button>
-              <button onClick={resetZoom}>Reset zoom</button>
-            </div>
-            {
-              <VictoryChart
-                theme={VictoryTheme.material}
-                domain={initialZoomDomain}
-                containerComponent={
-                  <VictoryZoomContainer
-                    zoomDomain={zoomDomain || initialZoomDomain}
-                    onZoomDomainChange={handleZoom}
-                  />
-                }
-                height={300}
-                width={300}
-              >
-                <VictoryAxis
-                  style={{
-                    axis: { stroke: 'transparent' },
-                    ticks: { stroke: 'transparent' },
-                    tickLabels: { fill: 'transparent' },
-                  }}
-                />
-                <VictoryScatter
-                  style={{
-                    data: {
-                      fill: ({ datum }) =>
-                        datum.index === currentElementId
-                          ? 'black'
-                          : labelColorMapping[datum.labels],
-                      opacity: ({ datum }) => (datum.index === currentElementId ? 1 : 0.5),
-                      cursor: 'pointer',
-                      strokeWidth: 0,
-                    },
-                  }}
-                  size={({ datum }) => (datum.index === currentElementId ? 5 : 2)}
-                  labels={({ datum }) => datum.index}
-                  labelComponent={
-                    <VictoryTooltip style={{ fontSize: 10 }} flyoutStyle={{ fill: 'white' }} />
-                  }
-                  data={projectionDataFormated}
-                  events={[
-                    {
-                      target: 'data',
-                      eventHandlers: {
-                        onClick: (_, props) => {
-                          const { datum } = props;
-                          getElementById(datum.index, 'train').then((element) => {
-                            setSelectedElement(element || null);
-                          });
-                        },
-                      },
-                    },
-                  ]}
-                  animate={false}
-                />
-
-                <VictoryLegend
-                  x={0}
-                  y={60}
-                  title="Legend"
-                  centerTitle
-                  orientation="vertical"
-                  gutter={10}
-                  style={{
-                    border: { stroke: 'black' },
-                    title: { fontSize: 5 },
-                    labels: { fontSize: 5 },
-                  }}
-                  data={Object.keys(labelColorMapping).map((label) => ({
-                    name: label,
-                    symbol: { fill: labelColorMapping[label] },
-                  }))}
-                />
-              </VictoryChart>
-            }
-          </div>
-          <div className="col-4">
+        <div className="row align-items-start m-0" style={{ height: '500px' }}>
+          <ProjectionVizSigma
+            className="col-8 border p-0 h-100"
+            data={projectionData}
+            //selection
+            selectedId={selectedElement?.element_id}
+            setSelectedId={setSelectedId}
+            frameBbox={frameAsBbox}
+            setFrameBbox={(bbox?: MarqueBoundingBox) => {
+              setAppContext((prev) => ({
+                ...prev,
+                selectionConfig: {
+                  ...selectionConfig,
+                  frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                },
+              }));
+            }}
+            labelColorMapping={labelColorMapping}
+          />
+          <div className="col-4 overflow-y-auto h-100">
             {selectedElement && (
-              <div className="mt-5">
+              <div>
                 Element:{' '}
                 <div className="badge bg-light text-dark">{selectedElement.element_id}</div>
                 <div className="mt-2">{selectedElement.text}</div>
@@ -353,7 +227,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
         <label htmlFor="model">Select a model</label>
         <select id="model" {...register('method')}>
           <option value=""></option>
-          {Object.keys(availableProjections ? availableProjections : []).map((e) => (
+          {Object.keys(availableProjections?.options || {}).map((e) => (
             <option key={e} value={e}>
               {e}
             </option>
@@ -376,7 +250,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
             )}
           />
         </div>
-        {availableProjections && selectedMethod == 'tsne' && (
+        {availableProjections?.options && selectedMethod == 'tsne' && (
           <div>
             <label htmlFor="perplexity">perplexity</label>
             <input
@@ -399,7 +273,7 @@ export const ProjectionManagement: FC<{ currentElementId: string | null }> = ({
             </select>
           </div>
         )}
-        {availableProjections && selectedMethod == 'umap' && (
+        {availableProjections?.options && selectedMethod == 'umap' && (
           <div>
             <label htmlFor="n_neighbors">n_neighbors</label>
             <input

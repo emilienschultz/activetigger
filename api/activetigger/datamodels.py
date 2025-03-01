@@ -1,8 +1,10 @@
+import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Literal, Optional
 
-from pydantic import BaseModel
+from pandas import DataFrame
+from pydantic import BaseModel, ConfigDict  # for dataframe
 
 # Data model to use of the API
 
@@ -47,6 +49,14 @@ class ProjectDataModel(BaseProjectModel):
     """
 
     csv: str
+
+
+class AnnotationsDataModel(BaseModel):
+    col_id: str
+    col_label: str
+    scheme: str
+    csv: str
+    filename: str | None = None
 
 
 class TestSetDataModel(BaseModel):
@@ -147,6 +157,7 @@ class AnnotationModel(BaseModel):
     label: str | None
     dataset: str | None = "train"
     comment: str | None = None
+    selection: str | None = None
 
 
 class TableAnnotationsModel(BaseModel):
@@ -165,8 +176,8 @@ class SchemeModel(BaseModel):
 
     project_slug: str
     name: str
-    kind: str | None = "multiclass"
-    labels: list[str] | None = None
+    kind: str = "multiclass"
+    labels: list[str] = []
 
 
 class RegexModel(BaseModel):
@@ -199,23 +210,6 @@ class SimpleModelModel(BaseModel):
     dichotomize: str | None = None
 
 
-class SimpleModelOutModel(BaseModel):
-    """
-    Trained simplemodel
-    """
-
-    features: list
-    model: str
-    params: (
-        dict[str, str | float | bool | None]
-        | dict[str, dict[str, str | float | bool | None]]
-        | None
-    )
-    scheme: str
-    username: str
-    statistics: dict
-
-
 class BertModelParametersModel(BaseModel):
     """
     Parameters for bertmodel training
@@ -230,6 +224,22 @@ class BertModelParametersModel(BaseModel):
     eval: int = 10
     gpu: bool = False
     adapt: bool = True
+
+
+class BertModelParametersDbModel(BertModelParametersModel):
+    predicted: bool = False
+    compressed: bool = False
+
+
+class BertParams(BaseModel):
+    batchsize: int
+    gradacc: float
+    epochs: int
+    lrate: float
+    wdecay: float
+    best: bool
+    eval: int
+    adapt: bool
 
 
 class BertModelModel(BaseModel):
@@ -336,32 +346,97 @@ class LassoParams(BaseModel):
 class Multi_naivebayesParams(BaseModel):
     alpha: float
     fit_prior: bool = True
-    class_prior: str | None | None = None
+    class_prior: str | None = None
 
 
-class BertParams(BaseModel):
-    batchsize: int
-    gradacc: float
-    epochs: int
-    lrate: float
-    wdecay: float
-    best: bool
-    eval: int
-    adapt: bool
+class GenerationCreationModel(BaseModel):
+    """
+    GenAI model used in generation
+    """
+
+    slug: str
+    api: str
+    name: str
+    endpoint: str | None = None
+    credentials: str | None = None
 
 
-class GenerateModel(BaseModel):
+class GenerationModel(GenerationCreationModel):
+    """
+    GenAI model used in generation
+    """
+
+    id: int
+
+
+class GenerationAvailableModel(BaseModel):
+    """
+    GenAI models available for generation
+    """
+
+    slug: str
+    api: str
+    name: str
+
+
+class GenerationModelApi(BaseModel):
+    """
+    GenAI API available for generation
+    """
+
+    name: str
+    models: list[GenerationAvailableModel]
+
+
+class GenerationRequest(BaseModel):
     """
     To start a generating prompt
     """
 
-    api: str
-    endpoint: str
+    model_id: int
     token: str | None = None
     prompt: str
     n_batch: int = 1
     scheme: str
     mode: str = "all"
+
+
+class UserComputing(BaseModel):
+    user: str
+    unique_id: str
+    time: datetime.datetime
+    kind: str
+
+
+class UserGenerationComputing(UserComputing):
+    kind: Literal["generation"]
+    project: str
+    number: int
+    model_id: int
+
+
+class UserFeatureComputing(UserComputing):
+    kind: Literal["feature"]
+    name: str
+    type: str
+    parameters: dict
+
+
+class UserModelComputing(UserComputing):
+    kind: Literal["train_bert", "predict_bert", "simplemodel", "bert"]
+    model: Any  # TODO: Type it with an abstract model interface
+    model_name: str
+    status: Literal["training", "testing", "predicting"]
+    scheme: Optional[str] = None
+    dataset: Optional[str] = None
+    get_training_progress: Optional[Callable[[], float]] = None
+
+
+class UserProjectionComputing(UserComputing):
+    kind: Literal["projection"]
+    name: str
+    method: str
+    params: ProjectionInStrictModel
 
 
 class TableOutModel(BaseModel):
@@ -454,7 +529,7 @@ class ProjectAuthsModel(BaseModel):
     Auth description for a project
     """
 
-    auth: dict[str, Any]
+    auth: dict[str, str]
 
 
 class WaitingModel(BaseModel):
@@ -492,14 +567,128 @@ class AuthActions(StrEnum):
 
 
 class TableBatch(BaseModel):
-    batch: Any
+    batch: DataFrame
     total: int
     min: int
     max: int
-    filter: str
+    filter: str | None
+
+    class Config:
+        arbitrary_types_allowed: bool = (
+            True  # Allow DataFrame type but switches off Pydantic here
+        )
 
 
 class CodebookModel(BaseModel):
     content: str
     scheme: str
-    time: str | None = None
+    time: str
+
+
+class GenerationResult(BaseModel):
+    user: str
+    project_slug: str
+    model_id: int
+    element_id: str
+    prompt: str
+    answer: str
+
+
+class ServerStateModel(BaseModel):
+    version: str
+    queue: dict[str, dict[str, str | None]]
+    active_projects: dict[Any, list[dict[str, Any]]]
+    gpu: dict[str, Any]
+    cpu: dict
+    memory: dict
+    disk: dict
+
+
+class StaticFileModel(BaseModel):
+    name: str
+    path: str
+
+
+class FeatureDescriptionModel(BaseModel):
+    name: str
+    parameters: dict[str, Any]
+    user: str
+    time: str
+    kind: str
+    cols: list[str]
+
+
+class MLStatisticsModel(BaseModel):
+    f1_label: dict[str, float] | None = None
+    precision_label: dict[str, float] | None = None
+    recall_label: dict[str, float] | None = None
+    f1_weighted: float | None = None
+    f1_micro: float | None = None
+    f1_macro: float | None = None
+    accuracy: float | dict[str, float] | None = None
+    precision: float | dict[str, float] | None = None
+    confusion_matrix: list[list[int]] | None = None
+    false_predictions: dict[str, Any] | list[Any] | None = None
+
+
+class FitModelResults(BaseModel):
+    model: Any
+    proba: DataFrame
+    statistics: MLStatisticsModel
+    cv10: MLStatisticsModel
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class SimpleModelOutModel(BaseModel):
+    """
+    Trained simplemodel
+    """
+
+    features: list
+    model: str
+    params: (
+        dict[str, str | float | bool | None]
+        | dict[str, dict[str, str | float | bool | None]]
+        | None
+    )
+    scheme: str
+    username: str
+    statistics: MLStatisticsModel
+    statistics_cv10: MLStatisticsModel
+
+
+class ReturnTaskPredictModel(BaseModel):
+    path: str
+    metrics: MLStatisticsModel | None = None
+
+
+class BertModelInformationsModel(BaseModel):
+    params: dict | None = None
+    loss: dict | None = None
+    train_scores: dict | None = None
+    test_scores: dict | None = None
+
+
+class ProjectUpdateModel(BaseModel):
+    project_name: str | None = None
+    language: str | None = None
+    cols_text: list[str] | None = None
+    cols_context: list[str] | None = None
+    add_n_train: int | None = None
+
+
+class UserStatistics(BaseModel):
+    username: str
+    projects: dict[str, str]
+    # last_connexion
+    # last_actions
+
+
+class PromptInputModel(BaseModel):
+    text: str
+
+
+class PromptModel(BaseModel):
+    id: int
+    text: str
+    parameters: dict[str, Any]

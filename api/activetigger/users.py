@@ -2,11 +2,10 @@ import logging
 import os
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import]
 
-from activetigger.datamodels import UserInDBModel
+from activetigger.datamodels import UserInDBModel, UserStatistics
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.models import Users as UserEntity
 from activetigger.functions import compare_to_hash, get_hash
 
 
@@ -40,12 +39,12 @@ class Users:
             # rename the file
             os.rename("add_users.yaml", "add_users_processed.yaml")
 
-    def get_project_auth(self, project_slug: str) -> dict[UserEntity, str]:
+    def get_project_auth(self, project_slug: str) -> dict[str, str]:
         """
         Get user auth for a project
         """
-        auth = self.db_manager.projects_service.get_project_auth(project_slug)
-        return auth
+        print("function")
+        return self.db_manager.projects_service.get_project_auth(project_slug)
 
     def set_auth(self, username: str, project_slug: str, status: str) -> None:
         """
@@ -85,16 +84,16 @@ class Users:
             )
         return auth
 
-    def existing_users(self, username: str = "root") -> dict:
+    def existing_users(self, username: str = "root", active: bool = True) -> dict:
         """
         Get existing users which have been created by one user
         (except root which can't be modified)
         TODO : better rules
         """
         if username == "root":
-            users = self.db_manager.users_service.get_users_created_by("all")
+            users = self.db_manager.users_service.get_users_created_by("all", active)
         else:
-            users = self.db_manager.users_service.get_users_created_by(username)
+            users = self.db_manager.users_service.get_users_created_by(username, active)
         return users
 
     def add_user(
@@ -110,8 +109,8 @@ class Users:
         Comments:
             Default, users are managers
         """
-        # test if the user doesn't exist
-        if name in self.existing_users():
+        # test if the user doesn't exist, even among deactivated users
+        if name in self.existing_users(active=False):
             raise Exception("Username already exists")
         hash_pwd = get_hash(password)
         self.db_manager.users_service.add_user(
@@ -139,10 +138,10 @@ class Users:
 
     def get_user(self, name: str) -> UserInDBModel:
         """
-        Get user from database
+        Get active user from database
         """
         if name not in self.existing_users():
-            raise Exception("Username doesn't exist")
+            raise Exception("Username doesn't exist or is deactivated")
         user = self.db_manager.users_service.get_user(name)
         return UserInDBModel(
             username=name, hashed_password=user.key, status=user.description
@@ -180,3 +179,13 @@ class Users:
         hash_pwd = get_hash(password1)
         self.db_manager.users_service.change_password(username, hash_pwd.decode("utf8"))
         return None
+
+    def get_statistics(self, username: str) -> UserStatistics:
+        """
+        Get statistics for specific user
+        """
+        try:
+            projects = {i[0]: i[1] for i in self.get_auth_projects(username)}
+            return UserStatistics(username=username, projects=projects)
+        except Exception as e:
+            raise Exception(f"Error in getting statistics for {username}") from e

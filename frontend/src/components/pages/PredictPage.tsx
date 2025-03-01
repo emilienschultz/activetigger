@@ -23,7 +23,6 @@ export const ProjectPredictPage: FC = () => {
   const { stopTraining } = useStopTrainBertModel(projectSlug || null);
 
   // available labels from context
-
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
 
@@ -75,7 +74,7 @@ export const ProjectPredictPage: FC = () => {
             {project?.bertmodels.training &&
               Object.keys(project.bertmodels.training).length > 0 && (
                 <div className="mt-3">
-                  Current training:
+                  Current process:
                   <ul>
                     {Object.entries(
                       project?.bertmodels.training as Record<
@@ -93,39 +92,6 @@ export const ProjectPredictPage: FC = () => {
                   </ul>
                 </div>
               )}
-
-            {isComputing && (
-              <div>
-                <button
-                  key="stop"
-                  className="btn btn-primary mt-3 d-flex align-items-center"
-                  onClick={stopTraining}
-                >
-                  <PulseLoader color={'white'} /> Stop current process
-                </button>
-              </div>
-            )}
-
-            {currentModel && (
-              <div>
-                {model && (
-                  <div>
-                    {availablePrediction ? (
-                      <div className="explanations">Prediction computed, you can export it</div>
-                    ) : isComputing ? (
-                      <div></div>
-                    ) : (
-                      <button
-                        className="btn btn-info m-4"
-                        onClick={() => computeModelPrediction(currentModel, 'all')}
-                      >
-                        Launch prediction complete dataset
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
             <div className="d-flex align-items-center">
               <label>Batch size</label>
               <a className="batch">
@@ -142,6 +108,40 @@ export const ProjectPredictPage: FC = () => {
                 onChange={(e) => setBatchSize(Number(e.target.value))}
               />
             </div>
+            {isComputing && (
+              <div>
+                <button
+                  key="stop"
+                  className="btn btn-primary mt-3 d-flex align-items-center"
+                  onClick={stopTraining}
+                >
+                  <PulseLoader color={'white'} /> Stop current process
+                </button>
+              </div>
+            )}
+
+            {currentModel && currentScheme && (
+              <div>
+                {model && (
+                  <div>
+                    {availablePrediction ? (
+                      <div className="alert alert-success m-4">
+                        Prediction computed for this model, you can export it
+                      </div>
+                    ) : isComputing ? (
+                      <div></div>
+                    ) : (
+                      <button
+                        className="btn btn-info m-4"
+                        onClick={() => computeModelPrediction(currentModel, 'all', currentScheme)}
+                      >
+                        Launch prediction complete dataset
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

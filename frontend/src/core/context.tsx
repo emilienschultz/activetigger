@@ -1,4 +1,12 @@
-import { FC, PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
+import {
+  FC,
+  PropsWithChildren,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 import {
   DisplayConfig,
@@ -19,6 +27,7 @@ export type AppContextValue = {
   currentProjection?: string;
   freqRefreshSimpleModel: number; // freq to refresh active learning model
   history: string[]; // element annotated
+  selectionHistory: Record<string, string>; // history of the selection
   reFetchCurrentProject?: () => void; // update the state of the project
   phase: string;
   isComputing: boolean;
@@ -44,6 +53,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   },
   generateConfig: { n_batch: 1, selection_mode: 'all' },
   history: [],
+  selectionHistory: {},
   freqRefreshSimpleModel: 0,
   phase: 'train',
   isComputing: false,
@@ -71,9 +81,9 @@ const _useAppContext = () => {
   }, [appContext]);
 
   // Function to reset the context
-  const resetContext = () => {
+  const resetContext = useCallback(() => {
     setAppContext(DEFAULT_CONTEXT);
-  };
+  }, []);
 
   return {
     appContext,

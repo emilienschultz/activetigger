@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from datetime import datetime
@@ -5,12 +6,15 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import pyarrow.parquet as pq
+import pyarrow.parquet as pq  # type: ignore[import]
 from pandas import DataFrame, Series
 
+from activetigger.datamodels import FeatureDescriptionModel, UserFeatureComputing
 from activetigger.db.projects import ProjectsService
-from activetigger.functions import to_dtm, to_fasttext, to_sbert
 from activetigger.queue import Queue
+from activetigger.tasks.compute_dfm import ComputeDfm
+from activetigger.tasks.compute_fasttext import ComputeFasttext
+from activetigger.tasks.compute_sbert import ComputeSbert
 
 # Use parquet files to save features
 # In the future : database ?
@@ -26,14 +30,14 @@ class Features:
     """
 
     project_slug: str
-    path_train: Path
+    path_features: Path
     path_model: Path
     path_all: Path
     queue: Queue
+    computing: list
     informations: dict
     content: DataFrame
     map: dict
-    computing: dict
     options: dict
     lang: str
     projects_service: ProjectsService
@@ -42,11 +46,11 @@ class Features:
     def __init__(
         self,
         project_slug: str,
-        path_train: Path,
+        path_features: Path,
         path_all: Path,
         models_path: Path,
         queue: Any,
-        computing: dict,
+        computing: list[UserFeatureComputing],
         db_manager,
         lang: str,
     ) -> None:
@@ -55,7 +59,7 @@ class Features:
         """
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
-        self.path_train = path_train
+        self.path_features = path_features
         self.path_all = path_all
         self.path_models = models_path
         self.queue = queue
@@ -90,7 +94,7 @@ class Features:
         return f"Available features : {self.map}"
 
     def get_map(self) -> tuple[dict, int]:
-        parquet_file = pq.ParquetFile(self.path_train)
+        parquet_file = pq.ParquetFile(self.path_features)
         column_names = parquet_file.schema.names
 
         def find_strings_with_pattern(strings, pattern):
@@ -109,7 +113,7 @@ class Features:
         name: str,
         kind: str,
         username: str,
-        parameters: dict,
+        parameters: dict[str, Any],
         new_content: DataFrame | Series,
     ) -> dict:
         """
@@ -117,7 +121,7 @@ class Features:
         """
         # test name
         if name in self.map:
-            return {"error": "feature name already exists for this project"}
+            raise Exception("Feature already exists")
 
         # test length
         if len(new_content) != self.n:
@@ -131,7 +135,7 @@ class Features:
         new_content.columns = [f"{name}__{i}" for i in new_content.columns]
 
         # read data, add the feature to the dataset and save
-        content = pd.read_parquet(self.path_train)
+        content = pd.read_parquet(self.path_features)
         content = pd.concat(
             [
                 content[[i for i in content.columns if i not in new_content.columns]],
@@ -139,7 +143,7 @@ class Features:
             ],
             axis=1,
         )
-        content.to_parquet(self.path_train)
+        content.to_parquet(self.path_features)
         del content
 
         # add informations to database
@@ -162,16 +166,16 @@ class Features:
         Delete feature
         """
         if name not in self.map:
-            return {"error": "feature doesn't exist in mapping"}
+            raise Exception("Feature doesn't exist")
 
         if self.projects_service.get_feature(self.project_slug, name) is None:
-            return {"error": "feature doesn't exist in database"}
+            raise Exception("Feature doesn't exist in database")
 
         col = self.get([name])
         # read data, delete columns and save
-        content = pd.read_parquet(self.path_train)
+        content = pd.read_parquet(self.path_features)
         content[[i for i in content.columns if i not in col]].to_parquet(
-            self.path_train
+            self.path_features
         )
         del content
 
@@ -180,8 +184,6 @@ class Features:
 
         # refresh the map
         self.map = self.get_map()[0]
-
-        return {"success": "feature deleted"}
 
     def get(self, features: list | str = "all"):
         """
@@ -205,53 +207,56 @@ class Features:
 
         # load only needed data from file
         print("read parquet")
-        data = pd.read_parquet(self.path_train, columns=cols)
+        data = pd.read_parquet(self.path_features, columns=cols)
 
         return data
 
     def info(self, name: str):
         feature = self.projects_service.get_feature(self.project_slug, name)
         if feature is None:
-            return {"error": "feature doesn't exist in database"}
+            raise Exception("Feature doesn't exist in database")
         return {
             "time": feature.time,
             "name": name,
             "kind": feature.kind,
             "username": feature.user,
             "parameters": feature.parameters,
-            "columns": feature.data,
+            "columns": json.loads(feature.data),
         }
 
-    def get_available(self):
+    def get_available(self) -> dict[str, FeatureDescriptionModel]:
         """
         Informations on features + update
         Comments:
             Maybe not the best solution
             Database ? How to avoid a loop ...
         """
-        features = self.projects_service.get_project_features(self.project_slug)
-        return features
+        return self.projects_service.get_project_features(self.project_slug)
 
-    def get_column_raw(self, column_name: str, index: str = "train") -> dict:
+    def get_column_raw(self, column_name: str, index: str = "train") -> Series:
         """
         Get column raw dataset
         """
         df = pd.read_parquet(self.path_all)
-        df_train = pd.read_parquet(self.path_train, columns=[])  # only the index
+        df_train = pd.read_parquet(self.path_features, columns=[])  # only the index
         if column_name not in list(df.columns):
-            return {"error": "Column doesn't exist"}
+            raise Exception("Column doesn't exist")
         if index == "train":  # filter only train id
-            return {"success": df.loc[df_train.index][column_name]}
+            return df.loc[df_train.index][column_name]
         elif index == "all":
-            return {"success": df[column_name]}
+            return df[column_name]
         else:
-            return {"error": "Wrong index"}
+            raise Exception("Index not recognized")
 
     def current_user_processes(self, user: str):
-        return [e for e in self.computing if e["user"] == user]
+        return [e for e in self.computing if e.user == user]
 
-    def current_computing(self):
-        return [e["name"] for e in self.computing if e["kind"] == "feature"]
+    def current_computing(self) -> dict[str, dict[str, Any]]:
+        return {
+            e.name: {"progress": self.computing_progress(e.unique_id), "name": e.name}
+            for e in self.computing
+            if e.kind == "feature"
+        }
 
     def compute(
         self, df: pd.Series, name: str, kind: str, parameters: dict, username: str
@@ -265,7 +270,8 @@ class Features:
         if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
             raise ValueError("Kind not recognized")
 
-        # different types of features
+        # features without queue
+
         if kind == "regex":
             if "value" not in parameters:
                 raise ValueError("No value for regex")
@@ -277,23 +283,20 @@ class Features:
             r = self.add(regex_name, kind, username, parameters, f)
             return {"success": "regex added"}
 
-        elif kind == "dataset":
+        if kind == "dataset":
             # get the raw column for the train set
-            r = self.get_column_raw(parameters["dataset_col"])
-            if "error" in r:
-                return r
-            column = r["success"]
+            column = self.get_column_raw(parameters["dataset_col"])
 
             # convert the column to a specific format
             if len(column.dropna()) != len(column):
-                return {"error": "Column contains null values"}
+                raise ValueError("Column contains null values")
             if parameters["dataset_type"] == "Numeric":
                 try:
                     column = column.apply(float)
                 except Exception:
-                    return {
-                        "error": "The column can't be transform into numerical feature"
-                    }
+                    raise Exception(
+                        "The column can't be transform into numerical feature"
+                    )
             else:
                 column = column.apply(str)
 
@@ -302,51 +305,62 @@ class Features:
             self.add(dataset_name, kind, username, parameters, column)
             return {"success": "Feature added"}
 
-        elif kind == "sbert":
-            args = {"texts": df, "model": "all-mpnet-base-v2"}
-            func = to_sbert
-        elif kind == "fasttext":
-            args = {
-                "texts": df,
-                "language": self.lang,
-                "path_models": self.path_models,
-                "model": parameters["model"],
-            }
+        # features with queue
+
+        unique_id = None
+
+        if kind == "sbert":
+            unique_id = self.queue.add_task(
+                "feature",
+                self.project_slug,
+                ComputeSbert(texts=df, model="all-mpnet-base-v2"),
+            )
+
+        if kind == "fasttext":
+            unique_id = self.queue.add_task(
+                "feature",
+                self.project_slug,
+                ComputeFasttext(
+                    texts=df,
+                    language=self.lang,
+                    path_models=self.path_models,
+                    model=parameters["model"],
+                ),
+            )
             if parameters["model"] is not None and parameters["model"] != "":
                 name = f"{name}_{parameters['model']}"
-            func = to_fasttext
 
-        elif kind == "dfm":
+        if kind == "dfm":
             args = parameters.copy()
             args["texts"] = df
             args["language"] = self.lang
-            func = to_dtm
+            unique_id = self.queue.add_task(
+                "feature", self.project_slug, ComputeDfm(**args)
+            )
+            del args
 
-        # add the computation to queue
-        unique_id = self.queue.add("feature", self.project_slug, func, args)
-        if unique_id == "error":
-            raise ValueError("Error in adding in the queue")
-        print(
-            {
-                "unique_id": unique_id,
-                "kind": "feature",
-                "parameters": parameters,
-                "type": kind,
-                "user": username,
-                "name": name,
-                "time": datetime.now(),
-            }
-        )
-        self.computing.append(
-            {
-                "unique_id": unique_id,
-                "kind": "feature",
-                "parameters": parameters,
-                "type": kind,
-                "user": username,
-                "name": name,
-                "time": datetime.now(),
-            }
-        )
+        if unique_id:
+            self.computing.append(
+                UserFeatureComputing(
+                    unique_id=unique_id,
+                    kind="feature",
+                    parameters=parameters,
+                    type=kind,
+                    user=username,
+                    name=name,
+                    time=datetime.now(),
+                )
+            )
+            return {"success": "Feature in training"}
+        raise ValueError("Error in the process")
 
-        return {"success": "Feature in training"}
+    def computing_progress(self, unique_id: str) -> str | None:
+        """
+        Get the progress of a computing feature
+        """
+        try:
+            with open(self.path_all.parent.joinpath(unique_id), "r") as f:
+                r = f.read()
+            return r
+        except Exception:
+            return None

@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
+import { FaPlusCircle } from 'react-icons/fa';
 import Select from 'react-select';
 import {
   useAddUserAuthProject,
@@ -33,6 +34,9 @@ export const UsersPage: FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [currentAuth, setCurrentAuth] = useState<string | null>(null);
 
+  // display boxes
+  const [showCreateUser, setShowCreateUser] = useState<boolean>(false);
+
   const { authUsers, reFetchUsersAuth } = useUsersAuth(currentProjectSlug);
   const { users, reFetchUsers } = useUsers();
 
@@ -46,6 +50,7 @@ export const UsersPage: FC = () => {
   const onSubmit: SubmitHandler<newUser> = async (data) => {
     await createUser(data.username, data.password, data.status, data.mail);
     reset();
+    setShowCreateUser(false);
   };
 
   const userOptions = users
@@ -66,9 +71,7 @@ export const UsersPage: FC = () => {
         <div className="row">
           <div className="col-1"></div>
           <div className="col-8">
-            <h2 className="subsection">Manage users and rights</h2>
-
-            <div className="explanations">Select a user to attribute rights</div>
+            <div className="explanations">Manage users and rights</div>
 
             <div className="d-flex align-items-center">
               <Select
@@ -82,6 +85,15 @@ export const UsersPage: FC = () => {
                 placeholder="Select a user"
               />
               <button
+                className="btn btn p-0 m-2"
+                onClick={() => {
+                  setShowCreateUser(!showCreateUser);
+                  reFetchUsers();
+                }}
+              >
+                <FaPlusCircle size={25} />
+              </button>
+              <button
                 className="btn btn p-0"
                 onClick={() => {
                   deleteUser(currentUser);
@@ -91,9 +103,9 @@ export const UsersPage: FC = () => {
                 <MdOutlineDeleteOutline size={30} />
               </button>
             </div>
-            {authenticatedUser?.username === 'root' && (
-              <details className="custom-details">
-                <summary>Add user</summary>
+            {authenticatedUser?.username === 'root' && showCreateUser && (
+              <div className="alert alert-light">
+                <span className="explanations">Create a new user</span>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <input
                     className="form-control me-2 mt-2"
@@ -119,85 +131,84 @@ export const UsersPage: FC = () => {
                   </select>
                   <button className="btn btn-primary me-2 mt-2">Add user</button>
                 </form>
-              </details>
+              </div>
             )}
-            <span className="explanations">Select the project</span>
-
-            <br></br>
-            {
-              // <select
-              //   className="form-select"
-              //   onChange={(e) => {
-              //     setCurrentProjectSlug(e.target.value);
-              //   }}
-              // >
-              //   <option></option>
-              //   {(projects || []).map((project) => (
-              //     <option key={project.parameters.project_slug}>
-              //       {project.parameters.project_slug}
-              //     </option>
-              //   ))}
-              // </select>
-              <Select
-                id="select-project"
-                className="form-select"
-                options={projectOptions}
-                onChange={(selectedOption) => {
-                  setCurrentProjectSlug(selectedOption ? selectedOption.value : null);
-                }}
-                isClearable
-                placeholder="Select a project"
-              />
-            }
-            <div>
-              {authUsers ? (
-                <table className="table-auth">
-                  <tbody>
-                    <tr>
-                      <th>User</th>
-                      <th>Auth</th>
-                      <th>Delete</th>
-                    </tr>
-                    {Object.entries(authUsers).map(([user, auth]) => (
-                      <tr key={user}>
-                        <td>{user}</td>
-                        <td>{auth}</td>
-                        <td>
-                          <button
-                            className="btn btn p-0"
-                            onClick={() => {
-                              deleteUserAuth(user);
-                            }}
-                          >
-                            <MdOutlineDeleteOutline />
-                          </button>
-                        </td>
+            <div className="mt-3">
+              <span className="explanations">Select a project</span>
+              {
+                // <select
+                //   className="form-select"
+                //   onChange={(e) => {
+                //     setCurrentProjectSlug(e.target.value);
+                //   }}
+                // >
+                //   <option></option>
+                //   {(projects || []).map((project) => (
+                //     <option key={project.parameters.project_slug}>
+                //       {project.parameters.project_slug}
+                //     </option>
+                //   ))}
+                // </select>
+                <Select
+                  id="select-project"
+                  className="form-select"
+                  options={projectOptions}
+                  onChange={(selectedOption) => {
+                    setCurrentProjectSlug(selectedOption ? selectedOption.value : null);
+                  }}
+                  isClearable
+                  placeholder="Select a project"
+                />
+              }
+              <div>
+                {authUsers ? (
+                  <table className="table-auth">
+                    <tbody>
+                      <tr>
+                        <th>User</th>
+                        <th>Auth</th>
+                        <th>Delete</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <span></span>
-              )}
+                      {Object.entries(authUsers).map(([user, auth]) => (
+                        <tr key={user}>
+                          <td>{user}</td>
+                          <td>{auth}</td>
+                          <td>
+                            <button
+                              className="btn btn p-0"
+                              onClick={() => {
+                                deleteUserAuth(user);
+                              }}
+                            >
+                              <MdOutlineDeleteOutline />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <span></span>
+                )}
+              </div>
             </div>
 
-            <details className="custom-details">
-              <summary>Add authorization</summary>
+            <div className="alert alert-light d-flex align-items-center m-3">
+              <span className="w-25">
+                Add for user <b>{currentUser}</b> rights :
+              </span>
               <select
                 id="select-auth"
-                className="form-select"
+                className="form-select w-25"
                 onChange={(e) => {
                   setCurrentAuth(e.target.value);
                 }}
               >
-                <option></option>
                 <option>manager</option>
                 <option>annotator</option>
               </select>
               <button
                 onClick={() => {
-                  console.log(currentUser);
-                  console.log(currentAuth);
                   if (currentUser && currentAuth) {
                     addUserAuth(currentUser, currentAuth);
                   } else
@@ -207,11 +218,11 @@ export const UsersPage: FC = () => {
                     });
                   reFetchUsers();
                 }}
-                className="btn btn-primary me-2 mt-2"
+                className="btn"
               >
-                Add rights
+                <FaPlusCircle size={25} />
               </button>
-            </details>
+            </div>
           </div>
         </div>
       </div>

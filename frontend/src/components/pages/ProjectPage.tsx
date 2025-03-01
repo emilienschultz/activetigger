@@ -3,16 +3,17 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
-import { useDeleteProject, useGetLogs } from '../core/api';
+import { useDeleteProject, useGetLogs } from '../../core/api';
 
 import Modal from 'react-bootstrap/Modal';
 import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
-import { useAppContext } from '../core/context';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
-import { ProjectStatistics } from './ProjectStatistics';
-import { SchemesManagement } from './SchemesManagement';
+import { useAppContext } from '../../core/context';
+import { ProjectUpdateForm } from '../forms/ProjectUpdateForm';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
+import { ProjectStatistics } from '../ProjectStatistics';
+import { SchemesManagement } from '../SchemesManagement';
 
 /**
  * Component to display the project page
@@ -49,6 +50,7 @@ export const ProjectPage: FC = () => {
   // function to clear history
   const actionClearHistory = () => {
     setAppContext((prev) => ({ ...prev, history: [] }));
+    // setAppContext((prev) => ({ ...prev, selectionHistory: {} }));
   };
 
   const activeUsers = project?.users?.active ? project?.users?.active : [];
@@ -74,6 +76,10 @@ export const ProjectPage: FC = () => {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+
+  // expand trainset
+  // const expandTrainSet = useExpandTrainSet(projectName || null);
+  // const [nElements, setNElements] = useState<number | undefined>(undefined);
 
   return (
     projectName && (
@@ -137,8 +143,10 @@ export const ProjectPage: FC = () => {
                 />
               </Tab>
               <Tab eventKey="parameters" title="Parameters">
-                <span className="explanations">Parameters of this project</span>
-
+                <div className="explanations">Parameters of this project</div>
+                <button onClick={handleShow} className="delete-button mt-1">
+                  Delete project now
+                </button>
                 <table className="table-statistics">
                   <tbody>
                     <tr className="table-delimiter">
@@ -183,20 +191,47 @@ export const ProjectPage: FC = () => {
                     </tr>
                   </tbody>
                 </table>
-                {/* <div>{JSON.stringify(project.params, null, 2)}</div> */}
-                <button onClick={handleShow} className="delete-button mt-5">
-                  Delete project now
-                </button>
-                <Modal show={show} onHide={actionDelete}>
-                  <Modal.Header>
-                    <Modal.Title>Delete the project</Modal.Title>
-                  </Modal.Header>
-                  <Modal.Body>Do you really want to delete this project</Modal.Body>
-                  <Modal.Footer>
-                    <button onClick={handleClose}>No</button>
-                    <button onClick={actionDelete}>Delete</button>
-                  </Modal.Footer>
-                </Modal>
+
+                <details className="custom-details">
+                  <summary>Update project</summary>
+                  <ProjectUpdateForm />
+                  {/* <div className="col-9 alert alert-warning fw-bold mt-3">
+                    <span className="explanations">
+                      Add empty elements in the trainset. Be careful, it will erase all features.
+                    </span>
+                    <div className="d-flex inline my-2">
+                      <input
+                        type="number"
+                        placeholder="Add N"
+                        className="input-number mx-2"
+                        onChange={(el) => setNElements(Number(el.target.value))}
+                        value={nElements}
+                      />
+                      <button
+                        onClick={() => {
+                          expandTrainSet(nElements);
+                          setNElements(0);
+                        }}
+                        className="btn btn-primary"
+                      >
+                        Add elements in trainset
+                      </button>
+                    </div>
+                  </div> */}
+                </details>
+
+                <div>
+                  <Modal show={show} onHide={actionDelete}>
+                    <Modal.Header>
+                      <Modal.Title>Delete the project</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>Do you really want to delete this project</Modal.Body>
+                    <Modal.Footer>
+                      <button onClick={handleClose}>No</button>
+                      <button onClick={actionDelete}>Delete</button>
+                    </Modal.Footer>
+                  </Modal>
+                </div>
               </Tab>
             </Tabs>
           </div>

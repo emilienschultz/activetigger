@@ -105,6 +105,8 @@ You can then run the dev version
 npm run dev
 ```
 
+If you run the backend on a different port, mind the fact that you need to change the address in the `frontend/.env` file to set the correct port.
+
 To compile
 
 ```bash

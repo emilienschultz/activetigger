@@ -4,68 +4,6 @@
  */
 
 export interface paths {
-    "/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Welcome
-         * @description Welcome page at the root path for the API
-         */
-        get: operations["welcome__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/documentation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Documentation
-         * @description Path for documentation
-         *     Comments:
-         *         For the moment, a dictionnary
-         */
-        get: operations["get_documentation_documentation_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Login For Access Token
-         * @description Authentificate user from username/password and return token
-         */
-        post: operations["login_for_access_token_token_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/users/disconnect": {
         parameters: {
             query?: never;
@@ -248,7 +186,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/logs": {
+    "/users/statistics": {
         parameters: {
             query?: never;
             header?: never;
@@ -256,30 +194,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Logs
-         * @description Get all logs for a username/project
+         * Get Statistics
+         * @description Get statistics for specific user
          */
-        get: operations["get_logs_logs_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/projects/{project_slug}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Project State
-         * @description Get the state of a specific project
-         */
-        get: operations["get_project_state_projects__project_slug__get"];
+        get: operations["get_statistics_users_statistics_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -308,91 +226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Projects
-         * @description Get general informations on the server
-         *     depending of the status of connected user
-         */
-        get: operations["get_projects_projects_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/server": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Queue
-         * @description Get the state of the server
-         *     - queue
-         *     - gpu use
-         *     TODO : maybe add a buffer ?
-         */
-        get: operations["get_queue_server_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/queue/num": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Nb Queue
-         * @description Get the number of element active in the server queue
-         */
-        get: operations["get_nb_queue_queue_num_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/kill": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Kill Process
-         * @description Stop current generation
-         */
-        post: operations["kill_process_kill_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/project": {
+    "/projects/auth": {
         parameters: {
             query?: never;
             header?: never;
@@ -403,29 +237,9 @@ export interface paths {
          * Get Project Auth
          * @description Users auth on a project
          */
-        get: operations["get_project_auth_auth_project_get"];
+        get: operations["get_project_auth_projects_auth_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/projects/testset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Testdata
-         * @description Add a dataset for test when there is none available
-         */
-        post: operations["add_testdata_projects_testset_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -452,6 +266,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Project
+         * @description Update a project
+         *     - change the name
+         *     - change the language
+         *     - change context cols
+         *     - change text cols
+         *     - expand the number of elements in the trainset
+         */
+        post: operations["update_project_projects_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/delete": {
         parameters: {
             query?: never;
@@ -466,6 +305,67 @@ export interface paths {
          * @description Delete a project
          */
         post: operations["delete_project_projects_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/testset/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Testdata
+         * @description Add a dataset for test when there is none available
+         */
+        post: operations["add_testdata_projects_testset__action__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Projects
+         * @description Get general informations on the server
+         *     depending of the status of connected user
+         */
+        get: operations["get_projects_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project State
+         * @description Get the state of a specific project
+         */
+        get: operations["get_project_state_projects__project_slug__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -574,6 +474,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/annotation/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Annotation File
+         * @description Load annotations file
+         */
+        post: operations["post_annotation_file_annotation_file_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/elements/reconciliate": {
         parameters: {
             query?: never;
@@ -593,67 +513,6 @@ export interface paths {
          *     TODO : a specific action for reconciliation ?
          */
         post: operations["post_reconciliation_elements_reconciliate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/elements/generate/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Postgenerate
-         * @description Launch a call to generate from a prompt
-         *     Only one possible by user
-         */
-        post: operations["postgenerate_elements_generate_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/elements/generate/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Generation
-         * @description Stop current generation
-         */
-        post: operations["stop_generation_elements_generate_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/elements/generate/elements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Getgenerate
-         * @description Get elements from prediction
-         */
-        get: operations["getgenerate_elements_generate_elements_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -872,172 +731,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/models/simplemodel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Simplemodel
-         * @description Get available simplemodel for the project/user/scheme if any
-         */
-        get: operations["get_simplemodel_models_simplemodel_get"];
-        put?: never;
-        /**
-         * Post Simplemodel
-         * @description Compute simplemodel
-         */
-        post: operations["post_simplemodel_models_simplemodel_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Bert
-         * @description Get Bert parameters and statistics
-         */
-        get: operations["get_bert_models_bert_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/predict": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Predict
-         * @description Start prediction with a model
-         */
-        post: operations["predict_models_bert_predict_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/train": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Post Bert
-         * @description Compute bertmodel
-         *     TODO : move the methods to specific class
-         */
-        post: operations["post_bert_models_bert_train_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Bert
-         * @description Stop user process
-         */
-        post: operations["stop_bert_models_bert_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start Test
-         * @description Start testing the model on the test set
-         *     TODO : get scheme from bert model name
-         */
-        post: operations["start_test_models_bert_test_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Bert
-         * @description Delete trained bert model
-         */
-        post: operations["delete_bert_models_bert_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/rename": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Bert
-         * @description Rename bertmodel
-         */
-        post: operations["save_bert_models_bert_rename_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/export/data": {
         parameters: {
             query?: never;
@@ -1178,6 +871,479 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/models/simplemodel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Simplemodel
+         * @description Get available simplemodel for the project/user/scheme if any
+         */
+        get: operations["get_simplemodel_models_simplemodel_get"];
+        put?: never;
+        /**
+         * Post Simplemodel
+         * @description Compute simplemodel
+         */
+        post: operations["post_simplemodel_models_simplemodel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bert
+         * @description Get Bert parameters and statistics
+         */
+        get: operations["get_bert_models_bert_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict
+         * @description Start prediction with a model
+         */
+        post: operations["predict_models_bert_predict_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Test
+         * @description Start testing the model on the test set
+         */
+        post: operations["start_test_models_bert_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert/train": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Bert
+         * @description Compute bertmodel
+         *     TODO : move the methods to specific class
+         */
+        post: operations["post_bert_models_bert_train_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Bert
+         * @description Stop user process
+         */
+        post: operations["stop_bert_models_bert_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Bert
+         * @description Delete trained bert model
+         */
+        post: operations["delete_bert_models_bert_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Bert
+         * @description Rename bertmodel
+         */
+        post: operations["save_bert_models_bert_rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/models/available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Generation Models
+         * @description Returns the list of the available GenAI models for generation
+         */
+        get: operations["list_generation_models_generate_models_available_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Project Generation Models
+         * @description Returns the list of the available GenAI models configure for a project
+         */
+        get: operations["list_project_generation_models_generate_models_get"];
+        put?: never;
+        /**
+         * Add Project Generation Models
+         * @description Add a new GenAI model for the project
+         */
+        post: operations["add_project_generation_models_generate_models_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/models/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Project Generation Models
+         * @description Delete a GenAI model from the project
+         */
+        delete: operations["delete_project_generation_models_generate_models__model_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Postgenerate
+         * @description Launch a call to generate from a prompt
+         *     Only one possible by user
+         */
+        post: operations["postgenerate_generate_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Generation
+         * @description Stop current generation
+         */
+        post: operations["stop_generation_generate_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/elements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Getgenerate
+         * @description Get elements from prediction
+         */
+        get: operations["getgenerate_generate_elements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Prompts
+         * @description Get the list of prompts for the user
+         */
+        get: operations["get_prompts_generate_prompts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/prompts/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Prompt
+         * @description Add a prompt to the project
+         */
+        post: operations["add_prompt_generate_prompts_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/prompts/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Prompt
+         * @description Delete a prompt from the project
+         */
+        post: operations["delete_prompt_generate_prompts_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Welcome
+         * @description Welcome page at the root path for the API
+         */
+        get: operations["welcome__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Version
+         * @description Get the version of the server
+         */
+        get: operations["get_version_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login For Access Token
+         * @description Authentificate user from username/password and return token
+         */
+        post: operations["login_for_access_token_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Logs
+         * @description Get all logs for a username/project
+         */
+        get: operations["get_logs_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Queue
+         * @description Get the state of the server
+         *     - queue
+         *     - gpu use
+         *     TODO : maybe add a buffer ?
+         */
+        get: operations["get_queue_server_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kill Process
+         * @description Stop current generation
+         */
+        post: operations["kill_process_kill_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1208,6 +1374,21 @@ export interface components {
             dataset: string | null;
             /** Comment */
             comment?: string | null;
+            /** Selection */
+            selection?: string | null;
+        };
+        /** AnnotationsDataModel */
+        AnnotationsDataModel: {
+            /** Col Id */
+            col_id: string;
+            /** Col Label */
+            col_label: string;
+            /** Scheme */
+            scheme: string;
+            /** Csv */
+            csv: string;
+            /** Filename */
+            filename?: string | null;
         };
         /**
          * AuthActions
@@ -1221,6 +1402,17 @@ export interface components {
         AvailableProjectsModel: {
             /** Projects */
             projects: components["schemas"]["ProjectSummaryModel"][];
+        };
+        /** BertModelInformationsModel */
+        BertModelInformationsModel: {
+            /** Params */
+            params?: Record<string, never> | null;
+            /** Loss */
+            loss?: Record<string, never> | null;
+            /** Train Scores */
+            train_scores?: Record<string, never> | null;
+            /** Test Scores */
+            test_scores?: Record<string, never> | null;
         };
         /**
          * BertModelModel
@@ -1331,21 +1523,7 @@ export interface components {
             /** Scheme */
             scheme: string;
             /** Time */
-            time?: string | null;
-        };
-        /**
-         * DocumentationModel
-         * @description Documentation model
-         */
-        DocumentationModel: {
-            /** Credits */
-            credits: string[];
-            /** Page */
-            page: string;
-            /** Documentation */
-            documentation: string;
-            /** Contact */
-            contact: string;
+            time: string;
         };
         /**
          * ElementOutModel
@@ -1373,6 +1551,21 @@ export interface components {
             /** N Sample */
             n_sample?: number | null;
         };
+        /** FeatureDescriptionModel */
+        FeatureDescriptionModel: {
+            /** Name */
+            name: string;
+            /** Parameters */
+            parameters: Record<string, never>;
+            /** User */
+            user: string;
+            /** Time */
+            time: string;
+            /** Kind */
+            kind: string;
+            /** Cols */
+            cols: string[];
+        };
         /**
          * FeatureModel
          * @description Feature model
@@ -1388,14 +1581,68 @@ export interface components {
             };
         };
         /**
-         * GenerateModel
-         * @description To start a generating prompt
+         * GenerationAvailableModel
+         * @description GenAI models available for generation
          */
-        GenerateModel: {
+        GenerationAvailableModel: {
+            /** Slug */
+            slug: string;
             /** Api */
             api: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * GenerationCreationModel
+         * @description GenAI model used in generation
+         */
+        GenerationCreationModel: {
+            /** Slug */
+            slug: string;
+            /** Api */
+            api: string;
+            /** Name */
+            name: string;
             /** Endpoint */
-            endpoint: string;
+            endpoint?: string | null;
+            /** Credentials */
+            credentials?: string | null;
+        };
+        /**
+         * GenerationModel
+         * @description GenAI model used in generation
+         */
+        GenerationModel: {
+            /** Slug */
+            slug: string;
+            /** Api */
+            api: string;
+            /** Name */
+            name: string;
+            /** Endpoint */
+            endpoint?: string | null;
+            /** Credentials */
+            credentials?: string | null;
+            /** Id */
+            id: number;
+        };
+        /**
+         * GenerationModelApi
+         * @description GenAI API available for generation
+         */
+        GenerationModelApi: {
+            /** Name */
+            name: string;
+            /** Models */
+            models: components["schemas"]["GenerationAvailableModel"][];
+        };
+        /**
+         * GenerationRequest
+         * @description To start a generating prompt
+         */
+        GenerationRequest: {
+            /** Model Id */
+            model_id: number;
             /** Token */
             token?: string | null;
             /** Prompt */
@@ -1417,6 +1664,39 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** MLStatisticsModel */
+        MLStatisticsModel: {
+            /** F1 Label */
+            f1_label?: {
+                [key: string]: number | undefined;
+            } | null;
+            /** Precision Label */
+            precision_label?: {
+                [key: string]: number | undefined;
+            } | null;
+            /** Recall Label */
+            recall_label?: {
+                [key: string]: number | undefined;
+            } | null;
+            /** F1 Weighted */
+            f1_weighted?: number | null;
+            /** F1 Micro */
+            f1_micro?: number | null;
+            /** F1 Macro */
+            f1_macro?: number | null;
+            /** Accuracy */
+            accuracy?: number | {
+                [key: string]: number | undefined;
+            } | null;
+            /** Precision */
+            precision?: number | {
+                [key: string]: number | undefined;
+            } | null;
+            /** Confusion Matrix */
+            confusion_matrix?: number[][] | null;
+            /** False Predictions */
+            false_predictions?: Record<string, never> | unknown[] | null;
         };
         /**
          * NextInModel
@@ -1453,7 +1733,9 @@ export interface components {
          */
         ProjectAuthsModel: {
             /** Auth */
-            auth: Record<string, never>;
+            auth: {
+                [key: string]: string | undefined;
+            };
         };
         /**
          * ProjectDataModel
@@ -1657,6 +1939,19 @@ export interface components {
             /** Created At */
             created_at: string;
         };
+        /** ProjectUpdateModel */
+        ProjectUpdateModel: {
+            /** Project Name */
+            project_name?: string | null;
+            /** Language */
+            language?: string | null;
+            /** Cols Text */
+            cols_text?: string[] | null;
+            /** Cols Context */
+            cols_context?: string[] | null;
+            /** Add N Train */
+            add_n_train?: number | null;
+        };
         /**
          * ProjectionInStrictModel
          * @description Request projection
@@ -1685,6 +1980,20 @@ export interface components {
             /** Labels */
             labels: unknown[];
         };
+        /** PromptInputModel */
+        PromptInputModel: {
+            /** Text */
+            text: string;
+        };
+        /** PromptModel */
+        PromptModel: {
+            /** Id */
+            id: number;
+            /** Text */
+            text: string;
+            /** Parameters */
+            parameters: Record<string, never>;
+        };
         /**
          * ReconciliationModel
          * @description list of elements to reconciliate
@@ -1712,9 +2021,35 @@ export interface components {
              * Kind
              * @default multiclass
              */
-            kind: string | null;
-            /** Labels */
-            labels?: string[] | null;
+            kind: string;
+            /**
+             * Labels
+             * @default []
+             */
+            labels: string[];
+        };
+        /** ServerStateModel */
+        ServerStateModel: {
+            /** Version */
+            version: string;
+            /** Queue */
+            queue: {
+                [key: string]: {
+                    [key: string]: (string | null) | undefined;
+                } | undefined;
+            };
+            /** Active Projects */
+            active_projects: {
+                [key: string]: Record<string, never>[] | undefined;
+            };
+            /** Gpu */
+            gpu: Record<string, never>;
+            /** Cpu */
+            cpu: Record<string, never>;
+            /** Memory */
+            memory: Record<string, never>;
+            /** Disk */
+            disk: Record<string, never>;
         };
         /**
          * SimpleModelModel
@@ -1765,8 +2100,15 @@ export interface components {
             scheme: string;
             /** Username */
             username: string;
-            /** Statistics */
-            statistics: Record<string, never>;
+            statistics: components["schemas"]["MLStatisticsModel"];
+            statistics_cv10: components["schemas"]["MLStatisticsModel"];
+        };
+        /** StaticFileModel */
+        StaticFileModel: {
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
         };
         /**
          * TableAnnotationsModel
@@ -1858,6 +2200,15 @@ export interface components {
             /** Status */
             status: string | null;
         };
+        /** UserStatistics */
+        UserStatistics: {
+            /** Username */
+            username: string;
+            /** Projects */
+            projects: {
+                [key: string]: string | undefined;
+            };
+        };
         /**
          * UsersServerModel
          * @description list of users on the server
@@ -1903,79 +2254,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    welcome__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/html": string;
-                };
-            };
-        };
-    };
-    get_documentation_documentation_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DocumentationModel"];
-                };
-            };
-        };
-    };
-    login_for_access_token_token_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_token_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     disconnect_user_users_disconnect_post: {
         parameters: {
             query?: never;
@@ -2220,11 +2498,10 @@ export interface operations {
             };
         };
     };
-    get_logs_logs_get: {
+    get_statistics_users_statistics_get: {
         parameters: {
-            query?: {
-                project_slug?: string;
-                limit?: number;
+            query: {
+                username: string;
             };
             header?: never;
             path?: never;
@@ -2238,38 +2515,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TableOutModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_project_state_projects__project_slug__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectStateModel"];
+                    "application/json": components["schemas"]["UserStatistics"];
                 };
             };
             /** @description Validation Error */
@@ -2316,98 +2562,7 @@ export interface operations {
             };
         };
     };
-    get_projects_projects_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AvailableProjectsModel"];
-                };
-            };
-        };
-    };
-    get_queue_server_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    get_nb_queue_queue_num_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number;
-                };
-            };
-        };
-    };
-    kill_process_kill_post: {
-        parameters: {
-            query: {
-                unique_id: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_project_auth_auth_project_get: {
+    get_project_auth_projects_auth_get: {
         parameters: {
             query: {
                 project_slug: string;
@@ -2425,41 +2580,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectAuthsModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_testdata_projects_testset_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestSetDataModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -2506,6 +2626,41 @@ export interface operations {
             };
         };
     };
+    update_project_projects_update_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_project_projects_delete_post: {
         parameters: {
             query: {
@@ -2524,6 +2679,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_testdata_projects_testset__action__post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path: {
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TestSetDataModel"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_projects_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailableProjectsModel"];
+                };
+            };
+        };
+    };
+    get_project_state_projects__project_slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -2711,6 +2954,41 @@ export interface operations {
             };
         };
     };
+    post_annotation_file_annotation_file_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationsDataModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_reconciliation_table_elements_reconciliate_get: {
         parameters: {
             query: {
@@ -2765,104 +3043,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    postgenerate_elements_generate_start_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerateModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stop_generation_elements_generate_stop_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    getgenerate_elements_generate_elements_get: {
-        parameters: {
-            query: {
-                n_elements: number;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableOutModel"];
                 };
             };
             /** @description Validation Error */
@@ -3236,304 +3416,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_simplemodel_models_simplemodel_get: {
-        parameters: {
-            query: {
-                scheme: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SimpleModelOutModel"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_simplemodel_models_simplemodel_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimpleModelModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_bert_models_bert_get: {
-        parameters: {
-            query: {
-                name: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    predict_models_bert_predict_post: {
-        parameters: {
-            query: {
-                model_name: string;
-                dataset?: string;
-                batch_size?: number;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_bert_models_bert_train_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BertModelModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stop_bert_models_bert_stop_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_test_models_bert_test_post: {
-        parameters: {
-            query: {
-                scheme: string;
-                model: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_bert_models_bert_delete_post: {
-        parameters: {
-            query: {
-                bert_name: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_bert_models_bert_rename_post: {
-        parameters: {
-            query: {
-                former_name: string;
-                new_name: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: components["schemas"]["FeatureDescriptionModel"] | undefined;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -3698,7 +3583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string;
+                    "application/json": components["schemas"]["StaticFileModel"];
                 };
             };
             /** @description Validation Error */
@@ -3729,7 +3614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["StaticFileModel"];
                 };
             };
             /** @description Validation Error */
@@ -3748,6 +3633,775 @@ export interface operations {
             query: {
                 number: number;
                 project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_simplemodel_models_simplemodel_get: {
+        parameters: {
+            query: {
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimpleModelOutModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_simplemodel_models_simplemodel_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimpleModelModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bert_models_bert_get: {
+        parameters: {
+            query: {
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BertModelInformationsModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predict_models_bert_predict_post: {
+        parameters: {
+            query: {
+                model_name: string;
+                scheme: string;
+                dataset?: string;
+                batch_size?: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_test_models_bert_test_post: {
+        parameters: {
+            query: {
+                scheme: string;
+                model: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_bert_models_bert_train_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BertModelModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_bert_models_bert_stop_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bert_models_bert_delete_post: {
+        parameters: {
+            query: {
+                bert_name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_bert_models_bert_rename_post: {
+        parameters: {
+            query: {
+                former_name: string;
+                new_name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_generation_models_generate_models_available_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationModelApi"][];
+                };
+            };
+        };
+    };
+    list_project_generation_models_generate_models_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_project_generation_models_generate_models_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationCreationModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_generation_models_generate_models__model_id__delete: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    postgenerate_generate_start_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_generation_generate_stop_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getgenerate_generate_elements_get: {
+        parameters: {
+            query: {
+                n_elements: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOutModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_prompts_generate_prompts_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_prompt_generate_prompts_add_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptInputModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_prompt_generate_prompts_delete_post: {
+        parameters: {
+            query: {
+                prompt_id: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    welcome__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    get_version_version_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    login_for_access_token_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_token_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_logs_logs_get: {
+        parameters: {
+            query?: {
+                project_slug?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOutModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_queue_server_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerStateModel"];
+                };
+            };
+        };
+    };
+    kill_process_kill_post: {
+        parameters: {
+            query: {
+                unique_id: string;
             };
             header?: never;
             path?: never;

@@ -7,6 +7,8 @@ from sqlalchemy.types import JSON
 
 
 class Base(DeclarativeBase):
+    # convert to JSON the types [dict[str], Any] to be able to directly store objets
+    # allow to search on JSON
     type_annotation_map = {dict[str, Any]: JSON}
     metadata = MetaData(
         naming_convention={
@@ -55,6 +57,12 @@ class Projects(Base):
     models: Mapped[list["Models"]] = relationship(
         "Models", cascade="all,delete,delete-orphan", back_populates="project"
     )
+    gen_models: Mapped[list["GenModels"]] = relationship(
+        "GenModels", cascade="all, delete-orphan", back_populates="project"
+    )
+    prompts: Mapped[list["Prompts"]] = relationship(
+        "Prompts", cascade="all,delete,delete-orphan", back_populates="project"
+    )
 
 
 class Users(Base):
@@ -71,6 +79,9 @@ class Users(Base):
     created_by: Mapped[str]
     projects: Mapped[list[Projects]] = relationship(
         back_populates="user", cascade="all,delete,delete-orphan"
+    )
+    deactivated: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
     )
 
 
@@ -116,6 +127,7 @@ class Annotations(Base):
     scheme: Mapped[Schemes] = relationship()
     annotation: Mapped[str | None]
     comment: Mapped[str | None] = mapped_column(Text)
+    selection: Mapped[str | None] = mapped_column(Text)
 
 
 class Auths(Base):
@@ -163,6 +175,20 @@ class Tokens(Base):
     )
 
 
+class GenModels(Base):
+    __tablename__ = "gen_models"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
+    project: Mapped[Projects] = relationship(back_populates="gen_models")
+    slug: Mapped[str]
+    name: Mapped[str]
+    api: Mapped[str]
+    endpoint: Mapped[str | None]
+    credentials: Mapped[str | None]
+
+
 class Generations(Base):
     __tablename__ = "generations"
 
@@ -177,7 +203,8 @@ class Generations(Base):
     )
     project: Mapped[Projects] = relationship(back_populates="generations")
     element_id: Mapped[str]
-    endpoint: Mapped[str]
+    model_id: Mapped[int] = mapped_column(ForeignKey("gen_models.id"))
+    model: Mapped[GenModels] = relationship()
     prompt: Mapped[str]
     answer: Mapped[str]
 
@@ -242,7 +269,11 @@ class Prompts(Base):
         server_default=func.current_timestamp(),
         onupdate=func.current_timestamp(),
     )
-    user: Mapped[str]
-    project: Mapped[str]
-    name: Mapped[str]
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped[Users] = relationship()
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
+    project: Mapped[Projects] = relationship(back_populates="prompts")
+    value: Mapped[str]
     parameters: Mapped[dict[str, Any]]

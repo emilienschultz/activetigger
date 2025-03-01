@@ -1,24 +1,22 @@
 import datetime
 import logging
-from collections.abc import Sequence
 from typing import Any, TypedDict
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
+from activetigger.datamodels import FeatureDescriptionModel
 from activetigger.db import DBException
 from activetigger.db.models import (
     Annotations,
     Auths,
     Features,
-    Generations,
     Logs,
     Models,
     Projects,
     Schemes,
     Tokens,
-    Users,
 )
 
 
@@ -97,15 +95,16 @@ class ProjectsService:
         return project_slug
 
     def update_project(self, project_slug: str, parameters: dict[str, Any]):
-        session = self.Session()
-        project = session.query(Projects).filter_by(project_slug=project_slug).first()
-        if project is None:
-            raise DBException("Project not found")
+        with self.Session.begin() as session:
+            project = (
+                session.query(Projects).filter_by(project_slug=project_slug).first()
+            )
+            if project is None:
+                raise DBException("Project not found")
 
-        project.time_modified = datetime.datetime.now()
-        project.parameters = parameters
-        session.commit()
-        session.close()
+            project.time_modified = datetime.datetime.now()
+            project.parameters = parameters
+            session.commit()
 
     def existing_projects(self) -> list[str]:
         session = self.Session()
@@ -204,80 +203,6 @@ class ProjectsService:
             ).first()
             session.delete(project)
 
-    def add_generated(
-        self,
-        user: str,
-        project_slug: str,
-        element_id: str,
-        endpoint: str,
-        prompt: str,
-        answer: str,
-    ):
-        session = self.Session()
-        generation = Generations(
-            user_id=user,
-            time=datetime.datetime.now(),
-            project_id=project_slug,
-            element_id=element_id,
-            endpoint=endpoint,
-            prompt=prompt,
-            answer=answer,
-        )
-        session.add(generation)
-        session.commit()
-        session.close()
-
-    def get_generated(self, project_slug: str, username: str, n_elements: int = 10):
-        """
-        Get elements from generated table by order desc
-        """
-        session = self.Session()
-        generated = (
-            session.query(Generations)
-            .filter(
-                Generations.project_id == project_slug, Generations.user_id == username
-            )
-            .order_by(Generations.time.desc())
-            .limit(n_elements)
-            .all()
-        )
-        session.close()
-        return [
-            [el.time, el.element_id, el.prompt, el.answer, el.endpoint]
-            for el in generated
-        ]
-
-    def get_distinct_users(
-        self, project_slug: str, timespan: int | None
-    ) -> Sequence[Users]:
-        with self.Session() as session:
-            stmt = (
-                select(Projects.user)
-                .join_from(Projects, Users)
-                .where(Projects.project_slug == project_slug)
-                .distinct()
-            )
-            if timespan:
-                time_threshold = datetime.datetime.now() - datetime.timedelta(
-                    seconds=timespan
-                )
-                stmt = stmt.join(Annotations).where(
-                    Annotations.time > time_threshold,
-                )
-        return session.scalars(stmt).all()
-
-    def get_current_users(self, timespan: int = 600):
-        session = self.Session()
-        time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
-        users = (
-            session.query(Logs.user, Logs.user_id)
-            .filter(Logs.time > time_threshold)
-            .distinct()
-            .all()
-        )
-        session.close()
-        return [u.user_id for u in users]
-
     def get_project_auth(self, project_slug: str):
         with self.Session() as session:
             auth = session.scalars(
@@ -306,7 +231,7 @@ class ProjectsService:
         with self.Session() as session:
             result = session.execute(
                 select(
-                    Auths.project,
+                    Auths.project_id,
                     Auths.status,
                     Projects.parameters,
                     Projects.user_id,
@@ -315,7 +240,7 @@ class ProjectsService:
                 .join(Auths.project)
                 .where(Auths.user_id == username)
             ).all()
-            return [row for row in result]
+            return result
 
     def get_user_auth(self, username: str, project_slug: str | None = None):
         session = self.Session()
@@ -359,19 +284,6 @@ class ProjectsService:
                 [row.element_id, row.annotation, row.user_id, row.time, row.comment]
                 for row in results
             ]
-
-    def get_coding_users(self, scheme: str, project_slug: str) -> Sequence[Users]:
-        with self.Session() as session:
-            distinct_users = session.scalars(
-                select(Annotations.user)
-                .join_from(Annotations, Users)
-                .where(
-                    Annotations.project_id == project_slug,
-                    Annotations.scheme_id == scheme,
-                )
-                .distinct()
-            ).all()
-            return distinct_users
 
     def get_recent_annotations(
         self, project_slug: str, user: str, scheme: str, limit: int
@@ -447,8 +359,9 @@ class ProjectsService:
         project_slug: str,
         element_id: str,
         scheme: str,
-        annotation: str,
-        comment: str = "",
+        annotation: str | None,
+        comment: str | None = "",
+        selection: str | None = None,
     ):
         with self.Session.begin() as session:
             new_annotation = Annotations(
@@ -460,6 +373,7 @@ class ProjectsService:
                 scheme_id=scheme,
                 annotation=annotation,
                 comment=comment,
+                selection=selection,
             )
             session.add(new_annotation)
 
@@ -528,19 +442,17 @@ class ProjectsService:
         user: str,
         data: list[dict[str, Any]] | None = None,
     ):
-        session = self.Session()
-        feature = Features(
-            project_id=project,
-            time=datetime.datetime.now(),
-            kind=kind,
-            name=name,
-            parameters=parameters,
-            user_id=user,
-            data=data,
-        )
-        session.add(feature)
-        session.commit()
-        session.close()
+        with self.Session.begin() as session:
+            feature = Features(
+                project_id=project,
+                time=datetime.datetime.now(),
+                kind=kind,
+                name=name,
+                parameters=parameters,
+                user_id=user,
+                data=data,
+            )
+            session.add(feature)
 
     def delete_feature(self, project: str, name: str):
         session = self.Session()
@@ -549,6 +461,10 @@ class ProjectsService:
         ).delete()
         session.commit()
         session.close()
+
+    def delete_all_features(self, project: str):
+        with self.Session.begin() as session:
+            session.query(Features).filter(Features.project_id == project).delete()
 
     def get_feature(self, project: str, name: str):
         session = self.Session()
@@ -560,19 +476,20 @@ class ProjectsService:
         session.close()
         return feature
 
-    def get_project_features(self, project: str):
+    def get_project_features(self, project: str) -> dict[str, FeatureDescriptionModel]:
         with self.Session() as session:
             features = session.scalars(
                 select(Features).filter_by(project_id=project)
             ).all()
             return {
-                i.name: {
-                    "time": i.time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "kind": i.kind,
-                    "parameters": i.parameters,
-                    "user": i.user_id,
-                    "data": i.data,
-                }
+                i.name: FeatureDescriptionModel(
+                    time=i.time.strftime("%Y-%m-%d %H:%M:%S"),
+                    kind=i.kind,
+                    parameters=i.parameters,
+                    user=str(i.user_id),  # check
+                    cols=list(i.data),
+                    name=i.name,
+                )
                 for i in features
             }
 
@@ -690,7 +607,7 @@ class ProjectsService:
             .all()
         )
         if len(models) > 0:
-            return {"error": "The new name already exists"}
+            raise Exception("Model already exists")
         # get and rename
         model = (
             session.query(Models)

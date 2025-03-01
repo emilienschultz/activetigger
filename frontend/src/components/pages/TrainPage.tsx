@@ -1,17 +1,14 @@
 import { FC, useState } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { FaTools } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
+import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 import { Tooltip } from 'react-tooltip';
-import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
-
-import { Tab, Tabs } from 'react-bootstrap';
-import { Controller } from 'react-hook-form';
-import { FaTools } from 'react-icons/fa';
-import Select from 'react-select';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
@@ -24,6 +21,7 @@ import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { newBertModel } from '../../types';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
+import { LossChart } from '../vizualisation/lossChart';
 
 /**
  * Component to manage model training
@@ -32,9 +30,10 @@ import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 interface renameModel {
   new_name: string;
 }
+
 interface Row {
-  labels: string;
-  index: string;
+  id: string;
+  label: string;
   prediction: string;
   text: string;
 }
@@ -53,6 +52,8 @@ export const TrainPage: FC = () => {
   const {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
+
+  const [activeKey, setActiveKey] = useState<string>('models');
 
   // available labels from context
   const availableLabels =
@@ -134,75 +135,35 @@ export const TrainPage: FC = () => {
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     console.log(data);
+    setActiveKey('models');
+    console.log(activeKey);
     await trainBertModel(data);
   };
 
+  interface LossData {
+    epoch: { [key: string]: number };
+    val_loss: { [key: string]: number };
+    val_eval_loss: { [key: string]: number };
+  }
+
   // loss chart shape data
-  const loss = model?.training['loss'] ? JSON.parse(model?.training['loss']) : null;
-  const val_epochs = model?.training['loss'] ? Object.values(loss['epoch']) : [];
-  const val_loss = model?.training['loss'] ? Object.values(loss['val_loss']) : [];
-  const val_eval_loss = model?.training['loss'] ? Object.values(loss['val_eval_loss']) : [];
-
-  const valLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_loss[i] }));
-  const valEvalLossData = val_epochs.map((epoch, i) => ({ x: epoch, y: val_eval_loss[i] }));
-
-  const LossChart = () => (
-    <VictoryChart theme={VictoryTheme.material} minDomain={{ y: 0 }}>
-      <VictoryAxis
-        label="Epoch"
-        style={{
-          axisLabel: { padding: 30 },
-        }}
-      />
-      <VictoryAxis
-        dependentAxis
-        label="Loss"
-        style={{
-          axisLabel: { padding: 40 },
-        }}
-      />
-      <VictoryLine
-        data={valLossData}
-        style={{
-          data: { stroke: '#c43a31' }, // Rouge pour val_loss
-        }}
-      />
-      <VictoryLine
-        data={valEvalLossData}
-        style={{
-          data: { stroke: '#0000ff' }, // Bleu pour val_eval_loss
-        }}
-      />
-      <VictoryLegend
-        x={125}
-        y={10}
-        title="Legend"
-        centerTitle
-        orientation="horizontal"
-        gutter={20}
-        style={{ border: { stroke: 'black' }, title: { fontSize: 10 } }}
-        data={[
-          { name: 'Loss', symbol: { fill: '#c43a31' } },
-          { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
-        ]}
-      />
-    </VictoryChart>
-  );
+  const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
 
   // display table false prediction
-  const falsePredictions = model?.train_scores
-    ? (JSON.parse(model.train_scores['false_prediction']) as Row[])
-    : null;
+  const falsePredictions =
+    model?.train_scores && model.train_scores['false_predictions']
+      ? model.train_scores['false_predictions']
+      : null;
 
   const columns: readonly Column<Row>[] = [
     {
       name: 'Id',
-      key: 'index',
+      key: 'id',
       resizable: true,
     },
     {
       name: 'Label',
-      key: 'labels',
+      key: 'label',
       resizable: true,
     },
     {
@@ -217,7 +178,8 @@ export const TrainPage: FC = () => {
     },
   ];
 
-  const displayAdvancement = (val: number | string) => {
+  const displayAdvancement = (val: number | string | null) => {
+    if (!val) return '';
     const v = Math.round(Number(val));
     if (v >= 100) return 'completed, please wait';
     return v + '%';
@@ -241,8 +203,13 @@ export const TrainPage: FC = () => {
             {
               /* Temporary disable multi-class fine-tuning */
 
-              <Tabs id="panel" className="mb-3" defaultActiveKey={'models'}>
-                <Tab eventKey="models" title="Models">
+              <Tabs
+                id="panel"
+                className="mb-3"
+                activeKey={activeKey}
+                onSelect={(k) => setActiveKey(k || 'models')}
+              >
+                <Tab eventKey="models" title="Models" onSelect={() => setActiveKey('models')}>
                   <label htmlFor="selected-model">Existing models</label>
                   <div className="d-flex align-items-center">
                     <select
@@ -272,36 +239,29 @@ export const TrainPage: FC = () => {
                   {project?.bertmodels.training &&
                     Object.keys(project.bertmodels.training).length > 0 && (
                       <div className="mt-3">
-                        Current training:
+                        Current process:
                         <ul>
                           {Object.entries(
                             project?.bertmodels.training as Record<
                               string,
-                              Record<string, string | number>
+                              Record<string, string | number | null>
                             >,
                           ).map(([_, v]) => (
                             <li key={v.name}>
                               {v.name} - {v.status} :{' '}
                               <span style={{ fontWeight: 'bold' }}>
                                 {displayAdvancement(v.progress)}
+                                {
+                                  <div className="col-6 col-lg-4">
+                                    <LossChart loss={v.loss as unknown as LossData} />
+                                  </div>
+                                }
                               </span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
-
-                  {isComputing && (
-                    <div>
-                      <button
-                        key="stop"
-                        className="btn btn-primary mt-3 d-flex align-items-center"
-                        onClick={stopTraining}
-                      >
-                        <PulseLoader color={'white'} /> Stop current process
-                      </button>
-                    </div>
-                  )}
 
                   {currentModel && (
                     <div>
@@ -330,7 +290,7 @@ export const TrainPage: FC = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {Object.entries(model.training['parameters']).map(
+                                {Object.entries(model.params as Record<string, unknown>).map(
                                   ([key, value]) => (
                                     <tr key={key}>
                                       <td>{key}</td>
@@ -341,30 +301,22 @@ export const TrainPage: FC = () => {
                               </tbody>
                             </table>
                             <div className="col-6 col-lg-4">
-                              <LossChart />
+                              <LossChart loss={loss} />
                             </div>
                           </details>
                           <details className="custom-details">
                             <summary>Scores</summary>
-                            {!model_scores && !isComputing && (
+                            {!model_scores && !isComputing && currentScheme && (
                               <button
                                 className="btn btn-primary me-2 mt-2"
-                                onClick={() => computeModelPrediction(currentModel, 'train')}
+                                onClick={() =>
+                                  computeModelPrediction(currentModel, 'train', currentScheme)
+                                }
                               >
                                 Predict on training dataset
                               </button>
                             )}
-                            {isComputing && (
-                              <div>
-                                <button
-                                  key="stop"
-                                  className="btn btn-primary mt-3 d-flex align-items-center"
-                                  onClick={stopTraining}
-                                >
-                                  <PulseLoader color={'white'} /> Stop current process
-                                </button>
-                              </div>
-                            )}
+                            {isComputing && <div>Computation in progress</div>}
                             {model.train_scores && (
                               <div>
                                 <table className="table">
@@ -376,41 +328,21 @@ export const TrainPage: FC = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    <tr>
-                                      <td>F1 micro</td>
-                                      <td>{model.train_scores['f1_micro']}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>F1 macro</td>
-                                      <td>{model.train_scores['f1_macro']}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>F1 weighted</td>
-                                      <td>{model.train_scores['f1_weighted']}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>F1</td>
-                                      <td>{JSON.stringify(model.train_scores['f1'])}</td>
-                                    </tr>
-
-                                    <tr>
-                                      <td>Precision</td>
-                                      <td>{JSON.stringify(model.train_scores['precision'])}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>Recall</td>
-                                      <td>{JSON.stringify(model.train_scores['recall'])}</td>
-                                    </tr>
-                                    <tr>
-                                      <td>Accuracy</td>
-                                      <td>{model.train_scores['accuracy']}</td>
-                                    </tr>
+                                    {model.train_scores &&
+                                      Object.entries(model.train_scores)
+                                        .filter(([key]) => key !== 'false_predictions')
+                                        .map(([key, value], i) => (
+                                          <tr key={i}>
+                                            <td>{key}</td>
+                                            <td>{JSON.stringify(value)}</td>
+                                          </tr>
+                                        ))}
                                   </tbody>
                                 </table>
                                 <details className="m-3">
                                   <summary>False predictions</summary>
                                   {model_scores ? (
-                                    <DataGrid
+                                    <DataGrid<Row>
                                       className="fill-grid"
                                       columns={columns}
                                       rows={falsePredictions || []}
@@ -427,7 +359,7 @@ export const TrainPage: FC = () => {
                     </div>
                   )}
                 </Tab>
-                <Tab eventKey="new" title="New model">
+                <Tab eventKey="new" title="New model" onSelect={() => setActiveKey('new')}>
                   <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
                     {kindScheme == 'multilabel' && (
                       <div role="alert" className="alert alert-warning">
@@ -444,7 +376,7 @@ export const TrainPage: FC = () => {
                     )}
 
                     <div className="explanations">
-                      Before training a model, be sure to have annotated enough elements
+                      Before training a model, be sure to have annotated enough elements.
                     </div>
                     <label htmlFor="new-model-type"></label>
                     <div>
@@ -625,19 +557,12 @@ export const TrainPage: FC = () => {
                       </button>
                     )}
                   </form>
-                  {isComputing && (
-                    <div>
-                      <button
-                        key="stop"
-                        className="btn btn-primary mt-3 d-flex align-items-center"
-                        onClick={stopTraining}
-                      >
-                        <PulseLoader color={'white'} /> Stop current process
-                      </button>
-                    </div>
-                  )}
                 </Tab>
-                <Tab eventKey="parameters" title="Parameters">
+                <Tab
+                  eventKey="parameters"
+                  title="Parameters"
+                  onSelect={() => setActiveKey('parameters')}
+                >
                   <div>
                     <label>
                       Batch size for predictions{' '}
@@ -659,6 +584,17 @@ export const TrainPage: FC = () => {
                 </Tab>
               </Tabs>
             }
+            {isComputing && (
+              <div>
+                <button
+                  key="stop"
+                  className="btn btn-primary mt-3 d-flex align-items-center"
+                  onClick={stopTraining}
+                >
+                  <PulseLoader color={'white'} /> Stop current process
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

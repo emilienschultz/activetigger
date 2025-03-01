@@ -70,7 +70,7 @@ const _useAuth = (): AuthContext => {
           }
         }
       } catch (error) {
-        notify({ type: 'warning', message: 'could not authenticate. Please retry.' });
+        notify({ type: 'warning', message: String(error) });
         localStorage.removeItem('activeTigger.auth');
         setAuthenticatedUser(undefined);
       }

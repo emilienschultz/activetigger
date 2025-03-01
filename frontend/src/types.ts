@@ -51,7 +51,13 @@ export type BertModelParametersModel = components['schemas']['BertModelParameter
 
 export type TestSetDataModel = components['schemas']['TestSetDataModel'];
 
+export type AnnotationsDataModel = components['schemas']['AnnotationsDataModel'];
+
 export type ProjectionInStrictModel = components['schemas']['ProjectionInStrictModel'];
+
+export type GenerationModelApi = components['schemas']['GenerationModelApi'];
+
+export type ProjectUpdateModel = components['schemas']['ProjectUpdateModel'];
 
 export type ProjectionModelParams =
   | components['schemas']['TsneModel']
@@ -105,6 +111,7 @@ export interface GenerateConfig {
   endpoint?: string;
   token?: string;
   prompt?: string;
+  prompt_id?: string;
   n_batch?: number;
   selection_mode?: string;
 }
@@ -133,4 +140,30 @@ export interface TestSetModel {
   col_label?: string | null;
   scheme?: string | null;
   n_test: number;
+}
+
+export type SupportedAPI = 'Ollama' | 'OpenAI' | 'HuggingFace';
+
+export type GenModelAPI = { models: GenModel[] } & (
+  | {
+      name: 'Ollama';
+      endpoint: string;
+    }
+  | {
+      name: 'OpenAI';
+      credentials: string;
+    }
+  | {
+      name: 'HuggingFace';
+      endpoint: string;
+      credentials: string;
+    }
+);
+
+export interface GenModel {
+  id: number;
+  slug: string;
+  name: string;
+  endpoint?: string;
+  credentials?: string;
 }

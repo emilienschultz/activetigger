@@ -6,6 +6,7 @@ import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { omit } from 'lodash';
 import { unparse } from 'papaparse';
 import { useCreateTestSet } from '../../core/api';
+import { useNotifications } from '../../core/notifications';
 import { loadCSVFile, loadParquetFile } from '../../core/utils';
 import { TestSetModel } from '../../types';
 
@@ -23,9 +24,9 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
     defaultValues: {},
   });
   const createTestSet = useCreateTestSet(); // API call
+  const { notify } = useNotifications();
 
   const [data, setData] = useState<DataType | null>(null);
-  //const createTestSet = useCreateTestSet();
   const files = useWatch({ control, name: 'files' });
   // available columns
   const columns = data?.headers.map((h) => (
@@ -57,6 +58,10 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
   // action when form validated
   const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async (formData) => {
     if (data) {
+      if (!formData.col_id || !formData.col_text || !formData.n_test) {
+        notify({ type: 'error', message: 'Please fill all the fields' });
+        return;
+      }
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
       await createTestSet(projectSlug, {
         ...omit(formData, 'files'),
@@ -70,10 +75,12 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
     <div className="container-fluid">
       <div className="row">
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
-          <div className="explanations">
-            No test data set has been created. Do you want to upload your own test set? Be careful,
-            if you upload a testset, its id will be modified with "imported_". You need to take care
-            of the coherence for the labels.
+          <div>
+            <div className="alert alert-info m-2 col-6">
+              No test data set has been created. Do you want to upload your own test set? Be
+              careful, if you upload a testset, its id will be modified with "imported_". You need
+              to take care of the coherence for the labels.
+            </div>
             <label className="form-label" htmlFor="csvFile">
               File to upload
             </label>

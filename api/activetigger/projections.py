@@ -1,5 +1,10 @@
-from activetigger.datamodels import TsneModel, UmapModel
-from activetigger.functions import compute_tsne, compute_umap
+from datetime import datetime
+
+from pandas import DataFrame
+
+from activetigger.datamodels import ProjectionInStrictModel, UserProjectionComputing
+from activetigger.queue import Queue
+from activetigger.tasks.compute_projection import ComputeProjection
 
 
 class Projections:
@@ -7,14 +12,17 @@ class Projections:
     Manage projections
     """
 
+    # TODO: Transform available type to dict[str, UserProjection]
     available: dict
     options: dict
-    computing: dict
+    computing: list[UserProjectionComputing]
+    queue: Queue
 
-    def __init__(self, computing: list) -> None:
-        self.computing: list = computing
-        self.available: dict = {}
-        self.options: dict = {
+    def __init__(self, computing: list, queue: Queue) -> None:
+        self.computing = computing
+        self.queue = queue
+        self.available = {}
+        self.options = {
             "umap": {
                 "n_neighbors": 15,
                 "min_dist": 0.1,
@@ -29,38 +37,52 @@ class Projections:
             },
         }
 
-    def validate(self, method: str, params: dict) -> dict:
-        if method == "umap":
-            try:
-                return {"func": compute_umap, "params": UmapModel(**params).__dict__}
-            except Exception as e:
-                return {"error": str(e)}
-        if method == "tsne":
-            try:
-                return {"func": compute_tsne, "params": TsneModel(**params).__dict__}
-            except Exception as e:
-                return {"error": str(e)}
-        return {"error": "Unknown method"}
-
     def current_computing(self):
-        return [e["name"] for e in self.computing if e["kind"] == "projection"]
+        return [e.name for e in self.computing if e.kind == "projection"]
 
     def training(self) -> dict:
         """
         Currently under training
         """
-        r = {
-            e["user"]: e["method"] for e in self.computing if e["kind"] == "projection"
-        }
+        r = {e.user: e.method for e in self.computing if e.kind == "projection"}
         return r
 
-    def add(self, element, results):
+    def add(self, element: UserProjectionComputing, results: DataFrame) -> None:
         """
         Add projection after computation
         """
-        self.available[element["user"]] = {
+        self.available[element.user] = {
             "data": results,
-            "method": element["method"],
-            "params": element["params"],
-            "id": element["unique_id"],
+            "method": element.method,
+            "params": element.params,
+            "id": element.unique_id,
         }
+
+    def compute(
+        self,
+        project_slug: str,
+        username: str,
+        projection: ProjectionInStrictModel,
+        features: DataFrame,
+    ) -> None:
+        """
+        Launch the projection computation in the queue
+        """
+        unique_id = self.queue.add_task(
+            "projection",
+            project_slug,
+            ComputeProjection(
+                kind=projection.method, features=features, params=projection.params
+            ),
+        )
+        self.computing.append(
+            UserProjectionComputing(
+                unique_id=unique_id,
+                name=f"Projection by {username}",
+                user=username,
+                time=datetime.now(),
+                kind="projection",
+                method=projection.method,
+                params=projection,
+            )
+        )

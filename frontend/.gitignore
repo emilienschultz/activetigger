@@ -25,3 +25,4 @@ dist-ssr
 
 api/activetigger/__pycache__/
 api/tests/__pycache__/
+api/activetigger/api/__pycache__/

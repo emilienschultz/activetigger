@@ -55,8 +55,6 @@ export const SelectionManagement: FC = () => {
     }
   }, [availableLabels, selectionConfig, setAppContext]);
 
-  console.log(selectionConfig);
-
   return phase == 'test' ? (
     <div>Test mode activated - deactivate first before annotating train set</div>
   ) : (
@@ -170,19 +168,31 @@ export const SelectionManagement: FC = () => {
                 <thead>
                   <tr>
                     <th>Indicators</th>
-                    <th></th>
+                    <th>Exact</th>
+                    <th>CV10</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentModel.params &&
-                    (currentModel.statistics && Object.entries(currentModel.statistics)).map(
-                      ([key, value], i) => (
+                    (currentModel.statistics && Object.entries(currentModel.statistics))
+                      .filter(([key]) => key !== 'false_predictions')
+                      .map(([key, value], i) => (
                         <tr key={i}>
                           <td>{key}</td>
                           <td> {JSON.stringify(value)}</td>
+                          <td>
+                            {' '}
+                            {JSON.stringify(
+                              (
+                                currentModel.statistics_cv10 as Record<
+                                  string,
+                                  string | Record<string, number>
+                                >
+                              )[key],
+                            )}
+                          </td>
                         </tr>
-                      ),
-                    )}
+                      ))}
                 </tbody>
               </table>
             </div>

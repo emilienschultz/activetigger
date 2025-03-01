@@ -1,13 +1,16 @@
+"""
+Define the orchestrator and launch the instance
+"""
+
 import logging
 import os
-import secrets
 import shutil
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
-import yaml
+import yaml  # type: ignore[import]
 from cryptography.fernet import Fernet
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
@@ -40,7 +43,6 @@ class Orchestrator:
 
     db_name: str
     features_file: str
-    annotations_file: str
     data_all: str
     train_file: str
     test_file: str
@@ -48,7 +50,6 @@ class Orchestrator:
     algorithm: str
     n_workers: int
     starting_time: float
-    secret_key: str
     path: Path
     path_models: Path
     db: Path
@@ -74,7 +75,6 @@ class Orchestrator:
         self.db_name = "activetigger.db"
         self.data_all = "data_all.parquet"
         self.features_file = "features.parquet"
-        self.annotations_file = "annotations.parquet"
         self.train_file = "train.parquet"
         self.test_file = "test.parquet"
         self.default_user = "root"
@@ -88,7 +88,7 @@ class Orchestrator:
         self.path_models = Path(path_models)
 
         # create or load a key
-        self.secret_key = self.get_secret_key()
+        self.load_secret_key()
 
         # if a YAML configuration file exists, overwrite
         if Path("config.yaml").exists():
@@ -108,7 +108,7 @@ class Orchestrator:
         # attributes of the server
         self.projects = {}
         self.db_manager = DatabaseManager(str(self.db))
-        self.queue = Queue(self.n_workers)
+        self.queue = Queue(self.n_workers, self.path)
         self.users = Users(self.db_manager)
 
         # logging
@@ -128,37 +128,21 @@ class Orchestrator:
         self.queue.close()
         print("Server off")
 
-    def get_secret_key(self) -> str:
+    def load_secret_key(self) -> None:
         """
-        Get the secret key used for tokens
+        Load secret key in the environment
         - if key.yaml exists, load the key
         - if not, create a new key and the file
         """
         if (self.path.joinpath("key.yaml")).exists():
             with open(self.path.joinpath("key.yaml"), "r") as f:
                 conf = yaml.safe_load(f)
-            return conf["key"]
+            key = conf["key"]
         else:
-            key = secrets.token_hex(32)
+            key = Fernet.generate_key().decode()
             with open(self.path.joinpath("key.yaml"), "w") as f:
                 yaml.safe_dump({"key": key}, f)
-            return key
-
-    def encrypt(self, text: str) -> str:
-        """
-        Encrypt a string
-        """
-        cipher = Fernet(self.secret_key)
-        encrypted_token = cipher.encrypt(text.encode())
-        return encrypted_token.decode()
-
-    def decrypt(self, text: str) -> str:
-        """
-        Decrypt a string
-        """
-        cipher = Fernet(self.secret_key)
-        decrypted_token = cipher.decrypt(text.encode())
-        return decrypted_token.decode()
+        os.environ["SECRET_KEY"] = key
 
     def log_action(
         self,
@@ -228,7 +212,9 @@ class Orchestrator:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        encoded_jwt = jwt.encode(
+            to_encode, os.environ["SECRET_KEY"], algorithm=self.algorithm
+        )
 
         # add it in the database as active
         self.db_manager.projects_service.add_token(encoded_jwt, "active")
@@ -257,7 +243,9 @@ class Orchestrator:
             raise Exception("Token is invalid")
 
         # decode payload
-        payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+        payload = jwt.decode(
+            token, os.environ["SECRET_KEY"], algorithms=[self.algorithm]
+        )
         return payload
 
     def start_project(self, project_slug: str) -> dict:
@@ -265,7 +253,7 @@ class Orchestrator:
         Load project in server
         """
         if not self.exists(project_slug):
-            return {"error": "Project does not exist"}
+            raise Exception("This project does not exist")
 
         self.projects[project_slug] = Project(
             project_slug, self.queue, self.db_manager, path_models=self.path_models
@@ -330,7 +318,7 @@ class Orchestrator:
         # create dedicated directory
         params.dir = self.path.joinpath(project_slug)
         if params.dir is None:
-            return {"error": "This name is already used"}
+            raise Exception("Error in the creation of the directory")
         os.makedirs(params.dir)
 
         # copy total dataset as a copy (csv for the moment)
@@ -341,8 +329,9 @@ class Orchestrator:
         content = pd.read_csv(params.dir.joinpath("data_raw.csv"), dtype=str)
 
         # rename columns both for data & params to avoid confusion
-        content.columns = ["dataset_" + i for i in content.columns]
-        params.col_id = "dataset_" + params.col_id if params.col_id else None
+        content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
+        if params.col_id:
+            params.col_id = "dataset_" + params.col_id
         params.cols_text = ["dataset_" + i for i in params.cols_text if i]
         params.cols_context = ["dataset_" + i for i in params.cols_context if i]
         params.col_label = "dataset_" + params.col_label if params.col_label else None
@@ -448,10 +437,9 @@ class Orchestrator:
                 [content[f_notna], content[f_na].sample(n_train_random)]
             )
 
-        trainset.to_parquet(params.dir.joinpath(self.train_file), index=True)
-        trainset[list(set(["text"] + params.cols_context + keep_id))].to_parquet(
-            params.dir.joinpath("annotations.parquet"), index=True
-        )
+        trainset[
+            list(set(["text", "limit"] + params.cols_context + keep_id))
+        ].to_parquet(params.dir.joinpath(self.train_file), index=True)
         trainset[[]].to_parquet(params.dir.joinpath(self.features_file), index=True)
 
         # if the case, add existing annotations in the database
@@ -542,7 +530,8 @@ class Orchestrator:
         if project_slug in self.projects:
             project = self.projects[project_slug]
         else:
-            project = self.start_project(project_slug)
+            self.start_project(project_slug)
+            project = self.projects[project_slug]
 
         # delete the project
         try:
@@ -553,3 +542,26 @@ class Orchestrator:
         # clean current memory
         if project_slug in self.projects:
             del self.projects[project_slug]
+
+    def update(self):
+        """
+        Update state of projects from the queue
+        """
+        timer = time.time()
+        to_del = []
+        self.queue.check()  # check if the queue is still up
+        for p, project in self.projects.items():
+            # if project existing since one day, remove it from memory
+            if (timer - project.starting_time) > 86400:
+                to_del.append(p)
+                continue
+            # update the project
+            project.update_processes()
+
+        # remove the projects from memory
+        for p in to_del:
+            del self.projects[p]
+
+
+# launch the instance
+orchestrator = Orchestrator()

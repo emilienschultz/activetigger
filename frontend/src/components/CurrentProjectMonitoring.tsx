@@ -1,6 +1,7 @@
 import { FC, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { isEqual, isNil } from 'lodash';
 import { useProject } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -24,20 +25,22 @@ export const CurrentProjectMonitoring: FC = () => {
   }, [projectName, appContext.currentProject?.params.project_slug, resetContext]);
 
   useEffect(() => {
-    if (project && !('detail' in project)) {
-      // fix BUG
-      setAppContext((prev) => ({ ...prev, currentProject: project }));
+    if (!isNil(project)) {
+      // check if training process, and refresh the value
+      const isComputing =
+        !isNil(authenticatedUser) &&
+        !isNil(project.bertmodels.training) &&
+        Object.keys(project.bertmodels.training).includes(authenticatedUser.username);
+
+      setAppContext((prev) => {
+        if (!isEqual(prev.currentProject, project)) {
+          console.log('refresh project in app context');
+          return { ...prev, currentProject: project, isComputing };
+        }
+        if (prev.isComputing !== isComputing) return { ...prev, isComputing };
+        return prev;
+      });
     }
-
-    // check if training process, and refresh the value
-    const isComputing =
-      project &&
-      authenticatedUser &&
-      project.bertmodels.training &&
-      Object.keys(project.bertmodels.training).includes(authenticatedUser.username);
-
-    if (typeof isComputing === 'boolean')
-      setAppContext((prev) => ({ ...prev, isComputing: isComputing }));
   }, [project, setAppContext, authenticatedUser]);
 
   // Effect to poll project data regularly to monitor long lasting server tasks

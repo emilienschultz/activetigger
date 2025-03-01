@@ -8,10 +8,10 @@ import { MdSkipNext, MdSkipPrevious } from 'react-icons/md';
 
 import { Modal } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { useAddTableAnnotations, useTableElements } from '../core/api';
-import { useAppContext } from '../core/context';
-import { AnnotationModel } from '../types';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
+import { useAddTableAnnotations, useTableElements } from '../../core/api';
+import { useAppContext } from '../../core/context';
+import { AnnotationModel } from '../../types';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
 /**
  * Component to display the exploratory page

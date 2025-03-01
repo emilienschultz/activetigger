@@ -1,11 +1,11 @@
 import { FC, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { useUserProjects } from '../core/api';
-import { PageLayout } from './layout/PageLayout';
+import { useUserProjects } from '../../core/api';
+import { PageLayout } from '../layout/PageLayout';
 
 import { IoIosAddCircle } from 'react-icons/io';
-import { AvailableProjectsModel } from '../types';
+import { AvailableProjectsModel } from '../../types';
 
 export const ProjectsPage: FC = () => {
   const projects = useUserProjects();
