@@ -1,7 +1,6 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
-import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
 import { AuthRequired } from '../components/auth/AuthRequired';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
@@ -11,6 +10,7 @@ import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
 import { NotFound } from '../components/pages/NotFoundPage';
 import { ProjectPredictPage } from '../components/pages/PredictPage';
+import { ProjectAnnotationPage } from '../components/pages/ProjectAnnotationPage';
 import { ProjectExplorePage } from '../components/pages/ProjectExplorePage';
 import { ProjectExportPage } from '../components/pages/ProjectExportPage';
 import { GenPage } from '../components/pages/ProjectGenPage';
