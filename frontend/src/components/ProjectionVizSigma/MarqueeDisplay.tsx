@@ -23,7 +23,9 @@ export const MarqueeDisplay: FC<{ bbox?: MarqueBoundingBox }> = ({ bbox }) => {
         // SVG wants one point + width and height where bbox is two points, let's transpose
         const width = xMax - x;
         const height = y - yMax;
-        setRectPosition({ x, y: yMax, width, height });
+        if (!isNaN(x) && !isNaN(y) && !isNaN(width) && !isNaN(height))
+          setRectPosition({ x, y: yMax, width, height });
+        else setRectPosition(undefined);
       } else setRectPosition(undefined);
     },
     [sigma],
