@@ -86,13 +86,22 @@ async def get_projection(
     data["labels"] = df["labels"]
     data = data.fillna("NA")
 
+    # add the prediction if it exists
+    predictions = None
+    if current_user.username in project.simplemodels.existing:
+        if scheme in project.simplemodels.existing[current_user.username]:
+            data["predictions"] = project.simplemodels.existing[current_user.username][
+                scheme
+            ].proba["prediction"]
+            predictions = data["predictions"]
+
     return ProjectionOutModel(
         index=list(data.index),
         x=list(data[0]),
         y=list(data[1]),
         labels=list(data["labels"]),
-        # texts=list(data["texts"]),
         status=project.projections.available[current_user.username]["id"],
+        predictions=predictions,
     )
 
 

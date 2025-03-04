@@ -17,6 +17,7 @@ interface Props {
     x: unknown[];
     y: unknown[];
     labels: unknown[];
+    predictions?: unknown[] | null;
   };
   className?: string;
   // bbox
@@ -77,6 +78,9 @@ export const ProjectionVizSigma: FC<Props> = ({
   const [sigmaCursor, setSigmaCursor] = useState<SigmaCursorTypes>(undefined);
   const [activeTool, setActiveTool] = useState<SigmaToolsType>('panZoom');
 
+  // column to use for color mapping
+  const [selectedColumn, setSelectedColumn] = useState<'labels' | 'predictions'>('labels');
+
   // prepare graph for sigma from data props
   const graph = useMemo(() => {
     console.log('compute graph');
@@ -88,14 +92,14 @@ export const ProjectionVizSigma: FC<Props> = ({
         graph.addNode(data.index[index], {
           x: value as number,
           y: data.y[index] as number,
-          label: data.labels[index] as string,
+          label: data[selectedColumn]?.[index] as string,
           size,
         });
       });
       return graph;
     }
     return undefined;
-  }, [data]);
+  }, [data, selectedColumn]);
 
   // nodeReducer change node appearance from colorMapping and selection state
   const nodeReducer = useCallback(
@@ -118,6 +122,15 @@ export const ProjectionVizSigma: FC<Props> = ({
 
   return (
     <div className={className}>
+      <select
+        value={selectedColumn}
+        onChange={(event) => {
+          setSelectedColumn(event.target.value as 'labels' | 'predictions');
+        }}
+      >
+        <option value="labels">Annotated elements</option>
+        {data.predictions && <option value="predictions">Predicted elements</option>}
+      </select>
       <SigmaContainer
         className={classNames(
           sigmaCursor ? `cursor-${sigmaCursor}` : activeTool === 'marquee' && 'cursor-crosshair',

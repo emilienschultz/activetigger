@@ -131,19 +131,17 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   };
 
   return (
-    <div className="alert alert-info container-fluid m-3 col-6">
-      <div className="row">
-        <div className="d-flex flex-wrap align-items-center">
-          <div className="mt-3">
-            <SelectCurrentScheme />
-          </div>
-          <button onClick={deleteSelectedScheme} className="btn btn-primary mx-2">
-            <FaRegTrashAlt size={20} /> Delete
-          </button>
-          <button onClick={handleIconClick} className="btn btn-primary">
-            <FaPlusCircle size={20} /> Add
-          </button>
+    <div className="container-fluid m-3">
+      <div className="d-flex flex-wrap align-items-center">
+        <div className="mt-3">
+          <SelectCurrentScheme />
         </div>
+        <button onClick={deleteSelectedScheme} className="btn btn-primary mx-2">
+          <FaRegTrashAlt size={20} /> Delete
+        </button>
+        <button onClick={handleIconClick} className="btn btn-primary">
+          <FaPlusCircle size={20} /> Add
+        </button>
       </div>
       <div>
         {

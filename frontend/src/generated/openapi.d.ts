@@ -1979,6 +1979,8 @@ export interface components {
             y: unknown[];
             /** Labels */
             labels: unknown[];
+            /** Predictions */
+            predictions?: unknown[] | null;
         };
         /** PromptInputModel */
         PromptInputModel: {
