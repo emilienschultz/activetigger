@@ -10,15 +10,9 @@
 # Default port
 PORT=5000
 
-# Create the conda environment if it doesn't exist
-if conda info --envs | awk '{print $1}' | grep -q '^activetigger$'; then
-    echo "Conda environment 'activetigger' already exists. Activating..."
-else
-    echo "Creating conda environment 'activetigger' with Python 3.11..."
-    conda create -n activetigger python=3.11 -y
-fi
-
 # Activate the conda environment
+echo "Create activetigger environment..."
+conda create -n activetigger python=3.11 -y
 echo "Activating environment 'activetigger'..."
 conda activate activetigger
 
