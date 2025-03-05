@@ -10,19 +10,6 @@
 # Default port
 PORT=5000
 
-# Ensure conda is available
-if [ -z "$CONDA_EXE" ]; then
-    # Try to source conda.sh from common installation locations
-    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-        source "$HOME/miniconda3/etc/profile.d/conda.sh"
-    elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
-        source "$HOME/anaconda3/etc/profile.d/conda.sh"
-    else
-        echo "Conda not found. Please install Anaconda or Miniconda."
-        exit 1
-    fi
-fi
-
 # Create the conda environment if it doesn't exist
 if conda info --envs | awk '{print $1}' | grep -q '^activetigger$'; then
     echo "Conda environment 'activetigger' already exists. Activating..."

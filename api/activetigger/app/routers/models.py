@@ -215,15 +215,25 @@ async def post_bert(
 async def stop_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    specific_user: str | None = None,
 ) -> None:
     """
     Stop user process
     """
+
+    test_rights("modify project", current_user.username, project.name)
+
     # get BERT process for username
     try:
-        p = project.get_process(["train_bert", "predict_bert"], current_user.username)
+        if specific_user is not None:
+            user = specific_user
+        else:
+            user = current_user.username
+
+        p = project.get_process(["train_bert", "predict_bert"], user)
         if len(p) == 0:
             raise HTTPException(status_code=400, detail="No process found")
+
         # get id
         unique_id = p[0].unique_id
         # kill the process

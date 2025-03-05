@@ -33,7 +33,7 @@ logger = logging.getLogger("server")
 # conf deployment
 ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
-N_WORKERS = 2
+N_WORKERS = 1
 
 
 class Orchestrator:
