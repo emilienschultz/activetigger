@@ -33,7 +33,7 @@ logger = logging.getLogger("server")
 # conf deployment
 ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
-N_WORKERS = 1
+N_WORKERS = 5
 
 
 class Orchestrator:
@@ -124,7 +124,7 @@ class Orchestrator:
         """
         print("Ending the server")
         logger.error("Disconnect server")
-        self.queue.executor.shutdown()
+        self.queue.executor.shutdown(wait=False)
         self.queue.close()
         print("Server off")
 

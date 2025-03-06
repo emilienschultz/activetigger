@@ -24,6 +24,8 @@ from transformers import (
 from activetigger.datamodels import BertModelParametersModel
 from activetigger.tasks.base_task import BaseTask
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 
 class CustomLoggingCallback(TrainerCallback):
     event: Optional[multiprocessing.synchronize.Event]
@@ -213,7 +215,7 @@ class TrainBert(BaseTask):
                 per_device_eval_batch_size=int(self.params.batchsize),
                 warmup_steps=int(warmup_steps),
                 eval_steps=eval_steps,
-                evaluation_strategy="steps",
+                eval_strategy="steps",
                 save_strategy="steps",
                 save_steps=int(eval_steps),
                 logging_steps=int(eval_steps),
@@ -267,9 +269,21 @@ class TrainBert(BaseTask):
             shutil.rmtree(current_path)
             raise e
         finally:
-            del trainer, bert, self.df, device, self.event
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.synchronize()
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
+            print("Cleaning memory")
+            try:
+                del (
+                    trainer,
+                    bert,
+                    self.df,
+                    device,
+                    self.event,
+                )
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+                gc.collect()
+                print("OBJECTS", gc.get_objects())
+
+            except Exception as e:
+                print("Error in cleaning memory", e)

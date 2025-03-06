@@ -88,7 +88,13 @@ export const HomePage: FC = () => {
                         </Tooltip>
                       </label>
                     </div>
-                    <div className="explanations">Active users : {users?.length}</div>
+                    <div>
+                      {users ? (
+                        <div className="explanations">Active users : {users?.length}</div>
+                      ) : (
+                        <div className="text-danger">Problem to connect with the server</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

@@ -1,11 +1,14 @@
 import concurrent.futures
 import datetime
 import logging
+import multiprocessing
 import uuid
 from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
 from pathlib import Path
 from typing import Any, Callable
+
+import psutil
 
 logger = logging.getLogger("server")
 
@@ -23,6 +26,7 @@ class Queue:
     manager: SyncManager
     current: dict
     path: Path
+    last_restart: datetime.datetime
 
     def __init__(self, nb_workers: int = 4, path: Path = Path(".")) -> None:
         """
@@ -30,8 +34,9 @@ class Queue:
         """
         self.nb_workers = nb_workers
         self.path = path
+        self.last_restart = datetime.datetime.now()
         self.executor = concurrent.futures.ProcessPoolExecutor(
-            max_workers=self.nb_workers
+            max_workers=self.nb_workers, mp_context=multiprocessing.get_context("spawn")
         )  # manage parallel processes
         self.manager = Manager()  # communicate within processes
         self.current = {}  # keep track of the current stack
@@ -48,20 +53,48 @@ class Queue:
         logger.info("Close queue")
         print("Queue closes")
 
-    def check(self) -> None:
+    def restart(self) -> None:
+        """
+        Restart the executor
+        """
+        print("Restarting executor")
+        self.executor.shutdown(cancel_futures=True)
+        self.executor = concurrent.futures.ProcessPoolExecutor(
+            max_workers=self.nb_workers, mp_context=multiprocessing.get_context("spawn")
+        )
+        self.last_restart = datetime.datetime.now()
+
+    def check(self, renew: int = 10) -> None:
         """
         Check if the exector still works
         if not, recreate it
         """
         try:
+            # restart the executor after X min
+            if (datetime.datetime.now() - self.last_restart).seconds > renew * 60:
+                self.restart()
             self.executor.submit(lambda: None)
+            print("workers", self.get_workers_info())
         except Exception:
-            self.executor.shutdown(cancel_futures=True)
-            self.executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=self.nb_workers
-            )
+            self.restart()
             logger.error("Restart executor")
             print("Problem with executor ; restart")
+
+    def get_workers_info(self) -> dict:
+        """
+        Get info on the workers
+        """
+        process_info = {}
+        for pid in self.executor._processes.keys():
+            try:
+                p = psutil.Process(pid)
+                process_info[pid] = {
+                    "alive": p.is_running(),
+                    "memory_mb": p.memory_info().rss / (1024 * 1024),  # Convertir en Mo
+                }
+            except psutil.NoSuchProcess:
+                process_info[pid] = {"alive": False, "memory_mb": None}
+        return process_info
 
     def add_task(self, kind: str, project_slug: str, task: Any) -> str:
         """
