@@ -460,6 +460,7 @@ class BertModels:
                 test_size=test_size,
             ),
         )
+        del df
         # unique_id  = self.queue.add(
         #     "training",
         #     project,

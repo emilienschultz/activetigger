@@ -47,7 +47,6 @@ class Queue:
         """
         Close the executor
         """
-        # TODO : tuer les workers
         self.executor.shutdown(cancel_futures=True, wait=False)
         self.manager.shutdown()
         logger.info("Close queue")
@@ -110,6 +109,9 @@ class Queue:
         task.path_process = self.path.joinpath(project_slug)
 
         # send the process to the executor
+
+        # TODO : limit the size of the queue / delete the stack
+
         try:
             future = self.executor.submit(task)
         except Exception as e:
@@ -198,3 +200,53 @@ class Queue:
         Number of active processes
         """
         return len([f for f in self.current if self.current[f]["future"].running()])
+
+
+# class QueueProcess:
+#     def __init__(self, nb_workers: int = 4, path: Path = Path(".")) -> None:
+#         """Initialize the process queue manager."""
+#         self.nb_workers = nb_workers
+#         self.path = path
+#         self.last_restart = datetime.datetime.now()
+#         self.queue: list = []
+#         self.current: list = []
+#         self.results: dict = {}
+#         self.manager = Manager()
+#         logger.info("Init Queue")
+
+#     def add_task(self, func, *args):
+#         """Add a new task to the queue."""
+#         result_queue = multiprocessing.Queue()
+#         process = multiprocessing.Process(
+#             target=self._worker, args=(func, result_queue, *args)
+#         )
+#         self.queue.append((process, result_queue))
+
+#     def _worker(self, func, result_queue, *args):
+#         """Run the function and store the result."""
+#         result = func(*args)
+#         result_queue.put(result)
+
+#     def start_next(self):
+#         """Start the next process if slots are available."""
+#         if len(self.current) < self.nb_workers and self.queue:
+#             process, result_queue = self.queue.pop(0)
+#             process.start()
+#             self.current.append((process, result_queue))
+
+#     def monitor_processes(self):
+#         """Check the status of processes and collect results."""
+#         for process, result_queue in self.current[:]:
+#             if not process.is_alive():
+#                 process.join()
+#                 self.results[process.pid] = result_queue.get()
+#                 self.current.remove((process, result_queue))
+
+#     def update(self):
+#         """Continuously monitor and start processes until the queue is empty."""
+#         self.start_next()
+#         self.monitor_processes()
+
+#     def get_results(self):
+#         """Return the collected results."""
+#         return self.results
