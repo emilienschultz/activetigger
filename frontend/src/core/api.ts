@@ -48,7 +48,10 @@ async function fetchWithTimeout(input: Request) {
         headers: { 'Content-Type': 'application/json' },
       });
     // in case an other error occurres send it upstream
-    throw error;
+    return new Response(JSON.stringify({ error: 'API unreachable!' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } finally {
     // in any case clear timeout
     clearTimeout(timer);
