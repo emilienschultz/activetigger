@@ -11,7 +11,7 @@ import { useNotifications } from '../../core/notifications';
  * a component which protect private routes from access by unauthenticated user
  * @returns children or a redirection to the login form
  */
-export const AuthRequired: FC<PropsWithChildren> = ({ children }) => {
+export const APIMiddlewares: FC<PropsWithChildren> = ({ children }) => {
   // first we get authenticated user state
   const { authenticatedUser } = useAuth();
   // location is provided by react-router library and contains the current page (i.e. in which URL path this component has been mounted)
