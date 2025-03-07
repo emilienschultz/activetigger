@@ -337,7 +337,7 @@ async def post_annotation(
 
             orchestrator.log_action(
                 current_user.username,
-                f"ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
+                f"PROJECT {project.name} - ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
                 project.name,
             )
             return None

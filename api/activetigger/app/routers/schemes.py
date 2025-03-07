@@ -56,7 +56,7 @@ async def rename_label(
         # log
         orchestrator.log_action(
             current_user.username,
-            f"RENAME LABEL in {scheme}: label {former_label} to {new_label}",
+            f"PROJECT {project.name} - RENAME LABEL in {scheme}: label {former_label} to {new_label}",
             project.name,
         )
         return None
@@ -95,7 +95,7 @@ async def add_label(
             project.schemes.delete_label(label, scheme, current_user.username)
             orchestrator.log_action(
                 current_user.username,
-                f"DELETE LABEL in {scheme}: label {label}",
+                f"PROJECT {project.name} - DELETE LABEL in {scheme}: label {label}",
                 project.name,
             )
             return None
@@ -120,7 +120,7 @@ async def post_codebook(
         project.schemes.add_codebook(codebook.scheme, codebook.content, codebook.time)
         orchestrator.log_action(
             current_user.username,
-            f"MODIFY CODEBOOK: codebook {codebook.scheme}",
+            f"PROJECT {project.name} - MODIFY CODEBOOK: codebook {codebook.scheme}",
             project.name,
         )
         return None
@@ -166,7 +166,9 @@ async def post_schemes(
                 scheme.name, scheme.labels, scheme.kind, current_user.username
             )
             orchestrator.log_action(
-                current_user.username, f"ADD SCHEME: scheme {scheme.name}", project.name
+                current_user.username,
+                f"PROJECT {project.name} - ADD SCHEME: scheme {scheme.name}",
+                project.name,
             )
             return None
         except Exception:
@@ -176,7 +178,7 @@ async def post_schemes(
             project.schemes.delete_scheme(scheme.name)
             orchestrator.log_action(
                 current_user.username,
-                f"DELETE SCHEME: scheme {scheme.name}",
+                f"PROJECT {project.name} - DELETE SCHEME: scheme {scheme.name}",
                 project.name,
             )
             return None
@@ -188,7 +190,7 @@ async def post_schemes(
             project.schemes.update_scheme(scheme.name, scheme.labels)
             orchestrator.log_action(
                 current_user.username,
-                f"UPDATE SCHEME: scheme {scheme.name}",
+                f"PROJECT {project.name} - UPDATE SCHEME: scheme {scheme.name}",
                 project.name,
             )
             return None

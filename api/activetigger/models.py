@@ -459,6 +459,7 @@ class BertModels:
                 params=params,
                 test_size=test_size,
             ),
+            queue="gpu",
         )
         del df
         # unique_id  = self.queue.add(

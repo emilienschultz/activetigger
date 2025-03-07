@@ -6,7 +6,7 @@ import uuid
 from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import psutil
 
@@ -18,51 +18,73 @@ class Queue:
     Managining parallel processes for computation
     Jobs with  concurrent.futures.ProcessPoolExecutor
 
-    TODO : better management of failed processes
+    Need to differentiate between CPU and GPU jobs
+    otherwise there is concurrency in the memory usage
+
+    There is 2 different pools managing 2 queue
     """
 
+    path: Path
     max_waiting_processes: int = 15
-    nb_workers: int
-    executor: concurrent.futures.ProcessPoolExecutor
+    nb_workers_cpu: int
+    nb_workers_gpu: int
+    executor: concurrent.futures.ProcessPoolExecutor | None
+    executor_gpu: concurrent.futures.ProcessPoolExecutor | None
     manager: SyncManager
     current: dict
-    path: Path
     last_restart: datetime.datetime
 
-    def __init__(self, nb_workers: int = 4, path: Path = Path(".")) -> None:
+    def __init__(
+        self, nb_workers_cpu: int = 3, nb_workers_gpu: int = 1, path: Path = Path(".")
+    ) -> None:
         """
         Initiating the queue
         """
-        self.nb_workers = nb_workers
+        self.executor = None
+        self.executor_gpu = None
+        self.nb_workers_cpu = nb_workers_cpu
+        self.nb_workers_gpu = nb_workers_gpu
         self.path = path
-        self.last_restart = datetime.datetime.now()
-        self.executor = concurrent.futures.ProcessPoolExecutor(
-            max_workers=self.nb_workers, mp_context=multiprocessing.get_context("spawn")
-        )  # manage parallel processes
         self.manager = Manager()  # communicate within processes
         self.current = {}  # keep track of the current stack
 
+        # start the executor
+        self.start_pools()
         logger.info("Init Queue")
+
+    def start_pools(self) -> None:
+        """
+        Create the pools
+        """
+        # close the previous executor
+        if self.executor is not None:
+            self.executor.shutdown(cancel_futures=True)
+        if self.executor_gpu is not None:
+            self.executor_gpu.shutdown(cancel_futures=True)
+
+        context = multiprocessing.get_context("spawn")
+        self.executor = concurrent.futures.ProcessPoolExecutor(
+            max_workers=self.nb_workers_cpu, mp_context=context
+        )
+        if self.nb_workers_gpu > 0:
+            print("Init GPU pool")
+            self.executor_gpu = concurrent.futures.ProcessPoolExecutor(
+                max_workers=self.nb_workers_gpu, mp_context=context
+            )
+        self.last_restart = datetime.datetime.now()
+        print("Pool initialized")
 
     def close(self) -> None:
         """
         Close the executor
         """
-        self.executor.shutdown(cancel_futures=True, wait=False)
+        if self.executor is not None:
+            self.executor.shutdown(cancel_futures=True, wait=False)
+        if self.executor_gpu is not None:
+            self.executor_gpu.shutdown(cancel_futures=True, wait=False)
         self.manager.shutdown()
         logger.info("Close queue")
         print("Queue closes")
-
-    def restart(self) -> None:
-        """
-        Restart the executor
-        """
-        print("Restarting executor")
-        self.executor.shutdown(cancel_futures=True)
-        self.executor = concurrent.futures.ProcessPoolExecutor(
-            max_workers=self.nb_workers, mp_context=multiprocessing.get_context("spawn")
-        )
-        self.last_restart = datetime.datetime.now()
 
     def check(self, renew: int = 20) -> None:
         """
@@ -74,37 +96,69 @@ class Queue:
             if (datetime.datetime.now() - self.last_restart).seconds > renew * 60:
                 # only if no process is running
                 if all(self.current[p]["future"].done() for p in self.current):
-                    self.restart()
-            self.executor.submit(lambda: None)
-            print("workers", self.get_workers_info())
+                    self.start_pools()
+            # test if general executor ok
+            if self.executor is not None:
+                self.executor.submit(lambda: None)
+            print("workers", self.get_workers_info("cpu"), self.get_workers_info("gpu"))
         except Exception:
-            self.restart()
+            self.start_pools()
             logger.error("Restart executor")
             print("Problem with executor ; restart")
 
-    def get_workers_info(self) -> dict:
+    def get_workers_info(self, queue: str = "cpu") -> dict:
         """
         Get info on the workers
         """
         process_info = {}
-        for pid in self.executor._processes.keys():
+
+        # select the queue
+        if queue == "cpu":
+            if self.executor is None:
+                return {}
+            pids = self.executor._processes.keys()
+        elif queue == "gpu":
+            if self.executor_gpu is None:
+                return {}
+            pids = self.executor_gpu._processes.keys()
+
+        # extract the info
+        for pid in pids:
             try:
                 p = psutil.Process(pid)
                 process_info[pid] = {
                     "alive": p.is_running(),
-                    "memory_mb": p.memory_info().rss / (1024 * 1024),  # Convertir en Mo
+                    "memory_mb": p.memory_info().rss / (1024 * 1024),
                 }
             except psutil.NoSuchProcess:
                 process_info[pid] = {"alive": False, "memory_mb": None}
+
         return process_info
 
-    def add_task(self, kind: str, project_slug: str, task: Any) -> str:
+    def submit_to_queue(self, queue: str, task: Any) -> concurrent.futures.Future:
         """
-        Add a task to the queue
+        Submit a task to the queue
         """
+        if queue == "cpu":
+            if self.executor is None:
+                raise Exception("Executor not started")
+            future = self.executor.submit(task)
+        elif queue == "gpu":
+            if self.executor_gpu is None:
+                raise Exception("Executor not started")
+            future = self.executor_gpu.submit(task)
+        else:
+            raise Exception("Queue not found")
+        return future
 
+    def add_task(
+        self, kind: str, project_slug: str, task: Any, queue: str = "cpu"
+    ) -> str:
+        """
+        Add a task to one of the 2 queue
+        """
         # test if the queue is not full
-        if self.get_nb_waiting_processes() > self.max_waiting_processes:
+        if self.get_nb_waiting_processes(queue) > self.max_waiting_processes:
             raise Exception("Queue is full. Wait for process to finish.")
 
         # generate a unique id
@@ -114,16 +168,8 @@ class Queue:
         task.unique_id = unique_id
         task.path_process = self.path.joinpath(project_slug)
 
-        # send the process to the executor
-
-        # TODO : limit the size of the queue / delete the stack
-
-        try:
-            future = self.executor.submit(task)
-        except Exception as e:
-            print("Error submitting task: ", e)
-            logger.error(f"Error submitting task: {e}")
-            return "error"
+        # select the executor
+        future = self.submit_to_queue(queue, task)
 
         # save in the stack
         self.current[unique_id] = {
@@ -132,38 +178,9 @@ class Queue:
             "future": future,
             "event": event,
             "starting_time": datetime.datetime.now(),
+            "queue": queue,
         }
-        return unique_id
 
-    def add(self, kind: str, project_slug: str, func: Callable, args: dict) -> str:
-        """
-        Add a function in the queue
-        """
-        # test if the queue is not full
-        if self.get_nb_waiting_processes() > self.max_waiting_processes:
-            raise Exception("Queue is full. Wait for process to finish.")
-
-        unique_id = str(uuid.uuid4())
-        event = self.manager.Event()
-        args["event"] = event
-        args["unique_id"] = unique_id
-
-        # send the process to the executor
-        try:
-            future = self.executor.submit(func, **args)
-        except Exception as e:
-            print("Error submitting task: ", e)
-            logger.error(f"Error submitting task: {e}")
-            return "error"
-
-        # save in the stack
-        self.current[unique_id] = {
-            "kind": kind,
-            "project_slug": project_slug,
-            "future": future,
-            "event": event,
-            "starting_time": datetime.datetime.now(),
-        }
         return unique_id
 
     def kill(self, unique_id: str) -> None:
@@ -173,7 +190,7 @@ class Queue:
         if unique_id not in self.current:
             raise Exception("Process not found")
         self.current[unique_id]["event"].set()  # TODO update status to flag the killing
-        self.delete(unique_id)  # TODOmove this to the cleaning method
+        self.delete(unique_id)  # TODO move this to the cleaning method
 
     def delete(self, ids: str | list) -> None:
         """
@@ -211,7 +228,7 @@ class Queue:
         """
         return len([f for f in self.current if self.current[f]["future"].running()])
 
-    def get_nb_waiting_processes(self) -> int:
+    def get_nb_waiting_processes(self, queue: str = "cpu") -> int:
         """
         Number of waiting processes
         """
@@ -219,57 +236,51 @@ class Queue:
             [
                 f
                 for f in self.current
-                if not self.current[f]["future"].running()
+                if self.current[f]["queue"] == queue
+                and not self.current[f]["future"].running()
                 and not self.current[f]["future"].done()
             ]
         )
 
+    # def restart(self) -> None:
+    #     """
+    #     Restart the executor
+    #     """
+    #     print("Restarting executor")
+    #     self.executor.shutdown(cancel_futures=True)
+    #     self.executor = concurrent.futures.ProcessPoolExecutor(
+    #         max_workers=self.nb_workers, mp_context=multiprocessing.get_context("spawn")
+    #     )
+    #     self.last_restart = datetime.datetime.now()
 
-# class QueueProcess:
-#     def __init__(self, nb_workers: int = 4, path: Path = Path(".")) -> None:
-#         """Initialize the process queue manager."""
-#         self.nb_workers = nb_workers
-#         self.path = path
-#         self.last_restart = datetime.datetime.now()
-#         self.queue: list = []
-#         self.current: list = []
-#         self.results: dict = {}
-#         self.manager = Manager()
-#         logger.info("Init Queue")
 
-#     def add_task(self, func, *args):
-#         """Add a new task to the queue."""
-#         result_queue = multiprocessing.Queue()
-#         process = multiprocessing.Process(
-#             target=self._worker, args=(func, result_queue, *args)
-#         )
-#         self.queue.append((process, result_queue))
+# def add(self, kind: str, project_slug: str, func: Callable, args: dict) -> str:
+#     """
+#     Add a function in the queue
+#     """
+#     # test if the queue is not full
+#     if self.get_nb_waiting_processes() > self.max_waiting_processes:
+#         raise Exception("Queue is full. Wait for process to finish.")
 
-#     def _worker(self, func, result_queue, *args):
-#         """Run the function and store the result."""
-#         result = func(*args)
-#         result_queue.put(result)
+#     unique_id = str(uuid.uuid4())
+#     event = self.manager.Event()
+#     args["event"] = event
+#     args["unique_id"] = unique_id
 
-#     def start_next(self):
-#         """Start the next process if slots are available."""
-#         if len(self.current) < self.nb_workers and self.queue:
-#             process, result_queue = self.queue.pop(0)
-#             process.start()
-#             self.current.append((process, result_queue))
+#     # send the process to the executor
+#     try:
+#         future = self.executor.submit(func, **args)
+#     except Exception as e:
+#         print("Error submitting task: ", e)
+#         logger.error(f"Error submitting task: {e}")
+#         return "error"
 
-#     def monitor_processes(self):
-#         """Check the status of processes and collect results."""
-#         for process, result_queue in self.current[:]:
-#             if not process.is_alive():
-#                 process.join()
-#                 self.results[process.pid] = result_queue.get()
-#                 self.current.remove((process, result_queue))
-
-#     def update(self):
-#         """Continuously monitor and start processes until the queue is empty."""
-#         self.start_next()
-#         self.monitor_processes()
-
-#     def get_results(self):
-#         """Return the collected results."""
-#         return self.results
+#     # save in the stack
+#     self.current[unique_id] = {
+#         "kind": kind,
+#         "project_slug": project_slug,
+#         "future": future,
+#         "event": event,
+#         "starting_time": datetime.datetime.now(),
+#     }
+#     return unique_id
