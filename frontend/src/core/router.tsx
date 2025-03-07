@@ -1,7 +1,7 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
-import { AuthRequired } from '../components/auth/AuthRequired';
+import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
 import { DocPage } from '../components/pages/DocPage';
@@ -48,42 +48,42 @@ export function getRouter() {
     {
       path: '/users',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <UsersPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/monitor',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <MonitorPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/projects/',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <ProjectsPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/projects/new',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <ProjectNewPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/projects/:projectName',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <CurrentProjectMonitoring />
           <Outlet />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
       children: [
         {
