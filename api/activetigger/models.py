@@ -460,6 +460,21 @@ class BertModels:
                 test_size=test_size,
             ),
         )
+        # unique_id  = self.queue.add(
+        #     "training",
+        #     project,
+        #     train_bert,
+        #     {
+        #         "path": self.path,
+        #         "name": name,
+        #         "df": df.copy(deep=True),
+        #         "col_label": col_label,
+        #         "col_text": col_text,
+        #         "base_model": base_model,
+        #         "params": params,
+        #         "test_size": test_size,
+        #     },
+        # )
 
         # Update the queue state
         b = BertModel(name, self.path / name, base_model)

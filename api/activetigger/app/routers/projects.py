@@ -162,7 +162,7 @@ async def add_testdata(
             return None
         raise Exception("action not found")
     except Exception as e:
-        raise HTTPException(status_code=500) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/projects")

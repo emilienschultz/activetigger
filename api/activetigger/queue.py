@@ -64,15 +64,17 @@ class Queue:
         )
         self.last_restart = datetime.datetime.now()
 
-    def check(self, renew: int = 10) -> None:
+    def check(self, renew: int = 20) -> None:
         """
         Check if the exector still works
         if not, recreate it
         """
         try:
-            # restart the executor after X min
+            # restart the executor after X min to clear
             if (datetime.datetime.now() - self.last_restart).seconds > renew * 60:
-                self.restart()
+                # only if no process is running
+                if all(self.current[p]["future"].done() for p in self.current):
+                    self.restart()
             self.executor.submit(lambda: None)
             print("workers", self.get_workers_info())
         except Exception:
@@ -98,7 +100,7 @@ class Queue:
 
     def add_task(self, kind: str, project_slug: str, task: Any) -> str:
         """
-        Temporary
+        Add a task to the queue
         """
         # generate a unique id
         unique_id = str(uuid.uuid4())
@@ -108,7 +110,12 @@ class Queue:
         task.path_process = self.path.joinpath(project_slug)
 
         # send the process to the executor
-        future = self.executor.submit(task)
+        try:
+            future = self.executor.submit(task)
+        except Exception as e:
+            print("Error submitting task: ", e)
+            logger.error(f"Error submitting task: {e}")
+            return "error"
 
         # save in the stack
         self.current[unique_id] = {
@@ -122,14 +129,9 @@ class Queue:
 
     def add(self, kind: str, project_slug: str, func: Callable, args: dict) -> str:
         """
-        Add new element to queue
-        - launch the function func and args as a subprocess
-        - push the process in the queue
+        Add a function in the queue
         """
-        # generate a unique id
         unique_id = str(uuid.uuid4())
-
-        # create an event to control the process
         event = self.manager.Event()
         args["event"] = event
         args["unique_id"] = unique_id
@@ -138,6 +140,7 @@ class Queue:
         try:
             future = self.executor.submit(func, **args)
         except Exception as e:
+            print("Error submitting task: ", e)
             logger.error(f"Error submitting task: {e}")
             return "error"
 

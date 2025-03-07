@@ -254,9 +254,9 @@ class Project:
             print("Testset labels imported")
 
         # write the dataset
-        df[[testset.col_text]].to_parquet(self.params.dir.joinpath("test.parquet"))
+        df[["text"]].to_parquet(self.params.dir.joinpath("test.parquet"))
         # load the data
-        self.schemes.test = df[[testset.col_text]]
+        self.schemes.test = df[["text"]]
         # update parameters
         self.params.test = True
         # update the database

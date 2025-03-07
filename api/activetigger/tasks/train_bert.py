@@ -283,7 +283,6 @@ class TrainBert(BaseTask):
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
                 gc.collect()
-                print("OBJECTS", gc.get_objects())
 
             except Exception as e:
                 print("Error in cleaning memory", e)
