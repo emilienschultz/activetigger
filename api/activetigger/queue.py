@@ -21,6 +21,7 @@ class Queue:
     TODO : better management of failed processes
     """
 
+    max_waiting_processes: int = 15
     nb_workers: int
     executor: concurrent.futures.ProcessPoolExecutor
     manager: SyncManager
@@ -101,6 +102,11 @@ class Queue:
         """
         Add a task to the queue
         """
+
+        # test if the queue is not full
+        if self.get_nb_waiting_processes() > self.max_waiting_processes:
+            raise Exception("Queue is full. Wait for process to finish.")
+
         # generate a unique id
         unique_id = str(uuid.uuid4())
         event = self.manager.Event()
@@ -133,6 +139,10 @@ class Queue:
         """
         Add a function in the queue
         """
+        # test if the queue is not full
+        if self.get_nb_waiting_processes() > self.max_waiting_processes:
+            raise Exception("Queue is full. Wait for process to finish.")
+
         unique_id = str(uuid.uuid4())
         event = self.manager.Event()
         args["event"] = event
@@ -200,6 +210,19 @@ class Queue:
         Number of active processes
         """
         return len([f for f in self.current if self.current[f]["future"].running()])
+
+    def get_nb_waiting_processes(self) -> int:
+        """
+        Number of waiting processes
+        """
+        return len(
+            [
+                f
+                for f in self.current
+                if not self.current[f]["future"].running()
+                and not self.current[f]["future"].done()
+            ]
+        )
 
 
 # class QueueProcess:
