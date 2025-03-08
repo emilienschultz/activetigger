@@ -139,16 +139,21 @@ class Queue:
         """
         Submit a task to the queue
         """
+        # if not gpu, send to cpu
+        if queue == "gpu" and self.nb_workers_gpu == 0:
+            queue = "cpu"
+
+        # select the queue
         if queue == "cpu":
             if self.executor is None:
-                raise Exception("Executor not started")
+                raise Exception("Executor CPU not started")
             future = self.executor.submit(task)
         elif queue == "gpu":
             if self.executor_gpu is None:
-                raise Exception("Executor not started")
+                raise Exception("Executor GPU not started")
             future = self.executor_gpu.submit(task)
         else:
-            raise Exception("Queue not found")
+            raise Exception("Queue not found", queue)
         return future
 
     def add_task(
