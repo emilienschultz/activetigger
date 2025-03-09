@@ -314,6 +314,7 @@ class Features:
                 "feature",
                 self.project_slug,
                 ComputeSbert(texts=df, model="all-mpnet-base-v2"),
+                queue="gpu",
             )
 
         if kind == "fasttext":

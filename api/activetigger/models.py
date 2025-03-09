@@ -572,6 +572,7 @@ class BertModels:
                 file_name="predict_test.parquet",
                 batch=32,
             ),
+            queue="gpu",
         )
 
         b.status = "testing"
@@ -628,6 +629,7 @@ class BertModels:
                 file_name=f"predict_{dataset}.parquet",
                 batch=batch_size,
             ),
+            queue="gpu",
         )
         b.status = f"predicting {dataset}"
         self.computing.append(
