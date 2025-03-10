@@ -179,7 +179,7 @@ export const TrainPage: FC = () => {
   ];
 
   const displayAdvancement = (val: number | string | null) => {
-    if (!val) return '';
+    if (!val) return 'process in the queue waiting to start';
     const v = Math.round(Number(val));
     if (v >= 100) return 'completed, please wait';
     return v + '%';

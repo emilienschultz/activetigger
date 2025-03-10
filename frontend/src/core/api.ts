@@ -1321,7 +1321,7 @@ export function useGetDatasetUrl(projectSlug: string | null) {
       });
 
       if (!res.error) {
-        return config.api.url + res.data;
+        return config.api.url + res.data.path;
       }
       return null;
     }

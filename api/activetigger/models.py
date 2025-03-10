@@ -722,11 +722,11 @@ class BertModels:
         Export bert archive if exists
         """
         file_name = f"{name}.tar.gz"
-        if not (self.path / "../../static" / file_name).exists():
+        if not (self.path.joinpath("../../static").joinpath(file_name)).exists():
             raise FileNotFoundError("file does not exist")
         return StaticFileModel(
             name=file_name,
-            path=str(self.path.joinpath("../../static").joinpath(file_name)),
+            path=str(Path("/static").joinpath(file_name)),
         )
 
     def add(self, element: UserModelComputing):

@@ -554,6 +554,8 @@ class Orchestrator:
         """
         Update state of projects from the queue
         """
+        self.queue.display_info()
+        self.queue.clean_old_processes()
         timer = time.time()
         to_del = []
         for p, project in self.projects.items():

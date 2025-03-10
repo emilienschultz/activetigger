@@ -59,7 +59,7 @@ export const ProjectActionsSidebar: FC<{
 
   const errors = projectState?.errors?.map((arr) => arr.join(' - ')) || [];
 
-  console.log(queueState);
+  console.log(projectState);
 
   return (
     <div

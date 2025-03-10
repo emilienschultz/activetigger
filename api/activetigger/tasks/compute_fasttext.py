@@ -19,10 +19,16 @@ class ComputeFasttext(BaseTask):
     kind = "compute_feature_sbert"
 
     def __init__(
-        self, texts: Series, language: str, path_models: Path, model: str = ""
+        self,
+        texts: Series,
+        language: str,
+        path_process: Path,
+        path_models: Path,
+        model: str = "",
     ):
         super().__init__()
         self.texts = texts
+        self.path_process = path_process
         self.path_models = path_models
         self.language = language
         self.model = model
