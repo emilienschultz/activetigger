@@ -310,7 +310,8 @@ class ProjectionOutModel(BaseModel):
     index: list
     x: list
     y: list
-    labels: list
+    labels: list[str]
+    predictions: list[str] | None = None
 
 
 #    texts: list

@@ -1,8 +1,5 @@
-import multiprocessing
 from getpass import getpass
-from logging import Logger
-from pathlib import Path
-from typing import Optional, cast
+from typing import cast
 
 import bcrypt
 import pandas as pd
@@ -20,42 +17,9 @@ from sklearn.metrics import (  # type: ignore[import]
 from sklearn.preprocessing import OneHotEncoder  # type: ignore[import]
 from transformers import (  # type: ignore[import]
     BertTokenizer,
-    TrainerCallback,
-    TrainerControl,
-    TrainerState,
-    TrainingArguments,
 )
 
 from activetigger.datamodels import MLStatisticsModel
-
-
-class CustomLoggingCallback(TrainerCallback):
-    event: Optional[multiprocessing.synchronize.Event]
-    current_path: Path
-    logger: Logger
-
-    def __init__(self, event, logger, current_path):
-        self.event = event
-        self.current_path = current_path
-        self.logger = logger
-
-    def on_step_end(
-        self,
-        args: TrainingArguments,
-        state: TrainerState,
-        control: TrainerControl,
-        **kwargs,
-    ):
-        self.logger.info(f"Step {state.global_step}")
-        progress_percentage = (state.global_step / state.max_steps) * 100
-        with open(self.current_path.joinpath("train/progress"), "w") as f:
-            f.write(str(progress_percentage))
-        # end if event set
-        if self.event is not None:
-            if self.event.is_set():
-                self.logger.info("Event set, stopping training.")
-                control.should_training_stop = True
-                raise Exception("Process interrupted by user")
 
 
 def get_root_pwd() -> str:

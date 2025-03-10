@@ -200,7 +200,7 @@ async def get_queue() -> ServerStateModel:
 
     # running processes
     q = orchestrator.queue.state()
-    queue = {i: q[i] for i in q if q[i]["state"] == "running"}
+    queue = {i: q[i] for i in q if q[i]["state"] in ["pending", "running"]}
 
     # server state
     gpu = get_gpu_memory_info()

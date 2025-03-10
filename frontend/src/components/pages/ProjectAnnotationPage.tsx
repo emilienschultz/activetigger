@@ -8,22 +8,23 @@ import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 import {
   useAddAnnotation,
   useGetElementById,
   useGetNextElementId,
   useStatistics,
   useUpdateSimpleModel,
-} from '../core/api';
-import { useAuth } from '../core/auth';
-import { useAppContext } from '../core/context';
-import { ElementOutModel } from '../types';
-import { ProjectPageLayout } from './layout/ProjectPageLayout';
-import { MulticlassInput } from './MulticlassInput';
-import { MultilabelInput } from './MultilabelInput';
-import { ProjectionManagement } from './ProjectionManagement';
-import { SelectionManagement } from './SelectionManagement';
-import { SimpleModelManagement } from './SimpleModelManagement';
+} from '../../core/api';
+import { useAuth } from '../../core/auth';
+import { useAppContext } from '../../core/context';
+import { ElementOutModel } from '../../types';
+import { ProjectPageLayout } from '../layout/ProjectPageLayout';
+import { MulticlassInput } from '../MulticlassInput';
+import { MultilabelInput } from '../MultilabelInput';
+import { ProjectionManagement } from '../ProjectionManagement';
+import { SelectionManagement } from '../SelectionManagement';
+import { SimpleModelManagement } from '../SimpleModelManagement';
 
 /**
  * Annotation page
@@ -242,20 +243,22 @@ export const ProjectAnnotationPage: FC = () => {
               <div>
                 <div className="d-flex align-items-center mb-3">
                   {statistics ? (
-                    <span
-                      className="badge text-bg-light"
-                      title="tagged / selection untagged / total"
-                    >
+                    <span className="badge text-bg-light currentstatistics">
                       Annotated :{' '}
                       {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${nSample ? nSample : ''} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
                     </span>
                   ) : (
                     ''
                   )}
-
+                  <Tooltip anchorSelect=".currentstatistics" place="top">
+                    tagged / selection untagged / total
+                  </Tooltip>
                   <div>
-                    <button className="btn" onClick={refetchElement}>
+                    <button className="btn getelement" onClick={refetchElement}>
                       <LuRefreshCw size={20} /> Get element
+                      <Tooltip anchorSelect=".getelement" place="top">
+                        Get next element with the selection mode
+                      </Tooltip>
                     </button>
                   </div>
                 </div>
@@ -386,15 +389,21 @@ export const ProjectAnnotationPage: FC = () => {
           <div className="d-flex flex-wrap gap-2 justify-content-center">
             <Link
               to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
-              className="btn"
+              className="btn previouselement"
               onClick={() => {
                 setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
               }}
             >
               <IoMdSkipBackward />
+              <Tooltip anchorSelect=".previouselement" place="top">
+                Go back to previous element
+              </Tooltip>
             </Link>
-            <button className="btn" onClick={() => setDisplayComment(!displayComment)}>
+            <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
               <FaPencilAlt />
+              <Tooltip anchorSelect=".addcomment" place="top">
+                Add a commentary
+              </Tooltip>
             </button>
 
             {kindScheme == 'multiclass' && (
@@ -415,12 +424,15 @@ export const ProjectAnnotationPage: FC = () => {
               // erase button to remove last annotation
               lastTag && (
                 <button
-                  className="btn"
+                  className="btn clearannotation"
                   onClick={() => {
                     postAnnotation(null, elementId);
                   }}
                 >
                   <PiEraser />
+                  <Tooltip anchorSelect=".clearannotation" place="top">
+                    Erase current tag
+                  </Tooltip>
                 </button>
               )
             }

@@ -112,6 +112,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   useEffect(() => {
     if (projectionData) {
       const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
+      console.log('unique');
       const labeledColors = uniqueLabels.reduce<Record<string, string>>(
         (acc, label, index: number) => {
           acc[label as string] = colormap[index];

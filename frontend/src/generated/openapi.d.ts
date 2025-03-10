@@ -1978,7 +1978,9 @@ export interface components {
             /** Y */
             y: unknown[];
             /** Labels */
-            labels: unknown[];
+            labels: string[];
+            /** Predictions */
+            predictions?: string[] | null;
         };
         /** PromptInputModel */
         PromptInputModel: {
@@ -3865,6 +3867,7 @@ export interface operations {
     stop_bert_models_bert_stop_post: {
         parameters: {
             query: {
+                specific_user?: string | null;
                 project_slug: string;
             };
             header?: never;

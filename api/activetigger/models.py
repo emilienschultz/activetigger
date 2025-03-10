@@ -38,6 +38,8 @@ from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
 from activetigger.tasks.fit_model import FitModel
 from activetigger.tasks.predict_bert import PredictBert
+
+# from activetigger.tasks.empty_task import EmptyTask
 from activetigger.tasks.train_bert import TrainBert
 
 
@@ -459,7 +461,25 @@ class BertModels:
                 params=params,
                 test_size=test_size,
             ),
+            # EmptyTask(120),
+            queue="gpu",
         )
+        del df
+        # unique_id  = self.queue.add(
+        #     "training",
+        #     project,
+        #     train_bert,
+        #     {
+        #         "path": self.path,
+        #         "name": name,
+        #         "df": df.copy(deep=True),
+        #         "col_label": col_label,
+        #         "col_text": col_text,
+        #         "base_model": base_model,
+        #         "params": params,
+        #         "test_size": test_size,
+        #     },
+        # )
 
         # Update the queue state
         b = BertModel(name, self.path / name, base_model)
@@ -555,6 +575,7 @@ class BertModels:
                 file_name="predict_test.parquet",
                 batch=32,
             ),
+            queue="gpu",
         )
 
         b.status = "testing"
@@ -611,6 +632,7 @@ class BertModels:
                 file_name=f"predict_{dataset}.parquet",
                 batch=batch_size,
             ),
+            queue="gpu",
         )
         b.status = f"predicting {dataset}"
         self.computing.append(
@@ -700,11 +722,11 @@ class BertModels:
         Export bert archive if exists
         """
         file_name = f"{name}.tar.gz"
-        if not (self.path / "../../static" / file_name).exists():
+        if not (self.path.joinpath("../../static").joinpath(file_name)).exists():
             raise FileNotFoundError("file does not exist")
         return StaticFileModel(
             name=file_name,
-            path=str(self.path.joinpath("../../static").joinpath(file_name)),
+            path=str(Path("/static").joinpath(file_name)),
         )
 
     def add(self, element: UserModelComputing):

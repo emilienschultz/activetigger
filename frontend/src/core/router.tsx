@@ -1,8 +1,7 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
-import { ProjectAnnotationPage } from '../components/ProjectAnnotationPage';
-import { AuthRequired } from '../components/auth/AuthRequired';
+import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
 import { DocPage } from '../components/pages/DocPage';
@@ -11,6 +10,7 @@ import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
 import { NotFound } from '../components/pages/NotFoundPage';
 import { ProjectPredictPage } from '../components/pages/PredictPage';
+import { ProjectAnnotationPage } from '../components/pages/ProjectAnnotationPage';
 import { ProjectExplorePage } from '../components/pages/ProjectExplorePage';
 import { ProjectExportPage } from '../components/pages/ProjectExportPage';
 import { GenPage } from '../components/pages/ProjectGenPage';
@@ -48,42 +48,42 @@ export function getRouter() {
     {
       path: '/users',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <UsersPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/monitor',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <MonitorPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/projects/',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <ProjectsPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/projects/new',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <ProjectNewPage />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
     },
     {
       path: '/projects/:projectName',
       element: (
-        <AuthRequired>
+        <APIMiddlewares>
           <CurrentProjectMonitoring />
           <Outlet />
-        </AuthRequired>
+        </APIMiddlewares>
       ),
       children: [
         {

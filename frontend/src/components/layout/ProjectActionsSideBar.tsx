@@ -33,7 +33,6 @@ export const ProjectActionsSidebar: FC<{
 }) => {
   const projectName = projectState ? projectState.params.project_slug : null;
   const { authenticatedUser } = useAuth();
-  console.log(authenticatedUser);
 
   // 2 types of menu
   const onlyAnnotator = authenticatedUser?.status === 'annotator';
@@ -59,6 +58,8 @@ export const ProjectActionsSidebar: FC<{
   }
 
   const errors = projectState?.errors?.map((arr) => arr.join(' - ')) || [];
+
+  console.log(projectState);
 
   return (
     <div
@@ -180,7 +181,7 @@ export const ProjectActionsSidebar: FC<{
                 className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
                 aria-current="page"
                 title="Generate"
-                style={{ color: 'darkorange', display: 'flex', alignItems: 'center' }}
+                style={{ color: '#df31e8' }}
               >
                 <RiAiGenerate />
                 <span> Generate</span>

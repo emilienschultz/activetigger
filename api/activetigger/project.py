@@ -254,9 +254,9 @@ class Project:
             print("Testset labels imported")
 
         # write the dataset
-        df[[testset.col_text]].to_parquet(self.params.dir.joinpath("test.parquet"))
+        df[["text"]].to_parquet(self.params.dir.joinpath("test.parquet"))
         # load the data
-        self.schemes.test = df[[testset.col_text]]
+        self.schemes.test = df[["text"]]
         # update parameters
         self.params.test = True
         # update the database
@@ -924,18 +924,20 @@ class Project:
         # loop on the current process
         for e in self.computing.copy():
 
+            process = self.queue.get(e.unique_id)
+
             # case of not in queue
-            if e.unique_id not in self.queue.current:
+            if process is None:
                 logging.warning("Problem : id in computing not in queue")
                 self.computing.remove(e)
                 continue
 
             # check if the process is done, else continue
-            if not self.queue.current[e.unique_id]["future"].done():
+            if process["future"] is None or not process["future"].done():
                 continue
 
             # get the future
-            future = self.queue.current[e.unique_id]["future"]
+            future = process["future"]
 
             # manage different tasks
 
@@ -943,6 +945,7 @@ class Project:
             if e.kind == "train_bert":
                 model = cast(UserModelComputing, e)
                 try:
+                    print(process)
                     error = future.exception()
                     if error:
                         raise Exception(str(error))

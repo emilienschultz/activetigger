@@ -51,8 +51,8 @@ export const ProjectPredictPage: FC = () => {
                 <FaTools />
               </a>
               <Tooltip anchorSelect=".problems" place="top">
-                If the model doesn't train, the reason can be the limit of available GPU. Please try
-                latter. If the problem persists, contact us.
+                If the model doesn't train directly, it can be due to lack of available GPU. GPU
+                processes are limited, and there is a queue to access them.
               </Tooltip>
             </div>
 

@@ -125,6 +125,8 @@ class Features:
 
         # test length
         if len(new_content) != self.n:
+            print(self.n)
+            print(new_content)
             raise ValueError("Features don't have the right shape")
 
         # change type for series
@@ -313,7 +315,12 @@ class Features:
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
-                ComputeSbert(texts=df, model="all-mpnet-base-v2"),
+                ComputeSbert(
+                    texts=df,
+                    path_process=self.path_all.parent,
+                    model="all-mpnet-base-v2",
+                ),
+                queue="gpu",
             )
 
         if kind == "fasttext":
@@ -323,6 +330,7 @@ class Features:
                 ComputeFasttext(
                     texts=df,
                     language=self.lang,
+                    path_process=self.path_all.parent,
                     path_models=self.path_models,
                     model=parameters["model"],
                 ),

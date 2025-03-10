@@ -33,7 +33,8 @@ logger = logging.getLogger("server")
 # conf deployment
 ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
-N_WORKERS = 2
+N_WORKERS_GPU = 1
+N_WORKERS_CPU = 5
 
 
 class Orchestrator:
@@ -48,7 +49,8 @@ class Orchestrator:
     test_file: str
     default_user: str
     algorithm: str
-    n_workers: int
+    n_workers_cpu: int
+    n_workers_gpu: int
     starting_time: float
     path: Path
     path_models: Path
@@ -79,7 +81,8 @@ class Orchestrator:
         self.test_file = "test.parquet"
         self.default_user = "root"
         self.algorithm = ALGORITHM
-        self.n_workers = N_WORKERS
+        self.n_workers_cpu = N_WORKERS_CPU
+        self.n_workers_gpu = N_WORKERS_GPU
 
         self.starting_time = time.time()
 
@@ -108,7 +111,11 @@ class Orchestrator:
         # attributes of the server
         self.projects = {}
         self.db_manager = DatabaseManager(str(self.db))
-        self.queue = Queue(self.n_workers, self.path)
+        self.queue = Queue(
+            nb_workers_cpu=self.n_workers_cpu,
+            nb_workers_gpu=self.n_workers_gpu,
+            path=self.path,
+        )
         self.users = Users(self.db_manager)
 
         # logging
@@ -124,7 +131,7 @@ class Orchestrator:
         """
         print("Ending the server")
         logger.error("Disconnect server")
-        self.queue.executor.shutdown()
+        self.queue.executor.shutdown(wait=False)
         self.queue.close()
         print("Server off")
 
@@ -547,9 +554,10 @@ class Orchestrator:
         """
         Update state of projects from the queue
         """
+        self.queue.display_info()
+        self.queue.clean_old_processes()
         timer = time.time()
         to_del = []
-        self.queue.check()  # check if the queue is still up
         for p, project in self.projects.items():
             # if project existing since one day, remove it from memory
             if (timer - project.starting_time) > 86400:

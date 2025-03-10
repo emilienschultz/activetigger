@@ -32,7 +32,7 @@ export const UsersPage: FC = () => {
   const { authenticatedUser } = useAuth();
 
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [currentAuth, setCurrentAuth] = useState<string | null>(null);
+  const [currentAuth, setCurrentAuth] = useState<string>('manager');
 
   // display boxes
   const [showCreateUser, setShowCreateUser] = useState<boolean>(false);
@@ -203,9 +203,10 @@ export const UsersPage: FC = () => {
                 onChange={(e) => {
                   setCurrentAuth(e.target.value);
                 }}
+                defaultValue={'manager'}
               >
-                <option>manager</option>
-                <option>annotator</option>
+                <option key={'manager'}>manager</option>
+                <option key={'annotator'}>annotator</option>
               </select>
               <button
                 onClick={() => {

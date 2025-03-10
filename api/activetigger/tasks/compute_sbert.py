@@ -2,6 +2,7 @@ import gc
 import logging
 import math
 import os
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -21,6 +22,7 @@ class ComputeSbert(BaseTask):
     def __init__(
         self,
         texts: Series,
+        path_process: Path,
         model: str = "all-mpnet-base-v2",
         batch_size: int = 32,
         min_gpu: int = 6,
@@ -30,6 +32,7 @@ class ComputeSbert(BaseTask):
         self.model = model
         self.batch_size = batch_size
         self.min_gpu = min_gpu
+        self.path_process = path_process
 
     def __call__(self) -> DataFrame:
         """
