@@ -783,7 +783,7 @@ class Project:
         path_target = target_dir.joinpath("..").joinpath("static").joinpath(name)
         if not path_target.exists():
             shutil.copyfile(path_origin, path_target)
-        return StaticFileModel(name=name, path=f"/static/{name}")
+        return StaticFileModel(name=name, path=f"static/{name}")
 
     def compute_statistics(
         self, scheme: str, predictions: DataFrame, decimals: int = 2

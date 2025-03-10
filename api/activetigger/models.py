@@ -327,7 +327,7 @@ class BertModels:
             }
             # if no compression, start it
             if not m["parameters"]["compressed"]:
-                if (self.path / "../../static" / f"{m['name']}.tar.gz").exists():
+                if (self.path.joinpath(f"../../static/{m['name']}.tar.gz")).exists():
                     # update bdd
                     self.projects_service.set_model_params(
                         self.project_slug,
@@ -338,7 +338,7 @@ class BertModels:
                 else:
                     # create a flag
                     with open(
-                        self.path / "../../static" / f"{m['name']}.tar.gz", "w"
+                        str(self.path.joinpath(f"../../static/{m['name']}.tar.gz")), "w"
                     ) as f:
                         f.write("process started")
                     # start compression
@@ -376,7 +376,7 @@ class BertModels:
             raise FileNotFoundError("Model does not exist")
         try:
             shutil.rmtree(self.path / bert_name)
-            os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
+            os.remove(self.path.joinpath(f"../../static/{bert_name}.tar.gz"))
         except Exception as e:
             raise Exception(f"Problem to delete model : {e}")
         return {"success": "Bert model deleted"}
@@ -656,7 +656,11 @@ class BertModels:
         """
         process = Process(
             target=shutil.make_archive,
-            args=(self.path / "../../static" / name, "gztar", self.path / name),
+            args=(
+                self.path.joinpath("../../static").joinpath(name),
+                "gztar",
+                self.path / name,
+            ),
         )
         process.start()
         print("starting compression")
@@ -726,7 +730,7 @@ class BertModels:
             raise FileNotFoundError("file does not exist")
         return StaticFileModel(
             name=file_name,
-            path=str(Path("/static").joinpath(file_name)),
+            path=str(Path("static").joinpath(file_name)),
         )
 
     def add(self, element: UserModelComputing):
