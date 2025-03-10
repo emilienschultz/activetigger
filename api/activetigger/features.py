@@ -125,6 +125,8 @@ class Features:
 
         # test length
         if len(new_content) != self.n:
+            print(self.n)
+            print(new_content)
             raise ValueError("Features don't have the right shape")
 
         # change type for series

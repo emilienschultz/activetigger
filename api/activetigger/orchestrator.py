@@ -34,7 +34,7 @@ logger = logging.getLogger("server")
 ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
 N_WORKERS_GPU = 1
-N_WORKERS_CPU = 1
+N_WORKERS_CPU = 5
 
 
 class Orchestrator:
