@@ -50,7 +50,7 @@ class Orchestrator:
     default_user: str
     algorithm: str
     n_workers_cpu: int
-    n_workers_cpu: int
+    n_workers_gpu: int
     starting_time: float
     path: Path
     path_models: Path

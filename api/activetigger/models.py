@@ -38,6 +38,8 @@ from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
 from activetigger.tasks.fit_model import FitModel
 from activetigger.tasks.predict_bert import PredictBert
+
+# from activetigger.tasks.empty_task import EmptyTask
 from activetigger.tasks.train_bert import TrainBert
 
 
@@ -459,6 +461,7 @@ class BertModels:
                 params=params,
                 test_size=test_size,
             ),
+            # EmptyTask(120),
             queue="gpu",
         )
         del df

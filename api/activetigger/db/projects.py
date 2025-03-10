@@ -526,7 +526,7 @@ class ProjectsService:
         session.commit()
         session.close()
 
-        print("available", self.available_models(project))
+        #        print("available", self.available_models(project))
 
         return True
 
