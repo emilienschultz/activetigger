@@ -262,10 +262,13 @@ class Orchestrator:
         if not self.exists(project_slug):
             raise Exception("This project does not exist")
 
-        self.projects[project_slug] = Project(
-            project_slug, self.queue, self.db_manager, path_models=self.path_models
-        )
-        return {"success": "Project loaded"}
+        try:
+            self.projects[project_slug] = Project(
+                project_slug, self.queue, self.db_manager, path_models=self.path_models
+            )
+            return {"success": "Project loaded"}
+        except Exception as e:
+            raise Exception from e
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """
