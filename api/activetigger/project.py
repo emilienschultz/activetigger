@@ -87,10 +87,14 @@ class Project:
 
     def delete(self):
         """
-        Delete project
+        Delete completely a project
         """
-        # remove folder
 
+        # remove static files
+        if Path(f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.name}").exists():
+            shutil.rmtree(f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.name}")
+
+        # remove folder of the project
         try:
             shutil.rmtree(self.params.dir)
         except Exception as e:
@@ -780,10 +784,12 @@ class Project:
         name = f"{project_slug}_data_all.parquet"
         target_dir = self.params.dir if self.params.dir is not None else Path(".")
         path_origin = target_dir.joinpath("data_all.parquet")
-        path_target = target_dir.joinpath("..").joinpath("static").joinpath(name)
-        if not path_target.exists():
+        path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.params.project_slug}/{name}"
+        if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
-        return StaticFileModel(name=name, path=f"static/{name}")
+        return StaticFileModel(
+            name=name, path=f"/static/{self.params.project_slug}/{name}"
+        )
 
     def compute_statistics(
         self, scheme: str, predictions: DataFrame, decimals: int = 2

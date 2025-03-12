@@ -8,10 +8,11 @@ from logging import Logger
 from pathlib import Path
 from typing import Optional
 
-import datasets
+import datasets  # type: ignore[import]
+import pandas as pd
 import torch
 from pandas import DataFrame
-from transformers import (
+from transformers import (  # type: ignore[import]
     AutoModelForSequenceClassification,
     AutoTokenizer,
     Trainer,
@@ -23,6 +24,8 @@ from transformers import (
 
 from activetigger.datamodels import BertModelParametersModel
 from activetigger.tasks.base_task import BaseTask
+
+pd.set_option("future.no_silent_downcasting", True)
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -82,8 +85,9 @@ class TrainBert(BaseTask):
     def __init__(
         self,
         path: Path,
-        name: str,
-        df: DataFrame,
+        project_slug: str,
+        model_name: str,
+        df: DataFrame | datasets.Dataset,
         col_text: str,
         col_label: str,
         base_model: str,
@@ -94,7 +98,8 @@ class TrainBert(BaseTask):
         **kwargs,
     ):
         self.path = path
-        self.name = name
+        self.project_slug = project_slug
+        self.name = model_name
         self.df = df
         self.col_text = col_text
         self.col_label = col_label
@@ -226,7 +231,7 @@ class TrainBert(BaseTask):
                 use_cpu=not bool(self.params.gpu),  # deactivate gpu
             )
 
-            # Train
+            # train
             trainer = Trainer(
                 model=bert,
                 args=training_args,
@@ -258,17 +263,11 @@ class TrainBert(BaseTask):
             shutil.rmtree(current_path.joinpath("train"))
             os.rename(log_path, current_path.joinpath("finished"))
 
-            # compress the model in the static folder
-            if os.path.exists(self.path.joinpath("../../static")):
-                shutil.make_archive(
-                    str(self.path.joinpath("../../static").joinpath(self.name)),
-                    "gztar",
-                    str(self.path.joinpath(self.name)),
-                )
-
-            path_static = os.environ.get("ACTIVETIGGER_PATH", "./projects") + "/static"
+            # make archive (create dir if needed)
+            path_static = f"{os.environ.get('ACTIVETIGGER_PATH', './projects')}/static/{self.project_slug}"
+            os.makedirs(path_static, exist_ok=True)
             shutil.make_archive(
-                path_static + "/" + self.name,
+                f"{path_static}/{self.name}",
                 "gztar",
                 str(self.path.joinpath(self.name)),
             )
