@@ -7,12 +7,14 @@ import Highlighter from 'react-highlight-words';
 import { MdSkipNext, MdSkipPrevious } from 'react-icons/md';
 
 import { Modal } from 'react-bootstrap';
+import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
 import { Link } from 'react-router-dom';
 import { useAddTableAnnotations, useTableElements } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { AnnotationModel } from '../../types';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
-
+import { ProjectionManagement } from '../ProjectionManagement';
 /**
  * Component to display the exploratory page
  */
@@ -201,107 +203,118 @@ export const ProjectExplorePage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName} currentAction="explore">
       <div className="container-fluid">
-        <div className="row mt-3">
-          {phase == 'test' && (
-            <div className="alert alert-warning">
-              Test mode activated - you are annotating the test set
-            </div>
-          )}
-          <div className="col-12">
-            {!isValidRegex(search || '') && (
-              <div className="alert alert-danger">Regex not valid</div>
-            )}
-            {currentScheme && table && (
-              <div>
-                <div className="d-flex align-items-center justify-content-between mb-3">
-                  {Object.keys(modifiedRows).length > 0 && (
-                    <button onClick={validateChanges}>Validate changes</button>
-                  )}
-                  <span>Total elements : {totalElement}</span>
-                  <span>Page size</span>
-                  <select
-                    onChange={(e) => {
-                      setPage(1);
-                      setPageSize(Number(e.target.value));
-                    }}
-                    className="form-select w-25"
-                    value={pageSize}
-                  >
-                    {[10, 20, 50, 100].map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}
-                  </select>
-                  <label>Page</label>
-                  <select
-                    className="form-select w-25"
-                    onChange={(e) => {
-                      setPage(Number(e.target.value));
-                    }}
-                    value={page || '1'}
-                  >
-                    {range(1, totalElement > 0 ? Math.ceil(totalElement / pageSize) : 1).map(
-                      (v) => (
-                        <option key={v}>{v}</option>
-                      ),
-                    )}
-                  </select>
+        <Tabs id="explore" className="mt-3" defaultActiveKey="tabular">
+          <Tab title="Tabular" eventKey="tabular">
+            <div className="row mt-3">
+              {phase == 'test' && (
+                <div className="alert alert-warning">
+                  Test mode activated - you are annotating the test set
                 </div>
-                <div className="d-flex align-items-center justify-content-between mb-3">
-                  <label>Filter</label>
+              )}
+              <div className="col-12">
+                {!isValidRegex(search || '') && (
+                  <div className="alert alert-danger">Regex not valid</div>
+                )}
+                {currentScheme && table && (
+                  <div>
+                    <div className="d-flex align-items-center justify-content-between mb-3">
+                      {Object.keys(modifiedRows).length > 0 && (
+                        <button onClick={validateChanges}>Validate changes</button>
+                      )}
+                      <span>Total elements : {totalElement}</span>
+                      <span>Page size</span>
+                      <select
+                        onChange={(e) => {
+                          setPage(1);
+                          setPageSize(Number(e.target.value));
+                        }}
+                        className="form-select w-25"
+                        value={pageSize}
+                      >
+                        {[10, 20, 50, 100].map((e) => (
+                          <option key={e}>{e}</option>
+                        ))}
+                      </select>
+                      <label>Page</label>
+                      <select
+                        className="form-select w-25"
+                        onChange={(e) => {
+                          setPage(Number(e.target.value));
+                        }}
+                        value={page || '1'}
+                      >
+                        {range(1, totalElement > 0 ? Math.ceil(totalElement / pageSize) : 1).map(
+                          (v) => (
+                            <option key={v}>{v}</option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+                    <div className="d-flex align-items-center justify-content-between mb-3">
+                      <label>Filter</label>
 
-                  <select
-                    className="form-select w-25 mx-2"
-                    onChange={(e) => setSample(e.target.value)}
-                    value={sample}
+                      <select
+                        className="form-select w-25 mx-2"
+                        onChange={(e) => setSample(e.target.value)}
+                        value={sample}
+                      >
+                        {['tagged', 'untagged', 'all', 'recent'].map((e) => (
+                          <option key={e}>{e}</option>
+                        ))}
+                      </select>
+                      <input
+                        className="form-control"
+                        placeholder="You can use a regex search to filter"
+                        onChange={(e) => setSearch(e.target.value)}
+                      ></input>
+                    </div>
+
+                    <DataGrid
+                      className="fill-grid"
+                      columns={columns}
+                      rows={rows}
+                      rowHeight={80}
+                      onRowsChange={(e) => {
+                        setRows(e);
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="d-flex justify-content-center mt-3 align-items-center">
+                  <button
+                    className="btn"
+                    onClick={() => (page && page > 1 ? setPage(page - 1) : setPage(1))}
                   >
-                    {['tagged', 'untagged', 'all', 'recent'].map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}
-                  </select>
-                  <input
-                    className="form-control"
-                    placeholder="You can use a regex search to filter"
-                    onChange={(e) => setSearch(e.target.value)}
-                  ></input>
+                    <MdSkipPrevious size={30} />
+                  </button>{' '}
+                  Change page{' '}
+                  <button className="btn" onClick={() => (page ? setPage(page + 1) : setPage(1))}>
+                    <MdSkipNext size={30} />
+                  </button>
                 </div>
-
-                <DataGrid
-                  className="fill-grid"
-                  columns={columns}
-                  rows={rows}
-                  rowHeight={80}
-                  onRowsChange={(e) => {
-                    setRows(e);
-                  }}
-                />
               </div>
-            )}
-            <div className="d-flex justify-content-center mt-3 align-items-center">
-              <button
-                className="btn"
-                onClick={() => (page && page > 1 ? setPage(page - 1) : setPage(1))}
-              >
-                <MdSkipPrevious size={30} />
-              </button>{' '}
-              Change page{' '}
-              <button className="btn" onClick={() => (page ? setPage(page + 1) : setPage(1))}>
-                <MdSkipNext size={30} />
-              </button>
             </div>
-          </div>
-        </div>
-        <Modal show={blocker.state === 'blocked'} onHide={blocker.reset}>
-          <Modal.Header>
-            <Modal.Title>You are leaving the page</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Do you want to change the page ? You will lose all your changes if you proceed
-          </Modal.Body>
-          <Modal.Footer>
-            <button onClick={blocker.reset}>No</button>
-            <button onClick={blocker.proceed}>Yes</button>
-          </Modal.Footer>
-        </Modal>
+            <Modal show={blocker.state === 'blocked'} onHide={blocker.reset}>
+              <Modal.Header>
+                <Modal.Title>You are leaving the page</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                Do you want to change the page ? You will lose all your changes if you proceed
+              </Modal.Body>
+              <Modal.Footer>
+                <button onClick={blocker.reset}>No</button>
+                <button onClick={blocker.proceed}>Yes</button>
+              </Modal.Footer>
+            </Modal>
+          </Tab>
+          <Tab title="Vizualisation" eventKey="visualisation">
+            <ProjectionManagement
+              projectName={projectName || null}
+              currentScheme={currentScheme || null}
+              availableFeatures={project?.features.available ? project?.features.available : []}
+            />
+          </Tab>
+        </Tabs>
       </div>
     </ProjectPageLayout>
   );

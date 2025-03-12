@@ -87,10 +87,14 @@ class Project:
 
     def delete(self):
         """
-        Delete project
+        Delete completely a project
         """
-        # remove folder
 
+        # remove static files
+        if Path(f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.name}").exists():
+            shutil.rmtree(f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.name}")
+
+        # remove folder of the project
         try:
             shutil.rmtree(self.params.dir)
         except Exception as e:
@@ -410,6 +414,10 @@ class Project:
                         na=False,
                     )
                 )
+            elif "QUERY=" in filter_san:  # case to use a query
+                f_regex = df[self.params.cols_context].eval(
+                    filter_san.replace("QUERY=", "")
+                )
             else:
                 f_regex = df["text"].str.contains(
                     filter_san, regex=True, case=True, na=False
@@ -418,9 +426,9 @@ class Project:
 
         # manage frame selection (if projection, only in the box)
         if frame and len(frame) == 4:
-            if user in self.features.projections:
-                if "data" in self.features.projections[user]:
-                    projection = self.features.projections[user]["data"]
+            if user in self.projections.available:
+                if "data" in self.projections.available[user]:
+                    projection = self.projections.available[user]["data"]
                     f_frame = (
                         (projection[0] > frame[0])
                         & (projection[0] < frame[1])
@@ -780,10 +788,12 @@ class Project:
         name = f"{project_slug}_data_all.parquet"
         target_dir = self.params.dir if self.params.dir is not None else Path(".")
         path_origin = target_dir.joinpath("data_all.parquet")
-        path_target = target_dir.joinpath("..").joinpath("static").joinpath(name)
-        if not path_target.exists():
+        path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.params.project_slug}/{name}"
+        if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
-        return StaticFileModel(name=name, path=f"/static/{name}")
+        return StaticFileModel(
+            name=name, path=f"/static/{self.params.project_slug}/{name}"
+        )
 
     def compute_statistics(
         self, scheme: str, predictions: DataFrame, decimals: int = 2

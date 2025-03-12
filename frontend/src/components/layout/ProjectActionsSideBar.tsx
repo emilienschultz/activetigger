@@ -59,8 +59,6 @@ export const ProjectActionsSidebar: FC<{
 
   const errors = projectState?.errors?.map((arr) => arr.join(' - ')) || [];
 
-  console.log(projectState);
-
   return (
     <div
       className={`project-sidebar d-flex flex-column flex-shrink-0 ${currentMode == 'train' ? 'bg-light' : 'bg-info'}`}

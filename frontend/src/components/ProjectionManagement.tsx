@@ -185,7 +185,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       {projectionData && labelColorMapping && (
         <div className="row align-items-start m-0" style={{ height: '500px' }}>
           <ProjectionVizSigma
-            className="col-8 border p-0 h-100"
+            className={`${selectedElement ? 'col-8' : 'col-12'} border p-0 h-100`}
             data={projectionData}
             //selection
             selectedId={selectedElement?.element_id}
@@ -224,7 +224,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           </div>
         </div>
       )}
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
+        <h4 className="subsection">Compute new projection</h4>
         <label htmlFor="model">Select a model</label>
         <select id="model" {...register('method')}>
           <option value=""></option>

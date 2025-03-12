@@ -64,14 +64,10 @@ class Orchestrator:
     def __init__(self, path=".", path_models="./models") -> None:
         """
         Start the server
+        Use the following environment variables:
+        - ACTIVETIGGER_PATH: path to the projects
+        - ACTIVETIGGER_MODEL: path to
         """
-
-        # unix system : set priority to this process
-        try:
-            os.nice(-15)
-            print(f"Process niceness set to {os.nice(0)}")
-        except PermissionError:
-            print("You need administrative privileges to set negative niceness values.")
 
         self.max_projects = MAX_LOADED_PROJECTS
         self.db_name = "activetigger.db"
@@ -89,24 +85,15 @@ class Orchestrator:
         # Define path
         self.path = Path(path)
         self.path_models = Path(path_models)
-
-        # create or load a key
-        self.load_secret_key()
-
-        # if a YAML configuration file exists, overwrite
-        if Path("config.yaml").exists():
-            with open("config.yaml") as f:
-                config = yaml.safe_load(f)
-            if "path" in config:
-                self.path = Path(config["path"])
-            if "path_models" in config:
-                self.path_models = Path(config["path_models"])
-
         self.db = self.path.joinpath(self.db_name)
 
         # create directories
+        self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
+
+        # create or load a key to encrypt the tokens
+        self.load_secret_key()
 
         # attributes of the server
         self.projects = {}
@@ -262,10 +249,13 @@ class Orchestrator:
         if not self.exists(project_slug):
             raise Exception("This project does not exist")
 
-        self.projects[project_slug] = Project(
-            project_slug, self.queue, self.db_manager, path_models=self.path_models
-        )
-        return {"success": "Project loaded"}
+        try:
+            self.projects[project_slug] = Project(
+                project_slug, self.queue, self.db_manager, path_models=self.path_models
+            )
+            return {"success": "Project loaded"}
+        except Exception as e:
+            raise Exception from e
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """
@@ -378,6 +368,13 @@ class Orchestrator:
             content["id"] = content[params.col_id].astype(str).apply(slugify)
             keep_id.append(params.col_id)
             content.set_index("id", inplace=True)
+
+        # convert columns that can be numeric
+        for col in content.columns:
+            try:
+                content[col] = pd.to_numeric(content[col], errors="raise")
+            except ValueError:
+                pass  # Leave columns that cannot be converted
 
         # create the text column, merging the different columns
         content["text"] = content[params.cols_text].apply(
@@ -572,4 +569,8 @@ class Orchestrator:
 
 
 # launch the instance
-orchestrator = Orchestrator()
+print("ORCH", os.environ["ACTIVETIGGER_PATH"], os.environ["ACTIVETIGGER_MODEL"])
+orchestrator = Orchestrator(
+    os.environ.get("ACTIVETIGGER_PATH", "./projects"),
+    os.environ.get("ACTIVETIGGER_MODEL", "./models"),
+)

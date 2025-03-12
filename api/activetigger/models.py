@@ -5,7 +5,6 @@ import pickle
 import shutil
 from datetime import datetime
 from io import BytesIO
-from multiprocessing import Process
 from pathlib import Path
 from typing import Any
 
@@ -247,58 +246,10 @@ class BertModels:
                     "language": "fr",
                 },
                 {
-                    "name": "camembert/camembert-large",
-                    "priority": 0,
-                    "comment": "",
-                    "language": "fr",
-                },
-                {
-                    "name": "flaubert/flaubert_small_cased",
-                    "priority": 5,
-                    "comment": "",
-                    "language": "fr",
-                },
-                {
                     "name": "flaubert/flaubert_base_cased",
                     "priority": 7,
                     "comment": "",
                     "language": "fr",
-                },
-                {
-                    "name": "flaubert/flaubert_large_cased",
-                    "priority": 9,
-                    "comment": "",
-                    "language": "fr",
-                },
-                {
-                    "name": "distilbert-base-cased",
-                    "priority": 0,
-                    "comment": "",
-                    "language": "en",
-                },
-                {
-                    "name": "roberta-base",
-                    "priority": 0,
-                    "comment": "",
-                    "language": "en",
-                },
-                {
-                    "name": "microsoft/deberta-base",
-                    "priority": 0,
-                    "comment": "",
-                    "language": "en",
-                },
-                {
-                    "name": "distilbert-base-multilingual-cased",
-                    "priority": 0,
-                    "comment": "",
-                    "language": "multi",
-                },
-                {
-                    "name": "microsoft/Multilingual-MiniLM-L12-H384",
-                    "priority": 0,
-                    "comment": "",
-                    "language": "multi",
                 },
             ]
         self.project_slug = project_slug
@@ -325,24 +276,6 @@ class BertModels:
                 "predicted": m["parameters"]["predicted"],
                 "compressed": m["parameters"]["compressed"],
             }
-            # if no compression, start it
-            if not m["parameters"]["compressed"]:
-                if (self.path / "../../static" / f"{m['name']}.tar.gz").exists():
-                    # update bdd
-                    self.projects_service.set_model_params(
-                        self.project_slug,
-                        m["name"],
-                        "compressed",
-                        True,
-                    )
-                else:
-                    # create a flag
-                    with open(
-                        self.path / "../../static" / f"{m['name']}.tar.gz", "w"
-                    ) as f:
-                        f.write("process started")
-                    # start compression
-                    self.start_compression(m["name"])
 
         return r
 
@@ -376,7 +309,9 @@ class BertModels:
             raise FileNotFoundError("Model does not exist")
         try:
             shutil.rmtree(self.path / bert_name)
-            os.remove(self.path / "../../static" / f"{bert_name}.tar.gz")
+            os.remove(
+                f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.project_slug}/{bert_name}.tar.gz"
+            )
         except Exception as e:
             raise Exception(f"Problem to delete model : {e}")
         return {"success": "Bert model deleted"}
@@ -433,16 +368,19 @@ class BertModels:
         day = current_date.strftime("%d")
         month = current_date.strftime("%m")
         year = current_date.strftime("%Y")
-        name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
+        model_name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
 
         # check if a project not already exist
-        if self.projects_service.model_exists(project, name):
+        if self.projects_service.model_exists(project, model_name):
             raise Exception("A model with this name already exists")
 
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
         if params.gpu:
             mem = functions.get_gpu_memory_info()
-            if self.estimate_memory_use(name, kind="train") > mem["available_memory"]:
+            if (
+                self.estimate_memory_use(model_name, kind="train")
+                > mem["available_memory"]
+            ):
                 raise Exception(
                     "Not enough GPU memory available. Wait or reduce batch."
                 )
@@ -453,7 +391,8 @@ class BertModels:
             project,
             TrainBert(
                 path=self.path,
-                name=name,
+                project_slug=project,
+                model_name=model_name,
                 df=df.copy(deep=True),
                 col_label=col_label,
                 col_text=col_text,
@@ -461,28 +400,12 @@ class BertModels:
                 params=params,
                 test_size=test_size,
             ),
-            # EmptyTask(120),
             queue="gpu",
         )
         del df
-        # unique_id  = self.queue.add(
-        #     "training",
-        #     project,
-        #     train_bert,
-        #     {
-        #         "path": self.path,
-        #         "name": name,
-        #         "df": df.copy(deep=True),
-        #         "col_label": col_label,
-        #         "col_text": col_text,
-        #         "base_model": base_model,
-        #         "params": params,
-        #         "test_size": test_size,
-        #     },
-        # )
 
         # Update the queue state
-        b = BertModel(name, self.path / name, base_model)
+        b = BertModel(model_name, self.path / model_name, base_model)
         b.status = "training"
         self.computing.append(
             UserModelComputing(
@@ -505,12 +428,12 @@ class BertModels:
         # add in database
         if not self.projects_service.add_model(
             kind="bert",
-            name=name,
+            name=model_name,
             user=user,
             project=project,
             scheme=scheme,
             params=params.model_dump(),
-            path=str(self.path / name),
+            path=str(self.path / model_name),
             status="training",
         ):
             raise Exception("Problem to add in database")
@@ -650,17 +573,6 @@ class BertModels:
         )
         return {"success": "bert model predicting"}
 
-    def start_compression(self, name):
-        """
-        Compress bertmodel as a separate process
-        """
-        process = Process(
-            target=shutil.make_archive,
-            args=(self.path / "../../static" / name, "gztar", self.path / name),
-        )
-        process.start()
-        print("starting compression")
-
     def rename(self, former_name: str, new_name: str):
         """
         Rename a model (copy it)
@@ -721,12 +633,13 @@ class BertModels:
         """
         Export bert archive if exists
         """
-        file_name = f"{name}.tar.gz"
-        if not (self.path.joinpath("../../static").joinpath(file_name)).exists():
+        file = f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.project_slug}/{name}.tar.gz"
+
+        if not Path(file).exists():
             raise FileNotFoundError("file does not exist")
         return StaticFileModel(
-            name=file_name,
-            path=str(Path("/static").joinpath(file_name)),
+            name=f"{name}.tar.gz",
+            path=f"/static/{self.project_slug}/{name}.tar.gz",
         )
 
     def add(self, element: UserModelComputing):
@@ -737,6 +650,13 @@ class BertModels:
             # update bdd status
             self.projects_service.change_model_status(
                 self.project_slug, element.model_name, "trained"
+            )
+            # TODO test if the model is already compressed
+            self.projects_service.set_model_params(
+                self.project_slug,
+                element.model_name,
+                "compressed",
+                True,
             )
             print("Model trained")
         if element.status == "testing":

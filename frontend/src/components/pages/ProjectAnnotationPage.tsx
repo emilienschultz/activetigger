@@ -4,10 +4,9 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import Highlighter from 'react-highlight-words';
 import { FaPencilAlt } from 'react-icons/fa';
-import { IoMdSkipBackward } from 'react-icons/io';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import {
   useAddAnnotation,
@@ -19,6 +18,7 @@ import {
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 import { ElementOutModel } from '../../types';
+import { BackButton } from '../BackButton';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { MulticlassInput } from '../MulticlassInput';
 import { MultilabelInput } from '../MultilabelInput';
@@ -387,18 +387,12 @@ export const ProjectAnnotationPage: FC = () => {
       {elementId !== 'noelement' && (
         <div className="row">
           <div className="d-flex flex-wrap gap-2 justify-content-center">
-            <Link
-              to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
-              className="btn previouselement"
-              onClick={() => {
-                setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
-              }}
-            >
-              <IoMdSkipBackward />
-              <Tooltip anchorSelect=".previouselement" place="top">
-                Go back to previous element
-              </Tooltip>
-            </Link>
+            <BackButton
+              projectName={projectName || ''}
+              history={history}
+              setAppContext={setAppContext}
+            />
+
             <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
               <FaPencilAlt />
               <Tooltip anchorSelect=".addcomment" place="top">
