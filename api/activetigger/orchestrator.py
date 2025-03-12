@@ -369,6 +369,13 @@ class Orchestrator:
             keep_id.append(params.col_id)
             content.set_index("id", inplace=True)
 
+        # convert columns that can be numeric
+        for col in content.columns:
+            try:
+                content[col] = pd.to_numeric(content[col], errors="raise")
+            except ValueError:
+                pass  # Leave columns that cannot be converted
+
         # create the text column, merging the different columns
         content["text"] = content[params.cols_text].apply(
             lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1

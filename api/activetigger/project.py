@@ -414,6 +414,10 @@ class Project:
                         na=False,
                     )
                 )
+            elif "QUERY=" in filter_san:  # case to use a query
+                f_regex = df[self.params.cols_context].eval(
+                    filter_san.replace("QUERY=", "")
+                )
             else:
                 f_regex = df["text"].str.contains(
                     filter_san, regex=True, case=True, na=False

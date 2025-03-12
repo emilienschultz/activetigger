@@ -126,7 +126,7 @@ export const SelectionManagement: FC = () => {
             className="form-control"
             type="text"
             id="select_regex"
-            placeholder="Enter a regex / CONTEXT= for context"
+            placeholder="Search / Regex / CONTEXT= / QUERY="
             value={selectionConfig.filter}
             onChange={(e) => {
               setAppContext((prev) => ({
