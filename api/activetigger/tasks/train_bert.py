@@ -266,6 +266,13 @@ class TrainBert(BaseTask):
                     str(self.path.joinpath(self.name)),
                 )
 
+            path_static = os.environ.get("ACTIVETIGGER_PATH", "./projects") + "/static"
+            shutil.make_archive(
+                path_static + "/" + self.name,
+                "gztar",
+                str(self.path.joinpath(self.name)),
+            )
+
             return None
 
         except Exception as e:
