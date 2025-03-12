@@ -422,9 +422,9 @@ class Project:
 
         # manage frame selection (if projection, only in the box)
         if frame and len(frame) == 4:
-            if user in self.features.projections:
-                if "data" in self.features.projections[user]:
-                    projection = self.features.projections[user]["data"]
+            if user in self.projections.available:
+                if "data" in self.projections.available[user]:
+                    projection = self.projections.available[user]["data"]
                     f_frame = (
                         (projection[0] > frame[0])
                         & (projection[0] < frame[1])
