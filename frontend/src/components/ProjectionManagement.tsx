@@ -2,8 +2,8 @@ import { pick } from 'lodash';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-
 import Select from 'react-select';
+import PulseLoader from 'react-spinners/PulseLoader';
 
 import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -102,6 +102,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       return;
     }
     await updateProjection(data);
+    setFormNewProjection(false);
   };
 
   // scatterplot management for colors
@@ -180,8 +181,125 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     [selectionConfig.frame],
   );
 
+  const projectionTraining =
+    authenticatedUser && project
+      ? authenticatedUser?.username in project.projections.training
+      : false;
+
+  const [formNewProjection, setFormNewProjection] = useState<boolean>(false);
+
+  console.log(projectionTraining);
+
   return (
     <div>
+      {!projectionTraining && (
+        <button
+          className="btn btn-primary btn-validation mb-3"
+          onClick={() => setFormNewProjection(!formNewProjection)}
+        >
+          Compute new projection
+        </button>
+      )}
+
+      {projectionTraining && (
+        <div className="col-8 d-flex justify-content-center">
+          <div className="d-flex align-items-center gap-2">
+            <PulseLoader /> Computing a projection, please wait
+          </div>
+        </div>
+      )}
+
+      {!projectionTraining && formNewProjection && (
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 col-8">
+          <h4 className="subsection">Compute new projection</h4>
+          <label htmlFor="model">Select a model</label>
+          <select id="model" {...register('method')}>
+            <option value=""></option>
+            {Object.keys(availableProjections?.options || {}).map((e) => (
+              <option key={e} value={e}>
+                {e}
+              </option>
+            ))}{' '}
+          </select>
+          <div>
+            <label htmlFor="features">Select features</label>
+            <Controller
+              name="features"
+              control={control}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  options={features}
+                  isMulti
+                  value={features.filter((feature) => value?.includes(feature.value))}
+                  onChange={(selectedOptions) => {
+                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+                  }}
+                />
+              )}
+            />
+          </div>
+          {availableProjections?.options && selectedMethod == 'tsne' && (
+            <div>
+              <label htmlFor="perplexity">perplexity</label>
+              <input
+                type="number"
+                step="1"
+                id="perplexity"
+                {...register('params.perplexity', { valueAsNumber: true })}
+              ></input>
+              <label>Learning rate</label>
+              <select {...register('params.learning_rate')}>
+                <option key="auto" value="auto">
+                  auto
+                </option>
+              </select>
+              <label>Init</label>
+              <select {...register('params.init')}>
+                <option key="random" value="random">
+                  random
+                </option>
+              </select>
+            </div>
+          )}
+          {availableProjections?.options && selectedMethod == 'umap' && (
+            <div>
+              <label htmlFor="n_neighbors">n_neighbors</label>
+              <input
+                type="number"
+                step="1"
+                id="n_neighbors"
+                {...register('params.n_neighbors', { valueAsNumber: true })}
+              ></input>
+              <label htmlFor="min_dist">min_dist</label>
+              <input
+                type="number"
+                id="min_dist"
+                step="0.01"
+                {...register('params.min_dist', { valueAsNumber: true })}
+              ></input>
+              <label htmlFor="metric">Metric</label>
+              <select {...register('params.metric')}>
+                <option key="cosine" value="cosine">
+                  cosine
+                </option>
+                <option key="euclidean" value="euclidean">
+                  euclidean
+                </option>
+              </select>
+            </div>
+          )}
+          <label htmlFor="n_components">n_components</label>
+          <input
+            type="number"
+            id="n_components"
+            step="1"
+            {...register('params.n_components', { valueAsNumber: true, required: true })}
+          ></input>
+
+          <button className="btn btn-primary btn-validation">Compute</button>
+        </form>
+      )}
+
       {projectionData && labelColorMapping && (
         <div className="row align-items-start m-0" style={{ height: '500px' }}>
           <ProjectionVizSigma
@@ -224,94 +342,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           </div>
         </div>
       )}
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
-        <h4 className="subsection">Compute new projection</h4>
-        <label htmlFor="model">Select a model</label>
-        <select id="model" {...register('method')}>
-          <option value=""></option>
-          {Object.keys(availableProjections?.options || {}).map((e) => (
-            <option key={e} value={e}>
-              {e}
-            </option>
-          ))}{' '}
-        </select>
-        <div>
-          <label htmlFor="features">Select features</label>
-          <Controller
-            name="features"
-            control={control}
-            render={({ field: { value, onChange } }) => (
-              <Select
-                options={features}
-                isMulti
-                value={features.filter((feature) => value?.includes(feature.value))}
-                onChange={(selectedOptions) => {
-                  onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
-                }}
-              />
-            )}
-          />
-        </div>
-        {availableProjections?.options && selectedMethod == 'tsne' && (
-          <div>
-            <label htmlFor="perplexity">perplexity</label>
-            <input
-              type="number"
-              step="1"
-              id="perplexity"
-              {...register('params.perplexity', { valueAsNumber: true })}
-            ></input>
-            <label>Learning rate</label>
-            <select {...register('params.learning_rate')}>
-              <option key="auto" value="auto">
-                auto
-              </option>
-            </select>
-            <label>Init</label>
-            <select {...register('params.init')}>
-              <option key="random" value="random">
-                random
-              </option>
-            </select>
-          </div>
-        )}
-        {availableProjections?.options && selectedMethod == 'umap' && (
-          <div>
-            <label htmlFor="n_neighbors">n_neighbors</label>
-            <input
-              type="number"
-              step="1"
-              id="n_neighbors"
-              {...register('params.n_neighbors', { valueAsNumber: true })}
-            ></input>
-            <label htmlFor="min_dist">min_dist</label>
-            <input
-              type="number"
-              id="min_dist"
-              step="0.01"
-              {...register('params.min_dist', { valueAsNumber: true })}
-            ></input>
-            <label htmlFor="metric">Metric</label>
-            <select {...register('params.metric')}>
-              <option key="cosine" value="cosine">
-                cosine
-              </option>
-              <option key="euclidean" value="euclidean">
-                euclidean
-              </option>
-            </select>
-          </div>
-        )}
-        <label htmlFor="n_components">n_components</label>
-        <input
-          type="number"
-          id="n_components"
-          step="1"
-          {...register('params.n_components', { valueAsNumber: true, required: true })}
-        ></input>
-
-        <button className="btn btn-primary btn-validation">Compute</button>
-      </form>
     </div>
   );
 };

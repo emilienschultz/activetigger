@@ -122,15 +122,18 @@ export const ProjectionVizSigma: FC<Props> = ({
 
   return (
     <div className={className}>
-      <select
-        value={selectedColumn}
-        onChange={(event) => {
-          setSelectedColumn(event.target.value as 'labels' | 'predictions');
-        }}
-      >
-        <option value="labels">Annotated elements</option>
-        {data.predictions && <option value="predictions">Predicted elements</option>}
-      </select>
+      <div className="m-3">
+        <label className="mx-2">Color by: </label>
+        <select
+          value={selectedColumn}
+          onChange={(event) => {
+            setSelectedColumn(event.target.value as 'labels' | 'predictions');
+          }}
+        >
+          <option value="labels">Annotated elements</option>
+          {data.predictions && <option value="predictions">Predicted elements</option>}
+        </select>
+      </div>
       <SigmaContainer
         className={classNames(
           sigmaCursor ? `cursor-${sigmaCursor}` : activeTool === 'marquee' && 'cursor-crosshair',
