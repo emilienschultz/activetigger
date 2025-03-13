@@ -22,7 +22,6 @@ from activetigger.datamodels import (
     TestSetDataModel,
     UserInDBModel,
 )
-from activetigger.functions import get_dir_size
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
@@ -189,7 +188,6 @@ async def get_project_state(
     """
     Get the state of a specific project
     """
-    print("MEMORY", project.params.dir, get_dir_size(str(project.params.dir)))
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     data = project.get_state()
