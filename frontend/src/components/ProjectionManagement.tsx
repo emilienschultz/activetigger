@@ -188,8 +188,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   const [formNewProjection, setFormNewProjection] = useState<boolean>(false);
 
-  console.log(projectionTraining);
-
   return (
     <div>
       {!projectionTraining && (

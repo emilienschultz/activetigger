@@ -150,6 +150,7 @@ async def get_list_elements(
     Get a table of elements
     """
     try:
+        print("GET TABLE", contains)
         extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
         df = extract.batch.fillna(" ")
         table = (
