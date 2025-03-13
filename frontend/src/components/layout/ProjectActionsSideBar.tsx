@@ -46,7 +46,7 @@ export const ProjectActionsSidebar: FC<{
     : false;
 
   // display the number of current processes on the server
-  const { queueState, gpu, disk } = useGetServer(projectState || null);
+  const { disk } = useGetServer(projectState || null);
 
   // notify if disk is full
   const { notify } = useNotifications();
