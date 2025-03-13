@@ -50,7 +50,7 @@ class CustomLoggingCallback(TrainerCallback):
     ):
         self.logger.info(f"Step {state.global_step}")
         progress_percentage = (state.global_step / state.max_steps) * 100
-        with open(self.current_path.joinpath("train/progress"), "w") as f:
+        with open(self.current_path.joinpath("progress_train"), "w") as f:
             f.write(str(progress_percentage))
         with open(self.current_path.joinpath("log_history.txt"), "w") as f:
             json.dump(state.log_history, f)

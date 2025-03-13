@@ -131,10 +131,15 @@ class BertModel:
         (different cases)
         """
         # case of training
+        print(
+            "progress",
+            (self.path.joinpath("progress_train")).exists(),
+            (self.path.joinpath("progress_train")),
+        )
         if (self.status == "training") & (
-            self.path.joinpath("train/progress")
+            self.path.joinpath("progress_train")
         ).exists():
-            with open(self.path.joinpath("train/progress"), "r") as f:
+            with open(self.path.joinpath("progress_train"), "r") as f:
                 r = f.read()
                 if r == "":
                     r = "0"
