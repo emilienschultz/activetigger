@@ -145,7 +145,7 @@ async def set_auth(
         try:
             orchestrator.users.set_auth(username, project_slug, status)
             orchestrator.log_action(
-                current_user.username, f"INFO add user {username}", "all"
+                current_user.username, f"ADD AUTH USER: {username}", "all"
             )
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
@@ -156,7 +156,7 @@ async def set_auth(
         try:
             orchestrator.users.delete_auth(username, project_slug)
             orchestrator.log_action(
-                current_user.username, f"INFO delete user {username}", "all"
+                current_user.username, f"DELETE AUTH USER: {username}", "all"
             )
         except Exception as e:
             raise HTTPException(status_code=500) from e

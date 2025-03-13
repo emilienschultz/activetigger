@@ -217,6 +217,9 @@ export const ProjectAnnotationPage: FC = () => {
       return false;
     }
   };
+
+  const [wordsToHighlight, setWordsToHighlight] = useState<string>('');
+
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
       <div className="container-fluid">
@@ -311,8 +314,8 @@ export const ProjectAnnotationPage: FC = () => {
                 highlightClassName="Search"
                 searchWords={
                   selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                    ? [selectionConfig.filter]
-                    : []
+                    ? [...selectionConfig.filter, ...wordsToHighlight.split('\n')]
+                    : wordsToHighlight.split('\n')
                 }
                 autoEscape={false}
                 textToHighlight={textInFrame}
@@ -557,6 +560,15 @@ export const ProjectAnnotationPage: FC = () => {
                 />
                 <span>Max: 100%</span>
               </label>
+              <div className="flex flex-col gap-2">
+                <label className="explanations">Highlight words in the text</label>
+                <br></br>
+                <textarea
+                  className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Line break to separe"
+                  onChange={(e) => setWordsToHighlight(e.target.value)}
+                />
+              </div>
             </Tab>
           </Tabs>
         )}

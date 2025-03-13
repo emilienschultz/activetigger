@@ -67,6 +67,10 @@ export const ProjectPage: FC = () => {
       resizable: true,
     },
     {
+      name: 'Project',
+      key: 'project',
+    },
+    {
       name: 'Action',
       key: 'action',
     },

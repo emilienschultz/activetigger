@@ -37,7 +37,7 @@ async def post_simplemodel(
     try:
         project.update_simplemodel(simplemodel, current_user.username)
         orchestrator.log_action(
-            current_user.username, "INFO compute simplemodel", project.name
+            current_user.username, "TRAIN MODEL: simplemodel", project.name
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -111,7 +111,7 @@ async def predict(
             batch_size=batch_size,
         )
         orchestrator.log_action(
-            current_user.username, f"INFO predict bert {model_name}", project.name
+            current_user.username, f"PREDICT MODEL: {model_name}", project.name
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -144,7 +144,7 @@ async def start_test(
             col_labels="labels",
         )
         orchestrator.log_action(
-            current_user.username, "INFO predict bert for testing", project.name
+            current_user.username, "PREDICT MODEL TEST", project.name
         )
         return None
 
@@ -203,7 +203,7 @@ async def post_bert(
             test_size=bert.test_size,
         )
         orchestrator.log_action(
-            current_user.username, f"INFO train bert {bert.name}", project.name
+            current_user.username, f"TRAIN MODEL: {bert.name}", project.name
         )
         return None
 
@@ -241,7 +241,7 @@ async def stop_bert(
         # delete it in the database
         project.bertmodels.projects_service.delete_model(project.name, p[0].model.name)
         orchestrator.log_action(
-            current_user.username, "INFO stop bert training", project.name
+            current_user.username, "STOP MODEL TRAINING", project.name
         )
         return None
     except Exception as e:
@@ -262,7 +262,7 @@ async def delete_bert(
     try:
         project.bertmodels.delete(bert_name)
         orchestrator.log_action(
-            current_user.username, f"INFO delete bert model {bert_name}", project.name
+            current_user.username, f"DELETE MODEL: {bert_name}", project.name
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -284,7 +284,7 @@ async def save_bert(
         project.bertmodels.rename(former_name, new_name)
         orchestrator.log_action(
             current_user.username,
-            f"INFO rename bert model {former_name} - {new_name}",
+            f"INFO RENAME MODEL: {former_name} -> {new_name}",
             project.name,
         )
     except Exception as e:

@@ -500,6 +500,7 @@ class ProjectStateModel(BaseModel):
     projections: dict[str, Any]
     generations: dict[str, Any]
     errors: list[list]
+    memory: float
 
 
 class QueueModel(BaseModel):

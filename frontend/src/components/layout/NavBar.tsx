@@ -5,6 +5,7 @@ import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import logo from '../../assets/at.png';
+import { useGetServer } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 
@@ -29,12 +30,15 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
 
   // function to clear history
   const {
-    appContext: { history },
+    appContext: { history, currentProject },
     setAppContext,
   } = useAppContext();
   const actionClearHistory = () => {
     setAppContext((prev) => ({ ...prev, history: [] }));
   };
+
+  // display the number of current processes on the server
+  const { queueState, gpu } = useGetServer(currentProject || null);
 
   return (
     <div className="bg-primary">
@@ -60,10 +64,10 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
             <span className="navbar-toggler-icon"></span>
           </button>
           <div
-            className={cx('navbar-collapse', expanded ? 'expanded' : 'collapse')}
+            className={cx('navbar-collapse ', expanded ? 'expanded' : 'collapse')}
             id="navbarSupportedContent"
           >
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex">
               {PAGES.map(({ id, label, href }) => (
                 <li key={id} className="nav-item">
                   <Link
@@ -76,8 +80,30 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </li>
               ))}
             </ul>
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex">
+              <li className="m-1">
+                <div
+                  className="nav-item badge text-bg-secondary"
+                  title="Number of processes running"
+                >
+                  <span className="d-none d-md-inline">Process: </span>
+                  {Object.values(queueState || []).length}
+                </div>
+              </li>
+              <li className="m-1">
+                <div className="badge text-bg-warning" title="Used/Total">
+                  <span className="d-none d-md-inline">
+                    GPU:
+                    {gpu
+                      ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
+                      : 'No'}
+                  </span>
+                </div>
+              </li>
+            </ul>
+
             {authenticatedUser ? (
-              <span className="d-flex align-items-center navbar-text navbar-text-margins">
+              <div className="d-flex align-items-center navbar-text navbar-text-margins">
                 <span className="mx-2">Logged as {authenticatedUser.username}</span>
                 <button className="btn btn-primary clearhistory" onClick={actionClearHistory}>
                   <FiRefreshCcw />
@@ -96,7 +122,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                   {' '}
                   <IoMdLogOut title="Logout" />
                 </button>
-              </span>
+              </div>
             ) : (
               <Link to="/login">
                 <IoMdLogIn title="login" />

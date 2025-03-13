@@ -127,7 +127,7 @@ async def compute_projection(
         )
         orchestrator.log_action(
             current_user.username,
-            f"INFO compute projection {projection.method}",
+            f"COMPUTE PROJECTION: {projection.method}",
             project.params.project_slug,
         )
         return WaitingModel(detail=f"Projection {projection.method} is computing")
@@ -150,6 +150,7 @@ async def get_list_elements(
     Get a table of elements
     """
     try:
+        print("GET TABLE", contains)
         extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
         df = extract.batch.fillna(" ")
         table = (
@@ -190,7 +191,7 @@ async def post_list_elements(
             )
             orchestrator.log_action(
                 current_user.username,
-                f"UPDATE ANNOTATION in {annotation.scheme}: {annotation.element_id} as {annotation.label}",
+                f"UPDATE ANNOTATION: in {annotation.scheme} element {annotation.element_id} as {annotation.label}",
                 project.name,
             )
         except Exception:
@@ -221,7 +222,7 @@ async def post_annotation_file(
         )
         orchestrator.log_action(
             current_user.username,
-            "LOAD ANNOTATION FROM FILE FOR SCHEME " + annotationsdata.scheme,
+            f"LOAD ANNOTATION FROM FILE: scheme {annotationsdata.scheme}",
             project.name,
         )
         return None
@@ -278,7 +279,7 @@ async def post_reconciliation(
         # log
         orchestrator.log_action(
             current_user.username,
-            f"RECONCILIATE ANNOTATION in {scheme}: {element_id} as {label}",
+            f"RECONCILIATE ANNOTATION: in {scheme} element {element_id} as {label}",
             project.name,
         )
         return None
@@ -338,7 +339,7 @@ async def post_annotation(
 
             orchestrator.log_action(
                 current_user.username,
-                f"PROJECT {project.name} - ANNOTATE in {annotation.scheme}: tag {annotation.element_id} as {annotation.label} ({annotation.dataset})",
+                f"ADD ANNOTATION: in {annotation.scheme} element {annotation.element_id} as {annotation.label} ({annotation.dataset})",
                 project.name,
             )
             return None
@@ -356,7 +357,7 @@ async def post_annotation(
 
             orchestrator.log_action(
                 current_user.username,
-                f"DELETE ANNOTATION in {annotation.scheme}: id {annotation.element_id}",
+                f"DELETE ANNOTATION: in {annotation.scheme} id {annotation.element_id}",
                 project.name,
             )
             return None

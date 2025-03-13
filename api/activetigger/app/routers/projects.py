@@ -76,7 +76,7 @@ async def new_project(
         r = orchestrator.create_project(project, current_user.username)
         # log action
         orchestrator.log_action(
-            current_user.username, "INFO create project", project.project_name
+            current_user.username, "INFO CREATE PROJECT", project.project_name
         )
         return r["success"]
     except Exception as e:
@@ -104,7 +104,7 @@ async def update_project(
     try:
         project.update_project(update)
         orchestrator.log_action(
-            current_user.username, "INFO update project", project.name
+            current_user.username, "INFO UPDATE PROJECT", project.name
         )
         del orchestrator.projects[project.name]
     except Exception as e:
@@ -127,7 +127,7 @@ async def delete_project(
         print("start delete")
         orchestrator.delete_project(project_slug)
         orchestrator.log_action(
-            current_user.username, "INFO delete project", project_slug
+            current_user.username, "INFO DELETE PROJECT", project_slug
         )
         return None
     except Exception as e:
@@ -150,14 +150,12 @@ async def add_testdata(
             if testset is None:
                 raise Exception("No testset sent")
             project.add_testset(testset, current_user.username, project.name)
-            orchestrator.log_action(
-                current_user.username, "INFO add testdata project", project.name
-            )
+            orchestrator.log_action(current_user.username, "ADD TESTSET", project.name)
             return None
         if action == "delete":
             project.drop_testset()
             orchestrator.log_action(
-                current_user.username, "INFO delete testdata project", project.name
+                current_user.username, "DELETE TESTSET", project.name
             )
             return None
         raise Exception("action not found")

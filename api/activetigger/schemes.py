@@ -225,8 +225,17 @@ class Schemes:
 
         # filter for contains
         if contains:
-            f_contains = df["text"].str.contains(clean_regex(contains))
-            df = cast(DataFrame, df[f_contains])
+            print(contains)
+            if contains.startswith("ALL:") and len(contains) > 4:
+                contains_f = contains.replace("ALL:", "")
+                f_labels = (
+                    df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
+                )
+                f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
+                f_contains = f_labels | f_text
+            else:
+                f_contains = df["text"].str.contains(clean_regex(contains))
+            df = cast(DataFrame, df[f_contains]).fillna(False)
 
         # build dataset
         if mode == "tagged":

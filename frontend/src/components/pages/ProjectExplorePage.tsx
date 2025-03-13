@@ -119,7 +119,7 @@ export const ProjectExplorePage: FC = () => {
         >
           <Highlighter
             highlightClassName="Search"
-            searchWords={search && isValidRegex(search) ? [search] : []}
+            searchWords={search && isValidRegex(search) ? [search.replace('ALL:', '')] : []}
             autoEscape={false}
             textToHighlight={props.row.text}
             highlightStyle={{
@@ -140,8 +140,6 @@ export const ProjectExplorePage: FC = () => {
     },
     { key: 'timestamp', name: 'Changed', resizable: true, width: 100 },
   ];
-
-  console.log(rows);
 
   // specific function to have a select component
   function renderDropdown({ row, onRowChange }: RenderEditCellProps<Row>) {
@@ -264,7 +262,7 @@ export const ProjectExplorePage: FC = () => {
                       </select>
                       <input
                         className="form-control"
-                        placeholder="You can use a regex search to filter"
+                        placeholder="Regex search to filter on text / for both text and label, use ALL: to start"
                         onChange={(e) => setSearch(e.target.value)}
                       ></input>
                     </div>
