@@ -1,3 +1,4 @@
+import os
 from getpass import getpass
 from typing import cast
 
@@ -229,3 +230,17 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
         false_predictions=(Y_true != Y_pred).loc[lambda x: x].index.tolist(),
     )
     return statistics
+
+
+def get_dir_size(path: str = ".") -> float:
+    """
+    Get size of a directory in MB
+    """
+    total: float = 0
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_file():
+                total = total + entry.stat().st_size / (1024 * 1024)
+            elif entry.is_dir():
+                total += get_dir_size(entry.path)
+    return total

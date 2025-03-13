@@ -30,7 +30,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import clean_regex, get_metrics
+from activetigger.functions import clean_regex, get_dir_size, get_metrics
 from activetigger.generation.generations import Generations
 from activetigger.models import BertModels, SimpleModels
 from activetigger.projections import Projections
@@ -664,6 +664,7 @@ class Project:
         Send state of the project
         """
         # start_time = time.time()
+
         r = {
             "params": self.params,
             "users": {"active": self.get_active_users()},
@@ -700,6 +701,7 @@ class Project:
             },
             "generations": {"training": self.generations.current_users_generating()},
             "errors": self.errors,
+            "memory": get_dir_size(str(self.params.dir)),
         }
 
         # end_time = time.time()

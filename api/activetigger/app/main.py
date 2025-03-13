@@ -1,5 +1,6 @@
 import importlib
 import logging
+import os
 import time
 from collections.abc import Awaitable
 from contextlib import asynccontextmanager
@@ -40,7 +41,7 @@ from activetigger.datamodels import (
     TokenModel,
     UserInDBModel,
 )
-from activetigger.functions import get_gpu_memory_info
+from activetigger.functions import get_dir_size, get_gpu_memory_info
 from activetigger.orchestrator import orchestrator
 
 # to log specific events from api
@@ -208,6 +209,7 @@ async def get_queue() -> ServerStateModel:
     cpu_count = psutil.cpu_count()
     memory_info = psutil.virtual_memory()
     disk_info = psutil.disk_usage("/")
+    at_memory = get_dir_size(os.environ["ACTIVETIGGER_PATH"])
 
     return ServerStateModel(
         version=__version__,
@@ -221,6 +223,7 @@ async def get_queue() -> ServerStateModel:
             "available": memory_info.available / (1024**3),
         },
         disk={
+            "activetigger": at_memory,
             "proportion": disk_info.percent,
             "total": disk_info.total / (1024**3),
         },
@@ -239,7 +242,7 @@ async def kill_process(
     try:
         orchestrator.queue.kill(unique_id)
         orchestrator.log_action(
-            current_user.username, f"kill process {unique_id}", "all"
+            current_user.username, f"KILL PROCESS: {unique_id}", "all"
         )
         return None
     except Exception as e:

@@ -42,7 +42,7 @@ async def list_generation_models() -> list[GenerationModelApi]:
 
 @router.get("/generate/models", dependencies=[Depends(verified_user)])
 async def list_project_generation_models(
-    project: Annotated[Project, Depends(get_project)]
+    project: Annotated[Project, Depends(get_project)],
 ) -> list[GenerationModel]:
     """
     Returns the list of the available GenAI models configure for a project
@@ -129,7 +129,7 @@ async def postgenerate(
 
         orchestrator.log_action(
             current_user.username,
-            "INFO Start generating process",
+            "START GENERATE",
             project.params.project_slug,
         )
         return None
@@ -155,7 +155,7 @@ async def stop_generation(
         unique_id = p[0].unique_id
         orchestrator.queue.kill(unique_id)
         orchestrator.log_action(
-            current_user.username, "INFO stop generation", project.params.project_slug
+            current_user.username, "STOP GENERATE", project.params.project_slug
         )
         return None
     except Exception as e:

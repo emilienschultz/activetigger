@@ -55,7 +55,7 @@ async def post_embeddings(
             df, feature.name, feature.type, feature.parameters, current_user.username
         )
         orchestrator.log_action(
-            current_user.username, f"INFO Compute feature {feature.type}", project.name
+            current_user.username, f"COMPUTE FEATURE: {feature.type}", project.name
         )
         return WaitingModel(
             detail=f"computing {feature.type}, it could take a few minutes"
@@ -78,7 +78,7 @@ async def delete_feature(
     try:
         project.features.delete(name)
         orchestrator.log_action(
-            current_user.username, f"INFO delete feature {name}", project.name
+            current_user.username, f"DELETE FEATURE: {name}", project.name
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

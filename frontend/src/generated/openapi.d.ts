@@ -1928,6 +1928,8 @@ export interface components {
             generations: Record<string, never>;
             /** Errors */
             errors: unknown[][];
+            /** Memory */
+            memory: number;
         };
         /** ProjectSummaryModel */
         ProjectSummaryModel: {
