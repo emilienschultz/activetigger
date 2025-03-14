@@ -69,6 +69,8 @@ class PredictBert(BaseTask):
         """
         Main process to predict
         """
+        print("start predicting")
+
         # empty cache
         torch.cuda.empty_cache()
 

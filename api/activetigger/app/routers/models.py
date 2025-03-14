@@ -110,7 +110,7 @@ async def predict(
             )
             df["text"] = df[external_dataset.text]
             if len(df[external_dataset.id].unique()) == len(df):
-                df["index"] = df[external_dataset.id]
+                df["index"] = df[external_dataset.id].apply(str)
             else:
                 df["index"] = ["external-" + str(i) for i in range(len(df))]
             df.set_index("index", inplace=True)

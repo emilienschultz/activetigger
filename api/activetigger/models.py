@@ -613,22 +613,23 @@ class BertModels:
         Export predict file if exists
         """
         path = self.path / name / file_name
+        if not path.exists():
+            raise FileNotFoundError("file does not exist")
+
+        df = pd.read_parquet(path)
 
         # change format if needed
         if format == "csv":
-            df = pd.read_parquet(path)
             file_name = "predict.csv"
             path = self.path / name / file_name
             df.to_csv(path)
         # change format if needed
-        if format == "xlsx":
-            df = pd.read_parquet(path)
+        elif format == "xlsx":
             file_name = "predict.xlsx"
             path = self.path / name / file_name
             df.to_excel(path)
-
-        if not path.exists():
-            raise FileNotFoundError("file does not exist")
+        else:
+            raise Exception("Format not supported")
 
         r = {"name": file_name, "path": path}
         return r
