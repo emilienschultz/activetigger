@@ -79,13 +79,15 @@ async def export_prediction(
     project: Annotated[Project, Depends(get_project)],
     format: str = Query(),
     name: str = Query(),
+    dataset: str = Query("all"),
 ) -> FileResponse:
     """
     Export annotations
     """
     try:
+        filename = f"predict_{dataset}.parquet"
         r = project.bertmodels.export_prediction(
-            name=name, file_name="predict_all.parquet", format=format
+            name=name, file_name=filename, format=format
         )
         return FileResponse(r["path"], filename=r["name"])
     except Exception as e:

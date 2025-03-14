@@ -11,6 +11,7 @@ import {
   useStopTrainBertModel,
 } from '../../core/api';
 import { useAppContext } from '../../core/context';
+import { ImportPredictionDataset } from '../forms/ImportPredictionDataset';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
 export const ProjectPredictPage: FC = () => {
@@ -132,12 +133,21 @@ export const ProjectPredictPage: FC = () => {
                       <div></div>
                     ) : (
                       <button
-                        className="btn btn-info m-4"
+                        className="btn btn-info my-4  col-6"
                         onClick={() => computeModelPrediction(currentModel, 'all', currentScheme)}
                       >
                         Launch prediction complete dataset
                       </button>
                     )}
+                  </div>
+                )}
+                {model && (
+                  <div>
+                    <ImportPredictionDataset
+                      projectSlug={projectSlug || ''}
+                      modelName={currentModel}
+                      scheme={currentScheme}
+                    />
                   </div>
                 )}
               </div>

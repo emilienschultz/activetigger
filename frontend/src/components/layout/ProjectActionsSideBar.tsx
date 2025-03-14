@@ -188,22 +188,9 @@ export const ProjectActionsSidebar: FC<{
           )}
           <li className="nav-item ">
             <div className="nav-link">
-              {/* <div className="badge text-bg-secondary" title="Number of processes running">
-                <span className="d-none d-md-inline">Process: </span>
-                {Object.values(queueState || []).length}
-              </div>
-              <br></br>
-              <div className="badge text-bg-warning" title="Used/Total">
-                <span className="d-none d-md-inline">
-                  GPU:
-                  {gpu
-                    ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
-                    : 'No'}
-                </span>
-              </div> */}
               <div className="badge text-bg-info" title="Memory">
                 <span className="d-none d-md-inline">
-                  Mem:
+                  HDD:
                   {projectState?.memory ? `${projectState.memory.toFixed(1)} Mo` : ''}
                 </span>
               </div>

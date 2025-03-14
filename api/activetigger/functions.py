@@ -1,3 +1,4 @@
+import io
 import os
 from getpass import getpass
 from typing import cast
@@ -244,3 +245,14 @@ def get_dir_size(path: str = ".") -> float:
             elif entry.is_dir():
                 total += get_dir_size(entry.path)
     return total
+
+
+def process_payload_csv(csv_str: str, cols: list[str]):
+    """
+    Process payload from a CSV file in str
+    """
+    csv_buffer = io.StringIO(csv_str)
+    df = pd.read_csv(
+        csv_buffer,
+    )
+    return df[cols]

@@ -59,6 +59,8 @@ export type GenerationModelApi = components['schemas']['GenerationModelApi'];
 
 export type ProjectUpdateModel = components['schemas']['ProjectUpdateModel'];
 
+export type TextDatasetModel = components['schemas']['TextDatasetModel'];
+
 export type ProjectionModelParams =
   | components['schemas']['TsneModel']
   | components['schemas']['UmapModel'];

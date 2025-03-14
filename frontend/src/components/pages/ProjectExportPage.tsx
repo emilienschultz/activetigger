@@ -40,6 +40,10 @@ export const ProjectExportPage: FC = () => {
     currentScheme && model
       ? project?.bertmodels.available[currentScheme][model]['predicted']
       : false;
+  const availablePredictionExternal =
+    currentScheme && model
+      ? project?.bertmodels.available[currentScheme][model]['predicted_external']
+      : false;
 
   const { getFeaturesFile } = useGetFeaturesFile(projectName || null);
   const { getAnnotationsFile } = useGetAnnotationsFile(projectName || null);
@@ -177,7 +181,21 @@ export const ProjectExportPage: FC = () => {
                         }
                       }}
                     >
-                      Export dataset prediction
+                      Export prediction complete dataset
+                    </button>
+                  )}
+                </div>
+                <div>
+                  {availablePredictionExternal && (
+                    <button
+                      className="btn btn-primary mt-3"
+                      onClick={() => {
+                        if (model) {
+                          getPredictionsFile(model, format, 'external');
+                        }
+                      }}
+                    >
+                      Export prediction external dataset
                     </button>
                   )}
                 </div>

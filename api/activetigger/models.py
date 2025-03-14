@@ -279,9 +279,8 @@ class BertModels:
                 r[m["scheme"]] = {}
             r[m["scheme"]][m["name"]] = {
                 "predicted": m["parameters"]["predicted"],
-                "compressed": m["parameters"]["compressed"],
+                "predicted_external": m["parameters"].get("predicted_external", False),
             }
-
         return r
 
     def training(self) -> dict:
@@ -667,12 +666,20 @@ class BertModels:
         if element.status == "testing":
             print("Model tested")
         if element.status == "predicting":
-            # case of global prediction completed
+            # update flag if there is a prediction of the whole dataset
             if element.dataset == "all":
                 self.projects_service.set_model_params(
                     self.project_slug,
                     element.model_name,
                     flag="predicted",
+                    value=True,
+                )
+            # update flag if there is a prediction in an external dataset
+            if element.dataset == "external":
+                self.projects_service.set_model_params(
+                    self.project_slug,
+                    element.model_name,
+                    flag="predicted_external",
                     value=True,
                 )
             print("Prediction finished")

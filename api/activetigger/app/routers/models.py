@@ -1,3 +1,4 @@
+import io
 from typing import Annotated
 
 import pandas as pd
@@ -17,6 +18,7 @@ from activetigger.datamodels import (
     BertModelModel,
     SimpleModelModel,
     SimpleModelOutModel,
+    TextDatasetModel,
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
@@ -80,6 +82,7 @@ async def predict(
     scheme: str,
     dataset: str = "all",
     batch_size: int = 32,
+    external_dataset: TextDatasetModel | None = None,
 ) -> None:
     """
     Start prediction with a model
@@ -96,6 +99,24 @@ async def predict(
         elif dataset == "all":
             df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
             col_label = None
+        elif dataset == "external":
+            if external_dataset is None:
+                raise HTTPException(
+                    status_code=400, detail="External dataset is missing"
+                )
+            csv_buffer = io.StringIO(external_dataset.csv)
+            df = pd.read_csv(
+                csv_buffer,
+            )
+            df["text"] = df[external_dataset.text]
+            if len(df[external_dataset.id].unique()) == len(df):
+                df["index"] = df[external_dataset.id]
+            else:
+                df["index"] = ["external-" + str(i) for i in range(len(df))]
+            df.set_index("index", inplace=True)
+            df = df[["text"]].dropna()
+            col_label = None
+            # raise HTTPException(status_code=500, detail="Not implemented yet")
         else:
             raise Exception(f"dataset {dataset} not found")
 
@@ -238,8 +259,11 @@ async def stop_bert(
         unique_id = p[0].unique_id
         # kill the process
         orchestrator.queue.kill(unique_id)
-        # delete it in the database
-        project.bertmodels.projects_service.delete_model(project.name, p[0].model.name)
+        # delete it in the database if it is a training
+        if p[0].kind == "train_bert":
+            project.bertmodels.projects_service.delete_model(
+                project.name, p[0].model.name
+            )
         orchestrator.log_action(
             current_user.username, "STOP MODEL TRAINING", project.name
         )

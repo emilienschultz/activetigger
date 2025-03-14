@@ -2154,6 +2154,17 @@ export interface components {
             /** Scheme */
             scheme?: string | null;
         };
+        /** TextDatasetModel */
+        TextDatasetModel: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+            /** Filename */
+            filename?: string | null;
+            /** Csv */
+            csv?: string | null;
+        };
         /**
          * TokenModel
          * @description Auth token
@@ -3776,7 +3787,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TextDatasetModel"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
