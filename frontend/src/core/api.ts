@@ -31,7 +31,7 @@ import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
 
 // Add a timeout to the default fetch
 async function fetchWithTimeout(input: Request) {
-  const timeout = 30000;
+  const timeout = 90000;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
@@ -43,7 +43,7 @@ async function fetchWithTimeout(input: Request) {
   } catch (error) {
     // on abort, it's a Timeout, generate an according Response
     if ((error as Error).name === 'AbortError')
-      return new Response(JSON.stringify({ error: 'API timeout Baby' }), {
+      return new Response(JSON.stringify({ error: 'API timeout' }), {
         status: 408,
         headers: { 'Content-Type': 'application/json' },
       });
