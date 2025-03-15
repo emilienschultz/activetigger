@@ -6,7 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 
-import { stringify } from 'csv-stringify/browser/esm/sync';
+//import { stringify } from 'csv-stringify/browser/esm/sync';
+import { unparse } from 'papaparse';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useCreateProject } from '../../core/api';
@@ -117,7 +118,8 @@ export const ProjectCreationForm: FC = () => {
         //const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
         console.log('start parsing');
         console.log(data.headers);
-        const csv = stringify(data.data, { header: true, columns: data.headers.filter(Boolean) });
+        // const csv = stringify(data.data, { header: true, columns: data.headers.filter(Boolean) });
+        const csv = unparse(data.data, { header: true });
         console.log('data parsing done');
         try {
           const slug = await createProject({
