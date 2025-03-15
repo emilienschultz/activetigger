@@ -16,6 +16,7 @@ import {
   SimpleModelModel,
   SupportedAPI,
   TestSetDataModel,
+  TextDatasetModel,
   newBertModel,
 } from '../types';
 import { HttpError } from './HTTPError';
@@ -30,7 +31,7 @@ import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
 
 // Add a timeout to the default fetch
 async function fetchWithTimeout(input: Request) {
-  const timeout = 30000;
+  const timeout = 90000;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
@@ -42,7 +43,7 @@ async function fetchWithTimeout(input: Request) {
   } catch (error) {
     // on abort, it's a Timeout, generate an according Response
     if ((error as Error).name === 'AbortError')
-      return new Response(JSON.stringify({ error: 'API timeout Baby' }), {
+      return new Response(JSON.stringify({ error: 'API timeout' }), {
         status: 408,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -266,6 +267,37 @@ export function useDropTestSet(projectSlug: string | null) {
     if (!res.error) notify({ type: 'success', message: 'Test data set dropped' });
   }, [notify, projectSlug]);
   return dropTestSet;
+}
+
+/**
+ * Import dataset to predict
+ */
+export function usePredictOnDataset() {
+  const { notify } = useNotifications();
+  const predictOnDataset = useCallback(
+    async (projectSlug: string, scheme: string, model_name: string, data: TextDatasetModel) => {
+      // do the new projects POST call
+      const res = await api.POST('/models/bert/predict', {
+        // POST has a body
+        params: {
+          query: {
+            project_slug: projectSlug,
+            model_name: model_name,
+            dataset: 'external',
+            scheme: scheme,
+          },
+        },
+        body: data,
+      });
+      if (!res.error) notify({ type: 'success', message: 'Start predicting on dataset' });
+      else
+        throw new Error(
+          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+        );
+    },
+    [notify],
+  );
+  return predictOnDataset;
 }
 
 /**
@@ -1189,7 +1221,7 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
 export function useGetPredictionsFile(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getPredictionsFile = useCallback(
-    async (model: string, format: string) => {
+    async (model: string, format: string, dataset: string = 'all') => {
       if (projectSlug) {
         const res = await api.GET('/export/prediction', {
           params: {
@@ -1197,6 +1229,7 @@ export function useGetPredictionsFile(projectSlug: string | null) {
               project_slug: projectSlug,
               name: model,
               format: format,
+              dataset: dataset,
             },
           },
           parseAs: 'blob',
@@ -1204,7 +1237,7 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the predictions data' });
-          saveAs(res.data, `predictions_simplemodel_${projectSlug}_${model}.${format}`);
+          saveAs(res.data, `predictions_${projectSlug}_${model}_${dataset}.${format}`);
         }
         return true;
       }

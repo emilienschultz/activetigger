@@ -569,7 +569,6 @@ class Orchestrator:
 
 
 # launch the instance
-print("ORCH", os.environ["ACTIVETIGGER_PATH"], os.environ["ACTIVETIGGER_MODEL"])
 orchestrator = Orchestrator(
     os.environ.get("ACTIVETIGGER_PATH", "./projects"),
     os.environ.get("ACTIVETIGGER_MODEL", "./models"),

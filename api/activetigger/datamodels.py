@@ -694,3 +694,10 @@ class PromptModel(BaseModel):
     id: int
     text: str
     parameters: dict[str, Any]
+
+
+class TextDatasetModel(BaseModel):
+    id: str
+    text: str
+    filename: str | None = None
+    csv: str | None = None

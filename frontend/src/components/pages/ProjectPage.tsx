@@ -10,6 +10,7 @@ import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
+import { CodebookManagement } from '../CodeBookManagement';
 import { ProjectUpdateForm } from '../forms/ProjectUpdateForm';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { ProjectStatistics } from '../ProjectStatistics';
@@ -115,6 +116,12 @@ export const ProjectPage: FC = () => {
                     <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
                   </div>
                 )}
+              </Tab>
+              <Tab eventKey="codebook" title="Codebook">
+                <CodebookManagement
+                  projectName={projectName}
+                  currentScheme={currentScheme || null}
+                />
               </Tab>
 
               <Tab eventKey="session" title="History session">

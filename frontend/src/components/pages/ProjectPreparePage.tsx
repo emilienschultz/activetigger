@@ -4,7 +4,6 @@ import Tabs from 'react-bootstrap/Tabs';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
-import { CodebookManagement } from '../CodeBookManagement';
 
 import { useAddFeature, useDeleteFeature, useGetFeatureInfo } from '../../core/api';
 import { useAppContext } from '../../core/context';
@@ -262,12 +261,6 @@ export const ProjectPreparePage: FC = () => {
 
                     <button className="btn btn-primary btn-validation">Create</button>
                   </form>
-                </Tab>
-                <Tab eventKey="codebook" title="Codebook">
-                  <CodebookManagement
-                    projectName={projectName}
-                    currentScheme={currentScheme || null}
-                  />
                 </Tab>
                 <Tab eventKey="imports" title="Import annotations">
                   <ImportAnnotations

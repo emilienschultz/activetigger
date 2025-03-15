@@ -44,7 +44,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const { register, handleSubmit, control, watch } = useForm<SimpleModelModel>({
     defaultValues: {
       model: 'liblinear',
-      features: Object.values(availableFeatures),
+      // features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
       params: {
         cost: 1,
@@ -175,7 +175,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             ))
         }
         <div>
-          <label htmlFor="features">Select features</label>
+          <label htmlFor="features">Features used to predict</label>
           {/* Specific management of the component with the react-form controller */}
           <Controller
             name="features"

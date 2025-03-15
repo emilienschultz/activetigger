@@ -131,10 +131,15 @@ class BertModel:
         (different cases)
         """
         # case of training
+        print(
+            "progress",
+            (self.path.joinpath("progress_train")).exists(),
+            (self.path.joinpath("progress_train")),
+        )
         if (self.status == "training") & (
-            self.path.joinpath("train/progress")
+            self.path.joinpath("progress_train")
         ).exists():
-            with open(self.path.joinpath("train/progress"), "r") as f:
+            with open(self.path.joinpath("progress_train"), "r") as f:
                 r = f.read()
                 if r == "":
                     r = "0"
@@ -274,9 +279,8 @@ class BertModels:
                 r[m["scheme"]] = {}
             r[m["scheme"]][m["name"]] = {
                 "predicted": m["parameters"]["predicted"],
-                "compressed": m["parameters"]["compressed"],
+                "predicted_external": m["parameters"].get("predicted_external", False),
             }
-
         return r
 
     def training(self) -> dict:
@@ -609,22 +613,23 @@ class BertModels:
         Export predict file if exists
         """
         path = self.path / name / file_name
+        if not path.exists():
+            raise FileNotFoundError("file does not exist")
+
+        df = pd.read_parquet(path)
 
         # change format if needed
         if format == "csv":
-            df = pd.read_parquet(path)
             file_name = "predict.csv"
             path = self.path / name / file_name
             df.to_csv(path)
         # change format if needed
-        if format == "xlsx":
-            df = pd.read_parquet(path)
+        elif format == "xlsx":
             file_name = "predict.xlsx"
             path = self.path / name / file_name
             df.to_excel(path)
-
-        if not path.exists():
-            raise FileNotFoundError("file does not exist")
+        else:
+            raise Exception("Format not supported")
 
         r = {"name": file_name, "path": path}
         return r
@@ -662,12 +667,20 @@ class BertModels:
         if element.status == "testing":
             print("Model tested")
         if element.status == "predicting":
-            # case of global prediction completed
+            # update flag if there is a prediction of the whole dataset
             if element.dataset == "all":
                 self.projects_service.set_model_params(
                     self.project_slug,
                     element.model_name,
                     flag="predicted",
+                    value=True,
+                )
+            # update flag if there is a prediction in an external dataset
+            if element.dataset == "external":
+                self.projects_service.set_model_params(
+                    self.project_slug,
+                    element.model_name,
+                    flag="predicted_external",
                     value=True,
                 )
             print("Prediction finished")

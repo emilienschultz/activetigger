@@ -91,38 +91,42 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </div>
               </li>
               <li className="m-1">
-                <div className="badge text-bg-warning" title="Used/Total">
-                  <span className="d-none d-md-inline">
-                    GPU:
-                    {gpu
-                      ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
-                      : 'No'}
-                  </span>
+                <div className="badge text-bg-secondary" title="Used/Total">
+                  <span className="d-none d-md-inline">GPU:</span>
+                  {gpu
+                    ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
+                    : 'No'}
                 </div>
               </li>
             </ul>
 
             {authenticatedUser ? (
-              <div className="d-flex align-items-center navbar-text navbar-text-margins">
-                <span className="mx-2">Logged as {authenticatedUser.username}</span>
-                <button className="btn btn-primary clearhistory" onClick={actionClearHistory}>
-                  <FiRefreshCcw />
-                  <span className="badge badge-warning">{history.length}</span>
-                </button>
-                <Tooltip anchorSelect=".clearhistory" place="top">
-                  Clear the current session (you can only annotate once each element by session)
-                </Tooltip>
-                <button
-                  className="btn btn-primary"
-                  onClick={async () => {
-                    const success = await logout();
-                    if (success) navigate('/');
-                  }}
-                >
-                  {' '}
-                  <IoMdLogOut title="Logout" />
-                </button>
-              </div>
+              <ul className="d-flex navbar-nav me-auto mb-2 mb-lg-0 navbar-text navbar-text-margins align-items-center">
+                <li className="d-flex nav-item">
+                  <button className="btn btn-primary clearhistory" onClick={actionClearHistory}>
+                    <FiRefreshCcw />
+                    <span className="badge badge-warning">{history.length}</span>
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <span>Logged as {authenticatedUser.username}</span>
+                </li>
+                <li className="nav-item">
+                  <Tooltip anchorSelect=".clearhistory" place="top">
+                    Clear the current session (you can only annotate once each element by session)
+                  </Tooltip>
+                  <button
+                    className="btn btn-primary"
+                    onClick={async () => {
+                      const success = await logout();
+                      if (success) navigate('/');
+                    }}
+                  >
+                    {' '}
+                    <IoMdLogOut title="Logout" />
+                  </button>
+                </li>
+              </ul>
             ) : (
               <Link to="/login">
                 <IoMdLogIn title="login" />

@@ -37,7 +37,7 @@ export const ProjectCreationForm: FC = () => {
   const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
     {
       defaultValues: {
-        project_name: 'New project',
+        //        project_name: 'New project',
         n_train: 100,
         n_test: 0,
         language: 'en',
@@ -168,6 +168,7 @@ export const ProjectCreationForm: FC = () => {
             <input
               className="form-control"
               id="project_name"
+              placeholder="Name of the project (need to be unique in the system)"
               type="text"
               {...register('project_name')}
               onClick={handleClickOnText}
