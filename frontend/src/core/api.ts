@@ -2037,3 +2037,37 @@ export function useDeletePrompts(projectSlug: string | null) {
   );
   return deletePrompts;
 }
+
+/**
+ * Upload file
+ */
+export function useUploadData() {
+  const { notify } = useNotifications();
+  console.log('upload');
+  const uploadData = useCallback(
+    async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch(`${config.api.url}/files/add`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        await response.json();
+        notify({ type: 'success', message: 'File uploaded' });
+      } catch (error) {
+        notify({ type: 'error', message: 'Error while uploading file' });
+        console.error('Error:', error);
+      }
+
+      // const res = await api_withouttimeout.POST('/upload', {
+      //   body: formData as unknown as { file: string },
+      // });
+      // if (!res.error) notify({ type: 'success', message: 'File uploaded' });
+    },
+    [notify],
+  );
+  return uploadData;
+}

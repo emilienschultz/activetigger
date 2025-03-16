@@ -9,7 +9,6 @@ import { useAppContext } from '../../core/context';
 import { LoginParams } from '../../types';
 import { LoginForm } from './../forms/LoginForm';
 import Notifications from './../layout/Notifications';
-
 export const HomePage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { users } = useGetActiveUsers();
