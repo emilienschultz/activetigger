@@ -1,14 +1,13 @@
 import { FC, useState } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { useDeleteFile, useGetFiles, useUploadFile } from '../core/api';
+import { useNotifications } from '../core/notifications';
 
 interface FileUploadProps {}
 
-// to do :
-// get available files
-// delete existing file
-
 export const FilesManagement: FC<FileUploadProps> = () => {
+  const MAX_FILE_SIZE = 400 * 1024 * 1024; // 400 MB in bytes
+  const { notify } = useNotifications();
   const [file, setFile] = useState<File | null>(null);
   const [manageMenu, setManageMenu] = useState(false);
   const uploadFile = useUploadFile();
@@ -17,6 +16,10 @@ export const FilesManagement: FC<FileUploadProps> = () => {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
+      if (event.target.files[0].size > MAX_FILE_SIZE) {
+        notify({ type: 'error', message: 'File size is too big. Limit 400 Mo.' });
+        return;
+      }
       setFile(event.target.files[0]);
     }
   };
