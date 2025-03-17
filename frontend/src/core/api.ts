@@ -2038,13 +2038,54 @@ export function useDeletePrompts(projectSlug: string | null) {
   return deletePrompts;
 }
 
+/***** MANAGE Files ******/
+
 /**
- * Upload file
+ * Get available files
  */
-export function useUploadData() {
+export function useGetFiles() {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getFiles = useAsyncMemo(async () => {
+    const res = await api.GET('/files');
+
+    return res.data;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { files: getAsyncMemoData(getFiles), reFetchFiles: reFetch };
+}
+
+/**
+ * Delete a file
+ */
+export function useDeleteFile(reFetchFiles: () => void) {
+  const { notify } = useNotifications();
+  const deleteFile = useCallback(
+    async (filename: string | null) => {
+      if (filename) {
+        const res = await api.POST('/files/delete', {
+          params: {
+            query: { filename: filename },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'File deleted' });
+        reFetchFiles();
+      }
+    },
+    [notify, reFetchFiles],
+  );
+  return deleteFile;
+}
+
+/**
+ * Add file
+ */
+export function useUploadFile() {
   const { notify } = useNotifications();
   console.log('upload');
-  const uploadData = useCallback(
+  const uploadFile = useCallback(
     async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
@@ -2062,12 +2103,12 @@ export function useUploadData() {
         console.error('Error:', error);
       }
 
-      // const res = await api_withouttimeout.POST('/upload', {
+      // const res = await api_withouttimeout.POST('/files/add', {
       //   body: formData as unknown as { file: string },
       // });
       // if (!res.error) notify({ type: 'success', message: 'File uploaded' });
     },
     [notify],
   );
-  return uploadData;
+  return uploadFile;
 }

@@ -29,6 +29,7 @@ from activetigger.app.routers import (
     annotations,
     export,
     features,
+    files,
     generation,
     models,
     projects,
@@ -75,6 +76,7 @@ app.include_router(features.router)
 app.include_router(export.router)
 app.include_router(models.router)
 app.include_router(generation.router)
+app.include_router(files.router)
 
 
 # update the orchestrator at each action
