@@ -26,7 +26,7 @@ export const FilesManagement: FC<FileUploadProps> = () => {
 
   const handleUpload = async () => {
     if (!file) return;
-    uploadFile(file);
+    await uploadFile(file);
   };
 
   const formData = new FormData();
