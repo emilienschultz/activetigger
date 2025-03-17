@@ -314,7 +314,7 @@ export const ProjectAnnotationPage: FC = () => {
                 highlightClassName="Search"
                 searchWords={
                   selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                    ? [...selectionConfig.filter, ...wordsToHighlight.split('\n')]
+                    ? [selectionConfig.filter, ...wordsToHighlight.split('\n')]
                     : wordsToHighlight.split('\n')
                 }
                 autoEscape={false}
@@ -332,7 +332,7 @@ export const ProjectAnnotationPage: FC = () => {
                   highlightClassName="Search"
                   searchWords={
                     selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                      ? [selectionConfig.filter]
+                      ? [selectionConfig.filter, ...wordsToHighlight.split('\n')]
                       : []
                   }
                   autoEscape={false}

@@ -7,7 +7,7 @@ interface FileUploadProps {}
 // get available files
 // delete existing file
 
-export const ManageFiles: FC<FileUploadProps> = () => {
+export const FilesManagement: FC<FileUploadProps> = () => {
   const [file, setFile] = useState<File | null>(null);
   const uploadData = useUploadData();
 
