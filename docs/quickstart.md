@@ -55,8 +55,6 @@ Using a test set is not mandatory. Further down the line, if you would like to v
 
 !!! info "Size of the dataset"
 
-    For the moment, you cannot add additional elements later. For  this, you will need to create a new project. This will change in the future.
-
 
 ![Create a project](img/createproject.png)
 
