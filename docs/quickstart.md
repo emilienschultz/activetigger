@@ -246,7 +246,7 @@ Once you find the model satisfactory, you can apply it to the whole dataset in t
 
 ## Test your model
 
-If you have defined or imported a test set, you can also apply the model on it. This is useful to see how the model performs on unseen data. It is seen as good practice to validate a model on a dedicated test set.
+If you have defined or imported a test set, you can also apply the model on it. This is useful to see how the model performs on unseen data. It is seen as good practice to validate a model on a dedicated test set. The first step is to import the test set, then to select "test set mode". You should then go the the annotation tab. Once you have annotated enough data, you can calculate your scores to see if your model is robust.
 
 ## Export
 
