@@ -248,6 +248,12 @@ Once you find the model satisfactory, you can apply it to the whole dataset in t
 
 If you have defined or imported a test set, you can also apply the model on it. This is useful to see how the model performs on unseen data. It is seen as good practice to validate a model on a dedicated test set. The first step is to import the test set, then to select "test set mode". You should then go the the annotation tab. Once you have annotated enough data, you can calculate your scores to see if your model is robust.
 
+## Predict 
+
+To extend the annotations across all your data, select a model that you have trained and click on « Launch prediction complete dataset ». The file (which you can export from the Export tab) will then provide the probability associated with each text in your dataset. 
+
+You can also apply your model on data that hasn't been uploaded on the project with « Import external texts to predict ». 
+
 ## Export
 
 You can export your total annotations in `csv`, `xlsx` or `parquet` format.
