@@ -140,6 +140,13 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
         else:
             raise HTTPException(500, "No rights for this action")
 
+    # manage files
+    if action == "manage files":
+        if status in ["root", "manager"]:
+            return True
+        else:
+            raise HTTPException(500, "No rights for this action")
+
     # possibility to create user
     if action == "create user":
         if status in ["root"]:

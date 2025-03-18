@@ -162,6 +162,8 @@ export const ProjectCreationForm: FC = () => {
             to later join the data with other tables.
           </div>
         </div>
+        {/* <FilesManagement /> */}
+
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>
             <label className="form-label" htmlFor="project_name">
