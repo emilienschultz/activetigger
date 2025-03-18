@@ -44,7 +44,7 @@ export const MarqueeController: FC<{
   const closeMarkee = useCallback(() => {
     console.log('stop marquee');
     setBbox((prev) => {
-      validateBoundingBox(prev);
+      setTimeout(() => validateBoundingBox(prev), 0);
       return prev;
     });
     backToIdle();
