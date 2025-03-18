@@ -229,6 +229,8 @@ For example, say that you are classifying social media posts according to whethe
 
 The generic **F1 score** is often the variable most of interest, as it indicate how precision and recall are balanced. The closer the F1 score is to 1, the better the model performs according to the coding scheme you have trained it on. 
 
+Active Tigger also provides a **confusion matrix**. You can read it as follows (for binary classifications): the first number represents the true negatives, meaning the documents correctly classified as belonging to the negative class. The second number represents the false positives (documents incorrectly classified as belonging to the positive class). The third number corresponds to the false negatives (documents incorrectly classified as not belonging to the positive class). Finally, the fourth number represents the true positives (documents correctly classified as belonging to the positive class.
+
 If you find yourself with low scores, it is a good idea to first consider your coding scheme. Are your categories clear? Several rounds of iterative annotations are often necessary as you refine your approach. If you realize that you have annotated certain words ambiguously, you can revise your coding from the Explore tab.
 
 To improve your score, you can also check in the False Prediction tab for texts where discrepancies between your coding and the model's coding is indicated. Try to understand the reason for the difference and revise your coding accordingly.
