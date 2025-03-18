@@ -189,6 +189,11 @@ If the aim is to train a model, we recommend alternating between active and maxp
 
 If displayed (see Display parameters), the **Prediction** button above your available labels indicates the model's prediction of a certain label (given previous annotations) and its level of certainty (you can deactivate it in **Display parameters**)
 
+### Vizualisation
+
+To improve your coding, you can use the Visualization mode. Select your SBERT feature (you can also add your trained model if you have one), then click compute. This will project your models into two dimensions. This projection allows you to see how your models group similar texts naturally. You can either visualize the elements you have annotated or the model’s predictions. The separation (or overlap) of the different groups can give you a visual indication of your model's performance – clear separation suggests a model that distinguishes categories well. Points appearing in "incorrect regions" (e.g., isolated orange points in a mostly blue area) may indicate classification errors or interesting edge cases to analyze.
+When you spot such cases, you can click on a point and annotate it.
+
 ## Fine-tune your BERT classifier
 
 Active Tigger allows you to train a BERT classifier model on your annotated data with two goals: extending your annotation on the complete dataset, or retrieving this classifier for other uses. Basically, it is a fine-tuning : the base model pre-trained will be adjusted to your specific data.
