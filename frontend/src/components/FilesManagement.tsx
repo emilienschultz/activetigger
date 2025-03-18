@@ -24,11 +24,6 @@ export const FilesManagement: FC<FileUploadProps> = () => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!file) return;
-    await uploadFile(file);
-  };
-
   const formData = new FormData();
   formData.append('file', file || '');
 
@@ -37,7 +32,15 @@ export const FilesManagement: FC<FileUploadProps> = () => {
       <div className="explanations">Upload tabular file to use</div>
       <div className="d-flex align-items-center">
         <input type="file" onChange={handleFileChange} className="form-control" />
-        <button onClick={handleUpload} disabled={!file} className="btn btn-primary mx-2">
+        <button
+          onClick={async () => {
+            if (!file) return;
+            console.log('Uploading file', file);
+            await uploadFile(file);
+          }}
+          disabled={!file}
+          className="btn btn-primary mx-2"
+        >
           Upload
         </button>
         <button className="btn btn-primary">

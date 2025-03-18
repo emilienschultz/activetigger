@@ -64,13 +64,13 @@ async def save_file(file: UploadFile, username: str):
 @router.post("/files/add")
 async def upload_file(
     background_tasks: BackgroundTasks,
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    # current_user: Annotated[UserInDBModel, Depends(verified_user)],
     file: UploadFile = File(...),
 ) -> None:
     """
     Upload a file on the server
     """
-    test_rights("manage files", current_user.username)
+    # test_rights("manage files", current_user.username)
     background_tasks.add_task(save_file, file, "dev")
     return None
 

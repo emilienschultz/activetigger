@@ -14,6 +14,7 @@ import { useCreateProject } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
+import { FilesManagement } from '../FilesManagement';
 
 // format of the data table
 export interface DataType {
@@ -162,7 +163,7 @@ export const ProjectCreationForm: FC = () => {
             to later join the data with other tables.
           </div>
         </div>
-        {/* <FilesManagement /> */}
+        <FilesManagement />
 
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
           <div>

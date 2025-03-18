@@ -136,16 +136,18 @@ export const ProjectTestPage: FC = () => {
                 )}
               </div>
               <div className="col-4">
-                <button
-                  className="btn btn-danger"
-                  onClick={() => {
-                    dropTestSet().then(() => {
-                      navigate(`/projects/${projectName}/test`);
-                    });
-                  }}
-                >
-                  Drop existing testset
-                </button>
+                {phase != 'test' && (
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => {
+                      dropTestSet().then(() => {
+                        navigate(`/projects/${projectName}/test`);
+                      });
+                    }}
+                  >
+                    Drop existing testset
+                  </button>
+                )}
               </div>
               {phase == 'test' && (
                 <div className="alert alert-info m-3">
