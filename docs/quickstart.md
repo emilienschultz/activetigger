@@ -41,9 +41,9 @@ Give your project a name (the **project name**). Each name is unique in the appl
 
 Specify the name of the column that contains the unique (numerical or textual) IDs for each element (**id columns**), and the name of the column (or columns) that contains the text (**text(s) columns**). Specify the language of the texts.
 
-If the file has already been annotated and you want to import these annotations, you can specify the column of **existing annotations**.
+If the file has already been annotated and you want to import these annotations, you can specify the column of **existing annotations**. 
 
-Optionally, if there are **context elements** that you can display while annotating (for example the author, the date, the publication...), you can specify the relevant columns here.
+Optionally, if there are **context elements** that you can display while annotating (for example the author, the date, the publication...), you can specify the relevant columns here. You can view these informations when annotating by going to Display Parameters and clicking on Contextual Information.
 
 The next step is to define both the **training dataset** that you will annotate and an optional **test dataset** that can be used for model evaluation.
 
