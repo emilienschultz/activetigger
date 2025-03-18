@@ -462,7 +462,7 @@ export const ProjectAnnotationPage: FC = () => {
                 kindScheme={kindScheme}
               />
             </Tab>
-            <Tab eventKey="visualization" title="Visualization">
+            <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
               <ProjectionManagement
                 projectName={projectName || null}
                 currentScheme={currentScheme || null}
