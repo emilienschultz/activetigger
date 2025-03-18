@@ -53,6 +53,8 @@ You need to specify the number of elements you want in each dataset. Those eleme
 
 Using a test set is not mandatory. Further down the line, if you would like to validate your model on a test set, this will be possible at a later stage.
 
+It is possible to stratify the elements of the test set, ensuring that each category of a given variable is equally represented. For example, if annotating a press corpus, you can ensure that the proportion of articles from Newspaper A and Newspaper B remains the same, even if their overall distribution in the corpus is uneven.
+
 !!! info "Size of the dataset"
 
 
