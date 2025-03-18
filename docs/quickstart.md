@@ -229,7 +229,11 @@ For example, say that you are classifying social media posts according to whethe
 
 The generic **F1 score** is often the variable most of interest, as it indicate how precision and recall are balanced. The closer the F1 score is to 1, the better the model performs according to the coding scheme you have trained it on. 
 
-If you find yourself with low scores, it is a good idea to first consider your coding scheme. Are your categories clear? Several rounds of iterative annotations are often necessary as you refine your approach.
+If you find yourself with low scores, it is a good idea to first consider your coding scheme. Are your categories clear? Several rounds of iterative annotations are often necessary as you refine your approach. If you realize that you have annotated certain words ambiguously, you can revise your coding from the Explore tab.
+
+To improve your score, you can also check in the False Prediction tab for texts where discrepancies between your coding and the model's coding is indicated. Try to understand the reason for the difference and revise your coding accordingly.
+
+Another way to improve your coding is by going to the Visualization tab (under the Annotate tab), which helps you identify ambiguous cases.
 
 Once you find the model satisfactory, you can apply it to the whole dataset in the tab **Compute prediction**. This will apply the model to all the elements in the dataset, and you can then export the results.
 
