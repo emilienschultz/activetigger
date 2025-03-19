@@ -64,7 +64,7 @@ async def save_file(file: UploadFile, username: str):
 @router.post("/files/add")
 async def upload_file(
     background_tasks: BackgroundTasks,
-    # current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     file: UploadFile = File(...),
 ) -> None:
     """
