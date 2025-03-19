@@ -41,9 +41,9 @@ Give your project a name (the **project name**). Each name is unique in the appl
 
 Specify the name of the column that contains the unique (numerical or textual) IDs for each element (**id columns**), and the name of the column (or columns) that contains the text (**text(s) columns**). Specify the language of the texts.
 
-If the file has already been annotated and you want to import these annotations, you can specify the column of **existing annotations**.
+If the file has already been annotated and you want to import these annotations, you can specify the column of **existing annotations**. 
 
-Optionally, if there are **context elements** that you can display while annotating (for example the author, the date, the publication...), you can specify the relevant columns here.
+Optionally, if there are **context elements** that you can display while annotating (for example the author, the date, the publication...), you can specify the relevant columns here. You can view these informations when annotating by going to Display Parameters and clicking on Contextual Information.
 
 The next step is to define both the **training dataset** that you will annotate and an optional **test dataset** that can be used for model evaluation.
 
@@ -53,9 +53,9 @@ You need to specify the number of elements you want in each dataset. Those eleme
 
 Using a test set is not mandatory. Further down the line, if you would like to validate your model on a test set, this will be possible at a later stage.
 
-!!! info "Size of the dataset"
+It is possible to stratify the elements of the test set, ensuring that each category of a given variable is equally represented. For example, if annotating a press corpus, you can ensure that the proportion of articles from Newspaper A and Newspaper B remains the same, even if their overall distribution in the corpus is uneven.
 
-    For the moment, you cannot add additional elements later. For  this, you will need to create a new project. This will change in the future.
+!!! info "Size of the dataset"
 
 
 ![Create a project](img/createproject.png)
@@ -189,6 +189,11 @@ If the aim is to train a model, we recommend alternating between active and maxp
 
 If displayed (see Display parameters), the **Prediction** button above your available labels indicates the model's prediction of a certain label (given previous annotations) and its level of certainty (you can deactivate it in **Display parameters**)
 
+### Vizualisation
+
+To improve your coding, you can use the Visualization mode. Select your SBERT feature (you can also add your trained model if you have one), then click compute. This will project your models into two dimensions. This projection allows you to see how your models group similar texts naturally. You can either visualize the elements you have annotated or the model’s predictions. The separation (or overlap) of the different groups can give you a visual indication of your model's performance – clear separation suggests a model that distinguishes categories well. Points appearing in "incorrect regions" (e.g., isolated orange points in a mostly blue area) may indicate classification errors or interesting edge cases to analyze.
+When you spot such cases, you can click on a point and annotate it.
+
 ## Fine-tune your BERT classifier
 
 Active Tigger allows you to train a BERT classifier model on your annotated data with two goals: extending your annotation on the complete dataset, or retrieving this classifier for other uses. Basically, it is a fine-tuning : the base model pre-trained will be adjusted to your specific data.
@@ -229,13 +234,25 @@ For example, say that you are classifying social media posts according to whethe
 
 The generic **F1 score** is often the variable most of interest, as it indicate how precision and recall are balanced. The closer the F1 score is to 1, the better the model performs according to the coding scheme you have trained it on. 
 
-If you find yourself with low scores, it is a good idea to first consider your coding scheme. Are your categories clear? Several rounds of iterative annotations are often necessary as you refine your approach.
+Active Tigger also provides a **confusion matrix**. You can read it as follows (for binary classifications): the first number represents the true negatives, meaning the documents correctly classified as belonging to the negative class. The second number represents the false positives (documents incorrectly classified as belonging to the positive class). The third number corresponds to the false negatives (documents incorrectly classified as not belonging to the positive class). Finally, the fourth number represents the true positives (documents correctly classified as belonging to the positive class.
+
+If you find yourself with low scores, it is a good idea to first consider your coding scheme. Are your categories clear? Several rounds of iterative annotations are often necessary as you refine your approach. If you realize that you have annotated certain words ambiguously, you can revise your coding from the Explore tab.
+
+To improve your score, you can also check in the False Prediction tab for texts where discrepancies between your coding and the model's coding is indicated. Try to understand the reason for the difference and revise your coding accordingly.
+
+Another way to improve your coding is by going to the Visualization tab (under the Annotate tab), which helps you identify ambiguous cases.
 
 Once you find the model satisfactory, you can apply it to the whole dataset in the tab **Compute prediction**. This will apply the model to all the elements in the dataset, and you can then export the results.
 
 ## Test your model
 
-If you have defined or imported a test set, you can also apply the model on it. This is useful to see how the model performs on unseen data. It is seen as good practice to validate a model on a dedicated test set.
+If you have defined or imported a test set, you can also apply the model on it. This is useful to see how the model performs on unseen data. It is seen as good practice to validate a model on a dedicated test set. The first step is to import the test set, then to select "test set mode". You should then go the the annotation tab. Once you have annotated enough data, you can calculate your scores to see if your model is robust.
+
+## Predict 
+
+To extend the annotations across all your data, select a model that you have trained and click on « Launch prediction complete dataset ». The file (which you can export from the Export tab) will then provide the probability associated with each text in your dataset. 
+
+You can also apply your model on data that hasn't been uploaded on the project with « Import external texts to predict ». 
 
 ## Export
 

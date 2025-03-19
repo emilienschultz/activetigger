@@ -15,3 +15,7 @@ No.
 ## I have bugs or repetitive problems
 
 Please open a issue on the Github.
+
+## I have just created a project but want to modify certain parameters (e.g., increase the trainset size).
+
+Go to the project tab, navigate to Settings, and select Update Project.

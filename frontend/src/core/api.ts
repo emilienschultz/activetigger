@@ -2087,26 +2087,16 @@ export function useUploadFile() {
   console.log('upload');
   const uploadFile = useCallback(
     async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await fetch(`${config.api.url}/files/add`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        await response.json();
-        notify({ type: 'success', message: 'File uploaded' });
-      } catch (error) {
-        notify({ type: 'error', message: 'Error while uploading file' });
-        console.error('Error:', error);
-      }
-
-      // const res = await api_withouttimeout.POST('/files/add', {
-      //   body: formData as unknown as { file: string },
-      // });
-      // if (!res.error) notify({ type: 'success', message: 'File uploaded' });
+      const res = await api_withouttimeout.POST('/files/add', {
+        body: { file: file as unknown as string },
+        bodySerializer: (body) => {
+          const formData = new FormData();
+          formData.set('file', body.file);
+          return formData;
+        },
+      });
+      // FIX https://github.com/openapi-ts/openapi-typescript/issues/1214#issuecomment-1957965890
+      if (!res.error) notify({ type: 'success', message: 'File uploaded' });
     },
     [notify],
   );

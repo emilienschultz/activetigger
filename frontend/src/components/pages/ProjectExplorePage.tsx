@@ -305,7 +305,7 @@ export const ProjectExplorePage: FC = () => {
               </Modal.Footer>
             </Modal>
           </Tab>
-          <Tab title="Visualization" eventKey="visualisation">
+          <Tab title="Visualization" eventKey="visualisation" unmountOnExit={true}>
             <ProjectionManagement
               projectName={projectName || null}
               currentScheme={currentScheme || null}
