@@ -223,6 +223,13 @@ class Schemes:
                 filter="recent",
             )
 
+        # build dataset
+        if mode == "tagged":
+            df = cast(DataFrame, df[df["labels"].notnull()])
+
+        if mode == "untagged":
+            df = cast(DataFrame, df[df["labels"].isnull()])
+
         # filter for contains
         if contains:
             print(contains)
@@ -236,13 +243,6 @@ class Schemes:
             else:
                 f_contains = df["text"].str.contains(clean_regex(contains))
             df = cast(DataFrame, df[f_contains]).fillna(False)
-
-        # build dataset
-        if mode == "tagged":
-            df = cast(DataFrame, df[df["labels"].notnull()])
-
-        if mode == "untagged":
-            df = cast(DataFrame, df[df["labels"].isnull()])
 
         # normalize size
         if max == 0:
