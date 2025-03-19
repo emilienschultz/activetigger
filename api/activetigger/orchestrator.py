@@ -17,7 +17,7 @@ from jose import jwt
 from slugify import slugify
 
 from activetigger.datamodels import (
-    ProjectDataModel,
+    ProjectBaseModel,
     ProjectModel,
     ProjectSummaryModel,
 )
@@ -287,7 +287,7 @@ class Orchestrator:
         existing_projects = self.db_manager.projects_service.existing_projects()
         return existing_projects
 
-    def create_project(self, params: ProjectDataModel, username: str) -> dict:
+    def create_project(self, params: ProjectBaseModel, username: str) -> dict:
         """
         Set up a new project
         - load data and save
@@ -314,16 +314,20 @@ class Orchestrator:
 
         # create dedicated directory
         params.dir = self.path.joinpath(project_slug)
-        if params.dir is None:
-            raise Exception("Error in the creation of the directory")
-        os.makedirs(params.dir)
 
-        # copy total dataset as a copy (csv for the moment)
-        with open(params.dir.joinpath("data_raw.csv"), "w") as f:
-            f.write(params.csv)
+        # check if the directory already exists + file
+        if not params.dir.exists():
+            raise Exception("The directory does not exist and should")
 
         # Step 1 : load all data and index to str and rename columns
-        content = pd.read_csv(params.dir.joinpath("data_raw.csv"), dtype=str)
+        if params.filename.endswith(".csv"):
+            content = pd.read_csv(params.dir.joinpath(params.filename))
+        elif params.filename.endswith(".parquet"):
+            content = pd.read_parquet(params.dir.joinpath(params.filename))
+        elif params.filename.endswith(".xlsx"):
+            content = pd.read_excel(params.dir.joinpath(params.filename))
+        else:
+            raise Exception("File format not supported (only csv, xlsx and parquet)")
 
         # rename columns both for data & params to avoid confusion
         content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
@@ -515,9 +519,6 @@ class Orchestrator:
 
         # save the parameters
         self.set_project_parameters(ProjectModel(**project), username)
-
-        # clean
-        os.remove(params.dir.joinpath("data_raw.csv"))
 
         return {"success": project_slug}
 

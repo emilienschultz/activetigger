@@ -1241,7 +1241,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/files/add": {
+    "/files/add/project": {
         parameters: {
             query?: never;
             header?: never;
@@ -1253,8 +1253,9 @@ export interface paths {
         /**
          * Upload File
          * @description Upload a file on the server
+         *     use: type de file
          */
-        post: operations["upload_file_files_add_post"];
+        post: operations["upload_file_files_add_project_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1576,8 +1577,8 @@ export interface components {
             /** Client Secret */
             client_secret?: string | null;
         };
-        /** Body_upload_file_files_add_post */
-        Body_upload_file_files_add_post: {
+        /** Body_upload_file_files_add_project_post */
+        Body_upload_file_files_add_project_post: {
             /**
              * File
              * Format: binary
@@ -1806,10 +1807,10 @@ export interface components {
             };
         };
         /**
-         * ProjectDataModel
-         * @description To create a new project
+         * ProjectBaseModel
+         * @description Parameters of a project to save in the database
          */
-        ProjectDataModel: {
+        ProjectBaseModel: {
             /** Cols Text */
             cols_text: string[];
             /** Project Name */
@@ -1873,8 +1874,6 @@ export interface components {
              * @default false
              */
             random_selection: boolean;
-            /** Csv */
-            csv: string;
         };
         /**
          * ProjectDescriptionModel
@@ -2685,7 +2684,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProjectDataModel"];
+                "application/json": components["schemas"]["ProjectBaseModel"];
             };
         };
         responses: {
@@ -4382,16 +4381,18 @@ export interface operations {
             };
         };
     };
-    upload_file_files_add_post: {
+    upload_file_files_add_project_post: {
         parameters: {
-            query?: never;
+            query: {
+                project_name: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_file_files_add_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_file_files_add_project_post"];
             };
         };
         responses: {

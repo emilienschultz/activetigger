@@ -15,7 +15,7 @@ from activetigger.app.dependencies import (
 from activetigger.datamodels import (
     AvailableProjectsModel,
     ProjectAuthsModel,
-    ProjectDataModel,
+    ProjectBaseModel,
     ProjectDescriptionModel,
     ProjectStateModel,
     ProjectUpdateModel,
@@ -65,7 +65,7 @@ async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
 @router.post("/projects/new", dependencies=[Depends(verified_user)])
 async def new_project(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    project: ProjectDataModel,
+    project: ProjectBaseModel,
 ) -> str:
     """
     Load new project

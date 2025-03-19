@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict  # for dataframe
 # Data model to use of the API
 
 
-class BaseProjectModel(BaseModel):
+class ProjectBaseModel(BaseModel):
     """
     Parameters of a project to save in the database
     """
@@ -34,7 +34,7 @@ class BaseProjectModel(BaseModel):
     random_selection: bool = False
 
 
-class ProjectModel(BaseProjectModel):
+class ProjectModel(ProjectBaseModel):
     """
     Once created
     """
@@ -43,7 +43,7 @@ class ProjectModel(BaseProjectModel):
     all_columns: list[str] | None = None
 
 
-class ProjectDataModel(BaseProjectModel):
+class ProjectDataModel(ProjectBaseModel):
     """
     To create a new project
     """
