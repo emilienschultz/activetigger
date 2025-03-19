@@ -42,4 +42,4 @@ mypy
 types-python-jose
 types-psutil
 pandas-stubs
-loki
+loky
