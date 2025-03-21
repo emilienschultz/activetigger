@@ -565,7 +565,7 @@ export const ProjectAnnotationPage: FC = () => {
                 <br></br>
                 <textarea
                   className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Line break to separe"
+                  placeholder="Line break to separate"
                   onChange={(e) => setWordsToHighlight(e.target.value)}
                 />
               </div>

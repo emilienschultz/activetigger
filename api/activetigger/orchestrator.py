@@ -23,6 +23,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
+from activetigger.functions import get_dir_size
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
@@ -177,6 +178,9 @@ class Orchestrator:
                 parameters=ProjectModel(**i[2]),
                 created_by=i[3],
                 created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
+                size=round(
+                    get_dir_size(os.environ["ACTIVETIGGER_PATH"] + "/" + i[0]), 1
+                ),
             )
             for i in list(reversed(projects_auth))
         ]
@@ -519,6 +523,9 @@ class Orchestrator:
 
         # save the parameters
         self.set_project_parameters(ProjectModel(**project), username)
+
+        # delete the initial file
+        params.dir.joinpath(params.filename).unlink()
 
         return {"success": project_slug}
 

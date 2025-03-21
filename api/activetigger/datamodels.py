@@ -474,6 +474,7 @@ class ProjectSummaryModel(BaseModel):
     user_right: str
     created_by: str
     created_at: str
+    size: float | None = None
 
 
 class AvailableProjectsModel(BaseModel):

@@ -20,6 +20,7 @@ export type AvailableProjectsModel = {
   created_by: string;
   created_at: string;
   parameters: ProjectModel;
+  size: number;
 };
 export type LoginParams = components['schemas']['Body_login_for_access_token_token_post'];
 

@@ -217,7 +217,9 @@ export function useCreateProject() {
         return res['data'];
       } else
         throw new Error(
-          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+          Array.isArray(res.error.detail)
+            ? res.error.detail.map((d) => d.msg).join('; ')
+            : res.error.detail || res.error.toString(),
         );
     },
     [notify],

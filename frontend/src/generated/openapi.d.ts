@@ -2007,6 +2007,8 @@ export interface components {
             created_by: string;
             /** Created At */
             created_at: string;
+            /** Size */
+            size?: number | null;
         };
         /** ProjectUpdateModel */
         ProjectUpdateModel: {
