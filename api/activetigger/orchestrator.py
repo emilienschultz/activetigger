@@ -470,8 +470,8 @@ class Orchestrator:
             scheme_type = "multiclass" if delimiters < 5 else "multilabel"
 
             # check there is a limited number of labels
-            if len(scheme_labels) > 30:
-                print("Too many different labels > 30")
+            if scheme_type == "multiclass" and len(scheme_labels) > 30:
+                print("Too many different labels for multiclass > 30")
                 continue
 
             print("Add scheme/labels from file in train/test")
