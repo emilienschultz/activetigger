@@ -25,7 +25,7 @@ class ProjectBaseModel(BaseModel):
     n_skip: int = 0
     default_scheme: list[str] = []
     language: str = "fr"
-    col_label: str | None = None
+    cols_label: list[str] = []
     cols_context: list[str] = []
     cols_test: list[str] = []
     test: bool = False

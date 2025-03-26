@@ -262,9 +262,24 @@ export const ProjectCreationForm: FC = () => {
                   </select>
 
                   <label className="form-label" htmlFor="col_label">
-                    Column for existing annotations (optional)
+                    Columns for existing annotations (optional)
                   </label>
-                  <select
+                  <Controller
+                    name="cols_label"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={columnsSelect}
+                        isMulti
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                  />
+                  {/* <select
                     className="event-control"
                     id="col_label"
                     disabled={data === null}
@@ -274,7 +289,7 @@ export const ProjectCreationForm: FC = () => {
                       Select...
                     </option>
                     {columns}
-                  </select>
+                  </select> */}
 
                   <label className="form-label" htmlFor="cols_context">
                     Contextual information columns (optional)

@@ -25,6 +25,9 @@ class FitModel(BaseTask):
         """
         Fit simplemodel and calculate statistics
         """
+
+        print("start fit model")
+
         # drop NA values
         f = self.Y.notnull()
         Xf = self.X[f]
@@ -49,6 +52,8 @@ class FitModel(BaseTask):
         kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
         Y_pred_10cv = cross_val_predict(self.model, Xf, Yf, cv=kf)
         cv10 = get_metrics(Yf, Y_pred_10cv)
+
+        print("end fit model")
 
         return FitModelResults(
             model=self.model,

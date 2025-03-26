@@ -1845,8 +1845,11 @@ export interface components {
              * @default fr
              */
             language: string;
-            /** Col Label */
-            col_label?: string | null;
+            /**
+             * Cols Label
+             * @default []
+             */
+            cols_label: string[];
             /**
              * Cols Context
              * @default []
@@ -1936,8 +1939,11 @@ export interface components {
              * @default fr
              */
             language: string;
-            /** Col Label */
-            col_label?: string | null;
+            /**
+             * Cols Label
+             * @default []
+             */
+            cols_label: string[];
             /**
              * Cols Context
              * @default []
