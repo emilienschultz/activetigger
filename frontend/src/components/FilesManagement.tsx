@@ -1,6 +1,6 @@
 import { FC, useState } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
-import { useDeleteFile, useGetFiles, useUploadFile } from '../core/api';
+import { useDeleteFile, useGetFiles } from '../core/api';
 import { useNotifications } from '../core/notifications';
 
 interface FileUploadProps {}
@@ -10,7 +10,7 @@ export const FilesManagement: FC<FileUploadProps> = () => {
   const { notify } = useNotifications();
   const [file, setFile] = useState<File | null>(null);
   const [manageMenu, setManageMenu] = useState(false);
-  const uploadFile = useUploadFile();
+  // const uploadFile = useUploadFile();
   const { files, reFetchFiles } = useGetFiles();
   const deleteFile = useDeleteFile(reFetchFiles);
 
@@ -36,7 +36,7 @@ export const FilesManagement: FC<FileUploadProps> = () => {
           onClick={async () => {
             if (!file) return;
             console.log('Uploading file', file);
-            await uploadFile(file);
+            //await uploadFile(file);
           }}
           disabled={!file}
           className="btn btn-primary mx-2"
