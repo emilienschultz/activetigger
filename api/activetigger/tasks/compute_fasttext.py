@@ -65,6 +65,7 @@ class ComputeFasttext(BaseTask):
         os.chdir(current_directory)
         texts_tk = tokenize(self.texts)
         ft = fasttext.load_model(str(self.path_models.joinpath(model_name)))
+        print("model loaded", str(self.path_models.joinpath(model_name)))
         emb = []
         for t in texts_tk:
             emb.append(ft.get_sentence_vector(t.replace("\n", " ")))
