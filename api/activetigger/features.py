@@ -318,7 +318,7 @@ class Features:
                 ComputeSbert(
                     texts=df,
                     path_process=self.path_all.parent,
-                    model="all-mpnet-base-v2",
+                    model="Alibaba-NLP/gte-multilingual-base",
                 ),
                 queue="gpu",
             )
