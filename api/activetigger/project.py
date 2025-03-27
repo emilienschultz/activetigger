@@ -32,10 +32,11 @@ from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import clean_regex, get_dir_size, get_metrics
 from activetigger.generation.generations import Generations
-from activetigger.models import BertModels, SimpleModels
+from activetigger.models import BertModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
+from activetigger.simplemodels import SimpleModels
 
 MODELS = "bert_models.csv"
 TIMEZONE = pytz.timezone("Europe/Paris")
@@ -291,9 +292,7 @@ class Project:
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
 
-        # test if the parameters have the correct format
-        validation = self.simplemodels.validation[simplemodel.model]
-        params = validation(**simplemodel.params).dict()
+        params = simplemodel.params
 
         # add information on the target of the model
         if simplemodel.dichotomize is not None:

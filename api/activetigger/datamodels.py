@@ -430,7 +430,7 @@ class UserModelComputing(UserComputing):
     status: Literal["training", "testing", "predicting"]
     scheme: Optional[str] = None
     dataset: Optional[str] = None
-    get_training_progress: Optional[Callable[[], float]] = None
+    get_training_progress: Callable[[], float | None] | None = None
 
 
 class UserProjectionComputing(UserComputing):
