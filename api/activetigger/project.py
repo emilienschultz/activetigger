@@ -784,17 +784,18 @@ class Project:
     def export_raw(self, project_slug: str):
         """
         Export raw data
+        To be able to export, need to copy in the static folder
         """
-        # copy in the static folder
         name = f"{project_slug}_data_all.parquet"
         target_dir = self.params.dir if self.params.dir is not None else Path(".")
         path_origin = target_dir.joinpath("data_all.parquet")
-        path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.params.project_slug}/{name}"
+        folder_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}"
+        if not Path(folder_target).exists():
+            os.makedirs(folder_target)
+        path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}/{name}"
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
-        return StaticFileModel(
-            name=name, path=f"/static/{self.params.project_slug}/{name}"
-        )
+        return StaticFileModel(name=name, path=f"/static/{project_slug}/{name}")
 
     def compute_statistics(
         self, scheme: str, predictions: DataFrame, decimals: int = 2
