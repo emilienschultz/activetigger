@@ -104,6 +104,12 @@ export const ProjectTestPage: FC = () => {
           <div className="explanations">
             Switch to the test mode to annotate the testset and compute test statistics.
           </div>
+          <div className="alert alert-warning col-8">
+            Warning: It is important to ensure that the testset does not contaminate the model
+            training. To avoid that, do not use statistics from the testset to change trainset
+            annotations.
+          </div>
+
           {
             // possibility to switch to test mode only if test dataset available
           }

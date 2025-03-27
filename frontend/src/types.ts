@@ -12,7 +12,7 @@ import { components } from './generated/openapi';
 export type UserModel = components['schemas']['UserModel'];
 
 export type ProjectModel = components['schemas']['ProjectModel'];
-export type ProjectDataModel = components['schemas']['ProjectDataModel'];
+export type ProjectBaseModel = components['schemas']['ProjectBaseModel'];
 export type ProjectStateModel = components['schemas']['ProjectStateModel'];
 export type ElementOutModel = components['schemas']['ElementOutModel'];
 
@@ -20,6 +20,7 @@ export type AvailableProjectsModel = {
   created_by: string;
   created_at: string;
   parameters: ProjectModel;
+  size: number;
 };
 export type LoginParams = components['schemas']['Body_login_for_access_token_token_post'];
 

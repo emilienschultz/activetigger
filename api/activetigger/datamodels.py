@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict  # for dataframe
 # Data model to use of the API
 
 
-class BaseProjectModel(BaseModel):
+class ProjectBaseModel(BaseModel):
     """
     Parameters of a project to save in the database
     """
@@ -25,7 +25,7 @@ class BaseProjectModel(BaseModel):
     n_skip: int = 0
     default_scheme: list[str] = []
     language: str = "fr"
-    col_label: str | None = None
+    cols_label: list[str] = []
     cols_context: list[str] = []
     cols_test: list[str] = []
     test: bool = False
@@ -34,7 +34,7 @@ class BaseProjectModel(BaseModel):
     random_selection: bool = False
 
 
-class ProjectModel(BaseProjectModel):
+class ProjectModel(ProjectBaseModel):
     """
     Once created
     """
@@ -43,7 +43,7 @@ class ProjectModel(BaseProjectModel):
     all_columns: list[str] | None = None
 
 
-class ProjectDataModel(BaseProjectModel):
+class ProjectDataModel(ProjectBaseModel):
     """
     To create a new project
     """
@@ -430,7 +430,7 @@ class UserModelComputing(UserComputing):
     status: Literal["training", "testing", "predicting"]
     scheme: Optional[str] = None
     dataset: Optional[str] = None
-    get_training_progress: Optional[Callable[[], float]] = None
+    get_training_progress: Callable[[], float | None] | None = None
 
 
 class UserProjectionComputing(UserComputing):
@@ -474,6 +474,7 @@ class ProjectSummaryModel(BaseModel):
     user_right: str
     created_by: str
     created_at: str
+    size: float | None = None
 
 
 class AvailableProjectsModel(BaseModel):

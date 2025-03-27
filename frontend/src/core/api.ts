@@ -9,7 +9,7 @@ import {
   AvailableProjectsModel,
   GenModel,
   LoginParams,
-  ProjectDataModel,
+  ProjectBaseModel,
   ProjectStateModel,
   ProjectUpdateModel,
   ProjectionInStrictModel,
@@ -206,7 +206,7 @@ export function useCreateProject() {
   // therefore the component using this hook will not have to bother handling authentication it's done automatically here
   const createProject = useCallback(
     // this async function needs a ProjectDataModel payload as params
-    async (project: ProjectDataModel) => {
+    async (project: ProjectBaseModel) => {
       // do the new projects POST call
       const res = await api_withouttimeout.POST('/projects/new', {
         // POST has a body
@@ -217,7 +217,9 @@ export function useCreateProject() {
         return res['data'];
       } else
         throw new Error(
-          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
+          Array.isArray(res.error.detail)
+            ? res.error.detail.map((d) => d.msg).join('; ')
+            : res.error.detail || res.error.toString(),
         );
     },
     [notify],
@@ -2082,12 +2084,15 @@ export function useDeleteFile(reFetchFiles: () => void) {
 /**
  * Add file
  */
-export function useUploadFile() {
+export function useAddProjectFile() {
   const { notify } = useNotifications();
   console.log('upload');
-  const uploadFile = useCallback(
-    async (file: File) => {
-      const res = await api_withouttimeout.POST('/files/add', {
+  const addProjectFile = useCallback(
+    async (file: File, project_name: string) => {
+      const res = await api_withouttimeout.POST('/files/add/project', {
+        params: {
+          query: { project_name: project_name },
+        },
         body: { file: file as unknown as string },
         bodySerializer: (body) => {
           const formData = new FormData();
@@ -2095,10 +2100,17 @@ export function useUploadFile() {
           return formData;
         },
       });
+      console.log(res);
       // FIX https://github.com/openapi-ts/openapi-typescript/issues/1214#issuecomment-1957965890
       if (!res.error) notify({ type: 'success', message: 'File uploaded' });
+      else
+        throw new Error(
+          Array.isArray(res.error.detail)
+            ? res.error.detail.map((d) => d.msg).join('; ')
+            : res.error.detail || res.error.toString(),
+        );
     },
     [notify],
   );
-  return uploadFile;
+  return addProjectFile;
 }

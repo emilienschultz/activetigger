@@ -17,12 +17,13 @@ from jose import jwt
 from slugify import slugify
 
 from activetigger.datamodels import (
-    ProjectDataModel,
+    ProjectBaseModel,
     ProjectModel,
     ProjectSummaryModel,
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
+from activetigger.functions import get_dir_size
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
@@ -177,6 +178,9 @@ class Orchestrator:
                 parameters=ProjectModel(**i[2]),
                 created_by=i[3],
                 created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
+                size=round(
+                    get_dir_size(os.environ["ACTIVETIGGER_PATH"] + "/" + i[0]), 1
+                ),
             )
             for i in list(reversed(projects_auth))
         ]
@@ -287,7 +291,7 @@ class Orchestrator:
         existing_projects = self.db_manager.projects_service.existing_projects()
         return existing_projects
 
-    def create_project(self, params: ProjectDataModel, username: str) -> dict:
+    def create_project(self, params: ProjectBaseModel, username: str) -> dict:
         """
         Set up a new project
         - load data and save
@@ -312,26 +316,31 @@ class Orchestrator:
         # get the slug of the project name as a key
         project_slug = slugify(params.project_name)
 
-        # create dedicated directory
+        # add the dedicated directory
         params.dir = self.path.joinpath(project_slug)
-        if params.dir is None:
-            raise Exception("Error in the creation of the directory")
-        os.makedirs(params.dir)
 
-        # copy total dataset as a copy (csv for the moment)
-        with open(params.dir.joinpath("data_raw.csv"), "w") as f:
-            f.write(params.csv)
+        # check if the directory already exists + file (should with the data)
+        if not params.dir.exists():
+            raise Exception("The directory does not exist and should")
 
         # Step 1 : load all data and index to str and rename columns
-        content = pd.read_csv(params.dir.joinpath("data_raw.csv"), dtype=str)
+        if params.filename.endswith(".csv"):
+            content = pd.read_csv(params.dir.joinpath(params.filename))
+        elif params.filename.endswith(".parquet"):
+            content = pd.read_parquet(params.dir.joinpath(params.filename))
+        elif params.filename.endswith(".xlsx"):
+            content = pd.read_excel(params.dir.joinpath(params.filename))
+        else:
+            raise Exception("File format not supported (only csv, xlsx and parquet)")
 
         # rename columns both for data & params to avoid confusion
         content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
         if params.col_id:
             params.col_id = "dataset_" + params.col_id
+        # change also the name in the parameters
         params.cols_text = ["dataset_" + i for i in params.cols_text if i]
         params.cols_context = ["dataset_" + i for i in params.cols_context if i]
-        params.col_label = "dataset_" + params.col_label if params.col_label else None
+        params.cols_label = ["dataset_" + i for i in params.cols_label if i]
         params.cols_test = ["dataset_" + i for i in params.cols_test if i]
 
         # remove empty lines
@@ -387,13 +396,6 @@ class Orchestrator:
         if n_before != len(content):
             print(f"Drop {n_before - len(content)} empty text lines")
 
-        # manage the label column
-        if (params.col_label is not None) & (params.col_label != ""):
-            content.rename(columns={params.col_label: "label"}, inplace=True)
-        else:
-            content["label"] = None
-            params.col_label = None
-
         # limit of usable text (in the futur, will be defined by the number of token)
         def limit(text):
             return 1200
@@ -423,10 +425,15 @@ class Orchestrator:
             params.test = True
             rows_test = list(testset.index)
 
-        # Step 3 : train dataset, remove test rows, prioritize labelled data
+        # Step 3 : train dataset, remove test rows
+        # choice to prioritize labelled data for the FIRST ROW
         content = content.drop(rows_test)
-        f_notna = content["label"].notna()
-        f_na = content["label"].isna()
+        if len(params.cols_label) == 0:
+            f_notna = pd.Series(False, index=content.index)
+            f_na = pd.Series(True, index=content.index)
+        else:
+            f_notna = content[params.cols_label[0]].notna()
+            f_na = content[params.cols_label[0]].isna()
 
         # case where the order is kept and no testset
         if not params.random_selection and params.n_test == 0:
@@ -446,66 +453,70 @@ class Orchestrator:
         ].to_parquet(params.dir.joinpath(self.train_file), index=True)
         trainset[[]].to_parquet(params.dir.joinpath(self.features_file), index=True)
 
-        # if the case, add existing annotations in the database
-        if params.col_label is None:
-            self.db_manager.projects_service.add_scheme(
-                project_slug, "default", [], "multiclass", "system"
-            )
-        else:
+        # add an empty default scheme
+        self.db_manager.projects_service.add_scheme(
+            project_slug, "default", [], "multiclass", "system"
+        )
+        params.default_scheme = []
+
+        # add loaded schemes from columns
+        for col in params.cols_label:
+
+            # get the scheme from labels
+            scheme_labels = list(content[col].dropna().unique())
+            scheme_name = slugify(col)
             # determine if multiclass / multilabel (arbitrary rule)
-            delimiters = content["label"].str.contains("|", regex=False).sum()
-            print("DELIMITERS", delimiters)
+            delimiters = content[col].str.contains("|", regex=False).sum()
+            scheme_type = "multiclass" if delimiters < 5 else "multilabel"
 
             # check there is a limited number of labels
-            df = content["label"].dropna()
-            params.default_scheme = list(df.unique())
+            if scheme_type == "multiclass" and len(scheme_labels) > 30:
+                print("Too many different labels for multiclass > 30")
+                continue
 
-            if len(params.default_scheme) < 30:
-                print("Add scheme/labels from file in train/test")
+            print("Add scheme/labels from file in train/test")
 
-                # add the scheme in the database
-                self.db_manager.projects_service.add_scheme(
-                    project_slug,
-                    "default",
-                    list(params.default_scheme),
-                    "multiclass" if delimiters < 5 else "multilabel",
-                    "system",
-                )
+            # add the scheme in the database
+            self.db_manager.projects_service.add_scheme(
+                project_slug,
+                scheme_name,
+                scheme_labels,
+                scheme_type,
+                "system",
+            )
 
-                # add the labels from the trainset in the database
+            # add the labels from the trainset in the database
+            elements = [
+                {"element_id": element_id, "annotation": label, "comment": ""}
+                for element_id, label in trainset[col].dropna().items()
+            ]
+            self.db_manager.projects_service.add_annotations(
+                dataset="train",
+                user=username,
+                project_slug=project_slug,
+                scheme=scheme_name,
+                elements=elements,
+            )
+            # add the labels from the trainset in the database if exists & not clear
+            if isinstance(testset, pd.DataFrame) and not params.clear_test:
                 elements = [
                     {"element_id": element_id, "annotation": label, "comment": ""}
-                    for element_id, label in trainset["label"].dropna().items()
+                    for element_id, label in testset[col].dropna().items()
                 ]
                 self.db_manager.projects_service.add_annotations(
-                    dataset="train",
+                    dataset="test",
                     user=username,
                     project_slug=project_slug,
-                    scheme="default",
+                    scheme=scheme_name,
                     elements=elements,
                 )
-                # add the labels from the trainset in the database if exists & not clear
-                if isinstance(testset, pd.DataFrame) and not params.clear_test:
-                    elements = [
-                        {"element_id": element_id, "annotation": label, "comment": ""}
-                        for element_id, label in testset["label"].dropna().items()
-                    ]
-                    self.db_manager.projects_service.add_annotations(
-                        dataset="test",
-                        user=username,
-                        project_slug=project_slug,
-                        scheme="default",
-                        elements=elements,
-                    )
-            else:
-                print("Too many different labels > 30")
 
         # add user right on the project + root
         self.users.set_auth(username, project_slug, "manager")
         self.users.set_auth("root", project_slug, "manager")
 
         # save parameters (without the data)
-        params.col_label = None  # reverse dummy
+        # params.cols_label = []  # reverse dummy
         project = params.model_dump()
 
         # add elements for the parameters
@@ -516,8 +527,8 @@ class Orchestrator:
         # save the parameters
         self.set_project_parameters(ProjectModel(**project), username)
 
-        # clean
-        os.remove(params.dir.joinpath("data_raw.csv"))
+        # delete the initial file
+        params.dir.joinpath(params.filename).unlink()
 
         return {"success": project_slug}
 
@@ -551,7 +562,7 @@ class Orchestrator:
         """
         Update state of projects from the queue
         """
-        self.queue.display_info()
+        # self.queue.display_info()
         self.queue.clean_old_processes()
         timer = time.time()
         to_del = []

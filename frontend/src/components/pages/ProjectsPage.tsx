@@ -60,6 +60,10 @@ export const ProjectsPage: FC = () => {
                       <span>Created by: {project.created_by}</span>
                       <span>Created at: {project.created_at}</span>
                     </p>
+
+                    <div className="badge text-bg-info" title="Memory">
+                      <span className="d-none d-md-inline">HDD : {project.size} Mo</span>
+                    </div>
                   </div>
                 ))}
               </div>
