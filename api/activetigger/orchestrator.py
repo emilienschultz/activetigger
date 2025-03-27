@@ -325,11 +325,17 @@ class Orchestrator:
 
         # Step 1 : load all data and index to str and rename columns
         if params.filename.endswith(".csv"):
-            content = pd.read_csv(params.dir.joinpath(params.filename))
+            content = pd.read_csv(
+                params.dir.joinpath(params.filename), low_memory=False
+            )
         elif params.filename.endswith(".parquet"):
-            content = pd.read_parquet(params.dir.joinpath(params.filename))
+            content = pd.read_parquet(
+                params.dir.joinpath(params.filename), low_memory=False
+            )
         elif params.filename.endswith(".xlsx"):
-            content = pd.read_excel(params.dir.joinpath(params.filename))
+            content = pd.read_excel(
+                params.dir.joinpath(params.filename), low_memory=False
+            )
         else:
             raise Exception("File format not supported (only csv, xlsx and parquet)")
 
