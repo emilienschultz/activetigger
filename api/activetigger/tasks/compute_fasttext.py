@@ -56,6 +56,7 @@ class ComputeFasttext(BaseTask):
                 "If the model doesn't exist, it will be downloaded first. It could talke some time."
             )
             model_name = download_model(self.language, if_exists="ignore")
+            print("MODEL", model_name)
         else:
             model_name = self.model
             if not Path(model_name).exists():
