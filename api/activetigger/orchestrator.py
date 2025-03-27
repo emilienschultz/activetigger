@@ -329,13 +329,9 @@ class Orchestrator:
                 params.dir.joinpath(params.filename), low_memory=False
             )
         elif params.filename.endswith(".parquet"):
-            content = pd.read_parquet(
-                params.dir.joinpath(params.filename), low_memory=False
-            )
+            content = pd.read_parquet(params.dir.joinpath(params.filename))
         elif params.filename.endswith(".xlsx"):
-            content = pd.read_excel(
-                params.dir.joinpath(params.filename), low_memory=False
-            )
+            content = pd.read_excel(params.dir.joinpath(params.filename))
         else:
             raise Exception("File format not supported (only csv, xlsx and parquet)")
 
