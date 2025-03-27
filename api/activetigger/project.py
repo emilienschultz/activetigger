@@ -1038,7 +1038,7 @@ class Project:
                 try:
                     error = future.exception()
                     if error:
-                        raise Exception(str(error))
+                        raise Exception("from task" + str(error))
                     results = future.result()
                     self.features.add(
                         feature_computation.name,
