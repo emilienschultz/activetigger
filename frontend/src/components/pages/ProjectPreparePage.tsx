@@ -159,13 +159,13 @@ export const ProjectPreparePage: FC = () => {
                         </select>
                       </div>
                     )} */}
-
+                    {/* 
                     {selectedFeatureToCreate === 'sbert' && (
                       <div className="alert alert-warning mt-3" role="alert">
                         Small context windows. Due to the model specifications, only the first 128
                         tokens of the text are used to compute the embeddings.
                       </div>
-                    )}
+                    )} */}
 
                     {selectedFeatureToCreate === 'fasttext' && (
                       <div>

@@ -33,6 +33,7 @@ export const ProjectCreationForm: FC = () => {
     { value: 'fr', label: 'French' },
     { value: 'de', label: 'German' },
     { value: 'cn', label: 'Chinese' },
+    { value: 'ja', label: 'Japanese' },
   ];
   const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
     {

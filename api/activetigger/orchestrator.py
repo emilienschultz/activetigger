@@ -466,7 +466,7 @@ class Orchestrator:
 
             # get the scheme from labels
             scheme_labels = list(content[col].dropna().unique())
-            scheme_name = slugify(col)
+            scheme_name = slugify(col).replace("dataset-", "")
             # determine if multiclass / multilabel (arbitrary rule)
             delimiters = content[col].str.contains("|", regex=False).sum()
             scheme_type = "multiclass" if delimiters < 5 else "multilabel"
