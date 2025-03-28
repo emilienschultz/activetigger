@@ -65,7 +65,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
             type="button"
             key={e.label}
             value={e.label}
-            className="btn btn-primary grow-1 gap-2 justify-content-center mx-1"
+            className="btn btn-primary grow-1 gap-2 justify-content-center m-1"
             onClick={(v) => {
               postAnnotation(v.currentTarget.value, elementId);
             }}

@@ -281,7 +281,7 @@ export const GenPage: FC = () => {
                   <div className="d-flex align-items-center ">
                     <Select
                       id="select-prompt"
-                      className="form-select w-75"
+                      className="w-75"
                       options={(prompts || []).map((e) => ({
                         value: e.id as unknown as string,
                         label: e.text as unknown as string,
@@ -337,8 +337,8 @@ export const GenPage: FC = () => {
                       }}
                     />
                     <span style={{ color: 'gray' }}>
-                      The request will send the data to the external API. Be sure you can trust the
-                      API provider with the level of privacy of your data.
+                      The request will send the data to an external API. Be sure you can trust the
+                      API provider with respect to the level of privacy you need for you data
                     </span>
                     <label htmlFor="prompt">Prompt </label>
                   </div>
@@ -387,6 +387,7 @@ export const GenPage: FC = () => {
                 <div className="explanations">Last generated content for the current user</div>
                 <DataGrid
                   className="fill-grid"
+                  style={{ backgroundColor: 'white' }}
                   columns={columns}
                   rows={(generated as unknown as Row[]) || []}
                   rowHeight={80}

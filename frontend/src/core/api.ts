@@ -1441,7 +1441,7 @@ export function useUpdateProjection(
             params: formData.params,
           },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Projection under training' });
+        if (!res.error) notify({ type: 'warning', message: 'Projection is being computed' });
       }
       return true;
     },
@@ -2011,7 +2011,7 @@ export function useSavePrompts(projectSlug: string | null) {
           },
           body: { text: prompt },
         });
-        if (!res.error) notify({ type: 'success', message: 'Prompts saved' });
+        if (!res.error) notify({ type: 'success', message: 'Prompt saved' });
       }
     },
     [notify, projectSlug],
@@ -2032,7 +2032,7 @@ export function useDeletePrompts(projectSlug: string | null) {
             query: { project_slug: projectSlug, prompt_id: prompt_id },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Prompts deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Prompt deleted' });
       }
     },
     [notify, projectSlug],
