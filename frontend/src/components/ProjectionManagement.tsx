@@ -13,18 +13,7 @@ import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from 
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
-const colormap = [
-  '#1f77b4', // tab:blue
-  '#ff7f0e', // tab:orange
-  '#2ca02c', // tab:green
-  '#d62728', // tab:red
-  '#9467bd', // tab:purple
-  '#8c564b', // tab:brown
-  '#e377c2', // tab:pink
-  '#7f7f7f', // tab:gray
-  '#bcbd22', // tab:olive
-  '#17becf', // tab:cyan
-];
+import chroma from 'chroma-js';
 
 interface ProjectionManagementProps {
   projectName: string | null;
@@ -55,6 +44,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     projectName,
     currentScheme,
   );
+
+  // unique labels
+  const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
+  const colormap = chroma.scale('Viridis').colors(uniqueLabels.length);
 
   // form management
   const availableProjections = useMemo(() => project?.projections, [project?.projections]);
@@ -112,8 +105,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   useEffect(() => {
     if (projectionData) {
-      const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
-      console.log('unique');
       const labeledColors = uniqueLabels.reduce<Record<string, string>>(
         (acc, label, index: number) => {
           acc[label as string] = colormap[index];

@@ -797,7 +797,7 @@ class Project:
         path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}/{name}"
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
-        return StaticFileModel(name=name, path=f"/static/{project_slug}/{name}")
+        return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")
 
     def compute_statistics(
         self, scheme: str, predictions: DataFrame, decimals: int = 2
