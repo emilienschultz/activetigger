@@ -47,31 +47,19 @@ class ComputeFasttext(BaseTask):
             raise Exception(f"path {str(self.path_models)} does not exist")
 
         current_directory = os.getcwd()
-
         os.chdir(self.path_models)
 
         # if no model is specified, try to dl the language model
         if self.model is None or self.model == "":
-            print(
-                "If the model doesn't exist, it will be downloaded first. It could talke some time."
-            )
             model_name = download_model(self.language, if_exists="ignore")
-            print("MODEL", model_name)
         else:
             model_name = self.model
             if not Path(model_name).exists():
                 raise FileNotFoundError(f"Model {model_name} not found")
 
         os.chdir(current_directory)
-        print("start tokenizing", os.getcwd)
         texts_tk = tokenize(self.texts)
-        print(
-            "start loading model",
-            str(self.path_models.joinpath(model_name)),
-            os.getcwd(),
-        )
         ft = fasttext.load_model(str(self.path_models.joinpath(model_name)))
-        print("model loaded", str(self.path_models.joinpath(model_name)))
         emb = []
         for t in texts_tk:
             emb.append(ft.get_sentence_vector(t.replace("\n", " ")))

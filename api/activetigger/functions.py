@@ -75,21 +75,24 @@ def compare_to_hash(text: str, hash: str | bytes):
     return r
 
 
-def tokenize(texts: Series, language: str = "fr") -> Series:
+def tokenize(texts: Series, language: str = "fr", batch_size=100) -> Series:
     """
     Clean texts with tokenization to facilitate word count
-    TODO : faster tokenization ?
     """
-    if language == "en":
-        model = "en_core_web_sm"
-    elif language == "fr":
-        model = "fr_core_news_sm"
-    else:
-        raise Exception(f"Language {language} is not supported")
 
-    nlp = spacy.load(model, disable=["ner", "tagger"])
-    docs = nlp.pipe(texts, batch_size=1000)
+    models = {
+        "en": "en_core_web_sm",
+        "fr": "fr_core_news_sm",
+        "de": "de_core_news_sm",
+        "ja": "ja_core_news_sm",
+        "cn": "zh_core_web_sm",
+    }
+    if language not in models:
+        raise Exception(f"Language {language} is not supported")
+    nlp = spacy.load(models[language], disable=["ner", "tagger"])
+    docs = nlp.pipe(texts, batch_size=batch_size, n_process=5)
     textes_tk = [" ".join([str(token) for token in doc]) for doc in docs]
+    del nlp
     return pd.Series(textes_tk, index=texts.index)
 
 
