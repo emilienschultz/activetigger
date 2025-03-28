@@ -90,7 +90,7 @@ def tokenize(texts: Series, language: str = "fr", batch_size=100) -> Series:
     if language not in models:
         raise Exception(f"Language {language} is not supported")
     nlp = spacy.load(models[language], disable=["ner", "tagger"])
-    docs = nlp.pipe(texts, batch_size=batch_size, n_process=5)
+    docs = nlp.pipe(texts, batch_size=batch_size)
     textes_tk = [" ".join([str(token) for token in doc]) for doc in docs]
     del nlp
     return pd.Series(textes_tk, index=texts.index)
