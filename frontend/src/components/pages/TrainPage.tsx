@@ -185,6 +185,23 @@ export const TrainPage: FC = () => {
     return v + '%';
   };
 
+  console.log(model && model.train_scores);
+  const downloadModel = () => {
+    if (!model) return; // Ensure model is not null or undefined
+
+    // Convert the model object to a JSON string
+    const modelJson = JSON.stringify(model, null, 2);
+
+    // Create a Blob from the JSON string
+    const blob = new Blob([modelJson], { type: 'application/json' });
+
+    // Create a temporary link element
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = currentModel || 'model.json';
+    link.click();
+  };
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -339,6 +356,7 @@ export const TrainPage: FC = () => {
                                         ))}
                                   </tbody>
                                 </table>
+                                <button onClick={() => downloadModel()}>Download as json</button>
                                 <details className="m-3">
                                   <summary>False predictions</summary>
                                   {model_scores ? (
