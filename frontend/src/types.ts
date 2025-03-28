@@ -89,11 +89,16 @@ export interface FeatureFasttextParameters {
   model?: string;
 }
 
+export interface FeatureSbertParameters {
+  model?: string;
+}
+
 export interface FeatureModelExtended {
   name: string;
   type: string;
   parameters:
     | null
+    | FeatureSbertParameters
     | FeatureDfmParameters
     | FeatureRegexParameters
     | FeatureDatasetParameters

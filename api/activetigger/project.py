@@ -213,6 +213,8 @@ class Project:
         if len(df) > 10000:
             raise Exception("You testset is too large")
 
+        print("col label", testset.col_label, "scheme", testset.scheme)
+
         # change names
         if not testset.col_label:
             df = df.rename(
@@ -237,11 +239,11 @@ class Project:
         df["id"] = df["id"].apply(lambda x: f"imported-{x}")
         df = df.set_index("id")
 
-        # import labels if specified + scheme
+        # import labels if specified + scheme // check if the labels are in the scheme
         if testset.col_label and testset.scheme:
             # Check the label columns if they match the scheme or raise error
-            scheme = self.schemes.available()[testset.scheme]
-            for label in df[testset.col_label].unique():
+            scheme = self.schemes.available()[testset.scheme]["labels"]
+            for label in df[testset.col_label].dropna().unique():
                 if label not in scheme:
                     raise Exception(f"Label {label} not in the scheme {testset.scheme}")
 

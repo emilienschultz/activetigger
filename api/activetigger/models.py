@@ -350,10 +350,12 @@ class BertModels:
 
         # name integrating the scheme & user + date
         current_date = datetime.now()
+        minutes = current_date.strftime("%M")
+        hour = current_date.strftime("%H")
         day = current_date.strftime("%d")
         month = current_date.strftime("%m")
         year = current_date.strftime("%Y")
-        model_name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
+        model_name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}_{hour}h{minutes}"
 
         # check if a project not already exist
         if self.projects_service.model_exists(project, model_name):
