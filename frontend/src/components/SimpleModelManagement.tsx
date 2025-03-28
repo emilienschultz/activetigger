@@ -77,6 +77,24 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     //reset();
   };
 
+  // build default features selected
+  // const default_features = features.filter((e) => e.label.includes(e.value));
+  type Feature = {
+    label: string;
+    value: string;
+  };
+  const filterFeatures = (features: Feature[]) => {
+    const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
+    const predictFeature = features.find((e) => /predict/i.test(e.label)); // Trouve le premier "predict"
+
+    if (predictFeature) {
+      filtered.push(predictFeature);
+    }
+
+    return filtered;
+  };
+  const default_features = filterFeatures(features);
+
   return (
     <div>
       <span className="explanations">
@@ -184,7 +202,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
               <Select
                 options={features}
                 isMulti
-                value={features.filter((feature) => value?.includes(feature.value))}
+                value={default_features}
                 onChange={(selectedOptions) => {
                   onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
                 }}

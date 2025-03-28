@@ -528,7 +528,7 @@ class BertModels:
             raise Exception("The model does not exist")
 
         # load the model
-        b = BertModel(name, self.path / name)
+        b = BertModel(name, self.path.joinpath(name))
         b.load(lazy=True)
         unique_id = self.queue.add_task(
             "prediction",
