@@ -63,6 +63,7 @@ class ComputeFasttext(BaseTask):
                 raise FileNotFoundError(f"Model {model_name} not found")
 
         os.chdir(current_directory)
+        print("start tokenizing", os.getcwd)
         texts_tk = tokenize(self.texts)
         print(
             "start loading model",
