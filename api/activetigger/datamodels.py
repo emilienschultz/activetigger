@@ -631,6 +631,7 @@ class MLStatisticsModel(BaseModel):
     accuracy: float | dict[str, float] | None = None
     precision: float | dict[str, float] | None = None
     confusion_matrix: list[list[int]] | None = None
+    # confusion_matrix: dict | None = None
     false_predictions: dict[str, Any] | list[Any] | None = None
 
 

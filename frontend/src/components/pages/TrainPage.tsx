@@ -20,6 +20,7 @@ import {
 import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { newBertModel } from '../../types';
+import { DisplayScores } from '../DisplayScores';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { LossChart } from '../vizualisation/lossChart';
 
@@ -336,26 +337,7 @@ export const TrainPage: FC = () => {
                             {isComputing && <div>Computation in progress</div>}
                             {model.train_scores && (
                               <div>
-                                <table className="table">
-                                  {' '}
-                                  <thead>
-                                    <tr>
-                                      <th scope="col">Key</th>
-                                      <th scope="col">Value</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {model.train_scores &&
-                                      Object.entries(model.train_scores)
-                                        .filter(([key]) => key !== 'false_predictions')
-                                        .map(([key, value], i) => (
-                                          <tr key={i}>
-                                            <td>{key}</td>
-                                            <td>{JSON.stringify(value)}</td>
-                                          </tr>
-                                        ))}
-                                  </tbody>
-                                </table>
+                                <DisplayScores scores={model.train_scores} />
                                 <button onClick={() => downloadModel()}>Download as json</button>
                                 <details className="m-3">
                                   <summary>False predictions</summary>

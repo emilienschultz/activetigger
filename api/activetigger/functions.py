@@ -230,7 +230,12 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
                 ],
             )
         ),
-        confusion_matrix=confusion_matrix(Y_true, Y_pred).tolist(),
+        confusion_matrix=confusion_matrix(Y_true, Y_pred, labels=labels).tolist(),
+        # confusion_matrix=pd.DataFrame(
+        #     confusion_matrix(Y_true, Y_pred, labels=labels),
+        #     columns=labels,
+        #     index=labels,
+        # ).to_dict(orient="index"),
         false_predictions=(Y_true != Y_pred).loc[lambda x: x].index.tolist(),
     )
     return statistics

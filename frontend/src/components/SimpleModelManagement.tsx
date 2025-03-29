@@ -198,11 +198,11 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           <Controller
             name="features"
             control={control}
-            render={({ field: { value, onChange } }) => (
+            defaultValue={default_features}
+            render={({ field: { onChange } }) => (
               <Select
                 options={features}
                 isMulti
-                value={default_features}
                 onChange={(selectedOptions) => {
                   onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
                 }}
