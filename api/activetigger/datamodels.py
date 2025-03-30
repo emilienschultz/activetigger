@@ -312,6 +312,7 @@ class ProjectionOutModel(BaseModel):
     y: list
     labels: list[str]
     predictions: list[str] | None = None
+    parameters: ProjectionInStrictModel
 
 
 #    texts: list

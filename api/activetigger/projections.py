@@ -1,4 +1,6 @@
+import pickle
 from datetime import datetime
+from pathlib import Path
 
 from pandas import DataFrame
 
@@ -13,12 +15,14 @@ class Projections:
     """
 
     # TODO: Transform available type to dict[str, UserProjection]
+    path: Path
     available: dict
     options: dict
     computing: list[UserProjectionComputing]
     queue: Queue
 
-    def __init__(self, computing: list, queue: Queue) -> None:
+    def __init__(self, path: Path, computing: list, queue: Queue) -> None:
+        self.path = path
         self.computing = computing
         self.queue = queue
         self.available = {}
@@ -36,6 +40,19 @@ class Projections:
                 "perplexity": 3,
             },
         }
+        self.load()
+
+    def load(self) -> None:
+        """
+        Load available projections in pickle file
+        """
+        if self.path.joinpath("projections.pkl").exists():
+            try:
+                self.available = pickle.load(
+                    open(self.path.joinpath("projections.pkl"), "rb")
+                )
+            except Exception as e:
+                print(e)
 
     def current_computing(self):
         return [e.name for e in self.computing if e.kind == "projection"]
@@ -54,9 +71,15 @@ class Projections:
         self.available[element.user] = {
             "data": results,
             "method": element.method,
-            "params": element.params,
+            "parameters": element.params,
             "id": element.unique_id,
         }
+        try:
+            pickle.dump(
+                self.available, open(self.path.joinpath("projections.pkl"), "wb")
+            )
+        except Exception as e:
+            print("Error in saving projections", e)
 
     def compute(
         self,

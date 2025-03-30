@@ -155,7 +155,7 @@ class Project:
         self.generations = Generations(
             self.db_manager, cast(list[UserGenerationComputing], self.computing)
         )
-        self.projections = Projections(self.computing, self.queue)
+        self.projections = Projections(self.params.dir, self.computing, self.queue)
         self.errors = []  # Move to specific class / db in the future
 
     def load_params(self, project_slug: str) -> ProjectModel:

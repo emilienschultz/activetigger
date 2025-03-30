@@ -83,6 +83,7 @@ async def get_projection(
 
     # create the data from projection and current scheme
     data = project.projections.available[current_user.username]["data"]
+    parameters = project.projections.available[current_user.username]["parameters"]
     df = project.schemes.get_scheme_data(scheme, complete=True)
     data["labels"] = df["labels"]
     data = data.fillna("NA")
@@ -103,6 +104,7 @@ async def get_projection(
         labels=list(data["labels"]),
         status=project.projections.available[current_user.username]["id"],
         predictions=predictions,
+        parameters=parameters,  # add parameters
     )
 
 

@@ -2058,6 +2058,8 @@ export interface components {
             labels: string[];
             /** Predictions */
             predictions?: string[] | null;
+            /** Parameters */
+            parameters: Record<string, never>;
         };
         /** PromptInputModel */
         PromptInputModel: {

@@ -93,7 +93,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
     return filtered;
   };
-  const default_features = filterFeatures(features);
+  const defaultFeatures = filterFeatures(features);
 
   return (
     <div>
@@ -198,9 +198,9 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           <Controller
             name="features"
             control={control}
-            defaultValue={default_features}
             render={({ field: { onChange } }) => (
               <Select
+                defaultValue={defaultFeatures}
                 options={features}
                 isMulti
                 onChange={(selectedOptions) => {
