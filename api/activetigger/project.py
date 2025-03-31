@@ -700,7 +700,7 @@ class Project:
                 },
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
-            "generations": {"training": self.generations.current_users_generating()},
+            "generations": {"training": self.generations.training()},
             "errors": self.errors,
             "memory": get_dir_size(str(self.params.dir)),
         }
@@ -1088,7 +1088,6 @@ class Project:
                         list[GenerationResult],
                         results,
                     )
-                    print("RESULTS", r)
                     for row in r:
                         self.generations.add(
                             user=row.user,

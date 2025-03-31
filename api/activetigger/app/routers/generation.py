@@ -110,6 +110,7 @@ async def postgenerate(
             "generation",
             project.name,
             GenerateCall(
+                path_process=project.params.dir,
                 username=current_user.username,
                 project_slug=project.name,
                 df=extract,
@@ -127,6 +128,11 @@ async def postgenerate(
                 number=request.n_batch,
                 time=datetime.now(),
                 kind="generation",
+                get_progress=GenerateCall.get_progress_callback(
+                    project.params.dir.joinpath(unique_id)
+                    if project.params.dir is not None
+                    else None
+                ),
             )
         )
 

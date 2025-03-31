@@ -2,6 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (
+    GenerationComputingOut,
     PromptModel,
     UserGenerationComputing,
 )
@@ -65,8 +66,18 @@ class Generations:
         df["time"] = df["time"].dt.tz_convert("Europe/Paris")
         return df
 
-    def current_users_generating(self) -> list[UserGenerationComputing]:
-        return [e for e in self.computing if e.kind == "generation"]
+    def training(self) -> dict[str, GenerationComputingOut]:
+        """
+        Get state current generation computing
+        """
+        return {
+            e.user: GenerationComputingOut(
+                model_id=e.model_id,
+                progress=e.get_progress() if e.get_progress is not None else 0,
+            )
+            for e in self.computing
+            if e.kind == "generation"
+        }
 
     def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
         """

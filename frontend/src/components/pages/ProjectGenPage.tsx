@@ -59,13 +59,12 @@ export const GenPage: FC = () => {
   const [showForm, setShowForm] = useState<boolean>(false);
 
   // currently generating for the user
-  const [isGenerating, setGenerating] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
   useEffect(() => {
-    const trainings: Array<{ user: string }> = currentProject?.generations.training || [];
-    setGenerating(
+    setIsGenerating(
       authenticatedUser?.username !== undefined &&
-        trainings.length !== 0 &&
-        trainings.some((training) => training.user === authenticatedUser?.username),
+        currentProject?.generations.training[authenticatedUser?.username] != undefined,
     );
   }, [authenticatedUser, currentProject]);
 
@@ -122,7 +121,7 @@ export const GenPage: FC = () => {
         }));
     };
     fetchModels();
-  }, [projectName]);
+  }, [projectName, setAppContext]);
 
   const columns: readonly Column<Row>[] = [
     {
@@ -215,6 +214,8 @@ export const GenPage: FC = () => {
 
   const [promptName, setPromptName] = useState<string>('');
 
+  console.log(currentProject?.generations);
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
       <div className="container-fluid mt-3">
@@ -255,6 +256,7 @@ export const GenPage: FC = () => {
                     </button>
                   </div>
                 </div>
+                {/* <div>{JSON.stringify(generateConfig.selectedModel, null, 2)}</div> */}
                 <hr />
 
                 <div className="row mt-3">
@@ -384,9 +386,20 @@ export const GenPage: FC = () => {
                   <div className="col-12 text-center">
                     {isGenerating ? (
                       <div>
-                        <PulseLoader />
+                        <div>
+                          <PulseLoader />
+                        </div>
                         <button className="btn btn-secondary mt-3" onClick={stopGenerate}>
-                          Stop
+                          Stop (
+                          {authenticatedUser?.username &&
+                          currentProject?.generations?.training[authenticatedUser?.username]
+                            ? String(
+                                currentProject?.generations?.training[authenticatedUser?.username][
+                                  'progress'
+                                ],
+                              )
+                            : 0}
+                          %)
                         </button>
                       </div>
                     ) : (

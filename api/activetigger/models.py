@@ -106,7 +106,7 @@ class BertModel:
             r = json.load(f)
         return list(r["id2label"].values())
 
-    def get_training_progress(self) -> float | None:
+    def get_progress(self) -> float | None:
         """
         Get progress when training
         (different cases)
@@ -275,9 +275,7 @@ class BertModels:
             e.user: {
                 "name": e.model_name,
                 "status": e.status,
-                "progress": (
-                    e.get_training_progress() if e.get_training_progress else None
-                ),
+                "progress": (e.get_progress() if e.get_progress else None),
                 "loss": e.model.get_loss(),
             }
             for e in self.computing
@@ -405,7 +403,7 @@ class BertModels:
                 status="training",
                 scheme=scheme,
                 dataset=None,
-                get_training_progress=b.get_training_progress,
+                get_progress=b.get_progress,
             )
         )
 
@@ -498,7 +496,7 @@ class BertModels:
                 time=datetime.now(),
                 kind="predict_bert",
                 status="testing",
-                get_training_progress=b.get_training_progress,
+                get_progress=b.get_progress,
                 dataset="test",
             )
         )
@@ -555,7 +553,7 @@ class BertModels:
                 kind="predict_bert",
                 dataset=dataset,
                 status="predicting",
-                get_training_progress=b.get_training_progress,
+                get_progress=b.get_progress,
             )
         )
         return {"success": "bert model predicting"}

@@ -415,6 +415,7 @@ class UserGenerationComputing(UserComputing):
     project: str
     number: int
     model_id: int
+    get_progress: Callable[[], float | None] | None = None
 
 
 class UserFeatureComputing(UserComputing):
@@ -424,6 +425,15 @@ class UserFeatureComputing(UserComputing):
     parameters: dict
 
 
+class GenerationComputingOut(BaseModel):
+    """
+    Response for generation
+    """
+
+    model_id: int
+    progress: float | None
+
+
 class UserModelComputing(UserComputing):
     kind: Literal["train_bert", "predict_bert", "simplemodel", "bert"]
     model: Any  # TODO: Type it with an abstract model interface
@@ -431,7 +441,7 @@ class UserModelComputing(UserComputing):
     status: Literal["training", "testing", "predicting"]
     scheme: Optional[str] = None
     dataset: Optional[str] = None
-    get_training_progress: Callable[[], float | None] | None = None
+    get_progress: Callable[[], float | None] | None = None
 
 
 class UserProjectionComputing(UserComputing):
