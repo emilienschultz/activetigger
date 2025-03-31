@@ -1293,31 +1293,46 @@ export function useGetPredictionsSimplemodelFile(projectSlug: string | null) {
  */
 export function useGetGenerationsFile(projectSlug: string | null) {
   const { notify } = useNotifications();
-  const getGenerationsFile = useCallback(
-    async (n_elements: number) => {
-      if (projectSlug) {
-        const res = await api.GET('/export/generations', {
-          params: {
-            query: {
-              project_slug: projectSlug,
-              number: n_elements,
-            },
+  const getGenerationsFile = useCallback(async () => {
+    if (projectSlug) {
+      const res = await api.GET('/export/generations', {
+        params: {
+          query: {
+            project_slug: projectSlug,
           },
-          parseAs: 'blob',
-        });
+        },
+        parseAs: 'blob',
+      });
 
-        if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the generations data' });
-          saveAs(res.data, 'generations.csv');
-        }
-        return true;
+      if (!res.error) {
+        notify({ type: 'success', message: 'Exporting the generations data' });
+        saveAs(res.data, 'generations.csv');
       }
-      return null;
-    },
-    [projectSlug, notify],
-  );
+      return true;
+    }
+    return null;
+  }, [projectSlug, notify]);
 
   return { getGenerationsFile };
+}
+
+/**
+ * Drop elements for a user/project
+ */
+export function useDropGeneratedElements(projectSlug: string | null, username: string | null) {
+  const { notify } = useNotifications();
+  const dropGeneratedElements = useCallback(async () => {
+    if (!projectSlug) return;
+    // do the new projects POST call
+    const res = await api.POST('/generate/elements/drop', {
+      // POST has a body
+      params: {
+        query: { project_slug: projectSlug, username: username },
+      },
+    });
+    if (!res.error) notify({ type: 'success', message: 'Elements dropped' });
+  }, [notify, projectSlug, username]);
+  return dropGeneratedElements;
 }
 
 /**
@@ -1678,6 +1693,8 @@ export function useGenerate(
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
+    console.log('make a call');
+
     if (projectSlug && modelId && prompt && n_batch && currentScheme && mode) {
       const res = await api.POST('/generate/start', {
         params: {
@@ -1696,6 +1713,9 @@ export function useGenerate(
       });
       if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
       return true;
+    } else {
+      console.log('error');
+      console.log(projectSlug, modelId, prompt, n_batch, currentScheme, mode);
     }
     return null;
   }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);
@@ -1734,6 +1754,8 @@ export function useGeneratedElements(
   n_elements: number,
   isGenerating: boolean, // state for the user for refertching
 ) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
   const getGeneratedElements = useAsyncMemo(async () => {
     if (n_elements && project_slug) {
       const res = await api.GET('/generate/elements', {
@@ -1751,8 +1773,11 @@ export function useGeneratedElements(
       }
     }
     return null;
-  }, [project_slug, n_elements, isGenerating]);
-  return { generated: getAsyncMemoData(getGeneratedElements) };
+  }, [project_slug, n_elements, isGenerating, fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { generated: getAsyncMemoData(getGeneratedElements), reFetchGenerated: reFetch };
 }
 
 /**
@@ -2003,13 +2028,13 @@ export function useGetPrompts(projectSlug: string | null) {
 export function useSavePrompts(projectSlug: string | null) {
   const { notify } = useNotifications();
   const savePrompts = useCallback(
-    async (prompt: string | null) => {
+    async (prompt: string | null, name: string | null) => {
       if (projectSlug && prompt) {
         const res = await api.POST('/generate/prompts/add', {
           params: {
             query: { project_slug: projectSlug },
           },
-          body: { text: prompt },
+          body: { text: prompt, name: name },
         });
         if (!res.error) notify({ type: 'success', message: 'Prompt saved' });
       }

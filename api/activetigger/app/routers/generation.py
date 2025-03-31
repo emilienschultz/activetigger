@@ -36,6 +36,7 @@ router = APIRouter()
 async def list_generation_models() -> list[GenerationModelApi]:
     """
     Returns the list of the available GenAI models for generation
+    API (not the models themselves)
     """
     return orchestrator.db_manager.generations_service.get_available_models()
 
@@ -87,28 +88,30 @@ async def postgenerate(
     """
     Launch a call to generate from a prompt
     Only one possible by user
+
+    TODO : move to a module
     """
 
-    # get subset of elements
     try:
-        # extract = project.schemes.get_table(
-        #     request.scheme, 0, request.n_batch, request.mode
-        # )
+        # get subset of elements
         extract = project.schemes.get_sample(
             request.scheme, request.n_batch, request.mode
         )
 
+        print(extract)
+
+        # get model
         model = orchestrator.db_manager.generations_service.get_gen_model(
             request.model_id
         )
 
+        # add task to the queue
         unique_id = orchestrator.queue.add_task(
             "generation",
             project.name,
             GenerateCall(
                 username=current_user.username,
                 project_slug=project.name,
-                # df=extract.batch,
                 df=extract,
                 prompt=request.prompt,
                 model=GenerationModel(**model.__dict__),
@@ -185,6 +188,20 @@ async def getgenerate(
     return TableOutModel(items=r, total=len(r))
 
 
+@router.post("/generate/elements/drop", dependencies=[Depends(verified_user)])
+async def dropgenerate(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> None:
+    """
+    Drop all elements from prediction for a user
+    """
+    try:
+        project.generations.drop_generated(project.name, current_user.username)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/generate/prompts", dependencies=[Depends(verified_user)])
 async def get_prompts(
     project: Annotated[Project, Depends(get_project)],
@@ -209,8 +226,12 @@ async def add_prompt(
     Add a prompt to the project
     """
     try:
+        if prompt.name is not None:
+            name = prompt.name
+        else:
+            name = prompt.text
         project.generations.save_prompt(
-            current_user.username, project.name, prompt.text
+            current_user.username, project.name, prompt.text, name
         )
         return None
     except Exception as e:

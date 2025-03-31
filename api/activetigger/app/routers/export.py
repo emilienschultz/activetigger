@@ -129,7 +129,7 @@ async def export_raw(
 async def export_generations(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    number: int = Query(),
+    # number: int = Query(),
 ) -> Response:
     """
     Export annotations
@@ -138,7 +138,6 @@ async def export_generations(
         table = project.generations.get_generated(
             project_slug=project.name,
             username=current_user.username,
-            n_elements=number,
         )
 
         # join the text

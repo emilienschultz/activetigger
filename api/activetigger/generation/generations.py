@@ -49,7 +49,7 @@ class Generations:
         self,
         project_slug: str,
         username: str,
-        n_elements: int,
+        n_elements: int | None = None,
     ) -> DataFrame:
         """
         Get generated elements from the database
@@ -68,12 +68,15 @@ class Generations:
     def current_users_generating(self) -> list[UserGenerationComputing]:
         return [e for e in self.computing if e.kind == "generation"]
 
-    def save_prompt(self, user: str, project_slug: str, prompt: str) -> None:
+    def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
         """
         Save a prompt in the database
         """
         self.generations_service.add_prompt(
-            username=user, project_slug=project_slug, text=prompt
+            username=user,
+            project_slug=project_slug,
+            text=prompt,
+            parameters={"name": name},
         )
         return None
 
@@ -89,3 +92,10 @@ class Generations:
         Get the list of prompts for the user
         """
         return self.generations_service.get_prompts(project_slug)
+
+    def drop_generated(self, project_slug: str, username: str) -> None:
+        """
+        Drop all elements from prediction for a user
+        """
+        self.generations_service.drop_generated(project_slug, username)
+        return None

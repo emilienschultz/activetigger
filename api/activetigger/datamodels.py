@@ -691,6 +691,7 @@ class UserStatistics(BaseModel):
 
 class PromptInputModel(BaseModel):
     text: str
+    name: str | None = None
 
 
 class PromptModel(BaseModel):

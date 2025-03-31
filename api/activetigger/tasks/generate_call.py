@@ -92,11 +92,11 @@ class GenerateCall(BaseTask):
                     user=self.username,
                     project_slug=self.project_slug,
                     model_id=self.model.id,
-                    element_id=cast(str, row["id"]),
+                    element_id=_index,
                     prompt=prompt_with_text,
                     answer=response,
                 )
             )
-            logging.debug("element generated: %s, %s ", row["id"], response)
+            logging.debug("element generated: %s, %s ", _index, response)
 
         return results

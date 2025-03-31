@@ -155,7 +155,12 @@ class Schemes:
         return len(self.content)
 
     def get_sample(
-        self, scheme: str, n_elements: int, mode: str, dataset: str = "train"
+        self,
+        scheme: str,
+        n_elements: int,
+        mode: str,
+        dataset: str = "train",
+        random: bool = False,
     ) -> DataFrame:
         """
         Get a sample of element following a method
@@ -175,7 +180,9 @@ class Schemes:
         if n_elements > len(df):
             n_elements = len(df)
 
-        return df.sample(n_elements).reset_index()
+        if random:
+            return df.sample(n=n_elements)
+        return df.head(n_elements)
 
     def get_table(
         self,
