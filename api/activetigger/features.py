@@ -70,7 +70,9 @@ class Features:
 
         # options
         self.options: dict = {
-            "sbert": {"models": ["all-mpnet-base-v2"]},
+            "sbert": {
+                "models": ["Alibaba-NLP/gte-multilingual-base", "all-mpnet-base-v2"]
+            },
             "fasttext": {
                 "models": [
                     f for f in os.listdir(self.path_models) if f.endswith(".bin")
@@ -312,13 +314,18 @@ class Features:
         unique_id = None
 
         if kind == "sbert":
+            if "model" not in parameters:
+                model = self.options["sbert"]["models"][0]
+            else:
+                model = parameters["model"]
+            print("using model", model)
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
                 ComputeSbert(
                     texts=df,
                     path_process=self.path_all.parent,
-                    model="all-mpnet-base-v2",
+                    model=model,
                 ),
                 queue="gpu",
             )

@@ -2,11 +2,13 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (
+    GenerationComputingOut,
     PromptModel,
     UserGenerationComputing,
 )
 from activetigger.db.generations import GenerationsService
 from activetigger.db.manager import DatabaseManager
+from activetigger.functions import remove_punctuation, replace_accented_chars
 
 
 class Generations:
@@ -49,7 +51,7 @@ class Generations:
         self,
         project_slug: str,
         username: str,
-        n_elements: int,
+        n_elements: int | None = None,
     ) -> DataFrame:
         """
         Get generated elements from the database
@@ -65,15 +67,28 @@ class Generations:
         df["time"] = df["time"].dt.tz_convert("Europe/Paris")
         return df
 
-    def current_users_generating(self) -> list[UserGenerationComputing]:
-        return [e for e in self.computing if e.kind == "generation"]
+    def training(self) -> dict[str, GenerationComputingOut]:
+        """
+        Get state current generation computing
+        """
+        return {
+            e.user: GenerationComputingOut(
+                model_id=e.model_id,
+                progress=e.get_progress() if e.get_progress is not None else 0,
+            )
+            for e in self.computing
+            if e.kind == "generation"
+        }
 
-    def save_prompt(self, user: str, project_slug: str, prompt: str) -> None:
+    def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
         """
         Save a prompt in the database
         """
         self.generations_service.add_prompt(
-            username=user, project_slug=project_slug, text=prompt
+            username=user,
+            project_slug=project_slug,
+            text=prompt,
+            parameters={"name": name},
         )
         return None
 
@@ -89,3 +104,26 @@ class Generations:
         Get the list of prompts for the user
         """
         return self.generations_service.get_prompts(project_slug)
+
+    def drop_generated(self, project_slug: str, username: str) -> None:
+        """
+        Drop all elements from prediction for a user
+        """
+        self.generations_service.drop_generated(project_slug, username)
+        return None
+
+    def filter(self, answers: pd.Series, filters) -> pd.Series:
+        """
+        Apply filters
+        """
+        if "remove_punct" in filters:
+            answers = answers.apply(remove_punctuation)
+        if "remove_spaces" in filters:
+            answers = answers.str.replace(r"\s+", " ")
+        if "lowercase" in filters:
+            answers = answers.str.lower()
+        if "strip" in filters:
+            answers = answers.str.strip()
+        if "replace_accents" in filters:
+            answers = answers.apply(replace_accented_chars)
+        return answers

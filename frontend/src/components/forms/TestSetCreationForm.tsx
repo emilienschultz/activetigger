@@ -7,7 +7,8 @@ import { omit } from 'lodash';
 import { unparse } from 'papaparse';
 import { useCreateTestSet } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
-import { loadCSVFile, loadParquetFile } from '../../core/utils';
+import { loadFile } from '../../core/utils';
+
 import { TestSetModel } from '../../types';
 
 // format of the data table
@@ -18,11 +19,16 @@ export interface DataType {
 }
 
 // component
-export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }) => {
+export const TestSetCreationForm: FC<{ projectSlug: string; currentScheme: string | null }> = ({
+  projectSlug,
+  currentScheme,
+}) => {
   // form management
-  const { register, control, handleSubmit } = useForm<TestSetModel & { files: FileList }>({
-    defaultValues: {},
-  });
+  const { register, control, handleSubmit, setValue } = useForm<TestSetModel & { files: FileList }>(
+    {
+      defaultValues: { scheme: currentScheme },
+    },
+  );
   const createTestSet = useCreateTestSet(); // API call
   const { notify } = useNotifications();
 
@@ -40,20 +46,16 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
     console.log('checking file', files);
     if (files && files.length > 0) {
       const file = files[0];
-      if (file.name.includes('csv')) {
-        console.log('csv');
-        loadCSVFile(file).then((data) => {
-          setData(data);
-        });
-      }
-      if (file.name.includes('parquet')) {
-        console.log('parquet');
-        loadParquetFile(file).then((data) => {
-          setData(data);
-        });
-      }
+      loadFile(file).then((data) => {
+        if (data === null) {
+          notify({ type: 'error', message: 'Error reading the file' });
+          return;
+        }
+        setData(data);
+        setValue('n_test', data.data.length - 1);
+      });
     }
-  }, [files]);
+  }, [files, setValue, notify]);
 
   // action when form validated
   const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async (formData) => {
@@ -144,7 +146,7 @@ export const TestSetCreationForm: FC<{ projectSlug: string }> = ({ projectSlug }
                     {columns}
                   </select>
                   <label className="form-label" htmlFor="col_label">
-                    Column for label (optional)
+                    Column for label (optional but they need to exist in the scheme)
                   </label>
                   <select
                     className="form-control"

@@ -254,7 +254,7 @@ export const ProjectAnnotationPage: FC = () => {
                     ''
                   )}
                   <Tooltip anchorSelect=".currentstatistics" place="top">
-                    tagged / selection untagged / total
+                    tagged / sample selected / total
                   </Tooltip>
                   <div>
                     <button className="btn getelement" onClick={refetchElement}>

@@ -325,7 +325,9 @@ class Orchestrator:
 
         # Step 1 : load all data and index to str and rename columns
         if params.filename.endswith(".csv"):
-            content = pd.read_csv(params.dir.joinpath(params.filename))
+            content = pd.read_csv(
+                params.dir.joinpath(params.filename), low_memory=False
+            )
         elif params.filename.endswith(".parquet"):
             content = pd.read_parquet(params.dir.joinpath(params.filename))
         elif params.filename.endswith(".xlsx"):
@@ -464,7 +466,7 @@ class Orchestrator:
 
             # get the scheme from labels
             scheme_labels = list(content[col].dropna().unique())
-            scheme_name = slugify(col)
+            scheme_name = slugify(col).replace("dataset-", "")
             # determine if multiclass / multilabel (arbitrary rule)
             delimiters = content[col].str.contains("|", regex=False).sum()
             scheme_type = "multiclass" if delimiters < 5 else "multilabel"

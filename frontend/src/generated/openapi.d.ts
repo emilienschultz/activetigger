@@ -858,13 +858,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Export Generations
          * @description Export annotations
          */
-        get: operations["export_generations_export_generations_get"];
-        put?: never;
-        post?: never;
+        post: operations["export_generations_export_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1046,6 +1046,7 @@ export interface paths {
         /**
          * List Generation Models
          * @description Returns the list of the available GenAI models for generation
+         *     API (not the models themselves)
          */
         get: operations["list_generation_models_generate_models_available_get"];
         put?: never;
@@ -1113,6 +1114,8 @@ export interface paths {
          * Postgenerate
          * @description Launch a call to generate from a prompt
          *     Only one possible by user
+         *
+         *     TODO : move to a module
          */
         post: operations["postgenerate_generate_start_post"];
         delete?: never;
@@ -1148,13 +1151,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Getgenerate
          * @description Get elements from prediction
          */
-        get: operations["getgenerate_generate_elements_get"];
+        post: operations["getgenerate_generate_elements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/generate/elements/drop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Dropgenerate
+         * @description Drop all elements from prediction for a user
+         */
+        post: operations["dropgenerate_generate_elements_drop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1620,6 +1643,14 @@ export interface components {
             /** N Sample */
             n_sample?: number | null;
         };
+        /** ExportGenerationsParams */
+        ExportGenerationsParams: {
+            /**
+             * Filters
+             * @default []
+             */
+            filters: string[];
+        };
         /** FeatureDescriptionModel */
         FeatureDescriptionModel: {
             /** Name */
@@ -1648,6 +1679,16 @@ export interface components {
             parameters: {
                 [key: string]: (string | number) | undefined;
             };
+        };
+        /** GeneratedElementsIn */
+        GeneratedElementsIn: {
+            /** N Elements */
+            n_elements: number;
+            /**
+             * Filters
+             * @default []
+             */
+            filters: string[];
         };
         /**
          * GenerationAvailableModel
@@ -2058,11 +2099,14 @@ export interface components {
             labels: string[];
             /** Predictions */
             predictions?: string[] | null;
+            parameters: components["schemas"]["ProjectionInStrictModel"];
         };
         /** PromptInputModel */
         PromptInputModel: {
             /** Text */
             text: string;
+            /** Name */
+            name?: string | null;
         };
         /** PromptModel */
         PromptModel: {
@@ -3719,17 +3763,20 @@ export interface operations {
             };
         };
     };
-    export_generations_export_generations_get: {
+    export_generations_export_generations_post: {
         parameters: {
             query: {
-                number: number;
                 project_slug: string;
             };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportGenerationsParams"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4239,10 +4286,44 @@ export interface operations {
             };
         };
     };
-    getgenerate_generate_elements_get: {
+    getgenerate_generate_elements_post: {
         parameters: {
             query: {
-                n_elements: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratedElementsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableOutModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dropgenerate_generate_elements_drop_post: {
+        parameters: {
+            query: {
                 project_slug: string;
             };
             header?: never;
@@ -4257,7 +4338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TableOutModel"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import cast
 
 from pandas import DataFrame
@@ -23,6 +24,7 @@ class GenerateCall(BaseTask):
 
     def __init__(
         self,
+        path_process: Path | None,
         username: str,
         project_slug: str,
         df: DataFrame,
@@ -30,11 +32,39 @@ class GenerateCall(BaseTask):
         prompt: str,
     ):
         super().__init__()
+        if path_process is None:
+            path_process = Path(".")
+        self.path_process = path_process
         self.username = username
         self.project_slug = project_slug
         self.df = df
         self.model = model
         self.prompt = prompt
+
+    def _write_progress(self, progress: int):
+        """
+        Write progress in the file
+        """
+        with open(self.path_process.joinpath(self.unique_id), "w") as f:
+            f.write(f"{progress}")
+        print(f"Progress: {progress}")
+
+    @staticmethod
+    def get_progress_callback(path_file):
+        """
+        Get progress callback
+        """
+
+        def callback() -> int | None:
+            try:
+                with open(path_file, "r") as f:
+                    r = f.read()
+                return int(r)
+            except Exception as e:
+                print(e)
+                return None
+
+        return callback
 
     def __call__(self):
         """
@@ -50,6 +80,8 @@ class GenerateCall(BaseTask):
 
         # loop on all elements
         # TODO: Why not give all the data in one go?
+        c = 0
+        self._write_progress(0)
         for _index, row in self.df.iterrows():
             # test for interruption
             if self.event is not None:
@@ -92,11 +124,13 @@ class GenerateCall(BaseTask):
                     user=self.username,
                     project_slug=self.project_slug,
                     model_id=self.model.id,
-                    element_id=cast(str, row["id"]),
+                    element_id=_index,
                     prompt=prompt_with_text,
                     answer=response,
                 )
             )
-            logging.debug("element generated: %s, %s ", row["id"], response)
+            logging.debug("element generated: %s, %s ", _index, response)
+            self._write_progress(int((c / len(self.df)) * 100))
+            c += 1
 
         return results

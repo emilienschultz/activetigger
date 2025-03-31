@@ -1291,33 +1291,50 @@ export function useGetPredictionsSimplemodelFile(projectSlug: string | null) {
 /**
  * Get file generations
  */
-export function useGetGenerationsFile(projectSlug: string | null) {
+export function useGetGenerationsFile(projectSlug: string | null, filters: string[]) {
   const { notify } = useNotifications();
-  const getGenerationsFile = useCallback(
-    async (n_elements: number) => {
-      if (projectSlug) {
-        const res = await api.GET('/export/generations', {
-          params: {
-            query: {
-              project_slug: projectSlug,
-              number: n_elements,
-            },
+  const getGenerationsFile = useCallback(async () => {
+    if (projectSlug) {
+      console.log(filters);
+      const res = await api.POST('/export/generations', {
+        params: {
+          query: {
+            project_slug: projectSlug,
           },
-          parseAs: 'blob',
-        });
+        },
+        body: { filters: filters },
+        parseAs: 'blob',
+      });
 
-        if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the generations data' });
-          saveAs(res.data, 'generations.csv');
-        }
-        return true;
+      if (!res.error) {
+        notify({ type: 'success', message: 'Exporting the generations data' });
+        saveAs(res.data, 'generations.csv');
       }
-      return null;
-    },
-    [projectSlug, notify],
-  );
+      return true;
+    }
+    return null;
+  }, [projectSlug, notify, filters]);
 
   return { getGenerationsFile };
+}
+
+/**
+ * Drop elements for a user/project
+ */
+export function useDropGeneratedElements(projectSlug: string | null, username: string | null) {
+  const { notify } = useNotifications();
+  const dropGeneratedElements = useCallback(async () => {
+    if (!projectSlug) return;
+    // do the new projects POST call
+    const res = await api.POST('/generate/elements/drop', {
+      // POST has a body
+      params: {
+        query: { project_slug: projectSlug, username: username },
+      },
+    });
+    if (!res.error) notify({ type: 'success', message: 'Elements dropped' });
+  }, [notify, projectSlug, username]);
+  return dropGeneratedElements;
 }
 
 /**
@@ -1441,7 +1458,7 @@ export function useUpdateProjection(
             params: formData.params,
           },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Projection under training' });
+        if (!res.error) notify({ type: 'warning', message: 'Projection is being computed' });
       }
       return true;
     },
@@ -1678,6 +1695,8 @@ export function useGenerate(
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
+    console.log('make a call');
+
     if (projectSlug && modelId && prompt && n_batch && currentScheme && mode) {
       const res = await api.POST('/generate/start', {
         params: {
@@ -1696,6 +1715,9 @@ export function useGenerate(
       });
       if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
       return true;
+    } else {
+      console.log('error');
+      console.log(projectSlug, modelId, prompt, n_batch, currentScheme, mode);
     }
     return null;
   }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);
@@ -1732,27 +1754,35 @@ export function useStopGenerate(projectSlug: string | null) {
 export function useGeneratedElements(
   project_slug: string | null,
   n_elements: number,
+  filters: string[],
   isGenerating: boolean, // state for the user for refertching
 ) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
   const getGeneratedElements = useAsyncMemo(async () => {
     if (n_elements && project_slug) {
-      const res = await api.GET('/generate/elements', {
+      const res = await api.POST('/generate/elements', {
         params: {
           query: {
             project_slug: project_slug,
-            n_elements: n_elements,
           },
         },
+        body: {
+          n_elements: n_elements,
+          filters: filters,
+        },
       });
-      console.log('generate');
       console.log(res);
       if (!res.error && res.data && 'items' in res.data) {
         return res.data.items;
       }
     }
     return null;
-  }, [project_slug, n_elements, isGenerating]);
-  return { generated: getAsyncMemoData(getGeneratedElements) };
+  }, [project_slug, n_elements, isGenerating, fetchTrigger, filters]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { generated: getAsyncMemoData(getGeneratedElements), reFetchGenerated: reFetch };
 }
 
 /**
@@ -1760,8 +1790,6 @@ export function useGeneratedElements(
  */
 export function useGetLogs(project_slug: string | null, limit: number) {
   const getLogs = useAsyncMemo(async () => {
-    console.log(project_slug);
-    console.log(limit);
     if (limit && project_slug) {
       console.log(limit);
       const res = await api.GET('/logs', {
@@ -2003,15 +2031,15 @@ export function useGetPrompts(projectSlug: string | null) {
 export function useSavePrompts(projectSlug: string | null) {
   const { notify } = useNotifications();
   const savePrompts = useCallback(
-    async (prompt: string | null) => {
+    async (prompt: string | null, name: string | null) => {
       if (projectSlug && prompt) {
         const res = await api.POST('/generate/prompts/add', {
           params: {
             query: { project_slug: projectSlug },
           },
-          body: { text: prompt },
+          body: { text: prompt, name: name },
         });
-        if (!res.error) notify({ type: 'success', message: 'Prompts saved' });
+        if (!res.error) notify({ type: 'success', message: 'Prompt saved' });
       }
     },
     [notify, projectSlug],
@@ -2032,7 +2060,7 @@ export function useDeletePrompts(projectSlug: string | null) {
             query: { project_slug: projectSlug, prompt_id: prompt_id },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Prompts deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Prompt deleted' });
       }
     },
     [notify, projectSlug],

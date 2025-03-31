@@ -91,7 +91,7 @@ export const HomePage: FC = () => {
                       {users ? (
                         <div className="explanations">Active users : {users?.length}</div>
                       ) : (
-                        <div className="text-danger">Problem to connect with the server</div>
+                        <div className="text-danger">Problem connecting to the server</div>
                       )}
                     </div>
                   </div>

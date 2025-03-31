@@ -269,6 +269,7 @@ export const ProjectExplorePage: FC = () => {
 
                     <DataGrid
                       className="fill-grid"
+                      style={{ backgroundColor: 'white' }}
                       columns={columns}
                       rows={rows}
                       rowHeight={80}

@@ -13,18 +13,7 @@ import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from 
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
-const colormap = [
-  '#1f77b4', // tab:blue
-  '#ff7f0e', // tab:orange
-  '#2ca02c', // tab:green
-  '#d62728', // tab:red
-  '#9467bd', // tab:purple
-  '#8c564b', // tab:brown
-  '#e377c2', // tab:pink
-  '#7f7f7f', // tab:gray
-  '#bcbd22', // tab:olive
-  '#17becf', // tab:cyan
-];
+import chroma from 'chroma-js';
 
 interface ProjectionManagementProps {
   projectName: string | null;
@@ -56,13 +45,16 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     currentScheme,
   );
 
+  // unique labels
+  const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
+  const colormap = chroma.scale('Viridis').colors(uniqueLabels.length);
+
   // form management
   const availableProjections = useMemo(() => project?.projections, [project?.projections]);
 
   const { register, handleSubmit, watch, control } = useForm<ProjectionInStrictModel>({
     defaultValues: {
       method: 'umap',
-      features: [],
       params: {
         //common
         n_components: 2,
@@ -112,8 +104,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   useEffect(() => {
     if (projectionData) {
-      const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
-      console.log('unique');
       const labeledColors = uniqueLabels.reduce<Record<string, string>>(
         (acc, label, index: number) => {
           acc[label as string] = colormap[index];
@@ -188,6 +178,16 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   const [formNewProjection, setFormNewProjection] = useState<boolean>(false);
 
+  type Feature = {
+    label: string;
+    value: string;
+  };
+  const filterFeatures = (features: Feature[]) => {
+    const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
+    return filtered;
+  };
+  const defaultFeatures = filterFeatures(features);
+
   return (
     <div>
       {!projectionTraining && (
@@ -224,11 +224,11 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <Controller
               name="features"
               control={control}
-              render={({ field: { value, onChange } }) => (
+              render={({ field: { onChange } }) => (
                 <Select
                   options={features}
+                  defaultValue={defaultFeatures}
                   isMulti
-                  value={features.filter((feature) => value?.includes(feature.value))}
                   onChange={(selectedOptions) => {
                     onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
                   }}
@@ -299,44 +299,53 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       )}
 
       {projectionData && labelColorMapping && (
-        <div className="row align-items-start m-0" style={{ height: '500px' }}>
-          <ProjectionVizSigma
-            className={`${selectedElement ? 'col-8' : 'col-12'} border p-0 h-100`}
-            data={projectionData}
-            //selection
-            selectedId={selectedElement?.element_id}
-            setSelectedId={setSelectedId}
-            frameBbox={frameAsBbox}
-            setFrameBbox={(bbox?: MarqueBoundingBox) => {
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: {
-                  ...selectionConfig,
-                  frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                },
-              }));
-            }}
-            labelColorMapping={labelColorMapping}
-          />
-          <div className="col-4 overflow-y-auto h-100">
-            {selectedElement && (
-              <div>
-                Element:{' '}
-                <div className="badge bg-light text-dark">{selectedElement.element_id}</div>
-                <div className="mt-2">{selectedElement.text}</div>
-                <div className="mt-2">
-                  Previous annotations : {JSON.stringify(selectedElement.history)}
+        <div>
+          <details>
+            <summary>parameters</summary>
+            {JSON.stringify(projectionData?.parameters, null, 2)}
+          </details>
+          <div className="row align-items-start m-0" style={{ height: '500px' }}>
+            <ProjectionVizSigma
+              //className={`${selectedElement ? 'col-8' : 'col-12'} border p-0 h-100`}
+              className={`col-8 border p-0 h-100`}
+              data={projectionData}
+              //selection
+              selectedId={selectedElement?.element_id}
+              setSelectedId={setSelectedId}
+              frameBbox={frameAsBbox}
+              setFrameBbox={(bbox?: MarqueBoundingBox) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: {
+                    ...selectionConfig,
+                    frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                  },
+                }));
+              }}
+              labelColorMapping={labelColorMapping}
+            />
+            <div className="col-4 overflow-y-auto h-100">
+              {selectedElement ? (
+                <div>
+                  Element:{' '}
+                  <div className="badge bg-light text-dark">{selectedElement.element_id}</div>
+                  <div className="mt-2">{selectedElement.text}</div>
+                  <div className="mt-2">
+                    Previous annotations : {JSON.stringify(selectedElement.history)}
+                  </div>
+                  <button
+                    className="btn btn-primary mt-3"
+                    onClick={() =>
+                      navigate(`/projects/${projectName}/annotate/${selectedElement.element_id}`)
+                    }
+                  >
+                    Annotate
+                  </button>
                 </div>
-                <button
-                  className="btn btn-primary mt-3"
-                  onClick={() =>
-                    navigate(`/projects/${projectName}/annotate/${selectedElement.element_id}`)
-                  }
-                >
-                  Annotate
-                </button>
-              </div>
-            )}
+              ) : (
+                <div>Click on an element to display its content</div>
+              )}
+            </div>
           </div>
         </div>
       )}

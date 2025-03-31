@@ -51,7 +51,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
     frameSelection: false,
     frame: [],
   },
-  generateConfig: { n_batch: 1, selection_mode: 'all' },
+  generateConfig: { n_batch: 1, selectionMode: 'all' },
   history: [],
   selectionHistory: {},
   freqRefreshSimpleModel: 0,

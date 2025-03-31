@@ -12,6 +12,7 @@ import {
   deleteGenModel,
   getProjectGenModels,
   useDeletePrompts,
+  useDropGeneratedElements,
   useGenerate,
   useGeneratedElements,
   useGetGenerationsFile,
@@ -54,18 +55,19 @@ export const GenPage: FC = () => {
   } = useAppContext();
 
   // GenModels
-  const [configuredModels, setConfigureModels] = useState<Array<GenModel & { api: string }>>([]);
-  const [selectedModel, setSelectedModel] = useState<number>();
+  const [configuredModels, setConfiguredModels] = useState<Array<GenModel & { api: string }>>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
 
   // currently generating for the user
-  const [isGenerating, setGenerating] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+  // add filters for text treatment
+  const [filters, setFilters] = useState<string[]>([]);
+
   useEffect(() => {
-    const trainings: Array<{ user: string }> = currentProject?.generations.training || [];
-    setGenerating(
+    setIsGenerating(
       authenticatedUser?.username !== undefined &&
-        trainings.length !== 0 &&
-        trainings.some((training) => training.user === authenticatedUser?.username),
+        currentProject?.generations.training[authenticatedUser?.username] != undefined,
     );
   }, [authenticatedUser, currentProject]);
 
@@ -73,21 +75,33 @@ export const GenPage: FC = () => {
   const { generate } = useGenerate(
     projectName || null,
     currentScheme || null,
-    selectedModel || null,
+    generateConfig.selectedModel?.id || null,
     generateConfig.n_batch || null,
     generateConfig.prompt || null,
-    generateConfig.selection_mode || null,
+    generateConfig.selectionMode || null,
     generateConfig.token,
   );
 
   const { stopGenerate } = useStopGenerate(projectName || null);
 
   // call api to get a sample of elements
-  const { generated } = useGeneratedElements(projectName || null, 10, isGenerating);
+  const { generated, reFetchGenerated } = useGeneratedElements(
+    projectName || null,
+    100,
+    filters,
+    isGenerating,
+  );
+
+  console.log(generated);
 
   // call api to download a batch of elements
-  const { getGenerationsFile } = useGetGenerationsFile(projectName || null);
-  const [numberElements, setNumberElements] = useState<number>(10);
+  const { getGenerationsFile } = useGetGenerationsFile(projectName || null, filters);
+
+  // call api to drop generated elements
+  const dropGeneratedElements = useDropGeneratedElements(
+    projectName || null,
+    authenticatedUser?.username || null,
+  );
 
   // call api for prompts
   const { prompts, reFetchPrompts } = useGetPrompts(projectName || null);
@@ -105,11 +119,15 @@ export const GenPage: FC = () => {
   useEffect(() => {
     const fetchModels = async () => {
       const models = await getProjectGenModels(projectName);
-      setConfigureModels(models);
-      if (models.length > 0) setSelectedModel(models[0].id);
+      setConfiguredModels(models);
+      if (models.length > 0)
+        setAppContext((prev) => ({
+          ...prev,
+          generateConfig: { ...prev.generateConfig, selectedModel: models[0] },
+        }));
     };
     fetchModels();
-  }, [projectName]);
+  }, [projectName, setAppContext]);
 
   const columns: readonly Column<Row>[] = [
     {
@@ -182,18 +200,25 @@ export const GenPage: FC = () => {
 
   const addModel = async (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => {
     const id = await createGenModel(projectName, model);
-    setConfigureModels([...configuredModels, { ...model, id }]);
+    setConfiguredModels([...configuredModels, { ...model, id }]);
     setShowForm(false);
   };
 
   const removeModel = async () => {
-    setConfigureModels(configuredModels.filter((m) => m.id !== selectedModel));
-    if (selectedModel !== undefined) await deleteGenModel(projectName, selectedModel);
+    setConfiguredModels(configuredModels.filter((m) => m.id !== generateConfig.selectedModel?.id));
+    if (generateConfig.selectedModel?.id !== undefined)
+      await deleteGenModel(projectName, generateConfig.selectedModel?.id);
   };
 
   const handleChange = async (e: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedModel(parseInt(e.target.value));
+    const model = configuredModels.filter((m) => m.id === parseInt(e.target.value))[0];
+    setAppContext((prev) => ({
+      ...prev,
+      generateConfig: { ...prev.generateConfig, selectedModel: model },
+    }));
   };
+
+  const [promptName, setPromptName] = useState<string>('');
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
@@ -235,6 +260,7 @@ export const GenPage: FC = () => {
                     </button>
                   </div>
                 </div>
+                {/* <div>{JSON.stringify(generateConfig.selectedModel, null, 2)}</div> */}
                 <hr />
 
                 <div className="row mt-3">
@@ -263,7 +289,7 @@ export const GenPage: FC = () => {
                         onChange={(e) => {
                           setAppContext((prev) => ({
                             ...prev,
-                            generateConfig: { ...generateConfig, selection_mode: e.target.value },
+                            generateConfig: { ...generateConfig, selectionMode: e.target.value },
                           }));
                         }}
                       >
@@ -281,10 +307,11 @@ export const GenPage: FC = () => {
                   <div className="d-flex align-items-center ">
                     <Select
                       id="select-prompt"
-                      className="form-select w-75"
+                      className="w-75"
                       options={(prompts || []).map((e) => ({
                         value: e.id as unknown as string,
-                        label: e.text as unknown as string,
+                        label: e.parameters.name as unknown as string,
+                        text: e.text as unknown as string,
                       }))}
                       isClearable
                       placeholder="Look for a recorded prompt"
@@ -293,33 +320,51 @@ export const GenPage: FC = () => {
                           ...prev,
                           generateConfig: {
                             ...generateConfig,
-                            prompt: e?.label || '',
-                            prompt_id: e?.value,
+                            prompt: e?.text || '',
+                            promptId: e?.value,
                           },
                         }));
                       }}
                     />
-                    <button
-                      className="btn btn-primary mx-2 savebutton"
-                      onClick={() => {
-                        savePrompts(generateConfig.prompt || null);
-                        reFetchPrompts();
-                      }}
-                    >
-                      <BsSave2 />
-                    </button>
-                    <Tooltip anchorSelect=".savebutton" place="top">
-                      Save the prompt
-                    </Tooltip>
+
                     <button
                       onClick={() => {
-                        deletePrompts(generateConfig.prompt_id || null);
+                        deletePrompts(generateConfig.promptId || null);
                         reFetchPrompts();
                       }}
                       className="btn btn-primary mx-2"
                     >
                       <FaRegTrashAlt size={20} />
                     </button>
+                  </div>
+                  <div>
+                    {' '}
+                    <details className="p-1  col-6">
+                      <summary>Save prompt</summary>
+                      <div className="d-flex align-items-center">
+                        <input
+                          type="text"
+                          id="promptname"
+                          className="form-control"
+                          value={promptName}
+                          placeholder="Prompt name to save"
+                          onChange={(e) => setPromptName(e.target.value)}
+                        />
+
+                        <button
+                          className="btn btn-primary mx-2 savebutton"
+                          onClick={() => {
+                            savePrompts(generateConfig.prompt || null, promptName);
+                            reFetchPrompts();
+                          }}
+                        >
+                          <BsSave2 />
+                        </button>
+                        <Tooltip anchorSelect=".savebutton" place="top">
+                          Save the prompt
+                        </Tooltip>
+                      </div>
+                    </details>
                   </div>
                   <div className="form-floating mt-2">
                     <textarea
@@ -337,24 +382,34 @@ export const GenPage: FC = () => {
                       }}
                     />
                     <span style={{ color: 'gray' }}>
-                      The request will send the data to the external API. Be sure you can trust the
-                      API provider with the level of privacy of your data.
+                      The request will send the data to an external API. Be sure you can trust the
+                      API provider with respect to the level of privacy you need for you data
                     </span>
                     <label htmlFor="prompt">Prompt </label>
                   </div>
                   <div className="col-12 text-center">
                     {isGenerating ? (
                       <div>
-                        <PulseLoader />
+                        <div>
+                          <PulseLoader />
+                        </div>
                         <button className="btn btn-secondary mt-3" onClick={stopGenerate}>
-                          Stop
+                          Stop (
+                          {authenticatedUser?.username &&
+                          currentProject?.generations?.training[authenticatedUser?.username]
+                            ? String(
+                                currentProject?.generations?.training[authenticatedUser?.username][
+                                  'progress'
+                                ],
+                              )
+                            : 0}
+                          %)
                         </button>
                       </div>
                     ) : (
                       <button
                         className="btn btn-secondary mt-3 generatebutton"
                         onClick={() => {
-                          console.log('generate');
                           generate();
                         }}
                       >
@@ -368,7 +423,7 @@ export const GenPage: FC = () => {
                 </div>
                 <hr />
                 <div className="col-12 d-flex align-items-center justify-content-center">
-                  <span>Number elements to download</span>
+                  {/* <span>Number elements to download</span>
                   <input
                     type="number"
                     placeholder="Number of last generated elements to download"
@@ -376,17 +431,38 @@ export const GenPage: FC = () => {
                     style={{ width: '100px' }}
                     value={numberElements || 10}
                     onChange={(e) => setNumberElements(Number(e.target.value))}
-                  />
+                  /> */}
+                  <button className="btn btn-primary mx-2" onClick={() => getGenerationsFile()}>
+                    Download all
+                  </button>
                   <button
-                    className="btn btn-primary"
-                    onClick={() => getGenerationsFile(numberElements)}
+                    className="btn btn-primary mx-2"
+                    onClick={() => {
+                      dropGeneratedElements().then(() => reFetchGenerated());
+                    }}
                   >
-                    Download
+                    Clear all
                   </button>
                 </div>
-                <div className="explanations">Last generated content for the current user</div>
+                <Select
+                  placeholder="Add treatment for the generated columns"
+                  className="m-3"
+                  options={[
+                    { value: 'remove_punct', label: 'Remove punctuation' },
+                    { value: 'remove_spaces', label: 'Remove spaces' },
+                    { value: 'lowercase', label: 'Lowercase' },
+                    { value: 'strip', label: 'Strip' },
+                    { value: 'replace_accents', label: 'Replace accents characters' },
+                  ]}
+                  isMulti
+                  onChange={(e) => {
+                    setFilters(e.map((f) => f.value));
+                  }}
+                />
+                <div className="explanations">Last 100 generated content for the current user</div>
                 <DataGrid
                   className="fill-grid"
+                  style={{ backgroundColor: 'white' }}
                   columns={columns}
                   rows={(generated as unknown as Row[]) || []}
                   rowHeight={80}

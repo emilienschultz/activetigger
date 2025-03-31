@@ -155,7 +155,7 @@ class Project:
         self.generations = Generations(
             self.db_manager, cast(list[UserGenerationComputing], self.computing)
         )
-        self.projections = Projections(self.computing, self.queue)
+        self.projections = Projections(self.params.dir, self.computing, self.queue)
         self.errors = []  # Move to specific class / db in the future
 
     def load_params(self, project_slug: str) -> ProjectModel:
@@ -213,6 +213,8 @@ class Project:
         if len(df) > 10000:
             raise Exception("You testset is too large")
 
+        print("col label", testset.col_label, "scheme", testset.scheme)
+
         # change names
         if not testset.col_label:
             df = df.rename(
@@ -237,11 +239,11 @@ class Project:
         df["id"] = df["id"].apply(lambda x: f"imported-{x}")
         df = df.set_index("id")
 
-        # import labels if specified + scheme
+        # import labels if specified + scheme // check if the labels are in the scheme
         if testset.col_label and testset.scheme:
             # Check the label columns if they match the scheme or raise error
-            scheme = self.schemes.available()[testset.scheme]
-            for label in df[testset.col_label].unique():
+            scheme = self.schemes.available()[testset.scheme]["labels"]
+            for label in df[testset.col_label].dropna().unique():
                 if label not in scheme:
                     raise Exception(f"Label {label} not in the scheme {testset.scheme}")
 
@@ -698,7 +700,7 @@ class Project:
                 },
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
-            "generations": {"training": self.generations.current_users_generating()},
+            "generations": {"training": self.generations.training()},
             "errors": self.errors,
             "memory": get_dir_size(str(self.params.dir)),
         }
@@ -784,17 +786,18 @@ class Project:
     def export_raw(self, project_slug: str):
         """
         Export raw data
+        To be able to export, need to copy in the static folder
         """
-        # copy in the static folder
         name = f"{project_slug}_data_all.parquet"
         target_dir = self.params.dir if self.params.dir is not None else Path(".")
         path_origin = target_dir.joinpath("data_all.parquet")
-        path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.params.project_slug}/{name}"
+        folder_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}"
+        if not Path(folder_target).exists():
+            os.makedirs(folder_target)
+        path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}/{name}"
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
-        return StaticFileModel(
-            name=name, path=f"/static/{self.params.project_slug}/{name}"
-        )
+        return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")
 
     def compute_statistics(
         self, scheme: str, predictions: DataFrame, decimals: int = 2
@@ -1037,7 +1040,7 @@ class Project:
                 try:
                     error = future.exception()
                     if error:
-                        raise Exception(str(error))
+                        raise Exception("from task" + str(error))
                     results = future.result()
                     self.features.add(
                         feature_computation.name,
@@ -1085,7 +1088,6 @@ class Project:
                         list[GenerationResult],
                         results,
                     )
-                    print("RESULTS", r)
                     for row in r:
                         self.generations.add(
                             user=row.user,

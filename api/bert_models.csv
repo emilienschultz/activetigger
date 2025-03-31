@@ -14,3 +14,4 @@ ckiplab/bert-base-chinese-ws,5,,cn, 400,
 hfl/chinese-roberta-wwm-ext,5,,cn, 400,
 deepset/gbert-base,5,,de, 440, 111
 deepset/gbert-large,4,,de, 1350, 440
+tohoku-nlp/bert-base-japanese-v3,5,,ja, 100, 440

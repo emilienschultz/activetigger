@@ -20,6 +20,7 @@ import {
 import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { newBertModel } from '../../types';
+import { DisplayScores } from '../DisplayScores';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { LossChart } from '../vizualisation/lossChart';
 
@@ -185,6 +186,23 @@ export const TrainPage: FC = () => {
     return v + '%';
   };
 
+  console.log(model && model.train_scores);
+  const downloadModel = () => {
+    if (!model) return; // Ensure model is not null or undefined
+
+    // Convert the model object to a JSON string
+    const modelJson = JSON.stringify(model, null, 2);
+
+    // Create a Blob from the JSON string
+    const blob = new Blob([modelJson], { type: 'application/json' });
+
+    // Create a temporary link element
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = currentModel || 'model.json';
+    link.click();
+  };
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -319,26 +337,8 @@ export const TrainPage: FC = () => {
                             {isComputing && <div>Computation in progress</div>}
                             {model.train_scores && (
                               <div>
-                                <table className="table">
-                                  {' '}
-                                  <thead>
-                                    <tr>
-                                      <th scope="col">Key</th>
-                                      <th scope="col">Value</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {model.train_scores &&
-                                      Object.entries(model.train_scores)
-                                        .filter(([key]) => key !== 'false_predictions')
-                                        .map(([key, value], i) => (
-                                          <tr key={i}>
-                                            <td>{key}</td>
-                                            <td>{JSON.stringify(value)}</td>
-                                          </tr>
-                                        ))}
-                                  </tbody>
-                                </table>
+                                <DisplayScores scores={model.train_scores} />
+                                <button onClick={() => downloadModel()}>Download as json</button>
                                 <details className="m-3">
                                   <summary>False predictions</summary>
                                   {model_scores ? (

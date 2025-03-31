@@ -23,6 +23,7 @@ export const ProjectUpdateForm: FC = () => {
     { value: 'fr', label: 'French' },
     { value: 'de', label: 'German' },
     { value: 'cn', label: 'Chinese' },
+    { value: 'ja', label: 'Japanese' },
   ];
   const {
     register,

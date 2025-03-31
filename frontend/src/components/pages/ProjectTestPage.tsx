@@ -259,7 +259,10 @@ export const ProjectTestPage: FC = () => {
           {!currentProject?.params.test && (
             <div className="row">
               <div className="col-12">
-                <TestSetCreationForm projectSlug={projectName} />
+                <TestSetCreationForm
+                  projectSlug={projectName}
+                  currentScheme={currentScheme || null}
+                />
               </div>
             </div>
           )}

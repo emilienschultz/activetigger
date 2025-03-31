@@ -89,11 +89,16 @@ export interface FeatureFasttextParameters {
   model?: string;
 }
 
+export interface FeatureSbertParameters {
+  model?: string;
+}
+
 export interface FeatureModelExtended {
   name: string;
   type: string;
   parameters:
     | null
+    | FeatureSbertParameters
     | FeatureDfmParameters
     | FeatureRegexParameters
     | FeatureDatasetParameters
@@ -114,9 +119,10 @@ export interface GenerateConfig {
   endpoint?: string;
   token?: string;
   prompt?: string;
-  prompt_id?: string;
+  promptId?: string;
   n_batch?: number;
-  selection_mode?: string;
+  selectionMode?: string;
+  selectedModel?: GenModel & { api: string };
 }
 
 export interface DisplayConfig {

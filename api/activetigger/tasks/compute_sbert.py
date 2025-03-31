@@ -60,23 +60,21 @@ class ComputeSbert(BaseTask):
             device = torch.device("cpu")  # Fallback to CPU
 
         try:
-            sbert = SentenceTransformer(self.model, device=str(device))
+            sbert = SentenceTransformer(
+                self.model, device=str(device), trust_remote_code=True
+            )
             sbert.max_seq_length = 512
 
             print("start computation")
             embeddings = []
             total_batches = math.ceil(len(self.texts) / self.batch_size)
-            # if device.type == "cuda":
-            #     with autocast(device_type=str(device)):
-            #         emb = sbert.encode(
-            #             list(self.texts),
-            #             device=str(device),
-            #             batch_size=self.batch_size,
-            #         )
-            # else:
             for i, start in enumerate(range(0, len(self.texts), self.batch_size), 1):
                 batch_texts = list(self.texts.iloc[start : start + self.batch_size])
-                embeddings.append(sbert.encode(batch_texts, device=str(device)))
+                embeddings.append(
+                    sbert.encode(
+                        batch_texts, device=str(device), normalize_embeddings=True
+                    )
+                )
 
                 # manage progress
                 progress_percent = (i / total_batches) * 100

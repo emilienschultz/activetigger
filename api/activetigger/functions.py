@@ -1,5 +1,7 @@
 import io
 import os
+import string
+import unicodedata
 from getpass import getpass
 from typing import cast
 
@@ -22,6 +24,16 @@ from transformers import (  # type: ignore[import]
 )
 
 from activetigger.datamodels import MLStatisticsModel
+
+
+def remove_punctuation(text):
+    return text.translate(str.maketrans("", "", string.punctuation))
+
+
+def replace_accented_chars(text):
+    return "".join(
+        c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
+    )
 
 
 def get_root_pwd() -> str:
@@ -75,21 +87,24 @@ def compare_to_hash(text: str, hash: str | bytes):
     return r
 
 
-def tokenize(texts: Series, language: str = "fr") -> Series:
+def tokenize(texts: Series, language: str = "fr", batch_size=100) -> Series:
     """
     Clean texts with tokenization to facilitate word count
-    TODO : faster tokenization ?
     """
-    if language == "en":
-        model = "en_core_web_sm"
-    elif language == "fr":
-        model = "fr_core_news_sm"
-    else:
-        raise Exception(f"Language {language} is not supported")
 
-    nlp = spacy.load(model, disable=["ner", "tagger"])
-    docs = nlp.pipe(texts, batch_size=1000)
+    models = {
+        "en": "en_core_web_sm",
+        "fr": "fr_core_news_sm",
+        "de": "de_core_news_sm",
+        "ja": "ja_core_news_sm",
+        "cn": "zh_core_web_sm",
+    }
+    if language not in models:
+        raise Exception(f"Language {language} is not supported")
+    nlp = spacy.load(models[language], disable=["ner", "tagger"])
+    docs = nlp.pipe(texts, batch_size=batch_size)
     textes_tk = [" ".join([str(token) for token in doc]) for doc in docs]
+    del nlp
     return pd.Series(textes_tk, index=texts.index)
 
 
@@ -227,7 +242,12 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
                 ],
             )
         ),
-        confusion_matrix=confusion_matrix(Y_true, Y_pred).tolist(),
+        confusion_matrix=confusion_matrix(Y_true, Y_pred, labels=labels).tolist(),
+        # confusion_matrix=pd.DataFrame(
+        #     confusion_matrix(Y_true, Y_pred, labels=labels),
+        #     columns=labels,
+        #     index=labels,
+        # ).to_dict(orient="index"),
         false_predictions=(Y_true != Y_pred).loc[lambda x: x].index.tolist(),
     )
     return statistics

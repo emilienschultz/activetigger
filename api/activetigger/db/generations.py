@@ -45,19 +45,28 @@ class GenerationsService:
         session.commit()
         session.close()
 
-    def get_generated(self, project_slug: str, username: str, n_elements: int = 10):
+    def get_generated(
+        self, project_slug: str, username: str, n_elements: int | None = None
+    ):
         """
         Get elements from generated table by order desc
         """
         with self.Session() as session:
-            generated = session.scalars(
-                select(Generations)
-                .filter_by(project_id=project_slug, user_id=username)
-                .options(joinedload(Generations.model))  # join with the model table
-                .order_by(Generations.time.desc())
-                .limit(n_elements)
-            ).all()
-            print(generated)
+            if n_elements is None:
+                generated = session.scalars(
+                    select(Generations)
+                    .filter_by(project_id=project_slug, user_id=username)
+                    .options(joinedload(Generations.model))  # join with the model table
+                    .order_by(Generations.time.desc())
+                ).all()
+            else:
+                generated = session.scalars(
+                    select(Generations)
+                    .filter_by(project_id=project_slug, user_id=username)
+                    .options(joinedload(Generations.model))  # join with the model table
+                    .order_by(Generations.time.desc())
+                    .limit(n_elements)
+                ).all()
             return [
                 [el.time, el.element_id, el.prompt, el.answer, el.model.name]
                 for el in generated
@@ -177,3 +186,11 @@ class GenerationsService:
             )
             for el in elements
         ]
+
+    def drop_generated(self, project_slug: str, username: str) -> None:
+        with self.Session.begin() as session:
+            session.execute(
+                delete(Generations).filter_by(project_id=project_slug, user_id=username)
+            )
+
+        return None

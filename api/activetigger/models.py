@@ -106,7 +106,7 @@ class BertModel:
             r = json.load(f)
         return list(r["id2label"].values())
 
-    def get_training_progress(self) -> float | None:
+    def get_progress(self) -> float | None:
         """
         Get progress when training
         (different cases)
@@ -275,9 +275,7 @@ class BertModels:
             e.user: {
                 "name": e.model_name,
                 "status": e.status,
-                "progress": (
-                    e.get_training_progress() if e.get_training_progress else None
-                ),
+                "progress": (e.get_progress() if e.get_progress else None),
                 "loss": e.model.get_loss(),
             }
             for e in self.computing
@@ -350,10 +348,12 @@ class BertModels:
 
         # name integrating the scheme & user + date
         current_date = datetime.now()
+        minutes = current_date.strftime("%M")
+        hour = current_date.strftime("%H")
         day = current_date.strftime("%d")
         month = current_date.strftime("%m")
         year = current_date.strftime("%Y")
-        model_name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}"
+        model_name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}_{hour}h{minutes}"
 
         # check if a project not already exist
         if self.projects_service.model_exists(project, model_name):
@@ -403,7 +403,7 @@ class BertModels:
                 status="training",
                 scheme=scheme,
                 dataset=None,
-                get_training_progress=b.get_training_progress,
+                get_progress=b.get_progress,
             )
         )
 
@@ -496,7 +496,7 @@ class BertModels:
                 time=datetime.now(),
                 kind="predict_bert",
                 status="testing",
-                get_training_progress=b.get_training_progress,
+                get_progress=b.get_progress,
                 dataset="test",
             )
         )
@@ -526,7 +526,7 @@ class BertModels:
             raise Exception("The model does not exist")
 
         # load the model
-        b = BertModel(name, self.path / name)
+        b = BertModel(name, self.path.joinpath(name))
         b.load(lazy=True)
         unique_id = self.queue.add_task(
             "prediction",
@@ -553,7 +553,7 @@ class BertModels:
                 kind="predict_bert",
                 dataset=dataset,
                 status="predicting",
-                get_training_progress=b.get_training_progress,
+                get_progress=b.get_progress,
             )
         )
         return {"success": "bert model predicting"}
