@@ -52,9 +52,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   // form management
   const availableProjections = useMemo(() => project?.projections, [project?.projections]);
 
-  const { register, handleSubmit, watch, control } = useForm<ProjectionInStrictModel>({
+  const { register, handleSubmit, watch, control, reset } = useForm<ProjectionInStrictModel>({
     defaultValues: {
       method: 'umap',
+      features: [],
       params: {
         //common
         n_components: 2,
@@ -89,12 +90,14 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     const params = pick(formData.params, relevantParams) as ProjectionModelParams;
     const data = { ...formData, params };
     const watchedFeatures = watch('features');
+    console.log('watchedFeatures', watchedFeatures);
     if (watchedFeatures.length == 0) {
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
     }
     await updateProjection(data);
     setFormNewProjection(false);
+    reset();
   };
 
   // scatterplot management for colors
@@ -227,7 +230,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               render={({ field: { onChange } }) => (
                 <Select
                   options={features}
-                  defaultValue={defaultFeatures}
                   isMulti
                   onChange={(selectedOptions) => {
                     onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
