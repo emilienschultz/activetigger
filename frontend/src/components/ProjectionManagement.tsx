@@ -306,7 +306,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           </details>
           <div className="row align-items-start m-0" style={{ height: '500px' }}>
             <ProjectionVizSigma
-              className={`${selectedElement ? 'col-8' : 'col-12'} border p-0 h-100`}
+              //className={`${selectedElement ? 'col-8' : 'col-12'} border p-0 h-100`}
+              className={`col-8 border p-0 h-100`}
               data={projectionData}
               //selection
               selectedId={selectedElement?.element_id}
@@ -324,7 +325,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               labelColorMapping={labelColorMapping}
             />
             <div className="col-4 overflow-y-auto h-100">
-              {selectedElement && (
+              {selectedElement ? (
                 <div>
                   Element:{' '}
                   <div className="badge bg-light text-dark">{selectedElement.element_id}</div>
@@ -341,6 +342,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     Annotate
                   </button>
                 </div>
+              ) : (
+                <div>Click on an element to display its content</div>
               )}
             </div>
           </div>
