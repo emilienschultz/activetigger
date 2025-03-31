@@ -99,6 +99,7 @@ class GenerationsService:
                 ],
             ),
             GenerationModelApi(name="HuggingFace", models=[]),
+            GenerationModelApi(name="OpenRouter", models=[]),
         ]
 
     def get_project_gen_models(self, project_slug: str) -> Sequence[GenModels]:
