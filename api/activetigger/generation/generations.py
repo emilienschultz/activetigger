@@ -8,6 +8,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.generations import GenerationsService
 from activetigger.db.manager import DatabaseManager
+from activetigger.functions import remove_punctuation, replace_accented_chars
 
 
 class Generations:
@@ -110,3 +111,19 @@ class Generations:
         """
         self.generations_service.drop_generated(project_slug, username)
         return None
+
+    def filter(self, answers: pd.Series, filters) -> pd.Series:
+        """
+        Apply filters
+        """
+        if "remove_punct" in filters:
+            answers = answers.apply(remove_punctuation)
+        if "remove_spaces" in filters:
+            answers = answers.str.replace(r"\s+", " ")
+        if "lowercase" in filters:
+            answers = answers.str.lower()
+        if "strip" in filters:
+            answers = answers.str.strip()
+        if "replace_accents" in filters:
+            answers = answers.apply(replace_accented_chars)
+        return answers

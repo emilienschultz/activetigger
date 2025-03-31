@@ -1,5 +1,7 @@
 import io
 import os
+import string
+import unicodedata
 from getpass import getpass
 from typing import cast
 
@@ -22,6 +24,16 @@ from transformers import (  # type: ignore[import]
 )
 
 from activetigger.datamodels import MLStatisticsModel
+
+
+def remove_punctuation(text):
+    return text.translate(str.maketrans("", "", string.punctuation))
+
+
+def replace_accented_chars(text):
+    return "".join(
+        c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
+    )
 
 
 def get_root_pwd() -> str:

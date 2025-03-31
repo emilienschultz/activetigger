@@ -13,6 +13,7 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.datamodels import (
+    GeneratedElementsIn,
     GenerationCreationModel,
     GenerationModel,
     GenerationModelApi,
@@ -98,8 +99,6 @@ async def postgenerate(
             request.scheme, request.n_batch, request.mode
         )
 
-        print(extract)
-
         # get model
         model = orchestrator.db_manager.generations_service.get_gen_model(
             request.model_id
@@ -171,21 +170,27 @@ async def stop_generation(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/generate/elements", dependencies=[Depends(verified_user)])
+@router.post("/generate/elements", dependencies=[Depends(verified_user)])
 async def getgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    n_elements: int,
+    params: GeneratedElementsIn,
 ) -> TableOutModel:
     """
     Get elements from prediction
     """
     try:
+        # get data
         table = project.generations.get_generated(
-            project.name, current_user.username, n_elements
+            project.name, current_user.username, params.n_elements
         )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error in loading generated data")
+
+        # apply filters
+        table["answer"] = project.generations.filter(table["answer"], params.filters)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Error in loading generated data" + str(e)
+        )
 
     # join with the text
     # table = table.join(project.content["text"], on="index")

@@ -1291,16 +1291,18 @@ export function useGetPredictionsSimplemodelFile(projectSlug: string | null) {
 /**
  * Get file generations
  */
-export function useGetGenerationsFile(projectSlug: string | null) {
+export function useGetGenerationsFile(projectSlug: string | null, filters: string[]) {
   const { notify } = useNotifications();
   const getGenerationsFile = useCallback(async () => {
     if (projectSlug) {
-      const res = await api.GET('/export/generations', {
+      console.log(filters);
+      const res = await api.POST('/export/generations', {
         params: {
           query: {
             project_slug: projectSlug,
           },
         },
+        body: { filters: filters },
         parseAs: 'blob',
       });
 
@@ -1311,7 +1313,7 @@ export function useGetGenerationsFile(projectSlug: string | null) {
       return true;
     }
     return null;
-  }, [projectSlug, notify]);
+  }, [projectSlug, notify, filters]);
 
   return { getGenerationsFile };
 }
@@ -1752,28 +1754,31 @@ export function useStopGenerate(projectSlug: string | null) {
 export function useGeneratedElements(
   project_slug: string | null,
   n_elements: number,
+  filters: string[],
   isGenerating: boolean, // state for the user for refertching
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getGeneratedElements = useAsyncMemo(async () => {
     if (n_elements && project_slug) {
-      const res = await api.GET('/generate/elements', {
+      const res = await api.POST('/generate/elements', {
         params: {
           query: {
             project_slug: project_slug,
-            n_elements: n_elements,
           },
         },
+        body: {
+          n_elements: n_elements,
+          filters: filters,
+        },
       });
-      console.log('generate');
       console.log(res);
       if (!res.error && res.data && 'items' in res.data) {
         return res.data.items;
       }
     }
     return null;
-  }, [project_slug, n_elements, isGenerating, fetchTrigger]);
+  }, [project_slug, n_elements, isGenerating, fetchTrigger, filters]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
@@ -1785,8 +1790,6 @@ export function useGeneratedElements(
  */
 export function useGetLogs(project_slug: string | null, limit: number) {
   const getLogs = useAsyncMemo(async () => {
-    console.log(project_slug);
-    console.log(limit);
     if (limit && project_slug) {
       console.log(limit);
       const res = await api.GET('/logs', {

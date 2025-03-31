@@ -61,6 +61,9 @@ export const GenPage: FC = () => {
   // currently generating for the user
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
+  // add filters for text treatment
+  const [filters, setFilters] = useState<string[]>([]);
+
   useEffect(() => {
     setIsGenerating(
       authenticatedUser?.username !== undefined &&
@@ -84,12 +87,15 @@ export const GenPage: FC = () => {
   // call api to get a sample of elements
   const { generated, reFetchGenerated } = useGeneratedElements(
     projectName || null,
-    10,
+    100,
+    filters,
     isGenerating,
   );
 
+  console.log(generated);
+
   // call api to download a batch of elements
-  const { getGenerationsFile } = useGetGenerationsFile(projectName || null);
+  const { getGenerationsFile } = useGetGenerationsFile(projectName || null, filters);
 
   // call api to drop generated elements
   const dropGeneratedElements = useDropGeneratedElements(
@@ -213,8 +219,6 @@ export const GenPage: FC = () => {
   };
 
   const [promptName, setPromptName] = useState<string>('');
-
-  console.log(currentProject?.generations);
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
@@ -429,7 +433,7 @@ export const GenPage: FC = () => {
                     onChange={(e) => setNumberElements(Number(e.target.value))}
                   /> */}
                   <button className="btn btn-primary mx-2" onClick={() => getGenerationsFile()}>
-                    Download
+                    Download all
                   </button>
                   <button
                     className="btn btn-primary mx-2"
@@ -437,10 +441,25 @@ export const GenPage: FC = () => {
                       dropGeneratedElements().then(() => reFetchGenerated());
                     }}
                   >
-                    Purge
+                    Clear all
                   </button>
                 </div>
-                <div className="explanations">Last generated content for the current user</div>
+                <Select
+                  placeholder="Add treatment for the generated columns"
+                  className="m-3"
+                  options={[
+                    { value: 'remove_punct', label: 'Remove punctuation' },
+                    { value: 'remove_spaces', label: 'Remove spaces' },
+                    { value: 'lowercase', label: 'Lowercase' },
+                    { value: 'strip', label: 'Strip' },
+                    { value: 'replace_accents', label: 'Replace accents characters' },
+                  ]}
+                  isMulti
+                  onChange={(e) => {
+                    setFilters(e.map((f) => f.value));
+                  }}
+                />
+                <div className="explanations">Last 100 generated content for the current user</div>
                 <DataGrid
                   className="fill-grid"
                   style={{ backgroundColor: 'white' }}

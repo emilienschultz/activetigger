@@ -715,3 +715,12 @@ class TextDatasetModel(BaseModel):
     text: str
     filename: str | None = None
     csv: str | None = None
+
+
+class GeneratedElementsIn(BaseModel):
+    n_elements: int
+    filters: list[str] = []
+
+
+class ExportGenerationsParams(BaseModel):
+    filters: list[str] = []
