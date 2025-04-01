@@ -1,7 +1,6 @@
 import gc
 import logging
 import math
-import os
 from pathlib import Path
 
 import numpy as np
@@ -89,7 +88,7 @@ class ComputeSbert(BaseTask):
                 columns=["sb%03d" % (x + 1) for x in range(len(embeddings[0][0]))],
             )
             logging.debug("computation end")
-            os.remove(self.path_process.joinpath(self.unique_id))
+            self.path_process.joinpath(self.unique_id).unlink()
             return emb
         except Exception as e:
             logging.error(e)

@@ -73,7 +73,7 @@ export const ProjectPredictPage: FC = () => {
 
             {/* Display the progress of training models */}
             {project?.languagemodels.training &&
-              Object.keys(project.bertmodelanguagemodelsls.training).length > 0 && (
+              Object.keys(project.languagemodels.training).length > 0 && (
                 <div className="mt-3">
                   Current process:
                   <ul>

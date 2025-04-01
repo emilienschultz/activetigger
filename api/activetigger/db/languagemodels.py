@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
+from activetigger.datamodels import LanguageModelScheme
 from activetigger.db import DBException
 from activetigger.db.models import (
     Models,
@@ -11,12 +12,19 @@ from activetigger.db.models import (
 
 
 class LanguageModelsService:
+    """
+    Database service for language models
+    """
+
     SessionMaker: sessionmaker[Session]
 
     def __init__(self, sessionmaker: sessionmaker[Session]):
         self.SessionMaker = sessionmaker
 
-    def available_models(self, project: str):
+    def available_models(self, project: str) -> list[LanguageModelScheme]:
+        """
+        Get available models in database
+        """
         with self.SessionMaker() as session:
             models = session.execute(
                 select(Models.name, Models.parameters, Models.path, Models.scheme_id)
@@ -27,12 +35,12 @@ class LanguageModelsService:
                 .distinct()
             ).all()
         return [
-            {
-                "name": m.name,
-                "scheme": m.scheme_id,
-                "path": m.path,
-                "parameters": m.parameters,
-            }
+            LanguageModelScheme(
+                name=m.name,
+                scheme=m.scheme_id,
+                path=m.path,
+                parameters=m.parameters,
+            )
             for m in models
         ]
 

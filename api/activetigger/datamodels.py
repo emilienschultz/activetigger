@@ -724,3 +724,10 @@ class GeneratedElementsIn(BaseModel):
 
 class ExportGenerationsParams(BaseModel):
     filters: list[str] = []
+
+
+class LanguageModelScheme(BaseModel):
+    name: str
+    scheme: str
+    parameters: dict[str, Any]
+    path: str

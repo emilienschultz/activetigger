@@ -74,6 +74,7 @@ export const TrainPage: FC = () => {
     currentScheme && project?.languagemodels.available[currentScheme]
       ? Object.keys(project?.languagemodels.available[currentScheme])
       : [];
+
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // compute model preduction

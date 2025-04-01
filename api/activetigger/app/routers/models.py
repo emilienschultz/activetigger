@@ -67,11 +67,13 @@ async def get_bert(
     """
     Get Bert parameters and statistics
     """
-    b = project.languagemodels.get(name, lazy=True)
-    if b is None:
-        raise HTTPException(status_code=400, detail="Bert model does not exist")
-    data = b.informations()
-    return data
+    try:
+        lm = project.languagemodels.get(name, lazy=True)
+        if lm is None:
+            raise HTTPException(status_code=400, detail="Bert model does not exist")
+        return lm.get_informations()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/bert/predict", dependencies=[Depends(verified_user)])
@@ -184,6 +186,16 @@ async def post_bert(
     TODO : move the methods to specific class
     """
     try:
+
+        # Check if there is no other competing processes : 1 active process by user
+        if (
+            len(project.languagemodels.current_user_processes(current_user.username))
+            > 0
+        ):
+            raise Exception(
+                "User already has a process launched, please wait before launching another one"
+            )
+
         # get data
         df = project.schemes.get_scheme_data(bert.scheme, complete=True)
         df = df[["text", "labels"]].dropna()

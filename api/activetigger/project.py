@@ -1114,19 +1114,29 @@ class Project:
 
         # if there are predictions, add them
         for f in add_predictions:
-            # load the prediction probabilities minus one
-            df = pd.read_parquet(add_predictions[f])
-            df = df.drop(columns=["entropy", "prediction"])
-            df = df[df.columns[0:-1]]
-            name = f.replace("__", "_")  # avoid __ in the name for features
-            self.features.add(
-                name=name,
-                kind="prediction",
-                parameters={},
-                username="system",
-                new_content=df,
-            )
-            logging.debug("Add feature" + str(name))
+            try:
+                # load the prediction probabilities minus one
+                df = pd.read_parquet(add_predictions[f])
+                df = df.drop(columns=["entropy", "prediction"])
+                df = df[df.columns[0:-1]]
+                name = f.replace("__", "_")  # avoid __ in the name for features
+                self.features.add(
+                    name=name,
+                    kind="prediction",
+                    parameters={},
+                    username="system",
+                    new_content=df,
+                )
+                logging.debug("Add feature" + str(name))
+            except Exception as ex:
+                self.errors.append(
+                    [
+                        datetime.now(TIMEZONE),
+                        "Error in adding prediction",
+                        str(ex),
+                    ]
+                )
+                logging.error("Error in addind prediction", ex)
 
         # clean errors older than 15 minutes
         delta = datetime.now(TIMEZONE) - timedelta(minutes=15)

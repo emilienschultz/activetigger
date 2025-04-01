@@ -46,10 +46,10 @@ class Projections:
         """
         Load available projections in pickle file
         """
-        if self.path.joinpath("projections.pkl").exists():
+        if self.path.joinpath("projections.pickle").exists():
             try:
                 self.available = pickle.load(
-                    open(self.path.joinpath("projections.pkl"), "rb")
+                    open(self.path.joinpath("projections.pickle"), "rb")
                 )
             except Exception as e:
                 print(e)
@@ -76,7 +76,7 @@ class Projections:
         }
         try:
             pickle.dump(
-                self.available, open(self.path.joinpath("projections.pkl"), "wb")
+                self.available, open(self.path.joinpath("projections.pickle"), "wb")
             )
         except Exception as e:
             print("Error in saving projections", e)
