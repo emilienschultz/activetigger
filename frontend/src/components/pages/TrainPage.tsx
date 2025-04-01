@@ -323,17 +323,7 @@ export const TrainPage: FC = () => {
                           </details>
                           <details className="custom-details">
                             <summary>Scores</summary>
-                            {!model_scores && !isComputing && currentScheme && (
-                              <button
-                                className="btn btn-primary me-2 mt-2"
-                                onClick={() =>
-                                  computeModelPrediction(currentModel, 'train', currentScheme)
-                                }
-                              >
-                                Predict on training dataset
-                              </button>
-                            )}
-                            {isComputing && <div>Computation in progress</div>}
+
                             {model.train_scores && (
                               <div>
                                 <DisplayScores scores={model.train_scores} />
@@ -352,6 +342,17 @@ export const TrainPage: FC = () => {
                                 </details>
                               </div>
                             )}
+                            {!isComputing && currentScheme && (
+                              <button
+                                className="btn btn-primary m-2 mt-2"
+                                onClick={() =>
+                                  computeModelPrediction(currentModel, 'train', currentScheme)
+                                }
+                              >
+                                Compute on trainset for statistics
+                              </button>
+                            )}
+                            {isComputing && <div>Computation in progress</div>}
                           </details>
                         </div>
                       )}
@@ -507,12 +508,12 @@ export const TrainPage: FC = () => {
                     </div>
                     <div>
                       <label>
-                        Test size{' '}
+                        Development dataset size{' '}
                         <a className="test_size">
                           <HiOutlineQuestionMarkCircle />
                         </a>
                         <Tooltip anchorSelect=".test_size" place="top">
-                          Eval size for the test set in the dev test to compute metrics.
+                          Eval size for the dev test to compute metrics.
                         </Tooltip>
                       </label>
                       <input type="number" step="0.1" {...registerNewModel('test_size')} />

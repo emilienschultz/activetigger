@@ -16,7 +16,6 @@ from slugify import slugify
 
 from activetigger.datamodels import (
     GenerationResult,
-    MLStatisticsModel,
     ProjectModel,
     ProjectUpdateModel,
     SimpleModelModel,
@@ -30,7 +29,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import clean_regex, get_dir_size, get_metrics
+from activetigger.functions import clean_regex, get_dir_size
 from activetigger.generation.generations import Generations
 from activetigger.models import BertModels
 from activetigger.projections import Projections
@@ -799,16 +798,16 @@ class Project:
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")
 
-    def compute_statistics(
-        self, scheme: str, predictions: DataFrame, decimals: int = 2
-    ) -> MLStatisticsModel:
-        """
-        Compute statistics for a specific scheme and prediction
-        """
-        Y_true = self.schemes.get_scheme_data(scheme)["labels"]
-        Y_pred = predictions["prediction"]
-        metrics = get_metrics(Y_true, Y_pred, decimals)
-        return metrics
+    # def compute_statistics(
+    #     self, scheme: str, predictions: DataFrame, decimals: int = 2
+    # ) -> MLStatisticsModel:
+    #     """
+    #     Compute statistics for a specific scheme and prediction
+    #     """
+    #     Y_true = self.schemes.get_scheme_data(scheme)["labels"]
+    #     Y_pred = predictions["prediction"]
+    #     metrics = get_metrics(Y_true, Y_pred, decimals)
+    #     return metrics
 
     def update_project(self, update: ProjectUpdateModel) -> None:
         """
