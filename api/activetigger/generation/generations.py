@@ -95,11 +95,11 @@ class Generations:
         all_models = self.generations_service.get_project_gen_models(project_slug)
         return any([model.name == name for model in all_models])
 
-    def add_model(self, project_slug: str, model: GenerationCreationModel) -> None:
+    def add_model(self, project_slug: str, model: GenerationCreationModel) -> int:
         """
         Add a model in the database
         """
-        self.generations_service.add_project_gen_model(project_slug, model)
+        return self.generations_service.add_project_gen_model(project_slug, model)
 
     def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
         """
