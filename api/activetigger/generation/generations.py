@@ -3,6 +3,7 @@ from pandas import DataFrame
 
 from activetigger.datamodels import (
     GenerationComputingOut,
+    GenerationCreationModel,
     PromptModel,
     UserGenerationComputing,
 )
@@ -86,6 +87,19 @@ class Generations:
         """
         all_prompts = self.get_prompts(project_slug)
         return any([prompt.parameters["name"] == name for prompt in all_prompts])
+
+    def model_exists(self, project_slug: str, name: str) -> bool:
+        """
+        Check if a model already exists
+        """
+        all_models = self.generations_service.get_project_gen_models(project_slug)
+        return any([model.name == name for model in all_models])
+
+    def add_model(self, project_slug: str, model: GenerationCreationModel) -> None:
+        """
+        Add a model in the database
+        """
+        self.generations_service.add_project_gen_model(project_slug, model)
 
     def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
         """

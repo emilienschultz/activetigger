@@ -63,19 +63,14 @@ async def add_project_generation_models(
 
     try:
         # test if the model exists with this name for the project
-        models = orchestrator.db_manager.generations_service.get_project_gen_models(
-            project.name
-        )
-        for m in models:
-            if m.name == model.name:
-                raise HTTPException(
-                    status_code=400, detail="A model with this name already exists"
-                )
+        if project.generations.model_exists(project.name, model.name):
+            raise HTTPException(
+                status_code=400, detail="A model with this name already exists"
+            )
 
         # add the model
-        return orchestrator.db_manager.generations_service.add_project_gen_model(
-            project.name, model
-        )
+        r = project.generations.add_model(project.name, model)
+        return r
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
