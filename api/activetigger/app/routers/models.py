@@ -67,7 +67,7 @@ async def get_bert(
     """
     Get Bert parameters and statistics
     """
-    b = project.bertmodels.get(name, lazy=True)
+    b = project.languagemodels.get(name, lazy=True)
     if b is None:
         raise HTTPException(status_code=400, detail="Bert model does not exist")
     data = b.informations()
@@ -121,7 +121,7 @@ async def predict(
             raise Exception(f"dataset {dataset} not found")
 
         # start process to predict
-        project.bertmodels.start_predicting_process(
+        project.languagemodels.start_predicting_process(
             project_slug=project.name,
             name=model_name,
             user=current_user.username,
@@ -156,7 +156,7 @@ async def start_test(
         df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
 
         # launch testing process : prediction
-        project.bertmodels.start_testing_process(
+        project.languagemodels.start_testing_process(
             project_slug=project.name,
             name=model,
             user=current_user.username,
@@ -211,7 +211,7 @@ async def post_bert(
             )
 
         # launch training process
-        project.bertmodels.start_training_process(
+        project.languagemodels.start_training_process(
             name=bert.name,
             project=project.name,
             user=current_user.username,
@@ -261,7 +261,7 @@ async def stop_bert(
         orchestrator.queue.kill(unique_id)
         # delete it in the database if it is a training
         if p[0].kind == "train_bert":
-            project.bertmodels.projects_service.delete_model(
+            project.db_manager.language_models_service.delete_model(
                 project.name, p[0].model.name
             )
         orchestrator.log_action(
@@ -284,7 +284,7 @@ async def delete_bert(
     test_rights("modify project", current_user.username, project.name)
 
     try:
-        project.bertmodels.delete(bert_name)
+        project.languagemodels.delete(bert_name)
         orchestrator.log_action(
             current_user.username, f"DELETE MODEL: {bert_name}", project.name
         )
@@ -305,7 +305,7 @@ async def save_bert(
     test_rights("modify project", current_user.username, project.name)
 
     try:
-        project.bertmodels.rename(former_name, new_name)
+        project.languagemodels.rename(former_name, new_name)
         orchestrator.log_action(
             current_user.username,
             f"INFO RENAME MODEL: {former_name} -> {new_name}",

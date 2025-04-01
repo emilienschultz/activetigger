@@ -29,8 +29,8 @@ export const CurrentProjectMonitoring: FC = () => {
       // check if training process, and refresh the value
       const isComputing =
         !isNil(authenticatedUser) &&
-        !isNil(project.bertmodels.training) &&
-        Object.keys(project.bertmodels.training).includes(authenticatedUser.username);
+        !isNil(project.languagemodels.training) &&
+        Object.keys(project.languagemodels.training).includes(authenticatedUser.username);
 
       setAppContext((prev) => {
         if (!isEqual(prev.currentProject, project)) {

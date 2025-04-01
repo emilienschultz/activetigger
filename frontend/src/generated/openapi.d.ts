@@ -2034,8 +2034,8 @@ export interface components {
             features: Record<string, never>;
             /** Simplemodel */
             simplemodel: Record<string, never>;
-            /** Bertmodels */
-            bertmodels: Record<string, never>;
+            /** Languagemodels */
+            languagemodels: Record<string, never>;
             /** Projections */
             projections: Record<string, never>;
             /** Generations */

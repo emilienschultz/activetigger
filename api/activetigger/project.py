@@ -31,7 +31,7 @@ from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import clean_regex, get_dir_size
 from activetigger.generation.generations import Generations
-from activetigger.models import BertModels
+from activetigger.languagemodels import LanguageModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
@@ -56,7 +56,7 @@ class Project:
     content: DataFrame
     schemes: Schemes
     features: Features
-    bertmodels: BertModels
+    languagemodels: LanguageModels
     simplemodels: SimpleModels
     generations: Generations
     projections: Projections
@@ -140,7 +140,7 @@ class Project:
             self.db_manager,
             self.params.language,
         )
-        self.bertmodels = BertModels(
+        self.languagemodels = LanguageModels(
             project_slug,
             self.params.dir,
             self.queue,
@@ -684,12 +684,12 @@ class Project:
                 "available": self.simplemodels.available(),
                 "training": self.simplemodels.training(),
             },
-            "bertmodels": {
-                "options": self.bertmodels.base_models,
-                "available": self.bertmodels.available(),
-                "training": self.bertmodels.training(),
+            "languagemodels": {
+                "options": self.languagemodels.base_models,
+                "available": self.languagemodels.available(),
+                "training": self.languagemodels.training(),
                 "test": {},
-                "base_parameters": self.bertmodels.params_default,
+                "base_parameters": self.languagemodels.params_default,
             },
             "projections": {
                 "options": self.projections.options,
@@ -962,11 +962,11 @@ class Project:
                     error = future.exception()
                     if error:
                         raise Exception(str(error))
-                    self.bertmodels.add(model)
+                    self.languagemodels.add(model)
                     print("Bert training achieved")
                     logging.debug("Bert training achieved")
                 except Exception as ex:
-                    self.bertmodels.projects_service.delete_model(
+                    self.db_manager.language_models_service.delete_model(
                         self.name, model.model_name
                     )
                     self.errors.append(
@@ -998,7 +998,7 @@ class Project:
                         add_predictions["predict_" + prediction.model_name] = (
                             results.path
                         )
-                    self.bertmodels.add(prediction)
+                    self.languagemodels.add(prediction)
                     print("Bert predicting achieved")
                     logging.debug("Bert predicting achieved")
                 except Exception as ex:

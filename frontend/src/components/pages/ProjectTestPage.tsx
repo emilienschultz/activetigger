@@ -43,8 +43,8 @@ export const ProjectTestPage: FC = () => {
 
   // available models
   const availableModels =
-    currentScheme && currentProject?.bertmodels.available[currentScheme]
-      ? Object.keys(currentProject?.bertmodels.available[currentScheme])
+    currentScheme && currentProject?.languagemodels.available[currentScheme]
+      ? Object.keys(currentProject?.languagemodels.available[currentScheme])
       : [];
 
   // state forthe model

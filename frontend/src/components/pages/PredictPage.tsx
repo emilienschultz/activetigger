@@ -28,14 +28,14 @@ export const ProjectPredictPage: FC = () => {
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
 
   const availablePrediction =
-    currentScheme && currentModel && project?.bertmodels.available[currentScheme][currentModel]
-      ? project?.bertmodels.available[currentScheme][currentModel]['predicted']
+    currentScheme && currentModel && project?.languagemodels.available[currentScheme][currentModel]
+      ? project?.languagemodels.available[currentScheme][currentModel]['predicted']
       : false;
 
   // available models
   const availableModels =
-    currentScheme && project?.bertmodels.available[currentScheme]
-      ? Object.keys(project?.bertmodels.available[currentScheme])
+    currentScheme && project?.languagemodels.available[currentScheme]
+      ? Object.keys(project?.languagemodels.available[currentScheme])
       : [];
 
   // compute model preduction
@@ -72,13 +72,13 @@ export const ProjectPredictPage: FC = () => {
             </div>
 
             {/* Display the progress of training models */}
-            {project?.bertmodels.training &&
-              Object.keys(project.bertmodels.training).length > 0 && (
+            {project?.languagemodels.training &&
+              Object.keys(project.bertmodelanguagemodelsls.training).length > 0 && (
                 <div className="mt-3">
                   Current process:
                   <ul>
                     {Object.entries(
-                      project?.bertmodels.training as Record<
+                      project?.languagemodels.training as Record<
                         string,
                         Record<string, string | number>
                       >,

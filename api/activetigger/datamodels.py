@@ -508,7 +508,7 @@ class ProjectStateModel(BaseModel):
     schemes: dict[str, Any]
     features: dict[str, Any]
     simplemodel: dict[str, Any]
-    bertmodels: dict[str, Any]
+    languagemodels: dict[str, Any]
     projections: dict[str, Any]
     generations: dict[str, Any]
     errors: list[list]

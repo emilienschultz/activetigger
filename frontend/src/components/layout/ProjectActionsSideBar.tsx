@@ -37,9 +37,11 @@ export const ProjectActionsSidebar: FC<{
   // 2 types of menu
   const onlyAnnotator = authenticatedUser?.status === 'annotator';
 
+  console.log(projectState);
+
   // test if computation is currently undergoing
   const currentComputation = projectState
-    ? currentUser in projectState.bertmodels.training ||
+    ? currentUser in projectState.languagemodels.training ||
       currentUser in projectState.simplemodel.training ||
       currentUser in projectState.projections.training ||
       (projectState.features.training as string[]).length > 0

@@ -109,6 +109,11 @@ async def postgenerate(
             request.scheme, request.n_batch, request.mode
         )
 
+        if len(extract) == 0:
+            raise HTTPException(
+                status_code=400, detail="No elements found for this scheme"
+            )
+
         # get model
         model = orchestrator.db_manager.generations_service.get_gen_model(
             request.model_id

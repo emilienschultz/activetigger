@@ -71,8 +71,8 @@ export const TrainPage: FC = () => {
 
   // available models
   const availableModels =
-    currentScheme && project?.bertmodels.available[currentScheme]
-      ? Object.keys(project?.bertmodels.available[currentScheme])
+    currentScheme && project?.languagemodels.available[currentScheme]
+      ? Object.keys(project?.languagemodels.available[currentScheme])
       : [];
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
@@ -96,7 +96,7 @@ export const TrainPage: FC = () => {
   };
 
   // available base models suited for the project : sorted by language + priority
-  const filteredModels = ((project?.bertmodels.options as unknown as BertModel[]) ?? [])
+  const filteredModels = ((project?.languagemodels.options as unknown as BertModel[]) ?? [])
     .sort((a, b) => b.priority - a.priority)
     .sort((a, b) => {
       const aHasFr = a.language === project?.params.language ? -1 : 1;
@@ -253,13 +253,13 @@ export const TrainPage: FC = () => {
                   </div>
 
                   {/* Display the progress of training models */}
-                  {project?.bertmodels.training &&
-                    Object.keys(project.bertmodels.training).length > 0 && (
+                  {project?.languagemodels.training &&
+                    Object.keys(project.languagemodels.training).length > 0 && (
                       <div className="mt-3">
                         Current process:
                         <ul>
                           {Object.entries(
-                            project?.bertmodels.training as Record<
+                            project?.languagemodels.training as Record<
                               string,
                               Record<string, string | number | null>
                             >,
