@@ -47,7 +47,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   // unique labels
   const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
-  const colormap = chroma.scale('Viridis').colors(uniqueLabels.length);
+  const colormap = chroma.scale('Spectral').colors(uniqueLabels.length);
 
   // form management
   const availableProjections = useMemo(() => project?.projections, [project?.projections]);

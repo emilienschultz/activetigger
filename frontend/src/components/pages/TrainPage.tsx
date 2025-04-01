@@ -186,7 +186,6 @@ export const TrainPage: FC = () => {
     return v + '%';
   };
 
-  console.log(model && model.train_scores);
   const downloadModel = () => {
     if (!model) return; // Ensure model is not null or undefined
 
