@@ -175,6 +175,9 @@ class GenerationsService:
             session.execute(delete(Prompts).filter_by(id=prompt_id))
 
     def get_prompts(self, project_slug: str) -> list[PromptModel]:
+        """
+        Get all prompts for a project
+        """
         with self.Session() as session:
             elements = session.scalars(
                 select(Prompts).filter_by(project_id=project_slug)

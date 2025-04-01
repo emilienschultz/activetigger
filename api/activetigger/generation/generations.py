@@ -80,6 +80,13 @@ class Generations:
             if e.kind == "generation"
         }
 
+    def prompt_exists(self, project_slug: str, name: str) -> bool:
+        """
+        Check if a prompt already exists
+        """
+        all_prompts = self.get_prompts(project_slug)
+        return any([prompt.parameters["name"] == name for prompt in all_prompts])
+
     def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
         """
         Save a prompt in the database

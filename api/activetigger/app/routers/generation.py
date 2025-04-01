@@ -60,9 +60,24 @@ async def add_project_generation_models(
     """
     Add a new GenAI model for the project
     """
-    return orchestrator.db_manager.generations_service.add_project_gen_model(
-        project.name, model
-    )
+
+    try:
+        # test if the model exists with this name for the project
+        models = orchestrator.db_manager.generations_service.get_project_gen_models(
+            project.name
+        )
+        for m in models:
+            if m.name == model.name:
+                raise HTTPException(
+                    status_code=400, detail="A model with this name already exists"
+                )
+
+        # add the model
+        return orchestrator.db_manager.generations_service.add_project_gen_model(
+            project.name, model
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete(
@@ -237,10 +252,19 @@ async def add_prompt(
     Add a prompt to the project
     """
     try:
+        # if no name, use the beginning of the text
         if prompt.name is not None:
             name = prompt.name
         else:
-            name = prompt.text
+            name = prompt.text[0 : max(30, len(prompt.text))]
+
+        # check if the name is already used
+        if project.generations.prompt_exists(project.name, name):
+            raise HTTPException(
+                status_code=400, detail="A prompt with this name already exists"
+            )
+
+        # save prompt
         project.generations.save_prompt(
             current_user.username, project.name, prompt.text, name
         )
