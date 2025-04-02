@@ -10,11 +10,11 @@ from pandas import DataFrame
 
 import activetigger.functions as functions
 from activetigger.datamodels import (
+    LMComputing,
     LMInformationsModel,
     LMParametersDbModel,
     LMParametersModel,
     StaticFileModel,
-    UserModelComputing,
 )
 from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
@@ -31,7 +31,7 @@ class LanguageModels:
     project_slug: str
     path: Path
     queue: Queue
-    computing: list[UserModelComputing]
+    computing: list
     language_models_service: LanguageModelsService
     db_manager: DatabaseManager
     base_models: list
@@ -137,7 +137,7 @@ class LanguageModels:
         except Exception as e:
             raise Exception(f"Problem to delete model files : {e}")
 
-    def current_user_processes(self, user: str) -> list[UserModelComputing]:
+    def current_user_processes(self, user: str) -> list[LMComputing]:
         """
         Get the user current processes
         """
@@ -230,7 +230,7 @@ class LanguageModels:
 
         # Update the queue state
         self.computing.append(
-            UserModelComputing(
+            LMComputing(
                 user=user,
                 model_name=model_name,
                 unique_id=unique_id,
@@ -240,7 +240,6 @@ class LanguageModels:
                 scheme=scheme,
                 dataset=None,
                 get_progress=self.get_progress(model_name, status="training"),
-                model=None,
             )
         )
 
@@ -319,7 +318,7 @@ class LanguageModels:
         )
 
         self.computing.append(
-            UserModelComputing(
+            LMComputing(
                 user=user,
                 model_name=name,
                 unique_id=unique_id,
@@ -328,7 +327,6 @@ class LanguageModels:
                 status="testing",
                 get_progress=self.get_progress(name, status="predicting"),
                 dataset="test",
-                model=None,
             )
         )
 
@@ -372,7 +370,7 @@ class LanguageModels:
             queue="gpu",
         )
         self.computing.append(
-            UserModelComputing(
+            LMComputing(
                 user=user,
                 model_name=name,
                 unique_id=unique_id,
@@ -381,7 +379,6 @@ class LanguageModels:
                 dataset=dataset,
                 status="predicting",
                 get_progress=self.get_progress(name, status="predicting"),
-                model=None,
             )
         )
         return {"success": "bert model predicting"}
@@ -443,7 +440,7 @@ class LanguageModels:
             path=f"/static/{self.project_slug}/{name}.tar.gz",
         )
 
-    def add(self, element: UserModelComputing):
+    def add(self, element: LMComputing):
         """
         Manage computed process for model
         """

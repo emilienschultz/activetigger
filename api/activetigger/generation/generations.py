@@ -1,11 +1,11 @@
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.datamodels import (
+from activetigger.datamodels import (  # ignore[import]
+    GenerationComputing,
     GenerationComputingOut,
     GenerationCreationModel,
     PromptModel,
-    UserGenerationComputing,
 )
 from activetigger.db.generations import GenerationsService
 from activetigger.db.manager import DatabaseManager
@@ -17,11 +17,11 @@ class Generations:
     Class to manage generation data
     """
 
-    computing: list[UserGenerationComputing]
+    computing: list
     generations_service: GenerationsService
 
     def __init__(
-        self, db_manager: DatabaseManager, computing: list[UserGenerationComputing]
+        self, db_manager: DatabaseManager, computing: list[GenerationComputing]
     ) -> None:
         self.generations_service = db_manager.generations_service
         self.computing = computing

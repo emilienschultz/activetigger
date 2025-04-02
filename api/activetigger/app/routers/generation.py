@@ -14,6 +14,7 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     GeneratedElementsIn,
+    GenerationComputing,
     GenerationCreationModel,
     GenerationModel,
     GenerationModelApi,
@@ -21,7 +22,6 @@ from activetigger.datamodels import (
     PromptInputModel,
     PromptModel,
     TableOutModel,
-    UserGenerationComputing,
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
@@ -134,7 +134,7 @@ async def postgenerate(
         )
 
         project.computing.append(
-            UserGenerationComputing(
+            GenerationComputing(
                 unique_id=unique_id,
                 user=current_user.username,
                 project=project.name,

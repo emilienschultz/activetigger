@@ -15,17 +15,18 @@ from pandas import DataFrame
 from slugify import slugify
 
 from activetigger.datamodels import (
+    FeatureComputing,
+    GenerationComputing,
     GenerationResult,
+    LMComputing,
+    ProcessComputing,
+    ProjectionComputing,
     ProjectModel,
     ProjectUpdateModel,
+    SimpleModelComputing,
     SimpleModelModel,
     StaticFileModel,
     TestSetDataModel,
-    UserComputing,
-    UserFeatureComputing,
-    UserGenerationComputing,
-    UserModelComputing,
-    UserProjectionComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
@@ -49,7 +50,7 @@ class Project:
     starting_time: float
     name: str
     queue: Queue
-    computing: list[UserComputing]
+    computing: list[ProcessComputing]
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
@@ -136,7 +137,7 @@ class Project:
             self.params.dir.joinpath("data_all.parquet"),
             self.path_models,
             self.queue,
-            cast(list[UserFeatureComputing], self.computing),
+            cast(list[FeatureComputing], self.computing),
             self.db_manager,
             self.params.language,
         )
@@ -152,7 +153,7 @@ class Project:
         # TODO: Computings should be filtered here based on their type, each type in a different list given to the appropriate class.
         # It would render the cast here and the for-loop in the class unecessary
         self.generations = Generations(
-            self.db_manager, cast(list[UserGenerationComputing], self.computing)
+            self.db_manager, cast(list[GenerationComputing], self.computing)
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
         self.errors = []  # Move to specific class / db in the future
@@ -956,7 +957,7 @@ class Project:
 
             # case for bert fine-tuning
             if e.kind == "train_bert":
-                model = cast(UserModelComputing, e)
+                model = cast(LMComputing, e)
                 try:
                     print(process)
                     error = future.exception()
@@ -982,7 +983,7 @@ class Project:
 
             # case for bertmodel prediction
             if e.kind == "predict_bert":
-                prediction = cast(UserModelComputing, e)
+                prediction = cast(LMComputing, e)
                 try:
                     error = future.exception()
                     if error:
@@ -1015,7 +1016,7 @@ class Project:
 
             # case for simplemodels
             if e.kind == "simplemodel":
-                model = cast(UserModelComputing, e)
+                model = cast(SimpleModelComputing, e)
                 try:
                     error = future.exception()
                     if error:
@@ -1035,7 +1036,7 @@ class Project:
 
             # case for features
             if e.kind == "feature":
-                feature_computation = cast(UserFeatureComputing, e)
+                feature_computation = cast(FeatureComputing, e)
                 try:
                     error = future.exception()
                     if error:
@@ -1060,7 +1061,7 @@ class Project:
 
             # case for projections
             if e.kind == "projection":
-                projection = cast(UserProjectionComputing, e)
+                projection = cast(ProjectionComputing, e)
                 try:
                     results = future.result()
                     self.projections.add(projection, results)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pandas import DataFrame
 
-from activetigger.datamodels import ProjectionInStrictModel, UserProjectionComputing
+from activetigger.datamodels import ProjectionComputing, ProjectionInStrictModel
 from activetigger.queue import Queue
 from activetigger.tasks.compute_projection import ComputeProjection
 
@@ -18,7 +18,7 @@ class Projections:
     path: Path
     available: dict
     options: dict
-    computing: list[UserProjectionComputing]
+    computing: list
     queue: Queue
 
     def __init__(self, path: Path, computing: list, queue: Queue) -> None:
@@ -64,7 +64,7 @@ class Projections:
         r = {e.user: e.method for e in self.computing if e.kind == "projection"}
         return r
 
-    def add(self, element: UserProjectionComputing, results: DataFrame) -> None:
+    def add(self, element: ProjectionComputing, results: DataFrame) -> None:
         """
         Add projection after computation
         """
@@ -99,7 +99,7 @@ class Projections:
             ),
         )
         self.computing.append(
-            UserProjectionComputing(
+            ProjectionComputing(
                 unique_id=unique_id,
                 name=f"Projection by {username}",
                 user=username,
