@@ -33,16 +33,16 @@ export const ProjectExportPage: FC = () => {
 
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableModels =
-    currentScheme && project?.bertmodels.available[currentScheme]
-      ? Object.keys(project?.bertmodels.available[currentScheme])
+    currentScheme && project?.languagemodels.available[currentScheme]
+      ? Object.keys(project?.languagemodels.available[currentScheme])
       : [];
   const availablePrediction =
     currentScheme && model
-      ? project?.bertmodels.available[currentScheme][model]['predicted']
+      ? project?.languagemodels.available[currentScheme][model]['predicted']
       : false;
   const availablePredictionExternal =
     currentScheme && model
-      ? project?.bertmodels.available[currentScheme][model]['predicted_external']
+      ? project?.languagemodels.available[currentScheme][model]['predicted_external']
       : false;
 
   const { getFeaturesFile } = useGetFeaturesFile(projectName || null);

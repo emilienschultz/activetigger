@@ -12,6 +12,7 @@ import {
   useTestModel,
 } from '../../core/api';
 import { useAppContext } from '../../core/context';
+import { DisplayScores } from '../DisplayScores';
 import { TestSetCreationForm } from '../forms/TestSetCreationForm';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
@@ -42,8 +43,8 @@ export const ProjectTestPage: FC = () => {
 
   // available models
   const availableModels =
-    currentScheme && currentProject?.bertmodels.available[currentScheme]
-      ? Object.keys(currentProject?.bertmodels.available[currentScheme])
+    currentScheme && currentProject?.languagemodels.available[currentScheme]
+      ? Object.keys(currentProject?.languagemodels.available[currentScheme])
       : [];
 
   // state forthe model
@@ -92,6 +93,22 @@ export const ProjectTestPage: FC = () => {
   ];
 
   if (!projectName) return null;
+
+  const downloadModel = () => {
+    if (!model) return; // Ensure model is not null or undefined
+
+    // Convert the model object to a JSON string
+    const modelJson = JSON.stringify(model, null, 2);
+
+    // Create a Blob from the JSON string
+    const blob = new Blob([modelJson], { type: 'application/json' });
+
+    // Create a temporary link element
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = currentModel || 'model.json';
+    link.click();
+  };
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
@@ -219,7 +236,7 @@ export const ProjectTestPage: FC = () => {
               {!(currentModel && currentScheme) && (
                 <div>Select a scheme & a model to start computation</div>
               )}
-              {model && model.test_scores && (
+              {/* {model && model.test_scores && (
                 <div>
                   <table className="table">
                     <thead>
@@ -240,6 +257,24 @@ export const ProjectTestPage: FC = () => {
                           ))}
                     </tbody>
                   </table>
+                  <details className="m-3">
+                    <summary>False predictions</summary>
+                    {falsePredictions ? (
+                      <DataGrid<Row>
+                        className="fill-grid"
+                        columns={columns}
+                        rows={falsePredictions || []}
+                      />
+                    ) : (
+                      <div>Compute prediction first</div>
+                    )}
+                  </details>
+                </div>
+              )} */}
+              {model && model.test_scores && (
+                <div>
+                  <DisplayScores scores={model.train_scores || {}} />
+                  <button onClick={() => downloadModel()}>Download as json</button>
                   <details className="m-3">
                     <summary>False predictions</summary>
                     {falsePredictions ? (

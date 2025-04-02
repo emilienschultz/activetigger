@@ -14,8 +14,8 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.datamodels import (
-    BertModelInformationsModel,
     BertModelModel,
+    LMInformationsModel,
     SimpleModelModel,
     SimpleModelOutModel,
     TextDatasetModel,
@@ -63,15 +63,14 @@ async def get_simplemodel(
 @router.get("/models/bert", dependencies=[Depends(verified_user)])
 async def get_bert(
     project: Annotated[Project, Depends(get_project)], name: str
-) -> BertModelInformationsModel:
+) -> LMInformationsModel:
     """
     Get Bert parameters and statistics
     """
-    b = project.bertmodels.get(name, lazy=True)
-    if b is None:
-        raise HTTPException(status_code=400, detail="Bert model does not exist")
-    data = b.informations()
-    return data
+    try:
+        return project.languagemodels.get_informations(name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/bert/predict", dependencies=[Depends(verified_user)])
@@ -121,7 +120,7 @@ async def predict(
             raise Exception(f"dataset {dataset} not found")
 
         # start process to predict
-        project.bertmodels.start_predicting_process(
+        project.languagemodels.start_predicting_process(
             project_slug=project.name,
             name=model_name,
             user=current_user.username,
@@ -156,7 +155,7 @@ async def start_test(
         df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
 
         # launch testing process : prediction
-        project.bertmodels.start_testing_process(
+        project.languagemodels.start_testing_process(
             project_slug=project.name,
             name=model,
             user=current_user.username,
@@ -184,6 +183,16 @@ async def post_bert(
     TODO : move the methods to specific class
     """
     try:
+
+        # Check if there is no other competing processes : 1 active process by user
+        if (
+            len(project.languagemodels.current_user_processes(current_user.username))
+            > 0
+        ):
+            raise Exception(
+                "User already has a process launched, please wait before launching another one"
+            )
+
         # get data
         df = project.schemes.get_scheme_data(bert.scheme, complete=True)
         df = df[["text", "labels"]].dropna()
@@ -211,7 +220,7 @@ async def post_bert(
             )
 
         # launch training process
-        project.bertmodels.start_training_process(
+        project.languagemodels.start_training_process(
             name=bert.name,
             project=project.name,
             user=current_user.username,
@@ -261,8 +270,8 @@ async def stop_bert(
         orchestrator.queue.kill(unique_id)
         # delete it in the database if it is a training
         if p[0].kind == "train_bert":
-            project.bertmodels.projects_service.delete_model(
-                project.name, p[0].model.name
+            project.db_manager.language_models_service.delete_model(
+                project.name, p[0].model_name
             )
         orchestrator.log_action(
             current_user.username, "STOP MODEL TRAINING", project.name
@@ -284,7 +293,7 @@ async def delete_bert(
     test_rights("modify project", current_user.username, project.name)
 
     try:
-        project.bertmodels.delete(bert_name)
+        project.languagemodels.delete(bert_name)
         orchestrator.log_action(
             current_user.username, f"DELETE MODEL: {bert_name}", project.name
         )
@@ -305,7 +314,7 @@ async def save_bert(
     test_rights("modify project", current_user.username, project.name)
 
     try:
-        project.bertmodels.rename(former_name, new_name)
+        project.languagemodels.rename(former_name, new_name)
         orchestrator.log_action(
             current_user.username,
             f"INFO RENAME MODEL: {former_name} -> {new_name}",

@@ -21,8 +21,8 @@ from activetigger.datamodels import (
     MLStatisticsModel,
     Multi_naivebayesParams,
     RandomforestParams,
+    SimpleModelComputing,
     SimpleModelOutModel,
-    UserModelComputing,
 )
 from activetigger.queue import Queue
 from activetigger.tasks.fit_model import FitModel
@@ -274,26 +274,19 @@ class SimpleModels:
         unique_id = self.queue.add_task("simplemodel", project_slug, FitModel(**args))
         del args
 
-        sm = SimpleModel(
-            name=name,
-            user=user,
-            features=features,
-            labels=labels,
-            model_params=model_params,
-            standardize=standardize,
-            model=model,
-        )
-
         self.computing.append(
-            UserModelComputing(
+            SimpleModelComputing(
                 user=user,
-                model=sm,
-                model_name=sm.name,
                 unique_id=unique_id,
                 time=datetime.now(),
                 kind="simplemodel",
-                status="training",
                 scheme=scheme,
+                name=name,
+                features=features,
+                labels=labels,
+                model_params=model_params,
+                standardize=standardize,
+                model=model,
             )
         )
 
@@ -314,18 +307,19 @@ class SimpleModels:
             self.existing = pickle.load(file)
         return True
 
-    def add(self, element: UserModelComputing, results) -> None:
+    def add(self, element: SimpleModelComputing, results) -> None:
         """
         Add simplemodel after computation
+        TODO : refactor to avoid using element.model
         """
-        sm = element.model
-        sm.model = results.model
-        sm.proba = results.proba
-        sm.cv10 = results.cv10
-        sm.statistics = results.statistics
+
+        element.model = results.model
+        element.proba = results.proba
+        element.cv10 = results.cv10
+        element.statistics = results.statistics
         if element.user not in self.existing:
             self.existing[element.user] = {}
-        self.existing[element.user][element.scheme] = sm
+        self.existing[element.user][element.scheme] = element
         self.dumps()
 
     def export_prediction(self, scheme: str, username: str, format: str = "csv"):

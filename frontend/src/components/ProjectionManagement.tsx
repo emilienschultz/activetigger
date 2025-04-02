@@ -47,12 +47,12 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   // unique labels
   const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
-  const colormap = chroma.scale('Viridis').colors(uniqueLabels.length);
+  const colormap = chroma.scale('Spectral').colors(uniqueLabels.length);
 
   // form management
   const availableProjections = useMemo(() => project?.projections, [project?.projections]);
 
-  const { register, handleSubmit, watch, control } = useForm<ProjectionInStrictModel>({
+  const { register, handleSubmit, watch, control, reset } = useForm<ProjectionInStrictModel>({
     defaultValues: {
       method: 'umap',
       params: {
@@ -89,12 +89,14 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     const params = pick(formData.params, relevantParams) as ProjectionModelParams;
     const data = { ...formData, params };
     const watchedFeatures = watch('features');
+    console.log('watchedFeatures', watchedFeatures);
     if (watchedFeatures.length == 0) {
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
     }
     await updateProjection(data);
     setFormNewProjection(false);
+    reset();
   };
 
   // scatterplot management for colors
@@ -187,6 +189,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     return filtered;
   };
   const defaultFeatures = filterFeatures(features);
+  console.log(defaultFeatures);
 
   return (
     <div>
@@ -224,11 +227,12 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <Controller
               name="features"
               control={control}
-              render={({ field: { onChange } }) => (
+              defaultValue={defaultFeatures.map((e) => e.value)}
+              render={({ field: { onChange, value } }) => (
                 <Select
                   options={features}
-                  defaultValue={defaultFeatures}
                   isMulti
+                  value={features.filter((option) => value.includes(option.value))}
                   onChange={(selectedOptions) => {
                     onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
                   }}

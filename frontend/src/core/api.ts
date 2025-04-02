@@ -1715,9 +1715,6 @@ export function useGenerate(
       });
       if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
       return true;
-    } else {
-      console.log('error');
-      console.log(projectSlug, modelId, prompt, n_batch, currentScheme, mode);
     }
     return null;
   }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);

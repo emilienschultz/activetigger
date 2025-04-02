@@ -22,7 +22,7 @@ from transformers import (  # type: ignore[import]
     TrainingArguments,
 )
 
-from activetigger.datamodels import BertModelParametersModel
+from activetigger.datamodels import LMParametersModel
 from activetigger.tasks.base_task import BaseTask
 
 pd.set_option("future.no_silent_downcasting", True)
@@ -91,7 +91,7 @@ class TrainBert(BaseTask):
         col_text: str,
         col_label: str,
         base_model: str,
-        params: BertModelParametersModel,
+        params: LMParametersModel,
         test_size: float,
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,

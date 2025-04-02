@@ -112,20 +112,21 @@ export const GenModelSetupForm: FC<{
                   </label>
                 </div>,
               );
-              inputs.push(
-                <div className="form-floating col-5" key="endpoint">
-                  <input
-                    type="text"
-                    id="endpoint"
-                    className="form-control"
-                    placeholder="enter the url of the endpoint"
-                    {...register('endpoint')}
-                  />
-                  <label htmlFor="endpoint" className="mt-0">
-                    Endpoint
-                  </label>
-                </div>,
-              );
+              if (selectedAPI.name !== 'OpenRouter')
+                inputs.push(
+                  <div className="form-floating col-5" key="endpoint">
+                    <input
+                      type="text"
+                      id="endpoint"
+                      className="form-control"
+                      placeholder="enter the url of the endpoint"
+                      {...register('endpoint')}
+                    />
+                    <label htmlFor="endpoint" className="mt-0">
+                      Endpoint
+                    </label>
+                  </div>,
+                );
             }
 
             if (selectedAPI.name !== 'Ollama')

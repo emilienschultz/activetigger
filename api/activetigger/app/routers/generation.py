@@ -14,6 +14,7 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     GeneratedElementsIn,
+    GenerationComputing,
     GenerationCreationModel,
     GenerationModel,
     GenerationModelApi,
@@ -21,7 +22,6 @@ from activetigger.datamodels import (
     PromptInputModel,
     PromptModel,
     TableOutModel,
-    UserGenerationComputing,
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
@@ -60,9 +60,19 @@ async def add_project_generation_models(
     """
     Add a new GenAI model for the project
     """
-    return orchestrator.db_manager.generations_service.add_project_gen_model(
-        project.name, model
-    )
+
+    try:
+        # test if the model exists with this name for the project
+        if project.generations.model_exists(project.name, model.name):
+            raise HTTPException(
+                status_code=400, detail="A model with this name already exists"
+            )
+
+        # add the model
+        r = project.generations.add_model(project.name, model)
+        return r
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete(
@@ -99,6 +109,11 @@ async def postgenerate(
             request.scheme, request.n_batch, request.mode
         )
 
+        if len(extract) == 0:
+            raise HTTPException(
+                status_code=400, detail="No elements found for this scheme"
+            )
+
         # get model
         model = orchestrator.db_manager.generations_service.get_gen_model(
             request.model_id
@@ -119,7 +134,7 @@ async def postgenerate(
         )
 
         project.computing.append(
-            UserGenerationComputing(
+            GenerationComputing(
                 unique_id=unique_id,
                 user=current_user.username,
                 project=project.name,
@@ -237,10 +252,19 @@ async def add_prompt(
     Add a prompt to the project
     """
     try:
+        # if no name, use the beginning of the text
         if prompt.name is not None:
             name = prompt.name
         else:
-            name = prompt.text
+            name = prompt.text[0 : max(30, len(prompt.text))]
+
+        # check if the name is already used
+        if project.generations.prompt_exists(project.name, name):
+            raise HTTPException(
+                status_code=400, detail="A prompt with this name already exists"
+            )
+
+        # save prompt
         project.generations.save_prompt(
             current_user.username, project.name, prompt.text, name
         )

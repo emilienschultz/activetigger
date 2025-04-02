@@ -90,7 +90,7 @@ async def export_prediction(
     """
     try:
         filename = f"predict_{dataset}.parquet"
-        r = project.bertmodels.export_prediction(
+        r = project.languagemodels.export_prediction(
             name=name, file_name=filename, format=format
         )
         return FileResponse(r["path"], filename=r["name"])
@@ -109,7 +109,7 @@ async def export_bert(
     """
     test_rights("modify project", current_user.username, project.name)
     try:
-        return project.bertmodels.export_bert(name=name)
+        return project.languagemodels.export_bert(name=name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

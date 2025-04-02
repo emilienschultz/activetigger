@@ -1,10 +1,11 @@
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.datamodels import (
+from activetigger.datamodels import (  # ignore[import]
+    GenerationComputing,
     GenerationComputingOut,
+    GenerationCreationModel,
     PromptModel,
-    UserGenerationComputing,
 )
 from activetigger.db.generations import GenerationsService
 from activetigger.db.manager import DatabaseManager
@@ -16,11 +17,11 @@ class Generations:
     Class to manage generation data
     """
 
-    computing: list[UserGenerationComputing]
+    computing: list
     generations_service: GenerationsService
 
     def __init__(
-        self, db_manager: DatabaseManager, computing: list[UserGenerationComputing]
+        self, db_manager: DatabaseManager, computing: list[GenerationComputing]
     ) -> None:
         self.generations_service = db_manager.generations_service
         self.computing = computing
@@ -79,6 +80,26 @@ class Generations:
             for e in self.computing
             if e.kind == "generation"
         }
+
+    def prompt_exists(self, project_slug: str, name: str) -> bool:
+        """
+        Check if a prompt already exists
+        """
+        all_prompts = self.get_prompts(project_slug)
+        return any([prompt.parameters["name"] == name for prompt in all_prompts])
+
+    def model_exists(self, project_slug: str, name: str) -> bool:
+        """
+        Check if a model already exists
+        """
+        all_models = self.generations_service.get_project_gen_models(project_slug)
+        return any([model.name == name for model in all_models])
+
+    def add_model(self, project_slug: str, model: GenerationCreationModel) -> int:
+        """
+        Add a model in the database
+        """
+        return self.generations_service.add_project_gen_model(project_slug, model)
 
     def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
         """

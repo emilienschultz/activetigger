@@ -48,7 +48,7 @@ export type SimpleModelModel = components['schemas']['SimpleModelModel'];
 
 export type UsersServerModel = components['schemas']['UsersServerModel'];
 
-export type BertModelParametersModel = components['schemas']['BertModelParametersModel'];
+export type LMParametersModel = components['schemas']['LMParametersModel'];
 
 export type TestSetDataModel = components['schemas']['TestSetDataModel'];
 
@@ -136,7 +136,7 @@ export interface DisplayConfig {
 export interface newBertModel {
   name?: string;
   base: string;
-  parameters: BertModelParametersModel;
+  parameters: LMParametersModel;
   dichotomize?: string;
   class_balance?: boolean;
   class_min_freq?: number;

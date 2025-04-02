@@ -15,24 +15,23 @@ from pandas import DataFrame
 from slugify import slugify
 
 from activetigger.datamodels import (
+    FeatureComputing,
+    GenerationComputing,
     GenerationResult,
-    MLStatisticsModel,
+    LMComputing,
+    ProjectionComputing,
     ProjectModel,
     ProjectUpdateModel,
+    SimpleModelComputing,
     SimpleModelModel,
     StaticFileModel,
     TestSetDataModel,
-    UserComputing,
-    UserFeatureComputing,
-    UserGenerationComputing,
-    UserModelComputing,
-    UserProjectionComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import clean_regex, get_dir_size, get_metrics
+from activetigger.functions import clean_regex, get_dir_size
 from activetigger.generation.generations import Generations
-from activetigger.models import BertModels
+from activetigger.languagemodels import LanguageModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
@@ -50,14 +49,14 @@ class Project:
     starting_time: float
     name: str
     queue: Queue
-    computing: list[UserComputing]
+    computing: list
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
     content: DataFrame
     schemes: Schemes
     features: Features
-    bertmodels: BertModels
+    languagemodels: LanguageModels
     simplemodels: SimpleModels
     generations: Generations
     projections: Projections
@@ -137,11 +136,11 @@ class Project:
             self.params.dir.joinpath("data_all.parquet"),
             self.path_models,
             self.queue,
-            cast(list[UserFeatureComputing], self.computing),
+            cast(list[FeatureComputing], self.computing),
             self.db_manager,
             self.params.language,
         )
-        self.bertmodels = BertModels(
+        self.languagemodels = LanguageModels(
             project_slug,
             self.params.dir,
             self.queue,
@@ -153,7 +152,7 @@ class Project:
         # TODO: Computings should be filtered here based on their type, each type in a different list given to the appropriate class.
         # It would render the cast here and the for-loop in the class unecessary
         self.generations = Generations(
-            self.db_manager, cast(list[UserGenerationComputing], self.computing)
+            self.db_manager, cast(list[GenerationComputing], self.computing)
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
         self.errors = []  # Move to specific class / db in the future
@@ -294,10 +293,13 @@ class Project:
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
 
-        params = simplemodel.params
+        if simplemodel.params is None:
+            params = None
+        else:
+            params = dict(simplemodel.params)
 
         # add information on the target of the model
-        if simplemodel.dichotomize is not None:
+        if simplemodel.dichotomize is not None and params is not None:
             params["dichotomize"] = simplemodel.dichotomize
 
         # get data
@@ -331,7 +333,7 @@ class Project:
             col_labels="labels",
             col_features=col_features,
             model_params=params,
-            standardize=simplemodel.standardize,
+            standardize=simplemodel.standardize or False,
         )
 
         return {"success": "Simplemodel updated"}
@@ -543,7 +545,7 @@ class Project:
         if dataset == "test":
             if element_id not in self.schemes.test.index:
                 raise Exception("Element does not exist.")
-            data = {
+            data: dict = {
                 "element_id": element_id,
                 "text": self.schemes.test.loc[element_id, "text"],
                 "context": {},
@@ -600,7 +602,7 @@ class Project:
         """
         return self.params
 
-    def get_statistics(self, scheme: str | None, user: str | None):
+    def get_statistics(self, scheme: str | None, user: str | None) -> dict:
         """
         Generate a description of a current project/scheme/user
         Return:
@@ -685,12 +687,12 @@ class Project:
                 "available": self.simplemodels.available(),
                 "training": self.simplemodels.training(),
             },
-            "bertmodels": {
-                "options": self.bertmodels.base_models,
-                "available": self.bertmodels.available(),
-                "training": self.bertmodels.training(),
+            "languagemodels": {
+                "options": self.languagemodels.base_models,
+                "available": self.languagemodels.available(),
+                "training": self.languagemodels.training(),
                 "test": {},
-                "base_parameters": self.bertmodels.params_default,
+                "base_parameters": self.languagemodels.params_default,
             },
             "projections": {
                 "options": self.projections.options,
@@ -798,17 +800,6 @@ class Project:
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")
-
-    def compute_statistics(
-        self, scheme: str, predictions: DataFrame, decimals: int = 2
-    ) -> MLStatisticsModel:
-        """
-        Compute statistics for a specific scheme and prediction
-        """
-        Y_true = self.schemes.get_scheme_data(scheme)["labels"]
-        Y_pred = predictions["prediction"]
-        metrics = get_metrics(Y_true, Y_pred, decimals)
-        return metrics
 
     def update_project(self, update: ProjectUpdateModel) -> None:
         """
@@ -957,17 +948,17 @@ class Project:
 
             # case for bert fine-tuning
             if e.kind == "train_bert":
-                model = cast(UserModelComputing, e)
+                model = cast(LMComputing, e)
                 try:
                     print(process)
                     error = future.exception()
                     if error:
                         raise Exception(str(error))
-                    self.bertmodels.add(model)
+                    self.languagemodels.add(model)
                     print("Bert training achieved")
                     logging.debug("Bert training achieved")
                 except Exception as ex:
-                    self.bertmodels.projects_service.delete_model(
+                    self.db_manager.language_models_service.delete_model(
                         self.name, model.model_name
                     )
                     self.errors.append(
@@ -983,7 +974,7 @@ class Project:
 
             # case for bertmodel prediction
             if e.kind == "predict_bert":
-                prediction = cast(UserModelComputing, e)
+                prediction = cast(LMComputing, e)
                 try:
                     error = future.exception()
                     if error:
@@ -999,7 +990,7 @@ class Project:
                         add_predictions["predict_" + prediction.model_name] = (
                             results.path
                         )
-                    self.bertmodels.add(prediction)
+                    self.languagemodels.add(prediction)
                     print("Bert predicting achieved")
                     logging.debug("Bert predicting achieved")
                 except Exception as ex:
@@ -1016,13 +1007,13 @@ class Project:
 
             # case for simplemodels
             if e.kind == "simplemodel":
-                model = cast(UserModelComputing, e)
+                sm = cast(SimpleModelComputing, e)
                 try:
                     error = future.exception()
                     if error:
                         raise Exception(str(error))
                     results = future.result()
-                    self.simplemodels.add(model, results)
+                    self.simplemodels.add(sm, results)
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
                 except Exception as ex:
@@ -1036,7 +1027,7 @@ class Project:
 
             # case for features
             if e.kind == "feature":
-                feature_computation = cast(UserFeatureComputing, e)
+                feature_computation = cast(FeatureComputing, e)
                 try:
                     error = future.exception()
                     if error:
@@ -1061,7 +1052,7 @@ class Project:
 
             # case for projections
             if e.kind == "projection":
-                projection = cast(UserProjectionComputing, e)
+                projection = cast(ProjectionComputing, e)
                 try:
                     results = future.result()
                     self.projections.add(projection, results)
@@ -1115,19 +1106,29 @@ class Project:
 
         # if there are predictions, add them
         for f in add_predictions:
-            # load the prediction probabilities minus one
-            df = pd.read_parquet(add_predictions[f])
-            df = df.drop(columns=["entropy", "prediction"])
-            df = df[df.columns[0:-1]]
-            name = f.replace("__", "_")  # avoid __ in the name for features
-            self.features.add(
-                name=name,
-                kind="prediction",
-                parameters={},
-                username="system",
-                new_content=df,
-            )
-            logging.debug("Add feature" + str(name))
+            try:
+                # load the prediction probabilities minus one
+                df = pd.read_parquet(add_predictions[f])
+                df = df.drop(columns=["entropy", "prediction"])
+                df = df[df.columns[0:-1]]
+                name = f.replace("__", "_")  # avoid __ in the name for features
+                self.features.add(
+                    name=name,
+                    kind="prediction",
+                    parameters={},
+                    username="system",
+                    new_content=df,
+                )
+                logging.debug("Add feature" + str(name))
+            except Exception as ex:
+                self.errors.append(
+                    [
+                        datetime.now(TIMEZONE),
+                        "Error in adding prediction",
+                        str(ex),
+                    ]
+                )
+                logging.error("Error in addind prediction", ex)
 
         # clean errors older than 15 minutes
         delta = datetime.now(TIMEZONE) - timedelta(minutes=15)

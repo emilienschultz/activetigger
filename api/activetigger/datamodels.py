@@ -5,6 +5,7 @@ from typing import Any, Callable, Literal, Optional
 
 from pandas import DataFrame
 from pydantic import BaseModel, ConfigDict  # for dataframe
+from sklearn.base import BaseEstimator  # type: ignore[import]
 
 # Data model to use of the API
 
@@ -210,7 +211,7 @@ class SimpleModelModel(BaseModel):
     dichotomize: str | None = None
 
 
-class BertModelParametersModel(BaseModel):
+class LMParametersModel(BaseModel):
     """
     Parameters for bertmodel training
     """
@@ -226,7 +227,7 @@ class BertModelParametersModel(BaseModel):
     adapt: bool = True
 
 
-class BertModelParametersDbModel(BertModelParametersModel):
+class LMParametersDbModel(LMParametersModel):
     predicted: bool = False
     compressed: bool = False
 
@@ -252,7 +253,7 @@ class BertModelModel(BaseModel):
     scheme: str
     name: str
     base_model: str
-    params: BertModelParametersModel
+    params: LMParametersModel
     test_size: float = 0.2
     dichotomize: str | None = None
     class_min_freq: int = 1
@@ -390,6 +391,19 @@ class GenerationModelApi(BaseModel):
     models: list[GenerationAvailableModel]
 
 
+class MLStatisticsModel(BaseModel):
+    f1_label: dict[str, float] | None = None
+    precision_label: dict[str, float] | None = None
+    recall_label: dict[str, float] | None = None
+    f1_weighted: float | None = None
+    f1_micro: float | None = None
+    f1_macro: float | None = None
+    accuracy: float | dict[str, float] | None = None
+    precision: float | dict[str, float] | None = None
+    confusion_matrix: list[list[int]] | None = None
+    false_predictions: dict[str, Any] | list[Any] | None = None
+
+
 class GenerationRequest(BaseModel):
     """
     To start a generating prompt
@@ -403,14 +417,42 @@ class GenerationRequest(BaseModel):
     mode: str = "all"
 
 
-class UserComputing(BaseModel):
+# --------------------
+# CLASS FOR COMPUTING
+# --------------------
+
+
+class ProcessComputing(BaseModel):
     user: str
     unique_id: str
     time: datetime.datetime
     kind: str
 
 
-class UserGenerationComputing(UserComputing):
+class LMComputing(ProcessComputing):
+    model_name: str
+    status: Literal["training", "testing", "predicting"]
+    scheme: Optional[str] = None
+    dataset: Optional[str] = None
+    get_progress: Callable[[], float | None] | None = None
+    params: dict[str, Any] | None = None
+
+
+class ProjectionComputing(ProcessComputing):
+    kind: Literal["projection"]
+    name: str
+    method: str
+    params: ProjectionInStrictModel
+
+
+class FeatureComputing(ProcessComputing):
+    kind: Literal["feature"]
+    name: str
+    type: str
+    parameters: dict
+
+
+class GenerationComputing(ProcessComputing):
     kind: Literal["generation"]
     project: str
     number: int
@@ -418,11 +460,23 @@ class UserGenerationComputing(UserComputing):
     get_progress: Callable[[], float | None] | None = None
 
 
-class UserFeatureComputing(UserComputing):
-    kind: Literal["feature"]
+class SimpleModelComputing(ProcessComputing):
+    """
+    Simplemodel object
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str
-    type: str
-    parameters: dict
+    user: str
+    features: list
+    scheme: str
+    labels: list
+    model_params: dict
+    standardize: bool
+    model: BaseEstimator
+    proba: DataFrame | None = None
+    statistics: MLStatisticsModel | None = None
+    cv10: MLStatisticsModel | None = None
 
 
 class GenerationComputingOut(BaseModel):
@@ -432,23 +486,6 @@ class GenerationComputingOut(BaseModel):
 
     model_id: int
     progress: float | None
-
-
-class UserModelComputing(UserComputing):
-    kind: Literal["train_bert", "predict_bert", "simplemodel", "bert"]
-    model: Any  # TODO: Type it with an abstract model interface
-    model_name: str
-    status: Literal["training", "testing", "predicting"]
-    scheme: Optional[str] = None
-    dataset: Optional[str] = None
-    get_progress: Callable[[], float | None] | None = None
-
-
-class UserProjectionComputing(UserComputing):
-    kind: Literal["projection"]
-    name: str
-    method: str
-    params: ProjectionInStrictModel
 
 
 class TableOutModel(BaseModel):
@@ -508,7 +545,7 @@ class ProjectStateModel(BaseModel):
     schemes: dict[str, Any]
     features: dict[str, Any]
     simplemodel: dict[str, Any]
-    bertmodels: dict[str, Any]
+    languagemodels: dict[str, Any]
     projections: dict[str, Any]
     generations: dict[str, Any]
     errors: list[list]
@@ -632,20 +669,6 @@ class FeatureDescriptionModel(BaseModel):
     cols: list[str]
 
 
-class MLStatisticsModel(BaseModel):
-    f1_label: dict[str, float] | None = None
-    precision_label: dict[str, float] | None = None
-    recall_label: dict[str, float] | None = None
-    f1_weighted: float | None = None
-    f1_micro: float | None = None
-    f1_macro: float | None = None
-    accuracy: float | dict[str, float] | None = None
-    precision: float | dict[str, float] | None = None
-    confusion_matrix: list[list[int]] | None = None
-    # confusion_matrix: dict | None = None
-    false_predictions: dict[str, Any] | list[Any] | None = None
-
-
 class FitModelResults(BaseModel):
     model: Any
     proba: DataFrame
@@ -677,7 +700,7 @@ class ReturnTaskPredictModel(BaseModel):
     metrics: MLStatisticsModel | None = None
 
 
-class BertModelInformationsModel(BaseModel):
+class LMInformationsModel(BaseModel):
     params: dict | None = None
     loss: dict | None = None
     train_scores: dict | None = None
@@ -724,3 +747,10 @@ class GeneratedElementsIn(BaseModel):
 
 class ExportGenerationsParams(BaseModel):
     filters: list[str] = []
+
+
+class LanguageModelScheme(BaseModel):
+    name: str
+    scheme: str
+    parameters: dict[str, Any]
+    path: str

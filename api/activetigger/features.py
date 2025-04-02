@@ -9,7 +9,7 @@ import pandas as pd
 import pyarrow.parquet as pq  # type: ignore[import]
 from pandas import DataFrame, Series
 
-from activetigger.datamodels import FeatureDescriptionModel, UserFeatureComputing
+from activetigger.datamodels import FeatureComputing, FeatureDescriptionModel
 from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
 from activetigger.tasks.compute_dfm import ComputeDfm
@@ -50,7 +50,7 @@ class Features:
         path_all: Path,
         models_path: Path,
         queue: Any,
-        computing: list[UserFeatureComputing],
+        computing: list,
         db_manager,
         lang: str,
     ) -> None:
@@ -356,7 +356,7 @@ class Features:
 
         if unique_id:
             self.computing.append(
-                UserFeatureComputing(
+                FeatureComputing(
                     unique_id=unique_id,
                     kind="feature",
                     parameters=parameters,

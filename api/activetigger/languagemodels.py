@@ -3,205 +3,39 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import Callable, Optional
 
 import pandas as pd
 from pandas import DataFrame
-from transformers import AutoModelForSequenceClassification, AutoTokenizer  # type: ignore[import]
 
 import activetigger.functions as functions
 from activetigger.datamodels import (
-    BertModelInformationsModel,
-    BertModelParametersDbModel,
-    BertModelParametersModel,
+    LMComputing,
+    LMInformationsModel,
+    LMParametersDbModel,
+    LMParametersModel,
     StaticFileModel,
-    UserModelComputing,
 )
+from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
 from activetigger.tasks.predict_bert import PredictBert
 from activetigger.tasks.train_bert import TrainBert
 
 
-class BertModel:
+class LanguageModels:
     """
-    Manage one bertmodel
-    """
-
-    name: str
-    path: Path
-    params: dict | None
-    base_model: str | None
-    tokenizer = None
-    model = None
-    log_history = None
-    status: str
-    pred: DataFrame | None
-    data: DataFrame | None
-    timestamp: datetime
-
-    def __init__(
-        self,
-        name: str,
-        path: Path,
-        base_model: str | None = None,
-        params: dict | None = None,
-    ) -> None:
-        """
-        Init a bert model
-        """
-        self.name = name
-        self.path = path
-        self.params = params
-        self.base_model = base_model
-        self.tokenizer = None
-        self.model = None
-        self.log_history = None
-        self.status = "initializing"
-        self.pred = None
-        self.data = None
-        self.timestamp = datetime.now()
-
-    def __repr__(self) -> str:
-        return f"{self.name} - {self.base_model}"
-
-    def load(self, lazy=False):
-        """
-        Load trained model from files
-        - either lazy (only parameters)
-        - or complete (the weights of the model)
-        """
-        if not (self.path.joinpath("config.json")).exists():
-            raise FileNotFoundError("model not defined")
-
-        # Load parameters
-        with open(self.path.joinpath("parameters.json"), "r") as jsonfile:
-            self.params = json.load(jsonfile)
-
-        # Load training data
-        self.data = pd.read_parquet(self.path.joinpath("training_data.parquet"))
-
-        # Load train history
-        with open(self.path.joinpath("log_history.txt"), "r") as f:
-            self.log_history = json.load(f)
-
-        # Load prediction if available
-        if (self.path.joinpath("predict_train.parquet")).exists():
-            self.pred = pd.read_parquet(self.path.joinpath("predict_train.parquet"))
-
-        with open(self.path.joinpath("config.json"), "r") as jsonfile:
-            modeltype = json.load(jsonfile)["_name_or_path"]
-        self.base_model = modeltype
-
-        # Only load the model if not lazy mode
-        if lazy:
-            self.status = "lazy"
-        else:
-            self.tokenizer = AutoTokenizer.from_pretrained(modeltype)
-            self.model = AutoModelForSequenceClassification.from_pretrained(self.path)
-            self.status = "loaded"
-
-    def get_labels(self):
-        with open(self.path.joinpath("config.json"), "r") as f:
-            r = json.load(f)
-        return list(r["id2label"].values())
-
-    def get_progress(self) -> float | None:
-        """
-        Get progress when training
-        (different cases)
-        """
-        # case of training
-        print(
-            "progress",
-            (self.path.joinpath("progress_train")).exists(),
-            (self.path.joinpath("progress_train")),
-        )
-        if (self.status == "training") & (
-            self.path.joinpath("progress_train")
-        ).exists():
-            with open(self.path.joinpath("progress_train"), "r") as f:
-                r = f.read()
-                if r == "":
-                    r = "0"
-            return float(r)
-        # case for prediction (predicting/testing)
-        if (("predicting" in self.status) or (self.status == "testing")) & (
-            self.path.joinpath("progress_predict")
-        ).exists():
-            with open(self.path.joinpath("progress_predict"), "r") as f:
-                r = f.read()
-                if r == "":
-                    r = "0"
-            return float(r)
-        return None
-
-    def get_loss(self) -> dict | None:
-        try:
-            with open(self.path.joinpath("log_history.txt"), "r") as f:
-                log = json.load(f)
-            loss = pd.DataFrame(
-                [
-                    [
-                        log[2 * i]["epoch"],
-                        log[2 * i]["loss"],
-                        log[2 * i + 1]["eval_loss"],
-                    ]
-                    for i in range(0, int((len(log) - 1) / 2))
-                ],
-                columns=["epoch", "val_loss", "val_eval_loss"],
-            ).to_json()
-            return json.loads(loss)
-        except Exception:
-            return None
-
-    def informations(self) -> BertModelInformationsModel:
-        """
-        Informations on the bert model from the files
-        TODO : avoid to read and create a cache
-        """
-
-        loss = self.get_loss()
-
-        # train scores
-        if (self.path.joinpath("metrics_predict_train.parquet.json")).exists():
-            with open(
-                self.path.joinpath("metrics_predict_train.parquet.json"), "r"
-            ) as f:
-                train_scores = json.load(f)
-        else:
-            train_scores = None
-
-        # test scores
-        if (self.path.joinpath("metrics_predict_test.parquet.json")).exists():
-            with open(
-                self.path.joinpath("metrics_predict_test.parquet.json"), "r"
-            ) as f:
-                test_scores = json.load(f)
-        else:
-            test_scores = None
-
-        return BertModelInformationsModel(
-            params=self.params,
-            loss=loss,
-            train_scores=train_scores,
-            test_scores=test_scores,
-        )
-
-
-class BertModels:
-    """
-    Managing bertmodel training
+    Module to manage languagemodels
     """
 
     project_slug: str
     path: Path
     queue: Queue
-    computing: list[UserModelComputing]
-    projects_service: ProjectsService
+    computing: list
+    language_models_service: LanguageModelsService
     db_manager: DatabaseManager
     base_models: list
-    params_default: BertModelParametersModel
+    params_default: LMParametersModel
 
     def __init__(
         self,
@@ -212,7 +46,12 @@ class BertModels:
         db_manager: DatabaseManager,
         list_models: str | None = None,
     ) -> None:
-        self.params_default = BertModelParametersModel()
+        self.params_default = LMParametersModel()
+        self.project_slug = project_slug
+        self.queue = queue
+        self.computing = computing
+        self.language_models_service = db_manager.language_models_service
+        self.path: Path = Path(path).joinpath("bert")
 
         # load the list of models
         if list_models is not None:
@@ -238,11 +77,8 @@ class BertModels:
                     "language": "fr",
                 },
             ]
-        self.project_slug = project_slug
-        self.queue = queue
-        self.computing = computing
-        self.projects_service = db_manager.projects_service
-        self.path: Path = Path(path) / "bert"
+
+        # create the directory for models
         if not self.path.exists():
             os.mkdir(self.path)
 
@@ -251,16 +87,17 @@ class BertModels:
 
     def available(self) -> dict:
         """
-        Information on available models for state
+        Available models
+        TODO : change structure ?
         """
-        models = self.projects_service.available_models(self.project_slug)
+        models = self.language_models_service.available_models(self.project_slug)
         r: dict = {}
         for m in models:
-            if m["scheme"] not in r:
-                r[m["scheme"]] = {}
-            r[m["scheme"]][m["name"]] = {
-                "predicted": m["parameters"]["predicted"],
-                "predicted_external": m["parameters"].get("predicted_external", False),
+            if m.scheme not in r:
+                r[m.scheme] = {}
+            r[m.scheme][m.name] = {
+                "predicted": m.parameters["predicted"],
+                "predicted_external": m.parameters.get("predicted_external", False),
             }
         return r
 
@@ -276,44 +113,47 @@ class BertModels:
                 "name": e.model_name,
                 "status": e.status,
                 "progress": (e.get_progress() if e.get_progress else None),
-                "loss": e.model.get_loss(),
+                "loss": self.get_loss(e.model_name),
             }
             for e in self.computing
             if e.kind in ["bert", "train_bert", "predict_bert"]
         }
         return r
 
-    def delete(self, bert_name: str) -> dict:
+    def delete(self, name: str) -> None:
         """
         Delete bert model
         """
-        r = self.projects_service.delete_model(self.project_slug, bert_name)
-        if not r:
+        # remove from database
+        if not self.language_models_service.delete_model(self.project_slug, name):
             raise FileNotFoundError("Model does not exist")
+
+        # remove files associated
         try:
-            shutil.rmtree(self.path / bert_name)
+            shutil.rmtree(self.path.joinpath(name))
             os.remove(
-                f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.project_slug}/{bert_name}.tar.gz"
+                f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.project_slug}/{name}.tar.gz"
             )
         except Exception as e:
-            raise Exception(f"Problem to delete model : {e}")
-        return {"success": "Bert model deleted"}
+            raise Exception(f"Problem to delete model files : {e}")
 
-    def current_user_processes(self, user: str) -> list[UserModelComputing]:
+    def current_user_processes(self, user: str) -> list[LMComputing]:
         """
         Get the user current processes
         """
         return [e for e in self.computing if e.user == user]
 
-    def estimate_memory_use(self, model: str, kind: str = "train"):
+    def estimate_memory_use(self, model: str, kind: str = "train") -> int:
         """
         Estimate the GPU memory in Gb needed to train a model
+        For the moment dummy values
         TODO : implement
         """
         if kind == "train":
             return 4
         if kind == "predict":
             return 3
+        return 0
 
     def start_training_process(
         self,
@@ -324,27 +164,26 @@ class BertModels:
         df: DataFrame,
         col_text: str,
         col_label: str,
-        params: BertModelParametersModel,
+        params: LMParametersModel,
         base_model: str = "almanach/camembert-base",
         test_size: float = 0.2,
-    ) -> dict:
+        num_min_annotations: int = 10,
+        num_min_annotations_per_label: int = 5,
+    ):
         """
         Manage the training of a model from the API
         """
-        # Check if there is no other competing processes : 1 active process by user
-        if len(self.current_user_processes(user)) > 0:
-            raise Exception(
-                "User already has a process launched, please wait before launching another one"
-            )
 
         # check the size of training data
-        if len(df.dropna()) < 10:
-            raise Exception("Less than 10 elements annotated")
+        if len(df.dropna()) < num_min_annotations:
+            raise Exception(f"Less than {num_min_annotations} elements annotated")
 
         # check the number of elements
         counts = df[col_label].value_counts()
-        if not (counts >= 5).all():
-            raise Exception("Less than 5 elements per label")
+        if not (counts >= num_min_annotations_per_label).all():
+            raise Exception(
+                f"Less than {num_min_annotations_per_label} elements per label"
+            )
 
         # name integrating the scheme & user + date
         current_date = datetime.now()
@@ -356,7 +195,7 @@ class BertModels:
         model_name = f"{name}__{user}__{project}__{scheme}__{day}-{month}-{year}_{hour}h{minutes}"
 
         # check if a project not already exist
-        if self.projects_service.model_exists(project, model_name):
+        if self.language_models_service.model_exists(project, model_name):
             raise Exception("A model with this name already exists")
 
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
@@ -389,41 +228,24 @@ class BertModels:
         )
         del df
 
+        # add flags in params
+        params = LMParametersDbModel(**params.model_dump())
+
         # Update the queue state
-        b = BertModel(model_name, self.path / model_name, base_model)
-        b.status = "training"
         self.computing.append(
-            UserModelComputing(
+            LMComputing(
                 user=user,
-                model=b,
-                model_name=b.name,
+                model_name=model_name,
                 unique_id=unique_id,
                 time=current_date,
                 kind="train_bert",
                 status="training",
                 scheme=scheme,
                 dataset=None,
-                get_progress=b.get_progress,
+                params=params.model_dump(),
+                get_progress=self.get_progress(model_name, status="training"),
             )
         )
-
-        # add flags in params
-        params = BertModelParametersDbModel(**params.model_dump())
-
-        # add in database
-        if not self.projects_service.add_model(
-            kind="bert",
-            name=model_name,
-            user=user,
-            project=project,
-            scheme=scheme,
-            params=params.model_dump(),
-            path=str(self.path / model_name),
-            status="training",
-        ):
-            raise Exception("Problem to add in database")
-
-        return {"success": "bert model on training"}
 
     def start_testing_process(
         self,
@@ -452,13 +274,11 @@ class BertModels:
             raise Exception("Less than 10 elements annotated")
 
         # load model
-        b = BertModel(name, self.path / name)
-        b.load(lazy=True)
 
         # test if the testset and the model have the same labels
-        labels_model = set(b.get_labels())
+        labels_model = self.get_labels(name)
         labels_test = set(df["labels"].dropna().unique())
-        if set(b.get_labels()) != set(df["labels"].dropna().unique()):
+        if set(labels_model) != set(df["labels"].dropna().unique()):
             raise Exception(
                 f"The testset and the model have different labels {labels_model} vs {labels_test}"
             )
@@ -470,7 +290,6 @@ class BertModels:
             os.remove(self.path.joinpath(name).joinpath("statistics.json"))
 
         # start prediction on the test set
-
         unique_id = self.queue.add_task(
             "prediction",
             project_slug,
@@ -478,25 +297,23 @@ class BertModels:
                 df=df,
                 col_text=col_text,
                 col_label=col_labels,
-                path=b.path,
-                basemodel=b.base_model,
+                path=self.path.joinpath(name),
+                basemodel=self.get_base_model(name),
                 file_name="predict_test.parquet",
                 batch=32,
             ),
             queue="gpu",
         )
 
-        b.status = "testing"
         self.computing.append(
-            UserModelComputing(
+            LMComputing(
                 user=user,
-                model=b,
-                model_name=b.name,
+                model_name=name,
                 unique_id=unique_id,
                 time=datetime.now(),
                 kind="predict_bert",
                 status="testing",
-                get_progress=b.get_progress,
+                get_progress=self.get_progress(name, status="predicting"),
                 dataset="test",
             )
         )
@@ -526,8 +343,6 @@ class BertModels:
             raise Exception("The model does not exist")
 
         # load the model
-        b = BertModel(name, self.path.joinpath(name))
-        b.load(lazy=True)
         unique_id = self.queue.add_task(
             "prediction",
             project_slug,
@@ -535,25 +350,23 @@ class BertModels:
                 df=df,
                 col_text=col_text,
                 col_label=col_label,
-                path=b.path,
-                basemodel=b.base_model,
+                path=self.path.joinpath(name),
+                basemodel=self.get_base_model(name),
                 file_name=f"predict_{dataset}.parquet",
                 batch=batch_size,
             ),
             queue="gpu",
         )
-        b.status = f"predicting {dataset}"
         self.computing.append(
-            UserModelComputing(
+            LMComputing(
                 user=user,
-                model=b,
-                model_name=b.name,
+                model_name=name,
                 unique_id=unique_id,
                 time=datetime.now(),
                 kind="predict_bert",
                 dataset=dataset,
                 status="predicting",
-                get_progress=b.get_progress,
+                get_progress=self.get_progress(name, status="predicting"),
             )
         )
         return {"success": "bert model predicting"}
@@ -563,29 +376,16 @@ class BertModels:
         Rename a model (copy it)
         """
         # get model
-        model = self.projects_service.get_model(self.project_slug, former_name)
+        model = self.language_models_service.get_model(self.project_slug, former_name)
         if model is None:
             raise Exception("Model does not exist")
         if (Path(model.path) / "status.log").exists():
             raise Exception("Model is currently computing")
-        self.projects_service.rename_model(self.project_slug, former_name, new_name)
+        self.language_models_service.rename_model(
+            self.project_slug, former_name, new_name
+        )
         os.rename(model.path, model.path.replace(former_name, new_name))
         return {"success": "model renamed"}
-
-    def get(self, name: str, lazy=False) -> BertModel | None:
-        """
-        Get a model
-        """
-        model = self.projects_service.get_model(self.project_slug, name)
-        if model is None:
-            return None
-        if not Path(model.path).exists():
-            return None
-        if (Path(model.path) / "status.log").exists():
-            return None
-        b = BertModel(name, Path(model.path))
-        b.load(lazy=lazy)
-        return b
 
     def export_prediction(
         self, name: str, file_name: str = "predict.parquet", format: str | None = None
@@ -628,17 +428,29 @@ class BertModels:
             path=f"/static/{self.project_slug}/{name}.tar.gz",
         )
 
-    def add(self, element: UserModelComputing):
+    def add(self, element: LMComputing):
         """
         Manage computed process for model
         """
         if element.status == "training":
-            # update bdd status
-            self.projects_service.change_model_status(
-                self.project_slug, element.model_name, "trained"
+            # add in database
+            self.language_models_service.add_model(
+                kind="bert",
+                name=element.model_name,
+                user=element.user,
+                project=self.project_slug,
+                scheme=element.scheme or "default",
+                params=element.params or {},
+                path=str(self.path.joinpath(element.model_name)),
+                status="trained",
             )
+
+            # update bdd status
+            # self.language_models_service.change_model_status(
+            #     self.project_slug, element.model_name, "trained"
+            # )
             # TODO test if the model is already compressed
-            self.projects_service.set_model_params(
+            self.language_models_service.set_model_params(
                 self.project_slug,
                 element.model_name,
                 "compressed",
@@ -650,7 +462,7 @@ class BertModels:
         if element.status == "predicting":
             # update flag if there is a prediction of the whole dataset
             if element.dataset == "all":
-                self.projects_service.set_model_params(
+                self.language_models_service.set_model_params(
                     self.project_slug,
                     element.model_name,
                     flag="predicted",
@@ -658,10 +470,128 @@ class BertModels:
                 )
             # update flag if there is a prediction in an external dataset
             if element.dataset == "external":
-                self.projects_service.set_model_params(
+                self.language_models_service.set_model_params(
                     self.project_slug,
                     element.model_name,
                     flag="predicted_external",
                     value=True,
                 )
             print("Prediction finished")
+
+    def get_labels(self, model_name: str) -> list:
+        """
+        Get the labels of the model
+        """
+        with open(self.path.joinpath(model_name).joinpath("config.json"), "r") as f:
+            r = json.load(f)
+        return list(r["id2label"].values())
+
+    def get_progress(self, model_name, status: str) -> Callable[[], Optional[float]]:
+        """
+        Get progress when training
+        (different cases)
+        """
+        if status == "training":
+            path_model = self.path.joinpath(model_name).joinpath("progress_train")
+        elif status == "predicting":
+            path_model = self.path.joinpath(model_name).joinpath("progress_predict")
+        else:
+            raise Exception("Status not recognized")
+
+        def progress_predicting():
+            if path_model.exists():
+                r = path_model.read_text()
+                if r.strip() == "":
+                    r = 0
+                return float(r)
+            return None
+
+        return progress_predicting
+
+    def get_loss(self, model_name) -> dict | None:
+        try:
+            with open(
+                self.path.joinpath(model_name).joinpath("log_history.txt"), "r"
+            ) as f:
+                log = json.load(f)
+            loss = pd.DataFrame(
+                [
+                    [
+                        log[2 * i]["epoch"],
+                        log[2 * i]["loss"],
+                        log[2 * i + 1]["eval_loss"],
+                    ]
+                    for i in range(0, int((len(log) - 1) / 2))
+                ],
+                columns=["epoch", "val_loss", "val_eval_loss"],
+            ).to_json()
+            return json.loads(loss)
+        except Exception:
+            return None
+
+    def get_parameters(self, model_name) -> dict | None:
+        with open(
+            self.path.joinpath(model_name).joinpath("parameters.json"), "r"
+        ) as jsonfile:
+            params = json.load(jsonfile)
+        return params
+
+    def get_trainscores(self, model_name) -> dict | None:
+        if (
+            self.path.joinpath(model_name).joinpath(
+                "metrics_predict_train.parquet.json"
+            )
+        ).exists():
+            with open(
+                self.path.joinpath(model_name).joinpath(
+                    "metrics_predict_train.parquet.json"
+                ),
+                "r",
+            ) as f:
+                train_scores = json.load(f)
+        else:
+            train_scores = None
+        return train_scores
+
+    def get_testscores(self, model_name) -> dict | None:
+        if (
+            self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json")
+        ).exists():
+            with open(
+                self.path.joinpath(model_name).joinpath(
+                    "metrics_predict_test.parquet.json"
+                ),
+                "r",
+            ) as f:
+                test_scores = json.load(f)
+        else:
+            test_scores = None
+        return test_scores
+
+    def get_informations(self, model_name) -> LMInformationsModel:
+        """
+        Informations on the bert model from the files
+        TODO : avoid to read and create a cache
+        """
+
+        loss = self.get_loss(model_name)
+        params = self.get_parameters(model_name)
+        train_scores = self.get_trainscores(model_name)
+        test_scores = self.get_testscores(model_name)
+
+        return LMInformationsModel(
+            params=params,
+            loss=loss,
+            train_scores=train_scores,
+            test_scores=test_scores,
+        )
+
+    def get_base_model(self, model_name) -> dict | None:
+        """
+        Get the base model for a model
+        """
+        with open(
+            self.path.joinpath(model_name).joinpath("config.json"), "r"
+        ) as jsonfile:
+            basemodel = json.load(jsonfile)["_name_or_path"]
+        return basemodel
