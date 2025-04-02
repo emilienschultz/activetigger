@@ -55,7 +55,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const { register, handleSubmit, watch, control, reset } = useForm<ProjectionInStrictModel>({
     defaultValues: {
       method: 'umap',
-      features: [],
       params: {
         //common
         n_components: 2,
@@ -190,6 +189,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     return filtered;
   };
   const defaultFeatures = filterFeatures(features);
+  console.log(defaultFeatures);
 
   return (
     <div>
@@ -227,10 +227,12 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <Controller
               name="features"
               control={control}
-              render={({ field: { onChange } }) => (
+              defaultValue={defaultFeatures.map((e) => e.value)}
+              render={({ field: { onChange, value } }) => (
                 <Select
                   options={features}
                   isMulti
+                  value={features.filter((option) => value.includes(option.value))}
                   onChange={(selectedOptions) => {
                     onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
                   }}

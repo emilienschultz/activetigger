@@ -54,7 +54,7 @@ export const ProjectPreparePage: FC = () => {
         dfm_min_term_freq: 5,
         dfm_ngrams: 1,
       },
-      type: '',
+      type: 'sbert',
     },
   });
 
@@ -143,10 +143,9 @@ export const ProjectPreparePage: FC = () => {
                   <h4 className="mt-3 subsection">Create a new feature</h4>
                   <form onSubmit={handleSubmit(createNewFeature)}>
                     <span className="explanations">
-                      Depending on the size of the corpus, computation can take some time (up to
-                      dozens of minutes)
+                      Depending on the size of the corpus, computation can take some time
                     </span>
-                    <select className="form-control" id="newFeature" {...register('type')}>
+                    <select className="w-full" id="newFeature" {...register('type')}>
                       <option key="empty"></option>
                       {Object.keys(project.features.options).map((element) => (
                         <option key={element} value={element}>
@@ -156,7 +155,8 @@ export const ProjectPreparePage: FC = () => {
                     </select>
 
                     {selectedFeatureToCreate === 'sbert' && (
-                      <div>
+                      <details className="m-2">
+                        <summary>Advanced settings</summary>
                         <label htmlFor="model">Model to use</label>
                         <select id="model" {...register('parameters.model')}>
                           {((project?.features.options['sbert']['models'] as string[]) || []).map(
@@ -167,7 +167,7 @@ export const ProjectPreparePage: FC = () => {
                             ),
                           )}
                         </select>
-                      </div>
+                      </details>
                     )}
                     {/* 
                     {selectedFeatureToCreate === 'sbert' && (
@@ -178,8 +178,9 @@ export const ProjectPreparePage: FC = () => {
                     )} */}
 
                     {selectedFeatureToCreate === 'fasttext' && (
-                      <div>
-                        <label htmlFor="dataset_col">Optional, model to use</label>
+                      <details className="m-2">
+                        <summary>Advanced settings</summary>
+                        <label htmlFor="model">Model to use</label>
                         <select id="dataset_col" {...register('parameters.model')}>
                           <option key={null} value={''}>
                             Generic model
@@ -193,7 +194,7 @@ export const ProjectPreparePage: FC = () => {
                             ),
                           )}
                         </select>
-                      </div>
+                      </details>
                     )}
 
                     {selectedFeatureToCreate === 'regex' && (
@@ -206,7 +207,8 @@ export const ProjectPreparePage: FC = () => {
                     )}
 
                     {selectedFeatureToCreate === 'dfm' && (
-                      <div>
+                      <details className="m-2">
+                        <summary>Advanced settings</summary>
                         <div>
                           <label htmlFor="dfm_tfidf">TF-IDF</label>
                           <select id="dfm_tfidf" {...register('parameters.dfm_tfidf')}>
@@ -252,7 +254,7 @@ export const ProjectPreparePage: FC = () => {
                             <option key="false">False</option>
                           </select>
                         </div>
-                      </div>
+                      </details>
                     )}
 
                     {selectedFeatureToCreate === 'dataset' && (

@@ -435,6 +435,7 @@ class LMComputing(ProcessComputing):
     scheme: Optional[str] = None
     dataset: Optional[str] = None
     get_progress: Callable[[], float | None] | None = None
+    params: dict[str, Any] | None = None
 
 
 class ProjectionComputing(ProcessComputing):

@@ -228,6 +228,9 @@ class LanguageModels:
         )
         del df
 
+        # add flags in params
+        params = LMParametersDbModel(**params.model_dump())
+
         # Update the queue state
         self.computing.append(
             LMComputing(
@@ -239,25 +242,10 @@ class LanguageModels:
                 status="training",
                 scheme=scheme,
                 dataset=None,
+                params=params.model_dump(),
                 get_progress=self.get_progress(model_name, status="training"),
             )
         )
-
-        # add flags in params
-        params = LMParametersDbModel(**params.model_dump())
-
-        # add in database
-        if not self.language_models_service.add_model(
-            kind="bert",
-            name=model_name,
-            user=user,
-            project=project,
-            scheme=scheme,
-            params=params.model_dump(),
-            path=str(self.path.joinpath(model_name)),
-            status="training",
-        ):
-            raise Exception("Problem to add in database")
 
     def start_testing_process(
         self,
@@ -445,10 +433,22 @@ class LanguageModels:
         Manage computed process for model
         """
         if element.status == "training":
-            # update bdd status
-            self.language_models_service.change_model_status(
-                self.project_slug, element.model_name, "trained"
+            # add in database
+            self.language_models_service.add_model(
+                kind="bert",
+                name=element.model_name,
+                user=element.user,
+                project=self.project_slug,
+                scheme=element.scheme or "default",
+                params=element.params or {},
+                path=str(self.path.joinpath(element.model_name)),
+                status="trained",
             )
+
+            # update bdd status
+            # self.language_models_service.change_model_status(
+            #     self.project_slug, element.model_name, "trained"
+            # )
             # TODO test if the model is already compressed
             self.language_models_service.set_model_params(
                 self.project_slug,

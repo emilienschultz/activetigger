@@ -19,7 +19,6 @@ from activetigger.datamodels import (
     GenerationComputing,
     GenerationResult,
     LMComputing,
-    ProcessComputing,
     ProjectionComputing,
     ProjectModel,
     ProjectUpdateModel,
@@ -50,7 +49,7 @@ class Project:
     starting_time: float
     name: str
     queue: Queue
-    computing: list[ProcessComputing]
+    computing: list
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
@@ -294,10 +293,13 @@ class Project:
             simplemodel.features = ["dfm"]
             simplemodel.standardize = False
 
-        params = simplemodel.params
+        if simplemodel.params is None:
+            params = None
+        else:
+            params = dict(simplemodel.params)
 
         # add information on the target of the model
-        if simplemodel.dichotomize is not None:
+        if simplemodel.dichotomize is not None and params is not None:
             params["dichotomize"] = simplemodel.dichotomize
 
         # get data
@@ -331,7 +333,7 @@ class Project:
             col_labels="labels",
             col_features=col_features,
             model_params=params,
-            standardize=simplemodel.standardize,
+            standardize=simplemodel.standardize or False,
         )
 
         return {"success": "Simplemodel updated"}
@@ -543,7 +545,7 @@ class Project:
         if dataset == "test":
             if element_id not in self.schemes.test.index:
                 raise Exception("Element does not exist.")
-            data = {
+            data: dict = {
                 "element_id": element_id,
                 "text": self.schemes.test.loc[element_id, "text"],
                 "context": {},
@@ -600,7 +602,7 @@ class Project:
         """
         return self.params
 
-    def get_statistics(self, scheme: str | None, user: str | None):
+    def get_statistics(self, scheme: str | None, user: str | None) -> dict:
         """
         Generate a description of a current project/scheme/user
         Return:
@@ -798,17 +800,6 @@ class Project:
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")
-
-    # def compute_statistics(
-    #     self, scheme: str, predictions: DataFrame, decimals: int = 2
-    # ) -> MLStatisticsModel:
-    #     """
-    #     Compute statistics for a specific scheme and prediction
-    #     """
-    #     Y_true = self.schemes.get_scheme_data(scheme)["labels"]
-    #     Y_pred = predictions["prediction"]
-    #     metrics = get_metrics(Y_true, Y_pred, decimals)
-    #     return metrics
 
     def update_project(self, update: ProjectUpdateModel) -> None:
         """
@@ -1016,13 +1007,13 @@ class Project:
 
             # case for simplemodels
             if e.kind == "simplemodel":
-                model = cast(SimpleModelComputing, e)
+                sm = cast(SimpleModelComputing, e)
                 try:
                     error = future.exception()
                     if error:
                         raise Exception(str(error))
                     results = future.result()
-                    self.simplemodels.add(model, results)
+                    self.simplemodels.add(sm, results)
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
                 except Exception as ex:
