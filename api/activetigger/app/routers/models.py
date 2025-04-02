@@ -14,8 +14,8 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.datamodels import (
-    BertModelInformationsModel,
     BertModelModel,
+    LMInformationsModel,
     SimpleModelModel,
     SimpleModelOutModel,
     TextDatasetModel,
@@ -63,15 +63,12 @@ async def get_simplemodel(
 @router.get("/models/bert", dependencies=[Depends(verified_user)])
 async def get_bert(
     project: Annotated[Project, Depends(get_project)], name: str
-) -> BertModelInformationsModel:
+) -> LMInformationsModel:
     """
     Get Bert parameters and statistics
     """
     try:
-        lm = project.languagemodels.get(name, lazy=True)
-        if lm is None:
-            raise HTTPException(status_code=400, detail="Bert model does not exist")
-        return lm.get_informations()
+        return project.languagemodels.get_informations(name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -274,7 +271,7 @@ async def stop_bert(
         # delete it in the database if it is a training
         if p[0].kind == "train_bert":
             project.db_manager.language_models_service.delete_model(
-                project.name, p[0].model.name
+                project.name, p[0].model_name
             )
         orchestrator.log_action(
             current_user.username, "STOP MODEL TRAINING", project.name

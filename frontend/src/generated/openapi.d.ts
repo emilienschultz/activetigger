@@ -1487,17 +1487,6 @@ export interface components {
             /** Projects */
             projects: components["schemas"]["ProjectSummaryModel"][];
         };
-        /** BertModelInformationsModel */
-        BertModelInformationsModel: {
-            /** Params */
-            params?: Record<string, never> | null;
-            /** Loss */
-            loss?: Record<string, never> | null;
-            /** Train Scores */
-            train_scores?: Record<string, never> | null;
-            /** Test Scores */
-            test_scores?: Record<string, never> | null;
-        };
         /**
          * BertModelModel
          * @description Request Bertmodel
@@ -1512,7 +1501,7 @@ export interface components {
             name: string;
             /** Base Model */
             base_model: string;
-            params: components["schemas"]["BertModelParametersModel"];
+            params: components["schemas"]["LMParametersModel"];
             /**
              * Test Size
              * @default 0.2
@@ -1530,57 +1519,6 @@ export interface components {
              * @default false
              */
             class_balance: boolean;
-        };
-        /**
-         * BertModelParametersModel
-         * @description Parameters for bertmodel training
-         */
-        BertModelParametersModel: {
-            /**
-             * Batchsize
-             * @default 4
-             */
-            batchsize: number;
-            /**
-             * Gradacc
-             * @default 1
-             */
-            gradacc: number;
-            /**
-             * Epochs
-             * @default 3
-             */
-            epochs: number;
-            /**
-             * Lrate
-             * @default 0.00005
-             */
-            lrate: number;
-            /**
-             * Wdecay
-             * @default 0.01
-             */
-            wdecay: number;
-            /**
-             * Best
-             * @default true
-             */
-            best: boolean;
-            /**
-             * Eval
-             * @default 10
-             */
-            eval: number;
-            /**
-             * Gpu
-             * @default false
-             */
-            gpu: boolean;
-            /**
-             * Adapt
-             * @default true
-             */
-            adapt: boolean;
         };
         /** Body_login_for_access_token_token_post */
         Body_login_for_access_token_token_post: {
@@ -1774,6 +1712,68 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LMInformationsModel */
+        LMInformationsModel: {
+            /** Params */
+            params?: Record<string, never> | null;
+            /** Loss */
+            loss?: Record<string, never> | null;
+            /** Train Scores */
+            train_scores?: Record<string, never> | null;
+            /** Test Scores */
+            test_scores?: Record<string, never> | null;
+        };
+        /**
+         * LMParametersModel
+         * @description Parameters for bertmodel training
+         */
+        LMParametersModel: {
+            /**
+             * Batchsize
+             * @default 4
+             */
+            batchsize: number;
+            /**
+             * Gradacc
+             * @default 1
+             */
+            gradacc: number;
+            /**
+             * Epochs
+             * @default 3
+             */
+            epochs: number;
+            /**
+             * Lrate
+             * @default 0.00005
+             */
+            lrate: number;
+            /**
+             * Wdecay
+             * @default 0.01
+             */
+            wdecay: number;
+            /**
+             * Best
+             * @default true
+             */
+            best: boolean;
+            /**
+             * Eval
+             * @default 10
+             */
+            eval: number;
+            /**
+             * Gpu
+             * @default false
+             */
+            gpu: boolean;
+            /**
+             * Adapt
+             * @default true
+             */
+            adapt: boolean;
         };
         /** MLStatisticsModel */
         MLStatisticsModel: {
@@ -3883,7 +3883,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BertModelInformationsModel"];
+                    "application/json": components["schemas"]["LMInformationsModel"];
                 };
             };
             /** @description Validation Error */

@@ -210,7 +210,7 @@ class SimpleModelModel(BaseModel):
     dichotomize: str | None = None
 
 
-class BertModelParametersModel(BaseModel):
+class LMParametersModel(BaseModel):
     """
     Parameters for bertmodel training
     """
@@ -226,7 +226,7 @@ class BertModelParametersModel(BaseModel):
     adapt: bool = True
 
 
-class BertModelParametersDbModel(BertModelParametersModel):
+class LMParametersDbModel(LMParametersModel):
     predicted: bool = False
     compressed: bool = False
 
@@ -252,7 +252,7 @@ class BertModelModel(BaseModel):
     scheme: str
     name: str
     base_model: str
-    params: BertModelParametersModel
+    params: LMParametersModel
     test_size: float = 0.2
     dichotomize: str | None = None
     class_min_freq: int = 1
@@ -436,12 +436,12 @@ class GenerationComputingOut(BaseModel):
 
 class UserModelComputing(UserComputing):
     kind: Literal["train_bert", "predict_bert", "simplemodel", "bert"]
-    model: Any  # TODO: Type it with an abstract model interface
     model_name: str
     status: Literal["training", "testing", "predicting"]
     scheme: Optional[str] = None
     dataset: Optional[str] = None
     get_progress: Callable[[], float | None] | None = None
+    model: Any | None
 
 
 class UserProjectionComputing(UserComputing):
@@ -677,7 +677,7 @@ class ReturnTaskPredictModel(BaseModel):
     metrics: MLStatisticsModel | None = None
 
 
-class BertModelInformationsModel(BaseModel):
+class LMInformationsModel(BaseModel):
     params: dict | None = None
     loss: dict | None = None
     train_scores: dict | None = None
