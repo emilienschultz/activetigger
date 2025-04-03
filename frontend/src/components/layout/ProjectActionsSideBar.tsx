@@ -38,12 +38,13 @@ export const ProjectActionsSidebar: FC<{
   const onlyAnnotator = authenticatedUser?.status === 'annotator';
 
   // test if computation is currently undergoing
-  const currentComputation = projectState
-    ? currentUser in projectState.languagemodels.training ||
-      currentUser in projectState.simplemodel.training ||
-      currentUser in projectState.projections.training ||
-      (projectState.features.training as string[]).length > 0
-    : false;
+  const currentComputation =
+    projectState && projectState.languagemodels
+      ? currentUser in projectState.languagemodels.training ||
+        currentUser in projectState.simplemodel.training ||
+        currentUser in projectState.projections.training ||
+        (projectState.features.training as string[]).length > 0
+      : false;
 
   // display the number of current processes on the server
   const { disk } = useGetServer(projectState || null);

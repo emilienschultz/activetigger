@@ -16,6 +16,21 @@ export const CurrentProjectMonitoring: FC = () => {
 
   const { project, reFetch } = useProject(projectName); // api call
 
+  // set a default scheme if there is none
+  useEffect(() => {
+    const availableSchemes = appContext.currentProject
+      ? Object.keys(appContext.currentProject.schemes.available)
+      : [];
+    // case of there is no selected scheme and schemes are available
+    if (!appContext.currentScheme && availableSchemes.length > 0) {
+      console.log('Set default scheme');
+      setAppContext((state) => ({
+        ...state,
+        currentScheme: availableSchemes[0],
+      }));
+    }
+  }, [appContext.currentScheme, setAppContext, appContext.currentProject]);
+
   // reset context if project change
   useEffect(() => {
     if (projectName != appContext.currentProject?.params.project_slug) {

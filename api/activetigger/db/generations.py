@@ -68,7 +68,13 @@ class GenerationsService:
                     .limit(n_elements)
                 ).all()
             return [
-                [el.time, el.element_id, el.prompt, el.answer, el.model.name]
+                [
+                    el.time,
+                    el.element_id,
+                    el.prompt,
+                    el.answer,
+                    el.model.name if el.model else None,
+                ]
                 for el in generated
             ]
 
