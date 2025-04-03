@@ -173,20 +173,18 @@ export const ProjectActionsSidebar: FC<{
               <span> Export</span>
             </Link>
           </li>
-          {developmentMode && (
-            <li className="nav-item">
-              <Link
-                to={`/projects/${projectName}/generate`}
-                className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
-                aria-current="page"
-                title="Generate"
-                style={{ color: '#df31e8' }}
-              >
-                <RiAiGenerate />
-                <span> Generate</span>
-              </Link>
-            </li>
-          )}
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/generate`}
+              className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
+              aria-current="page"
+              title="Generate"
+              style={{ color: '#df31e8' }}
+            >
+              <RiAiGenerate />
+              <span> Generate</span>
+            </Link>
+          </li>
           <li className="nav-item ">
             <div className="nav-link">
               <div className="badge text-bg-info" title="Memory">
