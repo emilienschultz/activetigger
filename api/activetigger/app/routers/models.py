@@ -183,6 +183,13 @@ async def post_bert(
     TODO : move the methods to specific class
     """
     try:
+        # check in the size limit is not exceeded
+        limit = orchestrator.users.get_storage_limit(current_user.username)
+        if orchestrator.users.get_storage(current_user.username) > limit * 1000:
+            raise HTTPException(
+                status_code=500,
+                detail=f"User storage limit exceeded ({limit} Gb), please delete some models in your projects",
+            )
 
         # Check if there is no other competing processes : 1 active process by user
         if (

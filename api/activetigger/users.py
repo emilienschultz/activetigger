@@ -6,7 +6,7 @@ import yaml  # type: ignore[import]
 
 from activetigger.datamodels import UserInDBModel, UserStatistics
 from activetigger.db.manager import DatabaseManager
-from activetigger.functions import compare_to_hash, get_hash
+from activetigger.functions import compare_to_hash, get_dir_size, get_hash
 
 
 class Users:
@@ -15,29 +15,22 @@ class Users:
     """
 
     db_manager: DatabaseManager
+    users: dict
 
     def __init__(
         self,
         db_manager: DatabaseManager,
-        file_users: str = "add_users.yaml",
+        file_users: str = "users.yaml",
     ):
         """
         Init users references
         """
         self.db_manager = db_manager
 
-        # add users if add_users.yaml exists
+        # add specific users parameters if they exist
+        self.users = {}
         if Path(file_users).exists():
-            existing = self.existing_users()
-            with open("add_users.yaml") as f:
-                add_users = yaml.safe_load(f)
-            for user, password in add_users.items():
-                if user not in existing:
-                    self.add_user(user, password, "manager", "system")
-                else:
-                    print(f"Not possible to add {user}, already exists")
-            # rename the file
-            os.rename("add_users.yaml", "add_users_processed.yaml")
+            self.users = yaml.safe_load(open(file_users))
 
     def get_project_auth(self, project_slug: str) -> dict[str, str]:
         """
@@ -66,7 +59,7 @@ class Users:
         """
         Get user auth
         """
-        auth = self.db_manager.projects_service.get_user_projects(username)
+        auth = self.db_manager.projects_service.get_user_auth_projects(username)
         return auth
 
     def get_auth(self, username: str, project_slug: str = "all") -> list:
@@ -189,3 +182,29 @@ class Users:
             return UserStatistics(username=username, projects=projects)
         except Exception as e:
             raise Exception(f"Error in getting statistics for {username}") from e
+
+    def get_storage(self, username: str) -> float:
+        """
+        Get total size for user projects in Gb
+        """
+        projects = self.db_manager.users_service.get_user_created_projects(username)
+        return sum(
+            [
+                get_dir_size(f"{os.environ['ACTIVETIGGER_PATH']}/{project}")
+                for project in projects
+            ]
+        )
+
+    def get_storage_limit(self, username: str) -> float:
+        """
+        Get storage limit for user
+        TODO : add a list of exceptions
+        """
+        # case of root
+        if username == "root":
+            return 500.0
+        # derogation for specific users
+        if username in self.users:
+            return float(self.users[username]["storage_limit"])
+        # default value
+        return float(os.environ["ACTIVETIGGER_USER_HDD_MAX"])
