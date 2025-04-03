@@ -29,7 +29,7 @@ export const ProjectActionsSidebar: FC<{
   currentUser,
   currentMode,
   currentScheme,
-  developmentMode,
+  //  developmentMode,
 }) => {
   const projectName = projectState ? projectState.params.project_slug : null;
   const { authenticatedUser } = useAuth();
