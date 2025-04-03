@@ -38,12 +38,13 @@ export const ProjectActionsSidebar: FC<{
   const onlyAnnotator = authenticatedUser?.status === 'annotator';
 
   // test if computation is currently undergoing
-  const currentComputation = projectState
-    ? currentUser in projectState.languagemodels.training ||
-      currentUser in projectState.simplemodel.training ||
-      currentUser in projectState.projections.training ||
-      (projectState.features.training as string[]).length > 0
-    : false;
+  const currentComputation =
+    projectState && projectState.languagemodels
+      ? currentUser in projectState.languagemodels.training ||
+        currentUser in projectState.simplemodel.training ||
+        currentUser in projectState.projections.training ||
+        (projectState.features.training as string[]).length > 0
+      : false;
 
   // display the number of current processes on the server
   const { disk } = useGetServer(projectState || null);
@@ -172,20 +173,18 @@ export const ProjectActionsSidebar: FC<{
               <span> Export</span>
             </Link>
           </li>
-          {developmentMode && (
-            <li className="nav-item">
-              <Link
-                to={`/projects/${projectName}/generate`}
-                className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
-                aria-current="page"
-                title="Generate"
-                style={{ color: '#df31e8' }}
-              >
-                <RiAiGenerate />
-                <span> Generate</span>
-              </Link>
-            </li>
-          )}
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/generate`}
+              className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
+              aria-current="page"
+              title="Generate"
+              style={{ color: '#df31e8' }}
+            >
+              <RiAiGenerate />
+              <span> Generate</span>
+            </Link>
+          </li>
           <li className="nav-item ">
             <div className="nav-link">
               <div className="badge text-bg-info" title="Memory">

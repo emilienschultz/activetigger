@@ -47,6 +47,8 @@ const AddButton: FC<{ showAddForm: () => void }> = ({ showAddForm }) => (
 );
 
 export const GenPage: FC = () => {
+  //------------------------------------
+  // hooks for the app
   const { projectName } = useParams() as { projectName: string };
   const { authenticatedUser } = useAuth();
   const {
@@ -54,24 +56,21 @@ export const GenPage: FC = () => {
     setAppContext,
   } = useAppContext();
 
-  // GenModels
+  //------------------------------------
+  // state of the page
+  // genModels
   const [configuredModels, setConfiguredModels] = useState<Array<GenModel & { api: string }>>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
-
   // currently generating for the user
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-
   // add filters for text treatment
   const [filters, setFilters] = useState<string[]>([]);
+  // to save the prompt name
+  const [promptName, setPromptName] = useState<string>('');
 
-  useEffect(() => {
-    setIsGenerating(
-      authenticatedUser?.username !== undefined &&
-        currentProject?.generations.training[authenticatedUser?.username] != undefined,
-    );
-  }, [authenticatedUser, currentProject]);
-
-  // call api to post generation
+  //------------------------------------
+  // call api
+  // to post generation
   const { generate } = useGenerate(
     projectName || null,
     currentScheme || null,
@@ -81,10 +80,10 @@ export const GenPage: FC = () => {
     generateConfig.selectionMode || null,
     generateConfig.token,
   );
-
+  // to stop generation
   const { stopGenerate } = useStopGenerate(projectName || null);
 
-  // call api to get a sample of elements
+  // to get a sample of elements
   const { generated, reFetchGenerated } = useGeneratedElements(
     projectName || null,
     100,
@@ -92,30 +91,42 @@ export const GenPage: FC = () => {
     isGenerating,
   );
 
-  console.log(generated);
-
-  // call api to download a batch of elements
+  // to download a batch of elements
   const { getGenerationsFile } = useGetGenerationsFile(projectName || null, filters);
 
-  // call api to drop generated elements
+  // to drop generated elements
   const dropGeneratedElements = useDropGeneratedElements(
     projectName || null,
     authenticatedUser?.username || null,
   );
 
-  // call api for prompts
+  // to get/save/delete prompts
   const { prompts, reFetchPrompts } = useGetPrompts(projectName || null);
   const savePrompts = useSavePrompts(projectName || null);
   const deletePrompts = useDeletePrompts(projectName || null);
 
-  useEffect(() => {
-    if (!generateConfig.api)
-      setAppContext((prev) => ({
-        ...prev,
-        generateConfig: { ...generateConfig, api: 'ollama' },
-      }));
-  }, [generateConfig, setAppContext]);
+  //------------------------------------
+  // reacting elements
 
+  // check if the user is generating and change the state
+  useEffect(() => {
+    setIsGenerating(
+      authenticatedUser?.username !== undefined &&
+        currentProject?.generations.training[authenticatedUser?.username] != undefined,
+    );
+  }, [authenticatedUser, currentProject]);
+
+  // useEffect(() => {
+  //   if (!generateConfig.api)
+  //     setAppContext((prev) => ({
+  //       ...prev,
+  //       generateConfig: { ...generateConfig, api: 'ollama' },
+  //     }));
+  // }, [generateConfig, setAppContext]);
+
+  // console.log('gen config', generateConfig);
+
+  // get existing models and select the first
   useEffect(() => {
     const fetchModels = async () => {
       const models = await getProjectGenModels(projectName);
@@ -129,6 +140,39 @@ export const GenPage: FC = () => {
     fetchModels();
   }, [projectName, setAppContext]);
 
+  // utility functions for the DOM
+  const showAddForm = () => {
+    setShowForm(true);
+  };
+
+  const hideForm = () => {
+    setShowForm(false);
+  };
+
+  // function to add a model
+  const addModel = async (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => {
+    const id = await createGenModel(projectName, model);
+    setConfiguredModels([...configuredModels, { ...model, id }]);
+    setShowForm(false);
+  };
+
+  // function to remove a model
+  const removeModel = async () => {
+    setConfiguredModels(configuredModels.filter((m) => m.id !== generateConfig.selectedModel?.id));
+    if (generateConfig.selectedModel?.id !== undefined)
+      await deleteGenModel(projectName, generateConfig.selectedModel?.id);
+  };
+
+  // function to handle the change of the model
+  const handleChange = async (e: ChangeEvent<HTMLSelectElement>) => {
+    const model = configuredModels.filter((m) => m.id === parseInt(e.target.value))[0];
+    setAppContext((prev) => ({
+      ...prev,
+      generateConfig: { ...prev.generateConfig, selectedModel: model },
+    }));
+  };
+
+  // Define the table
   const columns: readonly Column<Row>[] = [
     {
       name: 'Time',
@@ -189,36 +233,6 @@ export const GenPage: FC = () => {
       width: '10%',
     },
   ];
-
-  const showAddForm = () => {
-    setShowForm(true);
-  };
-
-  const hideForm = () => {
-    setShowForm(false);
-  };
-
-  const addModel = async (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => {
-    const id = await createGenModel(projectName, model);
-    setConfiguredModels([...configuredModels, { ...model, id }]);
-    setShowForm(false);
-  };
-
-  const removeModel = async () => {
-    setConfiguredModels(configuredModels.filter((m) => m.id !== generateConfig.selectedModel?.id));
-    if (generateConfig.selectedModel?.id !== undefined)
-      await deleteGenModel(projectName, generateConfig.selectedModel?.id);
-  };
-
-  const handleChange = async (e: ChangeEvent<HTMLSelectElement>) => {
-    const model = configuredModels.filter((m) => m.id === parseInt(e.target.value))[0];
-    setAppContext((prev) => ({
-      ...prev,
-      generateConfig: { ...prev.generateConfig, selectedModel: model },
-    }));
-  };
-
-  const [promptName, setPromptName] = useState<string>('');
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
@@ -423,15 +437,6 @@ export const GenPage: FC = () => {
                 </div>
                 <hr />
                 <div className="col-12 d-flex align-items-center justify-content-center">
-                  {/* <span>Number elements to download</span>
-                  <input
-                    type="number"
-                    placeholder="Number of last generated elements to download"
-                    className="form-control m-4"
-                    style={{ width: '100px' }}
-                    value={numberElements || 10}
-                    onChange={(e) => setNumberElements(Number(e.target.value))}
-                  /> */}
                   <button className="btn btn-primary mx-2" onClick={() => getGenerationsFile()}>
                     Download all
                   </button>

@@ -1696,6 +1696,7 @@ export function useGenerate(
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
     console.log('make a call');
+    console.log(projectSlug, modelId, prompt, n_batch, currentScheme, mode);
 
     if (projectSlug && modelId && prompt && n_batch && currentScheme && mode) {
       const res = await api.POST('/generate/start', {

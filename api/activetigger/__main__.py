@@ -32,6 +32,7 @@ if __name__ == "__main__":
     # create environement variables using config file
     os.environ["ACTIVETIGGER_PATH"] = "./projects"
     os.environ["ACTIVETIGGER_MODEL"] = "./models"
+    os.environ["ACTIVETIGGER_USER_HDD_MAX"] = "30"
     if Path(args.config).exists():
         with open(args.config) as f:
             config = yaml.safe_load(f)

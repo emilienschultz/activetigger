@@ -129,3 +129,15 @@ class UsersService:
                 .distinct()
             ).all()
             return distinct_users
+
+    def get_user_created_projects(self, username: str) -> list[str]:
+        """
+        Projects user created
+        """
+        with self.SessionMaker() as session:
+            result = session.execute(
+                select(
+                    Projects.project_slug,
+                ).where(Projects.user_id == username)
+            ).all()
+            return [row[0] for row in result]

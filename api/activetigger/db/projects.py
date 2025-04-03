@@ -226,7 +226,10 @@ class ProjectsService:
                 delete(Auths).filter_by(project_id=project_slug, user_id=user)
             )
 
-    def get_user_projects(self, username: str):
+    def get_user_auth_projects(self, username: str):
+        """
+        Projects user can access (auth)
+        """
         with self.Session() as session:
             result = session.execute(
                 select(
