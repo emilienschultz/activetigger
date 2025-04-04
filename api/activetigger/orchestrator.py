@@ -485,12 +485,17 @@ class Orchestrator:
         # add loaded schemes from columns
         for col in params.cols_label:
 
-            # get the scheme from labels
-            scheme_labels = list(content[col].dropna().unique())
+            # select the type of scheme
             scheme_name = slugify(col).replace("dataset-", "")
-            # determine if multiclass / multilabel (arbitrary rule)
             delimiters = content[col].str.contains("|", regex=False).sum()
-            scheme_type = "multiclass" if delimiters < 5 else "multilabel"
+            if delimiters < 5:
+                scheme_type = "multiclass"
+                scheme_labels = list(content[col].dropna().unique())
+            else:
+                scheme_type = "multilabel"
+                scheme_labels = list(
+                    content[col].dropna().str.split("|").explode().unique()
+                )
 
             # check there is a limited number of labels
             if scheme_type == "multiclass" and len(scheme_labels) > 30:

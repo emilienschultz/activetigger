@@ -7,6 +7,7 @@ from typing import Any
 
 import pandas as pd
 import pyarrow.parquet as pq  # type: ignore[import]
+import yaml
 from pandas import DataFrame, Series
 
 from activetigger.datamodels import FeatureComputing, FeatureDescriptionModel
@@ -68,16 +69,32 @@ class Features:
         self.lang = lang
         self.computing = computing
 
+        # load possible embeddings models
+        fasttext_models = [
+            f for f in os.listdir(self.path_models) if f.endswith(".bin")
+        ]
+        # possibility to create a sbert.yaml file to add models
+        sbert_models = ["Alibaba-NLP/gte-multilingual-base", "all-mpnet-base-v2"]
+        if Path(os.environ["ACTIVETIGGER_PATH"]).joinpath("sbert.yaml").exists():
+            content = yaml.safe_load(
+                open(
+                    str(Path(os.environ["ACTIVETIGGER_PATH"]).joinpath("sbert.yaml")),
+                    "r",
+                )
+            )
+            sbert_models = content.get("models", sbert_models)
+        else:
+            # create the file
+            with open(
+                str(Path(os.environ["ACTIVETIGGER_PATH"]).joinpath("sbert.yaml")),
+                "w",
+            ) as f:
+                yaml.dump({"models": sbert_models}, f)
+
         # options
         self.options: dict = {
-            "sbert": {
-                "models": ["Alibaba-NLP/gte-multilingual-base", "all-mpnet-base-v2"]
-            },
-            "fasttext": {
-                "models": [
-                    f for f in os.listdir(self.path_models) if f.endswith(".bin")
-                ]
-            },
+            "sbert": {"models": sbert_models},
+            "fasttext": {"models": fasttext_models},
             "dfm": {
                 "tfidf": False,
                 "ngrams": 1,
