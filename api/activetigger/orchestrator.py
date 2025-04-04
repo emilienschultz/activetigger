@@ -343,7 +343,7 @@ class Orchestrator:
         params.cols_text = ["dataset_" + i for i in params.cols_text if i]
         params.cols_context = ["dataset_" + i for i in params.cols_context if i]
         params.cols_label = ["dataset_" + i for i in params.cols_label if i]
-        params.cols_test = ["dataset_" + i for i in params.cols_test if i]
+        params.cols_stratify = ["dataset_" + i for i in params.cols_stratify if i]
 
         # remove empty lines
         content = content.dropna(how="all")
@@ -407,49 +407,70 @@ class Orchestrator:
         # save a complete copy of the dataset
         content.to_parquet(params.dir.joinpath(self.data_all), index=True)
 
+        # ------------------------
+        # End of the data cleaning
+        # ------------------------
+
         # Step 2 : test dataset : from the complete dataset + random/stratification
         rows_test = []
         params.test = False
         testset = None
         if params.n_test != 0:
             # if no stratification
-            if len(params.cols_test) == 0:
+            if len(params.cols_stratify) == 0:
                 testset = content.sample(params.n_test)
             # if stratification, total cat, number of element per cat, sample with a lim
             else:
-                df_grouped = content.groupby(params.cols_test, group_keys=False)
+                df_grouped = content.groupby(params.cols_stratify, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(params.n_test / nb_cat)
                 testset = df_grouped.apply(
                     lambda x: x.sample(min(len(x), nb_elements_cat))
                 )
+            # save the testset
             testset.to_parquet(params.dir.joinpath(self.test_file), index=True)
             params.test = True
             rows_test = list(testset.index)
 
-        # Step 3 : train dataset, remove test rows
-        # choice to prioritize labelled data for the FIRST ROW
-        content = content.drop(rows_test)
-        if len(params.cols_label) == 0:
-            f_notna = pd.Series(False, index=content.index)
-            f_na = pd.Series(True, index=content.index)
-        else:
-            f_notna = content[params.cols_label[0]].notna()
-            f_na = content[params.cols_label[0]].isna()
+        # Step 3 : train dataset
 
-        # case where the order is kept and no testset
+        # remove test rows
+        content = content.drop(rows_test)
+
+        # case where there is no test set and the selection is deterministic
         if not params.random_selection and params.n_test == 0:
             trainset = content[0 : params.n_train]
-        # case where there is more labelled data than needed
-        elif f_notna.sum() > params.n_train:
-            trainset = content[f_notna].sample(params.n_train)
-        # case where there is less labelled data than needed so complete with random
-        else:
-            n_train_random = params.n_train - f_notna.sum()
-            trainset = pd.concat(
-                [content[f_notna], content[f_na].sample(n_train_random)]
+        # case there is stratification on the trainset
+        elif len(params.cols_stratify) > 0 and params.stratify_train:
+            df_grouped = content.groupby(params.cols_stratify, group_keys=False)
+            nb_cat = len(df_grouped)
+            nb_elements_cat = round(params.n_train / nb_cat)
+            trainset = df_grouped.apply(
+                lambda x: x.sample(min(len(x), nb_elements_cat))
             )
+        # default with random selection in the remaining elements
+        else:
+            trainset = content.sample(params.n_train)
 
+        # possibility to add the last case : keep labelled data before random
+        # # choice to prioritize labelled data for the FIRST ROW
+        # if len(params.cols_label) == 0:
+        #     f_notna = pd.Series(False, index=content.index)
+        #     f_na = pd.Series(True, index=content.index)
+        # else:
+        #     f_notna = content[params.cols_label[0]].notna()
+        #     f_na = content[params.cols_label[0]].isna()
+        # case where there is more labelled data than needed
+        # elif f_notna.sum() > params.n_train:
+        #     trainset = content[f_notna].sample(params.n_train)
+        # case where there is less labelled data than needed so complete with random
+        # else:
+        #     n_train_random = params.n_train - f_notna.sum()
+        #     trainset = pd.concat(
+        #         [content[f_notna], content[f_na].sample(n_train_random)]
+        #     )
+
+        # write the trainset
         trainset[
             list(set(["text", "limit"] + params.cols_context + keep_id))
         ].to_parquet(params.dir.joinpath(self.train_file), index=True)
@@ -464,12 +485,17 @@ class Orchestrator:
         # add loaded schemes from columns
         for col in params.cols_label:
 
-            # get the scheme from labels
-            scheme_labels = list(content[col].dropna().unique())
+            # select the type of scheme
             scheme_name = slugify(col).replace("dataset-", "")
-            # determine if multiclass / multilabel (arbitrary rule)
             delimiters = content[col].str.contains("|", regex=False).sum()
-            scheme_type = "multiclass" if delimiters < 5 else "multilabel"
+            if delimiters < 5:
+                scheme_type = "multiclass"
+                scheme_labels = list(content[col].dropna().unique())
+            else:
+                scheme_type = "multilabel"
+                scheme_labels = list(
+                    content[col].dropna().str.split("|").explode().unique()
+                )
 
             # check there is a limited number of labels
             if scheme_type == "multiclass" and len(scheme_labels) > 30:

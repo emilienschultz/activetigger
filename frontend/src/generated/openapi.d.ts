@@ -1897,11 +1897,6 @@ export interface components {
              */
             cols_context: string[];
             /**
-             * Cols Test
-             * @default []
-             */
-            cols_test: string[];
-            /**
              * Test
              * @default false
              */
@@ -1918,6 +1913,21 @@ export interface components {
              * @default false
              */
             random_selection: boolean;
+            /**
+             * Cols Stratify
+             * @default []
+             */
+            cols_stratify: string[];
+            /**
+             * Stratify Train
+             * @default false
+             */
+            stratify_train: boolean;
+            /**
+             * Stratify Test
+             * @default false
+             */
+            stratify_test: boolean;
         };
         /**
          * ProjectDescriptionModel
@@ -1991,11 +2001,6 @@ export interface components {
              */
             cols_context: string[];
             /**
-             * Cols Test
-             * @default []
-             */
-            cols_test: string[];
-            /**
              * Test
              * @default false
              */
@@ -2012,6 +2017,21 @@ export interface components {
              * @default false
              */
             random_selection: boolean;
+            /**
+             * Cols Stratify
+             * @default []
+             */
+            cols_stratify: string[];
+            /**
+             * Stratify Train
+             * @default false
+             */
+            stratify_train: boolean;
+            /**
+             * Stratify Test
+             * @default false
+             */
+            stratify_test: boolean;
             /** Project Slug */
             project_slug: string;
             /** All Columns */

@@ -332,16 +332,6 @@ export const ProjectCreationForm: FC = () => {
                     {...register('n_test')}
                   />
 
-                  <label className="form-label" htmlFor="clear_test">
-                    Empty testset{' '}
-                    <input
-                      id="clear_test"
-                      type="checkbox"
-                      {...register('clear_test')}
-                      className="mx-3"
-                    />
-                  </label>
-
                   <label className="form-label" htmlFor="random_selection">
                     Random selection of elements{' '}
                     <a className="randomselection">
@@ -358,18 +348,52 @@ export const ProjectCreationForm: FC = () => {
                     />
                   </label>
 
-                  <label className="form-label" htmlFor="cols_test">
-                    Stratify the test set by
+                  <label className="form-label" htmlFor="stratify_train">
+                    Stratify trainset{' '}
+                    <a className="stratify_train">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".stratify_train" place="top">
+                      If selected, use the stratify columsn to stratify train set. Small variation
+                      in the number of elements can happen.
+                    </Tooltip>
+                    <input
+                      id="stratify_train"
+                      type="checkbox"
+                      {...register('stratify_train')}
+                      className="mx-3"
+                    />
+                  </label>
+
+                  <label className="form-label" htmlFor="stratify_test">
+                    Stratify testset{' '}
+                    <a className="stratify_train">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".stratify_train" place="top">
+                      If selected, use the stratify columsn to stratify test set. Small variation in
+                      the number of elements can happen.
+                    </Tooltip>
+                    <input
+                      id="stratify_test"
+                      type="checkbox"
+                      {...register('stratify_test')}
+                      className="mx-3"
+                    />
+                  </label>
+
+                  <label className="form-label" htmlFor="cols_stratify">
+                    Columns to stratify
                     <a className="stratify">
                       <HiOutlineQuestionMarkCircle />
                     </a>
                     <Tooltip anchorSelect=".stratify" place="top">
-                      If not empty, will stratify the test set by the selected column (try to
-                      equilibrate the number of elements regarding each category)
+                      If not empty, will stratify by the selected column (try to equilibrate the
+                      number of elements regarding each category)
                     </Tooltip>
                   </label>
                   <Controller
-                    name="cols_test"
+                    name="cols_stratify"
                     control={control}
                     render={({ field: { onChange } }) => (
                       <Select
@@ -383,6 +407,22 @@ export const ProjectCreationForm: FC = () => {
                       />
                     )}
                   />
+
+                  <label className="form-label" htmlFor="clear_test">
+                    Empty testset{' '}
+                    <a className="emptytestset">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".emptytestset" place="top">
+                      Drop labels for the testset
+                    </Tooltip>
+                    <input
+                      id="clear_test"
+                      type="checkbox"
+                      {...register('clear_test')}
+                      className="mx-3"
+                    />
+                  </label>
                 </div>
                 <button type="submit" className="btn btn-primary form-button" disabled={spinner}>
                   Create

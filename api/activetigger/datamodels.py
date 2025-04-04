@@ -28,11 +28,13 @@ class ProjectBaseModel(BaseModel):
     language: str = "fr"
     cols_label: list[str] = []
     cols_context: list[str] = []
-    cols_test: list[str] = []
     test: bool = False
     n_total: int | None = None
     clear_test: bool = False
     random_selection: bool = False
+    cols_stratify: list[str] = []
+    stratify_train: bool = False
+    stratify_test: bool = False
 
 
 class ProjectModel(ProjectBaseModel):
