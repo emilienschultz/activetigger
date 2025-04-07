@@ -77,6 +77,7 @@ async def create_user(
     password: str = Query(),
     status: str = Query(),
     mail: str = Query(),
+    dummy: bool = Query(False),
 ) -> None:
     """
     Create user
@@ -86,6 +87,8 @@ async def create_user(
         orchestrator.users.add_user(
             username_to_create, password, status, current_user.username, mail
         )
+        if dummy:
+            orchestrator.create_dummy_project(username_to_create)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
     return None

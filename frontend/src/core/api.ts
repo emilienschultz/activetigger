@@ -920,7 +920,13 @@ export function useCreateUser(reFetchUsers: () => void) {
     async (username: string, password: string, status: string, mail: string) => {
       const res = await api.POST('/users/create', {
         params: {
-          query: { username_to_create: username, password: password, status: status, mail: mail },
+          query: {
+            username_to_create: username,
+            password: password,
+            status: status,
+            mail: mail,
+            dummy: true,
+          },
         },
       });
       if (!res.error) notify({ type: 'success', message: 'User created' });

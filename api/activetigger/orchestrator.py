@@ -14,6 +14,7 @@ import yaml  # type: ignore[import]
 from cryptography.fernet import Fernet
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
+from sklearn.datasets import fetch_20newsgroups
 from slugify import slugify
 
 from activetigger.datamodels import (
@@ -609,6 +610,39 @@ class Orchestrator:
         # remove the projects from memory
         for p in to_del:
             del self.projects[p]
+
+    def create_dummy_project(self, username: str) -> None:
+        """
+        Create a dummy project for a user
+        """
+
+        # create name of the project and the directory
+        project_name = "dummy_" + username
+        project_slug = slugify(project_name)
+        project_path = self.path.joinpath(project_slug)
+        os.makedirs(project_path, exist_ok=True)
+
+        # create and save a toy dataset
+        newsgroups = fetch_20newsgroups(
+            subset="all", remove=("headers", "footers", "quotes")
+        )
+        df = pd.DataFrame({"text": newsgroups.data, "target": newsgroups.target})
+        df["category"] = df["target"].apply(lambda x: newsgroups.target_names[x])
+        df.sample(10000).to_csv(project_path.joinpath("dummy.csv"), index=False)
+
+        # parameters of the project
+        params = ProjectBaseModel(
+            project_name=project_name,
+            language="en",
+            filename="dummy.csv",
+            col_id="row_number",
+            cols_text=["text"],
+            cols_label=["category"],
+            n_train=3000,
+            n_test=500,
+        )
+
+        self.create_project(params, username)
 
 
 # launch the instance

@@ -554,7 +554,7 @@ class ProjectStateModel(BaseModel):
     generations: dict[str, Any]
     errors: list[list]
     memory: float
-    last_activity: str
+    last_activity: str | None = None
 
 
 class QueueModel(BaseModel):
