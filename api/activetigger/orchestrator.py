@@ -149,7 +149,7 @@ class Orchestrator:
         """
         Log action in the database
         """
-        self.db_manager.projects_service.add_log(user, action, project, connect)
+        self.db_manager.logs_service.add_log(user, action, project, connect)
         logger.info("%s from %s in project %s", action, user, project)
 
     def get_logs(
@@ -159,7 +159,7 @@ class Orchestrator:
         Get logs for a user/project
         project_slug: project slug or "all"
         """
-        logs = self.db_manager.projects_service.get_logs("all", project_slug, limit)
+        logs = self.db_manager.logs_service.get_logs("all", project_slug, limit)
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )
@@ -181,6 +181,10 @@ class Orchestrator:
                 size=round(
                     get_dir_size(os.environ["ACTIVETIGGER_PATH"] + "/" + i[0]), 1
                 ),
+                last_activity=self.db_manager.logs_service.get_last_activity_project(
+                    i[0]
+                ),
+                project_slug=i[0],
             )
             for i in list(reversed(projects_auth))
         ]

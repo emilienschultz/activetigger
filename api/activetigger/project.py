@@ -705,6 +705,9 @@ class Project:
             "generations": {"training": self.generations.training()},
             "errors": self.errors,
             "memory": get_dir_size(str(self.params.dir)),
+            "last_activity": self.db_manager.logs_service.get_last_activity_project(
+                self.params.project_slug
+            ),
         }
 
         # end_time = time.time()
@@ -1135,3 +1138,14 @@ class Project:
         self.errors = [error for error in self.errors if error[0] >= delta]
 
         return None
+
+    def last_activity(self, username: str | None = None) -> None:
+        """
+        Update the last activity of a user
+        """
+
+        self.db_manager
+
+        self.db_manager.users_service.update_last_activity(
+            username, datetime.now(TIMEZONE)
+        )
