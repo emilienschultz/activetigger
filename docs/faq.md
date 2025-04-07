@@ -18,4 +18,4 @@ Please open a issue on the Github.
 
 ## I have just created a project but want to modify certain parameters (e.g., increase the trainset size).
 
-Go to the project tab, navigate to Settings, and select Update Project.
+Go to the project tab, navigate to Settings, and select Update Project. Please note that if you increase the size of your project, you then need to create a new feature in the Prepare tab. 

@@ -172,9 +172,9 @@ First, make sure you have at least a _feature_ created under the **Prepare** tab
 
 ![Training a prediction model](img/featuretab.png)
 
-Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. The basic parameters can be used for the first model and refined latter.
+Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. The basic parameters can be used for the first model and refined latter. 
 
-Once the prediction model is trained, you can now choose the _active_ and _maxprob_ selection modes when picking elements. That means you can use the prediction of this model to guide your selection.
+Once the prediction model is trained, you can now choose the _active_ and _maxprob_ selection modes when picking elements. That means you can use the prediction of this model to guide your selection.  
 
 ![Overview of the selection modes](img/selectionmode.png)
 
@@ -188,6 +188,13 @@ If the aim is to train a model, we recommend alternating between active and maxp
 ![Overview of the Annotation tab](img/activeannotation.png)
 
 If displayed (see Display parameters), the **Prediction** button above your available labels indicates the model's prediction of a certain label (given previous annotations) and its level of certainty (you can deactivate it in **Display parameters**)
+
+You can see, by **clicking on active model**, if your model works well on your data. 
+
+The **Exact score** is calculated on all the data you have annotated. The model uses this same data for training and then evaluating its performance. It is normal for this score to be very high (close to 1.0), because the model has already seen all this data during training. For the **CV10 score** , the model automatically divides all your annotations into 10 equal parts and trains on 9 parts that represent 90% of the annotations. It does not take into account the remaining part, which corresponds to 10% of the annotations, during training. It then uses this set-aside part to test whether the model can correctly predict these annotations that it has not seen during training. Then it repeats the following operation 10 times. 
+Further in this quickstart, we provide a brief overview of how other metrics work, such as the F1 score.
+
+Once you judge that the score obtained is satisfactory, you can then train a larger model (it is explained in the Fine-tune your BERT classifier part), with more parameters that you can modify, which will serve to obtain more precise annotations.
 
 ### Vizualisation
 
