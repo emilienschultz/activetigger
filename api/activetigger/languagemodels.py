@@ -591,7 +591,14 @@ class LanguageModels:
         Get the base model for a model
         """
         with open(
-            self.path.joinpath(model_name).joinpath("config.json"), "r"
+            self.path.joinpath(model_name).joinpath("parameters.json"), "r"
         ) as jsonfile:
-            basemodel = json.load(jsonfile)["_name_or_path"]
+            data = json.load(jsonfile)
+            if "base_model" in data:
+                basemodel = data["base_model"]
+            else:
+                raise ValueError(
+                    "No model type found in config.json. Please check the file."
+                )
+
         return basemodel
