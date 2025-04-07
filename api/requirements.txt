@@ -3,7 +3,8 @@ numpy
 fastapi
 uvicorn
 torch
-git+https://github.com/huggingface/transformers.git #transformers[torch]
+#git+https://github.com/huggingface/transformers.git #transformers[torch]
+transformers>=4.51.0
 accelerate
 numpy
 matplotlib
