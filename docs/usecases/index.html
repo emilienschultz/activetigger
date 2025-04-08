@@ -50,6 +50,8 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Use Cases</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#jules-brion-research">Jules Brion research</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -97,7 +99,19 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="use-cases">Use cases</h1>
-<p>Describe cases</p>
+<h2 id="jules-brion-research">Jules Brion research</h2>
+<p><strong>Study Objective</strong>: To build a corpus of articles related to the environment.</p>
+<p><strong>Corpus</strong>: Articles are segmented into paragraphs to fit within the model's context window.</p>
+<p><strong>Codebook</strong>: Binary classification – environment / not environment.</p>
+<p><strong>Post-ActiveTigger Analysis</strong>: Aggregate the annotated paragraphs to determine whether each article is about the environment or not.</p>
+<p><strong>Goal</strong>: Develop a classifier with high performance (F1 score &gt; 0.95) capable of identifying environmental journalism segments.</p>
+<p><strong>Key Takeaways / Lessons Learned</strong>:</p>
+<ul>
+<li>Learning ActiveTigger: It took a few weeks to get comfortable with the interface, stabilize the corpus structure (e.g., paragraph length), and define the coding scheme.</li>
+<li>Use of Visualization: Visualization tools helped identify ambiguous categories, leading to annotation improvements.</li>
+<li>Model Training Insights:</li>
+<li>Understanding how BERT-based models learn was crucial to improving performance metrics.</li>
+</ul>
               
             </div>
           </div><footer>
