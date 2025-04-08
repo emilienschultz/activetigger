@@ -15,6 +15,11 @@ const PAGES: { id: string; label: string; href: string }[] = [
   // { id: 'help', label: 'Help', href: '/help' },
   { id: 'account', label: 'Account', href: '/account' },
   { id: 'users', label: 'Users', href: '/users' },
+  {
+    id: 'docs',
+    label: 'Documentation',
+    href: 'https://emilienschultz.github.io/activetigger/docs/',
+  },
 ];
 
 interface NavBarPropsType {

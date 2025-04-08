@@ -78,7 +78,7 @@ export const TrainPage: FC = () => {
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // compute model preduction
-  const [batchSize, setBatchSize] = useState<number>(32);
+  const [batchSize] = useState<number>(32);
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
 
   // form to rename
@@ -422,42 +422,12 @@ export const TrainPage: FC = () => {
 
                     <div>
                       <label>
-                        Batch Size{' '}
-                        <a className="batchsize">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".batchsize" place="top">
-                          How many samples are processed simultaneously. With small GPU, keep it
-                          around 4.
-                        </Tooltip>
-                      </label>
-                      <input type="number" {...registerNewModel('parameters.batchsize')} />
-                    </div>
-                    <div>
-                      <label>
-                        Gradient Accumulation{' '}
-                        <a className="gradientacc">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".gradientacc" place="top">
-                          summing gradients over multiple steps before updating the model weights
-                        </Tooltip>
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        {...registerNewModel('parameters.gradacc')}
-                      />
-                    </div>
-                    <div>
-                      <label>
                         Epochs{' '}
                         <a className="epochs">
                           <HiOutlineQuestionMarkCircle />
                         </a>
                         <Tooltip anchorSelect=".epochs" place="top">
-                          one complete pass through the entire training dataset during the training
-                          process
+                          number of complete pass through the entire training dataset
                         </Tooltip>
                       </label>
                       <input type="number" {...registerNewModel('parameters.epochs')} />
@@ -496,80 +466,112 @@ export const TrainPage: FC = () => {
                         {...registerNewModel('parameters.wdecay')}
                       />
                     </div>
-                    <div>
-                      <label>
-                        Eval{' '}
-                        <a className="evalstep">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".evalstep" place="top">
-                          how often (in terms of training steps) the evaluation of the model on the
-                          validation dataset is performed during training
-                        </Tooltip>
-                      </label>
-                      <input type="number" {...registerNewModel('parameters.eval')} />
-                    </div>
-                    <div>
-                      <label>
-                        Validation dataset size{' '}
-                        <a className="test_size">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".test_size" place="top">
-                          Eval size for the dev test to compute metrics.
-                        </Tooltip>
-                      </label>
-                      <input type="number" step="0.1" {...registerNewModel('test_size')} />
-                    </div>
-                    <div>
-                      <label>
-                        Class threshold{' '}
-                        <a className="class_min_freq">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".class_min_freq" place="top">
-                          Drop classses with less than this number of elements
-                        </Tooltip>
-                      </label>
-                      <input type="number" step="1" {...registerNewModel('class_min_freq')} />
-                    </div>
-                    <div className="form-group d-flex align-items-center">
-                      <label>
-                        Balance classes
-                        <a className="class_balance">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".class_balance" place="top">
-                          Downsize classes to the lowest one.
-                        </Tooltip>
-                      </label>
-                      <input type="checkbox" {...registerNewModel('class_balance')} />
-                    </div>
-                    <div className="form-group d-flex align-items-center">
-                      <label>
-                        Keep the best model
-                        <a className="best">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".best" place="top">
-                          Keep the model with the lowest validation loss.
-                        </Tooltip>
-                      </label>
-                      <input type="checkbox" {...registerNewModel('parameters.best')} />
-                    </div>
+                    <details className="custom-details">
+                      <summary>Advanced parameters</summary>
+                      <div>
+                        <label>
+                          Batch Size{' '}
+                          <a className="batchsize">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".batchsize" place="top">
+                            How many samples are processed simultaneously. With small GPU, keep it
+                            around 4.
+                          </Tooltip>
+                        </label>
+                        <input type="number" {...registerNewModel('parameters.batchsize')} />
+                      </div>
+                      <div>
+                        <label>
+                          Gradient Accumulation{' '}
+                          <a className="gradientacc">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".gradientacc" place="top">
+                            summing gradients over multiple steps before updating the model weights
+                          </Tooltip>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          {...registerNewModel('parameters.gradacc')}
+                        />
+                      </div>
+                      <div>
+                        <label>
+                          Eval{' '}
+                          <a className="evalstep">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".evalstep" place="top">
+                            how often (in terms of training steps) the evaluation of the model on
+                            the validation dataset is performed during training
+                          </Tooltip>
+                        </label>
+                        <input type="number" {...registerNewModel('parameters.eval')} />
+                      </div>
+                      <div>
+                        <label>
+                          Validation dataset size{' '}
+                          <a className="test_size">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".test_size" place="top">
+                            Eval size for the dev test to compute metrics.
+                          </Tooltip>
+                        </label>
+                        <input type="number" step="0.1" {...registerNewModel('test_size')} />
+                      </div>
+                      <div>
+                        <label>
+                          Class threshold{' '}
+                          <a className="class_min_freq">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".class_min_freq" place="top">
+                            Drop classses with less than this number of elements
+                          </Tooltip>
+                        </label>
+                        <input type="number" step="1" {...registerNewModel('class_min_freq')} />
+                      </div>
+                      <div className="form-group d-flex align-items-center">
+                        <label>
+                          Balance classes
+                          <a className="class_balance">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".class_balance" place="top">
+                            Downsize classes to the lowest one.
+                          </Tooltip>
+                        </label>
+                        <input type="checkbox" {...registerNewModel('class_balance')} />
+                      </div>
+                      <div className="form-group d-flex align-items-center">
+                        <label>
+                          Keep the best model
+                          <a className="best">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".best" place="top">
+                            Keep the model with the lowest validation loss.
+                          </Tooltip>
+                        </label>
+                        <input type="checkbox" {...registerNewModel('parameters.best')} />
+                      </div>
 
-                    <div className="form-group d-flex align-items-center">
-                      <label>
-                        Use GPU
-                        <a className="gpu">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".gpu" place="top">
-                          Compute the training on GPU.
-                        </Tooltip>
-                      </label>
-                      <input type="checkbox" {...registerNewModel('parameters.gpu')} />
-                    </div>
+                      <div className="form-group d-flex align-items-center">
+                        <label>
+                          Use GPU
+                          <a className="gpu">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".gpu" place="top">
+                            Compute the training on GPU.
+                          </Tooltip>
+                        </label>
+                        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+                      </div>
+                    </details>
                     {!isComputing && (
                       <button key="start" className="btn btn-primary me-2 mt-2">
                         Train the model
@@ -577,7 +579,7 @@ export const TrainPage: FC = () => {
                     )}
                   </form>
                 </Tab>
-                <Tab
+                {/* <Tab
                   eventKey="parameters"
                   title="Parameters"
                   onSelect={() => setActiveKey('parameters')}
@@ -600,7 +602,7 @@ export const TrainPage: FC = () => {
                       onChange={(e) => setBatchSize(Number(e.target.value))}
                     />
                   </div>
-                </Tab>
+                </Tab> */}
               </Tabs>
             }
             {isComputing && (
