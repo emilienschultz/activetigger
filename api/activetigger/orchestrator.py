@@ -591,6 +591,27 @@ class Orchestrator:
         if project_slug in self.projects:
             del self.projects[project_slug]
 
+    def clean_project(
+        self, project_slug: str | None = None, project_name: str | None = None
+    ) -> None:
+        """
+        Clean a project
+        """
+        if project_slug is None and project_name is None:
+            raise Exception("No project specified")
+        if project_slug is not None:
+            project_slug = slugify(project_slug)
+
+        # remove from database
+        self.db_manager.projects_service.delete_project(self.name)
+
+        # remove from the server
+        shutil.rmtree(self.path.joinpath(project_slug))
+
+        ## remove static files
+        if Path(f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}").exists():
+            shutil.rmtree(f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}")
+
     def update(self):
         """
         Update state of projects from the queue
@@ -628,7 +649,7 @@ class Orchestrator:
         )
         df = pd.DataFrame({"text": newsgroups.data, "target": newsgroups.target})
         df["category"] = df["target"].apply(lambda x: newsgroups.target_names[x])
-        df.sample(10000).to_csv(project_path.joinpath("dummy.csv"), index=False)
+        df.to_csv(project_path.joinpath("dummy.csv"), index=False)
 
         # parameters of the project
         params = ProjectBaseModel(
@@ -639,7 +660,7 @@ class Orchestrator:
             cols_text=["text"],
             cols_label=["category"],
             n_train=3000,
-            n_test=500,
+            n_test=1000,
         )
 
         self.create_project(params, username)

@@ -5,7 +5,6 @@ from typing import Annotated, List
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     Depends,
     File,
     HTTPException,
@@ -54,19 +53,23 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
     print("start writing the project")
 
     # create a folder for the project to be created
-    project_slug = slugify(project_name)
-    project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
-    if project_path.exists():
-        raise Exception("Project already exists")
-    os.makedirs(project_path)
-
-    # Read and write the file asynchronously
     try:
+        project_slug = slugify(project_name)
+        project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
+        if project_path.exists():
+            raise Exception("Project already exists")
+        os.makedirs(project_path)
+
+        # Read and write the file asynchronously
         with (project_path.joinpath(file.filename)).open("wb") as buffer:
             while chunk := await file.read(1024 * 1024):  # Read in 1MB chunks
                 print("writing chunk")
                 buffer.write(chunk)
     except Exception as e:
+        # if failed, remove the project folder
+        project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
+        if project_path.exists():
+            project_path.rmdir()
         raise HTTPException(status_code=500, detail=f"File writing error: {str(e)}")
 
     print("end writing the project")
@@ -74,7 +77,6 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
 
 @router.post("/files/add/project")
 async def upload_file(
-    background_tasks: BackgroundTasks,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     file: UploadFile = File(...),
@@ -100,6 +102,7 @@ async def upload_file(
         await new_project_file(file, current_user.username, project_name)
         return None
     except Exception as e:
+
         raise HTTPException(status_code=500, detail=str(e))
 
 
