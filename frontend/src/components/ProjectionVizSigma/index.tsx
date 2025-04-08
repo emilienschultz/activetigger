@@ -111,10 +111,16 @@ export const ProjectionVizSigma: FC<Props> = ({
         // built-in appearance in Sigma which forces showing the label
         res.highlighted = true;
       }
-      // apply color
+      // apply color for nodes
       res.color = labelColorMapping[data.label];
+
       // replace label by node id. Label is the default field in sigma to display the.. label
       res.label = node;
+
+      // force NA elements to be light grey
+      if (data.label === 'NA') {
+        res.color = '#ebebeb';
+      }
 
       return res;
     },
