@@ -123,9 +123,9 @@ export const TrainPage: FC = () => {
       test_size: 0.2,
       parameters: {
         batchsize: 4,
-        gradacc: 1.0,
+        gradacc: 4.0,
         epochs: 3,
-        lrate: 5e-5,
+        lrate: 3e-5,
         wdecay: 0.01,
         best: true,
         eval: 10,
@@ -377,7 +377,8 @@ export const TrainPage: FC = () => {
                     )}
 
                     <div className="explanations">
-                      Before training a model, be sure to have annotated enough elements.
+                      A good practice is to have around 50 annotated elements per class before
+                      starting the training
                     </div>
                     <label htmlFor="new-model-type"></label>
                     <div>
@@ -468,7 +469,8 @@ export const TrainPage: FC = () => {
                           <HiOutlineQuestionMarkCircle />
                         </a>
                         <Tooltip anchorSelect=".learningrate" place="top">
-                          step size at which the model updates its weights during training
+                          step size at which the model updates its weights during training (use a
+                          factor 3 to change it)
                         </Tooltip>
                       </label>
                       <input
@@ -509,7 +511,7 @@ export const TrainPage: FC = () => {
                     </div>
                     <div>
                       <label>
-                        Development dataset size{' '}
+                        Validation dataset size{' '}
                         <a className="test_size">
                           <HiOutlineQuestionMarkCircle />
                         </a>
@@ -544,12 +546,28 @@ export const TrainPage: FC = () => {
                       <input type="checkbox" {...registerNewModel('class_balance')} />
                     </div>
                     <div className="form-group d-flex align-items-center">
-                      <label>Best</label>
+                      <label>
+                        Keep the best model
+                        <a className="best">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".best" place="top">
+                          Keep the model with the lowest validation loss.
+                        </Tooltip>
+                      </label>
                       <input type="checkbox" {...registerNewModel('parameters.best')} />
                     </div>
 
                     <div className="form-group d-flex align-items-center">
-                      <label>GPU</label>
+                      <label>
+                        Use GPU
+                        <a className="gpu">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".gpu" place="top">
+                          Compute the training on GPU.
+                        </Tooltip>
+                      </label>
                       <input type="checkbox" {...registerNewModel('parameters.gpu')} />
                     </div>
                     {!isComputing && (

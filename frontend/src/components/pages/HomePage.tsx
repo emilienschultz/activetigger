@@ -1,7 +1,5 @@
 import { FC } from 'react';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Link, useNavigate } from 'react-router-dom';
-import { Tooltip } from 'react-tooltip';
 import logo from '../../assets/at.png';
 import { useGetActiveUsers, useGetVersion } from '../../core/api';
 import { useAuth } from '../../core/auth';
@@ -67,7 +65,7 @@ export const HomePage: FC = () => {
                   <div className="user-info">
                     You are logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
                     {authenticatedUser.status}){' '}
-                    <div className="form-check form-switch">
+                    {/* <div className="form-check form-switch">
                       <label className="form-check-label" htmlFor="devMode">
                         <input
                           className="form-check-input mx-2"
@@ -86,7 +84,7 @@ export const HomePage: FC = () => {
                           extensively.
                         </Tooltip>
                       </label>
-                    </div>
+                    </div> */}
                     <div>
                       {users ? (
                         <div className="explanations">Active users : {users?.length}</div>

@@ -211,7 +211,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             )}
           />
         </div>
-        <button className="btn btn-primary btn-validation">Train</button>
+        <button className="btn btn-primary btn-validation">Train quick model</button>
         <div className="d-flex align-items-center">
           <label htmlFor="frequencySlider">Refresh</label>
           Every

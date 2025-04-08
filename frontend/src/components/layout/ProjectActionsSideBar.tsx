@@ -182,7 +182,7 @@ export const ProjectActionsSidebar: FC<{
               style={{ color: '#df31e8' }}
             >
               <RiAiGenerate />
-              <span> Generate</span>
+              <span> Generative</span>
             </Link>
           </li>
           <li className="nav-item ">
