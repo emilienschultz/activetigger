@@ -256,8 +256,8 @@
 <p>Using the already annotated data, ActiveTigger can find the elements that your current model is either <em>most certain</em> or <em>most uncertain</em> that it knows how to predict, given your existing coding scheme and annotations. Here is how to set it up:</p>
 <p>First, make sure you have at least a <em>feature</em> created under the <strong>Prepare</strong> tab (by default, we recommend sbert).</p>
 <p><img alt="Training a prediction model" src="../img/featuretab.png" /></p>
-<p>Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. The basic parameters can be used for the first model and refined latter.</p>
-<p>Once the prediction model is trained, you can now choose the <em>active</em> and <em>maxprob</em> selection modes when picking elements. That means you can use the prediction of this model to guide your selection.</p>
+<p>Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. The basic parameters can be used for the first model and refined latter. </p>
+<p>Once the prediction model is trained, you can now choose the <em>active</em> and <em>maxprob</em> selection modes when picking elements. That means you can use the prediction of this model to guide your selection.  </p>
 <p><img alt="Overview of the selection modes" src="../img/selectionmode.png" /></p>
 <ul>
 <li><strong>Active</strong> mode means that Active Tigger will pick the elements on which it is most uncertain (where, based on previous annotations, it could be classified either way)</li>
@@ -267,6 +267,10 @@
 <p>If the aim is to train a model, we recommend alternating between active and maxprob mode in order to maximize the number of examples from both of your categories prioritizing on the <em>uncertain</em> elements.</p>
 <p><img alt="Overview of the Annotation tab" src="../img/activeannotation.png" /></p>
 <p>If displayed (see Display parameters), the <strong>Prediction</strong> button above your available labels indicates the model's prediction of a certain label (given previous annotations) and its level of certainty (you can deactivate it in <strong>Display parameters</strong>)</p>
+<p>You can see, by <strong>clicking on active model</strong>, if your model works well on your data. </p>
+<p>The <strong>Exact score</strong> is calculated on all the data you have annotated. The model uses this same data for training and then evaluating its performance. It is normal for this score to be very high (close to 1.0), because the model has already seen all this data during training. For the <strong>CV10 score</strong> , the model automatically divides all your annotations into 10 equal parts and trains on 9 parts that represent 90% of the annotations. It does not take into account the remaining part, which corresponds to 10% of the annotations, during training. It then uses this set-aside part to test whether the model can correctly predict these annotations that it has not seen during training. Then it repeats the following operation 10 times. 
+Further in this quickstart, we provide a brief overview of how other metrics work, such as the F1 score.</p>
+<p>Once you judge that the score obtained is satisfactory, you can then train a larger model (it is explained in the Fine-tune your BERT classifier part), with more parameters that you can modify, which will serve to obtain more precise annotations.</p>
 <h3 id="vizualisation">Vizualisation</h3>
 <p>To improve your coding, you can use the Visualization mode. Select your SBERT feature (you can also add your trained model if you have one), then click compute. This will project your models into two dimensions. This projection allows you to see how your models group similar texts naturally. You can either visualize the elements you have annotated or the model’s predictions. The separation (or overlap) of the different groups can give you a visual indication of your model's performance – clear separation suggests a model that distinguishes categories well. Points appearing in "incorrect regions" (e.g., isolated orange points in a mostly blue area) may indicate classification errors or interesting edge cases to analyze.
 When you spot such cases, you can click on a point and annotate it.</p>
