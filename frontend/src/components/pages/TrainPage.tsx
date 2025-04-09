@@ -12,6 +12,7 @@ import { Tooltip } from 'react-tooltip';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
+  useGetServer,
   useModelInformations,
   useRenameBertModel,
   useStopTrainBertModel,
@@ -53,6 +54,8 @@ export const TrainPage: FC = () => {
   const {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
+
+  const { gpu } = useGetServer(project || null);
 
   const [activeKey, setActiveKey] = useState<string>('models');
 
@@ -129,7 +132,7 @@ export const TrainPage: FC = () => {
         wdecay: 0.01,
         best: true,
         eval: 10,
-        gpu: true,
+        gpu: gpu ? true : false,
         adapt: false,
       },
     },
