@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../assets/at.png';
 import { useGetActiveUsers, useGetVersion } from '../../core/api';
 import { useAuth } from '../../core/auth';
-import { useAppContext } from '../../core/context';
 import { LoginParams } from '../../types';
 import { LoginForm } from './../forms/LoginForm';
 import Notifications from './../layout/Notifications';
@@ -11,15 +10,15 @@ export const HomePage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { users } = useGetActiveUsers();
 
-  const {
-    appContext: { developmentMode },
-    setAppContext,
-  } = useAppContext();
+  // const {
+  //   appContext: { developmentMode },
+  //   setAppContext,
+  // } = useAppContext();
 
   // function to change the status of the interface
-  const actionDevelopmentMode = () => {
-    setAppContext((prev) => ({ ...prev, developmentMode: !prev.developmentMode }));
-  };
+  // const actionDevelopmentMode = () => {
+  //   setAppContext((prev) => ({ ...prev, developmentMode: !prev.developmentMode }));
+  // };
 
   // possibility to log directly from the URL
   const navigate = useNavigate();
