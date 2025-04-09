@@ -12,7 +12,6 @@ import { Tooltip } from 'react-tooltip';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
-  useGetServer,
   useModelInformations,
   useRenameBertModel,
   useStopTrainBertModel,
@@ -55,7 +54,7 @@ export const TrainPage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
-  const { gpu } = useGetServer(project || null);
+  //  const { gpu } = useGetServer(project || null);
 
   const [activeKey, setActiveKey] = useState<string>('models');
 

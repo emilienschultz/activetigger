@@ -259,7 +259,6 @@ class TrainBert(BaseTask):
                     "predicted_label": pred_labels,
                 }
             )
-            print(df_preds)
             df_preds.to_csv(current_path.joinpath("predictions_eval.csv"))
 
             # compute metrics
