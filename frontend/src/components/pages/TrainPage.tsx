@@ -132,7 +132,7 @@ export const TrainPage: FC = () => {
         wdecay: 0.01,
         best: true,
         eval: 10,
-        gpu: gpu ? true : false,
+        gpu: true,
         adapt: false,
       },
     },
