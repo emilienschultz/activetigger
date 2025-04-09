@@ -1723,6 +1723,8 @@ export interface components {
             train_scores?: Record<string, never> | null;
             /** Test Scores */
             test_scores?: Record<string, never> | null;
+            /** Valid Scores */
+            valid_scores?: Record<string, never> | null;
         };
         /**
          * LMParametersModel
@@ -2064,9 +2066,13 @@ export interface components {
             errors: unknown[][];
             /** Memory */
             memory: number;
+            /** Last Activity */
+            last_activity?: string | null;
         };
         /** ProjectSummaryModel */
         ProjectSummaryModel: {
+            /** Project Slug */
+            project_slug: string;
             parameters: components["schemas"]["ProjectModel"];
             /** User Right */
             user_right: string;
@@ -2076,6 +2082,8 @@ export interface components {
             created_at: string;
             /** Size */
             size?: number | null;
+            /** Last Activity */
+            last_activity?: string | null;
         };
         /** ProjectUpdateModel */
         ProjectUpdateModel: {
@@ -2495,6 +2503,7 @@ export interface operations {
                 password: string;
                 status: string;
                 mail: string;
+                dummy?: boolean;
             };
             header?: never;
             path?: never;

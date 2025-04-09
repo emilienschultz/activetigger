@@ -206,6 +206,8 @@ export const TrainPage: FC = () => {
     link.click();
   };
 
+  console.log(model);
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
       <div className="container-fluid">
@@ -324,6 +326,12 @@ export const TrainPage: FC = () => {
                             <div className="col-6 col-lg-4">
                               <LossChart loss={loss} />
                             </div>
+                            {model.valid_scores && (
+                              <div>
+                                Scores de validation
+                                <DisplayScores scores={model.valid_scores} />
+                              </div>
+                            )}
                           </details>
                           <details className="custom-details">
                             <summary>Scores</summary>

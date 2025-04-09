@@ -568,6 +568,19 @@ class LanguageModels:
             test_scores = None
         return test_scores
 
+    def get_validscores(self, model_name) -> dict | None:
+        if (
+            self.path.joinpath(model_name).joinpath("metrics_validation.json")
+        ).exists():
+            with open(
+                self.path.joinpath(model_name).joinpath("metrics_validation.json"),
+                "r",
+            ) as f:
+                valid_scores = json.load(f)
+        else:
+            valid_scores = None
+        return valid_scores
+
     def get_informations(self, model_name) -> LMInformationsModel:
         """
         Informations on the bert model from the files
@@ -577,6 +590,7 @@ class LanguageModels:
         loss = self.get_loss(model_name)
         params = self.get_parameters(model_name)
         train_scores = self.get_trainscores(model_name)
+        valid_scores = self.get_validscores(model_name)
         test_scores = self.get_testscores(model_name)
 
         return LMInformationsModel(
@@ -584,6 +598,7 @@ class LanguageModels:
             loss=loss,
             train_scores=train_scores,
             test_scores=test_scores,
+            valid_scores=valid_scores,
         )
 
     def get_base_model(self, model_name) -> dict | None:

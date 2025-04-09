@@ -710,6 +710,7 @@ class LMInformationsModel(BaseModel):
     loss: dict | None = None
     train_scores: dict | None = None
     test_scores: dict | None = None
+    valid_scores: dict | None = None
 
 
 class ProjectUpdateModel(BaseModel):
