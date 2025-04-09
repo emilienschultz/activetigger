@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 import datasets  # type: ignore[import]
+import numpy as np
 import pandas as pd
 import torch
 from pandas import DataFrame
@@ -23,6 +24,7 @@ from transformers import (  # type: ignore[import]
 )
 
 from activetigger.datamodels import LMParametersModel
+from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
 pd.set_option("future.no_silent_downcasting", True)
@@ -243,8 +245,27 @@ class TrainBert(BaseTask):
                     )
                 ],
             )
-
             trainer.train()
+
+            # predict on the validset and get the labels
+            predictions = trainer.predict(self.df["test"])
+            true_labels = [id2label[i] for i in predictions.label_ids]
+            pred_labels = [
+                id2label[i] for i in np.argmax(predictions.predictions, axis=1)
+            ]
+            df_preds = pd.DataFrame(
+                {
+                    "true_label": true_labels,
+                    "predicted_label": pred_labels,
+                }
+            )
+            print(df_preds)
+            df_preds.to_csv(current_path.joinpath("predictions_eval.csv"))
+
+            # compute metrics
+            metrics = get_metrics(df_preds["true_label"], df_preds["predicted_label"])
+            with open(str(current_path.joinpath("metrics_validation.json")), "w") as f:
+                json.dump(metrics.model_dump(mode="json"), f)
 
             # save model
             bert.save_pretrained(current_path)

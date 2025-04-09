@@ -75,6 +75,8 @@ export const ProjectionVizSigma: FC<Props> = ({
   // app state is used as default value
   const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);
 
+  labelColorMapping['NA'] = '#ebebeb';
+
   // Special cursor to help interactivity affordances
   const [sigmaCursor, setSigmaCursor] = useState<SigmaCursorTypes>(undefined);
   const [activeTool, setActiveTool] = useState<SigmaToolsType>('panZoom');
@@ -111,8 +113,9 @@ export const ProjectionVizSigma: FC<Props> = ({
         // built-in appearance in Sigma which forces showing the label
         res.highlighted = true;
       }
-      // apply color
+      // apply color for nodes
       res.color = labelColorMapping[data.label];
+
       // replace label by node id. Label is the default field in sigma to display the.. label
       res.label = node;
 

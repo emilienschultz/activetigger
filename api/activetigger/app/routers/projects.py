@@ -80,6 +80,7 @@ async def new_project(
         )
         return r["success"]
     except Exception as e:
+        orchestrator.clean_project(project_name=project.project_name)
         raise HTTPException(status_code=500, detail=str(e))
 
 

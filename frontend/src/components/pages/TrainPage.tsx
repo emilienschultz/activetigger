@@ -12,6 +12,7 @@ import { Tooltip } from 'react-tooltip';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
+  useGetServer,
   useModelInformations,
   useRenameBertModel,
   useStopTrainBertModel,
@@ -54,6 +55,8 @@ export const TrainPage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
+  const { gpu } = useGetServer(project || null);
+
   const [activeKey, setActiveKey] = useState<string>('models');
 
   // available labels from context
@@ -78,7 +81,7 @@ export const TrainPage: FC = () => {
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // compute model preduction
-  const [batchSize, setBatchSize] = useState<number>(32);
+  const [batchSize] = useState<number>(32);
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
 
   // form to rename
@@ -123,13 +126,13 @@ export const TrainPage: FC = () => {
       test_size: 0.2,
       parameters: {
         batchsize: 4,
-        gradacc: 1.0,
+        gradacc: 4.0,
         epochs: 3,
-        lrate: 5e-5,
+        lrate: 3e-5,
         wdecay: 0.01,
         best: true,
         eval: 10,
-        gpu: true,
+        gpu: gpu ? true : false,
         adapt: false,
       },
     },
@@ -202,6 +205,8 @@ export const TrainPage: FC = () => {
     link.download = currentModel || 'model.json';
     link.click();
   };
+
+  console.log(model);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
@@ -321,6 +326,12 @@ export const TrainPage: FC = () => {
                             <div className="col-6 col-lg-4">
                               <LossChart loss={loss} />
                             </div>
+                            {model.valid_scores && (
+                              <div>
+                                Scores de validation
+                                <DisplayScores scores={model.valid_scores} />
+                              </div>
+                            )}
                           </details>
                           <details className="custom-details">
                             <summary>Scores</summary>
@@ -377,7 +388,8 @@ export const TrainPage: FC = () => {
                     )}
 
                     <div className="explanations">
-                      Before training a model, be sure to have annotated enough elements.
+                      A good practice is to have around 50 annotated elements per class before
+                      starting the training
                     </div>
                     <label htmlFor="new-model-type"></label>
                     <div>
@@ -421,42 +433,12 @@ export const TrainPage: FC = () => {
 
                     <div>
                       <label>
-                        Batch Size{' '}
-                        <a className="batchsize">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".batchsize" place="top">
-                          How many samples are processed simultaneously. With small GPU, keep it
-                          around 4.
-                        </Tooltip>
-                      </label>
-                      <input type="number" {...registerNewModel('parameters.batchsize')} />
-                    </div>
-                    <div>
-                      <label>
-                        Gradient Accumulation{' '}
-                        <a className="gradientacc">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".gradientacc" place="top">
-                          summing gradients over multiple steps before updating the model weights
-                        </Tooltip>
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        {...registerNewModel('parameters.gradacc')}
-                      />
-                    </div>
-                    <div>
-                      <label>
                         Epochs{' '}
                         <a className="epochs">
                           <HiOutlineQuestionMarkCircle />
                         </a>
                         <Tooltip anchorSelect=".epochs" place="top">
-                          one complete pass through the entire training dataset during the training
-                          process
+                          number of complete pass through the entire training dataset
                         </Tooltip>
                       </label>
                       <input type="number" {...registerNewModel('parameters.epochs')} />
@@ -468,7 +450,8 @@ export const TrainPage: FC = () => {
                           <HiOutlineQuestionMarkCircle />
                         </a>
                         <Tooltip anchorSelect=".learningrate" place="top">
-                          step size at which the model updates its weights during training
+                          step size at which the model updates its weights during training (use a
+                          factor 3 to change it)
                         </Tooltip>
                       </label>
                       <input
@@ -494,64 +477,112 @@ export const TrainPage: FC = () => {
                         {...registerNewModel('parameters.wdecay')}
                       />
                     </div>
-                    <div>
-                      <label>
-                        Eval{' '}
-                        <a className="evalstep">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".evalstep" place="top">
-                          how often (in terms of training steps) the evaluation of the model on the
-                          validation dataset is performed during training
-                        </Tooltip>
-                      </label>
-                      <input type="number" {...registerNewModel('parameters.eval')} />
-                    </div>
-                    <div>
-                      <label>
-                        Development dataset size{' '}
-                        <a className="test_size">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".test_size" place="top">
-                          Eval size for the dev test to compute metrics.
-                        </Tooltip>
-                      </label>
-                      <input type="number" step="0.1" {...registerNewModel('test_size')} />
-                    </div>
-                    <div>
-                      <label>
-                        Class threshold{' '}
-                        <a className="class_min_freq">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".class_min_freq" place="top">
-                          Drop classses with less than this number of elements
-                        </Tooltip>
-                      </label>
-                      <input type="number" step="1" {...registerNewModel('class_min_freq')} />
-                    </div>
-                    <div className="form-group d-flex align-items-center">
-                      <label>
-                        Balance classes
-                        <a className="class_balance">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".class_balance" place="top">
-                          Downsize classes to the lowest one.
-                        </Tooltip>
-                      </label>
-                      <input type="checkbox" {...registerNewModel('class_balance')} />
-                    </div>
-                    <div className="form-group d-flex align-items-center">
-                      <label>Best</label>
-                      <input type="checkbox" {...registerNewModel('parameters.best')} />
-                    </div>
+                    <details className="custom-details">
+                      <summary>Advanced parameters</summary>
+                      <div>
+                        <label>
+                          Batch Size{' '}
+                          <a className="batchsize">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".batchsize" place="top">
+                            How many samples are processed simultaneously. With small GPU, keep it
+                            around 4.
+                          </Tooltip>
+                        </label>
+                        <input type="number" {...registerNewModel('parameters.batchsize')} />
+                      </div>
+                      <div>
+                        <label>
+                          Gradient Accumulation{' '}
+                          <a className="gradientacc">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".gradientacc" place="top">
+                            summing gradients over multiple steps before updating the model weights
+                          </Tooltip>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          {...registerNewModel('parameters.gradacc')}
+                        />
+                      </div>
+                      <div>
+                        <label>
+                          Eval{' '}
+                          <a className="evalstep">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".evalstep" place="top">
+                            how often (in terms of training steps) the evaluation of the model on
+                            the validation dataset is performed during training
+                          </Tooltip>
+                        </label>
+                        <input type="number" {...registerNewModel('parameters.eval')} />
+                      </div>
+                      <div>
+                        <label>
+                          Validation dataset size{' '}
+                          <a className="test_size">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".test_size" place="top">
+                            Eval size for the dev test to compute metrics.
+                          </Tooltip>
+                        </label>
+                        <input type="number" step="0.1" {...registerNewModel('test_size')} />
+                      </div>
+                      <div>
+                        <label>
+                          Class threshold{' '}
+                          <a className="class_min_freq">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".class_min_freq" place="top">
+                            Drop classses with less than this number of elements
+                          </Tooltip>
+                        </label>
+                        <input type="number" step="1" {...registerNewModel('class_min_freq')} />
+                      </div>
+                      <div className="form-group d-flex align-items-center">
+                        <label>
+                          Balance classes
+                          <a className="class_balance">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".class_balance" place="top">
+                            Downsize classes to the lowest one.
+                          </Tooltip>
+                        </label>
+                        <input type="checkbox" {...registerNewModel('class_balance')} />
+                      </div>
+                      <div className="form-group d-flex align-items-center">
+                        <label>
+                          Keep the best model
+                          <a className="best">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".best" place="top">
+                            Keep the model with the lowest validation loss.
+                          </Tooltip>
+                        </label>
+                        <input type="checkbox" {...registerNewModel('parameters.best')} />
+                      </div>
 
-                    <div className="form-group d-flex align-items-center">
-                      <label>GPU</label>
-                      <input type="checkbox" {...registerNewModel('parameters.gpu')} />
-                    </div>
+                      <div className="form-group d-flex align-items-center">
+                        <label>
+                          Use GPU
+                          <a className="gpu">
+                            <HiOutlineQuestionMarkCircle />
+                          </a>
+                          <Tooltip anchorSelect=".gpu" place="top">
+                            Compute the training on GPU.
+                          </Tooltip>
+                        </label>
+                        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+                      </div>
+                    </details>
                     {!isComputing && (
                       <button key="start" className="btn btn-primary me-2 mt-2">
                         Train the model
@@ -559,7 +590,7 @@ export const TrainPage: FC = () => {
                     )}
                   </form>
                 </Tab>
-                <Tab
+                {/* <Tab
                   eventKey="parameters"
                   title="Parameters"
                   onSelect={() => setActiveKey('parameters')}
@@ -582,7 +613,7 @@ export const TrainPage: FC = () => {
                       onChange={(e) => setBatchSize(Number(e.target.value))}
                     />
                   </div>
-                </Tab>
+                </Tab> */}
               </Tabs>
             }
             {isComputing && (

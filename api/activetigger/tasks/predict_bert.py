@@ -92,8 +92,14 @@ class PredictBert(BaseTask):
         logger.addHandler(file_handler)
 
         print("load model")
-        with open(self.path / "config.json", "r") as jsonfile:
-            modeltype = json.load(jsonfile)["_name_or_path"]
+        with open(self.path / "parameters.json", "r") as jsonfile:
+            data = json.load(jsonfile)
+            if "base_model" in data:
+                modeltype = data["base_model"]
+            else:
+                raise ValueError(
+                    "No model type found in config.json. Please check the file."
+                )
         tokenizer = AutoTokenizer.from_pretrained(modeltype)
         model = AutoModelForSequenceClassification.from_pretrained(self.path)
 

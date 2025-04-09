@@ -14,6 +14,7 @@ import yaml  # type: ignore[import]
 from cryptography.fernet import Fernet
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
+from sklearn.datasets import fetch_20newsgroups
 from slugify import slugify
 
 from activetigger.datamodels import (
@@ -149,7 +150,7 @@ class Orchestrator:
         """
         Log action in the database
         """
-        self.db_manager.projects_service.add_log(user, action, project, connect)
+        self.db_manager.logs_service.add_log(user, action, project, connect)
         logger.info("%s from %s in project %s", action, user, project)
 
     def get_logs(
@@ -159,7 +160,7 @@ class Orchestrator:
         Get logs for a user/project
         project_slug: project slug or "all"
         """
-        logs = self.db_manager.projects_service.get_logs("all", project_slug, limit)
+        logs = self.db_manager.logs_service.get_logs("all", project_slug, limit)
         df = pd.DataFrame(
             logs, columns=["id", "time", "user", "project", "action", "NA"]
         )
@@ -181,6 +182,10 @@ class Orchestrator:
                 size=round(
                     get_dir_size(os.environ["ACTIVETIGGER_PATH"] + "/" + i[0]), 1
                 ),
+                last_activity=self.db_manager.logs_service.get_last_activity_project(
+                    i[0]
+                ),
+                project_slug=i[0],
             )
             for i in list(reversed(projects_auth))
         ]
@@ -586,6 +591,27 @@ class Orchestrator:
         if project_slug in self.projects:
             del self.projects[project_slug]
 
+    def clean_project(
+        self, project_slug: str | None = None, project_name: str | None = None
+    ) -> None:
+        """
+        Clean a project
+        """
+        if project_slug is None and project_name is None:
+            raise Exception("No project specified")
+        if project_slug is not None:
+            project_slug = slugify(project_slug)
+
+        # remove from database
+        self.db_manager.projects_service.delete_project(self.name)
+
+        # remove from the server
+        shutil.rmtree(self.path.joinpath(project_slug))
+
+        ## remove static files
+        if Path(f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}").exists():
+            shutil.rmtree(f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}")
+
     def update(self):
         """
         Update state of projects from the queue
@@ -605,6 +631,39 @@ class Orchestrator:
         # remove the projects from memory
         for p in to_del:
             del self.projects[p]
+
+    def create_dummy_project(self, username: str) -> None:
+        """
+        Create a dummy project for a user
+        """
+
+        # create name of the project and the directory
+        project_name = "dummy_" + username
+        project_slug = slugify(project_name)
+        project_path = self.path.joinpath(project_slug)
+        os.makedirs(project_path, exist_ok=True)
+
+        # create and save a toy dataset
+        newsgroups = fetch_20newsgroups(
+            subset="all", remove=("headers", "footers", "quotes")
+        )
+        df = pd.DataFrame({"text": newsgroups.data, "target": newsgroups.target})
+        df["category"] = df["target"].apply(lambda x: newsgroups.target_names[x])
+        df.to_csv(project_path.joinpath("dummy.csv"), index=False)
+
+        # parameters of the project
+        params = ProjectBaseModel(
+            project_name=project_name,
+            language="en",
+            filename="dummy.csv",
+            col_id="row_number",
+            cols_text=["text"],
+            cols_label=["category"],
+            n_train=3000,
+            n_test=1000,
+        )
+
+        self.create_project(params, username)
 
 
 # launch the instance

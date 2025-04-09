@@ -2,19 +2,21 @@
 
 ## Scientific board
 
-- Étienne Ollion
-- Julien Boelaert
-- Emma Bonutti
-- Annina Claesson
-- Arnault Chatelain
+- Étienne Ollion (CREST)
+- Julien Boelaert (Université de Lille)
+- Emma Bonutti (CREST)
+- Annina Claesson (CREST)
+- Arnault Chatelain (CREST)
+- Émilien Schultz (CREST)
 
-## Development 
+## Contributors 
 
 - Émilien Schultz (CREST)
 - Paul Girard (Ouestware)
 - Jean-Baptiste Richardet
 - Matthias Bussonnier
-- Léo Mignot
+- Léo Mignot (Centre Émile Durkheim)
+- Jules Brion (Pacte)
 
 ## Feedbacks
 

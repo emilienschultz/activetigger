@@ -520,11 +520,13 @@ class ProjectsServerModel(BaseModel):
 
 
 class ProjectSummaryModel(BaseModel):
+    project_slug: str
     parameters: ProjectModel
     user_right: str
     created_by: str
     created_at: str
     size: float | None = None
+    last_activity: str | None = None
 
 
 class AvailableProjectsModel(BaseModel):
@@ -552,6 +554,7 @@ class ProjectStateModel(BaseModel):
     generations: dict[str, Any]
     errors: list[list]
     memory: float
+    last_activity: str | None = None
 
 
 class QueueModel(BaseModel):
@@ -707,6 +710,7 @@ class LMInformationsModel(BaseModel):
     loss: dict | None = None
     train_scores: dict | None = None
     test_scores: dict | None = None
+    valid_scores: dict | None = None
 
 
 class ProjectUpdateModel(BaseModel):
