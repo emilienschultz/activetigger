@@ -1,5 +1,6 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
+import { useEffect } from 'react';
 import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
 import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../components/pages/AccountPage';
@@ -23,6 +24,14 @@ import { TrainPage } from '../components/pages/TrainPage';
 import { UsersPage } from '../components/pages/UsersPage';
 import { RoleSelector } from '../core/RoleSelector';
 
+function ExternalDocumentation() {
+  useEffect(() => {
+    window.open('https://emilienschultz.github.io/activetigger/docs/', '_blank');
+  }, []);
+
+  return null; // or <Navigate to="/" /> if you want to redirect back after
+}
+
 export function getRouter() {
   return createHashRouter([
     {
@@ -32,6 +41,10 @@ export function getRouter() {
     {
       path: '/',
       element: <HomePage />,
+    },
+    {
+      path: '/documentation',
+      element: <ExternalDocumentation />,
     },
     {
       path: '/login',

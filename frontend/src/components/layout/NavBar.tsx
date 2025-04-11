@@ -18,7 +18,7 @@ const PAGES: { id: string; label: string; href: string }[] = [
   {
     id: 'docs',
     label: 'Documentation',
-    href: 'https://emilienschultz.github.io/activetigger/docs/',
+    href: '/documentation',
   },
 ];
 
