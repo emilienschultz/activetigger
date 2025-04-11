@@ -285,25 +285,15 @@ export const TrainPage: FC = () => {
                       </div>
                     )}
 
+                  {/* Display the parameters of the selected model */}
                   {currentModel && (
                     <div>
                       {model && (
                         <div>
-                          <details className="custom-details">
-                            <summary>Parameters</summary>
-                            <details>
-                              <summary>Rename</summary>
-                              <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                                <input
-                                  id="new_name"
-                                  className="form-control me-2 mt-2"
-                                  type="text"
-                                  placeholder="New name of the model"
-                                  {...registerRename('new_name')}
-                                />
-                                <button className="btn btn-primary me-2 mt-2">Rename</button>
-                              </form>
-                            </details>
+                          <details className="m-2">
+                            <summary>
+                              <span>Parameters</span>
+                            </summary>
                             <table className="table">
                               <thead>
                                 <tr>
@@ -322,18 +312,34 @@ export const TrainPage: FC = () => {
                                 )}
                               </tbody>
                             </table>
-                            <div className="col-6 col-lg-4">
+                          </details>
+                          <details className="m-2">
+                            <summary>Rename</summary>
+                            <form onSubmit={handleSubmitRename(onSubmitRename)}>
+                              <input
+                                id="new_name"
+                                className="form-control me-2 mt-2"
+                                type="text"
+                                placeholder="New name of the model"
+                                {...registerRename('new_name')}
+                              />
+                              <button className="btn btn-primary me-2 mt-2">Rename</button>
+                            </form>
+                          </details>
+                          {model.valid_scores && (
+                            <div>
+                              <h4 className="subsection">Validation scores</h4>
+                              <DisplayScores scores={model.valid_scores} />
+                            </div>
+                          )}
+                          <div>
+                            <div>
                               <LossChart loss={loss} />
                             </div>
-                            {model.valid_scores && (
-                              <div>
-                                Scores de validation
-                                <DisplayScores scores={model.valid_scores} />
-                              </div>
-                            )}
-                          </details>
+                          </div>
+
                           <details className="custom-details">
-                            <summary>Scores</summary>
+                            <summary>Prediction on the trainset</summary>
 
                             {model.train_scores && (
                               <div>
