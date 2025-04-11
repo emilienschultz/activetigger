@@ -15,12 +15,9 @@ const PAGES: { id: string; label: string; href: string }[] = [
   // { id: 'help', label: 'Help', href: '/help' },
   { id: 'account', label: 'Account', href: '/account' },
   { id: 'users', label: 'Users', href: '/users' },
-  {
-    id: 'docs',
-    label: 'Documentation',
-    href: '/documentation',
-  },
 ];
+
+const DOCUMENTATION_LINK = 'https://emilienschultz.github.io/activetigger/docs';
 
 interface NavBarPropsType {
   currentPage?: string;
@@ -84,6 +81,17 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                   </Link>
                 </li>
               ))}
+              <li className="nav-item" key="docs">
+                <a
+                  className={cx('nav-link', currentPage === 'docs' && 'active')}
+                  href={DOCUMENTATION_LINK}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-current={currentPage === 'docs' ? 'page' : undefined}
+                >
+                  Documentation
+                </a>
+              </li>
             </ul>
             <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex">
               <li className="m-1">
