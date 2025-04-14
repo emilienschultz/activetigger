@@ -1,19 +1,15 @@
 import importlib
 import logging
 import os
-import time
-from collections.abc import Awaitable
 from contextlib import asynccontextmanager
 from importlib.abc import Traversable
-from typing import Annotated, Callable
+from typing import Annotated
 
 import psutil
 from fastapi import (
     Depends,
     FastAPI,
     HTTPException,
-    Request,
-    Response,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -77,28 +73,6 @@ app.include_router(export.router)
 app.include_router(models.router)
 app.include_router(generation.router)
 app.include_router(files.router)
-
-
-# update the orchestrator at each action
-last_update_time: float = 0.0
-
-
-@app.middleware("http")
-async def middleware(
-    request: Request, call_next: Callable[[Request], Awaitable[Response]]
-) -> Response:
-    """
-    Middleware to take care of completed processes
-    Executed at each action on the server
-    """
-    global last_update_time
-    current_time = time.time()
-    if current_time - last_update_time >= 1:
-        orchestrator.update()
-        last_update_time = current_time
-    # await asyncio.sleep(1)
-    response = await call_next(request)
-    return response
 
 
 # allow multiple servers (avoir CORS error)

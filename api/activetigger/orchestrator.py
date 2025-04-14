@@ -2,6 +2,7 @@
 Define the orchestrator and launch the instance
 """
 
+import asyncio
 import logging
 import os
 import shutil
@@ -37,6 +38,7 @@ ALGORITHM = "HS256"
 MAX_LOADED_PROJECTS = 20
 N_WORKERS_GPU = 1
 N_WORKERS_CPU = 5
+UPDATE_TIMEOUT = 1
 
 
 class Orchestrator:
@@ -107,6 +109,10 @@ class Orchestrator:
         )
         self.users = Users(self.db_manager)
 
+        # update
+        self._running = True
+        self._update_task = asyncio.create_task(self._update(timeout=UPDATE_TIMEOUT))
+
         # logging
         logging.basicConfig(
             filename=self.path.joinpath("log_server.log"),
@@ -120,9 +126,24 @@ class Orchestrator:
         """
         print("Ending the server")
         logger.error("Disconnect server")
+        self._running = False
         self.queue.executor.shutdown(wait=False)
         self.queue.close()
         print("Server off")
+
+    async def _update(self, timeout: int = 1) -> None:
+        """
+        Update the queue with new tasks every X seconds
+        """
+        try:
+            while self._running:
+                print("update orchestrator")
+                self.update()
+                await asyncio.sleep(timeout)
+        except asyncio.CancelledError:
+            print("Update task cancelled.")
+        finally:
+            print("Update task finished.")
 
     def load_secret_key(self) -> None:
         """

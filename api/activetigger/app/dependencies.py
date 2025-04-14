@@ -131,8 +131,6 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
     # general status
     status = user.status
 
-    # TODO : check project auth
-
     # possibility to create project
     if action == "create project":
         if status in ["root", "manager"]:
