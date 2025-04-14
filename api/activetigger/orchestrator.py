@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
+import psutil
 import yaml  # type: ignore[import]
 from cryptography.fernet import Fernet
 from fastapi.encoders import jsonable_encoder
@@ -18,14 +19,16 @@ from jose import jwt
 from sklearn.datasets import fetch_20newsgroups
 from slugify import slugify
 
+from activetigger import __version__
 from activetigger.datamodels import (
     ProjectBaseModel,
     ProjectModel,
     ProjectSummaryModel,
+    ServerStateModel,
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
-from activetigger.functions import get_dir_size
+from activetigger.functions import get_dir_size, get_gpu_memory_info
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
@@ -110,6 +113,7 @@ class Orchestrator:
         self.users = Users(self.db_manager)
 
         # update
+        # TODO : manage better the closing
         self._running = True
         self._update_task = asyncio.create_task(self._update(timeout=UPDATE_TIMEOUT))
 
@@ -119,6 +123,8 @@ class Orchestrator:
             level=logging.DEBUG,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
+
+        self.server_state = self.get_server_state()
 
     def __del__(self):
         """
@@ -188,6 +194,50 @@ class Orchestrator:
         if partial:
             return df[~df["action"].str.contains("INFO ")]
         return df
+
+    def get_server_state(self) -> ServerStateModel:
+        # active projects
+        active_projects = {}
+        for p in self.projects:
+            active_projects[p] = [
+                {
+                    "unique_id": c.unique_id,
+                    "user": c.user,
+                    "kind": c.kind,
+                    "time": c.time,
+                }
+                for c in self.projects[p].computing
+            ]
+
+        # running processes
+        q = self.queue.state()
+        queue = {i: q[i] for i in q if q[i]["state"] in ["pending", "running"]}
+
+        # server state
+        gpu = get_gpu_memory_info()
+        cpu = psutil.cpu_percent()
+        cpu_count = psutil.cpu_count()
+        memory_info = psutil.virtual_memory()
+        disk_info = psutil.disk_usage("/")
+        at_memory = get_dir_size(os.environ["ACTIVETIGGER_PATH"])
+
+        return ServerStateModel(
+            version=__version__,
+            active_projects=active_projects,
+            queue=queue,
+            gpu=gpu,
+            cpu={"proportion": cpu, "total": cpu_count},
+            memory={
+                "proportion": memory_info.percent,
+                "total": memory_info.total / (1024**3),
+                "available": memory_info.available / (1024**3),
+            },
+            disk={
+                "activetigger": at_memory,
+                "proportion": disk_info.percent,
+                "total": disk_info.total / (1024**3),
+            },
+        )
 
     def get_auth_projects(self, username: str) -> list[ProjectSummaryModel]:
         """
@@ -635,9 +685,10 @@ class Orchestrator:
 
     def update(self):
         """
-        Update state of projects from the queue
+        Update the state of the orchestrator
+        - projects
+        - state of the server
         """
-        # self.queue.display_info()
         self.queue.clean_old_processes()
         timer = time.time()
         to_del = []
@@ -652,6 +703,9 @@ class Orchestrator:
         # remove the projects from memory
         for p in to_del:
             del self.projects[p]
+
+        # update the information on the state of the project
+        self.server_state = self.get_server_state()
 
     def create_dummy_project(self, username: str) -> None:
         """

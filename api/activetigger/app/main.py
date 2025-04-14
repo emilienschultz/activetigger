@@ -1,11 +1,9 @@
 import importlib
 import logging
-import os
 from contextlib import asynccontextmanager
 from importlib.abc import Traversable
 from typing import Annotated
 
-import psutil
 from fastapi import (
     Depends,
     FastAPI,
@@ -38,7 +36,6 @@ from activetigger.datamodels import (
     TokenModel,
     UserInDBModel,
 )
-from activetigger.functions import get_dir_size, get_gpu_memory_info
 from activetigger.orchestrator import orchestrator
 
 # to log specific events from api
@@ -116,21 +113,21 @@ async def login_for_access_token(
     """
     Authentificate user from username/password and return token
     """
-    # authentificate the user
+
     try:
+        # authentificate the user
         user = orchestrator.users.authenticate_user(
             form_data.username, form_data.password
         )
+        # create new token for the user
+        access_token = orchestrator.create_access_token(
+            data={"sub": user.username}, expires_min=120
+        )
+        return TokenModel(
+            access_token=access_token, token_type="bearer", status=user.status
+        )
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
-
-    # create new token for the user
-    access_token = orchestrator.create_access_token(
-        data={"sub": user.username}, expires_min=120
-    )
-    return TokenModel(
-        access_token=access_token, token_type="bearer", status=user.status
-    )
 
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
@@ -157,53 +154,8 @@ async def get_logs(
 async def get_queue() -> ServerStateModel:
     """
     Get the state of the server
-    - queue
-    - gpu use
-    TODO : maybe add a buffer ?
     """
-
-    # active projects
-    active_projects = {}
-    for p in orchestrator.projects:
-        active_projects[p] = [
-            {
-                "unique_id": c.unique_id,
-                "user": c.user,
-                "kind": c.kind,
-                "time": c.time,
-            }
-            for c in orchestrator.projects[p].computing
-        ]
-
-    # running processes
-    q = orchestrator.queue.state()
-    queue = {i: q[i] for i in q if q[i]["state"] in ["pending", "running"]}
-
-    # server state
-    gpu = get_gpu_memory_info()
-    cpu = psutil.cpu_percent()
-    cpu_count = psutil.cpu_count()
-    memory_info = psutil.virtual_memory()
-    disk_info = psutil.disk_usage("/")
-    at_memory = get_dir_size(os.environ["ACTIVETIGGER_PATH"])
-
-    return ServerStateModel(
-        version=__version__,
-        active_projects=active_projects,
-        queue=queue,
-        gpu=gpu,
-        cpu={"proportion": cpu, "total": cpu_count},
-        memory={
-            "proportion": memory_info.percent,
-            "total": memory_info.total / (1024**3),
-            "available": memory_info.available / (1024**3),
-        },
-        disk={
-            "activetigger": at_memory,
-            "proportion": disk_info.percent,
-            "total": disk_info.total / (1024**3),
-        },
-    )
+    return orchestrator.server_state
 
 
 @app.post("/kill", dependencies=[Depends(verified_user)])
