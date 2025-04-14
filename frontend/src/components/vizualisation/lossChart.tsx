@@ -1,8 +1,16 @@
 import React from 'react';
-import { VictoryAxis, VictoryChart, VictoryLegend, VictoryLine, VictoryTheme } from 'victory';
+import {
+  VictoryAxis,
+  VictoryChart,
+  VictoryLegend,
+  VictoryLine,
+  VictoryScatter,
+  VictoryTheme,
+} from 'victory';
 
 interface LossChartProps {
   loss: LossData | null;
+  xmax?: number;
 }
 
 interface LossData {
@@ -11,7 +19,7 @@ interface LossData {
   val_eval_loss: { [key: string]: number };
 }
 
-export const LossChart: React.FC<LossChartProps> = ({ loss }) => {
+export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
   const val_epochs = loss ? (Object.values(loss.epoch) as unknown as number[]) : [];
   const val_loss = loss ? (Object.values(loss.val_loss) as unknown as number[]) : [];
   const val_eval_loss = loss ? (Object.values(loss.val_eval_loss) as unknown as number[]) : [];
@@ -33,7 +41,13 @@ export const LossChart: React.FC<LossChartProps> = ({ loss }) => {
     );
 
   return (
-    <VictoryChart theme={VictoryTheme.material} minDomain={{ y: 0 }} width={1000} height={500}>
+    <VictoryChart
+      theme={VictoryTheme.material}
+      minDomain={{ y: 0 }}
+      maxDomain={{ x: xmax }}
+      width={1000}
+      height={500}
+    >
       <VictoryAxis
         label="Epoch"
         style={{
@@ -53,10 +67,24 @@ export const LossChart: React.FC<LossChartProps> = ({ loss }) => {
           data: { stroke: '#c43a31' }, // Rouge pour val_loss
         }}
       />
+      <VictoryScatter
+        data={valLossData}
+        size={5} // <-- Adjust size here
+        style={{
+          data: { fill: '#c43a31' },
+        }}
+      />
       <VictoryLine
         data={valEvalLossData}
         style={{
           data: { stroke: '#0000ff' }, // Bleu pour val_eval_loss
+        }}
+      />
+      <VictoryScatter
+        data={valEvalLossData}
+        size={5} // <-- Adjust size here
+        style={{
+          data: { fill: '#0000ff' },
         }}
       />
       <VictoryLegend

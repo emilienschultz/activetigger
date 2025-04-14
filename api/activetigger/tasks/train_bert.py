@@ -213,8 +213,7 @@ class TrainBert(BaseTask):
             eval_steps = total_steps // self.params.eval
             if eval_steps == 0:
                 eval_steps = 1
-            #            print("Total steps", total_steps, self.params.epochs)
-            #            print("Eval steps", eval_steps, self.params.eval)
+            print("Total steps", total_steps, "Eval steps", eval_steps)
             training_args = TrainingArguments(
                 output_dir=current_path.joinpath("train"),
                 logging_dir=current_path.joinpath("logs"),

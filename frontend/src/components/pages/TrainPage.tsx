@@ -205,7 +205,7 @@ export const TrainPage: FC = () => {
     link.click();
   };
 
-  console.log(model);
+  console.log(project?.languagemodels.training);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
@@ -273,7 +273,12 @@ export const TrainPage: FC = () => {
                               {v.name} - {v.status} :{' '}
                               <span style={{ fontWeight: 'bold' }}>
                                 {displayAdvancement(v.progress)}
-                                {<LossChart loss={v.loss as unknown as LossData} />}
+                                {
+                                  <LossChart
+                                    loss={v.loss as unknown as LossData}
+                                    xmax={(v.epochs as number) || undefined}
+                                  />
+                                }
                               </span>
                             </li>
                           ))}
@@ -442,7 +447,7 @@ export const TrainPage: FC = () => {
                           number of complete pass through the entire training dataset
                         </Tooltip>
                       </label>
-                      <input type="number" {...registerNewModel('parameters.epochs')} />
+                      <input type="number" {...registerNewModel('parameters.epochs')} min={0} />
                     </div>
                     <div>
                       <label>
@@ -458,6 +463,7 @@ export const TrainPage: FC = () => {
                       <input
                         type="number"
                         step="0.00001"
+                        min={0}
                         {...registerNewModel('parameters.lrate')}
                       />
                     </div>
@@ -475,6 +481,7 @@ export const TrainPage: FC = () => {
                       <input
                         type="number"
                         step="0.001"
+                        min={0}
                         {...registerNewModel('parameters.wdecay')}
                       />
                     </div>
