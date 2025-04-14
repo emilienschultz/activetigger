@@ -114,6 +114,7 @@ class LanguageModels:
                 "status": e.status,
                 "progress": (e.get_progress() if e.get_progress else None),
                 "loss": self.get_loss(e.model_name),
+                "epochs": e.params["epochs"],
             }
             for e in self.computing
             if e.kind in ["bert", "train_bert", "predict_bert"]

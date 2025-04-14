@@ -211,6 +211,10 @@ class TrainBert(BaseTask):
             )
             warmup_steps = int((total_steps) // 10)
             eval_steps = total_steps // self.params.eval
+            if eval_steps == 0:
+                eval_steps = 1
+            #            print("Total steps", total_steps, self.params.epochs)
+            #            print("Eval steps", eval_steps, self.params.eval)
             training_args = TrainingArguments(
                 output_dir=current_path.joinpath("train"),
                 logging_dir=current_path.joinpath("logs"),
@@ -221,8 +225,8 @@ class TrainBert(BaseTask):
                 per_device_train_batch_size=int(self.params.batchsize),
                 per_device_eval_batch_size=int(self.params.batchsize),
                 warmup_steps=int(warmup_steps),
-                eval_steps=eval_steps,
                 eval_strategy="steps",
+                eval_steps=eval_steps,
                 save_strategy="steps",
                 save_steps=int(eval_steps),
                 logging_steps=int(eval_steps),
