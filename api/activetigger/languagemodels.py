@@ -108,13 +108,14 @@ class LanguageModels:
         - progress if available
         - loss if available
         """
+
         r = {
             e.user: {
                 "name": e.model_name,
                 "status": e.status,
                 "progress": (e.get_progress() if e.get_progress else None),
                 "loss": self.get_loss(e.model_name),
-                "epochs": e.params["epochs"],
+                "epochs": e.params["epochs"] if e.params else None,
             }
             for e in self.computing
             if e.kind in ["bert", "train_bert", "predict_bert"]

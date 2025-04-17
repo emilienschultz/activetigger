@@ -111,8 +111,6 @@ export const ProjectTestPage: FC = () => {
     link.click();
   };
 
-  console.log('CURRENT MODEL', currentModel, model);
-
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
       {kindScheme === 'multilabel' ? (
