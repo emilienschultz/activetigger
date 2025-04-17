@@ -42,10 +42,11 @@ export const ProjectTestPage: FC = () => {
       : 'multiclass';
 
   // available models
-  const availableModels =
-    currentScheme && currentProject?.languagemodels.available[currentScheme]
-      ? Object.keys(currentProject?.languagemodels.available[currentScheme] || {})
-      : [];
+  const currentModelOptions = currentScheme
+    ? currentProject?.languagemodels?.available?.[currentScheme]
+    : null;
+
+  const availableModels = currentModelOptions ? Object.keys(currentModelOptions) : [];
 
   console.log('availableModels', availableModels);
 
