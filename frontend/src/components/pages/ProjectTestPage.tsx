@@ -44,8 +44,10 @@ export const ProjectTestPage: FC = () => {
   // available models
   const availableModels =
     currentScheme && currentProject?.languagemodels.available[currentScheme]
-      ? Object.keys(currentProject?.languagemodels.available[currentScheme])
+      ? Object.keys(currentProject?.languagemodels.available[currentScheme] || {})
       : [];
+
+  console.log('availableModels', availableModels);
 
   // state forthe model
   const [currentModel, setCurrentModel] = useState<string | null>(null);
