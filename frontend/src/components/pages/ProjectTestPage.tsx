@@ -48,8 +48,6 @@ export const ProjectTestPage: FC = () => {
 
   const availableModels = currentModelOptions ? Object.keys(currentModelOptions) : [];
 
-  console.log('availableModels', availableModels);
-
   // state forthe model
   const [currentModel, setCurrentModel] = useState<string | null>(null);
 
@@ -112,6 +110,8 @@ export const ProjectTestPage: FC = () => {
     link.download = currentModel || 'model.json';
     link.click();
   };
+
+  console.log('CURRENT MODEL', currentModel, model);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="test">
@@ -276,7 +276,7 @@ export const ProjectTestPage: FC = () => {
               )} */}
               {model && model.test_scores && (
                 <div>
-                  <DisplayScores scores={model.train_scores || {}} />
+                  <DisplayScores scores={model.test_scores || {}} />
                   <button onClick={() => downloadModel()}>Download as json</button>
                   <details className="m-3">
                     <summary>False predictions</summary>

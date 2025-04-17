@@ -14,7 +14,7 @@ export const DisplayScores: FC<DisplayScores> = ({ scores, scores_cv10 }) => {
   );
 
   // get the labels
-  const labels = Object.keys(scores['f1_label']);
+  const labels = Object.keys(scores['f1_label'] || []);
   return (
     <table className="table">
       {' '}
@@ -26,7 +26,7 @@ export const DisplayScores: FC<DisplayScores> = ({ scores, scores_cv10 }) => {
         </tr>
       </thead>
       <tbody>
-        {Object.values(scores_filtered).map(([key, value], i) => (
+        {Object.values(scores_filtered || {}).map(([key, value], i) => (
           <tr key={i}>
             <td>{key}</td>
             <td>{JSON.stringify(value)}</td>

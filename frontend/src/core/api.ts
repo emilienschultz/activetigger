@@ -1530,8 +1530,6 @@ export function useGetServer(projectState: ProjectStateModel | null) {
 
   const data = getAsyncMemoData(getServerState);
 
-  console.log(data);
-
   return {
     version: data?.version,
     queueState: data?.queue,

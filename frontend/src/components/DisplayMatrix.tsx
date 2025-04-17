@@ -17,6 +17,8 @@ export const DisplayMatrix: FC<DisplayMatrixProps> = ({ matrix, labels }) => {
   // Calculate grand total
   const grandTotal = columnTotals.reduce((sum, val) => sum + val, 0);
 
+  console.log(labels, matrix, rowTotals, columnTotals, grandTotal);
+
   return (
     <div className="overflow-x-auto p-4">
       <table className="border-collapse border border-gray-300 w-full text-center">
