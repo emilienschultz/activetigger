@@ -421,7 +421,7 @@ class Orchestrator:
         params.cols_label = ["dataset_" + i for i in params.cols_label if i]
         params.cols_stratify = ["dataset_" + i for i in params.cols_stratify if i]
 
-        # remove empty lines
+        # remove completely empty lines
         content = content.dropna(how="all")
         all_columns = list(content.columns)
         n_total = len(content)
@@ -468,11 +468,8 @@ class Orchestrator:
             lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
         )
 
-        # drop NA texts
-        n_before = len(content)
-        content.dropna(subset=["text"], inplace=True)
-        if n_before != len(content):
-            print(f"Drop {n_before - len(content)} empty text lines")
+        # convert NA texts in empty string
+        content["text"] = content["text"].fillna("")
 
         # limit of usable text (in the futur, will be defined by the number of token)
         def limit(text):
@@ -668,19 +665,24 @@ class Orchestrator:
         """
         Clean a project
         """
-        if project_slug is None and project_name is None:
-            raise Exception("No project specified")
+
         if project_slug is not None:
-            project_slug = slugify(project_slug)
+            project_slug_verif = project_slug
+        elif project_name is not None:
+            project_slug_verif = slugify(project_name)
+        else:
+            raise Exception("No project specified")
 
         # remove from database
-        self.db_manager.projects_service.delete_project(self.name)
+        self.db_manager.projects_service.delete_project(project_slug_verif)
 
         # remove from the server
-        shutil.rmtree(self.path.joinpath(project_slug))
+        shutil.rmtree(self.path.joinpath(project_slug_verif), ignore_errors=True)
 
         ## remove static files
-        if Path(f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}").exists():
+        if Path(
+            f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug_verif}"
+        ).exists():
             shutil.rmtree(f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}")
 
     def update(self):

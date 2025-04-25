@@ -161,6 +161,8 @@ class ProjectsService:
             project = session.scalars(
                 select(Projects).filter_by(project_slug=project_slug)
             ).first()
+            if project is None:
+                return None
             session.delete(project)
 
     def get_project_auth(self, project_slug: str):
