@@ -456,12 +456,12 @@ class Orchestrator:
             keep_id.append(params.col_id)
             content.set_index("id", inplace=True)
 
-        # convert columns that can be numeric
+        # convert columns that can be numeric or force text
         for col in content.columns:
             try:
                 content[col] = pd.to_numeric(content[col], errors="raise")
-            except ValueError:
-                pass  # Leave columns that cannot be converted
+            except Exception:
+                content[col] = content[col].astype(str)
 
         # create the text column, merging the different columns
         content["text"] = content[params.cols_text].apply(
