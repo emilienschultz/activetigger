@@ -22,6 +22,7 @@ import {
 } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
+import { useNotifications } from '../../core/notifications';
 import { GenModel, SupportedAPI } from '../../types';
 import { GenModelSetupForm } from './../forms/GenModelSetupForm';
 import { ProjectPageLayout } from './../layout/ProjectPageLayout';
@@ -55,6 +56,7 @@ export const GenPage: FC = () => {
     appContext: { generateConfig, currentScheme, currentProject },
     setAppContext,
   } = useAppContext();
+  const { notify } = useNotifications();
 
   //------------------------------------
   // state of the page
@@ -152,6 +154,7 @@ export const GenPage: FC = () => {
   // function to add a model
   const addModel = async (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => {
     const id = await createGenModel(projectName, model);
+    notify({ type: 'success', message: 'Model added' });
     setConfiguredModels([...configuredModels, { ...model, id }]);
     setShowForm(false);
   };
@@ -161,6 +164,7 @@ export const GenPage: FC = () => {
     setConfiguredModels(configuredModels.filter((m) => m.id !== generateConfig.selectedModel?.id));
     if (generateConfig.selectedModel?.id !== undefined)
       await deleteGenModel(projectName, generateConfig.selectedModel?.id);
+    notify({ type: 'success', message: 'Model removed' });
   };
 
   // function to handle the change of the model
