@@ -41,65 +41,68 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
     );
 
   return (
-    <VictoryChart
-      theme={VictoryTheme.material}
-      minDomain={{ y: 0 }}
-      maxDomain={{ x: xmax }}
-      width={1000}
-      height={500}
-    >
-      <VictoryAxis
-        label="Epoch"
-        style={{
-          axisLabel: { padding: 30 },
-        }}
-      />
-      <VictoryAxis
-        dependentAxis
-        label="Loss"
-        style={{
-          axisLabel: { padding: 40 },
-        }}
-      />
-      <VictoryLine
-        data={valLossData}
-        style={{
-          data: { stroke: '#c43a31' }, // Rouge pour val_loss
-        }}
-      />
-      <VictoryScatter
-        data={valLossData}
-        size={5} // <-- Adjust size here
-        style={{
-          data: { fill: '#c43a31' },
-        }}
-      />
-      <VictoryLine
-        data={valEvalLossData}
-        style={{
-          data: { stroke: '#0000ff' }, // Bleu pour val_eval_loss
-        }}
-      />
-      <VictoryScatter
-        data={valEvalLossData}
-        size={5} // <-- Adjust size here
-        style={{
-          data: { fill: '#0000ff' },
-        }}
-      />
-      <VictoryLegend
-        x={125}
-        y={10}
-        title="Legend"
-        centerTitle
-        orientation="horizontal"
-        gutter={20}
-        style={{ border: { stroke: 'black' }, title: { fontSize: 10 } }}
-        data={[
-          { name: 'Loss', symbol: { fill: '#c43a31' } },
-          { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
-        ]}
-      />
-    </VictoryChart>
+    <>
+      <VictoryChart
+        theme={VictoryTheme.material}
+        minDomain={{ y: 0 }}
+        maxDomain={{ x: xmax }}
+        width={1000}
+        height={500}
+      >
+        <VictoryAxis
+          label="Epoch"
+          style={{
+            axisLabel: { padding: 30 },
+          }}
+        />
+        <VictoryAxis
+          dependentAxis
+          label="Loss"
+          style={{
+            axisLabel: { padding: 40 },
+          }}
+        />
+        <VictoryLine
+          data={valLossData}
+          style={{
+            data: { stroke: '#c43a31' }, // Rouge pour val_loss
+          }}
+        />
+        <VictoryScatter
+          data={valLossData}
+          size={5} // <-- Adjust size here
+          style={{
+            data: { fill: '#c43a31' },
+          }}
+        />
+        <VictoryLine
+          data={valEvalLossData}
+          style={{
+            data: { stroke: '#0000ff' }, // Bleu pour val_eval_loss
+          }}
+        />
+        <VictoryScatter
+          data={valEvalLossData}
+          size={5} // <-- Adjust size here
+          style={{
+            data: { fill: '#0000ff' },
+          }}
+        />
+        <VictoryLegend
+          x={100}
+          y={350}
+          title="Legend"
+          centerTitle
+          orientation="horizontal"
+          gutter={20}
+          style={{ border: { stroke: 'black' }, title: { fontSize: 10 } }}
+          data={[
+            { name: 'Train Loss', symbol: { fill: '#c43a31' } },
+            { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
+          ]}
+          standalone={true}
+        />
+      </VictoryChart>
+    </>
   );
 };

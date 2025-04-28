@@ -53,6 +53,7 @@ export const ProjectPreparePage: FC = () => {
         dfm_max_term_freq: 100,
         dfm_min_term_freq: 5,
         dfm_ngrams: 1,
+        model: 'generic',
       },
       type: 'sbert',
     },
@@ -182,7 +183,7 @@ export const ProjectPreparePage: FC = () => {
                         <summary>Advanced settings</summary>
                         <label htmlFor="model">Model to use</label>
                         <select id="dataset_col" {...register('parameters.model')}>
-                          <option key={null} value={''}>
+                          <option key={null} value="generic">
                             Generic model
                           </option>
 
