@@ -124,7 +124,7 @@ export const TrainPage: FC = () => {
       class_min_freq: 1,
       test_size: 0.2,
       parameters: {
-        batchsize: 16,
+        batchsize: 4,
         gradacc: 4.0,
         epochs: 3,
         lrate: 3e-5,
