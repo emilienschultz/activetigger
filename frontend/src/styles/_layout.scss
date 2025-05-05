@@ -83,3 +83,24 @@ form button:hover {
   max-height: 150px; /* Définit une hauteur max en mode scroll */
   overflow: auto;
 }
+
+
+#upload-progress,
+#upload-progress[value]::-webkit-progress-bar{
+    -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+          border: none;
+    border-radius: 0;
+    background-color: lightgray;
+    height: 6px;
+    color: $secondary;
+    margin: 0
+}
+#upload-progress[value]::-moz-progress-bar{
+    background-color:  $secondary;    
+}
+
+#upload-progress[value]::-webkit-progress-value {
+    background-color:  $secondary;    
+}
