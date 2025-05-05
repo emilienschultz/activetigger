@@ -218,7 +218,9 @@ export const ProjectAnnotationPage: FC = () => {
     }
   };
 
-  const [wordsToHighlight, setWordsToHighlight] = useState<string>('');
+  //  const [wordsToHighlight, setWordsToHighlight] = useState<string>('');
+
+  console.log(displayConfig.highlightText);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
@@ -314,8 +316,8 @@ export const ProjectAnnotationPage: FC = () => {
                 highlightClassName="Search"
                 searchWords={
                   selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                    ? [selectionConfig.filter, ...wordsToHighlight.split('\n')]
-                    : wordsToHighlight.split('\n')
+                    ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
+                    : displayConfig.highlightText.split('\n')
                 }
                 autoEscape={false}
                 textToHighlight={textInFrame}
@@ -332,7 +334,7 @@ export const ProjectAnnotationPage: FC = () => {
                   highlightClassName="Search"
                   searchWords={
                     selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                      ? [selectionConfig.filter, ...wordsToHighlight.split('\n')]
+                      ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
                       : []
                   }
                   autoEscape={false}
@@ -566,7 +568,17 @@ export const ProjectAnnotationPage: FC = () => {
                 <textarea
                   className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="Line break to separate"
-                  onChange={(e) => setWordsToHighlight(e.target.value)}
+                  // onChange={(e) => setWordsToHighlight(e.target.value)}
+                  value={displayConfig.highlightText}
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      displayConfig: {
+                        ...displayConfig,
+                        highlightText: String(e.target.value),
+                      },
+                    }));
+                  }}
                 />
               </div>
             </Tab>

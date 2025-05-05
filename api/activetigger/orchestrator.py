@@ -461,7 +461,7 @@ class Orchestrator:
             try:
                 content[col] = pd.to_numeric(content[col], errors="raise")
             except Exception:
-                content[col] = content[col].astype(str)
+                content[col] = content[col].astype(str).replace("nan", None)
 
         # create the text column, merging the different columns
         content["text"] = content[params.cols_text].apply(
@@ -505,14 +505,28 @@ class Orchestrator:
             params.test = True
             rows_test = list(testset.index)
 
-        # Step 3 : train dataset
+        # Step 3 : train dataset / different strategies
 
         # remove test rows
         content = content.drop(rows_test)
 
+        force_label = True
+
         # case where there is no test set and the selection is deterministic
         if not params.random_selection and params.n_test == 0:
             trainset = content[0 : params.n_train]
+        # case to force the max of label from one column
+        elif force_label and len(params.cols_label) > 0:
+            f_notna = content[params.cols_label[0]].notna()
+            f_na = content[params.cols_label[0]].isna()
+            # different case regarding the number of labels
+            if f_notna.sum() > params.n_train:
+                trainset = content[f_notna].sample(params.n_train)
+            else:
+                n_train_random = params.n_train - f_notna.sum()
+                trainset = pd.concat(
+                    [content[f_notna], content[f_na].sample(n_train_random)]
+                )
         # case there is stratification on the trainset
         elif len(params.cols_stratify) > 0 and params.stratify_train:
             df_grouped = content.groupby(params.cols_stratify, group_keys=False)
@@ -524,24 +538,6 @@ class Orchestrator:
         # default with random selection in the remaining elements
         else:
             trainset = content.sample(params.n_train)
-
-        # possibility to add the last case : keep labelled data before random
-        # # choice to prioritize labelled data for the FIRST ROW
-        # if len(params.cols_label) == 0:
-        #     f_notna = pd.Series(False, index=content.index)
-        #     f_na = pd.Series(True, index=content.index)
-        # else:
-        #     f_notna = content[params.cols_label[0]].notna()
-        #     f_na = content[params.cols_label[0]].isna()
-        # case where there is more labelled data than needed
-        # elif f_notna.sum() > params.n_train:
-        #     trainset = content[f_notna].sample(params.n_train)
-        # case where there is less labelled data than needed so complete with random
-        # else:
-        #     n_train_random = params.n_train - f_notna.sum()
-        #     trainset = pd.concat(
-        #         [content[f_notna], content[f_na].sample(n_train_random)]
-        #     )
 
         # write the trainset
         trainset[

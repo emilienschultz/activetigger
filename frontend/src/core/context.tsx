@@ -44,6 +44,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
     displayPrediction: true,
     displayHistory: false,
     frameSize: 50,
+    highlightText: '',
   },
   selectionConfig: {
     mode: 'deterministic',

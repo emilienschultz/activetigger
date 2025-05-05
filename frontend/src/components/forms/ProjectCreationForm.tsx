@@ -264,6 +264,12 @@ export const ProjectCreationForm: FC = () => {
 
                   <label className="form-label" htmlFor="col_label">
                     Columns for existing annotations (optional)
+                    <a className="labels">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".labels" place="top">
+                      Create a scheme for each column
+                    </Tooltip>
                   </label>
                   <Controller
                     name="cols_label"

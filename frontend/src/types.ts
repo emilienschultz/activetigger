@@ -131,6 +131,7 @@ export interface DisplayConfig {
   displayContext: boolean;
   displayHistory: boolean;
   frameSize: number;
+  highlightText: string;
 }
 
 export interface newBertModel {
