@@ -4,9 +4,10 @@ import DataTable from 'react-data-table-component';
 import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import PulseLoader from 'react-spinners/PulseLoader';
+import ClipLoader from 'react-spinners/ClipLoader';
 
 //import { stringify } from 'csv-stringify/browser/esm/sync';
+import { CanceledError } from 'axios';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useAddProjectFile, useCreateProject } from '../../core/api';
@@ -49,12 +50,13 @@ export const ProjectCreationForm: FC = () => {
   );
   const { notify } = useNotifications();
 
-  const [spinner, setSpinner] = useState<boolean>(false); // state for the data
+  const [creatingProject, setCreatingProject] = useState<boolean>(false); // state for the data
   const [data, setData] = useState<DataType | null>(null); // state for the data
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
-  const addProjectFile = useAddProjectFile(); // API call
+  const { addProjectFile, progression, cancel } = useAddProjectFile(); // API call
   const files = useWatch({ control, name: 'files' }); // watch the files entry
+
   // available columns
   const columns = data?.headers
     .filter((h) => h !== '')
@@ -113,25 +115,25 @@ export const ProjectCreationForm: FC = () => {
         });
         setValue('n_train', Math.max(0, data.data.length - Number(formData.n_test) - 1));
       }
-      setSpinner(true);
+      setCreatingProject(true);
+
       try {
-        try {
-          // send the data
-          await addProjectFile(files[0], formData.project_name);
-          // create the project
-          const slug = await createProject({
-            ...omit(formData, 'files'),
-            filename: data.filename,
-          });
-          setSpinner(false);
-          navigate(`/projects/${slug}`);
-        } catch (error) {
-          notify({ type: 'error', message: error + '' });
-          setSpinner(false);
-        }
+        // send the data
+        await addProjectFile(files[0], formData.project_name);
+        // create the project
+        const slug = await createProject({
+          ...omit(formData, 'files'),
+          filename: data.filename,
+        });
+        setCreatingProject(false);
+        navigate(`/projects/${slug}`);
       } catch (error) {
-        notify({ type: 'error', message: 'Error creating project' });
-        navigate('/projects');
+        // if error comes from axios being canceled by user than show a success else that's a real error
+        if (!(error instanceof CanceledError)) notify({ type: 'error', message: error + '' });
+        else notify({ type: 'success', message: 'Project creation aborted' });
+      } finally {
+        // anyway stop the loading state
+        setCreatingProject(false);
       }
     }
   };
@@ -159,128 +161,141 @@ export const ProjectCreationForm: FC = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
-          <div>
-            <label className="form-label" htmlFor="project_name">
-              Project name
-            </label>
-            <input
-              className="form-control"
-              id="project_name"
-              placeholder="Name of the project (need to be unique in the system)"
-              type="text"
-              {...register('project_name')}
-              onClick={handleClickOnText}
-            />
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="form-frame ">
+          <div className=" position-relative">
+            <div>
+              <label className="form-label" htmlFor="project_name">
+                Project name
+              </label>
+              <input
+                className="form-control"
+                id="project_name"
+                placeholder="Name of the project (need to be unique in the system)"
+                type="text"
+                disabled={creatingProject}
+                {...register('project_name')}
+                onClick={handleClickOnText}
+              />
+            </div>
 
-          <div>
-            <label className="form-label" htmlFor="csvFile">
-              Data
-            </label>
-            <input className="form-control" id="csvFile" type="file" {...register('files')} />
-            {
-              // display datable if data available
-              data !== null && (
-                <div>
-                  <div className="m-3">
-                    Size of the dataset : <b>{data.data.length - 1}</b>
+            <div>
+              <label className="form-label" htmlFor="csvFile">
+                Data
+              </label>
+              <input
+                className="form-control"
+                disabled={creatingProject}
+                id="csvFile"
+                type="file"
+                {...register('files')}
+              />
+              {
+                // display datable if data available
+                data !== null && (
+                  <div>
+                    <div className="m-3">
+                      Size of the dataset : <b>{data.data.length - 1}</b>
+                    </div>
+                    <DataTable<Record<DataType['headers'][number], string | number>>
+                      columns={data.headers.map((h) => ({
+                        name: h,
+                        selector: (row) => row[h],
+                        format: (row) => {
+                          const v = row[h];
+                          return typeof v === 'bigint' ? Number(v) : v;
+                        },
+                        width: '200px',
+                      }))}
+                      data={
+                        data.data.slice(0, 5) as Record<
+                          keyof DataType['headers'],
+                          string | number
+                        >[]
+                      }
+                    />
                   </div>
-                  <DataTable<Record<DataType['headers'][number], string | number>>
-                    columns={data.headers.map((h) => ({
-                      name: h,
-                      selector: (row) => row[h],
-                      format: (row) => {
-                        const v = row[h];
-                        return typeof v === 'bigint' ? Number(v) : v;
-                      },
-                      width: '200px',
-                    }))}
-                    data={
-                      data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
-                    }
-                  />
-                </div>
-              )
-            }
-          </div>
+                )
+              }
+            </div>
 
-          {
-            // only display if data
-            data != null && (
-              <div>
+            {
+              // only display if data
+              data != null && (
                 <div>
-                  <label className="form-label" htmlFor="col_id">
-                    Id column (they need to be unique)
-                  </label>
-                  <select
-                    className="form-control"
-                    id="col_id"
-                    disabled={data === null}
-                    {...register('col_id')}
-                  >
-                    <option key="row_number" value="row_number">
-                      Row number
-                    </option>
-                    {columns}
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label" htmlFor="cols_text">
-                    Text columns (all the selected fields will be concatenated)
-                  </label>
-
-                  <Controller
-                    name="cols_text"
-                    control={control}
-                    render={({ field: { onChange } }) => (
-                      <Select
-                        options={columnsSelect}
-                        isMulti
-                        onChange={(selectedOptions) => {
-                          onChange(
-                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                          );
-                        }}
-                      />
-                    )}
-                  />
-
-                  <label className="form-label" htmlFor="language">
-                    Language of the corpus (for tokenization and word segmentation)
-                  </label>
-                  <select
-                    className="form-control"
-                    id="language"
-                    disabled={data === null}
-                    {...register('language')}
-                  >
-                    {langages.map((lang) => (
-                      <option key={lang.value} value={lang.value}>
-                        {lang.label}
+                  <div>
+                    <label className="form-label" htmlFor="col_id">
+                      Id column (they need to be unique)
+                    </label>
+                    <select
+                      className="form-control"
+                      id="col_id"
+                      disabled={data === null || creatingProject}
+                      {...register('col_id')}
+                    >
+                      <option key="row_number" value="row_number">
+                        Row number
                       </option>
-                    ))}
-                  </select>
+                      {columns}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label" htmlFor="cols_text">
+                      Text columns (all the selected fields will be concatenated)
+                    </label>
 
-                  <label className="form-label" htmlFor="col_label">
-                    Columns for existing annotations (optional)
-                  </label>
-                  <Controller
-                    name="cols_label"
-                    control={control}
-                    render={({ field: { onChange } }) => (
-                      <Select
-                        options={columnsSelect}
-                        isMulti
-                        onChange={(selectedOptions) => {
-                          onChange(
-                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                          );
-                        }}
-                      />
-                    )}
-                  />
-                  {/* <select
+                    <Controller
+                      name="cols_text"
+                      control={control}
+                      render={({ field: { onChange } }) => (
+                        <Select
+                          options={columnsSelect}
+                          isMulti
+                          isDisabled={creatingProject}
+                          onChange={(selectedOptions) => {
+                            onChange(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
+                          }}
+                        />
+                      )}
+                    />
+
+                    <label className="form-label" htmlFor="language">
+                      Language of the corpus (for tokenization and word segmentation)
+                    </label>
+                    <select
+                      className="form-control"
+                      id="language"
+                      disabled={data === null || creatingProject}
+                      {...register('language')}
+                    >
+                      {langages.map((lang) => (
+                        <option key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label className="form-label" htmlFor="col_label">
+                      Columns for existing annotations (optional)
+                    </label>
+                    <Controller
+                      name="cols_label"
+                      control={control}
+                      render={({ field: { onChange } }) => (
+                        <Select
+                          options={columnsSelect}
+                          isMulti
+                          isDisabled={creatingProject}
+                          onChange={(selectedOptions) => {
+                            onChange(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
+                          }}
+                        />
+                      )}
+                    />
+                    {/* <select
                     className="event-control"
                     id="col_label"
                     disabled={data === null}
@@ -292,149 +307,198 @@ export const ProjectCreationForm: FC = () => {
                     {columns}
                   </select> */}
 
-                  <label className="form-label" htmlFor="cols_context">
-                    Contextual information columns (optional)
-                  </label>
-                  <Controller
-                    name="cols_context"
-                    control={control}
-                    render={({ field: { onChange } }) => (
-                      <Select
-                        options={columnsSelect}
-                        isMulti
-                        onChange={(selectedOptions) => {
-                          onChange(
-                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                          );
-                        }}
+                    <label className="form-label" htmlFor="cols_context">
+                      Contextual information columns (optional)
+                    </label>
+                    <Controller
+                      name="cols_context"
+                      control={control}
+                      render={({ field: { onChange } }) => (
+                        <Select
+                          options={columnsSelect}
+                          isMulti
+                          isDisabled={creatingProject}
+                          onChange={(selectedOptions) => {
+                            onChange(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
+                          }}
+                        />
+                      )}
+                    />
+
+                    <label className="form-label" htmlFor="n_train">
+                      Number of elements in the train set (limit : 100.000)
+                    </label>
+                    <input
+                      className="form-control"
+                      id="n_train"
+                      type="number"
+                      disabled={creatingProject}
+                      {...register('n_train')}
+                      max={maxTrainSet}
+                    />
+
+                    <label className="form-label" htmlFor="n_test">
+                      Number of elements in the test set (not already annotated)
+                    </label>
+                    <input
+                      className="form-control"
+                      id="n_test"
+                      type="number"
+                      disabled={creatingProject}
+                      {...register('n_test')}
+                    />
+
+                    <label className="form-label" htmlFor="random_selection">
+                      Random selection of elements{' '}
+                      <a className="randomselection">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".randomselection" place="top">
+                        If not, will keep the order (minus empty elements) only if testset = 0
+                      </Tooltip>
+                      <input
+                        id="random_selection"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('random_selection')}
+                        className="mx-3"
                       />
-                    )}
-                  />
+                    </label>
 
-                  <label className="form-label" htmlFor="n_train">
-                    Number of elements in the train set (limit : 100.000)
-                  </label>
-                  <input
-                    className="form-control"
-                    id="n_train"
-                    type="number"
-                    {...register('n_train')}
-                    max={maxTrainSet}
-                  />
-
-                  <label className="form-label" htmlFor="n_test">
-                    Number of elements in the test set (not already annotated)
-                  </label>
-                  <input
-                    className="form-control"
-                    id="n_test"
-                    type="number"
-                    {...register('n_test')}
-                  />
-
-                  <label className="form-label" htmlFor="random_selection">
-                    Random selection of elements{' '}
-                    <a className="randomselection">
-                      <HiOutlineQuestionMarkCircle />
-                    </a>
-                    <Tooltip anchorSelect=".randomselection" place="top">
-                      If not, will keep the order (minus empty elements) only if testset = 0
-                    </Tooltip>
-                    <input
-                      id="random_selection"
-                      type="checkbox"
-                      {...register('random_selection')}
-                      className="mx-3"
-                    />
-                  </label>
-
-                  <label className="form-label" htmlFor="stratify_train">
-                    Stratify trainset{' '}
-                    <a className="stratify_train">
-                      <HiOutlineQuestionMarkCircle />
-                    </a>
-                    <Tooltip anchorSelect=".stratify_train" place="top">
-                      If selected, use the stratify columsn to stratify train set. Small variation
-                      in the number of elements can happen.
-                    </Tooltip>
-                    <input
-                      id="stratify_train"
-                      type="checkbox"
-                      {...register('stratify_train')}
-                      className="mx-3"
-                    />
-                  </label>
-
-                  <label className="form-label" htmlFor="stratify_test">
-                    Stratify testset{' '}
-                    <a className="stratify_train">
-                      <HiOutlineQuestionMarkCircle />
-                    </a>
-                    <Tooltip anchorSelect=".stratify_train" place="top">
-                      If selected, use the stratify columsn to stratify test set. Small variation in
-                      the number of elements can happen.
-                    </Tooltip>
-                    <input
-                      id="stratify_test"
-                      type="checkbox"
-                      {...register('stratify_test')}
-                      className="mx-3"
-                    />
-                  </label>
-
-                  <label className="form-label" htmlFor="cols_stratify">
-                    Columns to stratify
-                    <a className="stratify">
-                      <HiOutlineQuestionMarkCircle />
-                    </a>
-                    <Tooltip anchorSelect=".stratify" place="top">
-                      If not empty, will stratify by the selected column (try to equilibrate the
-                      number of elements regarding each category)
-                    </Tooltip>
-                  </label>
-                  <Controller
-                    name="cols_stratify"
-                    control={control}
-                    render={({ field: { onChange } }) => (
-                      <Select
-                        options={columnsSelect}
-                        isMulti
-                        onChange={(selectedOptions) => {
-                          onChange(
-                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                          );
-                        }}
+                    <label className="form-label" htmlFor="stratify_train">
+                      Stratify trainset{' '}
+                      <a className="stratify_train">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".stratify_train" place="top">
+                        If selected, use the stratify columsn to stratify train set. Small variation
+                        in the number of elements can happen.
+                      </Tooltip>
+                      <input
+                        id="stratify_train"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('stratify_train')}
+                        className="mx-3"
                       />
-                    )}
-                  />
+                    </label>
 
-                  <label className="form-label" htmlFor="clear_test">
-                    Empty testset{' '}
-                    <a className="emptytestset">
-                      <HiOutlineQuestionMarkCircle />
-                    </a>
-                    <Tooltip anchorSelect=".emptytestset" place="top">
-                      Drop labels for the testset
-                    </Tooltip>
-                    <input
-                      id="clear_test"
-                      type="checkbox"
-                      {...register('clear_test')}
-                      className="mx-3"
+                    <label className="form-label" htmlFor="stratify_test">
+                      Stratify testset{' '}
+                      <a className="stratify_train">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".stratify_train" place="top">
+                        If selected, use the stratify columsn to stratify test set. Small variation
+                        in the number of elements can happen.
+                      </Tooltip>
+                      <input
+                        id="stratify_test"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('stratify_test')}
+                        className="mx-3"
+                      />
+                    </label>
+
+                    <label className="form-label" htmlFor="cols_stratify">
+                      Columns to stratify
+                      <a className="stratify">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".stratify" place="top">
+                        If not empty, will stratify by the selected column (try to equilibrate the
+                        number of elements regarding each category)
+                      </Tooltip>
+                    </label>
+                    <Controller
+                      name="cols_stratify"
+                      control={control}
+                      render={({ field: { onChange } }) => (
+                        <Select
+                          options={columnsSelect}
+                          isMulti
+                          isDisabled={creatingProject}
+                          onChange={(selectedOptions) => {
+                            onChange(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
+                          }}
+                        />
+                      )}
                     />
-                  </label>
-                </div>
-                <button type="submit" className="btn btn-primary form-button" disabled={spinner}>
-                  Create
-                </button>
-                {spinner && (
-                  <div className="col-12 text-center">
-                    <PulseLoader />
+
+                    <label className="form-label" htmlFor="clear_test">
+                      Empty testset{' '}
+                      <a className="emptytestset">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".emptytestset" place="top">
+                        Drop labels for the testset
+                      </Tooltip>
+                      <input
+                        id="clear_test"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('clear_test')}
+                        className="mx-3"
+                      />
+                    </label>
                   </div>
-                )}
+                </div>
+              )
+            }
+            {/* 
+              Quasi Modal
+              overlay progression bar with cancel button 
+            */}
+            {data && creatingProject && (
+              <div>
+                <div className="position-absolute bg-white w-100 h-100 top-0 left-0 d-flex flex-column justify-content-center bg-opacity-50">
+                  <div className="d-flex flex-column bg-white p-4 border border-dark gap-2">
+                    <div className="d-flex align-items-center gap-2 ">
+                      <ClipLoader /> <span>Uploading</span>{' '}
+                      <span>
+                        {progression.loaded && progression.total
+                          ? `${((progression.loaded / progression.total) * 100).toFixed(2)}%`
+                          : null}
+                      </span>
+                    </div>
+                    <progress
+                      id="upload-progress"
+                      value={progression.loaded}
+                      max={progression.total}
+                    />
+                    {cancel !== undefined && (
+                      <div>
+                        <button
+                          className="btn btn-warning mt-1"
+                          onClick={() => {
+                            cancel.abort();
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            )
-          }
+            )}
+          </div>
+          {data !== null && (
+            <>
+              <button
+                type="submit"
+                className="btn btn-primary form-button"
+                disabled={creatingProject}
+              >
+                Create
+              </button>
+            </>
+          )}
         </form>
       </div>
     </div>
