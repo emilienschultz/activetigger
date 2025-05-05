@@ -1,7 +1,9 @@
+import axios from 'axios';
 import { saveAs } from 'file-saver';
 import { toPairs, values } from 'lodash';
 import createClient, { Middleware } from 'openapi-fetch';
 import { useCallback, useState } from 'react';
+
 import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
@@ -20,7 +22,7 @@ import {
   newBertModel,
 } from '../types';
 import { HttpError } from './HTTPError';
-import { getAuthHeaders } from './auth';
+import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
 import { useNotifications } from './notifications';
 import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
@@ -2118,31 +2120,53 @@ export function useDeleteFile(reFetchFiles: () => void) {
  */
 export function useAddProjectFile() {
   const { notify } = useNotifications();
-  console.log('upload');
+  const { authenticatedUser } = useAuth();
+
+  // state to monitor progression
+  const [progression, setProgression] = useState<{ loaded?: number; total?: number }>({});
+  // state to allow user top cancel operation
+  const [controller, setController] = useState<AbortController | undefined>(undefined);
+
+  // main callback to upload to API
   const addProjectFile = useCallback(
     async (file: File, project_name: string) => {
-      const res = await api_withouttimeout.POST('/files/add/project', {
-        params: {
-          query: { project_name: project_name },
-        },
-        body: { file: file as unknown as string },
-        bodySerializer: (body) => {
-          const formData = new FormData();
-          formData.set('file', body.file);
-          return formData;
-        },
-      });
-      console.log(res);
-      // FIX https://github.com/openapi-ts/openapi-typescript/issues/1214#issuecomment-1957965890
-      if (!res.error) notify({ type: 'success', message: 'File uploaded' });
-      else
-        throw new Error(
-          Array.isArray(res.error.detail)
-            ? res.error.detail.map((d) => d.msg).join('; ')
-            : res.error.detail || res.error.toString(),
+      try {
+        // create a new controller
+        const controller = new AbortController();
+        // update state
+        setController(controller);
+        // use axios instead of openapi fetch to follow progression
+        await axios.postForm(
+          `${config.api.url}/files/add/project`,
+          { file },
+          {
+            // signal to abort
+            signal: controller.signal,
+            params: {
+              project_name,
+            },
+            // add auth
+            headers: getAuthHeaders(authenticatedUser)?.headers,
+            // update progression state
+            onUploadProgress: (progressEvent) => {
+              const { loaded, total } = progressEvent;
+              setProgression({ loaded, total });
+            },
+          },
         );
+        notify({ type: 'success', message: 'File uploaded' });
+      } finally {
+        // reset internal state
+        setProgression({});
+        setController(undefined);
+      }
     },
-    [notify],
+    [notify, authenticatedUser, setController],
   );
-  return addProjectFile;
+
+  return {
+    addProjectFile,
+    progression,
+    cancel: controller,
+  };
 }
