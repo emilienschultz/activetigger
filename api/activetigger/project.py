@@ -202,6 +202,9 @@ class Project:
         if self.params.dir is None:
             raise Exception("Cannot add test data without a valid dir")
 
+        if testset.col_label == "":
+            testset.col_label = None
+
         csv_buffer = io.StringIO(testset.csv)
         df = pd.read_csv(
             csv_buffer,
@@ -212,13 +215,9 @@ class Project:
         if len(df) > 10000:
             raise Exception("You testset is too large")
 
-        print("col label", testset.col_label, "scheme", testset.scheme)
-
         # change names
         if not testset.col_label:
-            df = df.rename(
-                columns={testset.col_id: "id", testset.col_text: "text"}
-            ).set_index("id")
+            df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"})
         else:
             df = df.rename(
                 columns={

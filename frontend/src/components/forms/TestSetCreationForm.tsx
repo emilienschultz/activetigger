@@ -65,6 +65,7 @@ export const TestSetCreationForm: FC<{ projectSlug: string; currentScheme: strin
         return;
       }
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+      console.log('DATA', formData);
       await createTestSet(projectSlug, {
         ...omit(formData, 'files'),
         csv,
@@ -154,7 +155,9 @@ export const TestSetCreationForm: FC<{ projectSlug: string; currentScheme: strin
                     disabled={data === null}
                     {...register('col_label')}
                   >
-                    <option key="none">No label to import</option>
+                    <option key="none" value="">
+                      No label
+                    </option>
 
                     {columns}
                   </select>

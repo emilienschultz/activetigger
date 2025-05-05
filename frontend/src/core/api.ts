@@ -247,10 +247,6 @@ export function useCreateTestSet() {
         body: testset,
       });
       if (!res.error) notify({ type: 'success', message: 'Test data set uploaded' });
-      else
-        throw new Error(
-          res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
-        );
     },
     [notify],
   );
