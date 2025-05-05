@@ -1395,9 +1395,6 @@ export interface paths {
         /**
          * Get Queue
          * @description Get the state of the server
-         *     - queue
-         *     - gpu use
-         *     TODO : maybe add a buffer ?
          */
         get: operations["get_queue_server_get"];
         put?: never;
@@ -1930,6 +1927,11 @@ export interface components {
              * @default false
              */
             stratify_test: boolean;
+            /**
+             * Force Label
+             * @default false
+             */
+            force_label: boolean;
         };
         /**
          * ProjectDescriptionModel
@@ -2034,6 +2036,11 @@ export interface components {
              * @default false
              */
             stratify_test: boolean;
+            /**
+             * Force Label
+             * @default false
+             */
+            force_label: boolean;
             /** Project Slug */
             project_slug: string;
             /** All Columns */

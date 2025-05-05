@@ -39,12 +39,12 @@ export const ProjectCreationForm: FC = () => {
   const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
     {
       defaultValues: {
-        //        project_name: 'New project',
         n_train: 100,
         n_test: 0,
         language: 'en',
         clear_test: false,
         random_selection: true,
+        force_label: false,
       },
     },
   );
@@ -56,6 +56,7 @@ export const ProjectCreationForm: FC = () => {
   const createProject = useCreateProject(); // API call
   const { addProjectFile, progression, cancel } = useAddProjectFile(); // API call
   const files = useWatch({ control, name: 'files' }); // watch the files entry
+  const force_label = useWatch({ control, name: 'force_label' }); // watch the force label entry
 
   // available columns
   const columns = data?.headers
@@ -350,6 +351,24 @@ export const ProjectCreationForm: FC = () => {
                       {...register('n_test')}
                     />
 
+                    <label className="form-label" htmlFor="force_label">
+                      Prioritize existing labels{' '}
+                      <a className="force_label">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".force_label" place="top">
+                        Select in priority the elements with existing labels (if any) of the first
+                        column of labels
+                      </Tooltip>
+                      <input
+                        id="force_label"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('force_label')}
+                        className="mx-3"
+                      />
+                    </label>
+
                     <label className="form-label" htmlFor="random_selection">
                       Random selection of elements{' '}
                       <a className="randomselection">
@@ -361,7 +380,7 @@ export const ProjectCreationForm: FC = () => {
                       <input
                         id="random_selection"
                         type="checkbox"
-                        disabled={creatingProject}
+                        disabled={creatingProject || force_label}
                         {...register('random_selection')}
                         className="mx-3"
                       />
@@ -379,7 +398,7 @@ export const ProjectCreationForm: FC = () => {
                       <input
                         id="stratify_train"
                         type="checkbox"
-                        disabled={creatingProject}
+                        disabled={creatingProject || force_label}
                         {...register('stratify_train')}
                         className="mx-3"
                       />
@@ -397,7 +416,7 @@ export const ProjectCreationForm: FC = () => {
                       <input
                         id="stratify_test"
                         type="checkbox"
-                        disabled={creatingProject}
+                        disabled={creatingProject || force_label}
                         {...register('stratify_test')}
                         className="mx-3"
                       />

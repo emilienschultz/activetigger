@@ -379,6 +379,8 @@ class Orchestrator:
         - when saved, the files followed the nomenclature of the project : text, label, etc.
         """
 
+        print("Project", params)
+
         # test if possible to create the project
         if self.exists(params.project_name):
             raise Exception("This project already exists")
@@ -510,13 +512,13 @@ class Orchestrator:
         # remove test rows
         content = content.drop(rows_test)
 
-        force_label = True
-
         # case where there is no test set and the selection is deterministic
         if not params.random_selection and params.n_test == 0:
+            print("deterministic selection of the trainset")
             trainset = content[0 : params.n_train]
         # case to force the max of label from one column
-        elif force_label and len(params.cols_label) > 0:
+        elif params.force_label and len(params.cols_label) > 0:
+            print("force the selection of labels")
             f_notna = content[params.cols_label[0]].notna()
             f_na = content[params.cols_label[0]].isna()
             # different case regarding the number of labels
@@ -529,6 +531,7 @@ class Orchestrator:
                 )
         # case there is stratification on the trainset
         elif len(params.cols_stratify) > 0 and params.stratify_train:
+            print("stratification of the trainset")
             df_grouped = content.groupby(params.cols_stratify, group_keys=False)
             nb_cat = len(df_grouped)
             nb_elements_cat = round(params.n_train / nb_cat)
@@ -537,6 +540,7 @@ class Orchestrator:
             )
         # default with random selection in the remaining elements
         else:
+            print("random selection of the trainset")
             trainset = content.sample(params.n_train)
 
         # write the trainset

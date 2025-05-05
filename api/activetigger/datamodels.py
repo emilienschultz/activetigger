@@ -35,6 +35,7 @@ class ProjectBaseModel(BaseModel):
     cols_stratify: list[str] = []
     stratify_train: bool = False
     stratify_test: bool = False
+    force_label: bool = False
 
 
 class ProjectModel(ProjectBaseModel):
