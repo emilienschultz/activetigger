@@ -210,9 +210,10 @@ class TrainBert(BaseTask):
                 int(self.params.batchsize) * float(self.params.gradacc)
             )
             warmup_steps = int((total_steps) // 10)
-            eval_steps = total_steps // self.params.eval
+            eval_steps = (total_steps - warmup_steps) // self.params.eval
             if eval_steps == 0:
                 eval_steps = 1
+
             training_args = TrainingArguments(
                 output_dir=current_path.joinpath("train"),
                 logging_dir=current_path.joinpath("logs"),

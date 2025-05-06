@@ -68,7 +68,9 @@ async def get_bert(
     Get Bert parameters and statistics
     """
     try:
-        return project.languagemodels.get_informations(name)
+        statistics = project.languagemodels.get_informations(name)
+        print(statistics)
+        return statistics
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

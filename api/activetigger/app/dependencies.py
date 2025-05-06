@@ -63,7 +63,14 @@ async def get_project(project_slug: str) -> ProjectModel:
         print("PROBLEM IN THE FIFO QUEUE", e)
 
     # load the project
-    orchestrator.start_project(project_slug)
+    try:
+        orchestrator.start_project(project_slug)
+    except Exception as e:
+        print("PROBLEM IN THE PROJECT LOADING", e)
+        raise HTTPException(
+            status_code=500,
+            detail="There is a problem with the project loading. Please contact the administrator",
+        )
 
     # return loaded project
     return orchestrator.projects[project_slug]

@@ -523,7 +523,7 @@ class LanguageModels:
                         log[2 * i]["loss"],
                         log[2 * i + 1]["eval_loss"],
                     ]
-                    for i in range(0, int((len(log) - 1) / 2))
+                    for i in range(0, int((len(log)) / 2))
                 ],
                 columns=["epoch", "val_loss", "val_eval_loss"],
             ).to_json()
