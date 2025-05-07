@@ -1357,7 +1357,8 @@ export function useGetModelUrl(projectSlug: string | null, model: string | null)
       });
 
       if (!res.error) {
-        return config.api.url + res.data.path;
+        const url = config.api.url.replace(/\/$/, '');
+        return url + '/' + res.data.path;
       }
       return null;
     }
@@ -1381,7 +1382,8 @@ export function useGetDatasetUrl(projectSlug: string | null) {
       });
 
       if (!res.error) {
-        return config.api.url + res.data.path;
+        const url = config.api.url.replace(/\/$/, '');
+        return url + '/' + res.data.path;
       }
       return null;
     }
@@ -2132,8 +2134,9 @@ export function useAddProjectFile() {
         // update state
         setController(controller);
         // use axios instead of openapi fetch to follow progression
+        const url = config.api.url.replace(/\/$/, '');
         await axios.postForm(
-          `${config.api.url}/files/add/project`,
+          `${url}/files/add/project`,
           { file },
           {
             // signal to abort
