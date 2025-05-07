@@ -372,6 +372,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Project Exists
+         * @description Check if a project exists
+         */
+        post: operations["check_project_exists_projects_available_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/elements/next": {
         parameters: {
             query?: never;
@@ -1275,7 +1295,7 @@ export interface paths {
         put?: never;
         /**
          * Upload File
-         * @description Upload a file on the server
+         * @description Upload a file on the server to create a new project
          *     use: type de file
          */
         post: operations["upload_file_files_add_project_post"];
@@ -2937,6 +2957,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectStateModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_project_exists_projects_available_post: {
+        parameters: {
+            query: {
+                project_name: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
                 };
             };
             /** @description Validation Error */

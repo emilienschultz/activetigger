@@ -121,6 +121,7 @@ export const ProjectCreationForm: FC = () => {
       try {
         // send the data
         await addProjectFile(files[0], formData.project_name);
+        console.log('file uploaded');
         // create the project
         const slug = await createProject({
           ...omit(formData, 'files'),

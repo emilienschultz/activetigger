@@ -71,6 +71,12 @@ async def new_project(
     Load new project
     """
     test_rights("create project", current_user.username)
+    # check if the project already exists
+    if orchestrator.exists(project.project_name):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Project {project.project_name} already exists",
+        )
     try:
         # create the project
         r = orchestrator.create_project(project, current_user.username)
@@ -193,3 +199,19 @@ async def get_project_state(
         raise HTTPException(status_code=404, detail="Project not found")
     data = project.get_state()
     return ProjectStateModel(**data)
+
+
+@router.post(
+    "/projects/available",
+    dependencies=[Depends(verified_user)],
+)
+async def check_project_exists(
+    project_name: str,
+) -> bool:
+    """
+    Check if a project exists
+    """
+    if orchestrator.exists(project_name):
+        return False
+    else:
+        return True

@@ -683,7 +683,9 @@ class Orchestrator:
         if Path(
             f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug_verif}"
         ).exists():
-            shutil.rmtree(f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}")
+            shutil.rmtree(
+                f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug_verif}"
+            )
 
     def update(self):
         """

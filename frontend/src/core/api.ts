@@ -2114,6 +2114,21 @@ export function useDeleteFile(reFetchFiles: () => void) {
 }
 
 /**
+ * Test if project name is available
+ */
+export function useProjectNameAvailable() {
+  const testProjectName = useCallback(async (project_name: string) => {
+    const res = await api.POST('/projects/available', {
+      params: {
+        query: { project_name: project_name },
+      },
+    });
+    return res.data;
+  }, []);
+  return testProjectName;
+}
+
+/**
  * Add file
  */
 export function useAddProjectFile() {
@@ -2154,6 +2169,8 @@ export function useAddProjectFile() {
           },
         );
         notify({ type: 'success', message: 'File uploaded' });
+      } catch (error) {
+        notify({ type: 'error', message: `Upload failed: ${error}` });
       } finally {
         // reset internal state
         setProgression({});

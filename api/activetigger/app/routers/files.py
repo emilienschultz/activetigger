@@ -19,6 +19,7 @@ from activetigger.app.dependencies import (
 from activetigger.datamodels import (
     UserInDBModel,
 )
+from activetigger.orchestrator import orchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -46,18 +47,13 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
     """
     Stream the uploaded file in a new project folder with the same name
     """
-    if username is None:
-        raise Exception("No username provided")
-    if file.filename is None:
-        raise Exception("No filename provided")
-    print("start writing the project")
-
     # create a folder for the project to be created
+    project_slug = slugify(project_name)
+    project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
+    if project_path.exists():
+        raise Exception("Project already exists")
+
     try:
-        project_slug = slugify(project_name)
-        project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
-        if project_path.exists():
-            raise Exception("Project already exists")
         os.makedirs(project_path)
 
         # Read and write the file asynchronously
@@ -67,7 +63,6 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
                 buffer.write(chunk)
     except Exception as e:
         # if failed, remove the project folder
-        project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
         if project_path.exists():
             project_path.rmdir()
         raise HTTPException(status_code=500, detail=f"File writing error: {str(e)}")
@@ -82,11 +77,16 @@ async def upload_file(
     file: UploadFile = File(...),
 ) -> None:
     """
-    Upload a file on the server
+    Upload a file on the server to create a new project
     use: type de file
     """
     test_rights("manage files", current_user.username)
 
+    # check if the project does not already exist
+    if orchestrator.exists(project_name):
+        raise HTTPException(
+            status_code=500, detail="Project already exists, please choose another name"
+        )
     # test the incoming file
     if file.filename is None:
         raise HTTPException(status_code=500, detail="Problem with the file")
@@ -98,11 +98,11 @@ async def upload_file(
         raise HTTPException(
             status_code=500, detail="Only csv and parquet files are allowed"
         )
+    # try to upload the file
     try:
         await new_project_file(file, current_user.username, project_name)
         return None
     except Exception as e:
-
         raise HTTPException(status_code=500, detail=str(e))
 
 
