@@ -1,0 +1,13 @@
+services:
+  postgres:
+    ports:
+      - ${POSTGRES_PORT}:5432
+  api:
+    ports:
+      - ${API_PORT}:4000
+  frontend:
+    ports:
+      - ${CLIENT_PORT}:5173
+  nginx:
+    ports:
+      - ${NGINX_PORT}:80

@@ -44,3 +44,4 @@ types-python-jose
 types-psutil
 pandas-stubs
 loky
+psycopg2

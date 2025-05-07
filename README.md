@@ -11,12 +11,10 @@ ActiveTigger[^1] is a text annotation web tool dedicated to computational social
 
 Designed primarily by researchers in social sciences, its use can extend to all users that need to annotate textual data.
 
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > The app is currently 🚧 **under the beta test phase** 🚧. The stable version is planned for mid-June.
 
-
 [Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
-
 
 ## Install the app
 
@@ -25,15 +23,36 @@ The app is built on a client/API architecture :
 - the server runs an API with FastAPI
 - the client is in [React](https://reactjs.org/)
 
-### Install the Python API
-
 Clone the repository
 
 ```bash
 git clone https://github.com/emilienschultz/activetigger.git
 ```
 
-Create a virtual environnement with Python 3.11, for instance with Anaconda 
+### Run with docker
+
+If you don't already have it installed, install docker.
+
+```bash
+cd docker
+docker compose -p activetigger up
+```
+
+Docker will start:
+
+- postgresql
+- python API (and install all requirements)
+- frontend
+- a reverse proxy with nginx
+
+By default the docker stack is in mode DEV.
+This means that both API and FRONTEND are started using the local code in watch mode. You can update the code the service will be restarted. You can therefor use docker for development.
+
+To adapt the docker stack configuration change the `./docker/.env` file.
+
+### Install the Python API
+
+Create a virtual environnement with Python 3.11, for instance with Anaconda
 
 ```bash
 conda create -n activetigger python=3.11
@@ -125,7 +144,6 @@ You can deploy the app with Github Pages for tests
 
 A python client is under development to interact with the API https://github.com/emilienschultz/activetigger-client
 
-
 ## Documentation
 
 The documentation is [here](https://emilienschultz.github.io/activetigger/docs/)
@@ -139,7 +157,6 @@ Something in the code looks ugly ? Do you miss a feature? Please add your knowle
 3. Commit your changes: `git commit -am 'Add some feature'`
 4. Push to the branch: `git push origin my-new-feature`
 5. Submit a pull request 🚀
-
 
 ## Funding
 

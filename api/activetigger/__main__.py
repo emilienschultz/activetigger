@@ -50,6 +50,4 @@ if __name__ == "__main__":
 
     print(os.environ["ACTIVETIGGER_PATH"], os.environ["ACTIVETIGGER_MODEL"])
 
-    uvicorn.run(
-        "activetigger.app.main:app", host="0.0.0.0", port=args.portapi, reload=True
-    )
+    uvicorn.run("activetigger.app.main:app", host="0.0.0.0", port=args.portapi, reload=os.environ['MODE'] == "dev")

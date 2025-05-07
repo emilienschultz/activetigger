@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
+import os
 
 from activetigger.db import DBException
 from activetigger.db.generations import GenerationsService
@@ -24,7 +25,8 @@ class DatabaseManager:
     projects_service: ProjectsService
 
     def __init__(self, path_db: str):
-        db_url = f"sqlite:///{path_db}"
+        # priority to environ if set
+        db_url = os.environ["DATABASE_URL"] if "DATABASE_URL" in os.environ else f"sqlite:///{path_db}"
 
         # connect the session
         self.engine = create_engine(db_url)
@@ -50,6 +52,6 @@ class DatabaseManager:
         Create root session
         :return: None
         """
-        pwd: str = get_root_pwd()
+        pwd: str = os.environ.get("ROOT_PASSWORD") if os.environ.get("ROOT_PASSWORD") is not None else get_root_pwd()
         hash_pwd: bytes = get_hash(pwd)
         self.users_service.add_user("root", hash_pwd.decode("utf8"), "root", "system")

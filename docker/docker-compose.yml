@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    restart: ${RESTART_POLICY}
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  api:
+    build:
+      context: ./api
+      dockerfile: ./Dockerfile
+      args:
+        - PYTHON_VERSION=${PYTHON_VERSION}
+        - USER_ID=${USER_ID}
+        - GROUP_ID=${GROUP_ID}
+    entrypoint: /entrypoint.sh
+    restart: ${RESTART_POLICY}
+    depends_on:
+      - postgres
+    volumes:
+      - ${PROJECT_PATH}/docker/api/entrypoint.sh:/entrypoint.sh
+      - ${PROJECT_PATH}/api:/api
+      - ${PROJECT_PATH}/docker/api/models:/api/models
+      - ${PROJECT_PATH}/docker/api/projects:/api/projects
+      - ${PROJECT_PATH}/docker/api/venv:/home/python/venv
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DATA_FOLDER=${DATA_FOLDER}
+      - ROOT_PASSWORD=${ROOT_PASSWORD}
+      - API_PORT=${API_PORT}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - MODE=${MODE}
+  frontend: 
+    image: node:${NODE_VERSION}
+    entrypoint: /entrypoint.sh
+    user: node
+    restart: ${RESTART_POLICY}
+    volumes:
+      - ${PROJECT_PATH}/docker/frontend/entrypoint.sh:/entrypoint.sh
+      - ${PROJECT_PATH}/frontend:/frontend
+    environment:
+      - API_PORT=${API_PORT}
+      - MODE=${MODE}
+      - VITE_API_URL=${API_URL}
+  nginx:
+    image: nginx:${NGINX_VERSION}
+    restart: ${RESTART_POLICY}
+    depends_on:
+      - api
+      - frontend
+    volumes:
+      - ${PROJECT_PATH}/docker/nginx.${MODE}.conf:/etc/nginx/conf.d/default.conf
+      - ${PROJECT_PATH}/frontend/dict:/var/www/frontend
