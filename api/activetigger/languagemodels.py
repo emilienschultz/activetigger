@@ -447,10 +447,6 @@ class LanguageModels:
                 status="trained",
             )
 
-            # update bdd status
-            # self.language_models_service.change_model_status(
-            #     self.project_slug, element.model_name, "trained"
-            # )
             # TODO test if the model is already compressed
             self.language_models_service.set_model_params(
                 self.project_slug,

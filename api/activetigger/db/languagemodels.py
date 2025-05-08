@@ -1,7 +1,7 @@
 import datetime
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from activetigger.datamodels import LanguageModelScheme
@@ -21,7 +21,7 @@ class LanguageModelsService:
     def __init__(self, sessionmaker: sessionmaker[Session]):
         self.SessionMaker = sessionmaker
 
-    def available_models(self, project: str) -> list[LanguageModelScheme]:
+    def available_models(self, project_slug: str) -> list[LanguageModelScheme]:
         """
         Get available models in database
         """
@@ -29,7 +29,7 @@ class LanguageModelsService:
             models = session.execute(
                 select(Models.name, Models.parameters, Models.path, Models.scheme_id)
                 .filter_by(
-                    project_id=project,
+                    project_slug=project_slug,
                     status="trained",
                 )
                 .distinct()
@@ -63,11 +63,11 @@ class LanguageModelsService:
             return False
 
         model = Models(
-            project_id=project,
+            project_slug=project,
             time=datetime.datetime.now(),
             kind=kind,
             name=name,
-            user_id=user,
+            user_name=user,
             parameters=params,
             scheme_id=scheme,
             status=status,
@@ -81,30 +81,22 @@ class LanguageModelsService:
 
         return True
 
-    def change_model_status(self, project: str, name: str, status: str):
-        with self.SessionMaker.begin() as session:
-            _ = session.execute(
-                update(Models)
-                .filter_by(name=name, project_id=project)
-                .values(status=status)
-            )
-
-    def model_exists(self, project: str, name: str):
+    def model_exists(self, project_slug: str, name: str):
         session = self.SessionMaker()
         models = (
             session.query(Models)
-            .filter(Models.name == name, Models.project_id == project)
+            .filter(Models.name == name, Models.project_slug == project_slug)
             .all()
         )
         session.close()
         return len(models) > 0
 
-    def delete_model(self, project: str, name: str):
+    def delete_model(self, project_slug: str, name: str):
         session = self.SessionMaker()
         # test if the name does not exist
         models = (
             session.query(Models)
-            .filter(Models.name == name, Models.project_id == project)
+            .filter(Models.name == name, Models.project_slug == project_slug)
             .all()
         )
         if len(models) == 0:
@@ -112,29 +104,29 @@ class LanguageModelsService:
             return False
         # delete the model
         session.query(Models).filter(
-            Models.name == name, Models.project_id == project
+            Models.name == name, Models.project_slug == project_slug
         ).delete()
         session.commit()
         session.close()
         return True
 
-    def get_model(self, project: str, name: str):
+    def get_model(self, project_slug: str, name: str):
         session = self.SessionMaker()
         model = (
             session.query(Models)
-            .filter(Models.name == name, Models.project_id == project)
+            .filter(Models.name == name, Models.project_slug == project_slug)
             .first()
         )
         session.close()
         return model
 
-    def rename_model(self, project: str, old_name: str, new_name: str):
+    def rename_model(self, project_slug: str, old_name: str, new_name: str):
         session = self.SessionMaker()
 
         # test if the name does not exist
         models = (
             session.query(Models)
-            .filter(Models.name == new_name, Models.project_id == project)
+            .filter(Models.name == new_name, Models.project_slug == project_slug)
             .all()
         )
         if len(models) > 0:
@@ -142,7 +134,7 @@ class LanguageModelsService:
         # get and rename
         model = (
             session.query(Models)
-            .filter(Models.name == old_name, Models.project_id == project)
+            .filter(Models.name == old_name, Models.project_slug == project_slug)
             .first()
         )
         if model is None:
@@ -154,11 +146,11 @@ class LanguageModelsService:
         session.close()
         return {"success": "model renamed"}
 
-    def set_model_params(self, project: str, name: str, flag: str, value):
+    def set_model_params(self, project_slug: str, name: str, flag: str, value):
         session = self.SessionMaker()
         model = (
             session.query(Models)
-            .filter(Models.name == name, Models.project_id == project)
+            .filter(Models.name == name, Models.project_slug == project_slug)
             .first()
         )
         if model is None:

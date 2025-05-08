@@ -169,11 +169,11 @@ class Features:
 
         # add informations to database
         self.projects_service.add_feature(
-            project=self.project_slug,
+            project_slug=self.project_slug,
             kind=kind,
             name=name,
             parameters=parameters,
-            user=username,
+            user_name=username,
             data=list(new_content.columns),
         )
 
@@ -331,7 +331,11 @@ class Features:
         unique_id = None
 
         if kind == "sbert":
-            if "model" not in parameters:
+            if (
+                "model" not in parameters
+                or parameters["model"] is None
+                or parameters["model"] == "generic"
+            ):
                 model = self.options["sbert"]["models"][0]
             else:
                 model = parameters["model"]

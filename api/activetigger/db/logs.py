@@ -18,11 +18,11 @@ class LogsService:
     def __init__(self, sessionmaker: sessionmaker[Session]):
         self.SessionMaker = sessionmaker
 
-    def add_log(self, user: str, action: str, project_slug: str, connect: str):
+    def add_log(self, user_name: str, action: str, project_slug: str, connect: str):
         session = self.SessionMaker()
         log = Logs(
-            user_id=user,
-            project_id=project_slug,
+            user_name=user_name,
+            project_slug=project_slug,
             action=action,
             connect=connect,
             time=datetime.datetime.now(),
@@ -31,16 +31,16 @@ class LogsService:
         session.commit()
         session.close()
 
-    def get_logs(self, username: str, project_slug: str, limit: int):
+    def get_logs(self, user_name: str, project_slug: str, limit: int):
         """
         TODO : secure the log through the project_slug auth
         """
         with self.SessionMaker() as session:
             stmt = select(Logs).order_by(Logs.time.desc()).limit(limit)
             if project_slug != "all":
-                stmt = stmt.filter_by(project_id=project_slug)
-            if username != "all":
-                stmt = stmt.filter_by(user_id=username)
+                stmt = stmt.filter_by(project_slug=project_slug)
+            if user_name != "all":
+                stmt = stmt.filter_by(user_name=user_name)
 
             logs = session.scalars(stmt).all()
 
@@ -48,8 +48,8 @@ class LogsService:
             {
                 "id": log.id,
                 "time": log.time.strftime("%Y-%m-%d %H:%M:%S"),
-                "user": log.user_id,
-                "project": log.project_id,
+                "user": log.user_name,
+                "project": log.project_slug,
                 "action": log.action,
                 "connect": log.connect,
             }
@@ -60,7 +60,7 @@ class LogsService:
         with self.SessionMaker() as session:
             stmt = select(Logs).order_by(Logs.time.desc()).limit(1)
             if project_slug != "all":
-                stmt = stmt.filter_by(project_id=project_slug)
+                stmt = stmt.filter_by(project_slug=project_slug)
             logs = session.scalars(stmt).all()
 
         if len(logs) == 0:
@@ -68,11 +68,11 @@ class LogsService:
 
         return logs[0].time.strftime("%Y-%m-%d %H:%M:%S")
 
-    def get_last_activity_user(self, username: str):
+    def get_last_activity_user(self, user_name: str):
         with self.SessionMaker() as session:
             stmt = select(Logs).order_by(Logs.time.desc()).limit(1)
-            if username != "all":
-                stmt = stmt.filter_by(user_id=username)
+            if user_name != "all":
+                stmt = stmt.filter_by(user_name=user_name)
             logs = session.scalars(stmt).all()
 
         if len(logs) == 0:

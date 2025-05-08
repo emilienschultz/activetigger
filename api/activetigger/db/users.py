@@ -19,16 +19,16 @@ class UsersService:
     def __init__(self, sessionmaker: sessionmaker[Session]):
         self.SessionMaker = sessionmaker
 
-    def get_user(self, username: str) -> Users:
+    def get_user(self, user_name: str) -> Users:
         with self.SessionMaker() as session:
-            user = session.scalars(select(Users).filter_by(user=username)).first()
+            user = session.scalars(select(Users).filter_by(user_name=user_name)).first()
             if user is None:
-                raise DBException(f"User {username} not found")
+                raise DBException(f"User {user_name} not found")
             return user
 
     def add_user(
         self,
-        username: str,
+        user_name: str,
         password: str,
         role: str,
         created_by: str,
@@ -36,7 +36,7 @@ class UsersService:
     ) -> None:
         with self.SessionMaker.begin() as session:
             user = Users(
-                user=username,
+                user_name=user_name,
                 key=password,
                 description=role,
                 created_by=created_by,
@@ -46,21 +46,21 @@ class UsersService:
             session.add(user)
 
     def get_users_created_by(
-        self, username: str, active: bool = True
+        self, user_name: str, active: bool = True
     ) -> dict[str, dict]:
         """
         get users created by *username*
         """
         with self.SessionMaker() as session:
-            stmt = select(Users.user, Users.contact)
-            if username != "all":
-                stmt = stmt.filter_by(created_by=username)
+            stmt = select(Users.user_name, Users.contact)
+            if user_name != "all":
+                stmt = stmt.filter_by(created_by=user_name)
             if active:
                 stmt = stmt.filter(Users.deactivated.is_(None))
             stmt = stmt.distinct()
             return {row[0]: {"contact": row[1]} for row in session.execute(stmt).all()}
 
-    def delete_user(self, username: str) -> None:
+    def delete_user(self, user_name: str) -> None:
         """
         Deletion means :
         - deactivate the user since we need to keep his data structure
@@ -70,19 +70,17 @@ class UsersService:
             # deactivate the account
             session.execute(
                 update(Users)
-                .where(Users.user == username)
+                .where(Users.user_name == user_name)
                 .values(deactivated=datetime.datetime.now())
             )
-            # delete his auths
-            # session.execute(delete(Auths).filter_by(user_id=username))
 
-    def change_password(self, username: str, password: str) -> None:
+    def change_password(self, user_name: str, password: str) -> None:
         """
         Change password for a specific user
         """
         with self.SessionMaker.begin() as session:
             _ = session.execute(
-                update(Users).filter_by(user=username).values(key=password)
+                update(Users).filter_by(user_name=user_name).values(key=password)
             )
 
     def get_distinct_users(
@@ -110,27 +108,28 @@ class UsersService:
                 seconds=timespan
             )
             users = (
-                session.query(Logs.user_id)
+                session.query(Logs.user_name)
                 .filter(Logs.time > time_threshold)
                 .distinct()
                 .all()
             )
-            return [u.user_id for u in users]
+            return [u.user_name for u in users]
 
-    def get_coding_users(self, scheme: str, project_slug: str) -> Sequence[Users]:
+    def get_coding_users(self, scheme: str, project_slug: str) -> list[str]:
         with self.SessionMaker() as session:
             distinct_users = session.scalars(
-                select(Annotations.user)
+                select(Annotations.user_name)
                 .join_from(Annotations, Users)
                 .where(
-                    Annotations.project_id == project_slug,
+                    Annotations.project_slug == project_slug,
                     Annotations.scheme_id == scheme,
                 )
                 .distinct()
             ).all()
-            return distinct_users
+            print("distinct_users", distinct_users)
+            return list(distinct_users)
 
-    def get_user_created_projects(self, username: str) -> list[str]:
+    def get_user_created_projects(self, user_name: str) -> list[str]:
         """
         Projects user created
         """
@@ -138,6 +137,6 @@ class UsersService:
             result = session.execute(
                 select(
                     Projects.project_slug,
-                ).where(Projects.user_id == username)
+                ).where(Projects.user_name == user_name)
             ).all()
             return [row[0] for row in result]

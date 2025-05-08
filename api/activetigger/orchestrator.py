@@ -379,8 +379,6 @@ class Orchestrator:
         - when saved, the files followed the nomenclature of the project : text, label, etc.
         """
 
-        print("Project", params)
-
         # test if possible to create the project
         if self.exists(params.project_name):
             raise Exception("This project already exists")
@@ -593,7 +591,7 @@ class Orchestrator:
             ]
             self.db_manager.projects_service.add_annotations(
                 dataset="train",
-                user=username,
+                user_name=username,
                 project_slug=project_slug,
                 scheme=scheme_name,
                 elements=elements,
@@ -606,7 +604,7 @@ class Orchestrator:
                 ]
                 self.db_manager.projects_service.add_annotations(
                     dataset="test",
-                    user=username,
+                    user_name=username,
                     project_slug=project_slug,
                     scheme=scheme_name,
                     elements=elements,

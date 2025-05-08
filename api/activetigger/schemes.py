@@ -396,7 +396,7 @@ class Schemes:
 
         self.projects_service.add_annotation(
             dataset="delete",
-            user=user,
+            user_name=user,
             project_slug=self.project_slug,
             element_id=element_id,
             scheme=scheme,
@@ -404,7 +404,7 @@ class Schemes:
         )
         self.projects_service.add_annotation(
             dataset=dataset,
-            user=user,
+            user_name=user,
             project_slug=self.project_slug,
             element_id=element_id,
             scheme=scheme,
@@ -452,7 +452,7 @@ class Schemes:
 
         self.projects_service.add_annotation(
             dataset=mode,
-            user=user,
+            user_name=user,
             project_slug=self.project_slug,
             element_id=element_id,
             scheme=scheme,
@@ -461,7 +461,7 @@ class Schemes:
             selection=selection,
         )
 
-    def get_coding_users(self, scheme: str):
+    def get_coding_users(self, scheme: str) -> list[str]:
         """
         Get users action for a scheme
         """

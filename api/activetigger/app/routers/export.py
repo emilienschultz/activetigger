@@ -143,7 +143,7 @@ async def export_generations(
         # get the elements
         table = project.generations.get_generated(
             project_slug=project.name,
-            username=current_user.username,
+            user_name=current_user.username,
         )
 
         # apply filters on the generated

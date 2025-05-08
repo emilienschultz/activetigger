@@ -24,7 +24,7 @@ class GenerationsService:
 
     def add_generated(
         self,
-        user: str,
+        user_name: str,
         project_slug: str,
         element_id: str,
         model_id: int,
@@ -33,9 +33,9 @@ class GenerationsService:
     ):
         session = self.Session()
         generation = Generations(
-            user_id=user,
+            user_name=user_name,
             time=datetime.datetime.now(),
-            project_id=project_slug,
+            project_slug=project_slug,
             element_id=element_id,
             model_id=model_id,
             prompt=prompt,
@@ -46,7 +46,7 @@ class GenerationsService:
         session.close()
 
     def get_generated(
-        self, project_slug: str, username: str, n_elements: int | None = None
+        self, project_slug: str, user_name: str, n_elements: int | None = None
     ):
         """
         Get elements from generated table by order desc
@@ -55,14 +55,14 @@ class GenerationsService:
             if n_elements is None:
                 generated = session.scalars(
                     select(Generations)
-                    .filter_by(project_id=project_slug, user_id=username)
+                    .filter_by(project_slug=project_slug, user_name=user_name)
                     .options(joinedload(Generations.model))  # join with the model table
                     .order_by(Generations.time.desc())
                 ).all()
             else:
                 generated = session.scalars(
                     select(Generations)
-                    .filter_by(project_id=project_slug, user_id=username)
+                    .filter_by(project_slug=project_slug, user_name=user_name)
                     .options(joinedload(Generations.model))  # join with the model table
                     .order_by(Generations.time.desc())
                     .limit(n_elements)
@@ -116,7 +116,7 @@ class GenerationsService:
         """
         with self.Session() as session:
             models = session.scalars(
-                select(GenModels).filter_by(project_id=project_slug)
+                select(GenModels).filter_by(project_slug=project_slug)
             ).all()
         return models
 
@@ -138,7 +138,7 @@ class GenerationsService:
             if model.credentials is None:
                 model.credentials = ""
             new_model = GenModels(
-                project_id=project_slug,
+                project_slug=project_slug,
                 slug=model.slug,
                 name=model.name,
                 api=model.api,
@@ -156,20 +156,20 @@ class GenerationsService:
         """
         with self.Session.begin() as session:
             session.execute(
-                delete(GenModels).filter_by(project_id=project_slug, id=model_id)
+                delete(GenModels).filter_by(project_slug=project_slug, id=model_id)
             )
 
     def add_prompt(
         self,
         project_slug: str,
-        username: str,
+        user_name: str,
         text: str,
         parameters: dict = {},
     ) -> None:
         with self.Session() as session:
             prompt = Prompts(
-                project_id=project_slug,
-                user_id=username,
+                project_slug=project_slug,
+                user_name=user_name,
                 value=text,
                 parameters=parameters,
             )
@@ -186,7 +186,7 @@ class GenerationsService:
         """
         with self.Session() as session:
             elements = session.scalars(
-                select(Prompts).filter_by(project_id=project_slug)
+                select(Prompts).filter_by(project_slug=project_slug)
             ).all()
         return [
             PromptModel(
@@ -197,10 +197,12 @@ class GenerationsService:
             for el in elements
         ]
 
-    def drop_generated(self, project_slug: str, username: str) -> None:
+    def drop_generated(self, project_slug: str, user_name: str) -> None:
         with self.Session.begin() as session:
             session.execute(
-                delete(Generations).filter_by(project_id=project_slug, user_id=username)
+                delete(Generations).filter_by(
+                    project_slug=project_slug, user_name=user_name
+                )
             )
 
         return None

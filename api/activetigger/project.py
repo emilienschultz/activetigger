@@ -251,7 +251,7 @@ class Project:
             ]
             self.db_manager.projects_service.add_annotations(
                 dataset="test",
-                user=username,
+                user_name=username,
                 project_slug=project_slug,
                 scheme=testset.scheme,
                 elements=elements,
@@ -615,14 +615,13 @@ class Project:
             raise Exception("Scheme not available")
         kind = schemes[scheme]["kind"]
 
+        print("type of scheme", kind)
+
         # part train
         r = {"train_set_n": len(self.schemes.content)}
-        r["users"] = [
-            i[0]
-            for i in self.db_manager.users_service.get_coding_users(
-                scheme, self.params.project_slug
-            )
-        ]
+        r["users"] = self.db_manager.users_service.get_coding_users(
+            scheme, self.params.project_slug
+        )
 
         df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
 

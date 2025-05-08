@@ -39,7 +39,7 @@ class Generations:
         Add a generated element in the database
         """
         self.generations_service.add_generated(
-            user=user,
+            user_name=user,
             project_slug=project_slug,
             element_id=element_id,
             model_id=model_id,
@@ -51,14 +51,14 @@ class Generations:
     def get_generated(
         self,
         project_slug: str,
-        username: str,
+        user_name: str,
         n_elements: int | None = None,
     ) -> DataFrame:
         """
         Get generated elements from the database
         """
         result = self.generations_service.get_generated(
-            project_slug=project_slug, username=username, n_elements=n_elements
+            project_slug=project_slug, user_name=user_name, n_elements=n_elements
         )
         df = pd.DataFrame(
             result, columns=["time", "index", "prompt", "answer", "model name"]
@@ -101,12 +101,14 @@ class Generations:
         """
         return self.generations_service.add_project_gen_model(project_slug, model)
 
-    def save_prompt(self, user: str, project_slug: str, prompt: str, name: str) -> None:
+    def save_prompt(
+        self, user_name: str, project_slug: str, prompt: str, name: str
+    ) -> None:
         """
         Save a prompt in the database
         """
         self.generations_service.add_prompt(
-            username=user,
+            user_name=user_name,
             project_slug=project_slug,
             text=prompt,
             parameters={"name": name},
@@ -126,11 +128,11 @@ class Generations:
         """
         return self.generations_service.get_prompts(project_slug)
 
-    def drop_generated(self, project_slug: str, username: str) -> None:
+    def drop_generated(self, project_slug: str, user_name: str) -> None:
         """
         Drop all elements from prediction for a user
         """
-        self.generations_service.drop_generated(project_slug, username)
+        self.generations_service.drop_generated(project_slug, user_name)
         return None
 
     def filter(self, answers: pd.Series, filters) -> pd.Series:
