@@ -214,9 +214,7 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
         accuracy=round(accuracy_score(Y_true, Y_pred), decimals),
         precision=round(
             precision_score(
-                list(Y_true),
-                list(Y_pred),
-                average="micro",
+                list(Y_true), list(Y_pred), average="micro", zero_division=1
             ),
             decimals,
         ),
@@ -226,7 +224,11 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
                 [
                     round(i, decimals)
                     for i in precision_score(
-                        list(Y_true), list(Y_pred), average=None, labels=labels
+                        list(Y_true),
+                        list(Y_pred),
+                        average=None,
+                        labels=labels,
+                        zero_division=1,
                     )
                 ],
             )

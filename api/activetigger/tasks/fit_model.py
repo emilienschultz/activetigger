@@ -53,8 +53,6 @@ class FitModel(BaseTask):
         Y_pred_10cv = cross_val_predict(self.model, Xf, Yf, cv=kf)
         cv10 = get_metrics(Yf, Y_pred_10cv)
 
-        print("end fit model")
-
         return FitModelResults(
             model=self.model,
             proba=proba,
