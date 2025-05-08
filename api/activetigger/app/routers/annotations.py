@@ -45,7 +45,6 @@ async def get_next(
     """
     Get next element
     """
-    print(next)
     try:
         r = project.get_next(
             scheme=next.scheme,
@@ -70,42 +69,26 @@ async def get_projection(
     scheme: str,
 ) -> ProjectionOutModel | None:
     """
-    Get projection data if computed
+    Get projection if computed
     """
 
-    # check if a projection is available
-    if current_user.username not in project.projections.available:
+    # get the projection
+    projection = project.projections.get(current_user.username)
+    if projection is None:
         return None
 
-    # data not yet computed
-    if "data" not in project.projections.available[current_user.username]:
-        return None
-
-    # create the data from projection and current scheme
-    data = project.projections.available[current_user.username]["data"]
-    parameters = project.projections.available[current_user.username]["parameters"]
+    # add existing annotations
     df = project.schemes.get_scheme_data(scheme, complete=True)
-    data["labels"] = df["labels"]
-    data = data.fillna("NA")
+    projection.labels = list(df["labels"].fillna("NA"))
 
-    # add the prediction if it exists
-    predictions = None
+    # add predictions if available
     if current_user.username in project.simplemodels.existing:
         if scheme in project.simplemodels.existing[current_user.username]:
-            data["predictions"] = project.simplemodels.existing[current_user.username][
-                scheme
-            ].proba["prediction"]
-            predictions = data["predictions"]
+            projection.predictions = project.simplemodels.existing[
+                current_user.username
+            ][scheme].proba["prediction"]
 
-    return ProjectionOutModel(
-        index=list(data.index),
-        x=list(data[0]),
-        y=list(data[1]),
-        labels=list(data["labels"]),
-        status=project.projections.available[current_user.username]["id"],
-        predictions=predictions,
-        parameters=parameters,  # add parameters
-    )
+    return projection
 
 
 @router.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
@@ -119,11 +102,12 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
-    # get features to project
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
     try:
+        # get features from project
         features = project.features.get(projection.features)
+        # compute the projection
         project.projections.compute(
             project.name, current_user.username, projection, features
         )
@@ -134,7 +118,6 @@ async def compute_projection(
         )
         return WaitingModel(detail=f"Projection {projection.method} is computing")
     except Exception as e:
-        print("coucou")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -152,7 +135,6 @@ async def get_list_elements(
     Get a table of elements
     """
     try:
-        print("GET TABLE", contains)
         extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
         df = extract.batch.fillna(" ")
         table = (
@@ -233,62 +215,6 @@ async def post_annotation_file(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
-async def get_reconciliation_table(
-    project: Annotated[Project, Depends(get_project)], scheme: str
-) -> ReconciliationModel:
-    """
-    Get the reconciliation table
-    """
-    try:
-        df, users = project.schemes.get_reconciliation_table(scheme)
-        return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-
-@router.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
-async def post_reconciliation(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    project: Annotated[Project, Depends(get_project)],
-    users: list = Query(),
-    element_id: str = Query(),
-    label: str = Query(),
-    scheme: str = Query(),
-) -> None:
-    """
-    Post a label for all user in a list
-    TODO : a specific action for reconciliation ?
-    """
-
-    try:
-        # for each user
-        for u in users:
-            project.schemes.push_annotation(
-                element_id, label, scheme, u, "train", "reconciliation"
-            )
-
-        # add a new tag for the reconciliator
-        project.schemes.push_annotation(
-            element_id,
-            label,
-            scheme,
-            current_user.username,
-            "reconciliation",
-            "reconciliation",
-        )
-
-        # log
-        orchestrator.log_action(
-            current_user.username,
-            f"RECONCILIATE ANNOTATION: in {scheme} element {element_id} as {label}",
-            project.name,
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-
 @router.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
 async def get_element(
     project: Annotated[Project, Depends(get_project)],
@@ -328,7 +254,6 @@ async def post_annotation(
 
     if action in ["add", "update"]:
         try:
-            print(annotation)
             project.schemes.push_annotation(
                 annotation.element_id,
                 annotation.label,
@@ -367,3 +292,58 @@ async def post_annotation(
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     raise HTTPException(status_code=400, detail="Wrong action")
+
+
+@router.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
+async def get_reconciliation_table(
+    project: Annotated[Project, Depends(get_project)], scheme: str
+) -> ReconciliationModel:
+    """
+    Get the reconciliation table
+    """
+    try:
+        df, users = project.schemes.get_reconciliation_table(scheme)
+        return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
+async def post_reconciliation(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project: Annotated[Project, Depends(get_project)],
+    users: list = Query(),
+    element_id: str = Query(),
+    label: str = Query(),
+    scheme: str = Query(),
+) -> None:
+    """
+    Post a label for all user in a list
+    """
+
+    try:
+        # for each user
+        for u in users:
+            project.schemes.push_annotation(
+                element_id, label, scheme, u, "train", "reconciliation"
+            )
+
+        # add a new tag for the reconciliator
+        project.schemes.push_annotation(
+            element_id,
+            label,
+            scheme,
+            current_user.username,
+            "reconciliation",
+            "reconciliation",
+        )
+
+        # log
+        orchestrator.log_action(
+            current_user.username,
+            f"RECONCILIATE ANNOTATION: in {scheme} element {element_id} as {label}",
+            project.name,
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e

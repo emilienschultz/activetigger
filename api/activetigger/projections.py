@@ -4,7 +4,11 @@ from pathlib import Path
 
 from pandas import DataFrame
 
-from activetigger.datamodels import ProjectionComputing, ProjectionInStrictModel
+from activetigger.datamodels import (
+    ProjectionComputing,
+    ProjectionInStrictModel,
+    ProjectionOutModel,
+)
 from activetigger.queue import Queue
 from activetigger.tasks.compute_projection import ComputeProjection
 
@@ -108,4 +112,21 @@ class Projections:
                 method=projection.method,
                 params=projection,
             )
+        )
+
+    def get(self, user_name: str) -> ProjectionOutModel | None:
+        """
+        Get the projection for a user
+        """
+        if user_name not in self.available:
+            return None
+        if "data" not in self.available[user_name]:
+            return None
+        data = self.available[user_name]["data"]
+        return ProjectionOutModel(
+            index=list(data.index),
+            x=list(data[0]),
+            y=list(data[1]),
+            status=self.available[user_name]["id"],
+            parameters=self.available[user_name]["parameters"],
         )

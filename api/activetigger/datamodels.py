@@ -314,12 +314,9 @@ class ProjectionOutModel(BaseModel):
     index: list
     x: list
     y: list
-    labels: list[str]
-    predictions: list[str] | None = None
     parameters: ProjectionInStrictModel
-
-
-#    texts: list
+    labels: list[str] | None = None
+    predictions: list[str] | None = None
 
 
 class FeatureModel(BaseModel):

@@ -90,7 +90,7 @@ app.add_middleware(
 @app.get("/", response_class=HTMLResponse)
 async def welcome() -> str:
     """
-    Welcome page at the root path for the API
+    Welcome page for the API
     """
     data_path: Traversable = importlib.resources.files("activetigger")
     with open(str(data_path.joinpath("html", "welcome.html")), "r") as f:
@@ -104,6 +104,14 @@ async def get_version() -> str:
     Get the version of the server
     """
     return __version__
+
+
+@app.get("/server")
+async def get_queue() -> ServerStateModel:
+    """
+    Get the state of the server
+    """
+    return orchestrator.server_state
 
 
 @app.post("/token")
@@ -150,21 +158,13 @@ async def get_logs(
     )
 
 
-@app.get("/server")
-async def get_queue() -> ServerStateModel:
-    """
-    Get the state of the server
-    """
-    return orchestrator.server_state
-
-
 @app.post("/kill", dependencies=[Depends(verified_user)])
 async def kill_process(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     unique_id: str,
 ) -> None:
     """
-    Stop current generation
+    Kill a process with a unique id
     """
     test_rights("kill process", current_user.username)
     try:

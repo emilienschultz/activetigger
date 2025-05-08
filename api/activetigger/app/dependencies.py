@@ -23,6 +23,31 @@ def get_orchestrator():
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
+def manage_fifo_queue():
+    """
+    Manage the current projects in memory
+    """
+    if len(orchestrator.projects) >= orchestrator.max_projects:
+        old_element = sorted(
+            [
+                [p, orchestrator.projects[p].starting_time]
+                for p in orchestrator.projects
+            ],
+            key=lambda x: x[1],
+        )[0]
+        if (
+            old_element[1] < time.time() - 3600
+        ):  # check if the project has a least one hour old to avoid destroying current projects
+            del orchestrator.projects[old_element[0]]
+            print(f"Delete project {old_element[0]} to gain memory")
+        else:
+            print("Too many projects in the current memory")
+            raise HTTPException(
+                status_code=500,
+                detail="There is too many projects currently loaded in this server. Please wait",
+            )
+
+
 async def get_project(project_slug: str) -> ProjectModel:
     """
     Dependency to get existing project
@@ -38,29 +63,8 @@ async def get_project(project_slug: str) -> ProjectModel:
     if project_slug in orchestrator.projects:
         return orchestrator.projects[project_slug]
 
-    # Manage a FIFO queue when there is too many projects
-    try:
-        if len(orchestrator.projects) >= orchestrator.max_projects:
-            old_element = sorted(
-                [
-                    [p, orchestrator.projects[p].starting_time]
-                    for p in orchestrator.projects
-                ],
-                key=lambda x: x[1],
-            )[0]
-            if (
-                old_element[1] < time.time() - 3600
-            ):  # check if the project has a least one hour old to avoid destroying current projects
-                del orchestrator.projects[old_element[0]]
-                print(f"Delete project {old_element[0]} to gain memory")
-            else:
-                print("Too many projects in the current memory")
-                raise HTTPException(
-                    status_code=500,
-                    detail="There is too many projects currently loaded in this server. Please wait",
-                )
-    except Exception as e:
-        print("PROBLEM IN THE FIFO QUEUE", e)
+    # Manage a FIFO queue
+    manage_fifo_queue()
 
     # load the project
     try:
