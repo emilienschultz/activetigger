@@ -39,7 +39,10 @@ async def list_generation_models() -> list[GenerationModelApi]:
     Returns the list of the available GenAI models for generation
     API (not the models themselves)
     """
-    return orchestrator.db_manager.generations_service.get_available_models()
+    try:
+        return orchestrator.db_manager.generations_service.get_available_models()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/generate/models", dependencies=[Depends(verified_user)])
@@ -49,8 +52,13 @@ async def list_project_generation_models(
     """
     Returns the list of the available GenAI models configure for a project
     """
-    r = orchestrator.db_manager.generations_service.get_project_gen_models(project.name)
-    return [GenerationModel(**i.__dict__) for i in r]
+    try:
+        r = orchestrator.db_manager.generations_service.get_project_gen_models(
+            project.name
+        )
+        return [GenerationModel(**i.__dict__) for i in r]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/generate/models", dependencies=[Depends(verified_user)])
@@ -60,7 +68,6 @@ async def add_project_generation_models(
     """
     Add a new GenAI model for the project
     """
-
     try:
         # test if the model exists with this name for the project
         if project.generations.model_exists(project.name, model.name):
@@ -85,9 +92,12 @@ async def delete_project_generation_models(
     """
     Delete a GenAI model from the project
     """
-    return orchestrator.db_manager.generations_service.delete_project_gen_model(
-        project.name, model_id
-    )
+    try:
+        return orchestrator.db_manager.generations_service.delete_project_gen_model(
+            project.name, model_id
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/generate/start", dependencies=[Depends(verified_user)])

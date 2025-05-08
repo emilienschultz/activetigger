@@ -72,23 +72,26 @@ async def get_projection(
     Get projection if computed
     """
 
-    # get the projection
-    projection = project.projections.get(current_user.username)
-    if projection is None:
-        return None
+    try:
+        # get the projection
+        projection = project.projections.get(current_user.username)
+        if projection is None:
+            return None
 
-    # add existing annotations
-    df = project.schemes.get_scheme_data(scheme, complete=True)
-    projection.labels = list(df["labels"].fillna("NA"))
+        # add existing annotations
+        df = project.schemes.get_scheme_data(scheme, complete=True)
+        projection.labels = list(df["labels"].fillna("NA"))
 
-    # add predictions if available
-    if current_user.username in project.simplemodels.existing:
-        if scheme in project.simplemodels.existing[current_user.username]:
-            projection.predictions = project.simplemodels.existing[
-                current_user.username
-            ][scheme].proba["prediction"]
+        # add predictions if available
+        if current_user.username in project.simplemodels.existing:
+            if scheme in project.simplemodels.existing[current_user.username]:
+                projection.predictions = project.simplemodels.existing[
+                    current_user.username
+                ][scheme].proba["prediction"]
 
-    return projection
+        return projection
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/elements/projection/compute", dependencies=[Depends(verified_user)])

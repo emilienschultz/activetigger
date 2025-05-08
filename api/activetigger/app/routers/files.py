@@ -52,6 +52,8 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
     project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
     if project_path.exists():
         raise Exception("Project already exists")
+    if file.filename is None:
+        raise Exception("Problem with the file name")
 
     try:
         os.makedirs(project_path)
@@ -66,8 +68,6 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
         if project_path.exists():
             project_path.rmdir()
         raise HTTPException(status_code=500, detail=f"File writing error: {str(e)}")
-
-    print("end writing the project")
 
 
 @router.post("/files/add/project")
