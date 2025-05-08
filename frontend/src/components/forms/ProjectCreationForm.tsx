@@ -10,7 +10,7 @@ import ClipLoader from 'react-spinners/ClipLoader';
 import { CanceledError } from 'axios';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
-import { useAddProjectFile, useCreateProject } from '../../core/api';
+import { useAddProjectFile, useCreateProject, useProjectNameAvailable } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
@@ -54,6 +54,7 @@ export const ProjectCreationForm: FC = () => {
   const [data, setData] = useState<DataType | null>(null); // state for the data
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
+  const availableProjectName = useProjectNameAvailable(); // check if the project name is available
   const { addProjectFile, progression, cancel } = useAddProjectFile(); // API call
   const files = useWatch({ control, name: 'files' }); // watch the files entry
   const force_label = useWatch({ control, name: 'force_label' }); // watch the force label entry
@@ -101,6 +102,7 @@ export const ProjectCreationForm: FC = () => {
   // action when form validated
   const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {
     if (data) {
+      // check the form
       if (formData.col_id == '') {
         notify({ type: 'error', message: 'Please select a id column' });
         return;
@@ -119,6 +121,13 @@ export const ProjectCreationForm: FC = () => {
       setCreatingProject(true);
 
       try {
+        // test if the project name is available
+        const available = await availableProjectName(formData.project_name);
+        if (!available) {
+          notify({ type: 'error', message: 'Project name already taken' });
+          setCreatingProject(false);
+          return;
+        }
         // send the data
         await addProjectFile(files[0], formData.project_name);
         console.log('file uploaded');
