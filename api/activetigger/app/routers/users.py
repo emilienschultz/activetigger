@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     HTTPException,
     Query,
@@ -72,6 +73,7 @@ async def recent_users() -> list[str]:
 
 @router.post("/users/create", dependencies=[Depends(verified_user)], tags=["users"])
 async def create_user(
+    background_tasks: BackgroundTasks,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     username_to_create: str = Query(),
     password: str = Query(),
@@ -88,7 +90,10 @@ async def create_user(
             username_to_create, password, status, current_user.username, mail
         )
         if dummy:
-            orchestrator.create_dummy_project(username_to_create)
+            # as a background task
+            background_tasks.add_task(
+                orchestrator.create_dummy_project, username_to_create
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
     return None
