@@ -126,7 +126,6 @@ class UsersService:
                 )
                 .distinct()
             ).all()
-            print("distinct_users", distinct_users)
             return list(distinct_users)
 
     def get_user_created_projects(self, user_name: str) -> list[str]:
