@@ -160,6 +160,9 @@ export const ProjectPreparePage: FC = () => {
                         <summary>Advanced settings</summary>
                         <label htmlFor="model">Model to use</label>
                         <select id="model" {...register('parameters.model')}>
+                          <option key={null} value="generic">
+                            Default model
+                          </option>
                           {((project?.features.options['sbert']['models'] as string[]) || []).map(
                             (element) => (
                               <option key={element as string} value={element as string}>
@@ -184,7 +187,7 @@ export const ProjectPreparePage: FC = () => {
                         <label htmlFor="model">Model to use</label>
                         <select id="dataset_col" {...register('parameters.model')}>
                           <option key={null} value="generic">
-                            Generic model
+                            Default model
                           </option>
 
                           {((project?.features as Features).options?.fasttext?.models || []).map(
