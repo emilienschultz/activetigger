@@ -8,8 +8,9 @@ from sqlalchemy import (
     Integer,
     MetaData,
     Text,
-    UniqueConstraint,
+    PrimaryKeyConstraint,
     func,
+    UniqueConstraint
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
@@ -98,7 +99,7 @@ class Users(Base):
 class Schemes(Base):
     __tablename__ = "schemes"
     __table_args__ = (
-        UniqueConstraint("project_slug", "name", name="uq_project_slug_name"),
+        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),
     )
 
     name: Mapped[str]
@@ -196,8 +197,13 @@ class Tokens(Base):
 class GenModels(Base):
     __tablename__ = "gen_models"
     __table_args__ = (
-        UniqueConstraint("project_slug", "name", name="uq_project_slug_name_genmodels"),
+        UniqueConstraint(
+            ["project_slug", "slug"],
+            name="fkc_project_slug_slug",
+        ),
     )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_slug: Mapped[str] = mapped_column(
         ForeignKey("projects.project_slug", ondelete="CASCADE")
     )
