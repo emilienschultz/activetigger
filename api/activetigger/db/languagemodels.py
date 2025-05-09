@@ -27,7 +27,7 @@ class LanguageModelsService:
         """
         with self.SessionMaker() as session:
             models = session.execute(
-                select(Models.name, Models.parameters, Models.path, Models.scheme_id)
+                select(Models.name, Models.parameters, Models.path, Models.name)
                 .filter_by(
                     project_slug=project_slug,
                     status="trained",
@@ -37,7 +37,7 @@ class LanguageModelsService:
         return [
             LanguageModelScheme(
                 name=m.name,
-                scheme=m.scheme_id,
+                scheme=m.name,
                 path=m.path,
                 parameters=m.parameters,
             )
@@ -69,7 +69,7 @@ class LanguageModelsService:
             name=name,
             user_name=user,
             parameters=params,
-            scheme_id=scheme,
+            scheme_name=scheme,
             status=status,
             path=path,
         )

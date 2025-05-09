@@ -1,7 +1,16 @@
 import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Integer, MetaData, Text, func
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Integer,
+    MetaData,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -88,8 +97,11 @@ class Users(Base):
 
 class Schemes(Base):
     __tablename__ = "schemes"
+    __table_args__ = (
+        UniqueConstraint("project_slug", "name", name="uq_project_slug_name"),
+    )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str]
     time_created: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -105,12 +117,19 @@ class Schemes(Base):
     )
     project: Mapped[Projects] = relationship(back_populates="schemes")
     models: Mapped[list["Models"]] = relationship()
-    name: Mapped[str]
     params: Mapped[dict[str, Any]]
 
 
 class Annotations(Base):
     __tablename__ = "annotations"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_slug", "scheme_name"],
+            ["schemes.project_slug", "schemes.name"],
+            name="fkc_project_slug_scheme_name",
+            ondelete="CASCADE",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     time: Mapped[datetime.datetime] = mapped_column(
@@ -119,12 +138,10 @@ class Annotations(Base):
     dataset: Mapped[str]
     user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
     user: Mapped[Users] = relationship()
-    project_slug: Mapped[str] = mapped_column(
-        ForeignKey("projects.project_slug", ondelete="CASCADE")
-    )
+    project_slug: Mapped[str]
     project: Mapped[Projects] = relationship(back_populates="annotations")
     element_id: Mapped[str]
-    scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
+    scheme_name: Mapped[str]
     scheme: Mapped[Schemes] = relationship()
     annotation: Mapped[str | None]
     comment: Mapped[str | None] = mapped_column(Text)
@@ -178,7 +195,9 @@ class Tokens(Base):
 
 class GenModels(Base):
     __tablename__ = "gen_models"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    __table_args__ = (
+        UniqueConstraint("project_slug", "name", name="uq_project_slug_name_genmodels"),
+    )
     project_slug: Mapped[str] = mapped_column(
         ForeignKey("projects.project_slug", ondelete="CASCADE")
     )
@@ -231,6 +250,14 @@ class Features(Base):
 
 class Models(Base):
     __tablename__ = "models"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_slug", "scheme_name"],
+            ["schemes.project_slug", "schemes.name"],
+            name="fkc_project_slug_scheme_name",
+            ondelete="CASCADE",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     time: Mapped[datetime.datetime] = mapped_column(
@@ -243,12 +270,10 @@ class Models(Base):
     )
     user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
     user: Mapped[Users] = relationship()
-    project_slug: Mapped[str] = mapped_column(
-        ForeignKey("projects.project_slug", ondelete="CASCADE")
-    )
-    project: Mapped[Projects] = relationship(back_populates="models")
-    scheme_id: Mapped[int] = mapped_column(ForeignKey("schemes.id"))
+    project_slug: Mapped[str]
     scheme: Mapped[Schemes] = relationship(back_populates="models")
+    project: Mapped[Projects] = relationship(back_populates="models")
+    scheme_name: Mapped[str]
     kind: Mapped[str]
     name: Mapped[str]
     parameters: Mapped[dict[str, Any]]

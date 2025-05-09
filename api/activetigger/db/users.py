@@ -122,7 +122,7 @@ class UsersService:
                 .join_from(Annotations, Users)
                 .where(
                     Annotations.project_slug == project_slug,
-                    Annotations.scheme_id == scheme,
+                    Annotations.scheme_name == scheme,
                 )
                 .distinct()
             ).all()

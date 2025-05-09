@@ -242,7 +242,7 @@ class ProjectsService:
                     Annotations.comment,
                     func.max(Annotations.time),
                 )
-                .filter_by(scheme_id=scheme, project_slug=project_slug)
+                .filter_by(scheme_name=scheme, project_slug=project_slug)
                 .where(Annotations.dataset.in_(dataset))
                 .group_by(Annotations.element_id)
                 .order_by(func.max(Annotations.time).desc())
@@ -262,7 +262,7 @@ class ProjectsService:
                 select(Annotations.element_id)
                 .filter_by(
                     project_slug=project_slug,
-                    scheme_id=scheme,
+                    scheme_name=scheme,
                     dataset="train",
                 )
                 .order_by(Annotations.time.desc())
@@ -287,7 +287,7 @@ class ProjectsService:
                 )
                 .filter_by(
                     project_slug=project_slug,
-                    scheme_id=scheme,
+                    scheme_name=scheme,
                     element_id=element_id,
                 )
                 .order_by(Annotations.time.desc())
@@ -313,7 +313,7 @@ class ProjectsService:
                 user_name=user_name,
                 project_slug=project_slug,
                 element_id=e["element_id"],
-                scheme_id=scheme,
+                scheme_name=scheme,
                 annotation=e["annotation"],
                 comment=e["comment"],
             )
@@ -339,7 +339,7 @@ class ProjectsService:
                 user_name=user_name,
                 project_slug=project_slug,
                 element_id=element_id,
-                scheme_id=scheme,
+                scheme_name=scheme,
                 annotation=annotation,
                 comment=comment,
                 selection=selection,
@@ -383,7 +383,7 @@ class ProjectsService:
                     Annotations.user_name,
                     func.max(Annotations.time).label("last_timestamp"),
                 )
-                .filter_by(project_slug=project_slug, scheme_id=scheme)
+                .filter_by(project_slug=project_slug, scheme_name=scheme)
                 .group_by(Annotations.element_id, Annotations.user_name)
                 .subquery()
             )
