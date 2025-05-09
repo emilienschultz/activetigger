@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 import os
+import uuid
 
 from activetigger.db import DBException
 from activetigger.db.generations import GenerationsService
@@ -43,9 +44,16 @@ class DatabaseManager:
 
         # check if there is a root user, add it
         try:
+            _ = self.users_service.get_user("system")
+        except DBException:
+            self.create_system_session()
+        
+        # check if there is a root user, add it
+        try:
             _ = self.users_service.get_user("root")
         except DBException:
             self.create_root_session()
+        
 
     def create_root_session(self) -> None:
         """
@@ -55,3 +63,13 @@ class DatabaseManager:
         pwd: str = os.environ.get("ROOT_PASSWORD") if os.environ.get("ROOT_PASSWORD") is not None else get_root_pwd()
         hash_pwd: bytes = get_hash(pwd)
         self.users_service.add_user("root", hash_pwd.decode("utf8"), "root", "system")
+    
+    def create_system_session(self) -> None:
+        """
+        Create root session
+        :return: None
+        """
+        # use a random password
+        pwd: str = str(uuid.uuid4())
+        hash_pwd: bytes = get_hash(pwd)
+        self.users_service.add_user("system", hash_pwd.decode("utf8"), "system", "system")
