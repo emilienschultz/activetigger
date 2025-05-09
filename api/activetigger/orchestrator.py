@@ -547,6 +547,19 @@ class Orchestrator:
         ].to_parquet(params.dir.joinpath(self.train_file), index=True)
         trainset[[]].to_parquet(params.dir.joinpath(self.features_file), index=True)
 
+        # save parameters (without the data)
+        # params.cols_label = []  # reverse dummy
+        project = params.model_dump()
+
+        # add elements for the parameters
+        project["project_slug"] = project_slug
+        project["all_columns"] = all_columns
+        project["n_total"] = n_total
+
+        # save the parameters
+        self.set_project_parameters(ProjectModel(**project), username)
+
+
         # add an empty default scheme
         self.db_manager.projects_service.add_scheme(
             project_slug, "default", [], "multiclass", "system"
@@ -614,18 +627,7 @@ class Orchestrator:
         self.users.set_auth(username, project_slug, "manager")
         self.users.set_auth("root", project_slug, "manager")
 
-        # save parameters (without the data)
-        # params.cols_label = []  # reverse dummy
-        project = params.model_dump()
-
-        # add elements for the parameters
-        project["project_slug"] = project_slug
-        project["all_columns"] = all_columns
-        project["n_total"] = n_total
-
-        # save the parameters
-        self.set_project_parameters(ProjectModel(**project), username)
-
+       
         # delete the initial file
         params.dir.joinpath(params.filename).unlink()
 
