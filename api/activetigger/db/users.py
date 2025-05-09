@@ -57,7 +57,6 @@ class UsersService:
                 stmt = stmt.filter_by(created_by=user_name)
             if active:
                 stmt = stmt.filter(Users.deactivated.is_(None))
-            stmt = stmt.distinct()
             return {row[0]: {"contact": row[1]} for row in session.execute(stmt).all()}
 
     def delete_user(self, user_name: str) -> None:

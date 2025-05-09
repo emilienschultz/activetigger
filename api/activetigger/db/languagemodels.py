@@ -32,7 +32,6 @@ class LanguageModelsService:
                     project_slug=project_slug,
                     status="trained",
                 )
-                .distinct()
             ).all()
         return [
             LanguageModelScheme(

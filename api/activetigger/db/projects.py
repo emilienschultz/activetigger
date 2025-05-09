@@ -2,7 +2,8 @@ import datetime
 import logging
 from typing import Any, TypedDict
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, update, and_
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
@@ -233,21 +234,38 @@ class ProjectsService:
         Get last annotation for each element id for a project/scheme
         """
         with self.Session() as session:
-            results = session.execute(
+            # Subquery: get max time per element_id with filters
+            subq = (
                 select(
                     Annotations.element_id,
-                    Annotations.annotation,
-                    Annotations.user_name,
-                    Annotations.time,
-                    Annotations.comment,
-                    func.max(Annotations.time),
+                    func.max(Annotations.time).label("time")
                 )
-                .filter_by(scheme_name=scheme, project_slug=project_slug)
-                .where(Annotations.dataset.in_(dataset))
+                .where(
+                    Annotations.scheme_name == scheme,
+                    Annotations.project_slug == project_slug,
+                    Annotations.dataset.in_(dataset)
+                )
                 .group_by(Annotations.element_id)
-                .order_by(func.max(Annotations.time).desc())
+                .subquery()
             )
 
+            # Main query: join back on element_id and time to get full rows
+            stmt = (
+                select(Annotations.element_id, Annotations.annotation, Annotations.user_name, Annotations.time, Annotations.comment)
+                .join(
+                    subq,
+                    and_(
+                        Annotations.element_id == subq.c.element_id,
+                        Annotations.time == subq.c.time
+                    )
+                )
+                .where(
+                    subq.c.element_id.is_not(None),
+                    subq.c.time.is_not(None)
+                )
+            ) 
+            results = session.execute(stmt)
+            
             # Execute the query and fetch all results
             return [
                 [row.element_id, row.annotation, row.user_name, row.time, row.comment]
@@ -351,7 +369,6 @@ class ProjectsService:
             schemes = session.execute(
                 select(Schemes.name, Schemes.params)
                 .filter_by(project_slug=project_slug)
-                .distinct()
             ).all()
         r = []
         for s in schemes:

@@ -631,7 +631,7 @@ class Orchestrator:
         # delete the initial file
         params.dir.joinpath(params.filename).unlink()
 
-        return {"success": project_slug}
+        return project_slug
 
     def delete_project(self, project_slug: str) -> None:
         """

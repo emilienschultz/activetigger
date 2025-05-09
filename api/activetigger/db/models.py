@@ -51,9 +51,9 @@ class Projects(Base):
     schemes: Mapped[list["Schemes"]] = relationship(
         "Schemes", cascade="all,delete,delete-orphan", back_populates="project"
     )
-    annotations: Mapped[list["Annotations"]] = relationship(
-        "Annotations", cascade="all,delete,delete-orphan", back_populates="project"
-    )
+    # annotations: Mapped[list["Annotations"]] = relationship(
+    #     "Annotations", cascade="all,delete,delete-orphan", back_populates="project"
+    # )
     auths: Mapped[list["Auths"]] = relationship(
         "Auths", cascade="all,delete,delete-orphan", back_populates="project"
     )
@@ -66,16 +66,15 @@ class Projects(Base):
     features: Mapped[list["Features"]] = relationship(
         "Features", cascade="all,delete,delete-orphan", back_populates="project"
     )
-    models: Mapped[list["Models"]] = relationship(
-        "Models", cascade="all,delete,delete-orphan", back_populates="project"
-    )
+    # models: Mapped[list["Models"]] = relationship(
+    #     "Models", cascade="all,delete,delete-orphan", back_populates="project"
+    # )
     gen_models: Mapped[list["GenModels"]] = relationship(
         "GenModels", cascade="all, delete-orphan", back_populates="project"
     )
     prompts: Mapped[list["Prompts"]] = relationship(
         "Prompts", cascade="all,delete,delete-orphan", back_populates="project"
     )
-
 
 class Users(Base):
     __tablename__ = "users"
@@ -140,7 +139,7 @@ class Annotations(Base):
     user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
     user: Mapped[Users] = relationship()
     project_slug: Mapped[str]
-    project: Mapped[Projects] = relationship(back_populates="annotations")
+    # project: Mapped[Projects] = relationship(back_populates="annotations")
     element_id: Mapped[str]
     scheme_name: Mapped[str]
     scheme: Mapped[Schemes] = relationship()
@@ -198,7 +197,7 @@ class GenModels(Base):
     __tablename__ = "gen_models"
     __table_args__ = (
         UniqueConstraint(
-            ["project_slug", "slug"],
+            "project_slug", "slug",
             name="fkc_project_slug_slug",
         ),
     )
@@ -278,7 +277,7 @@ class Models(Base):
     user: Mapped[Users] = relationship()
     project_slug: Mapped[str]
     scheme: Mapped[Schemes] = relationship(back_populates="models")
-    project: Mapped[Projects] = relationship(back_populates="models")
+    # project: Mapped[Projects] = relationship(back_populates="models")
     scheme_name: Mapped[str]
     kind: Mapped[str]
     name: Mapped[str]

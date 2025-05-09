@@ -79,12 +79,12 @@ async def new_project(
         )
     try:
         # create the project
-        r = orchestrator.create_project(project, current_user.username)
+        slug = orchestrator.create_project(project, current_user.username)
         # log action
         orchestrator.log_action(
-            current_user.username, "INFO CREATE PROJECT", project.project_name
+            current_user.username, "INFO CREATE PROJECT", slug
         )
-        return r["success"]
+        return slug
     except Exception as e:
         orchestrator.clean_project(project_name=project.project_name)
         raise HTTPException(status_code=500, detail=str(e))
