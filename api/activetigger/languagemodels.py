@@ -99,6 +99,7 @@ class LanguageModels:
                 "predicted": m.parameters["predicted"],
                 "predicted_external": m.parameters.get("predicted_external", False),
             }
+        print("models", r)
         return r
 
     def training(self) -> dict:
