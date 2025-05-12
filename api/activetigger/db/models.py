@@ -7,10 +7,10 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Integer,
     MetaData,
-    Text,
     PrimaryKeyConstraint,
+    Text,
+    UniqueConstraint,
     func,
-    UniqueConstraint
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
@@ -75,6 +75,7 @@ class Projects(Base):
     prompts: Mapped[list["Prompts"]] = relationship(
         "Prompts", cascade="all,delete,delete-orphan", back_populates="project"
     )
+
 
 class Users(Base):
     __tablename__ = "users"
@@ -197,7 +198,8 @@ class GenModels(Base):
     __tablename__ = "gen_models"
     __table_args__ = (
         UniqueConstraint(
-            "project_slug", "slug",
+            "project_slug",
+            "slug",
             name="fkc_project_slug_slug",
         ),
     )
@@ -212,6 +214,7 @@ class GenModels(Base):
     api: Mapped[str]
     endpoint: Mapped[str | None]
     credentials: Mapped[str | None]
+    user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
 
 
 class Generations(Base):

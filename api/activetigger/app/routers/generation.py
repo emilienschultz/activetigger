@@ -63,7 +63,9 @@ async def list_project_generation_models(
 
 @router.post("/generate/models", dependencies=[Depends(verified_user)])
 async def add_project_generation_models(
-    project: Annotated[Project, Depends(get_project)], model: GenerationCreationModel
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    model: GenerationCreationModel,
 ) -> int:
     """
     Add a new GenAI model for the project
@@ -76,7 +78,7 @@ async def add_project_generation_models(
             )
 
         # add the model
-        r = project.generations.add_model(project.name, model)
+        r = project.generations.add_model(project.name, model, current_user.username)
         return r
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

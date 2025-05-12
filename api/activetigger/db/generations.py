@@ -129,7 +129,7 @@ class GenerationsService:
             return result
 
     def add_project_gen_model(
-        self, project_slug: str, model: GenerationCreationModel
+        self, project_slug: str, model: GenerationCreationModel, user_name: str
     ) -> int:
         """
         Add a new GenAI model for the given project
@@ -144,6 +144,7 @@ class GenerationsService:
                 api=model.api,
                 endpoint=model.endpoint,
                 credentials=encrypt(model.credentials, os.environ["SECRET_KEY"]),
+                user_name=user_name,
             )
             session.add(new_model)
             session.commit()
