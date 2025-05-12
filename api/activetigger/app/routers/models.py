@@ -224,7 +224,7 @@ async def post_bert(
             print(f"Excluding labels : {bert.exclude_labels}")
             print(len(df))
             df = df[~df["labels"].isin(bert.exclude_labels)]
-            bert.name = f"{bert.name}_exclude_{'_'.join(bert.exclude_labels)}"
+            bert.name = f"{bert.name}_exclude_labels_"
             print(len(df))
 
         # balance the dataset based on the min class
