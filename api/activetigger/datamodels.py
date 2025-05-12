@@ -235,17 +235,6 @@ class LMParametersDbModel(LMParametersModel):
     compressed: bool = False
 
 
-class BertParams(BaseModel):
-    batchsize: int
-    gradacc: float
-    epochs: int
-    lrate: float
-    wdecay: float
-    best: bool
-    eval: int
-    adapt: bool
-
-
 class BertModelModel(BaseModel):
     """
     Request Bertmodel
@@ -261,6 +250,7 @@ class BertModelModel(BaseModel):
     dichotomize: str | None = None
     class_min_freq: int = 1
     class_balance: bool = False
+    exclude_labels: list[str] = []
 
 
 class UmapModel(BaseModel):

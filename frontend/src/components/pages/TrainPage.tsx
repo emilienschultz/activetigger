@@ -134,6 +134,7 @@ export const TrainPage: FC = () => {
         gpu: true,
         adapt: false,
       },
+      exclude_labels: [],
     },
   });
 
@@ -205,7 +206,10 @@ export const TrainPage: FC = () => {
     link.click();
   };
 
-  console.log(project?.languagemodels.training);
+  const existingLabels = Object.entries(availableLabels).map(([key, value]) => ({
+    value: key,
+    label: value,
+  }));
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="train">
@@ -394,8 +398,9 @@ export const TrainPage: FC = () => {
                     )}
 
                     <div className="explanations">
-                      A good practice is to have around 50 annotated elements per class before
-                      starting the training
+                      The model will be trained on annotated data. A good practice is to have around
+                      50 annotated elements per class before starting the training. You can exclude
+                      elements with specific labels
                     </div>
                     <label htmlFor="new-model-type"></label>
                     <div>
@@ -485,8 +490,20 @@ export const TrainPage: FC = () => {
                         {...registerNewModel('parameters.wdecay')}
                       />
                     </div>
+                    <div className="form-group d-flex align-items-center">
+                      <label>
+                        Use GPU
+                        <a className="gpu">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".gpu" place="top">
+                          Compute the training on GPU.
+                        </Tooltip>
+                      </label>
+                      <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+                    </div>
                     <details className="custom-details">
-                      <summary>Advanced parameters</summary>
+                      <summary>Advanced parameters for the model</summary>
                       <div>
                         <label>
                           Batch Size{' '}
@@ -577,18 +594,37 @@ export const TrainPage: FC = () => {
                         </label>
                         <input type="checkbox" {...registerNewModel('parameters.best')} />
                       </div>
-
-                      <div className="form-group d-flex align-items-center">
+                    </details>
+                    <details className="custom-details">
+                      <summary>Advanced parameters for the data</summary>
+                      <div>
                         <label>
-                          Use GPU
-                          <a className="gpu">
+                          Labels to ignore{' '}
+                          <a className="ignore">
                             <HiOutlineQuestionMarkCircle />
                           </a>
-                          <Tooltip anchorSelect=".gpu" place="top">
-                            Compute the training on GPU.
+                          <Tooltip anchorSelect=".ignore" place="top">
+                            Elements with those labels will be ignored during training
                           </Tooltip>
                         </label>
-                        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+
+                        <Controller
+                          name="exclude_labels"
+                          control={control}
+                          render={({ field: { onChange } }) => (
+                            <Select
+                              options={existingLabels}
+                              isMulti
+                              onChange={(selectedOptions) => {
+                                onChange(
+                                  selectedOptions
+                                    ? selectedOptions.map((option) => option.label)
+                                    : [],
+                                );
+                              }}
+                            />
+                          )}
+                        />
                       </div>
                     </details>
                     {!isComputing && (
@@ -598,30 +634,6 @@ export const TrainPage: FC = () => {
                     )}
                   </form>
                 </Tab>
-                {/* <Tab
-                  eventKey="parameters"
-                  title="Parameters"
-                  onSelect={() => setActiveKey('parameters')}
-                >
-                  <div>
-                    <label>
-                      Batch size for predictions{' '}
-                      <a className="batch">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".batch" place="top">
-                        Batch used for predict. Keep it small (16 or 32) for small GPU.
-                      </Tooltip>
-                    </label>
-                    <input
-                      type="number"
-                      step="1"
-                      className="m-2 form-control"
-                      value={batchSize}
-                      onChange={(e) => setBatchSize(Number(e.target.value))}
-                    />
-                  </div>
-                </Tab> */}
               </Tabs>
             }
             {isComputing && (

@@ -142,6 +142,7 @@ export interface newBertModel {
   class_balance?: boolean;
   class_min_freq?: number;
   test_size?: number;
+  exclude_labels?: string[];
 }
 
 export interface TestSetModel {

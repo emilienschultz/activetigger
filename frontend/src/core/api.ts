@@ -1011,6 +1011,7 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
             dichotomize: dataForm.dichotomize,
             class_balance: dataForm.class_balance || false,
             class_min_freq: dataForm.class_min_freq || 1,
+            exclude_labels: dataForm.exclude_labels || [],
           },
         });
         if (!res.error) notify({ type: 'warning', message: 'Starting bertmodel training' });

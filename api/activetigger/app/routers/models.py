@@ -183,6 +183,7 @@ async def post_bert(
     Compute bertmodel
     TODO : move the methods to specific class
     """
+    print(f"bertmodel : {bert}")
     try:
         # check in the size limit is not exceeded
         limit = orchestrator.users.get_storage_limit(current_user.username)
@@ -217,6 +218,14 @@ async def post_bert(
         df = df[
             df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)
         ]
+
+        # remove class requested by the user
+        if len(bert.exclude_labels) > 0:
+            print(f"Excluding labels : {bert.exclude_labels}")
+            print(len(df))
+            df = df[~df["labels"].isin(bert.exclude_labels)]
+            bert.name = f"{bert.name}_exclude_{'_'.join(bert.exclude_labels)}"
+            print(len(df))
 
         # balance the dataset based on the min class
         if bert.class_balance:
