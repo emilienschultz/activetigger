@@ -21,15 +21,14 @@ services:
     volumes:
       - ${PROJECT_PATH}/docker/api/entrypoint.sh:/entrypoint.sh
       - ${PROJECT_PATH}/api:/api
-      - ${PROJECT_PATH}/docker/api/models:/api/models
-      - ${PROJECT_PATH}/docker/api/projects:/api/projects
+      - ${DATA_PATH}/models:/api/models
+      - ${DATA_PATH}/projects:/api/projects
       - ${PROJECT_PATH}/docker/api/venv:/home/python/venv
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - DATA_FOLDER=${DATA_FOLDER}
       - ROOT_PASSWORD=${ROOT_PASSWORD}
       - API_PORT=${API_PORT}
       - SESSION_SECRET=${SESSION_SECRET}
