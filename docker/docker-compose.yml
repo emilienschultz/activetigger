@@ -34,7 +34,7 @@ services:
       - API_PORT=${API_PORT}
       - SESSION_SECRET=${SESSION_SECRET}
       - MODE=${MODE}
-  frontend: 
+  frontend:
     image: node:${NODE_VERSION}
     entrypoint: /entrypoint.sh
     user: node
@@ -49,6 +49,8 @@ services:
   nginx:
     image: nginx:${NGINX_VERSION}
     restart: ${RESTART_POLICY}
+    ports:
+      - ${NGINX_PORT}:80
     depends_on:
       - api
       - frontend

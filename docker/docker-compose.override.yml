@@ -8,6 +8,3 @@ services:
   frontend:
     ports:
       - ${CLIENT_PORT}:5173
-  nginx:
-    ports:
-      - ${NGINX_PORT}:80
