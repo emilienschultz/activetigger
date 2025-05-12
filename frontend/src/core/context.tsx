@@ -45,6 +45,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
     displayHistory: false,
     frameSize: 50,
     highlightText: '',
+    numberOfTokens: 512,
   },
   selectionConfig: {
     mode: 'deterministic',

@@ -130,6 +130,7 @@ export interface DisplayConfig {
   displayPrediction: boolean;
   displayContext: boolean;
   displayHistory: boolean;
+  numberOfTokens: number;
   frameSize: number;
   highlightText: string;
 }

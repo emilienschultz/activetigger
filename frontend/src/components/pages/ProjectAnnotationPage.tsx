@@ -191,8 +191,8 @@ export const ProjectAnnotationPage: FC = () => {
     [setAppContext, addAnnotation, navigate, projectName, comment, selectionHistory],
   );
 
-  const textInFrame = element?.text.slice(0, element?.limit as number) || '';
-  const textOutFrame = element?.text.slice(element?.limit as number) || '';
+  const textInFrame = element?.text.slice(0, displayConfig.numberOfTokens * 4) || '';
+  const textOutFrame = element?.text.slice(displayConfig.numberOfTokens * 4) || '';
 
   const lastTag =
     element?.history?.length && element?.history.length > 0
@@ -542,8 +542,29 @@ export const ProjectAnnotationPage: FC = () => {
                 Element history
               </label>
               <label style={{ display: 'block', marginBottom: '10px' }}>
+                Tokens approximation {displayConfig.numberOfTokens} (4 c / token)
+                <span className="m-2">Min: 100</span>
+                <input
+                  type="range"
+                  min="100"
+                  max="10000"
+                  className="form-input"
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      displayConfig: {
+                        ...displayConfig,
+                        numberOfTokens: Number(e.target.value),
+                      },
+                    }));
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                <span>Max: 10000</span>
+              </label>
+              <label style={{ display: 'block', marginBottom: '10px' }}>
                 Text frame size
-                <span>Min: 25%</span>
+                <span className="m-2">Min: 25%</span>
                 <input
                   type="range"
                   min="25"
