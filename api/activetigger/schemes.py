@@ -283,6 +283,10 @@ class Schemes:
         if self.exists(name):
             raise Exception("Scheme already exists")
 
+        # add a skip label if not present
+        if "skip ⌦" not in labels:
+            labels.append("skip ⌦")
+
         self.projects_service.add_scheme(self.project_slug, name, labels, kind, user)
 
         return {"success": "scheme created"}

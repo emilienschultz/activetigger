@@ -559,10 +559,9 @@ class Orchestrator:
         # save the parameters
         self.set_project_parameters(ProjectModel(**project), username)
 
-
         # add an empty default scheme
         self.db_manager.projects_service.add_scheme(
-            project_slug, "default", [], "multiclass", "system"
+            project_slug, "default", ["skip ⌦"], "multiclass", "system"
         )
         params.default_scheme = []
 
@@ -592,7 +591,7 @@ class Orchestrator:
             self.db_manager.projects_service.add_scheme(
                 project_slug,
                 scheme_name,
-                scheme_labels,
+                ["skip ⌦"] + scheme_labels,
                 scheme_type,
                 "system",
             )
@@ -627,7 +626,6 @@ class Orchestrator:
         self.users.set_auth(username, project_slug, "manager")
         self.users.set_auth("root", project_slug, "manager")
 
-       
         # delete the initial file
         params.dir.joinpath(params.filename).unlink()
 
