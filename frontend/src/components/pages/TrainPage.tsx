@@ -134,7 +134,6 @@ export const TrainPage: FC = () => {
         gpu: true,
         adapt: false,
       },
-      exclude_labels: [],
     },
   });
 
@@ -615,6 +614,27 @@ export const TrainPage: FC = () => {
                             <Select
                               options={existingLabels}
                               isMulti
+                              onChange={(selectedOptions) => {
+                                onChange(
+                                  selectedOptions
+                                    ? selectedOptions.map((option) => option.label)
+                                    : [],
+                                );
+                              }}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="exclude_labels"
+                          control={control}
+                          defaultValue={['skip ⌦']}
+                          render={({ field: { onChange, value } }) => (
+                            <Select
+                              options={existingLabels}
+                              isMulti
+                              value={existingLabels.filter((option) =>
+                                value?.includes(option.label),
+                              )}
                               onChange={(selectedOptions) => {
                                 onChange(
                                   selectedOptions
