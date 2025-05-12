@@ -134,7 +134,7 @@ export const TrainPage: FC = () => {
         gpu: true,
         adapt: false,
       },
-      exclude_labels: [{ value: 'skip ⌦', label: 'skip ⌦' }],
+      exclude_labels: [],
     },
   });
 

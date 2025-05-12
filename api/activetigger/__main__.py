@@ -43,11 +43,16 @@ if __name__ == "__main__":
     else:
         print("Creating config.yaml file by default")
         content = """path: ./projects
-        path_models: ./models
+path_models: ./models
         """
         with open("./config.yaml", "w") as f:
             f.write(content)
 
     print(os.environ["ACTIVETIGGER_PATH"], os.environ["ACTIVETIGGER_MODEL"])
 
-    uvicorn.run("activetigger.app.main:app", host="0.0.0.0", port=args.portapi, reload=os.environ['MODE'] == "dev")
+    uvicorn.run(
+        "activetigger.app.main:app",
+        host="0.0.0.0",
+        port=args.portapi,
+        reload=os.environ["MODE"] == "dev",
+    )
