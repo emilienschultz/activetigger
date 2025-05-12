@@ -28,9 +28,7 @@ from activetigger.project import Project
 router = APIRouter(tags=["projects"])
 
 
-@router.get(
-    "/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)]
-)
+@router.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
 async def get_project_statistics(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -81,9 +79,7 @@ async def new_project(
         # create the project
         slug = orchestrator.create_project(project, current_user.username)
         # log action
-        orchestrator.log_action(
-            current_user.username, "INFO CREATE PROJECT", slug
-        )
+        orchestrator.log_action(current_user.username, "INFO CREATE PROJECT", slug)
         return slug
     except Exception as e:
         orchestrator.clean_project(project_name=project.project_name)
@@ -110,9 +106,7 @@ async def update_project(
     test_rights("modify project", current_user.username, project.name)
     try:
         project.update_project(update)
-        orchestrator.log_action(
-            current_user.username, "INFO UPDATE PROJECT", project.name
-        )
+        orchestrator.log_action(current_user.username, "INFO UPDATE PROJECT", project.name)
         del orchestrator.projects[project.name]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -133,9 +127,6 @@ async def delete_project(
     try:
         print("start delete")
         orchestrator.delete_project(project_slug)
-        orchestrator.log_action(
-            current_user.username, "INFO DELETE PROJECT", project_slug
-        )
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -161,9 +152,7 @@ async def add_testdata(
             return None
         if action == "delete":
             project.drop_testset()
-            orchestrator.log_action(
-                current_user.username, "DELETE TESTSET", project.name
-            )
+            orchestrator.log_action(current_user.username, "DELETE TESTSET", project.name)
             return None
         raise Exception("action not found")
     except Exception as e:
