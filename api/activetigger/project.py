@@ -91,8 +91,8 @@ class Project:
         """
 
         # remove static files
-        if Path(f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.name}").exists():
-            shutil.rmtree(f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.name}")
+        if Path(f"{os.environ['DATA_PATH']}/projects/static/{self.name}").exists():
+            shutil.rmtree(f"{os.environ['DATA_PATH']}/projects/static/{self.name}")
 
         # remove folder of the project
         try:
@@ -183,9 +183,7 @@ class Project:
             self.params.project_slug, jsonable_encoder(self.params)
         )
 
-    def add_testset(
-        self, testset: TestSetDataModel, username: str, project_slug: str
-    ) -> None:
+    def add_testset(self, testset: TestSetDataModel, username: str, project_slug: str) -> None:
         """
         Add a test dataset
 
@@ -417,13 +415,9 @@ class Project:
                     )
                 )
             elif "QUERY=" in filter_san:  # case to use a query
-                f_regex = df[self.params.cols_context].eval(
-                    filter_san.replace("QUERY=", "")
-                )
+                f_regex = df[self.params.cols_context].eval(filter_san.replace("QUERY=", ""))
             else:
-                f_regex = df["text"].str.contains(
-                    filter_san, regex=True, case=True, na=False
-                )
+                f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
@@ -471,9 +465,7 @@ class Project:
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f][label]
-                .drop(history, errors="ignore")
-                .sort_values(ascending=False)
+                proba[f][label].drop(history, errors="ignore").sort_values(ascending=False)
             )  # get max proba id
             element_id = ss.index[0]
             n_sample = f.sum()
@@ -487,9 +479,7 @@ class Project:
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f]["entropy"]
-                .drop(history, errors="ignore")
-                .sort_values(ascending=False)
+                proba[f]["entropy"].drop(history, errors="ignore").sort_values(ascending=False)
             )  # get max entropy id
             element_id = ss.index[0]
             n_sample = f.sum()
@@ -514,9 +504,7 @@ class Project:
             "element_id": element_id,
             "text": self.content.fillna("NA").loc[element_id, "text"],
             "context": dict(
-                self.content.fillna("NA")
-                .loc[element_id, self.params.cols_context]
-                .apply(str)
+                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
             ),
             "selection": selection,
             "info": indicator,
@@ -566,9 +554,7 @@ class Project:
                 if self.simplemodels.exists(user, scheme):
                     sm = self.simplemodels.get_model(user, scheme)
                     predicted_label = sm.proba.loc[element_id, "prediction"]
-                    predicted_proba = round(
-                        sm.proba.loc[element_id, predicted_label], 2
-                    )
+                    predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
@@ -580,9 +566,7 @@ class Project:
                 "element_id": element_id,
                 "text": self.content.loc[element_id, "text"],
                 "context": dict(
-                    self.content.fillna("NA")
-                    .loc[element_id, self.params.cols_context]
-                    .apply(str)
+                    self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
                 ),
                 "selection": "request",
                 "predict": predict,
@@ -628,9 +612,7 @@ class Project:
         # different treatment if the scheme is multilabel or multiclass
         r["train_annotated_n"] = len(df.dropna(subset=["labels"]))
         if kind == "multiclass":
-            r["train_annotated_distribution"] = json.loads(
-                df["labels"].value_counts().to_json()
-            )
+            r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
         else:
             r["train_annotated_distribution"] = json.loads(
                 df["labels"].str.split("|").explode().value_counts().to_json()
@@ -642,9 +624,7 @@ class Project:
             r["test_set_n"] = len(self.schemes.test)
             r["test_annotated_n"] = len(df.dropna(subset=["labels"]))
             if kind == "multiclass":
-                r["test_annotated_distribution"] = json.loads(
-                    df["labels"].value_counts().to_json()
-                )
+                r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
             else:
                 r["test_annotated_distribution"] = json.loads(
                     df["labels"].str.split("|").explode().value_counts().to_json()
@@ -695,8 +675,7 @@ class Project:
             "projections": {
                 "options": self.projections.options,
                 "available": {
-                    i: self.projections.available[i]["id"]
-                    for i in self.projections.available
+                    i: self.projections.available[i]["id"] for i in self.projections.available
                 },
                 "training": self.projections.training(),  # list(self.projections.training().keys()),
             },
@@ -752,9 +731,7 @@ class Project:
         if dataset == "test":
             if not self.params.test:
                 raise Exception("No test data available")
-            data = self.schemes.get_scheme_data(
-                scheme=scheme, complete=True, kind="test"
-            )
+            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind="test")
             file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
@@ -794,10 +771,10 @@ class Project:
         name = f"{project_slug}_data_all.parquet"
         target_dir = self.params.dir if self.params.dir is not None else Path(".")
         path_origin = target_dir.joinpath("data_all.parquet")
-        folder_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}"
+        folder_target = f"{os.environ['DATA_PATH']}/projects/static/{project_slug}"
         if not Path(folder_target).exists():
             os.makedirs(folder_target)
-        path_target = f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug}/{name}"
+        path_target = f"{os.environ['DATA_PATH']}/projects/static/{project_slug}/{name}"
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")
@@ -826,9 +803,7 @@ class Project:
             drop_features = True
 
         # update the context columns by modifying the train data
-        if update.cols_context and set(update.cols_context) != set(
-            self.params.cols_context
-        ):
+        if update.cols_context and set(update.cols_context) != set(self.params.cols_context):
             if df is None:
                 df = pd.read_parquet(
                     self.params.dir.joinpath("data_all.parquet"),
@@ -910,9 +885,7 @@ class Project:
         """
         if not self.params.dir:
             raise ValueError("No directory for project")
-        self.content[[]].to_parquet(
-            self.params.dir.joinpath("features.parquet"), index=True
-        )
+        self.content[[]].to_parquet(self.params.dir.joinpath("features.parquet"), index=True)
         self.features.projects_service.delete_all_features(self.name)
 
     def update_processes(self) -> None:
@@ -929,7 +902,6 @@ class Project:
 
         # loop on the current process
         for e in self.computing.copy():
-
             process = self.queue.get(e.unique_id)
 
             # case of not in queue
@@ -988,9 +960,7 @@ class Project:
                         and results.path
                         and "predict_train.parquet" in results.path
                     ):
-                        add_predictions["predict_" + prediction.model_name] = (
-                            results.path
-                        )
+                        add_predictions["predict_" + prediction.model_name] = results.path
                     self.languagemodels.add(prediction)
                     print("Bert predicting achieved")
                     logging.debug("Bert predicting achieved")
@@ -1018,9 +988,7 @@ class Project:
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(TIMEZONE), "simplemodel failed", str(ex)]
-                    )
+                    self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
                     logging.error("Simplemodel failed", ex)
                 finally:
                     self.computing.remove(e)
@@ -1097,9 +1065,7 @@ class Project:
                             getattr(ex, "message", repr(ex)),
                         ]
                     )
-                    logging.warning(
-                        "Error in generation queue", getattr(ex, "message", repr(ex))
-                    )
+                    logging.warning("Error in generation queue", getattr(ex, "message", repr(ex)))
                     print("Error in generation queue", getattr(ex, "message", repr(ex)))
                 finally:
                     self.computing.remove(e)
@@ -1144,6 +1110,4 @@ class Project:
 
         self.db_manager
 
-        self.db_manager.users_service.update_last_activity(
-            username, datetime.now(TIMEZONE)
-        )
+        self.db_manager.users_service.update_last_activity(username, datetime.now(TIMEZONE))

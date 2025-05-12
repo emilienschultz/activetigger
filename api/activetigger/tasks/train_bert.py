@@ -136,9 +136,7 @@ class TrainBert(BaseTask):
         log_path = current_path.joinpath("status.log")
         logger = logging.getLogger("train_bert_model")
         file_handler = logging.FileHandler(log_path)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
         logger.info(f"Start {self.base_model}")
@@ -189,9 +187,7 @@ class TrainBert(BaseTask):
             )
 
         # Build train/test dataset for dev eval
-        self.df = self.df.train_test_split(
-            test_size=self.test_size
-        )  # stratify_by_column="label"
+        self.df = self.df.train_test_split(test_size=self.test_size)  # stratify_by_column="label"
         logger.info("Train/test dataset created")
 
         # Model
@@ -243,9 +239,7 @@ class TrainBert(BaseTask):
                 train_dataset=self.df["train"],
                 eval_dataset=self.df["test"],
                 callbacks=[
-                    CustomLoggingCallback(
-                        self.event, current_path=current_path, logger=logger
-                    )
+                    CustomLoggingCallback(self.event, current_path=current_path, logger=logger)
                 ],
             )
             trainer.train()
@@ -253,9 +247,7 @@ class TrainBert(BaseTask):
             # predict on the validset and get the labels
             predictions = trainer.predict(self.df["test"])
             true_labels = [id2label[i] for i in predictions.label_ids]
-            pred_labels = [
-                id2label[i] for i in np.argmax(predictions.predictions, axis=1)
-            ]
+            pred_labels = [id2label[i] for i in np.argmax(predictions.predictions, axis=1)]
             df_preds = pd.DataFrame(
                 {
                     "true_label": true_labels,
@@ -287,7 +279,7 @@ class TrainBert(BaseTask):
             os.rename(log_path, current_path.joinpath("finished"))
 
             # make archive (create dir if needed)
-            path_static = f"{os.environ.get('ACTIVETIGGER_PATH', './projects')}/static/{self.project_slug}"
+            path_static = f"{os.environ['DATA_PATH']}/projects/static/{self.project_slug}"
             os.makedirs(path_static, exist_ok=True)
             shutil.make_archive(
                 f"{path_static}/{self.name}",

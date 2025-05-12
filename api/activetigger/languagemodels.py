@@ -135,7 +135,7 @@ class LanguageModels:
         try:
             shutil.rmtree(self.path.joinpath(name))
             os.remove(
-                f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.project_slug}/{name}.tar.gz"
+                f"{os.environ['DATA_PATH']}/projects/static/{self.project_slug}/{name}.tar.gz"
             )
         except Exception as e:
             raise Exception(f"Problem to delete model files : {e}")
@@ -184,9 +184,7 @@ class LanguageModels:
         # check the number of elements
         counts = df[col_label].value_counts()
         if not (counts >= num_min_annotations_per_label).all():
-            raise Exception(
-                f"Less than {num_min_annotations_per_label} elements per label"
-            )
+            raise Exception(f"Less than {num_min_annotations_per_label} elements per label")
 
         # name integrating the scheme & user + date
         current_date = datetime.now()
@@ -204,13 +202,8 @@ class LanguageModels:
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
         if params.gpu:
             mem = functions.get_gpu_memory_info()
-            if (
-                self.estimate_memory_use(model_name, kind="train")
-                > mem["available_memory"]
-            ):
-                raise Exception(
-                    "Not enough GPU memory available. Wait or reduce batch."
-                )
+            if self.estimate_memory_use(model_name, kind="train") > mem["available_memory"]:
+                raise Exception("Not enough GPU memory available. Wait or reduce batch.")
 
         # launch as a independant process
         unique_id = self.queue.add_task(
@@ -384,9 +377,7 @@ class LanguageModels:
             raise Exception("Model does not exist")
         if (Path(model.path) / "status.log").exists():
             raise Exception("Model is currently computing")
-        self.language_models_service.rename_model(
-            self.project_slug, former_name, new_name
-        )
+        self.language_models_service.rename_model(self.project_slug, former_name, new_name)
         os.rename(model.path, model.path.replace(former_name, new_name))
         return {"success": "model renamed"}
 
@@ -422,7 +413,7 @@ class LanguageModels:
         """
         Export bert archive if exists
         """
-        file = f"{os.environ['ACTIVETIGGER_PATH']}/static/{self.project_slug}/{name}.tar.gz"
+        file = f"{os.environ['DATA_PATH']}/projects/static/{self.project_slug}/{name}.tar.gz"
 
         if not Path(file).exists():
             raise FileNotFoundError("file does not exist")
@@ -509,9 +500,7 @@ class LanguageModels:
 
     def get_loss(self, model_name) -> dict | None:
         try:
-            with open(
-                self.path.joinpath(model_name).joinpath("log_history.txt"), "r"
-            ) as f:
+            with open(self.path.joinpath(model_name).joinpath("log_history.txt"), "r") as f:
                 log = json.load(f)
             loss = pd.DataFrame(
                 [
@@ -529,22 +518,14 @@ class LanguageModels:
             return None
 
     def get_parameters(self, model_name) -> dict | None:
-        with open(
-            self.path.joinpath(model_name).joinpath("parameters.json"), "r"
-        ) as jsonfile:
+        with open(self.path.joinpath(model_name).joinpath("parameters.json"), "r") as jsonfile:
             params = json.load(jsonfile)
         return params
 
     def get_trainscores(self, model_name) -> dict | None:
-        if (
-            self.path.joinpath(model_name).joinpath(
-                "metrics_predict_train.parquet.json"
-            )
-        ).exists():
+        if (self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json")).exists():
             with open(
-                self.path.joinpath(model_name).joinpath(
-                    "metrics_predict_train.parquet.json"
-                ),
+                self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json"),
                 "r",
             ) as f:
                 train_scores = json.load(f)
@@ -553,13 +534,9 @@ class LanguageModels:
         return train_scores
 
     def get_testscores(self, model_name) -> dict | None:
-        if (
-            self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json")
-        ).exists():
+        if (self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json")).exists():
             with open(
-                self.path.joinpath(model_name).joinpath(
-                    "metrics_predict_test.parquet.json"
-                ),
+                self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json"),
                 "r",
             ) as f:
                 test_scores = json.load(f)
@@ -568,9 +545,7 @@ class LanguageModels:
         return test_scores
 
     def get_validscores(self, model_name) -> dict | None:
-        if (
-            self.path.joinpath(model_name).joinpath("metrics_validation.json")
-        ).exists():
+        if (self.path.joinpath(model_name).joinpath("metrics_validation.json")).exists():
             with open(
                 self.path.joinpath(model_name).joinpath("metrics_validation.json"),
                 "r",
@@ -604,15 +579,11 @@ class LanguageModels:
         """
         Get the base model for a model
         """
-        with open(
-            self.path.joinpath(model_name).joinpath("parameters.json"), "r"
-        ) as jsonfile:
+        with open(self.path.joinpath(model_name).joinpath("parameters.json"), "r") as jsonfile:
             data = json.load(jsonfile)
             if "base_model" in data:
                 basemodel = data["base_model"]
             else:
-                raise ValueError(
-                    "No model type found in config.json. Please check the file."
-                )
+                raise ValueError("No model type found in config.json. Please check the file.")
 
         return basemodel

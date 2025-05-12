@@ -34,7 +34,7 @@ async def get_files(
     Get all files
     """
     try:
-        files = os.listdir(f"{os.environ['ACTIVETIGGER_PATH']}/upload")
+        files = os.listdir(f"{os.environ['DATA_PATH']}/projects/upload")
         if current_user.status == "root":
             return files
         else:
@@ -49,7 +49,7 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
     """
     # create a folder for the project to be created
     project_slug = slugify(project_name)
-    project_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/{project_slug}")
+    project_path = Path(f"{os.environ['DATA_PATH']}/projects/{project_slug}")
     if project_path.exists():
         raise Exception("Project already exists")
     if file.filename is None:
@@ -95,9 +95,7 @@ async def upload_file(
         and not file.filename.endswith("parquet")
         and not file.filename.endswith("xlsx")
     ):
-        raise HTTPException(
-            status_code=500, detail="Only csv and parquet files are allowed"
-        )
+        raise HTTPException(status_code=500, detail="Only csv and parquet files are allowed")
     # try to upload the file
     try:
         await new_project_file(file, current_user.username, project_name)
@@ -116,7 +114,7 @@ async def delete_file(
     """
     test_rights("manage files", current_user.username)
     try:
-        file_path = Path(f"{os.environ['ACTIVETIGGER_PATH']}/upload/{filename}")
+        file_path = Path(f"{os.environ['DATA_PATH']}/projects/upload/{filename}")
         if file_path.exists():
             file_path.unlink()
             return None

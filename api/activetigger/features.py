@@ -70,15 +70,13 @@ class Features:
         self.computing = computing
 
         # load possible embeddings models
-        fasttext_models = [
-            f for f in os.listdir(self.path_models) if f.endswith(".bin")
-        ]
+        fasttext_models = [f for f in os.listdir(self.path_models) if f.endswith(".bin")]
         # possibility to create a sbert.yaml file to add models
         sbert_models = ["Alibaba-NLP/gte-multilingual-base", "all-mpnet-base-v2"]
-        if Path(os.environ["ACTIVETIGGER_PATH"]).joinpath("sbert.yaml").exists():
+        if Path(os.environ["DATA_PATH"]).joinpath("projects/sbert.yaml").exists():
             content = yaml.safe_load(
                 open(
-                    str(Path(os.environ["ACTIVETIGGER_PATH"]).joinpath("sbert.yaml")),
+                    str(Path(os.environ["DATA_PATH"]).joinpath("projects/sbert.yaml")),
                     "r",
                 )
             )
@@ -86,7 +84,7 @@ class Features:
         else:
             # create the file
             with open(
-                str(Path(os.environ["ACTIVETIGGER_PATH"]).joinpath("sbert.yaml")),
+                str(Path(os.environ["DATA_PATH"]).joinpath("projects/sbert.yaml")),
                 "w",
             ) as f:
                 yaml.dump({"models": sbert_models}, f)
@@ -120,9 +118,7 @@ class Features:
             matching_strings = [s for s in strings if re.match(pattern, s)]
             return matching_strings
 
-        var = set(
-            [i.split("__")[0] for i in column_names if "__index" not in i and i != "id"]
-        )
+        var = set([i.split("__")[0] for i in column_names if "__index" not in i and i != "id"])
         dic = {i: find_strings_with_pattern(column_names, i) for i in var}
         num_rows = parquet_file.metadata.num_rows
         return dic, num_rows
@@ -195,9 +191,7 @@ class Features:
         col = self.get([name])
         # read data, delete columns and save
         content = pd.read_parquet(self.path_features)
-        content[[i for i in content.columns if i not in col]].to_parquet(
-            self.path_features
-        )
+        content[[i for i in content.columns if i not in col]].to_parquet(self.path_features)
         del content
 
         # delete from database
@@ -279,9 +273,7 @@ class Features:
             if e.kind == "feature"
         }
 
-    def compute(
-        self, df: pd.Series, name: str, kind: str, parameters: dict, username: str
-    ):
+    def compute(self, df: pd.Series, name: str, kind: str, parameters: dict, username: str):
         """
         Compute new feature
         """
@@ -315,14 +307,14 @@ class Features:
                 try:
                     column = column.apply(float)
                 except Exception:
-                    raise Exception(
-                        "The column can't be transform into numerical feature"
-                    )
+                    raise Exception("The column can't be transform into numerical feature")
             else:
                 column = column.apply(str)
 
             # add the feature to the project
-            dataset_name = f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
+            dataset_name = (
+                f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
+            )
             self.add(dataset_name, kind, username, parameters, column)
             return {"success": "Feature added"}
 
@@ -370,9 +362,7 @@ class Features:
             args = parameters.copy()
             args["texts"] = df
             args["language"] = self.lang
-            unique_id = self.queue.add_task(
-                "feature", self.project_slug, ComputeDfm(**args)
-            )
+            unique_id = self.queue.add_task("feature", self.project_slug, ComputeDfm(**args))
             del args
 
         if unique_id:

@@ -68,12 +68,10 @@ class Orchestrator:
     users: Users
     max_projects: int
 
-    def __init__(self, path=".", path_models="./models") -> None:
+    def __init__(self, path, path_models) -> None:
         """
         Start the server
         Use the following environment variables:
-        - ACTIVETIGGER_PATH: path to the projects
-        - ACTIVETIGGER_MODEL: path to
         """
 
         self.max_projects = MAX_LOADED_PROJECTS
@@ -180,17 +178,13 @@ class Orchestrator:
         self.db_manager.logs_service.add_log(user, action, project, connect)
         logger.info("%s from %s in project %s", action, user, project)
 
-    def get_logs(
-        self, project_slug: str, limit: int, partial: bool = True
-    ) -> pd.DataFrame:
+    def get_logs(self, project_slug: str, limit: int, partial: bool = True) -> pd.DataFrame:
         """
         Get logs for a user/project
         project_slug: project slug or "all"
         """
         logs = self.db_manager.logs_service.get_logs("all", project_slug, limit)
-        df = pd.DataFrame(
-            logs, columns=["id", "time", "user", "project", "action", "NA"]
-        )
+        df = pd.DataFrame(logs, columns=["id", "time", "user", "project", "action", "NA"])
         if partial:
             return df[~df["action"].str.contains("INFO ")]
         return df
@@ -219,7 +213,7 @@ class Orchestrator:
         cpu_count = psutil.cpu_count()
         memory_info = psutil.virtual_memory()
         disk_info = psutil.disk_usage("/")
-        at_memory = get_dir_size(os.environ["ACTIVETIGGER_PATH"])
+        at_memory = get_dir_size(os.environ["DATA_PATH"] + "/projects")
 
         return ServerStateModel(
             version=__version__,
@@ -250,12 +244,8 @@ class Orchestrator:
                 parameters=ProjectModel(**i[2]),
                 created_by=i[3],
                 created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
-                size=round(
-                    get_dir_size(os.environ["ACTIVETIGGER_PATH"] + "/" + i[0]), 1
-                ),
-                last_activity=self.db_manager.logs_service.get_last_activity_project(
-                    i[0]
-                ),
+                size=round(get_dir_size(os.environ["DATA_PATH"] + "/projects/" + i[0]), 1),
+                last_activity=self.db_manager.logs_service.get_last_activity_project(i[0]),
                 project_slug=i[0],
             )
             for i in list(reversed(projects_auth))
@@ -286,9 +276,7 @@ class Orchestrator:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(
-            to_encode, os.environ["SECRET_KEY"], algorithm=self.algorithm
-        )
+        encoded_jwt = jwt.encode(to_encode, os.environ["SECRET_KEY"], algorithm=self.algorithm)
 
         # add it in the database as active
         self.db_manager.projects_service.add_token(encoded_jwt, "active")
@@ -317,9 +305,7 @@ class Orchestrator:
             raise Exception("Token is invalid")
 
         # decode payload
-        payload = jwt.decode(
-            token, os.environ["SECRET_KEY"], algorithms=[self.algorithm]
-        )
+        payload = jwt.decode(token, os.environ["SECRET_KEY"], algorithms=[self.algorithm])
         return payload
 
     def start_project(self, project_slug: str) -> dict:
@@ -343,9 +329,7 @@ class Orchestrator:
         """
 
         # get project
-        existing_project = self.db_manager.projects_service.get_project(
-            project.project_slug
-        )
+        existing_project = self.db_manager.projects_service.get_project(project.project_slug)
 
         if existing_project:
             # Update the existing project
@@ -401,9 +385,7 @@ class Orchestrator:
 
         # Step 1 : load all data and index to str and rename columns
         if params.filename.endswith(".csv"):
-            content = pd.read_csv(
-                params.dir.joinpath(params.filename), low_memory=False
-            )
+            content = pd.read_csv(params.dir.joinpath(params.filename), low_memory=False)
         elif params.filename.endswith(".parquet"):
             content = pd.read_parquet(params.dir.joinpath(params.filename))
         elif params.filename.endswith(".xlsx"):
@@ -444,14 +426,9 @@ class Orchestrator:
         # case of a column as index
         else:
             # check if index after slugify is unique otherwise throw an error
-            if not (
-                (content[params.col_id].astype(str).apply(slugify)).nunique()
-                == len(content)
-            ):
+            if not ((content[params.col_id].astype(str).apply(slugify)).nunique() == len(content)):
                 shutil.rmtree(params.dir)
-                raise Exception(
-                    "The id column is not unique after slugify, please change it"
-                )
+                raise Exception("The id column is not unique after slugify, please change it")
             content["id"] = content[params.col_id].astype(str).apply(slugify)
             keep_id.append(params.col_id)
             content.set_index("id", inplace=True)
@@ -497,9 +474,7 @@ class Orchestrator:
                 df_grouped = content.groupby(params.cols_stratify, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(params.n_test / nb_cat)
-                testset = df_grouped.apply(
-                    lambda x: x.sample(min(len(x), nb_elements_cat))
-                )
+                testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
             # save the testset
             testset.to_parquet(params.dir.joinpath(self.test_file), index=True)
             params.test = True
@@ -524,27 +499,23 @@ class Orchestrator:
                 trainset = content[f_notna].sample(params.n_train)
             else:
                 n_train_random = params.n_train - f_notna.sum()
-                trainset = pd.concat(
-                    [content[f_notna], content[f_na].sample(n_train_random)]
-                )
+                trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
         # case there is stratification on the trainset
         elif len(params.cols_stratify) > 0 and params.stratify_train:
             print("stratification of the trainset")
             df_grouped = content.groupby(params.cols_stratify, group_keys=False)
             nb_cat = len(df_grouped)
             nb_elements_cat = round(params.n_train / nb_cat)
-            trainset = df_grouped.apply(
-                lambda x: x.sample(min(len(x), nb_elements_cat))
-            )
+            trainset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
         # default with random selection in the remaining elements
         else:
             print("random selection of the trainset")
             trainset = content.sample(params.n_train)
 
         # write the trainset
-        trainset[
-            list(set(["text", "limit"] + params.cols_context + keep_id))
-        ].to_parquet(params.dir.joinpath(self.train_file), index=True)
+        trainset[list(set(["text", "limit"] + params.cols_context + keep_id))].to_parquet(
+            params.dir.joinpath(self.train_file), index=True
+        )
         trainset[[]].to_parquet(params.dir.joinpath(self.features_file), index=True)
 
         # save parameters (without the data)
@@ -567,7 +538,6 @@ class Orchestrator:
 
         # add loaded schemes from columns
         for col in params.cols_label:
-
             # select the type of scheme
             scheme_name = slugify(col).replace("dataset-", "")
             delimiters = content[col].str.contains("|", regex=False).sum()
@@ -576,9 +546,7 @@ class Orchestrator:
                 scheme_labels = list(content[col].dropna().unique())
             else:
                 scheme_type = "multilabel"
-                scheme_labels = list(
-                    content[col].dropna().str.split("|").explode().unique()
-                )
+                scheme_labels = list(content[col].dropna().str.split("|").explode().unique())
 
             # check there is a limited number of labels
             if scheme_type == "multiclass" and len(scheme_labels) > 30:
@@ -678,12 +646,8 @@ class Orchestrator:
         shutil.rmtree(self.path.joinpath(project_slug_verif), ignore_errors=True)
 
         ## remove static files
-        if Path(
-            f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug_verif}"
-        ).exists():
-            shutil.rmtree(
-                f"{os.environ['ACTIVETIGGER_PATH']}/static/{project_slug_verif}"
-            )
+        if Path(f"{os.environ['DATA_PATH']}/projects/static/{project_slug_verif}").exists():
+            shutil.rmtree(f"{os.environ['DATA_PATH']}/projects/static/{project_slug_verif}")
 
     def update(self):
         """
@@ -721,9 +685,7 @@ class Orchestrator:
         os.makedirs(project_path, exist_ok=True)
 
         # create and save a toy dataset
-        newsgroups = fetch_20newsgroups(
-            subset="all", remove=("headers", "footers", "quotes")
-        )
+        newsgroups = fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))
         df = pd.DataFrame({"text": newsgroups.data, "target": newsgroups.target})
         df["category"] = df["target"].apply(lambda x: newsgroups.target_names[x])
         df.to_csv(project_path.joinpath("dummy.csv"), index=False)
@@ -745,6 +707,6 @@ class Orchestrator:
 
 # launch the instance
 orchestrator = Orchestrator(
-    os.environ.get("ACTIVETIGGER_PATH", "./projects"),
-    os.environ.get("ACTIVETIGGER_MODEL", "./models"),
+    os.environ.get("DATA_PATH") + "/projects",
+    os.environ.get("DATA_PATH") + "/models",
 )

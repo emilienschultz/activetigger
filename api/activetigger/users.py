@@ -72,9 +72,7 @@ class Users:
         if project_slug == "all":
             auth = self.db_manager.projects_service.get_user_auth(username)
         else:
-            auth = self.db_manager.projects_service.get_user_auth(
-                username, project_slug
-            )
+            auth = self.db_manager.projects_service.get_user_auth(username, project_slug)
         return auth
 
     def existing_users(self, username: str = "root", active: bool = True) -> dict:
@@ -136,9 +134,7 @@ class Users:
         if name not in self.existing_users():
             raise Exception("Username doesn't exist or is deactivated")
         user = self.db_manager.users_service.get_user(name)
-        return UserInDBModel(
-            username=name, hashed_password=user.key, status=user.description
-        )
+        return UserInDBModel(username=name, hashed_password=user.key, status=user.description)
 
     def authenticate_user(self, username: str, password: str) -> UserInDBModel:
         """
@@ -189,10 +185,7 @@ class Users:
         """
         projects = self.db_manager.users_service.get_user_created_projects(username)
         return sum(
-            [
-                get_dir_size(f"{os.environ['ACTIVETIGGER_PATH']}/{project}")
-                for project in projects
-            ]
+            [get_dir_size(f"{os.environ['DATA_PATH']}/projects/{project}") for project in projects]
         )
 
     def get_storage_limit(self, username: str) -> float:
