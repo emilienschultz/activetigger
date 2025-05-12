@@ -337,7 +337,7 @@ export function useStatistics(projectSlug: string | null, currentScheme: string 
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getStatistics = useAsyncMemo(async () => {
-    if (projectSlug && currentScheme) {
+    if (projectSlug && currentScheme && currentScheme !== 'none' && currentScheme !== '') {
       const res = await api.GET('/projects/{project_slug}/statistics', {
         params: {
           path: { project_slug: projectSlug },
