@@ -421,7 +421,7 @@ export interface paths {
         };
         /**
          * Get Projection
-         * @description Get projection data if computed
+         * @description Get projection if computed
          */
         get: operations["get_projection_elements_projection_get"];
         put?: never;
@@ -514,31 +514,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/elements/reconciliate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Reconciliation Table
-         * @description Get the reconciliation table
-         */
-        get: operations["get_reconciliation_table_elements_reconciliate_get"];
-        put?: never;
-        /**
-         * Post Reconciliation
-         * @description Post a label for all user in a list
-         *     TODO : a specific action for reconciliation ?
-         */
-        post: operations["post_reconciliation_elements_reconciliate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/elements/{element_id}": {
         parameters: {
             query?: never;
@@ -576,6 +551,30 @@ export interface paths {
          *     - No information kept of selection process
          */
         post: operations["post_annotation_annotation__action__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elements/reconciliate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reconciliation Table
+         * @description Get the reconciliation table
+         */
+        get: operations["get_reconciliation_table_elements_reconciliate_get"];
+        put?: never;
+        /**
+         * Post Reconciliation
+         * @description Post a label for all user in a list
+         */
+        post: operations["post_reconciliation_elements_reconciliate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1334,7 +1333,7 @@ export interface paths {
         };
         /**
          * Welcome
-         * @description Welcome page at the root path for the API
+         * @description Welcome page for the API
          */
         get: operations["welcome__get"];
         put?: never;
@@ -1357,6 +1356,26 @@ export interface paths {
          * @description Get the version of the server
          */
         get: operations["get_version_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Queue
+         * @description Get the state of the server
+         */
+        get: operations["get_queue_server_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1405,26 +1424,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/server": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Queue
-         * @description Get the state of the server
-         */
-        get: operations["get_queue_server_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/kill": {
         parameters: {
             query?: never;
@@ -1436,7 +1435,7 @@ export interface paths {
         put?: never;
         /**
          * Kill Process
-         * @description Stop current generation
+         * @description Kill a process with a unique id
          */
         post: operations["kill_process_kill_post"];
         delete?: never;
@@ -2150,11 +2149,11 @@ export interface components {
             x: unknown[];
             /** Y */
             y: unknown[];
+            parameters: components["schemas"]["ProjectionInStrictModel"];
             /** Labels */
-            labels: string[];
+            labels?: string[] | null;
             /** Predictions */
             predictions?: string[] | null;
-            parameters: components["schemas"]["ProjectionInStrictModel"];
         };
         /** PromptInputModel */
         PromptInputModel: {
@@ -3210,73 +3209,6 @@ export interface operations {
             };
         };
     };
-    get_reconciliation_table_elements_reconciliate_get: {
-        parameters: {
-            query: {
-                scheme: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReconciliationModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_reconciliation_elements_reconciliate_post: {
-        parameters: {
-            query: {
-                users: unknown[];
-                element_id: string;
-                label: string;
-                scheme: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_element_elements__element_id__get: {
         parameters: {
             query: {
@@ -3328,6 +3260,73 @@ export interface operations {
                 "application/json": components["schemas"]["AnnotationModel"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reconciliation_table_elements_reconciliate_get: {
+        parameters: {
+            query: {
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reconciliation_elements_reconciliate_post: {
+        parameters: {
+            query: {
+                users: unknown[];
+                element_id: string;
+                label: string;
+                scheme: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -4663,6 +4662,26 @@ export interface operations {
             };
         };
     };
+    get_queue_server_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerStateModel"];
+                };
+            };
+        };
+    };
     login_for_access_token_token_post: {
         parameters: {
             query?: never;
@@ -4724,26 +4743,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_queue_server_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ServerStateModel"];
                 };
             };
         };
