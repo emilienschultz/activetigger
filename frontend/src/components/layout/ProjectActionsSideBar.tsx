@@ -43,7 +43,7 @@ export const ProjectActionsSidebar: FC<{
       ? currentUser in projectState.languagemodels.training ||
         currentUser in projectState.simplemodel.training ||
         currentUser in projectState.projections.training ||
-        (projectState.features.training as string[]).length > 0
+        Object.values(projectState.features.training).length > 0
       : false;
 
   // display the number of current processes on the server
