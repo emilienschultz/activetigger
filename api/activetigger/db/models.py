@@ -51,9 +51,6 @@ class Projects(Base):
     schemes: Mapped[list["Schemes"]] = relationship(
         "Schemes", cascade="all,delete,delete-orphan", back_populates="project"
     )
-    # annotations: Mapped[list["Annotations"]] = relationship(
-    #     "Annotations", cascade="all,delete,delete-orphan", back_populates="project"
-    # )
     auths: Mapped[list["Auths"]] = relationship(
         "Auths", cascade="all,delete,delete-orphan", back_populates="project"
     )
@@ -66,9 +63,6 @@ class Projects(Base):
     features: Mapped[list["Features"]] = relationship(
         "Features", cascade="all,delete,delete-orphan", back_populates="project"
     )
-    # models: Mapped[list["Models"]] = relationship(
-    #     "Models", cascade="all,delete,delete-orphan", back_populates="project"
-    # )
     gen_models: Mapped[list["GenModels"]] = relationship(
         "GenModels", cascade="all, delete-orphan", back_populates="project"
     )
@@ -140,7 +134,6 @@ class Annotations(Base):
     user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
     user: Mapped[Users] = relationship()
     project_slug: Mapped[str]
-    # project: Mapped[Projects] = relationship(back_populates="annotations")
     element_id: Mapped[str]
     scheme_name: Mapped[str]
     scheme: Mapped[Schemes] = relationship()
@@ -208,13 +201,13 @@ class GenModels(Base):
     project_slug: Mapped[str] = mapped_column(
         ForeignKey("projects.project_slug", ondelete="CASCADE")
     )
+    user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
     project: Mapped[Projects] = relationship(back_populates="gen_models")
     slug: Mapped[str]
     name: Mapped[str]
     api: Mapped[str]
     endpoint: Mapped[str | None]
     credentials: Mapped[str | None]
-    user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
 
 
 class Generations(Base):
@@ -280,7 +273,6 @@ class Models(Base):
     user: Mapped[Users] = relationship()
     project_slug: Mapped[str]
     scheme: Mapped[Schemes] = relationship(back_populates="models")
-    # project: Mapped[Projects] = relationship(back_populates="models")
     scheme_name: Mapped[str]
     kind: Mapped[str]
     name: Mapped[str]
