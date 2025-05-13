@@ -38,3 +38,4 @@ docker/api/projects/
 docker/api/venv/
 docker/api/models/
 
+api/.env
