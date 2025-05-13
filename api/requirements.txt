@@ -45,3 +45,4 @@ types-psutil
 pandas-stubs
 loky
 psycopg2
+python-dotenv

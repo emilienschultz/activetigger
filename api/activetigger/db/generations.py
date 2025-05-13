@@ -14,6 +14,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.models import Generations, GenModels, Prompts
 from activetigger.functions import decrypt, encrypt
+from activetigger.config import config
 
 
 class GenerationsService:
@@ -125,7 +126,7 @@ class GenerationsService:
             result = session.scalars(select(GenModels).filter_by(id=model_id)).first()
             if result is None:
                 raise Exception("Generation model not found")
-            result.credentials = decrypt(result.credentials, os.environ["SECRET_KEY"])
+            result.credentials = decrypt(result.credentials, config.secret_key)
             return result
 
     def add_project_gen_model(
@@ -143,7 +144,7 @@ class GenerationsService:
                 name=model.name,
                 api=model.api,
                 endpoint=model.endpoint,
-                credentials=encrypt(model.credentials, os.environ["SECRET_KEY"]),
+                credentials=encrypt(model.credentials, config.secret_key),
                 user_name=user_name,
             )
             session.add(new_model)

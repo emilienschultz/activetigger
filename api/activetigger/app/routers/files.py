@@ -20,6 +20,7 @@ from activetigger.datamodels import (
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
+from activetigger.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ async def get_files(
     Get all files
     """
     try:
-        files = os.listdir(f"{os.environ['DATA_PATH']}/projects/upload")
+        files = os.listdir(f"{config.data_path}/projects/upload")
         if current_user.status == "root":
             return files
         else:
@@ -49,7 +50,7 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
     """
     # create a folder for the project to be created
     project_slug = slugify(project_name)
-    project_path = Path(f"{os.environ['DATA_PATH']}/projects/{project_slug}")
+    project_path = Path(f"{config.data_path}/projects/{project_slug}")
     if project_path.exists():
         raise Exception("Project already exists")
     if file.filename is None:
@@ -114,7 +115,7 @@ async def delete_file(
     """
     test_rights("manage files", current_user.username)
     try:
-        file_path = Path(f"{os.environ['DATA_PATH']}/projects/upload/{filename}")
+        file_path = Path(f"{config.data_path}/projects/upload/{filename}")
         if file_path.exists():
             file_path.unlink()
             return None

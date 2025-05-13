@@ -16,6 +16,7 @@ from activetigger.queue import Queue
 from activetigger.tasks.compute_dfm import ComputeDfm
 from activetigger.tasks.compute_fasttext import ComputeFasttext
 from activetigger.tasks.compute_sbert import ComputeSbert
+from activetigger.config import config
 
 # Use parquet files to save features
 # In the future : database ?
@@ -73,10 +74,10 @@ class Features:
         fasttext_models = [f for f in os.listdir(self.path_models) if f.endswith(".bin")]
         # possibility to create a sbert.yaml file to add models
         sbert_models = ["Alibaba-NLP/gte-multilingual-base", "all-mpnet-base-v2"]
-        if Path(os.environ["DATA_PATH"]).joinpath("projects/sbert.yaml").exists():
+        if Path(config.data_path).joinpath("projects/sbert.yaml").exists():
             content = yaml.safe_load(
                 open(
-                    str(Path(os.environ["DATA_PATH"]).joinpath("projects/sbert.yaml")),
+                    str(Path(config.data_path).joinpath("projects/sbert.yaml")),
                     "r",
                 )
             )
@@ -84,7 +85,7 @@ class Features:
         else:
             # create the file
             with open(
-                str(Path(os.environ["DATA_PATH"]).joinpath("projects/sbert.yaml")),
+                str(Path(config.data_path).joinpath("projects/sbert.yaml")),
                 "w",
             ) as f:
                 yaml.dump({"models": sbert_models}, f)

@@ -33,16 +33,9 @@ from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
 
+from activetigger.config import config
+
 logger = logging.getLogger("server")
-
-
-# conf deployment
-ALGORITHM = "HS256"
-MAX_LOADED_PROJECTS = 20
-N_WORKERS_GPU = 1
-N_WORKERS_CPU = 5
-UPDATE_TIMEOUT = 1
-
 
 class Orchestrator:
     """
@@ -55,7 +48,7 @@ class Orchestrator:
     train_file: str
     test_file: str
     default_user: str
-    algorithm: str
+    jwt_algorithm: str
     n_workers_cpu: int
     n_workers_gpu: int
     starting_time: float
@@ -71,38 +64,34 @@ class Orchestrator:
     def __init__(self, path, path_models) -> None:
         """
         Start the server
-        Use the following environment variables:
         """
 
-        self.max_projects = MAX_LOADED_PROJECTS
-        self.db_name = "activetigger.db"
+        self.max_projects = config.max_loaded_projects
         self.data_all = "data_all.parquet"
         self.features_file = "features.parquet"
         self.train_file = "train.parquet"
         self.test_file = "test.parquet"
         self.default_user = "root"
-        self.algorithm = ALGORITHM
-        self.n_workers_cpu = N_WORKERS_CPU
-        self.n_workers_gpu = N_WORKERS_GPU
+        self.jwt_algorithm = config.jwt_algorithm
+        self.n_workers_cpu = config.n_workers_cpu
+        self.n_workers_gpu = config.n_workers_gpu
 
         self.starting_time = time.time()
 
         # Define path
         self.path = Path(path)
         self.path_models = Path(path_models)
-        self.db = self.path.joinpath(self.db_name)
+        
 
         # create directories
         self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
 
-        # create or load a key to encrypt the tokens
-        self.load_secret_key()
 
         # attributes of the server
         self.projects = {}
-        self.db_manager = DatabaseManager(str(self.db))
+        self.db_manager = DatabaseManager()
         self.queue = Queue(
             nb_workers_cpu=self.n_workers_cpu,
             nb_workers_gpu=self.n_workers_gpu,
@@ -113,7 +102,7 @@ class Orchestrator:
         # update
         # TODO : manage better the closing
         self._running = True
-        self._update_task = asyncio.create_task(self._update(timeout=UPDATE_TIMEOUT))
+        self._update_task = asyncio.create_task(self._update(timeout=config.update_timeout))
 
         # logging
         logging.basicConfig(
@@ -149,21 +138,6 @@ class Orchestrator:
         finally:
             print("Update task finished.")
 
-    def load_secret_key(self) -> None:
-        """
-        Load secret key in the environment
-        - if key.yaml exists, load the key
-        - if not, create a new key and the file
-        """
-        if (self.path.joinpath("key.yaml")).exists():
-            with open(self.path.joinpath("key.yaml"), "r") as f:
-                conf = yaml.safe_load(f)
-            key = conf["key"]
-        else:
-            key = Fernet.generate_key().decode()
-            with open(self.path.joinpath("key.yaml"), "w") as f:
-                yaml.safe_dump({"key": key}, f)
-        os.environ["SECRET_KEY"] = key
 
     def log_action(
         self,
@@ -213,7 +187,7 @@ class Orchestrator:
         cpu_count = psutil.cpu_count()
         memory_info = psutil.virtual_memory()
         disk_info = psutil.disk_usage("/")
-        at_memory = get_dir_size(os.environ["DATA_PATH"] + "/projects")
+        at_memory = get_dir_size(config.data_path + "/projects")
 
         return ServerStateModel(
             version=__version__,
@@ -244,7 +218,7 @@ class Orchestrator:
                 parameters=ProjectModel(**i[2]),
                 created_by=i[3],
                 created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
-                size=round(get_dir_size(os.environ["DATA_PATH"] + "/projects/" + i[0]), 1),
+                size=round(get_dir_size(config.data_path + "/projects/" + i[0]), 1),
                 last_activity=self.db_manager.logs_service.get_last_activity_project(i[0]),
                 project_slug=i[0],
             )
@@ -276,7 +250,7 @@ class Orchestrator:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=expires_min)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, os.environ["SECRET_KEY"], algorithm=self.algorithm)
+        encoded_jwt = jwt.encode(to_encode, config.secret_key, algorithm=self.jwt_algorithm)
 
         # add it in the database as active
         self.db_manager.projects_service.add_token(encoded_jwt, "active")
@@ -305,7 +279,7 @@ class Orchestrator:
             raise Exception("Token is invalid")
 
         # decode payload
-        payload = jwt.decode(token, os.environ["SECRET_KEY"], algorithms=[self.algorithm])
+        payload = jwt.decode(token, config.secret_key, algorithms=[self.jwt_algorithm])
         return payload
 
     def start_project(self, project_slug: str) -> dict:
@@ -646,8 +620,8 @@ class Orchestrator:
         shutil.rmtree(self.path.joinpath(project_slug_verif), ignore_errors=True)
 
         ## remove static files
-        if Path(f"{os.environ['DATA_PATH']}/projects/static/{project_slug_verif}").exists():
-            shutil.rmtree(f"{os.environ['DATA_PATH']}/projects/static/{project_slug_verif}")
+        if Path(f"{config.data_path}/projects/static/{project_slug_verif}").exists():
+            shutil.rmtree(f"{config.data_path}/projects/static/{project_slug_verif}")
 
     def update(self):
         """
@@ -707,6 +681,6 @@ class Orchestrator:
 
 # launch the instance
 orchestrator = Orchestrator(
-    os.environ.get("DATA_PATH") + "/projects",
-    os.environ.get("DATA_PATH") + "/models",
+    config.data_path + "/projects",
+    config.data_path + "/models",
 )

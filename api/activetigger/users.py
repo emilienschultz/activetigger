@@ -7,6 +7,7 @@ import yaml  # type: ignore[import]
 from activetigger.datamodels import UserInDBModel, UserStatistics
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import compare_to_hash, get_dir_size, get_hash
+from activetigger.config import config
 
 
 class Users:
@@ -185,7 +186,7 @@ class Users:
         """
         projects = self.db_manager.users_service.get_user_created_projects(username)
         return sum(
-            [get_dir_size(f"{os.environ['DATA_PATH']}/projects/{project}") for project in projects]
+            [get_dir_size(f"{config.data_path}/projects/{project}") for project in projects]
         )
 
     def get_storage_limit(self, username: str) -> float:
@@ -200,4 +201,4 @@ class Users:
         if username in self.users:
             return float(self.users[username]["storage_limit"])
         # default value
-        return float(os.environ["ACTIVETIGGER_USER_HDD_MAX"])
+        return config.user_hdd_max

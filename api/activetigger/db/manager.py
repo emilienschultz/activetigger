@@ -12,6 +12,7 @@ from activetigger.db.models import Base
 from activetigger.db.projects import ProjectsService
 from activetigger.db.users import UsersService
 from activetigger.functions import get_hash, get_root_pwd
+from activetigger.config import config
 
 
 class DatabaseManager:
@@ -60,7 +61,7 @@ class DatabaseManager:
         Create root session
         :return: None
         """
-        pwd: str = os.environ.get("ROOT_PASSWORD") if os.environ.get("ROOT_PASSWORD") is not None else get_root_pwd()
+        pwd: str = config.root_password if config.root_password is not None else get_root_pwd()
         hash_pwd: bytes = get_hash(pwd)
         self.users_service.add_user("root", hash_pwd.decode("utf8"), "root", "system")
     

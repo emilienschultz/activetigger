@@ -36,6 +36,7 @@ from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
 from activetigger.simplemodels import SimpleModels
+from activetigger.config import config
 
 MODELS = "bert_models.csv"
 TIMEZONE = pytz.timezone("Europe/Paris")
@@ -91,8 +92,8 @@ class Project:
         """
 
         # remove static files
-        if Path(f"{os.environ['DATA_PATH']}/projects/static/{self.name}").exists():
-            shutil.rmtree(f"{os.environ['DATA_PATH']}/projects/static/{self.name}")
+        if Path(f"{config.data_path}/projects/static/{self.name}").exists():
+            shutil.rmtree(f"{config.data_path}/projects/static/{self.name}")
 
         # remove folder of the project
         try:
@@ -771,10 +772,10 @@ class Project:
         name = f"{project_slug}_data_all.parquet"
         target_dir = self.params.dir if self.params.dir is not None else Path(".")
         path_origin = target_dir.joinpath("data_all.parquet")
-        folder_target = f"{os.environ['DATA_PATH']}/projects/static/{project_slug}"
+        folder_target = f"{config.data_path}/projects/static/{project_slug}"
         if not Path(folder_target).exists():
             os.makedirs(folder_target)
-        path_target = f"{os.environ['DATA_PATH']}/projects/static/{project_slug}/{name}"
+        path_target = f"{config.data_path}/projects/static/{project_slug}/{name}"
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")

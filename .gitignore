@@ -37,5 +37,6 @@ api/activetigger/tasks/__pycache__/
 docker/api/projects/
 docker/api/venv/
 docker/api/models/
+docker/api/postgresql/
 
 api/.env

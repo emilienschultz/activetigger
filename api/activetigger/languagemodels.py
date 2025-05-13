@@ -21,6 +21,7 @@ from activetigger.db.manager import DatabaseManager
 from activetigger.queue import Queue
 from activetigger.tasks.predict_bert import PredictBert
 from activetigger.tasks.train_bert import TrainBert
+from activetigger.config import config
 
 
 class LanguageModels:
@@ -135,7 +136,7 @@ class LanguageModels:
         try:
             shutil.rmtree(self.path.joinpath(name))
             os.remove(
-                f"{os.environ['DATA_PATH']}/projects/static/{self.project_slug}/{name}.tar.gz"
+                f"{config.data_path}/projects/static/{self.project_slug}/{name}.tar.gz"
             )
         except Exception as e:
             raise Exception(f"Problem to delete model files : {e}")
@@ -413,7 +414,7 @@ class LanguageModels:
         """
         Export bert archive if exists
         """
-        file = f"{os.environ['DATA_PATH']}/projects/static/{self.project_slug}/{name}.tar.gz"
+        file = f"{config.data_path}/projects/static/{self.project_slug}/{name}.tar.gz"
 
         if not Path(file).exists():
             raise FileNotFoundError("file does not exist")

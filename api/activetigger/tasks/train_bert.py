@@ -26,6 +26,7 @@ from transformers import (  # type: ignore[import]
 from activetigger.datamodels import LMParametersModel
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
+from activetigger.config import config
 
 pd.set_option("future.no_silent_downcasting", True)
 
@@ -279,7 +280,7 @@ class TrainBert(BaseTask):
             os.rename(log_path, current_path.joinpath("finished"))
 
             # make archive (create dir if needed)
-            path_static = f"{os.environ['DATA_PATH']}/projects/static/{self.project_slug}"
+            path_static = f"{config.data_path}/projects/static/{self.project_slug}"
             os.makedirs(path_static, exist_ok=True)
             shutil.make_archive(
                 f"{path_static}/{self.name}",
