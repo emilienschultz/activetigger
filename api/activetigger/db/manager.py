@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 import os
@@ -15,6 +15,13 @@ from activetigger.functions import get_hash, get_root_pwd
 from activetigger.config import config
 
 
+
+def set_sqlite_pragma(dbapi_connection,_):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
 class DatabaseManager:
     """
     Database management with SQLAlchemy
@@ -26,12 +33,18 @@ class DatabaseManager:
     users_service: UsersService
     projects_service: ProjectsService
 
-    def __init__(self, path_db: str):
+    def __init__(self):
         # priority to environ if set
-        db_url = os.environ["DATABASE_URL"] if "DATABASE_URL" in os.environ else f"sqlite:///{path_db}"
+        db_url = config.database_url
 
         # connect the session
+        print(f'connecting to DB ${db_url}')
         self.engine = create_engine(db_url)
+
+        # enable foreign key verification in sqlite
+        if db_url.startswith('sqlite'):
+            event.listen(self.engine, "connect", set_sqlite_pragma)
+
         self.SessionMaker = sessionmaker(bind=self.engine)
         self.default_user = "server"
         self.users_service = UsersService(self.SessionMaker)
