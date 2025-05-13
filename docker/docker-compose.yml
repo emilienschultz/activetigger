@@ -6,6 +6,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ${DATA_PATH}/postgresql/:/var/lib/postgresql/data
   api:
     build:
       context: ./api
