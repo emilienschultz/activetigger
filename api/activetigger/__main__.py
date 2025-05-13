@@ -32,6 +32,8 @@ if __name__ == "__main__":
     # create environement variables using config file
     if "DATA_PATH" not in os.environ:
         os.environ["DATA_PATH"] = "."
+    if "MODE" not in os.environ:
+        os.environ["MODE"] = "dev"
     os.environ["ACTIVETIGGER_USER_HDD_MAX"] = "30"
     if Path(args.config).exists():
         with open(args.config) as f:
