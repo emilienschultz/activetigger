@@ -17,6 +17,7 @@
 - Matthias Bussonnier
 - Léo Mignot (Centre Émile Durkheim)
 - Jules Brion (Pacte)
+- Annina Claesson (CREST)
 
 ## Feedbacks
 
