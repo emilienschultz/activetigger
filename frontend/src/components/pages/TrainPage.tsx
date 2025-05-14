@@ -627,7 +627,6 @@ export const TrainPage: FC = () => {
                         <Controller
                           name="exclude_labels"
                           control={control}
-                          defaultValue={['skip ⌦']}
                           render={({ field: { onChange, value } }) => (
                             <Select
                               options={existingLabels}

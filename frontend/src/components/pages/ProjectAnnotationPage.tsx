@@ -19,6 +19,8 @@ import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 import { ElementOutModel } from '../../types';
 import { BackButton } from '../BackButton';
+import { ForwardButton } from '../ForwardButton';
+
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { MulticlassInput } from '../MulticlassInput';
 import { MultilabelInput } from '../MultilabelInput';
@@ -435,6 +437,13 @@ export const ProjectAnnotationPage: FC = () => {
                 </button>
               )
             }
+            {elementId && (
+              <ForwardButton
+                setAppContext={setAppContext}
+                elementId={elementId}
+                refetchElement={refetchElement}
+              />
+            )}
           </div>
 
           {displayComment && (

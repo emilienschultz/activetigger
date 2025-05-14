@@ -20,6 +20,7 @@ from sklearn.datasets import fetch_20newsgroups
 from slugify import slugify
 
 from activetigger import __version__
+from activetigger.config import config
 from activetigger.datamodels import (
     ProjectBaseModel,
     ProjectModel,
@@ -33,9 +34,8 @@ from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
 
-from activetigger.config import config
-
 logger = logging.getLogger("server")
+
 
 class Orchestrator:
     """
@@ -81,13 +81,11 @@ class Orchestrator:
         # Define path
         self.path = Path(path)
         self.path_models = Path(path_models)
-        
 
         # create directories
         self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
-
 
         # attributes of the server
         self.projects = {}
@@ -137,7 +135,6 @@ class Orchestrator:
             print("Update task cancelled.")
         finally:
             print("Update task finished.")
-
 
     def log_action(
         self,
@@ -506,7 +503,7 @@ class Orchestrator:
 
         # add an empty default scheme
         self.db_manager.projects_service.add_scheme(
-            project_slug, "default", ["skip ⌦"], "multiclass", "system"
+            project_slug, "default", [], "multiclass", "system"
         )
         params.default_scheme = []
 
@@ -533,7 +530,7 @@ class Orchestrator:
             self.db_manager.projects_service.add_scheme(
                 project_slug,
                 scheme_name,
-                ["skip ⌦"] + scheme_labels,
+                scheme_labels,
                 scheme_type,
                 "system",
             )

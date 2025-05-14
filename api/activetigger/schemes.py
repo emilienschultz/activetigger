@@ -76,9 +76,7 @@ class Schemes:
         # - last element for each id
         # - for a specific scheme
 
-        results = self.projects_service.get_scheme_elements(
-            self.project_slug, scheme, kind
-        )
+        results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind)
 
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "timestamp", "comment"]
@@ -103,13 +101,9 @@ class Schemes:
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
 
-        results = self.projects_service.get_table_annotations_users(
-            self.project_slug, scheme
-        )
+        results = self.projects_service.get_table_annotations_users(self.project_slug, scheme)
         # Shape the data
-        df = pd.DataFrame(
-            results, columns=["id", "labels", "user", "time"]
-        )  # shape as a dataframe
+        df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
 
         def agg(x):
             return list(x)[0] if len(x) > 0 else None  # take the label else None
@@ -121,9 +115,7 @@ class Schemes:
             lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
         )  # filter for disagreement
         users = list(df.columns)
-        df = pd.DataFrame(
-            df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"]
-        )
+        df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
         df = df.join(self.content[["text"]], how="left")  # add the text
         df = df[f_multi].reset_index()
         # return the result
@@ -242,9 +234,7 @@ class Schemes:
             print(contains)
             if contains.startswith("ALL:") and len(contains) > 4:
                 contains_f = contains.replace("ALL:", "")
-                f_labels = (
-                    df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
-                )
+                f_labels = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
                 f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
                 f_contains = f_labels | f_text
             else:
@@ -282,10 +272,6 @@ class Schemes:
         """
         if self.exists(name):
             raise Exception("Scheme already exists")
-
-        # add a skip label if not present
-        if "skip ⌦" not in labels:
-            labels.append("skip ⌦")
 
         self.projects_service.add_scheme(self.project_slug, name, labels, kind, user)
 
@@ -469,9 +455,7 @@ class Schemes:
         """
         Get users action for a scheme
         """
-        results = self.db_manager.users_service.get_coding_users(
-            scheme, self.project_slug
-        )
+        results = self.db_manager.users_service.get_coding_users(scheme, self.project_slug)
         return results
 
     def add_codebook(self, scheme: str, codebook: str, time: str):
@@ -484,9 +468,7 @@ class Schemes:
         # if no modification since the last time, ok
         if r["time"] == time:
             try:
-                self.projects_service.update_scheme_codebook(
-                    self.project_slug, scheme, codebook
-                )
+                self.projects_service.update_scheme_codebook(self.project_slug, scheme, codebook)
             except DBException as e:
                 raise Exception("Codebook not added") from e
             return {"success": "Codebook added"}
@@ -528,9 +510,7 @@ class Schemes:
             raise Exception("No label")
         return label if label in annotation.split("|") else "not-" + label
 
-    def add_file_annotations(
-        self, annotationsdata: AnnotationsDataModel, user: str, dataset: str
-    ):
+    def add_file_annotations(self, annotationsdata: AnnotationsDataModel, user: str, dataset: str):
         """
         Add annotations from a file
         Create labels if not exist
