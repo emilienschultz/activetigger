@@ -16,12 +16,11 @@ Designed primarily by researchers in social sciences, its use can extend to all 
 
 [Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
 
-## Install the app
 
-The app is built on a client/API architecture :
 
-- the server runs an API with FastAPI
-- the client is in [React](https://reactjs.org/)
+## Run the app with Docker (recommended)
+
+If you don't already have it installed, install docker first.
 
 Clone the repository
 
@@ -29,26 +28,37 @@ Clone the repository
 git clone https://github.com/emilienschultz/activetigger.git
 ```
 
-### Run with docker
-
-If you don't already have it installed, install docker.
+Then, you can run the app with docker compose. You need to be in the `docker` directory.
 
 ```bash
 cd docker
 docker compose -p activetigger up
 ```
 
+The configuration file is `./docker/.env`.
+
 Docker will start:
 
-- postgresql
-- python API (and install all requirements)
+- Postgresql
+- Python API (and install all requirements)
 - frontend
-- a reverse proxy with nginx
+- a reverse proxy with Nginx
 
-By default the docker stack is in mode DEV.
-This means that both API and FRONTEND are started using the local code in watch mode. You can update the code the service will be restarted. You can therefor use docker for development.
+*By default the docker stack is in mode DEV.* This means that both API and FRONTEND are started using the local code in watch mode. You can update the code the service will be restarted. You can therefor use docker for development.
 
-To adapt the docker stack configuration change the `./docker/.env` file.
+## Install the app
+
+The app is built on a client/API/Database architecture :
+
+- the server runs an API with FastAPI
+- the client is in [React](https://reactjs.org/)
+- The database can be either SQLite or Postgresql (if you use Postgresql, you need to install it first)
+
+First, clone the repository
+
+```bash
+git clone https://github.com/emilienschultz/activetigger.git
+```
 
 ### Install the Python API
 
@@ -140,7 +150,13 @@ npm run build
 
 You can deploy the app with Github Pages for tests
 
-### Python client
+### Install Postgresql
+
+If you want to use Postgresql, you need to install it first. You can use the docker image or install it locally.
+
+**to write**
+
+## Python client
 
 A python client is under development to interact with the API https://github.com/emilienschultz/activetigger-client
 
