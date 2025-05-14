@@ -16,11 +16,11 @@ from activetigger.app.dependencies import (
     test_rights,
     verified_user,
 )
+from activetigger.config import config
 from activetigger.datamodels import (
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
-from activetigger.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +49,9 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
     Stream the uploaded file in a new project folder with the same name
     """
     # create a folder for the project to be created
-    project_slug = slugify(project_name)
+    project_slug = orchestrator.check_project_name(project_name)
     project_path = Path(f"{config.data_path}/projects/{project_slug}")
-    if project_path.exists():
-        raise Exception("Project already exists")
+
     if file.filename is None:
         raise Exception("Problem with the file name")
 

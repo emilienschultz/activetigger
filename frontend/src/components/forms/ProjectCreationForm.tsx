@@ -123,6 +123,11 @@ export const ProjectCreationForm: FC = () => {
       try {
         // test if the project name is available
         const available = await availableProjectName(formData.project_name);
+        if (formData.project_name === '') {
+          notify({ type: 'error', message: 'Please select a project name' });
+          setCreatingProject(false);
+          return;
+        }
         if (!available) {
           notify({ type: 'error', message: 'Project name already taken' });
           setCreatingProject(false);

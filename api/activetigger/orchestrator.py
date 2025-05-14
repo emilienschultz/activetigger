@@ -239,6 +239,17 @@ class Orchestrator:
         """
         return slugify(project_name) in self.existing_projects()
 
+    def check_project_name(self, project_name: str) -> str:
+        """
+        Check if a project name is valid
+        """
+        project_slug = slugify(project_name)
+        if self.exists(project_slug):
+            raise Exception("This project already exists")
+        if project_slug == "":
+            raise Exception("The project name is not valid - empty")
+        return project_slug
+
     def create_access_token(self, data: dict, expires_min: int = 60):
         """
         Create access token
@@ -322,7 +333,7 @@ class Orchestrator:
         existing_projects = self.db_manager.projects_service.existing_projects()
         return existing_projects
 
-    def create_project(self, params: ProjectBaseModel, username: str) -> dict:
+    def create_project(self, params: ProjectBaseModel, username: str) -> str:
         """
         Set up a new project
         - load data and save
@@ -334,18 +345,14 @@ class Orchestrator:
         - when saved, the files followed the nomenclature of the project : text, label, etc.
         """
 
-        # test if possible to create the project
-        if self.exists(params.project_name):
-            raise Exception("This project already exists")
+        # check the unicity and get the slug of the project name as a key
+        project_slug = self.check_project_name(params.project_name)
 
         # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
             raise Exception("No column selected for the id")
         if params.cols_text is None or len(params.cols_text) == 0:
             raise Exception("No column selected for the text")
-
-        # get the slug of the project name as a key
-        project_slug = slugify(params.project_name)
 
         # add the dedicated directory
         params.dir = self.path.joinpath(project_slug)
@@ -614,11 +621,12 @@ class Orchestrator:
         self.db_manager.projects_service.delete_project(project_slug_verif)
 
         # remove from the server
-        shutil.rmtree(self.path.joinpath(project_slug_verif), ignore_errors=True)
+        if project_slug_verif and project_slug_verif != "":
+            shutil.rmtree(self.path.joinpath(project_slug_verif), ignore_errors=True)
 
-        ## remove static files
-        if Path(f"{config.data_path}/projects/static/{project_slug_verif}").exists():
-            shutil.rmtree(f"{config.data_path}/projects/static/{project_slug_verif}")
+            ## remove static files
+            if Path(f"{config.data_path}/projects/static/{project_slug_verif}").exists():
+                shutil.rmtree(f"{config.data_path}/projects/static/{project_slug_verif}")
 
     def update(self):
         """

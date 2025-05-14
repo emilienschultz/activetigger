@@ -70,12 +70,8 @@ async def new_project(
     """
     test_rights("create project", current_user.username)
     # check if the project already exists
-    if orchestrator.exists(project.project_name):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Project {project.project_name} already exists",
-        )
     try:
+        orchestrator.check_project_name(project.project_name)
         # create the project
         slug = orchestrator.create_project(project, current_user.username)
         # log action
