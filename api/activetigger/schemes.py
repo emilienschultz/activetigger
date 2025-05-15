@@ -282,14 +282,15 @@ class Schemes:
         Add label in a scheme
         """
         available = self.available()
+        print(available)
         if (label is None) or (label == ""):
             raise Exception("Label cannot be empty")
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
         if available[scheme] is None:
             available[scheme] = []
-        if label in available[scheme]:
-            raise Exception("Label already exists")
+        if label in available[scheme]["labels"]:
+            return {"success": "label already in the scheme"}
         labels = available[scheme]["labels"]
         labels.append(label)
         self.update_scheme(scheme, labels)
@@ -302,7 +303,7 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
-        if label in available[scheme]:
+        if label in available[scheme]["labels"]:
             return True
         return False
 
