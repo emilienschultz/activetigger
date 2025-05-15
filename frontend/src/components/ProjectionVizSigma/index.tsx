@@ -17,7 +17,7 @@ interface Props {
     index: unknown[];
     x: unknown[];
     y: unknown[];
-    labels: unknown[];
+    labels?: string[] | null;
     predictions?: unknown[] | null;
   };
   className?: string;

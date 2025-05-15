@@ -60,33 +60,19 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
     <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
       {
         // display buttons for label from the user
-        availableLabels.map((e, i) =>
-          e.label.includes('⌦') ? (
-            <button
-              type="button"
-              key={e.label}
-              value={e.label}
-              className="btn btn-secondary grow-1 gap-2 justify-content-center m-1"
-              onClick={(v) => {
-                postAnnotation(e.label, elementId);
-              }}
-            >
-              {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              key={e.label}
-              value={e.label}
-              className="btn btn-primary grow-1 gap-2 justify-content-center m-1"
-              onClick={(v) => {
-                postAnnotation(v.currentTarget.value, elementId);
-              }}
-            >
-              {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
-            </button>
-          ),
-        )
+        availableLabels.map((e, i) => (
+          <button
+            type="button"
+            key={e.label}
+            value={e.label}
+            className="btn btn-primary grow-1 gap-2 justify-content-center m-1"
+            onClick={(v) => {
+              postAnnotation(v.currentTarget.value, elementId);
+            }}
+          >
+            {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
+          </button>
+        ))
       }
     </ReactSortable>
   );
