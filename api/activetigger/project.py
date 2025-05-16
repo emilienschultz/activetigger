@@ -14,6 +14,7 @@ from fastapi.encoders import jsonable_encoder
 from pandas import DataFrame
 from slugify import slugify
 
+from activetigger.config import config
 from activetigger.datamodels import (
     FeatureComputing,
     GenerationComputing,
@@ -36,7 +37,6 @@ from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
 from activetigger.simplemodels import SimpleModels
-from activetigger.config import config
 
 MODELS = "bert_models.csv"
 TIMEZONE = pytz.timezone("Europe/Paris")
@@ -811,7 +811,7 @@ class Project:
                     columns=update.cols_context,
                 )
             self.content.drop(columns=self.params.cols_context, inplace=True)
-            self.content = pd.concat([self.content, df], axis=1)
+            self.content = pd.concat([self.content, df.loc[self.content.index]], axis=1)
             self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
             self.params.cols_context = update.cols_context
             print("Context updated")
