@@ -240,13 +240,13 @@ class Project:
         if testset.col_label and testset.scheme:
             # Check the label columns if they match the scheme or raise error
             scheme = self.schemes.available()[testset.scheme]["labels"]
-            for label in df[testset.col_label].dropna().unique():
+            for label in df["label"].dropna().unique():
                 if label not in scheme:
                     raise Exception(f"Label {label} not in the scheme {testset.scheme}")
 
             elements = [
                 {"element_id": element_id, "annotation": label, "comment": ""}
-                for element_id, label in df[testset.col_label].dropna().items()
+                for element_id, label in df["label"].dropna().items()
             ]
             self.db_manager.projects_service.add_annotations(
                 dataset="test",
