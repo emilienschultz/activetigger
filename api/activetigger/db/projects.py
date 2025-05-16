@@ -2,21 +2,13 @@ import datetime
 import logging
 from typing import Any, TypedDict
 
-from sqlalchemy import delete, func, select, update, and_
-from sqlalchemy.orm import aliased
+from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import aliased, sessionmaker
 
 from activetigger.datamodels import FeatureDescriptionModel
 from activetigger.db import DBException
-from activetigger.db.models import (
-    Annotations,
-    Auths,
-    Features,
-    Projects,
-    Schemes,
-    Tokens,
-)
+from activetigger.db.models import Annotations, Auths, Features, Models, Projects, Schemes, Tokens
 
 
 class Codebook(TypedDict):
@@ -39,9 +31,7 @@ class ProjectsService:
         else:
             return None
 
-    def add_project(
-        self, project_slug: str, parameters: dict[str, Any], user_name: str
-    ) -> str:
+    def add_project(self, project_slug: str, parameters: dict[str, Any], user_name: str) -> str:
         with self.Session.begin() as session:
             now = datetime.datetime.now()
             project = Projects(
@@ -57,9 +47,7 @@ class ProjectsService:
 
     def update_project(self, project_slug: str, parameters: dict[str, Any]):
         with self.Session.begin() as session:
-            project = (
-                session.query(Projects).filter_by(project_slug=project_slug).first()
-            )
+            project = session.query(Projects).filter_by(project_slug=project_slug).first()
             if project is None:
                 raise DBException("Project not found")
 
@@ -75,9 +63,7 @@ class ProjectsService:
 
     def add_token(self, token: str, status: str):
         with self.Session.begin() as session:
-            new_token = Tokens(
-                token=token, status=status, time_created=datetime.datetime.now()
-            )
+            new_token = Tokens(token=token, status=status, time_created=datetime.datetime.now())
             session.add(new_token)
 
     def get_token_status(self, token: str):
@@ -127,9 +113,7 @@ class ProjectsService:
             scheme.params = params
             scheme.time_modified = datetime.datetime.now()
 
-    def update_scheme_codebook(
-        self, project_slug: str, scheme: str, codebook: str
-    ) -> None:
+    def update_scheme_codebook(self, project_slug: str, scheme: str, codebook: str) -> None:
         """
         Update the codebook in the database
         """
@@ -159,18 +143,14 @@ class ProjectsService:
 
     def delete_project(self, project_slug: str):
         with self.Session.begin() as session:
-            project = session.scalars(
-                select(Projects).filter_by(project_slug=project_slug)
-            ).first()
+            project = session.scalars(select(Projects).filter_by(project_slug=project_slug)).first()
             if project is None:
                 return None
             session.delete(project)
 
     def get_project_auth(self, project_slug: str):
         with self.Session() as session:
-            auth = session.scalars(
-                select(Auths).filter_by(project_slug=project_slug)
-            ).all()
+            auth = session.scalars(select(Auths).filter_by(project_slug=project_slug)).all()
             return {el.user_name: el.status for el in auth}
 
     def add_auth(self, project_slug: str, user_name: str, status: str):
@@ -181,9 +161,7 @@ class ProjectsService:
             if auth is not None:
                 auth.status = status
             else:
-                auth = Auths(
-                    project_slug=project_slug, user_name=user_name, status=status
-                )
+                auth = Auths(project_slug=project_slug, user_name=user_name, status=status)
                 session.add(auth)
 
     def delete_auth(self, project_slug: str, user_name: str):
@@ -221,9 +199,7 @@ class ProjectsService:
         else:
             result = (
                 session.query(Auths.user_name, Auths.status)
-                .filter(
-                    Auths.user_name == user_name, Auths.project_slug == project_slug
-                )
+                .filter(Auths.user_name == user_name, Auths.project_slug == project_slug)
                 .all()
             )
         session.close()
@@ -236,14 +212,11 @@ class ProjectsService:
         with self.Session() as session:
             # Subquery: get max time per element_id with filters
             subq = (
-                select(
-                    Annotations.element_id,
-                    func.max(Annotations.time).label("time")
-                )
+                select(Annotations.element_id, func.max(Annotations.time).label("time"))
                 .where(
                     Annotations.scheme_name == scheme,
                     Annotations.project_slug == project_slug,
-                    Annotations.dataset.in_(dataset)
+                    Annotations.dataset.in_(dataset),
                 )
                 .group_by(Annotations.element_id)
                 .subquery()
@@ -251,30 +224,30 @@ class ProjectsService:
 
             # Main query: join back on element_id and time to get full rows
             stmt = (
-                select(Annotations.element_id, Annotations.annotation, Annotations.user_name, Annotations.time, Annotations.comment)
+                select(
+                    Annotations.element_id,
+                    Annotations.annotation,
+                    Annotations.user_name,
+                    Annotations.time,
+                    Annotations.comment,
+                )
                 .join(
                     subq,
                     and_(
-                        Annotations.element_id == subq.c.element_id,
-                        Annotations.time == subq.c.time
-                    )
+                        Annotations.element_id == subq.c.element_id, Annotations.time == subq.c.time
+                    ),
                 )
-                .where(
-                    subq.c.element_id.is_not(None),
-                    subq.c.time.is_not(None)
-                )
-            ) 
+                .where(subq.c.element_id.is_not(None), subq.c.time.is_not(None))
+            )
             results = session.execute(stmt)
-            
+
             # Execute the query and fetch all results
             return [
                 [row.element_id, row.annotation, row.user_name, row.time, row.comment]
                 for row in results
             ]
 
-    def get_recent_annotations(
-        self, project_slug: str, user_name: str, scheme: str, limit: int
-    ):
+    def get_recent_annotations(self, project_slug: str, user_name: str, scheme: str, limit: int):
         with self.Session() as session:
             stmt = (
                 select(Annotations.element_id)
@@ -319,9 +292,7 @@ class ProjectsService:
         user_name: str,
         project_slug: str,
         scheme: str,
-        elements: list[
-            dict
-        ],  # [{"element_id": str, "annotation": str, "comment": str}]
+        elements: list[dict],  # [{"element_id": str, "annotation": str, "comment": str}]
     ):
         session = self.Session()
         for e in elements:
@@ -367,15 +338,12 @@ class ProjectsService:
     def available_schemes(self, project_slug: str):
         with self.Session() as session:
             schemes = session.execute(
-                select(Schemes.name, Schemes.params)
-                .filter_by(project_slug=project_slug)
+                select(Schemes.name, Schemes.params).filter_by(project_slug=project_slug)
             ).all()
         r = []
         for s in schemes:
             params = s.params
-            kind = (
-                params["kind"] if "kind" in params else "multiclass"
-            )  # temporary hack
+            kind = params["kind"] if "kind" in params else "multiclass"  # temporary hack
             r.append(
                 {
                     "name": s.name,
@@ -388,9 +356,120 @@ class ProjectsService:
 
     def delete_scheme(self, project_slug: str, name: str):
         with self.Session.begin() as session:
-            _ = session.execute(
-                delete(Schemes).filter_by(name=name, project_slug=project_slug)
+            _ = session.execute(delete(Schemes).filter_by(name=name, project_slug=project_slug))
+
+    def duplicate_scheme(self, project_slug: str, name: str, new_name: str, user_name: str) -> None:
+        """
+        Duplicate a scheme in the database
+        - copy the scheme with the new name
+        - change the scheme in annotations / models
+        """
+        with self.Session.begin() as session:
+            # get the existing scheme
+            old_scheme = session.scalars(
+                select(Schemes).filter_by(project_slug=project_slug, name=name)
+            ).first()
+            if old_scheme is None:
+                raise DBException("Scheme not found")
+
+            # Check if new_name already exists (to avoid duplicate key errors)
+            existing = session.scalars(
+                select(Schemes).filter_by(project_slug=project_slug, name=new_name)
+            ).first()
+            if existing is not None:
+                raise DBException("A scheme with the new name already exists")
+
+            # Create new scheme entry
+            new_scheme = Schemes(
+                **{
+                    c.name: getattr(old_scheme, c.name)
+                    for c in Schemes.__table__.columns
+                    if c.name not in ("name", "time_modified", "user_name")
+                },
+                name=new_name,
+                time_modified=datetime.datetime.now(),
+                user_name=user_name,
             )
+
+            # add it
+            session.add(new_scheme)
+
+            # get all the annotations to duplicate
+            annotations_to_copy = session.scalars(
+                select(Annotations).filter_by(project_slug=project_slug, scheme_name=name)
+            ).all()
+
+            # Create all new annotation objects in a list
+            new_annotations = [
+                Annotations(
+                    time=ann.time,
+                    dataset=ann.dataset,
+                    user_name=ann.user_name,
+                    project_slug=ann.project_slug,
+                    element_id=ann.element_id,
+                    scheme_name=new_name,
+                    annotation=ann.annotation,
+                    comment=ann.comment,
+                    selection=ann.selection,
+                )
+                for ann in annotations_to_copy
+            ]
+
+            # Bulk add them to the session
+            session.add_all(new_annotations)
+
+    def rename_scheme(self, project_slug: str, old_name: str, new_name: str) -> None:
+        """
+        Rename a scheme in the database
+        - copy the scheme with the new name
+        - change the scheme in annotations / models
+        - delete the old scheme
+        """
+        with self.Session.begin() as session:
+            # get the scheme
+            old_scheme = session.scalars(
+                select(Schemes).filter_by(project_slug=project_slug, name=old_name)
+            ).first()
+            if old_scheme is None:
+                raise DBException("Scheme not found")
+
+            # Check if new_name already exists (to avoid duplicate key errors)
+            existing = session.scalars(
+                select(Schemes).filter_by(project_slug=project_slug, name=new_name)
+            ).first()
+            if existing is not None:
+                raise DBException("A scheme with the new name already exists")
+
+            # Create new scheme entry
+            new_scheme = Schemes(
+                **{
+                    c.name: getattr(old_scheme, c.name)
+                    for c in Schemes.__table__.columns
+                    if c.name not in ("name", "time_modified")
+                },
+                name=new_name,
+                time_modified=datetime.datetime.now(),
+            )
+
+            # add it
+            session.add(new_scheme)
+
+            # Update references in annotations
+            session.execute(
+                update(Annotations)
+                .filter_by(project_slug=project_slug, scheme_name=old_name)
+                .values(scheme_name=new_name)
+            )
+
+            # Update references in models
+            session.execute(
+                update(Models)
+                .filter_by(project_slug=project_slug, name=old_name)
+                .values(name=new_name)
+            )
+
+            # Delete the old scheme
+            session.execute(delete(Schemes).filter_by(project_slug=project_slug, name=old_name))
 
     def get_table_annotations_users(self, project_slug: str, scheme: str):
         with self.Session() as session:
@@ -412,10 +491,7 @@ class ProjectsService:
             ).join(subquery, Annotations.id == subquery.c.id)
 
             results = session.execute(query).fetchall()
-            return [
-                [row.element_id, row.annotation, row.user_name, row.time]
-                for row in results
-            ]
+            return [[row.element_id, row.annotation, row.user_name, row.time] for row in results]
 
     # feature management
 
@@ -450,9 +526,7 @@ class ProjectsService:
 
     def delete_all_features(self, project_slug: str):
         with self.Session.begin() as session:
-            session.query(Features).filter(
-                Features.project_slug == project_slug
-            ).delete()
+            session.query(Features).filter(Features.project_slug == project_slug).delete()
 
     def get_feature(self, project_slug: str, name: str):
         session = self.Session()
@@ -464,13 +538,9 @@ class ProjectsService:
         session.close()
         return feature
 
-    def get_project_features(
-        self, project_slug: str
-    ) -> dict[str, FeatureDescriptionModel]:
+    def get_project_features(self, project_slug: str) -> dict[str, FeatureDescriptionModel]:
         with self.Session() as session:
-            features = session.scalars(
-                select(Features).filter_by(project_slug=project_slug)
-            ).all()
+            features = session.scalars(select(Features).filter_by(project_slug=project_slug)).all()
             return {
                 i.name: FeatureDescriptionModel(
                     time=i.time.strftime("%Y-%m-%d %H:%M:%S"),

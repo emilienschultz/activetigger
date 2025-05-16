@@ -340,6 +340,36 @@ class Schemes:
         self.projects_service.update_scheme_labels(self.project_slug, scheme, labels)
         return {"success": "scheme updated"}
 
+    def duplicate_scheme(self, scheme_name: str, new_scheme_name: str, username: str):
+        """
+        Duplicate a scheme
+        """
+
+        schemes = self.available()
+
+        if scheme_name not in schemes:
+            raise Exception("Scheme does not exist")
+        if new_scheme_name in schemes:
+            raise Exception("New name already exists")
+
+        self.projects_service.duplicate_scheme(
+            self.project_slug, scheme_name, new_scheme_name, username
+        )
+
+    def rename_scheme(self, old_name: str, new_name: str):
+        """
+        Rename a scheme
+        """
+
+        schemes = self.available()
+
+        if old_name not in schemes:
+            raise Exception("Scheme does not exist")
+        if new_name in schemes:
+            raise Exception("New name already exists")
+
+        self.projects_service.rename_scheme(self.project_slug, old_name, new_name)
+
     def delete_scheme(self, name) -> dict:
         """
         Delete a scheme

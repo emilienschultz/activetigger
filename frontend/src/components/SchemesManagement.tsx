@@ -2,7 +2,9 @@ import { FC, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
-import { useAddScheme, useDeleteScheme } from '../core/api';
+import { IoDuplicate } from 'react-icons/io5';
+import { MdDriveFileRenameOutline } from 'react-icons/md';
+import { useAddScheme, useDeleteScheme, useDuplicateScheme, useRenameScheme } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { SchemeModel } from '../types';
@@ -21,7 +23,7 @@ export const SelectCurrentScheme: FC = () => {
   } = useAppContext();
 
   const availableSchemes = useMemo(() => {
-    return currentProject ? Object.keys(currentProject.schemes.available) : [];
+    return currentProject ? Object.keys(currentProject.schemes.available as unknown as object) : [];
   }, [currentProject]);
 
   // manage scheme selection
@@ -89,7 +91,9 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
     setAppContext,
   } = useAppContext();
 
-  const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
+  const availableSchemes = currentProject
+    ? Object.keys(currentProject.schemes.available as unknown as object)
+    : [];
 
   // hooks to use the objets
   const { register, handleSubmit } = useForm<SchemeModel>({});
@@ -98,12 +102,13 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   // hook to get the api call
   const addScheme = useAddScheme(projectSlug);
   const deleteScheme = useDeleteScheme(projectSlug, currentScheme || null);
+  const renameScheme = useRenameScheme(projectSlug, currentScheme || '');
+  const duplicateScheme = useDuplicateScheme(projectSlug, currentScheme || '');
 
   // state for displaying the new scheme menu
   const [showCreateNewScheme, setShowCreateNewScheme] = useState(false);
-  const handleIconClick = () => {
-    setShowCreateNewScheme(!showCreateNewScheme);
-  };
+  const [showRename, setShowRename] = useState(false);
+  const [newSchemeName, setNewSchemeName] = useState('New name');
 
   // action to create the new scheme
   const createNewScheme: SubmitHandler<SchemeModel> = async (formData) => {
@@ -142,9 +147,22 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
         <button onClick={deleteSelectedScheme} className="btn btn-primary mx-2">
           <FaRegTrashAlt size={20} /> Delete
         </button>
-        <button onClick={handleIconClick} className="btn btn-primary">
+        <button
+          onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
+          className="btn btn-primary"
+        >
           <FaPlusCircle size={20} /> Add
         </button>
+        {true && (
+          <button onClick={() => setShowRename(!showRename)} className="btn btn-primary mx-2">
+            <MdDriveFileRenameOutline size={20} /> Rename
+          </button>
+        )}
+        {true && (
+          <button onClick={() => duplicateScheme()} className="btn btn-primary">
+            <IoDuplicate size={20} /> Duplicate
+          </button>
+        )}
       </div>
       <div>
         {
@@ -173,6 +191,32 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
                   <button className="btn btn-primary btn-validation">Create</button>
                 </div>
               </form>
+            </div>
+          )
+        }
+        {
+          // only display if click on the rename button
+          showRename && (
+            <div className="row">
+              <div className="col-4 d-flex justify-content-center align-items-center">
+                <input
+                  className="form-control me-2"
+                  id="scheme_rename"
+                  type="text"
+                  placeholder="Enter new scheme name"
+                  value={newSchemeName}
+                  onChange={(e) => setNewSchemeName(e.target.value)}
+                />
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    renameScheme(newSchemeName);
+                    setShowRename(false);
+                  }}
+                >
+                  Rename
+                </button>
+              </div>
             </div>
           )
         }

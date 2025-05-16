@@ -457,6 +457,53 @@ export function useAddScheme(projectSlug: string) {
 }
 
 /**
+ * rename a scheme
+ */
+export function useRenameScheme(projectSlug: string, schemeName: string) {
+  const { notify } = useNotifications();
+  const renameScheme = useCallback(
+    async (newSchemeName: string) => {
+      if (schemeName && newSchemeName) {
+        // do the new projects POST call
+        const res = await api.POST('/schemes/rename', {
+          params: {
+            query: { project_slug: projectSlug, old_name: schemeName, new_name: newSchemeName },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Scheme renamed' });
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify, schemeName],
+  );
+
+  return renameScheme;
+}
+
+/**
+ * duplicate a scheme
+ */
+export function useDuplicateScheme(projectSlug: string, schemeName: string) {
+  const { notify } = useNotifications();
+  const duplicateScheme = useCallback(async () => {
+    if (schemeName) {
+      // do the new projects POST call
+      const res = await api.POST('/schemes/duplicate', {
+        params: {
+          query: { project_slug: projectSlug, scheme_name: schemeName },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Scheme duplicated' });
+      return true;
+    }
+    return null;
+  }, [projectSlug, notify, schemeName]);
+
+  return duplicateScheme;
+}
+
+/**
  * create a feature
  **/
 export function useAddFeature(projectSlug: string | null) {

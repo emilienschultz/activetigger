@@ -46,9 +46,7 @@ async def rename_label(
             project.schemes.add_label(new_label, scheme, current_user.username)
 
         # convert the tags from the previous label
-        project.schemes.convert_annotations(
-            former_label, new_label, scheme, current_user.username
-        )
+        project.schemes.convert_annotations(former_label, new_label, scheme, current_user.username)
 
         # delete previous label in the scheme
         project.schemes.delete_label(former_label, scheme, current_user.username)
@@ -144,6 +142,53 @@ async def get_codebook(
             time=str(r["time"]),
         )
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/schemes/rename", dependencies=[Depends(verified_user)])
+async def rename_scheme(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project: Annotated[Project, Depends(get_project)],
+    old_name: str,
+    new_name: str,
+) -> None:
+    """
+    Rename a scheme
+    """
+    test_rights("modify project element", current_user.username, project.name)
+
+    try:
+        project.schemes.rename_scheme(old_name, new_name)
+        orchestrator.log_action(
+            current_user.username,
+            f"RENAME SCHEME: {old_name} to {new_name}",
+            project.name,
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/schemes/duplicate", dependencies=[Depends(verified_user)])
+async def duplicate_scheme(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project: Annotated[Project, Depends(get_project)],
+    scheme_name: str,
+) -> None:
+    """
+    Duplicate a scheme
+    """
+    test_rights("modify project element", current_user.username, project.name)
+
+    try:
+        project.schemes.duplicate_scheme(scheme_name, scheme_name + "_copy", current_user.username)
+        orchestrator.log_action(
+            current_user.username,
+            f"DUPLICATE SCHEME: {scheme_name}",
+            project.name,
+        )
+        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

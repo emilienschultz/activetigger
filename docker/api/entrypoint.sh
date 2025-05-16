@@ -4,7 +4,7 @@ set -e
 if [ "$MODE" = "dev" ]; then
   echo "/!\\ Mode is set to DEV /!\\"
 else
-  echo "/!\\ Mode is set to PRODUCTION /!\\"
+  echo "/!\\ Mode is set to PROD /!\\"
 fi
 echo "(i) Python version is $(python3 --version)"
 

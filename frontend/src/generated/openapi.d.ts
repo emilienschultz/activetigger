@@ -648,6 +648,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schemes/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rename Scheme
+         * @description Rename a scheme
+         */
+        post: operations["rename_scheme_schemes_rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schemes/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate Scheme
+         * @description Duplicate a scheme
+         */
+        post: operations["duplicate_scheme_schemes_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schemes/{action}": {
         parameters: {
             query?: never;
@@ -1535,6 +1575,11 @@ export interface components {
              * @default false
              */
             class_balance: boolean;
+            /**
+             * Exclude Labels
+             * @default []
+             */
+            exclude_labels: string[];
         };
         /** Body_login_for_access_token_token_post */
         Body_login_for_access_token_token_post: {
@@ -1581,13 +1626,17 @@ export interface components {
             /** Text */
             text: string;
             /** Context */
-            context: Record<string, never>;
+            context: {
+                [key: string]: unknown;
+            };
             /** Selection */
             selection: string;
             /** Info */
             info: string | null;
             /** Predict */
-            predict: Record<string, never>;
+            predict: {
+                [key: string]: unknown;
+            };
             /** Frame */
             frame: unknown[] | null;
             /** Limit */
@@ -1610,7 +1659,9 @@ export interface components {
             /** Name */
             name: string;
             /** Parameters */
-            parameters: Record<string, never>;
+            parameters: {
+                [key: string]: unknown;
+            };
             /** User */
             user: string;
             /** Time */
@@ -1732,15 +1783,25 @@ export interface components {
         /** LMInformationsModel */
         LMInformationsModel: {
             /** Params */
-            params?: Record<string, never> | null;
+            params?: {
+                [key: string]: unknown;
+            } | null;
             /** Loss */
-            loss?: Record<string, never> | null;
+            loss?: {
+                [key: string]: unknown;
+            } | null;
             /** Train Scores */
-            train_scores?: Record<string, never> | null;
+            train_scores?: {
+                [key: string]: unknown;
+            } | null;
             /** Test Scores */
-            test_scores?: Record<string, never> | null;
+            test_scores?: {
+                [key: string]: unknown;
+            } | null;
             /** Valid Scores */
-            valid_scores?: Record<string, never> | null;
+            valid_scores?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * LMParametersModel
@@ -1824,7 +1885,9 @@ export interface components {
             /** Confusion Matrix */
             confusion_matrix?: number[][] | null;
             /** False Predictions */
-            false_predictions?: Record<string, never> | unknown[] | null;
+            false_predictions?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
         };
         /**
          * NextInModel
@@ -1964,13 +2027,17 @@ export interface components {
             /** Train Annotated N */
             train_annotated_n: number;
             /** Train Annotated Distribution */
-            train_annotated_distribution: Record<string, never>;
+            train_annotated_distribution: {
+                [key: string]: unknown;
+            };
             /** Test Set N */
             test_set_n?: number | null;
             /** Test Annotated N */
             test_annotated_n?: number | null;
             /** Test Annotated Distribution */
-            test_annotated_distribution?: Record<string, never> | null;
+            test_annotated_distribution?: {
+                [key: string]: unknown;
+            } | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -2073,21 +2140,37 @@ export interface components {
         ProjectStateModel: {
             params: components["schemas"]["ProjectModel"];
             /** Users */
-            users: Record<string, never>;
+            users: {
+                [key: string]: unknown;
+            };
             /** Next */
-            next: Record<string, never>;
+            next: {
+                [key: string]: unknown;
+            };
             /** Schemes */
-            schemes: Record<string, never>;
+            schemes: {
+                [key: string]: unknown;
+            };
             /** Features */
-            features: Record<string, never>;
+            features: {
+                [key: string]: unknown;
+            };
             /** Simplemodel */
-            simplemodel: Record<string, never>;
+            simplemodel: {
+                [key: string]: unknown;
+            };
             /** Languagemodels */
-            languagemodels: Record<string, never>;
+            languagemodels: {
+                [key: string]: unknown;
+            };
             /** Projections */
-            projections: Record<string, never>;
+            projections: {
+                [key: string]: unknown;
+            };
             /** Generations */
-            generations: Record<string, never>;
+            generations: {
+                [key: string]: unknown;
+            };
             /** Errors */
             errors: unknown[][];
             /** Memory */
@@ -2169,7 +2252,9 @@ export interface components {
             /** Text */
             text: string;
             /** Parameters */
-            parameters: Record<string, never>;
+            parameters: {
+                [key: string]: unknown;
+            };
         };
         /**
          * ReconciliationModel
@@ -2217,16 +2302,26 @@ export interface components {
             };
             /** Active Projects */
             active_projects: {
-                [key: string]: Record<string, never>[] | undefined;
+                [key: string]: {
+                    [key: string]: unknown;
+                }[] | undefined;
             };
             /** Gpu */
-            gpu: Record<string, never>;
+            gpu: {
+                [key: string]: unknown;
+            };
             /** Cpu */
-            cpu: Record<string, never>;
+            cpu: {
+                [key: string]: unknown;
+            };
             /** Memory */
-            memory: Record<string, never>;
+            memory: {
+                [key: string]: unknown;
+            };
             /** Disk */
-            disk: Record<string, never>;
+            disk: {
+                [key: string]: unknown;
+            };
         };
         /**
          * SimpleModelModel
@@ -3463,6 +3558,71 @@ export interface operations {
                 "application/json": components["schemas"]["CodebookModel"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_scheme_schemes_rename_post: {
+        parameters: {
+            query: {
+                old_name: string;
+                new_name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_scheme_schemes_duplicate_post: {
+        parameters: {
+            query: {
+                scheme_name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
