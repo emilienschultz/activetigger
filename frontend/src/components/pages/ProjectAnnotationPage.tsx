@@ -203,6 +203,7 @@ export const ProjectAnnotationPage: FC = () => {
 
   const refetchElement = () => {
     getNextElementId().then((res) => {
+      console.log('res', res);
       if (res && res.n_sample) setNSample(res.n_sample);
       if (res && res.element_id) navigate(`/projects/${projectName}/annotate/${res.element_id}`);
       else {
@@ -220,9 +221,7 @@ export const ProjectAnnotationPage: FC = () => {
     }
   };
 
-  //  const [wordsToHighlight, setWordsToHighlight] = useState<string>('');
-
-  console.log(displayConfig.highlightText);
+  console.log('history', history);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="annotate">

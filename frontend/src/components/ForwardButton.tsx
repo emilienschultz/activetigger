@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { IoMdSkipForward } from 'react-icons/io';
 import { Tooltip } from 'react-tooltip';
 import { AppContextValue } from '../core/context';
@@ -16,6 +16,8 @@ export const ForwardButton: FC<ForwardButtonProps> = ({
   elementId,
   refetchElement,
 }) => {
+  const [shouldRefetch, setShouldRefetch] = useState(false);
+
   const handleKeyboardEvents = useCallback(
     (ev: KeyboardEvent) => {
       // prevent shortkey to perturb the inputs
@@ -28,10 +30,10 @@ export const ForwardButton: FC<ForwardButtonProps> = ({
 
       if (ev.code === 'KeyP') {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-        refetchElement();
+        setShouldRefetch(true);
       }
     },
-    [elementId, refetchElement, setAppContext],
+    [elementId, setShouldRefetch, setAppContext],
   );
 
   useEffect(() => {
@@ -43,12 +45,19 @@ export const ForwardButton: FC<ForwardButtonProps> = ({
     };
   }, [handleKeyboardEvents]);
 
+  useEffect(() => {
+    if (shouldRefetch) {
+      refetchElement();
+      setShouldRefetch(false);
+    }
+  }, [shouldRefetch, refetchElement]);
+
   return (
     <button
       className="btn nextelement"
       onClick={() => {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-        refetchElement();
+        setShouldRefetch(true);
       }}
     >
       <IoMdSkipForward />

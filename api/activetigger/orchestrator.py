@@ -517,7 +517,7 @@ class Orchestrator:
         # add loaded schemes from columns
         for col in params.cols_label:
             # select the type of scheme
-            scheme_name = slugify(col).replace("dataset-", "")
+            scheme_name = col.replace("dataset_", "")
             delimiters = content[col].str.contains("|", regex=False).sum()
             if delimiters < 5:
                 scheme_type = "multiclass"
