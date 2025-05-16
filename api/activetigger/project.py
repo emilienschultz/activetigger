@@ -600,8 +600,6 @@ class Project:
             raise Exception("Scheme not available")
         kind = schemes[scheme]["kind"]
 
-        print("type of scheme", kind)
-
         # part train
         r = {"train_set_n": len(self.schemes.content)}
         r["users"] = self.db_manager.users_service.get_coding_users(

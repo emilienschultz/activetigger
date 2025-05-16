@@ -27,5 +27,5 @@ if __name__ == "__main__":
         "activetigger.app.main:app",
         host="0.0.0.0",
         port=args.portapi,
-        reload=config.mode == "DEV",
+        reload=config.mode == "dev",
     )

@@ -21,8 +21,8 @@ load_dotenv()
 
 # Enum for env mode
 class MODE(StrEnum):
-    DEV = "DEV"
-    PROD = "PROD"
+    DEV = "dev"
+    PROD = "prod"
 
     @classmethod
     def has_member_key(cls, key):
