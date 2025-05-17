@@ -1,11 +1,8 @@
 import argparse
-import os
-from pathlib import Path
 
 import uvicorn
-import yaml  # type: ignore[import]
 
-from activetigger.config import Config, config
+from activetigger.config import config
 
 if __name__ == "__main__":
     """

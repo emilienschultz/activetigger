@@ -3,7 +3,7 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 import pandas as pd
 from pandas import DataFrame
@@ -11,6 +11,7 @@ from pandas import DataFrame
 import activetigger.functions as functions
 from activetigger.config import config
 from activetigger.datamodels import (
+    LanguageModelsProjectStateModel,
     LMComputing,
     LMInformationsModel,
     LMParametersDbModel,
@@ -56,7 +57,10 @@ class LanguageModels:
 
         # load the list of models
         if list_models is not None:
-            self.base_models = pd.read_csv(list_models).to_dict(orient="records")
+            self.base_models = cast(
+                list[dict[str, Any]], pd.read_csv(list_models).to_dict(orient="records")
+            )
+
             print(self.base_models)
         else:
             self.base_models = [
@@ -587,3 +591,14 @@ class LanguageModels:
                 raise ValueError("No model type found in config.json. Please check the file.")
 
         return basemodel
+
+    def state(self) -> LanguageModelsProjectStateModel:
+        """
+        Get the state of the module
+        """
+        return LanguageModelsProjectStateModel(
+            options=self.base_models,
+            available=self.available(),
+            training=self.training(),
+            base_parameters=self.params_default,
+        )

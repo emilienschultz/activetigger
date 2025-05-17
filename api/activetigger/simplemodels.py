@@ -24,6 +24,7 @@ from activetigger.datamodels import (
     RandomforestParams,
     SimpleModelComputing,
     SimpleModelOutModel,
+    SimpleModelsProjectStateModel,
 )
 from activetigger.queue import Queue
 from activetigger.tasks.fit_model import FitModel
@@ -346,3 +347,10 @@ class SimpleModels:
             return output, headers
         else:
             raise ValueError("Format not supported")
+
+    def state(self) -> SimpleModelsProjectStateModel:
+        return SimpleModelsProjectStateModel(
+            options=self.available_models,
+            available=self.available(),
+            training=self.training(),
+        )

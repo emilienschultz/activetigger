@@ -10,7 +10,6 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
-from slugify import slugify
 
 from activetigger.app.dependencies import (
     test_rights,

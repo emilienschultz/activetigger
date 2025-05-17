@@ -31,9 +31,7 @@ def remove_punctuation(text):
 
 
 def replace_accented_chars(text):
-    return "".join(
-        c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
-    )
+    return "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn")
 
 
 def get_root_pwd() -> str:
@@ -202,9 +200,7 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
                 labels,
                 [
                     round(i, decimals)
-                    for i in f1_score(
-                        list(Y_true), list(Y_pred), average=None, labels=labels
-                    )
+                    for i in f1_score(list(Y_true), list(Y_pred), average=None, labels=labels)
                 ],
             )
         ),
@@ -213,9 +209,7 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
         f1_micro=round(f1_score(Y_true, Y_pred, average="micro"), decimals),
         accuracy=round(accuracy_score(Y_true, Y_pred), decimals),
         precision=round(
-            precision_score(
-                list(Y_true), list(Y_pred), average="micro", zero_division=1
-            ),
+            precision_score(list(Y_true), list(Y_pred), average="micro", zero_division=1),
             decimals,
         ),
         precision_label=dict(
@@ -238,18 +232,11 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
                 labels,
                 [
                     round(i, decimals)
-                    for i in recall_score(
-                        list(Y_true), list(Y_pred), average=None, labels=labels
-                    )
+                    for i in recall_score(list(Y_true), list(Y_pred), average=None, labels=labels)
                 ],
             )
         ),
         confusion_matrix=confusion_matrix(Y_true, Y_pred, labels=labels).tolist(),
-        # confusion_matrix=pd.DataFrame(
-        #     confusion_matrix(Y_true, Y_pred, labels=labels),
-        #     columns=labels,
-        #     index=labels,
-        # ).to_dict(orient="index"),
         false_predictions=(Y_true != Y_pred).loc[lambda x: x].index.tolist(),
     )
     return statistics

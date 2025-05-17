@@ -5,6 +5,7 @@ from activetigger.datamodels import (  # ignore[import]
     GenerationComputing,
     GenerationComputingOut,
     GenerationCreationModel,
+    GenerationsProjectStateModel,
     PromptModel,
 )
 from activetigger.db.generations import GenerationsService
@@ -20,9 +21,7 @@ class Generations:
     computing: list
     generations_service: GenerationsService
 
-    def __init__(
-        self, db_manager: DatabaseManager, computing: list[GenerationComputing]
-    ) -> None:
+    def __init__(self, db_manager: DatabaseManager, computing: list[GenerationComputing]) -> None:
         self.generations_service = db_manager.generations_service
         self.computing = computing
 
@@ -60,9 +59,7 @@ class Generations:
         result = self.generations_service.get_generated(
             project_slug=project_slug, user_name=user_name, n_elements=n_elements
         )
-        df = pd.DataFrame(
-            result, columns=["time", "index", "prompt", "answer", "model name"]
-        )
+        df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model name"])
         df["time"] = pd.to_datetime(df["time"])
         df["time"] = df["time"].dt.tz_localize("UTC")
         df["time"] = df["time"].dt.tz_convert("Europe/Paris")
@@ -95,19 +92,13 @@ class Generations:
         all_models = self.generations_service.get_project_gen_models(project_slug)
         return any([model.name == name for model in all_models])
 
-    def add_model(
-        self, project_slug: str, model: GenerationCreationModel, user_name: str
-    ) -> int:
+    def add_model(self, project_slug: str, model: GenerationCreationModel, user_name: str) -> int:
         """
         Add a model in the database
         """
-        return self.generations_service.add_project_gen_model(
-            project_slug, model, user_name
-        )
+        return self.generations_service.add_project_gen_model(project_slug, model, user_name)
 
-    def save_prompt(
-        self, user_name: str, project_slug: str, prompt: str, name: str
-    ) -> None:
+    def save_prompt(self, user_name: str, project_slug: str, prompt: str, name: str) -> None:
         """
         Save a prompt in the database
         """
@@ -154,3 +145,6 @@ class Generations:
         if "replace_accents" in filters:
             answers = answers.apply(replace_accented_chars)
         return answers
+
+    def state(self) -> GenerationsProjectStateModel:
+        return GenerationsProjectStateModel(training=self.training())

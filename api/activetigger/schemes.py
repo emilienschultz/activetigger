@@ -5,7 +5,7 @@ from typing import Any, cast
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.datamodels import AnnotationsDataModel, TableBatch
+from activetigger.datamodels import AnnotationsDataModel, SchemesProjectStateModel, TableBatch
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import Codebook, ProjectsService
@@ -586,3 +586,9 @@ class Schemes:
             )
 
         return {"success": "Annotations added"}
+
+    def state(self) -> SchemesProjectStateModel:
+        """
+        Get the state of the project
+        """
+        return SchemesProjectStateModel(available=self.available())

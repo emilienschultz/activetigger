@@ -12,11 +12,9 @@ from pathlib import Path
 
 import pandas as pd
 import psutil
-import yaml  # type: ignore[import]
-from cryptography.fernet import Fernet
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
-from sklearn.datasets import fetch_20newsgroups
+from sklearn.datasets import fetch_20newsgroups  # type: ignore[import]
 from slugify import slugify
 
 from activetigger import __version__

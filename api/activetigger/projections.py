@@ -9,6 +9,7 @@ from activetigger.datamodels import (
     ProjectionComputing,
     ProjectionInStrictModel,
     ProjectionOutModel,
+    ProjectionsProjectStateModel,
 )
 from activetigger.queue import Queue
 from activetigger.tasks.compute_projection import ComputeProjection
@@ -124,4 +125,11 @@ class Projections:
             y=list(data[1]),
             status=self.available[user_name]["id"],
             parameters=self.available[user_name]["parameters"],
+        )
+
+    def state(self) -> ProjectionsProjectStateModel:
+        return ProjectionsProjectStateModel(
+            options=self.options,
+            available={i: self.available[i]["id"] for i in self.available},
+            training=self.training(),
         )

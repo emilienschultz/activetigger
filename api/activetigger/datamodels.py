@@ -525,13 +525,13 @@ class AvailableProjectsModel(BaseModel):
     projects: list[ProjectSummaryModel]
 
 
+## State definition of the project
+
+
 class NextProjectStateModel(BaseModel):
     methods_min: list[str]
     methods: list[str]
     sample: list[str]
-
-
-## State definition of the project
 
 
 class SchemesProjectStateModel(BaseModel):

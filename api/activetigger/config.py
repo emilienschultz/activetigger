@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 #  Singleton utils
 class _Singleton(type):
-    _instances = {}
+    _instances: dict = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -31,9 +31,11 @@ class MODE(StrEnum):
 
 # utils to cast str env variables as int or float
 def parse_environ(key: str, parse_method: Callable[[str], int | float], default: int | float):
+    if key is None:
+        raise ValueError(f"Key {key} is None")
     try:
-        return parse_method(os.environ.get(key))
-    except:
+        return parse_method(os.environ.get(key))  # type: ignore
+    except Exception:
         return default
 
 
@@ -41,7 +43,7 @@ class Config(metaclass=_Singleton):
     # type sage configuration specification with default values coming from env variables or defaults
     data_path: str = os.environ.get("DATA_PATH", ".")
     user_hdd_max: float
-    mode: MODE = os.environ.get("MODE", MODE.DEV)
+    mode: MODE = os.environ.get("MODE", str(MODE.DEV))  # type: ignore
     secret_key: str = os.environ.get("SECRET_KEY", "$%***YOU-MUST-CHANGE-THIS***%$")
     database_url: str
     root_password: str | None = os.environ.get("ROOT_PASSWORD", None)

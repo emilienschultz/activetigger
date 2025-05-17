@@ -17,22 +17,16 @@ from slugify import slugify
 from activetigger.config import config
 from activetigger.datamodels import (
     FeatureComputing,
-    FeaturesProjectStateModel,
     GenerationComputing,
     GenerationResult,
-    GenerationsProjectStateModel,
-    LanguageModelsProjectStateModel,
     LMComputing,
     NextProjectStateModel,
     ProjectionComputing,
-    ProjectionsProjectStateModel,
     ProjectModel,
     ProjectStateModel,
     ProjectUpdateModel,
-    SchemesProjectStateModel,
     SimpleModelComputing,
     SimpleModelModel,
-    SimpleModelsProjectStateModel,
     StaticFileModel,
     TestSetDataModel,
 )
@@ -647,7 +641,7 @@ class Project:
 
         return r
 
-    def get_state(self) -> ProjectStateModel:
+    def state(self) -> ProjectStateModel:
         """
         Send state of the project
         """
@@ -659,31 +653,12 @@ class Project:
                 methods=["deterministic", "random", "maxprob", "active"],
                 sample=["untagged", "all", "tagged"],
             ),
-            schemes=SchemesProjectStateModel(available=self.schemes.available()),
-            features=FeaturesProjectStateModel(
-                options=self.features.options,
-                available=list(self.features.map.keys()),
-                training=self.features.current_computing(),
-            ),
-            simplemodel=SimpleModelsProjectStateModel(
-                options=self.simplemodels.available_models,
-                available=self.simplemodels.available(),
-                training=self.simplemodels.training(),
-            ),
-            languagemodels=LanguageModelsProjectStateModel(
-                options=self.languagemodels.base_models,
-                available=self.languagemodels.available(),
-                training=self.languagemodels.training(),
-                base_parameters=self.languagemodels.params_default,
-            ),
-            projections=ProjectionsProjectStateModel(
-                options=self.projections.options,
-                available={
-                    i: self.projections.available[i]["id"] for i in self.projections.available
-                },
-                training=self.projections.training(),
-            ),
-            generations=GenerationsProjectStateModel(training=self.generations.training()),
+            schemes=self.schemes.state(),
+            features=self.features.state(),
+            simplemodel=self.simplemodels.state(),
+            languagemodels=self.languagemodels.state(),
+            projections=self.projections.state(),
+            generations=self.generations.state(),
             errors=self.errors,
             memory=get_dir_size(str(self.params.dir)),
             last_activity=self.db_manager.logs_service.get_last_activity_project(

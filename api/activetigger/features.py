@@ -7,19 +7,20 @@ from typing import Any
 
 import pandas as pd
 import pyarrow.parquet as pq  # type: ignore[import]
-import yaml
+import yaml  # type: ignore[import]
 from pandas import DataFrame, Series
 
 from activetigger.config import config
-from activetigger.datamodels import FeatureComputing, FeatureDescriptionModel
+from activetigger.datamodels import (
+    FeatureComputing,
+    FeatureDescriptionModel,
+    FeaturesProjectStateModel,
+)
 from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
 from activetigger.tasks.compute_dfm import ComputeDfm
 from activetigger.tasks.compute_fasttext import ComputeFasttext
 from activetigger.tasks.compute_sbert import ComputeSbert
-
-# Use parquet files to save features
-# In the future : database ?
 
 
 class Features:
@@ -267,7 +268,7 @@ class Features:
     def current_user_processes(self, user: str):
         return [e for e in self.computing if e.user == user]
 
-    def current_computing(self) -> dict[str, dict[str, Any]]:
+    def current_computing(self) -> dict[str, dict[str, str | None]]:
         return {
             e.name: {"progress": self.computing_progress(e.unique_id), "name": e.name}
             for e in self.computing
@@ -294,7 +295,7 @@ class Features:
             pattern = re.compile(parameters["value"])
             f = df.apply(lambda x: bool(pattern.search(x)))
             parameters["count"] = int(f.sum())
-            r = self.add(regex_name, kind, username, parameters, f)
+            self.add(regex_name, kind, username, parameters, f)
             return {"success": "regex added"}
 
         if kind == "dataset":
@@ -391,3 +392,10 @@ class Features:
             return r
         except Exception:
             return None
+
+    def state(self) -> FeaturesProjectStateModel:
+        return FeaturesProjectStateModel(
+            options=self.options,
+            available=list(self.map.keys()),
+            training=self.current_computing(),
+        )
