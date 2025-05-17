@@ -54,7 +54,7 @@ export const ProjectPage: FC = () => {
     // setAppContext((prev) => ({ ...prev, selectionHistory: {} }));
   };
 
-  const activeUsers = project?.users?.active ? project?.users?.active : [];
+  //  const activeUsers = project?.users?.active ? project?.users?.active : [];
 
   const columns: readonly Column<Row>[] = [
     {
@@ -98,7 +98,7 @@ export const ProjectPage: FC = () => {
               <Tab eventKey="statistics" title="Statistics">
                 {currentScheme && (
                   <div className="row">
-                    <div className="text-muted smalfont-weight-light">
+                    {/* <div className="text-muted smalfont-weight-light">
                       Recent users{' '}
                       <a className="recentusers">
                         <HiOutlineQuestionMarkCircle />
@@ -111,7 +111,7 @@ export const ProjectPage: FC = () => {
                           {e}
                         </span>
                       ))}
-                    </div>
+                    </div> */}
 
                     <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
                   </div>

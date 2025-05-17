@@ -393,7 +393,7 @@ class Schemes:
             return True
         return False
 
-    def available(self) -> dict[str, Any]:
+    def available(self) -> dict[str, dict[str, str | list[str]]]:
         """
         Available schemes {scheme:[labels]}
         """

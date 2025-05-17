@@ -57,7 +57,7 @@ class Config(metaclass=_Singleton):
         self.mode = (
             os.environ.get("MODE")
             if os.environ.get("MODE") is not None and MODE.has_member_key(os.environ.get("MODE"))
-            else "DEV"
+            else "dev"
         )
         self.user_hdd_max = parse_environ("ACTIVETIGGER_USER_HDD_MAX", float, 30.0)
         self.max_loaded_projects = parse_environ("MAX_LOADED_PROJECTS", int, 20)

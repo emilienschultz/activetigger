@@ -33,7 +33,7 @@ import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
 
 // Add a timeout to the default fetch
 async function fetchWithTimeout(input: Request) {
-  const timeout = 60000;
+  const timeout = 120000;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);

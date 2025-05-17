@@ -209,9 +209,7 @@ export const ProjectTestPage: FC = () => {
                   </div>
                 }
               </div>
-              {isComputing && (
-                <div>You already have a process launched. Wait for it to complete.</div>
-              )}
+              {isComputing && <div>You have a process launched. Wait for it to complete.</div>}
               {currentModel && currentScheme && !isComputing && (
                 <div className="col-12">
                   <button
@@ -282,7 +280,7 @@ export const ProjectTestPage: FC = () => {
                       <DataGrid<Row>
                         className="fill-grid"
                         columns={columns}
-                        rows={falsePredictions || []}
+                        rows={(falsePredictions as Row[]) || []}
                       />
                     ) : (
                       <div>Compute prediction first</div>

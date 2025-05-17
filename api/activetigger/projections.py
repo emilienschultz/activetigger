@@ -1,6 +1,7 @@
 import pickle
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from pandas import DataFrame
 
@@ -21,7 +22,7 @@ class Projections:
     # TODO: Transform available type to dict[str, UserProjection]
     path: Path
     available: dict
-    options: dict
+    options: dict[str, dict[str, Any]]
     computing: list
     queue: Queue
 
@@ -52,16 +53,14 @@ class Projections:
         """
         if self.path.joinpath("projections.pickle").exists():
             try:
-                self.available = pickle.load(
-                    open(self.path.joinpath("projections.pickle"), "rb")
-                )
+                self.available = pickle.load(open(self.path.joinpath("projections.pickle"), "rb"))
             except Exception as e:
                 print(e)
 
     def current_computing(self):
         return [e.name for e in self.computing if e.kind == "projection"]
 
-    def training(self) -> dict:
+    def training(self) -> dict[str, str]:
         """
         Currently under training
         """
@@ -79,9 +78,7 @@ class Projections:
             "id": element.unique_id,
         }
         try:
-            pickle.dump(
-                self.available, open(self.path.joinpath("projections.pickle"), "wb")
-            )
+            pickle.dump(self.available, open(self.path.joinpath("projections.pickle"), "wb"))
         except Exception as e:
             print("Error in saving projections", e)
 
@@ -98,9 +95,7 @@ class Projections:
         unique_id = self.queue.add_task(
             "projection",
             project_slug,
-            ComputeProjection(
-                kind=projection.method, features=features, params=projection.params
-            ),
+            ComputeProjection(kind=projection.method, features=features, params=projection.params),
         )
         self.computing.append(
             ProjectionComputing(

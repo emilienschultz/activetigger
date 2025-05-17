@@ -17,14 +17,22 @@ from slugify import slugify
 from activetigger.config import config
 from activetigger.datamodels import (
     FeatureComputing,
+    FeaturesProjectStateModel,
     GenerationComputing,
     GenerationResult,
+    GenerationsProjectStateModel,
+    LanguageModelsProjectStateModel,
     LMComputing,
+    NextProjectStateModel,
     ProjectionComputing,
+    ProjectionsProjectStateModel,
     ProjectModel,
+    ProjectStateModel,
     ProjectUpdateModel,
+    SchemesProjectStateModel,
     SimpleModelComputing,
     SimpleModelModel,
+    SimpleModelsProjectStateModel,
     StaticFileModel,
     TestSetDataModel,
 )
@@ -61,7 +69,7 @@ class Project:
     simplemodels: SimpleModels
     generations: Generations
     projections: Projections
-    errors: list
+    errors: list[list]
 
     def __init__(
         self,
@@ -639,57 +647,49 @@ class Project:
 
         return r
 
-    def get_state(self):
+    def get_state(self) -> ProjectStateModel:
         """
         Send state of the project
         """
-        # start_time = time.time()
 
-        r = {
-            "params": self.params,
-            "users": {"active": self.get_active_users()},
-            "next": {
-                "methods_min": ["deterministic", "random"],
-                "methods": ["deterministic", "random", "maxprob", "active"],
-                "sample": ["untagged", "all", "tagged"],
-            },
-            "schemes": {"available": self.schemes.available(), "statistics": {}},
-            "features": {
-                "options": self.features.options,
-                "available": list(self.features.map.keys()),
-                "training": self.features.current_computing(),
-            },
-            "simplemodel": {
-                "options": self.simplemodels.available_models,
-                "available": self.simplemodels.available(),
-                "training": self.simplemodels.training(),
-            },
-            "languagemodels": {
-                "options": self.languagemodels.base_models,
-                "available": self.languagemodels.available(),
-                "training": self.languagemodels.training(),
-                "test": {},
-                "base_parameters": self.languagemodels.params_default,
-            },
-            "projections": {
-                "options": self.projections.options,
-                "available": {
+        return ProjectStateModel(
+            params=self.params,
+            next=NextProjectStateModel(
+                methods_min=["deterministic", "random"],
+                methods=["deterministic", "random", "maxprob", "active"],
+                sample=["untagged", "all", "tagged"],
+            ),
+            schemes=SchemesProjectStateModel(available=self.schemes.available()),
+            features=FeaturesProjectStateModel(
+                options=self.features.options,
+                available=list(self.features.map.keys()),
+                training=self.features.current_computing(),
+            ),
+            simplemodel=SimpleModelsProjectStateModel(
+                options=self.simplemodels.available_models,
+                available=self.simplemodels.available(),
+                training=self.simplemodels.training(),
+            ),
+            languagemodels=LanguageModelsProjectStateModel(
+                options=self.languagemodels.base_models,
+                available=self.languagemodels.available(),
+                training=self.languagemodels.training(),
+                base_parameters=self.languagemodels.params_default,
+            ),
+            projections=ProjectionsProjectStateModel(
+                options=self.projections.options,
+                available={
                     i: self.projections.available[i]["id"] for i in self.projections.available
                 },
-                "training": self.projections.training(),  # list(self.projections.training().keys()),
-            },
-            "generations": {"training": self.generations.training()},
-            "errors": self.errors,
-            "memory": get_dir_size(str(self.params.dir)),
-            "last_activity": self.db_manager.logs_service.get_last_activity_project(
+                training=self.projections.training(),
+            ),
+            generations=GenerationsProjectStateModel(training=self.generations.training()),
+            errors=self.errors,
+            memory=get_dir_size(str(self.params.dir)),
+            last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
             ),
-        }
-
-        # end_time = time.time()
-        # execution_time = end_time - start_time
-        # print(f"Execution time: {execution_time:.5f} seconds")
-        return r
+        )
 
     def export_features(self, features: list, format: str = "parquet"):
         """

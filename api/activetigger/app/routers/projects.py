@@ -182,8 +182,10 @@ async def get_project_state(
     """
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
-    data = project.get_state()
-    return ProjectStateModel(**data)
+    try:
+        return project.get_state()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post(

@@ -56,7 +56,7 @@ class LogsService:
             for log in logs
         ]
 
-    def get_last_activity_project(self, project_slug: str):
+    def get_last_activity_project(self, project_slug: str) -> str | None:
         with self.SessionMaker() as session:
             stmt = select(Logs).order_by(Logs.time.desc()).limit(1)
             if project_slug != "all":

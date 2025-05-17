@@ -525,23 +525,67 @@ class AvailableProjectsModel(BaseModel):
     projects: list[ProjectSummaryModel]
 
 
+class NextProjectStateModel(BaseModel):
+    methods_min: list[str]
+    methods: list[str]
+    sample: list[str]
+
+
+## State definition of the project
+
+
+class SchemesProjectStateModel(BaseModel):
+    available: dict[str, dict[str, str | list[str]]]
+
+
+class FeaturesProjectStateModel(BaseModel):
+    options: dict[str, dict[str, Any]]
+    available: list[str]
+    training: dict[str, dict[str, str | None]]
+
+
+class SimpleModelsProjectStateModel(BaseModel):
+    options: dict[str, Any]
+    available: dict[str, dict[str, dict[str, Any]]]
+    training: dict[str, list[str]]
+
+
+class LanguageModelsProjectStateModel(BaseModel):
+    options: list[dict[str, Any]]
+    available: dict[str, dict[str, dict[str, bool]]]
+    training: dict[str, dict[str, dict[str, str | None]]]
+    base_parameters: LMParametersModel
+
+
+class ProjectionsProjectStateModel(BaseModel):
+    options: dict[str, dict[str, Any]]
+    available: dict[str, str | int]
+    training: dict[str, str]
+
+
+class GenerationsProjectStateModel(BaseModel):
+    training: dict[str, GenerationComputingOut]
+
+
+class ErrorsProjectStateModel(BaseModel):
+    errors: list[list]
+
+
 class ProjectStateModel(BaseModel):
     """
     Response for server state
-    TODO : have a more precise description of the fields
     """
 
     params: ProjectModel
-    users: dict[str, Any]
-    next: dict[str, Any]
-    schemes: dict[str, Any]
-    features: dict[str, Any]
-    simplemodel: dict[str, Any]
-    languagemodels: dict[str, Any]
-    projections: dict[str, Any]
-    generations: dict[str, Any]
+    next: NextProjectStateModel
+    schemes: SchemesProjectStateModel
+    features: FeaturesProjectStateModel
+    simplemodel: SimpleModelsProjectStateModel
+    languagemodels: LanguageModelsProjectStateModel
+    projections: ProjectionsProjectStateModel
+    generations: GenerationsProjectStateModel
     errors: list[list]
-    memory: float
+    memory: float | None = None
     last_activity: str | None = None
 
 
@@ -618,9 +662,7 @@ class TableBatch(BaseModel):
     filter: str | None
 
     class Config:
-        arbitrary_types_allowed: bool = (
-            True  # Allow DataFrame type but switches off Pydantic here
-        )
+        arbitrary_types_allowed: bool = True  # Allow DataFrame type but switches off Pydantic here
 
 
 class CodebookModel(BaseModel):

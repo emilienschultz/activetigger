@@ -10,13 +10,13 @@ import pyarrow.parquet as pq  # type: ignore[import]
 import yaml
 from pandas import DataFrame, Series
 
+from activetigger.config import config
 from activetigger.datamodels import FeatureComputing, FeatureDescriptionModel
 from activetigger.db.projects import ProjectsService
 from activetigger.queue import Queue
 from activetigger.tasks.compute_dfm import ComputeDfm
 from activetigger.tasks.compute_fasttext import ComputeFasttext
 from activetigger.tasks.compute_sbert import ComputeSbert
-from activetigger.config import config
 
 # Use parquet files to save features
 # In the future : database ?

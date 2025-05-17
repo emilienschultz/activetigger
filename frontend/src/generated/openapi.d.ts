@@ -1685,6 +1685,23 @@ export interface components {
                 [key: string]: (string | number) | undefined;
             };
         };
+        /** FeaturesProjectStateModel */
+        FeaturesProjectStateModel: {
+            /** Options */
+            options: {
+                [key: string]: {
+                    [key: string]: unknown;
+                } | undefined;
+            };
+            /** Available */
+            available: string[];
+            /** Training */
+            training: {
+                [key: string]: {
+                    [key: string]: (string | null) | undefined;
+                } | undefined;
+            };
+        };
         /** GeneratedElementsIn */
         GeneratedElementsIn: {
             /** N Elements */
@@ -1706,6 +1723,16 @@ export interface components {
             api: string;
             /** Name */
             name: string;
+        };
+        /**
+         * GenerationComputingOut
+         * @description Response for generation
+         */
+        GenerationComputingOut: {
+            /** Model Id */
+            model_id: number;
+            /** Progress */
+            progress: number | null;
         };
         /**
          * GenerationCreationModel
@@ -1774,6 +1801,13 @@ export interface components {
              * @default all
              */
             mode: string;
+        };
+        /** GenerationsProjectStateModel */
+        GenerationsProjectStateModel: {
+            /** Training */
+            training: {
+                [key: string]: components["schemas"]["GenerationComputingOut"] | undefined;
+            };
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1854,6 +1888,30 @@ export interface components {
              */
             adapt: boolean;
         };
+        /** LanguageModelsProjectStateModel */
+        LanguageModelsProjectStateModel: {
+            /** Options */
+            options: {
+                [key: string]: unknown;
+            }[];
+            /** Available */
+            available: {
+                [key: string]: {
+                    [key: string]: {
+                        [key: string]: boolean | undefined;
+                    } | undefined;
+                } | undefined;
+            };
+            /** Training */
+            training: {
+                [key: string]: {
+                    [key: string]: {
+                        [key: string]: (string | null) | undefined;
+                    } | undefined;
+                } | undefined;
+            };
+            base_parameters: components["schemas"]["LMParametersModel"];
+        };
         /** MLStatisticsModel */
         MLStatisticsModel: {
             /** F1 Label */
@@ -1917,6 +1975,15 @@ export interface components {
             history: string[];
             /** Filter */
             filter?: string | null;
+        };
+        /** NextProjectStateModel */
+        NextProjectStateModel: {
+            /** Methods Min */
+            methods_min: string[];
+            /** Methods */
+            methods: string[];
+            /** Sample */
+            sample: string[];
         };
         /**
          * ProjectAuthsModel
@@ -2135,46 +2202,20 @@ export interface components {
         /**
          * ProjectStateModel
          * @description Response for server state
-         *     TODO : have a more precise description of the fields
          */
         ProjectStateModel: {
             params: components["schemas"]["ProjectModel"];
-            /** Users */
-            users: {
-                [key: string]: unknown;
-            };
-            /** Next */
-            next: {
-                [key: string]: unknown;
-            };
-            /** Schemes */
-            schemes: {
-                [key: string]: unknown;
-            };
-            /** Features */
-            features: {
-                [key: string]: unknown;
-            };
-            /** Simplemodel */
-            simplemodel: {
-                [key: string]: unknown;
-            };
-            /** Languagemodels */
-            languagemodels: {
-                [key: string]: unknown;
-            };
-            /** Projections */
-            projections: {
-                [key: string]: unknown;
-            };
-            /** Generations */
-            generations: {
-                [key: string]: unknown;
-            };
+            next: components["schemas"]["NextProjectStateModel"];
+            schemes: components["schemas"]["SchemesProjectStateModel"];
+            features: components["schemas"]["FeaturesProjectStateModel"];
+            simplemodel: components["schemas"]["SimpleModelsProjectStateModel"];
+            languagemodels: components["schemas"]["LanguageModelsProjectStateModel"];
+            projections: components["schemas"]["ProjectionsProjectStateModel"];
+            generations: components["schemas"]["GenerationsProjectStateModel"];
             /** Errors */
             errors: unknown[][];
             /** Memory */
-            memory: number;
+            memory?: number | null;
             /** Last Activity */
             last_activity?: string | null;
         };
@@ -2238,6 +2279,23 @@ export interface components {
             /** Predictions */
             predictions?: string[] | null;
         };
+        /** ProjectionsProjectStateModel */
+        ProjectionsProjectStateModel: {
+            /** Options */
+            options: {
+                [key: string]: {
+                    [key: string]: unknown;
+                } | undefined;
+            };
+            /** Available */
+            available: {
+                [key: string]: (string | number) | undefined;
+            };
+            /** Training */
+            training: {
+                [key: string]: string | undefined;
+            };
+        };
         /** PromptInputModel */
         PromptInputModel: {
             /** Text */
@@ -2289,6 +2347,15 @@ export interface components {
              * @default []
              */
             labels: string[];
+        };
+        /** SchemesProjectStateModel */
+        SchemesProjectStateModel: {
+            /** Available */
+            available: {
+                [key: string]: {
+                    [key: string]: (string | string[]) | undefined;
+                } | undefined;
+            };
         };
         /** ServerStateModel */
         ServerStateModel: {
@@ -2374,6 +2441,25 @@ export interface components {
             username: string;
             statistics: components["schemas"]["MLStatisticsModel"];
             statistics_cv10: components["schemas"]["MLStatisticsModel"];
+        };
+        /** SimpleModelsProjectStateModel */
+        SimpleModelsProjectStateModel: {
+            /** Options */
+            options: {
+                [key: string]: unknown;
+            };
+            /** Available */
+            available: {
+                [key: string]: {
+                    [key: string]: {
+                        [key: string]: unknown;
+                    } | undefined;
+                } | undefined;
+            };
+            /** Training */
+            training: {
+                [key: string]: string[] | undefined;
+            };
         };
         /** StaticFileModel */
         StaticFileModel: {

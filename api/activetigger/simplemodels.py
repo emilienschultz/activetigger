@@ -3,6 +3,7 @@ import pickle
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from pandas import DataFrame
@@ -56,7 +57,7 @@ class SimpleModels:
 
     path: Path
     queue: Queue
-    available_models: dict
+    available_models: dict[str, Any]
     existing: dict
     computing: list
     save_file: str
@@ -71,14 +72,10 @@ class SimpleModels:
             "knn": KnnParams(n_neighbors=3),
             "randomforest": RandomforestParams(n_estimators=500, max_features=None),
             "lasso": LassoParams(C=32),
-            "multi_naivebayes": Multi_naivebayesParams(
-                alpha=1, fit_prior=True, class_prior=None
-            ),
+            "multi_naivebayes": Multi_naivebayesParams(alpha=1, fit_prior=True, class_prior=None),
         }
 
-        self.existing: dict = (
-            {}
-        )  # computed simplemodels for users / schemes DICT > USERS > SCHEME
+        self.existing: dict = {}  # computed simplemodels for users / schemes DICT > USERS > SCHEME
         self.computing: list = computing  # currently under computation
         self.path: Path = path  # path to operate
         self.queue = queue  # access to executor for multiprocessing
@@ -88,7 +85,7 @@ class SimpleModels:
     def __repr__(self) -> str:
         return str(self.available())
 
-    def available(self):
+    def available(self) -> dict[str, dict[str, dict[str, Any]]]:
         """
         Available simplemodels
         """
@@ -135,7 +132,7 @@ class SimpleModels:
         sm = self.existing[username][scheme]
         return sm.proba
 
-    def training(self) -> dict:
+    def training(self) -> dict[str, list[str]]:
         """
         Currently under training
         """
@@ -220,9 +217,7 @@ class SimpleModels:
         # Select model
         if name == "knn":
             params_knn = KnnParams(**model_params)
-            model = KNeighborsClassifier(
-                n_neighbors=int(params_knn.n_neighbors), n_jobs=-1
-            )
+            model = KNeighborsClassifier(n_neighbors=int(params_knn.n_neighbors), n_jobs=-1)
 
         if name == "lasso":
             params_lasso = LassoParams(**model_params)
@@ -233,9 +228,7 @@ class SimpleModels:
         if name == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
             params_lib = LiblinearParams(**model_params)
-            model = LogisticRegression(
-                penalty="l2", solver="lbfgs", C=params_lib.cost, n_jobs=-1
-            )
+            model = LogisticRegression(penalty="l2", solver="lbfgs", C=params_lib.cost, n_jobs=-1)
 
         if name == "randomforest":
             # params  Num. trees mtry  Sample fraction
@@ -247,9 +240,7 @@ class SimpleModels:
                 n_estimators=int(params_rf.n_estimators),
                 random_state=42,
                 max_features=(
-                    int(params_rf.max_features)
-                    if params_rf.max_features is not None
-                    else None
+                    int(params_rf.max_features) if params_rf.max_features is not None else None
                 ),
                 n_jobs=-1,
             )

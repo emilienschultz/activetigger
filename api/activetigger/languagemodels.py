@@ -3,7 +3,7 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import pandas as pd
 from pandas import DataFrame
@@ -35,7 +35,7 @@ class LanguageModels:
     computing: list
     language_models_service: LanguageModelsService
     db_manager: DatabaseManager
-    base_models: list
+    base_models: list[dict[str, Any]]
     params_default: LMParametersModel
 
     def __init__(
@@ -57,6 +57,7 @@ class LanguageModels:
         # load the list of models
         if list_models is not None:
             self.base_models = pd.read_csv(list_models).to_dict(orient="records")
+            print(self.base_models)
         else:
             self.base_models = [
                 {
@@ -86,7 +87,7 @@ class LanguageModels:
     def __repr__(self) -> str:
         return f"Trained models : {self.available()}"
 
-    def available(self) -> dict:
+    def available(self) -> dict[str, dict[str, dict[str, bool]]]:
         """
         Available models
         TODO : change structure ?
@@ -100,10 +101,9 @@ class LanguageModels:
                 "predicted": m.parameters["predicted"],
                 "predicted_external": m.parameters.get("predicted_external", False),
             }
-        print("models", r)
         return r
 
-    def training(self) -> dict:
+    def training(self) -> dict[str, dict[str, dict[str, str | None]]]:
         """
         Currently under training
         - name
