@@ -407,7 +407,7 @@ class Project:
             # sanitize
             filter_san = clean_regex(filter)
             if "CONTEXT=" in filter_san:  # case to search in the context
-                f_regex = (
+                f_regex: pd.Series = (
                     df[self.params.cols_context]
                     .apply(lambda row: " ".join(row.values.astype(str)), axis=1)
                     .str.contains(
@@ -532,7 +532,7 @@ class Project:
         Separate train/test dataset
         TODO: better homogeneise with get_next ?
         """
-        if dataset == "test":
+        if dataset == "test" and self.schemes.test is not None:
             if element_id not in self.schemes.test.index:
                 raise Exception("Element does not exist.")
             data: dict = {
@@ -705,7 +705,7 @@ class Project:
         if dataset == "test":
             if not self.params.test:
                 raise Exception("No test data available")
-            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind="test")
+            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
             file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
@@ -1076,12 +1076,3 @@ class Project:
         self.errors = [error for error in self.errors if error[0] >= delta]
 
         return None
-
-    def last_activity(self, username: str | None = None) -> None:
-        """
-        Update the last activity of a user
-        """
-
-        self.db_manager
-
-        self.db_manager.users_service.update_last_activity(username, datetime.now(TIMEZONE))
