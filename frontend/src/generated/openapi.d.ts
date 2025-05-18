@@ -1809,6 +1809,15 @@ export interface components {
                 [key: string]: components["schemas"]["GenerationComputingOut"] | undefined;
             };
         };
+        /** GpuInformationModel */
+        GpuInformationModel: {
+            /** Gpu Available */
+            gpu_available: boolean;
+            /** Total Memory */
+            total_memory: number;
+            /** Available Memory */
+            available_memory: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2373,10 +2382,7 @@ export interface components {
                     [key: string]: unknown;
                 }[] | undefined;
             };
-            /** Gpu */
-            gpu: {
-                [key: string]: unknown;
-            };
+            gpu: components["schemas"]["GpuInformationModel"];
             /** Cpu */
             cpu: {
                 [key: string]: unknown;
@@ -2452,7 +2458,7 @@ export interface components {
             available: {
                 [key: string]: {
                     [key: string]: {
-                        [key: string]: unknown;
+                        [key: string]: components["schemas"]["SimpleModelModel"] | undefined;
                     } | undefined;
                 } | undefined;
             };

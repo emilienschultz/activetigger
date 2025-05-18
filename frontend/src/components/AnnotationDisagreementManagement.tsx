@@ -18,13 +18,21 @@ export const AnnotationDisagreementManagement: FC<{
 
   // type of scheme
   const kindScheme =
-    currentScheme && project
+    currentScheme &&
+    project &&
+    project.schemes.available &&
+    project.schemes.available[currentScheme]
       ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
       : 'multiclass';
 
   // available labels from context
   const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
+    currentScheme &&
+    project &&
+    project.schemes.available &&
+    project.schemes.available[currentScheme]
+      ? (project.schemes.available[currentScheme]['labels'] as string[]) || []
+      : [];
 
   // get disagreement table
   const { tableDisagreement, users, reFetchTable } = useTableDisagreement(

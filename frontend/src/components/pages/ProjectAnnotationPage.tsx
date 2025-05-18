@@ -21,6 +21,7 @@ import { ElementOutModel } from '../../types';
 import { BackButton } from '../BackButton';
 import { ForwardButton } from '../ForwardButton';
 
+import { SimpleModelModel } from '../../types';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { MulticlassInput } from '../MulticlassInput';
 import { MultilabelInput } from '../MultilabelInput';
@@ -82,16 +83,13 @@ export const ProjectAnnotationPage: FC = () => {
   const currentModel =
     authenticatedUser &&
     currentScheme &&
-    project?.simplemodel.available[authenticatedUser?.username]?.[currentScheme]
-      ? project?.simplemodel.available[authenticatedUser?.username][currentScheme]
-      : null;
-
+    project?.simplemodel?.available?.[authenticatedUser.username]?.[currentScheme];
   const availableLabels =
-    currentScheme && project
+    currentScheme && project && project.schemes.available[currentScheme]
       ? (project.schemes.available[currentScheme]['labels'] as string[])
       : [];
   const [kindScheme] = useState<string>(
-    currentScheme && project
+    currentScheme && project && project.schemes.available[currentScheme]
       ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
       : 'multiclass',
   );
@@ -160,7 +158,7 @@ export const ProjectAnnotationPage: FC = () => {
       history.length % freqRefreshSimpleModel == 0
     ) {
       setUpdatedSimpleModel(true);
-      updateSimpleModel(currentModel);
+      updateSimpleModel(currentModel as unknown as SimpleModelModel);
     }
     if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
       setUpdatedSimpleModel(false);
@@ -350,23 +348,20 @@ export const ProjectAnnotationPage: FC = () => {
         {
           //display proba
 
-          phase != 'test' && displayConfig.displayPrediction && element?.predict.label && (
-            <div className="d-flex mb-2 justify-content-center display-prediction">
-              {/* Predicted label : {element?.predict.label} (proba: {element?.predict.proba}) */}
-
-              <button
-                type="button"
-                key={element?.predict.label + '_predict'}
-                value={element?.predict.label}
-                className="btn btn-secondary"
-                onClick={(e) => {
-                  postAnnotation(e.currentTarget.value, elementId);
-                }}
-              >
-                Predicted : {element?.predict.label} (proba: {element?.predict.proba})
-              </button>
-            </div>
-          )
+          <div className="d-flex mb-2 justify-content-center display-prediction">
+            <button
+              type="button"
+              key={element?.predict.label + '_predict'}
+              value={element?.predict.label as string}
+              className="btn btn-secondary"
+              onClick={(e) => {
+                postAnnotation(e.currentTarget.value, elementId);
+              }}
+            >
+              Predicted : {element?.predict.label as string} (proba:{' '}
+              {element?.predict.proba as number})
+            </button>
+          </div>
         }
         {
           //display context
@@ -466,7 +461,9 @@ export const ProjectAnnotationPage: FC = () => {
               <SimpleModelManagement
                 projectName={projectName || null}
                 currentScheme={currentScheme || null}
-                availableSimpleModels={availableSimpleModels}
+                availableSimpleModels={
+                  availableSimpleModels as unknown as Record<string, Record<string, number>>
+                }
                 availableFeatures={availableFeatures}
                 availableLabels={availableLabels}
                 kindScheme={kindScheme}

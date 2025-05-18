@@ -546,7 +546,7 @@ class FeaturesProjectStateModel(BaseModel):
 
 class SimpleModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
-    available: dict[str, dict[str, dict[str, Any]]]
+    available: dict[str, dict[str, dict[str, SimpleModelModel]]]
     training: dict[str, list[str]]
 
 
@@ -680,11 +680,17 @@ class GenerationResult(BaseModel):
     answer: str
 
 
+class GpuInformationModel(BaseModel):
+    gpu_available: bool
+    total_memory: float
+    available_memory: float
+
+
 class ServerStateModel(BaseModel):
     version: str
     queue: dict[str, dict[str, str | None]]
     active_projects: dict[Any, list[dict[str, Any]]]
-    gpu: dict[str, Any]
+    gpu: GpuInformationModel
     cpu: dict
     memory: dict
     disk: dict

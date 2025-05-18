@@ -58,7 +58,7 @@ export const ProjectActionsSidebar: FC<{
     });
   }
 
-  const errors = Object.values(projectState?.errors).map((arr) => arr.join(' - ')) || [];
+  const errors = projectState?.errors.map((arr) => arr.join(' - ')) || [];
 
   return (
     <div

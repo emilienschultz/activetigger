@@ -28,7 +28,10 @@ export const ProjectPredictPage: FC = () => {
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
 
   const availablePrediction =
-    currentScheme && currentModel && project?.languagemodels.available[currentScheme][currentModel]
+    currentScheme &&
+    currentModel &&
+    project?.languagemodels.available[currentScheme] &&
+    project?.languagemodels.available[currentScheme][currentModel]
       ? project?.languagemodels.available[currentScheme][currentModel]['predicted']
       : false;
 
@@ -77,19 +80,16 @@ export const ProjectPredictPage: FC = () => {
                 <div className="mt-3">
                   Current process:
                   <ul>
-                    {Object.entries(
-                      project?.languagemodels.training as Record<
-                        string,
-                        Record<string, string | number>
-                      >,
-                    ).map(([_, v]) => (
-                      <li key={v.name}>
-                        {v.name} - {v.status} :{' '}
-                        <span style={{ fontWeight: 'bold' }}>
-                          {Math.round(Number(v.progress))} %
-                        </span>
-                      </li>
-                    ))}
+                    {Object.entries(project?.languagemodels.training).map(([_, v]) =>
+                      v ? (
+                        <li key={v.name as unknown as string}>
+                          {v.name as unknown as string} - {v.status as unknown as string} :{' '}
+                          <span style={{ fontWeight: 'bold' }}>
+                            {Math.round(Number(v.progress))} %
+                          </span>
+                        </li>
+                      ) : null,
+                    )}
                   </ul>
                 </div>
               )}

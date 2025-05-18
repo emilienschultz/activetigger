@@ -177,7 +177,6 @@ class Orchestrator:
         queue = {i: q[i] for i in q if q[i]["state"] in ["pending", "running"]}
 
         # server state
-        gpu = get_gpu_memory_info()
         cpu = psutil.cpu_percent()
         cpu_count = psutil.cpu_count()
         memory_info = psutil.virtual_memory()
@@ -188,7 +187,7 @@ class Orchestrator:
             version=__version__,
             active_projects=active_projects,
             queue=queue,
-            gpu=gpu,
+            gpu=get_gpu_memory_info(),
             cpu={"proportion": cpu, "total": cpu_count},
             memory={
                 "proportion": memory_info.percent,
