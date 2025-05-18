@@ -60,14 +60,19 @@ export const TrainPage: FC = () => {
 
   // available labels from context
   const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
+    currentScheme &&
+    project &&
+    project.schemes.available &&
+    project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme]['labels'] || []
+      : [];
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
 
   const kindScheme =
-    currentScheme && project
+    currentScheme && project && project.schemes.available[currentScheme]
       ? (project.schemes.available[currentScheme]['kind'] as string)
       : 'multiclass';
 
@@ -267,7 +272,7 @@ export const TrainPage: FC = () => {
                         Current process:
                         <ul>
                           {Object.entries(
-                            project?.languagemodels.training as Record<
+                            project?.languagemodels.training as unknown as Record<
                               string,
                               Record<string, string | number | null>
                             >,
@@ -333,7 +338,17 @@ export const TrainPage: FC = () => {
                           {model.valid_scores && (
                             <div>
                               <h4 className="subsection">Validation scores</h4>
-                              <DisplayScores scores={model.valid_scores} />
+                              <DisplayScores
+                                scores={
+                                  model.valid_scores as Record<
+                                    string,
+                                    | string
+                                    | number
+                                    | Record<string, string>
+                                    | Record<string, number>
+                                  >
+                                }
+                              />
                             </div>
                           )}
                           <div>
@@ -347,7 +362,17 @@ export const TrainPage: FC = () => {
 
                             {model.train_scores && (
                               <div>
-                                <DisplayScores scores={model.train_scores} />
+                                <DisplayScores
+                                  scores={
+                                    model.train_scores as Record<
+                                      string,
+                                      | string
+                                      | number
+                                      | Record<string, string>
+                                      | Record<string, number>
+                                    >
+                                  }
+                                />
                                 <button onClick={() => downloadModel()}>Download as json</button>
                                 <details className="m-3">
                                   <summary>False predictions</summary>
@@ -355,7 +380,7 @@ export const TrainPage: FC = () => {
                                     <DataGrid<Row>
                                       className="fill-grid"
                                       columns={columns}
-                                      rows={falsePredictions || []}
+                                      rows={falsePredictions as Row[]}
                                     />
                                   ) : (
                                     <div>Compute prediction first</div>

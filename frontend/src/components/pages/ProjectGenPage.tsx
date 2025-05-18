@@ -413,15 +413,12 @@ export const GenPage: FC = () => {
                         </div>
                         <button className="btn btn-secondary mt-3" onClick={stopGenerate}>
                           Stop (
-                          {authenticatedUser?.username &&
-                          currentProject?.generations?.training[authenticatedUser?.username]
-                            ? String(
-                                currentProject?.generations?.training[authenticatedUser?.username][
-                                  'progress'
-                                ],
-                              )
-                            : 0}
-                          %)
+                          {String(
+                            currentProject?.generations?.training?.[
+                              authenticatedUser?.username || ''
+                            ]?.progress ?? 0,
+                          )}
+                          % )
                         </button>
                       </div>
                     ) : (

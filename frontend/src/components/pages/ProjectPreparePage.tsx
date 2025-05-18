@@ -28,11 +28,6 @@ interface Features {
   options?: FeaturesOptions;
 }
 
-interface FeatureComputingElement {
-  name: string;
-  progress: string | null;
-}
-
 export const ProjectPreparePage: FC = () => {
   const { projectName } = useParams();
 
@@ -83,9 +78,13 @@ export const ProjectPreparePage: FC = () => {
   };
 
   const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme]['labels'] || []
+      : [];
   const kindScheme =
-    currentScheme && project ? project.schemes.available[currentScheme]['kind'] : '';
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme]['kind']
+      : '';
 
   console.log(project?.features.training);
 
@@ -100,8 +99,8 @@ export const ProjectPreparePage: FC = () => {
                   <LabelsManagement
                     projectName={projectName || null}
                     currentScheme={currentScheme || null}
-                    availableLabels={availableLabels}
-                    kindScheme={kindScheme}
+                    availableLabels={availableLabels as string[]}
+                    kindScheme={kindScheme as string}
                     reFetchCurrentProject={reFetchCurrentProject || (() => null)}
                   />
                 </Tab>
@@ -123,7 +122,9 @@ export const ProjectPreparePage: FC = () => {
                         <span className="w-25">{key}</span>
                         <span className="mx-2">{value?.time}</span>
                         <span className="mx-2">by {value?.user}</span>
-                        {value?.kind === 'regex' && <span>N={value.parameters['count']}</span>}
+                        {value?.kind === 'regex' && (
+                          <span>N={value.parameters['count'] as string}</span>
+                        )}
                       </div>
                     </div>
                   ))}{' '}
@@ -132,10 +133,8 @@ export const ProjectPreparePage: FC = () => {
                     <div className="card text-bg-light mt-3 bg-warning" key={key}>
                       <div className="d-flex m-2 align-items-center">
                         <span className="w-25">
-                          Currently computing {(element as FeatureComputingElement).name as string}
-                          {(element as FeatureComputingElement).progress
-                            ? ` (${(element as FeatureComputingElement).progress}%)`
-                            : ''}
+                          Currently computing {element ? element.name : ''}
+                          {element ? ` (${element.progress}%)` : ''}
                         </span>
                       </div>
                     </div>
@@ -163,13 +162,15 @@ export const ProjectPreparePage: FC = () => {
                           <option key={null} value="generic">
                             Default model
                           </option>
-                          {((project?.features.options['sbert']['models'] as string[]) || []).map(
-                            (element) => (
-                              <option key={element as string} value={element as string}>
-                                {element as string}
-                              </option>
-                            ),
-                          )}
+                          {(
+                            (project?.features.options['sbert']
+                              ? (project?.features.options['sbert']['models'] as string[])
+                              : []) || []
+                          ).map((element) => (
+                            <option key={element as string} value={element as string}>
+                              {element as string}
+                            </option>
+                          ))}
                         </select>
                       </details>
                     )}

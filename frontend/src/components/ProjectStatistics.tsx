@@ -112,7 +112,11 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                   <tr>
                     <td>Distribution</td>
                     <td>
-                      <DataTable dataDict={statistics['train_annotated_distribution']} />
+                      <DataTable
+                        dataDict={
+                          statistics['train_annotated_distribution'] as Record<string, number>
+                        }
+                      />
                     </td>
                   </tr>
                   <tr className="table-delimiter">
@@ -132,7 +136,11 @@ export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) 
                     <td>
                       {' '}
                       {statistics['test_annotated_distribution'] && (
-                        <DataTable dataDict={statistics['test_annotated_distribution']} />
+                        <DataTable
+                          dataDict={
+                            statistics['test_annotated_distribution'] as Record<string, number>
+                          }
+                        />
                       )}
                     </td>
                   </tr>

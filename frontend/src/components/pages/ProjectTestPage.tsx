@@ -37,7 +37,7 @@ export const ProjectTestPage: FC = () => {
   const navigate = useNavigate();
 
   const kindScheme =
-    currentScheme && currentProject
+    currentScheme && currentProject && currentProject.schemes.available[currentScheme]
       ? (currentProject.schemes.available[currentScheme]['kind'] as string)
       : 'multiclass';
 
@@ -272,7 +272,14 @@ export const ProjectTestPage: FC = () => {
               )} */}
               {model && model.test_scores && (
                 <div>
-                  <DisplayScores scores={model.test_scores || {}} />
+                  <DisplayScores
+                    scores={
+                      model.test_scores as Record<
+                        string,
+                        string | number | Record<string, string> | Record<string, number>
+                      >
+                    }
+                  />
                   <button onClick={() => downloadModel()}>Download as json</button>
                   <details className="m-3">
                     <summary>False predictions</summary>

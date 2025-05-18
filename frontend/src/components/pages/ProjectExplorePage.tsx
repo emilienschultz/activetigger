@@ -37,7 +37,7 @@ export const ProjectExplorePage: FC = () => {
 
   const kindScheme =
     currentScheme && project
-      ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
+      ? (project.schemes.available[currentScheme]?.kind as string) || 'multiclass'
       : 'multiclass';
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
@@ -51,7 +51,7 @@ export const ProjectExplorePage: FC = () => {
   });
 
   const availableLabels =
-    currentScheme && project ? project.schemes.available[currentScheme]['labels'] || [] : [];
+    (currentScheme && project?.schemes?.available?.[currentScheme]?.labels) ?? [];
 
   // selection elements
   const [page, setPage] = useState<number | null>(0);
@@ -162,7 +162,7 @@ export const ProjectExplorePage: FC = () => {
         autoFocus
       >
         <option></option>
-        {availableLabels.map((l) => (
+        {(availableLabels as string[]).map((l) => (
           <option key={l} value={l}>
             {l}
           </option>

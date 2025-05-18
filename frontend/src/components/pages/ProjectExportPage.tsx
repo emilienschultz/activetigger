@@ -37,13 +37,15 @@ export const ProjectExportPage: FC = () => {
       ? Object.keys(project?.languagemodels.available[currentScheme])
       : [];
   const availablePrediction =
-    currentScheme && model
-      ? project?.languagemodels.available[currentScheme][model]['predicted']
-      : false;
+    (currentScheme &&
+      model &&
+      project?.languagemodels?.available?.[currentScheme]?.[model]?.['predicted']) ??
+    false;
   const availablePredictionExternal =
-    currentScheme && model
-      ? project?.languagemodels.available[currentScheme][model]['predicted_external']
-      : false;
+    (currentScheme &&
+      model &&
+      project?.languagemodels?.available?.[currentScheme]?.[model]?.['predicted_external']) ??
+    false;
 
   const { getFeaturesFile } = useGetFeaturesFile(projectName || null);
   const { getAnnotationsFile } = useGetAnnotationsFile(projectName || null);
