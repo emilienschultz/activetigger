@@ -44,9 +44,7 @@ class Projects(Base):
         onupdate=func.current_timestamp(),
     )
     parameters: Mapped[dict[str, Any]]
-    user_name: Mapped[str] = mapped_column(
-        ForeignKey("users.user_name", ondelete="CASCADE")
-    )
+    user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name", ondelete="CASCADE"))
     user: Mapped["Users"] = relationship("Users")
     schemes: Mapped[list["Schemes"]] = relationship(
         "Schemes", cascade="all,delete,delete-orphan", back_populates="project"
@@ -54,9 +52,9 @@ class Projects(Base):
     auths: Mapped[list["Auths"]] = relationship(
         "Auths", cascade="all,delete,delete-orphan", back_populates="project"
     )
-    logs: Mapped[list["Logs"]] = relationship(
-        "Logs", cascade="all,delete,delete-orphan", back_populates="project"
-    )
+    # logs: Mapped[list["Logs"]] = relationship(
+    #    "Logs", cascade="all,delete,delete-orphan", back_populates="project"
+    # )
     generations: Mapped[list["Generations"]] = relationship(
         "Generations", cascade="all,delete,delete-orphan", back_populates="project"
     )
@@ -85,16 +83,12 @@ class Users(Base):
     projects: Mapped[list[Projects]] = relationship(
         back_populates="user", cascade="all,delete,delete-orphan"
     )
-    deactivated: Mapped[datetime.datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
+    deactivated: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Schemes(Base):
     __tablename__ = "schemes"
-    __table_args__ = (
-        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),)
 
     name: Mapped[str]
     time_created: Mapped[datetime.datetime] = mapped_column(
@@ -165,10 +159,7 @@ class Logs(Base):
     )
     user_name: Mapped[str] = mapped_column(ForeignKey("users.user_name"))
     user: Mapped[Users] = relationship()
-    project_slug: Mapped[str] = mapped_column(
-        ForeignKey("projects.project_slug", ondelete="CASCADE")
-    )
-    project: Mapped[Projects] = relationship(back_populates="logs")
+    project_slug: Mapped[str]
     action: Mapped[str | None]
     connect: Mapped[str | None]
 
@@ -182,9 +173,7 @@ class Tokens(Base):
     )
     token: Mapped[str]
     status: Mapped[str]
-    time_revoked: Mapped[datetime.datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
+    time_revoked: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class GenModels(Base):
