@@ -31,7 +31,7 @@ interface Row {
 export const ProjectTestPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { phase, currentScheme, currentProject, isComputing },
+    appContext: { currentProjection, phase, currentScheme, currentProject, isComputing },
     setAppContext,
   } = useAppContext();
   const navigate = useNavigate();
@@ -109,6 +109,13 @@ export const ProjectTestPage: FC = () => {
     link.href = URL.createObjectURL(blob);
     link.download = currentModel || 'model.json';
     link.click();
+  };
+
+  const displayAdvancement = (val: number | string | null) => {
+    if (!val) return 'process in the queue waiting to start';
+    const v = Math.round(Number(val));
+    if (v >= 100) return 'completed, please wait';
+    return v + '%';
   };
 
   return (
@@ -210,6 +217,29 @@ export const ProjectTestPage: FC = () => {
                 }
               </div>
               {isComputing && <div>You have a process launched. Wait for it to complete.</div>}
+              {/* Display the progress of training models */}
+              {currentProject?.languagemodels.training &&
+                Object.keys(currentProject.languagemodels.training).length > 0 && (
+                  <div className="mt-3">
+                    Current process:
+                    <ul>
+                      {Object.entries(
+                        currentProject?.languagemodels.training as unknown as Record<
+                          string,
+                          Record<string, string | number | null>
+                        >,
+                      ).map(([_, v]) => (
+                        <li key={v.name}>
+                          {v.name} - {v.status} :{' '}
+                          <span style={{ fontWeight: 'bold' }}>
+                            {displayAdvancement(v.progress)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
               {currentModel && currentScheme && !isComputing && (
                 <div className="col-12">
                   <button
