@@ -711,13 +711,16 @@ class Project:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
             file_name = f"data_train_{self.name}_{scheme}.{format}"
 
+        print(data)
+
         # Create files
         if format == "csv":
-            data.reset_index().map(str).to_csv(path.joinpath(file_name))
+            data.reset_index().to_csv(path.joinpath(file_name))
         if format == "parquet":
-            data.reset_index().map(str).to_parquet(path.joinpath(file_name))
+            data.reset_index().to_parquet(path.joinpath(file_name))
         if format == "xlsx":
-            data.reset_index().map(str).to_excel(path.joinpath(file_name))
+            data["timestamp"] = data["timestamp"].dt.tz_localize(None)
+            data.reset_index().to_excel(path.joinpath(file_name))
 
         r = {"name": file_name, "path": path.joinpath(file_name)}
         return r

@@ -223,10 +223,13 @@ export const ProjectCreationForm: FC = () => {
                         width: '200px',
                       }))}
                       data={
-                        data.data.slice(0, 5) as Record<
-                          keyof DataType['headers'],
-                          string | number
-                        >[]
+                        data.data
+                          .slice(0, 5)
+                          .map((row) =>
+                            Object.fromEntries(
+                              Object.entries(row).map(([key, value]) => [key, String(value)]),
+                            ),
+                          ) as Record<keyof DataType['headers'], string>[]
                       }
                     />
                   </div>
