@@ -553,7 +553,7 @@ class SimpleModelsProjectStateModel(BaseModel):
 class LanguageModelsProjectStateModel(BaseModel):
     options: list[dict[str, Any]]
     available: dict[str, dict[str, dict[str, bool]]]
-    training: dict[str, dict[str, dict[str, str | None]]]
+    training: dict[str, dict[str, str | float | int | dict | None]]
     base_parameters: LMParametersModel
 
 
