@@ -250,15 +250,20 @@ class Features:
         """
         return self.projects_service.get_project_features(self.project_slug)
 
-    def get_column_raw(self, column_name: str, index: str = "train") -> Series:
+    def get_column_raw(
+        self, column_name: str, index: str = "train", add_real_index: bool = True
+    ) -> Series:
         """
         Get column raw dataset
         """
-        df = pd.read_parquet(self.path_all)
-        df_train = pd.read_parquet(self.path_features, columns=[])  # only the index
-        if column_name not in list(df.columns):
+        parquet_file = pq.ParquetFile(self.path_all)
+        column_names = parquet_file.schema.names
+        print("column names", column_names)
+        if column_name not in list(column_names):
             raise Exception("Column doesn't exist")
+        df = pd.read_parquet(self.path_all, columns=[column_name])
         if index == "train":  # filter only train id
+            df_train = pd.read_parquet(self.path_features, columns=[])  # only the index
             return df.loc[df_train.index][column_name]
         elif index == "all":
             return df[column_name]

@@ -49,6 +49,7 @@ class PredictBert(BaseTask):
         df: DataFrame,
         col_text: str,
         col_label: str | None = None,
+        col_id: str | None = None,
         batch: int = 32,
         file_name: str = "predict.parquet",
         event: Optional[multiprocessing.synchronize.Event] = None,
@@ -60,6 +61,7 @@ class PredictBert(BaseTask):
         self.df = df
         self.col_text = col_text
         self.col_label = col_label
+        self.col_id = col_id
         self.event = event
         self.unique_id = unique_id
         self.file_name = file_name
@@ -85,9 +87,7 @@ class PredictBert(BaseTask):
         progress_path = self.path / "progress_predict"
         logger = logging.getLogger("predict_bert_model")
         file_handler = logging.FileHandler(log_path)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
@@ -97,9 +97,7 @@ class PredictBert(BaseTask):
             if "base_model" in data:
                 modeltype = data["base_model"]
             else:
-                raise ValueError(
-                    "No model type found in config.json. Please check the file."
-                )
+                raise ValueError("No model type found in config.json. Please check the file.")
         tokenizer = AutoTokenizer.from_pretrained(modeltype)
         model = AutoModelForSequenceClassification.from_pretrained(self.path)
 
@@ -140,9 +138,7 @@ class PredictBert(BaseTask):
 
                 # write progress
                 with open(progress_path, "w") as f:
-                    f.write(
-                        str((len(predictions) * self.batch / self.df.shape[0]) * 100)
-                    )
+                    f.write(str((len(predictions) * self.batch / self.df.shape[0]) * 100))
 
             # to dataframe
             pred = pd.DataFrame(
@@ -174,9 +170,7 @@ class PredictBert(BaseTask):
                     .reset_index()
                 ).to_dict(orient="records")
                 # save in a dedicated file
-                with open(
-                    str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w"
-                ) as f:
+                with open(str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w") as f:
                     json.dump(metrics.model_dump(mode="json"), f)
                 # drop the temporary text col
                 pred.drop(columns=["text"], inplace=True)
@@ -185,9 +179,12 @@ class PredictBert(BaseTask):
             else:
                 metrics = None
 
+            # add the column id original if available
+            if self.col_id:
+                pred[self.col_id] = self.df[self.col_id]
+
             # write the content in a parquet file
-            pred.to_parquet(self.path / self.file_name)
-            print("Written", self.file_name)
+            pred.to_parquet(self.path.joinpath(self.file_name))
             return ReturnTaskPredictModel(
                 path=str(self.path.joinpath(self.file_name)), metrics=metrics
             )

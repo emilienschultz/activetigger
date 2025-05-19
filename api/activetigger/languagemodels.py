@@ -329,6 +329,7 @@ class LanguageModels:
         col_text: str,
         dataset: str,
         col_label: str | None = None,
+        col_id: str | None = None,
         batch_size: int = 32,
     ):
         """
@@ -350,6 +351,7 @@ class LanguageModels:
                 df=df,
                 col_text=col_text,
                 col_label=col_label,
+                col_id=col_id,
                 path=self.path.joinpath(name),
                 basemodel=self.get_base_model(name),
                 file_name=f"predict_{dataset}.parquet",
@@ -386,26 +388,31 @@ class LanguageModels:
         return {"success": "model renamed"}
 
     def export_prediction(
-        self, name: str, file_name: str = "predict.parquet", format: str | None = None
+        self, name: str, file_name: str = "predict.parquet", format: str = "parquet"
     ):
         """
         Export predict file if exists
         """
-        path = self.path / name / file_name
+        # get the predition file
+        path = self.path.joinpath(name).joinpath(file_name)
         if not path.exists():
             raise FileNotFoundError("file does not exist")
-
         df = pd.read_parquet(path)
 
-        # change format if needed
-        if format == "csv":
+        # add index column
+        # read the index column in the parquet file
+        # add it in the dataframe
+
+        # change the format
+        if format == "parquet":
+            pass
+        elif format == "csv":
             file_name = "predict.csv"
-            path = self.path / name / file_name
+            path = self.path.joinpath(name).joinpath(file_name)
             df.to_csv(path)
-        # change format if needed
         elif format == "xlsx":
             file_name = "predict.xlsx"
-            path = self.path / name / file_name
+            path = self.path.joinpath(name).joinpath(file_name)
             df.to_excel(path)
         else:
             raise Exception("Format not supported")

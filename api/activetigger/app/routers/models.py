@@ -38,9 +38,7 @@ async def post_simplemodel(
     """
     try:
         project.update_simplemodel(simplemodel, current_user.username)
-        orchestrator.log_action(
-            current_user.username, "TRAIN MODEL: simplemodel", project.name
-        )
+        orchestrator.log_action(current_user.username, "TRAIN MODEL: simplemodel", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -90,20 +88,22 @@ async def predict(
 
     try:
         # get the data
+
         if dataset == "train":
-            df = project.schemes.get_scheme_data(
-                scheme=scheme, complete=True, kind=["train"]
-            )
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
             col_label = "labels"
+            col_id = None
             # df = project.content[["text"]]  # get data
         elif dataset == "all":
             df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
+            df[project.params.col_id] = project.features.get_column_raw(
+                project.params.col_id, index="all"
+            )  # add original id
             col_label = None
+            col_id = project.params.col_id
         elif dataset == "external":
             if external_dataset is None:
-                raise HTTPException(
-                    status_code=400, detail="External dataset is missing"
-                )
+                raise HTTPException(status_code=400, detail="External dataset is missing")
             csv_buffer = io.StringIO(external_dataset.csv)
             df = pd.read_csv(
                 csv_buffer,
@@ -116,6 +116,7 @@ async def predict(
             df.set_index("index", inplace=True)
             df = df[["text"]].dropna()
             col_label = None
+            col_id = None
             # raise HTTPException(status_code=500, detail="Not implemented yet")
         else:
             raise Exception(f"dataset {dataset} not found")
@@ -128,12 +129,11 @@ async def predict(
             df=df,
             col_text="text",
             col_label=col_label,
+            col_id=col_id,
             dataset=dataset,
             batch_size=batch_size,
         )
-        orchestrator.log_action(
-            current_user.username, f"PREDICT MODEL: {model_name}", project.name
-        )
+        orchestrator.log_action(current_user.username, f"PREDICT MODEL: {model_name}", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -164,9 +164,7 @@ async def start_test(
             col_text="text",
             col_labels="labels",
         )
-        orchestrator.log_action(
-            current_user.username, "PREDICT MODEL TEST", project.name
-        )
+        orchestrator.log_action(current_user.username, "PREDICT MODEL TEST", project.name)
         return None
 
     except Exception as e:
@@ -194,10 +192,7 @@ async def post_bert(
             )
 
         # Check if there is no other competing processes : 1 active process by user
-        if (
-            len(project.languagemodels.current_user_processes(current_user.username))
-            > 0
-        ):
+        if len(project.languagemodels.current_user_processes(current_user.username)) > 0:
             raise Exception(
                 "User already has a process launched, please wait before launching another one"
             )
@@ -215,9 +210,7 @@ async def post_bert(
 
         # remove class under the threshold
         label_counts = df["labels"].value_counts()
-        df = df[
-            df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)
-        ]
+        df = df[df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)]
 
         # remove class requested by the user
         if len(bert.exclude_labels) > 0:
@@ -249,9 +242,7 @@ async def post_bert(
             params=bert.params,
             test_size=bert.test_size,
         )
-        orchestrator.log_action(
-            current_user.username, f"TRAIN MODEL: {bert.name}", project.name
-        )
+        orchestrator.log_action(current_user.username, f"TRAIN MODEL: {bert.name}", project.name)
         return None
 
     except Exception as e:
@@ -287,12 +278,8 @@ async def stop_bert(
         orchestrator.queue.kill(unique_id)
         # delete it in the database if it is a training
         if p[0].kind == "train_bert":
-            project.db_manager.language_models_service.delete_model(
-                project.name, p[0].model_name
-            )
-        orchestrator.log_action(
-            current_user.username, "STOP MODEL TRAINING", project.name
-        )
+            project.db_manager.language_models_service.delete_model(project.name, p[0].model_name)
+        orchestrator.log_action(current_user.username, "STOP MODEL TRAINING", project.name)
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -311,9 +298,7 @@ async def delete_bert(
 
     try:
         project.languagemodels.delete(bert_name)
-        orchestrator.log_action(
-            current_user.username, f"DELETE MODEL: {bert_name}", project.name
-        )
+        orchestrator.log_action(current_user.username, f"DELETE MODEL: {bert_name}", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
