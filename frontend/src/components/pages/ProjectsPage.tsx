@@ -1,5 +1,6 @@
 import { FC, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { ProjectCard } from '../ProjectCard';
 
 import { useUserProjects } from '../../core/api';
 import { PageLayout } from '../layout/PageLayout';
@@ -9,7 +10,6 @@ import { AvailableProjectsModel } from '../../types';
 
 export const ProjectsPage: FC = () => {
   const projects = useUserProjects();
-  const navigate = useNavigate();
   const [rows, setRows] = useState<AvailableProjectsModel[]>([]);
   useEffect(() => {
     setRows(projects || []);
@@ -50,21 +50,7 @@ export const ProjectsPage: FC = () => {
                   onChange={handleSearch}
                 />
                 {rows.map((project) => (
-                  <div
-                    key={project.parameters.project_slug}
-                    className="project-card"
-                    onClick={() => navigate(`/projects/${project.parameters.project_slug}`)}
-                  >
-                    <h3 className="project-title">{project.parameters.project_name}</h3>
-                    <p className="project-details">
-                      <span>Created by: {project.created_by}</span>
-                      <span>Created at: {project.created_at}</span>
-                    </p>
-
-                    <div className="badge text-bg-info" title="Memory">
-                      <span className="d-none d-md-inline">HDD : {project.size} Mo</span>
-                    </div>
-                  </div>
+                  <ProjectCard project={project} key={project.parameters.project_slug} />
                 ))}
               </div>
             </div>

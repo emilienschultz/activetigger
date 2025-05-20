@@ -293,3 +293,14 @@ $tertiary: #8f8d8d;
   justify-content: space-between;
 }
 
+
+.trash-wrapper {
+  color: inherit;
+  cursor: pointer;
+  margin-left: 1rem;
+  transition: color 0.2s ease;
+}
+
+.trash-wrapper:hover {
+  color: red;
+}

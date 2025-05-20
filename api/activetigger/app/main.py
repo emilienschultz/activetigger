@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # add static folder
-app.mount("/static", StaticFiles(directory=orchestrator.path / "static"), name="static")
+app.mount("/static", StaticFiles(directory=orchestrator.path.joinpath("static")), name="static")
 
 # add routers
 app.include_router(users.router)
@@ -124,16 +124,12 @@ async def login_for_access_token(
 
     try:
         # authentificate the user
-        user = orchestrator.users.authenticate_user(
-            form_data.username, form_data.password
-        )
+        user = orchestrator.users.authenticate_user(form_data.username, form_data.password)
         # create new token for the user
         access_token = orchestrator.create_access_token(
             data={"sub": user.username}, expires_min=120
         )
-        return TokenModel(
-            access_token=access_token, token_type="bearer", status=user.status
-        )
+        return TokenModel(access_token=access_token, token_type="bearer", status=user.status)
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
 
@@ -169,9 +165,7 @@ async def kill_process(
     test_rights("kill process", current_user.username)
     try:
         orchestrator.queue.kill(unique_id)
-        orchestrator.log_action(
-            current_user.username, f"KILL PROCESS: {unique_id}", "all"
-        )
+        orchestrator.log_action(current_user.username, f"KILL PROCESS: {unique_id}", "all")
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
