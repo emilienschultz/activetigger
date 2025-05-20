@@ -61,7 +61,7 @@ export const SelectCurrentScheme: FC = () => {
     <div className="row">
       <div className="d-flex align-items-center mb-3">
         <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
-          Scheme to use
+          Current
         </label>
         <select
           id="scheme-selected"

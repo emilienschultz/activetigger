@@ -66,20 +66,25 @@ export const ProjectActionsSidebar: FC<{
     >
       {!onlyAnnotator && (
         <ul className="nav nav-pills flex-column mb-auto">
-          <li className="nav-item mt-3">
+          <li className="nav-item">
+            <div className="nav-link">
+              <span>
+                <b>{projectName}</b>
+              </span>
+              <span style={{ fontSize: '0.875rem', color: 'grey' }} className="mx-1">
+                {currentScheme}
+              </span>
+            </div>
+          </li>
+          <li className="nav-item">
             <Link
               to={`/projects/${projectName}`}
               className={classNames('nav-link', !currentProjectAction && 'active')}
               aria-current="page"
               title="Project"
             >
-              <MdOutlineHomeMax className="m-2" />
-              <span>
-                <b>{projectName}</b>
-              </span>
-              <span className="mx-2" style={{ fontSize: '0.875rem', color: 'grey' }}>
-                {currentScheme}
-              </span>
+              <MdOutlineHomeMax />
+              <span className="ms-1">Project</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -90,7 +95,7 @@ export const ProjectActionsSidebar: FC<{
               title="Prepare"
             >
               <MdOutlineTransform />
-              <span> Prepare</span>
+              <span className="ms-1">Prepare</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -101,7 +106,7 @@ export const ProjectActionsSidebar: FC<{
               title="Explore"
             >
               <TbListSearch />
-              <span> Explore</span>
+              <span className="ms-1">Explore</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -112,7 +117,7 @@ export const ProjectActionsSidebar: FC<{
               title="Annotate"
             >
               <PiTagDuotone />
-              <span> Annotate</span>
+              <span className="ms-1">Annotate</span>
             </Link>
           </li>
           {/* {developmentMode && (
@@ -137,7 +142,7 @@ export const ProjectActionsSidebar: FC<{
               title="Training"
             >
               <MdModelTraining />
-              <span> Train</span>
+              <span className="ms-1">Train</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -148,7 +153,7 @@ export const ProjectActionsSidebar: FC<{
               title="Test"
             >
               <FaClipboardCheck />
-              <span> Test</span>
+              <span className="ms-1">Test</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -159,7 +164,7 @@ export const ProjectActionsSidebar: FC<{
               title="Predict"
             >
               <FiTarget />
-              <span> Predict</span>
+              <span className="ms-1">Predict</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -170,7 +175,7 @@ export const ProjectActionsSidebar: FC<{
               title="Export"
             >
               <FaCloudDownloadAlt />
-              <span> Export</span>
+              <span className="ms-1">Export</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -182,7 +187,7 @@ export const ProjectActionsSidebar: FC<{
               style={{ color: '#df31e8' }}
             >
               <RiAiGenerate />
-              <span> Generative</span>
+              <span className="ms-1">Generative</span>
             </Link>
           </li>
           <li className="nav-item ">
