@@ -13,7 +13,7 @@ import {
 } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { DisplayScores } from '../DisplayScores';
-import { TestSetCreationForm } from '../forms/TestSetCreationForm';
+import { TestSetManagement } from '../forms/TestSetManagement';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
 interface Row {
@@ -330,9 +330,10 @@ export const ProjectTestPage: FC = () => {
           {!currentProject?.params.test && (
             <div className="row">
               <div className="col-12">
-                <TestSetCreationForm
+                <TestSetManagement
                   projectSlug={projectName}
-                  currentScheme={currentScheme || null}
+                  currentScheme={currentScheme || ''}
+                  testSetExist={currentProject?.params.test || false}
                 />
               </div>
             </div>

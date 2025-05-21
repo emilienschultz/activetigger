@@ -13,6 +13,8 @@ import { useAppContext } from '../../core/context';
 import { CodebookManagement } from '../CodeBookManagement';
 import { FeaturesManagement } from '../FeaturesManagement';
 import { ProjectUpdateForm } from '../forms/ProjectUpdateForm';
+import { TestSetManagement } from '../forms/TestSetManagement';
+import { ImportAnnotations } from '../ImportAnnotations';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { ProjectStatistics } from '../ProjectStatistics';
 import { SchemesManagement } from '../SchemesManagement';
@@ -112,7 +114,18 @@ export const ProjectPage: FC = () => {
                   currentScheme={currentScheme || null}
                 />
               </Tab>
-
+              <Tab eventKey="import" title="Import">
+                <div className="explanations">Import data to this project</div>
+                <ImportAnnotations
+                  projectName={project.params.project_slug}
+                  currentScheme={currentScheme || null}
+                />
+                <TestSetManagement
+                  projectSlug={projectName}
+                  currentScheme={currentScheme || ''}
+                  testSetExist={project?.params.test}
+                />
+              </Tab>
               <Tab eventKey="parameters" title="Parameters">
                 <div className="explanations">Parameters of this project</div>
                 <button onClick={handleShow} className="delete-button mt-1">
