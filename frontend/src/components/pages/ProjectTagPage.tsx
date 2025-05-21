@@ -409,6 +409,77 @@ export const ProjectTagPage: FC = () => {
               )
             }
           </div>
+          {elementId !== 'noelement' && (
+            <div className="row">
+              <div className="d-flex flex-wrap gap-2 justify-content-center">
+                <BackButton
+                  projectName={projectName || ''}
+                  history={history}
+                  setAppContext={setAppContext}
+                />
+
+                <button
+                  className="btn addcomment"
+                  onClick={() => setDisplayComment(!displayComment)}
+                >
+                  <FaPencilAlt />
+                  <Tooltip anchorSelect=".addcomment" place="top">
+                    Add a commentary
+                  </Tooltip>
+                </button>
+
+                {kindScheme == 'multiclass' && (
+                  <MulticlassInput
+                    elementId={elementId || 'noelement'}
+                    postAnnotation={postAnnotation}
+                    labels={availableLabels}
+                  />
+                )}
+                {kindScheme == 'multilabel' && (
+                  <MultilabelInput
+                    elementId={elementId || 'noelement'}
+                    postAnnotation={postAnnotation}
+                    labels={availableLabels}
+                  />
+                )}
+                {
+                  // erase button to remove last annotation
+                  lastTag && (
+                    <button
+                      className="btn clearannotation"
+                      onClick={() => {
+                        postAnnotation(null, elementId);
+                      }}
+                    >
+                      <PiEraser />
+                      <Tooltip anchorSelect=".clearannotation" place="top">
+                        Erase current tag
+                      </Tooltip>
+                    </button>
+                  )
+                }
+                {elementId && (
+                  <ForwardButton
+                    setAppContext={setAppContext}
+                    elementId={elementId}
+                    refetchElement={refetchElement}
+                  />
+                )}
+              </div>
+
+              {displayComment && (
+                <div className="m-3">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
           {phase != 'test' && (
             <div className="mt-5">
               <label style={{ display: 'block', marginBottom: '10px' }}>
@@ -572,75 +643,6 @@ export const ProjectTagPage: FC = () => {
           />
         </Tab>
       </Tabs>
-
-      {elementId !== 'noelement' && (
-        <div className="row">
-          <div className="d-flex flex-wrap gap-2 justify-content-center">
-            <BackButton
-              projectName={projectName || ''}
-              history={history}
-              setAppContext={setAppContext}
-            />
-
-            <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
-              <FaPencilAlt />
-              <Tooltip anchorSelect=".addcomment" place="top">
-                Add a commentary
-              </Tooltip>
-            </button>
-
-            {kindScheme == 'multiclass' && (
-              <MulticlassInput
-                elementId={elementId || 'noelement'}
-                postAnnotation={postAnnotation}
-                labels={availableLabels}
-              />
-            )}
-            {kindScheme == 'multilabel' && (
-              <MultilabelInput
-                elementId={elementId || 'noelement'}
-                postAnnotation={postAnnotation}
-                labels={availableLabels}
-              />
-            )}
-            {
-              // erase button to remove last annotation
-              lastTag && (
-                <button
-                  className="btn clearannotation"
-                  onClick={() => {
-                    postAnnotation(null, elementId);
-                  }}
-                >
-                  <PiEraser />
-                  <Tooltip anchorSelect=".clearannotation" place="top">
-                    Erase current tag
-                  </Tooltip>
-                </button>
-              )
-            }
-            {elementId && (
-              <ForwardButton
-                setAppContext={setAppContext}
-                elementId={elementId}
-                refetchElement={refetchElement}
-              />
-            )}
-          </div>
-
-          {displayComment && (
-            <div className="m-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-            </div>
-          )}
-        </div>
-      )}
     </ProjectPageLayout>
   );
 };
