@@ -22,17 +22,17 @@ import { BackButton } from '../BackButton';
 import { ForwardButton } from '../ForwardButton';
 
 import { SimpleModelModel } from '../../types';
+import { DataTabular } from '../DataTabular';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { MulticlassInput } from '../MulticlassInput';
 import { MultilabelInput } from '../MultilabelInput';
 import { ProjectionManagement } from '../ProjectionManagement';
 import { SelectionManagement } from '../SelectionManagement';
 import { SimpleModelManagement } from '../SimpleModelManagement';
-
 /**
  * Annotation page
  */
-export const ProjectAnnotationPage: FC = () => {
+export const ProjectTagPage: FC = () => {
   // parameters
   const { projectName, elementId } = useParams();
   const { authenticatedUser } = useAuth();
@@ -219,265 +219,198 @@ export const ProjectAnnotationPage: FC = () => {
     }
   };
 
-  console.log('history', history);
+  if (!projectName || !currentScheme) return;
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="tag">
-      <div className="container-fluid">
-        <div className="row mb-3 mt-3">
-          {
-            // test mode
-            phase == 'test' && (
-              <div className="alert alert-info">
-                Test mode activated - you are annotating the test set
-                <div className="col-6">
-                  {statistics && (
-                    <span className="badge text-bg-light  m-3">
-                      Number of annotations :{' '}
-                      {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          }
-          {
-            // annotation mode
-            phase != 'test' && (
-              <div>
-                <div className="d-flex align-items-center mb-3">
-                  {statistics ? (
-                    <span className="badge text-bg-light currentstatistics">
-                      Annotated :{' '}
-                      {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${nSample ? nSample : ''} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
-                    </span>
-                  ) : (
-                    ''
-                  )}
-                  <Tooltip anchorSelect=".currentstatistics" place="top">
-                    tagged / sample selected / total
-                  </Tooltip>
-                  <div>
-                    <button className="btn getelement" onClick={refetchElement}>
-                      <LuRefreshCw size={20} /> Get element
-                      <Tooltip anchorSelect=".getelement" place="top">
-                        Get next element with the selection mode
-                      </Tooltip>
-                    </button>
+      <div className="col-4 form-check form-switch">
+        <input
+          className="form-check-input bg-info"
+          type="checkbox"
+          role="switch"
+          id="flexSwitchCheckDefault"
+          onChange={(e) => {
+            setAppContext((prev) => ({
+              ...prev,
+              phase: e.target.checked ? 'test' : 'train',
+            }));
+          }}
+          checked={phase == 'test' ? true : false}
+        />
+        <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
+          Test mode
+        </label>
+      </div>
+      <Tabs defaultActiveKey="text" className="mb-3">
+        <Tab eventKey="text" title="Text">
+          <div className="container-fluid">
+            <div className="row mb-3 mt-3">
+              {
+                // test mode
+                phase == 'test' && (
+                  <div className="alert alert-info">
+                    Test mode activated - you are annotating the test set
+                    <div className="col-6">
+                      {statistics && (
+                        <span className="badge text-bg-light  m-3">
+                          Number of annotations :{' '}
+                          {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <SelectionManagement />
-                </div>
-              </div>
-            )
-          }
-        </div>
-      </div>
-
-      {elementId === 'noelement' && (
-        <div className="alert alert-warning text-center">
-          <div className="m-2">No element available</div>
-          <button className="btn btn-primary" onClick={refetchElement}>
-            Get element
-          </button>
-        </div>
-      )}
-
-      {
-        // display content
-      }
-
-      {!isValidRegex(selectionConfig.filter || '') && (
-        <div className="alert alert-danger">Regex not valid</div>
-      )}
-
-      <div className="row">
-        {element?.text && (
-          <div
-            className="col-11 annotation-frame"
-            style={{ height: `${displayConfig.frameSize}vh` }}
-            ref={frameRef}
-          >
-            <motion.div
-              animate={elementId ? { backgroundColor: ['#e8e9ff', '#f9f9f9'] } : {}}
-              transition={{ duration: 1 }}
-            >
-              {lastTag && (
-                <div>
-                  <span className="badge bg-info  ">
-                    {displayConfig.displayAnnotation ? `Last tag: ${lastTag}` : 'Already annotated'}
-                  </span>
-                </div>
-              )}
-
-              <Highlighter
-                highlightClassName="Search"
-                searchWords={
-                  selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                    ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
-                    : displayConfig.highlightText.split('\n')
-                }
-                autoEscape={false}
-                textToHighlight={textInFrame}
-                highlightStyle={{
-                  backgroundColor: 'yellow',
-                  margin: '0px',
-                  padding: '0px',
-                }}
-                caseSensitive={true}
-              />
-              {/* text out of frame */}
-              <span className="text-out-context" title="Outside 512 token window ">
-                <Highlighter
-                  highlightClassName="Search"
-                  searchWords={
-                    selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                      ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
-                      : []
-                  }
-                  autoEscape={false}
-                  textToHighlight={textOutFrame}
-                  caseSensitive={true}
-                />
-              </span>
-            </motion.div>
-          </div>
-        )}
-
-        {
-          //display proba
-
-          <div className="d-flex mb-2 justify-content-center display-prediction">
-            <button
-              type="button"
-              key={element?.predict.label + '_predict'}
-              value={element?.predict.label as string}
-              className="btn btn-secondary"
-              onClick={(e) => {
-                postAnnotation(e.currentTarget.value, elementId);
-              }}
-            >
-              Predicted : {element?.predict.label as string} (proba:{' '}
-              {element?.predict.proba as number})
-            </button>
-          </div>
-        }
-        {
-          //display context
-          phase != 'test' && displayConfig.displayContext && (
-            <div className="d-flex mb-2 justify-content-center display-prediction">
-              Context{' '}
-              {Object.entries(element?.context || { None: 'None' }).map(
-                ([k, v]) => `[${k} - ${v}]`,
-              )}
+                )
+              }
+              {
+                // annotation mode
+                phase != 'test' && (
+                  <div>
+                    <div className="d-flex align-items-center mb-3">
+                      {statistics ? (
+                        <span className="badge text-bg-light currentstatistics">
+                          Annotated :{' '}
+                          {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${nSample ? nSample : ''} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
+                        </span>
+                      ) : (
+                        ''
+                      )}
+                      <Tooltip anchorSelect=".currentstatistics" place="top">
+                        tagged / sample selected / total
+                      </Tooltip>
+                      <div>
+                        <button className="btn getelement" onClick={refetchElement}>
+                          <LuRefreshCw size={20} /> Get element
+                          <Tooltip anchorSelect=".getelement" place="top">
+                            Get next element with the selection mode
+                          </Tooltip>
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <SelectionManagement />
+                    </div>
+                  </div>
+                )
+              }
             </div>
-          )
-        }
-        {
-          //display history
-          phase != 'test' && displayConfig.displayHistory && (
-            <div className="d-flex mb-2 justify-content-center display-prediction">
-              {/* History : {JSON.stringify(element?.history)} */}
-              History : {((element?.history as string[]) || []).map((h) => `[${h[0]} - ${h[2]}]`)}
-            </div>
-          )
-        }
-      </div>
-
-      {elementId !== 'noelement' && (
-        <div className="row">
-          <div className="d-flex flex-wrap gap-2 justify-content-center">
-            <BackButton
-              projectName={projectName || ''}
-              history={history}
-              setAppContext={setAppContext}
-            />
-
-            <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
-              <FaPencilAlt />
-              <Tooltip anchorSelect=".addcomment" place="top">
-                Add a commentary
-              </Tooltip>
-            </button>
-
-            {kindScheme == 'multiclass' && (
-              <MulticlassInput
-                elementId={elementId || 'noelement'}
-                postAnnotation={postAnnotation}
-                labels={availableLabels}
-              />
-            )}
-            {kindScheme == 'multilabel' && (
-              <MultilabelInput
-                elementId={elementId || 'noelement'}
-                postAnnotation={postAnnotation}
-                labels={availableLabels}
-              />
-            )}
-            {
-              // erase button to remove last annotation
-              lastTag && (
-                <button
-                  className="btn clearannotation"
-                  onClick={() => {
-                    postAnnotation(null, elementId);
-                  }}
-                >
-                  <PiEraser />
-                  <Tooltip anchorSelect=".clearannotation" place="top">
-                    Erase current tag
-                  </Tooltip>
-                </button>
-              )
-            }
-            {elementId && (
-              <ForwardButton
-                setAppContext={setAppContext}
-                elementId={elementId}
-                refetchElement={refetchElement}
-              />
-            )}
           </div>
 
-          {displayComment && (
-            <div className="m-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
+          {elementId === 'noelement' && (
+            <div className="alert alert-warning text-center">
+              <div className="m-2">No element available</div>
+              <button className="btn btn-primary" onClick={refetchElement}>
+                Get element
+              </button>
             </div>
           )}
-        </div>
-      )}
 
-      <div className="mt-5">
-        {phase != 'test' && (
-          <Tabs id="panel2" className="mb-3">
-            <Tab eventKey="prediction" title="Prediction">
-              <SimpleModelManagement
-                projectName={projectName || null}
-                currentScheme={currentScheme || null}
-                availableSimpleModels={
-                  availableSimpleModels as unknown as Record<string, Record<string, number>>
-                }
-                availableFeatures={availableFeatures}
-                availableLabels={availableLabels}
-                kindScheme={kindScheme}
-              />
-            </Tab>
-            <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
-              <ProjectionManagement
-                projectName={projectName || null}
-                currentScheme={currentScheme || null}
-                availableFeatures={availableFeatures}
-              />
-            </Tab>
+          {
+            // display content
+          }
 
-            <Tab eventKey="parameters" title="Display parameters">
+          {!isValidRegex(selectionConfig.filter || '') && (
+            <div className="alert alert-danger">Regex not valid</div>
+          )}
+
+          <div className="row">
+            {element?.text && (
+              <div
+                className="col-11 annotation-frame"
+                style={{ height: `${displayConfig.frameSize}vh` }}
+                ref={frameRef}
+              >
+                <motion.div
+                  animate={elementId ? { backgroundColor: ['#e8e9ff', '#f9f9f9'] } : {}}
+                  transition={{ duration: 1 }}
+                >
+                  {lastTag && (
+                    <div>
+                      <span className="badge bg-info  ">
+                        {displayConfig.displayAnnotation
+                          ? `Last tag: ${lastTag}`
+                          : 'Already annotated'}
+                      </span>
+                    </div>
+                  )}
+
+                  <Highlighter
+                    highlightClassName="Search"
+                    searchWords={
+                      selectionConfig.filter && isValidRegex(selectionConfig.filter)
+                        ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
+                        : displayConfig.highlightText.split('\n')
+                    }
+                    autoEscape={false}
+                    textToHighlight={textInFrame}
+                    highlightStyle={{
+                      backgroundColor: 'yellow',
+                      margin: '0px',
+                      padding: '0px',
+                    }}
+                    caseSensitive={true}
+                  />
+                  {/* text out of frame */}
+                  <span className="text-out-context" title="Outside 512 token window ">
+                    <Highlighter
+                      highlightClassName="Search"
+                      searchWords={
+                        selectionConfig.filter && isValidRegex(selectionConfig.filter)
+                          ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
+                          : []
+                      }
+                      autoEscape={false}
+                      textToHighlight={textOutFrame}
+                      caseSensitive={true}
+                    />
+                  </span>
+                </motion.div>
+              </div>
+            )}
+            {
+              //display proba
+              phase != 'test' &&
+                displayConfig.displayPrediction &&
+                (element?.predict.label as string) && (
+                  <div className="d-flex mb-2 justify-content-center display-prediction">
+                    <button
+                      type="button"
+                      key={element?.predict.label + '_predict'}
+                      value={element?.predict.label as string}
+                      className="btn btn-secondary"
+                      onClick={(e) => {
+                        postAnnotation(e.currentTarget.value, elementId);
+                      }}
+                    >
+                      Predicted : {element?.predict.label as string} (proba:{' '}
+                      {element?.predict.proba as number})
+                    </button>
+                  </div>
+                )
+            }
+            {
+              //display context
+              phase != 'test' && displayConfig.displayContext && (
+                <div className="d-flex mb-2 justify-content-center display-prediction">
+                  Context{' '}
+                  {Object.entries(element?.context || { None: 'None' }).map(
+                    ([k, v]) => `[${k} - ${v}]`,
+                  )}
+                </div>
+              )
+            }
+            {
+              //display history
+              phase != 'test' && displayConfig.displayHistory && (
+                <div className="d-flex mb-2 justify-content-center display-prediction">
+                  {/* History : {JSON.stringify(element?.history)} */}
+                  History :{' '}
+                  {((element?.history as string[]) || []).map((h) => `[${h[0]} - ${h[2]}]`)}
+                </div>
+              )
+            }
+          </div>
+          {phase != 'test' && (
+            <div className="mt-5">
               <label style={{ display: 'block', marginBottom: '10px' }}>
                 <input
                   type="checkbox"
@@ -607,10 +540,107 @@ export const ProjectAnnotationPage: FC = () => {
                   }}
                 />
               </div>
-            </Tab>
-          </Tabs>
-        )}
-      </div>
+            </div>
+          )}
+        </Tab>
+        <Tab eventKey="prediction" title="Quick model">
+          <SimpleModelManagement
+            projectName={projectName || null}
+            currentScheme={currentScheme || null}
+            availableSimpleModels={
+              availableSimpleModels as unknown as Record<string, Record<string, number>>
+            }
+            availableFeatures={availableFeatures}
+            availableLabels={availableLabels}
+            kindScheme={kindScheme}
+          />
+        </Tab>
+        <Tab eventKey="tabular" title="Tabular">
+          <DataTabular
+            projectSlug={projectName}
+            currentScheme={currentScheme}
+            phase={phase}
+            availableLabels={availableLabels}
+            kindScheme={kindScheme}
+          />
+        </Tab>
+        <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
+          <ProjectionManagement
+            projectName={projectName || null}
+            currentScheme={currentScheme || null}
+            availableFeatures={availableFeatures}
+          />
+        </Tab>
+      </Tabs>
+
+      {elementId !== 'noelement' && (
+        <div className="row">
+          <div className="d-flex flex-wrap gap-2 justify-content-center">
+            <BackButton
+              projectName={projectName || ''}
+              history={history}
+              setAppContext={setAppContext}
+            />
+
+            <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
+              <FaPencilAlt />
+              <Tooltip anchorSelect=".addcomment" place="top">
+                Add a commentary
+              </Tooltip>
+            </button>
+
+            {kindScheme == 'multiclass' && (
+              <MulticlassInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+              />
+            )}
+            {kindScheme == 'multilabel' && (
+              <MultilabelInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+              />
+            )}
+            {
+              // erase button to remove last annotation
+              lastTag && (
+                <button
+                  className="btn clearannotation"
+                  onClick={() => {
+                    postAnnotation(null, elementId);
+                  }}
+                >
+                  <PiEraser />
+                  <Tooltip anchorSelect=".clearannotation" place="top">
+                    Erase current tag
+                  </Tooltip>
+                </button>
+              )
+            }
+            {elementId && (
+              <ForwardButton
+                setAppContext={setAppContext}
+                elementId={elementId}
+                refetchElement={refetchElement}
+              />
+            )}
+          </div>
+
+          {displayComment && (
+            <div className="m-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </ProjectPageLayout>
   );
 };

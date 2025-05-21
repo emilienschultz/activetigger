@@ -1,11 +1,9 @@
 import classNames from 'classnames';
 import { FC } from 'react';
-import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
-import { FiTarget } from 'react-icons/fi';
+import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
-import { TbListSearch } from 'react-icons/tb';
 import { Link } from 'react-router-dom';
 import { useGetServer } from '../../core/api';
 import { useAuth } from '../../core/auth';
@@ -90,17 +88,6 @@ export const ProjectActionsSidebar: FC<{
 
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/explore`}
-              className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
-              aria-current="page"
-              title="Explore"
-            >
-              <TbListSearch />
-              <span className="ms-1">Explore</span>
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link
               to={`/projects/${projectName}/tag`}
               className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
@@ -126,37 +113,16 @@ export const ProjectActionsSidebar: FC<{
         )} */}
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/train`}
-              className={classNames('nav-link', currentProjectAction === 'train' && 'active')}
+              to={`/projects/${projectName}/finetune`}
+              className={classNames('nav-link', currentProjectAction === 'finetune' && 'active')}
               aria-current="page"
               title="Training"
             >
               <MdModelTraining />
-              <span className="ms-1">Train</span>
+              <span className="ms-1">Fine-tune </span>
             </Link>
           </li>
-          <li className="nav-item">
-            <Link
-              to={`/projects/${projectName}/test`}
-              className={classNames('nav-link', currentProjectAction === 'test' && 'active')}
-              aria-current="page"
-              title="Test"
-            >
-              <FaClipboardCheck />
-              <span className="ms-1">Test</span>
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link
-              to={`/projects/${projectName}/predict`}
-              className={classNames('nav-link', currentProjectAction === 'predict' && 'active')}
-              aria-current="page"
-              title="Predict"
-            >
-              <FiTarget />
-              <span className="ms-1">Predict</span>
-            </Link>
-          </li>
+
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/export`}

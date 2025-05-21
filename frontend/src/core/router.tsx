@@ -5,20 +5,17 @@ import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
 import { DocPage } from '../components/pages/DocPage';
+import { FinetunePage } from '../components/pages/FinetunePage';
 import { HomePage } from '../components/pages/HomePage';
 import { LoginPage } from '../components/pages/LoginPage';
 import { MonitorPage } from '../components/pages/MonitorPage';
 import { NotFound } from '../components/pages/NotFoundPage';
-import { ProjectPredictPage } from '../components/pages/PredictPage';
-import { ProjectAnnotationPage } from '../components/pages/ProjectAnnotationPage';
-import { ProjectExplorePage } from '../components/pages/ProjectExplorePage';
 import { ProjectExportPage } from '../components/pages/ProjectExportPage';
 import { GenPage } from '../components/pages/ProjectGenPage';
 import { ProjectNewPage } from '../components/pages/ProjectNewPage';
 import { ProjectPage } from '../components/pages/ProjectPage';
-import { ProjectTestPage } from '../components/pages/ProjectTestPage';
+import { ProjectTagPage } from '../components/pages/ProjectTagPage';
 import { ProjectsPage } from '../components/pages/ProjectsPage';
-import { TrainPage } from '../components/pages/TrainPage';
 import { UsersPage } from '../components/pages/UsersPage';
 import { RoleSelector } from '../core/RoleSelector';
 
@@ -91,23 +88,13 @@ export function getRouter() {
         },
         {
           path: '/projects/:projectName/tag/:elementId',
-          element: <ProjectAnnotationPage />,
-        },
-
-        {
-          path: '/projects/:projectName/explore',
-          element: (
-            <>
-              <RoleSelector allowedRoles={['manager', 'root']} />
-              <ProjectExplorePage />
-            </>
-          ),
+          element: <ProjectTagPage />,
         },
         {
           path: '/projects/:projectName/tag/',
           element: (
             <>
-              <ProjectAnnotationPage />
+              <ProjectTagPage />
             </>
           ),
         },
@@ -130,29 +117,11 @@ export function getRouter() {
           ),
         },
         {
-          path: '/projects/:projectName/train/',
+          path: '/projects/:projectName/finetune/',
           element: (
             <>
               <RoleSelector allowedRoles={['manager', 'root']} />
-              <TrainPage />
-            </>
-          ),
-        },
-        {
-          path: '/projects/:projectName/test/',
-          element: (
-            <>
-              <RoleSelector allowedRoles={['manager', 'root']} />
-              <ProjectTestPage />
-            </>
-          ),
-        },
-        {
-          path: '/projects/:projectName/predict/',
-          element: (
-            <>
-              <RoleSelector allowedRoles={['manager', 'root']} />
-              <ProjectPredictPage />
+              <FinetunePage />
             </>
           ),
         },

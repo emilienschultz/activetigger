@@ -7,7 +7,7 @@ import { ProjectActionsSidebar } from './ProjectActionsSideBar';
 
 export type PossibleProjectActions =
   | 'tag'
-  | 'train'
+  | 'finetune'
   | 'parameters'
   | 'explore'
   | 'curate'
