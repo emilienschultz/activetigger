@@ -15,8 +15,9 @@ import { FeaturesManagement } from '../FeaturesManagement';
 import { ProjectUpdateForm } from '../forms/ProjectUpdateForm';
 import { TestSetManagement } from '../forms/TestSetManagement';
 import { ImportAnnotations } from '../ImportAnnotations';
+import { LabelsManagement } from '../LabelsManagement';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
-import { ProjectStatistics } from '../ProjectStatistics';
+
 import { SchemesManagement } from '../SchemesManagement';
 
 /**
@@ -57,8 +58,14 @@ export const ProjectPage: FC = () => {
     // setAppContext((prev) => ({ ...prev, selectionHistory: {} }));
   };
 
-  //  const activeUsers = project?.users?.active ? project?.users?.active : [];
-
+  const availableLabels =
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme]['labels'] || []
+      : [];
+  const kindScheme =
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme]['kind']
+      : '';
   const columns: readonly Column<Row>[] = [
     {
       name: 'Time',
@@ -99,11 +106,18 @@ export const ProjectPage: FC = () => {
                 <div className="row">
                   <SchemesManagement projectSlug={projectName} />
                 </div>
-                {currentScheme && (
-                  <div className="row">
-                    <ProjectStatistics projectSlug={projectName} scheme={currentScheme} />
-                  </div>
-                )}
+                <hr />
+                <div>
+                  <LabelsManagement
+                    projectSlug={projectName}
+                    currentScheme={currentScheme || null}
+                    availableLabels={availableLabels as string[]}
+                    kindScheme={kindScheme as string}
+                    reFetchCurrentProject={() => {
+                      setAppContext((prev) => ({ ...prev, currentProject: null }));
+                    }}
+                  />
+                </div>
               </Tab>
               <Tab eventKey="features" title="Features">
                 <FeaturesManagement />
