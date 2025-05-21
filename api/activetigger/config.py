@@ -44,7 +44,7 @@ class Config(metaclass=_Singleton):
     data_path: str = os.environ.get("DATA_PATH", ".")
     user_hdd_max: float
     mode: MODE = os.environ.get("MODE", str(MODE.DEV))  # type: ignore
-    secret_key: str = os.environ.get("SECRET_KEY", "$%***YOU-MUST-CHANGE-THIS***%$")
+    secret_key: str = os.environ.get("SECRET_KEY", "Q__zz0ew00R_YSwCFl-6VgS9dPbfDtFDnzHfd57t0EY=")
     database_url: str
     root_password: str | None = os.environ.get("ROOT_PASSWORD", None)
     # orchestrator

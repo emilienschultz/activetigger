@@ -1,5 +1,4 @@
 import { FC } from 'react';
-import { VictoryAxis, VictoryBar, VictoryChart, VictoryTheme } from 'victory';
 
 import { useStatistics } from '../core/api';
 
@@ -32,41 +31,6 @@ interface StatisticsProps {
   projectSlug: string;
   scheme: string;
 }
-
-interface BarChartProps {
-  dataDict: Record<string, number> | null;
-}
-
-export const BarChart: FC<BarChartProps> = ({ dataDict }) => {
-  if (!dataDict) {
-    return null;
-  }
-  const data = Object.keys(dataDict).map((key) => ({
-    x: key,
-    y: dataDict[key],
-  }));
-
-  return (
-    <div style={{ width: '200px', margin: '0 auto' }}>
-      <VictoryChart theme={VictoryTheme.material} domainPadding={{ x: 50 }}>
-        <VictoryAxis
-          style={{
-            tickLabels: { fontSize: 12, padding: 5 },
-          }}
-        />
-        <VictoryAxis
-          dependentAxis
-          label="Number"
-          style={{
-            axisLabel: { fontSize: 14, padding: 30 },
-            tickLabels: { fontSize: 12, padding: 5 },
-          }}
-        />
-        <VictoryBar data={data} style={{ data: { fill: '#4a90e2' } }} barWidth={30} horizontal />
-      </VictoryChart>
-    </div>
-  );
-};
 
 /**
  * Component to display statistics

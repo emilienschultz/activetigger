@@ -97,7 +97,7 @@ export const ProjectPreparePage: FC = () => {
               <Tabs id="panel" className="mt-3" defaultActiveKey="labels">
                 <Tab eventKey="labels" title="Labels">
                   <LabelsManagement
-                    projectName={projectName || null}
+                    projectSlug={projectName || null}
                     currentScheme={currentScheme || null}
                     availableLabels={availableLabels as string[]}
                     kindScheme={kindScheme as string}

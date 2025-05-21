@@ -185,6 +185,7 @@ def decrypt(text: str | None, secret_key: str | None) -> str:
     if text is None or secret_key is None:
         raise Exception("Text or secret key is None")
     cipher = Fernet(secret_key)
+
     decrypted_token = cipher.decrypt(text.encode())
     return decrypted_token.decode()
 

@@ -1,20 +1,80 @@
 import { FC, useState } from 'react';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
-import { RiFindReplaceLine } from 'react-icons/ri';
 
+import { FaEdit } from 'react-icons/fa';
 import { useAddLabel, useDeleteLabel, useRenameLabel } from '../core/api';
 import { useNotifications } from '../core/notifications';
 
+import { FaCheck } from 'react-icons/fa';
+
+/**
+ * Component to manage one label
+ */
+
 interface LabelsManagementProps {
-  projectName: string | null;
+  projectSlug: string | null;
   currentScheme: string | null;
   availableLabels: string[];
   kindScheme: string;
   reFetchCurrentProject: () => void;
 }
 
+export const LabelCard: FC<{
+  label: string;
+  removeLabel: (label: string) => void;
+  renameLabel: (formerLabel: string, newLabel: string) => void;
+}> = ({ label, removeLabel, renameLabel }) => {
+  const [showRename, setShowRename] = useState(false);
+  const [newLabel, setNewLabel] = useState(label);
+  return (
+    <tr key={label} className="border-b hover:bg-gray-50">
+      <td className="px-4 py-3">{label}</td>
+      <td className="px-4 py-3 text-center">0</td>
+      <td className="flex justify-center gap-4">
+        <div
+          title="Delete"
+          onClick={() => removeLabel(label)}
+          className="cursor-pointer trash-wrapper"
+        >
+          <FaRegTrashAlt />
+        </div>
+      </td>
+      <td className="flex justify-center gap-4">
+        <div title="Rename" onClick={() => setShowRename(!showRename)} className="cursor-pointer">
+          <FaEdit />
+        </div>
+      </td>
+      {showRename && (
+        <td>
+          <div className="d-flex align-items-center">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter new label"
+              onChange={(e) => setNewLabel(e.target.value)}
+            />
+            <button
+              onClick={() => {
+                renameLabel(label, newLabel);
+                setShowRename(false);
+              }}
+              className="btn btn p-0"
+            >
+              <FaCheck size={20} className="m-2" />
+            </button>
+          </div>
+        </td>
+      )}
+    </tr>
+  );
+};
+
+/**
+ * Component to manage the labels of a project
+ */
+
 export const LabelsManagement: FC<LabelsManagementProps> = ({
-  projectName,
+  projectSlug,
   currentScheme,
   availableLabels,
   kindScheme,
@@ -23,9 +83,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   const { notify } = useNotifications();
 
   // hooks to manage labels
-  const { addLabel } = useAddLabel(projectName || null, currentScheme || null);
-  const { deleteLabel } = useDeleteLabel(projectName || null, currentScheme || null);
-  const { renameLabel } = useRenameLabel(projectName || null, currentScheme || null);
+  const { addLabel } = useAddLabel(projectSlug || null, currentScheme || null);
+  const { deleteLabel } = useDeleteLabel(projectSlug || null, currentScheme || null);
+  const { renameLabel } = useRenameLabel(projectSlug || null, currentScheme || null);
 
   // manage label creation
   const [createLabelValue, setCreateLabelValue] = useState('');
@@ -38,72 +98,61 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   };
   const createLabel = () => {
     addLabel(createLabelValue);
-    if (reFetchCurrentProject) reFetchCurrentProject();
     setCreateLabelValue('');
-  };
-
-  // manage label deletion
-  const [deleteLabelValue, setDeleteLabelValue] = useState('');
-  const handleDeleteLabelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setDeleteLabelValue(event.target.value);
-  };
-  const removeLabel = () => {
-    deleteLabel(deleteLabelValue);
-    if (reFetchCurrentProject) reFetchCurrentProject();
-  };
-
-  // manage label replacement
-  const replaceLabel = () => {
-    renameLabel(deleteLabelValue, createLabelValue);
-    setCreateLabelValue('');
-    if (reFetchCurrentProject) reFetchCurrentProject();
+    reFetchCurrentProject();
   };
 
   return (
     <div>
-      <span className="explanations">Create, delete or rename labels.</span>
-      <br></br>
-      <span>
+      <span className="explanations">
         {' '}
         The current scheme is a <b>{kindScheme}</b>
       </span>
-      <label htmlFor="select-label" className="form-label">
-        Available labels
-      </label>
-      <div className="d-flex align-items-center w-100">
-        <select id="select-label" onChange={handleDeleteLabelChange} className="form-select w-50">
-          {availableLabels.map((e, i) => (
-            <option key={i}>{e}</option>
-          ))}{' '}
-        </select>
-        <button onClick={removeLabel} className="btn btn p-0">
-          <FaRegTrashAlt size={20} className="m-2" />
-        </button>
-      </div>
-      <label htmlFor="select-label" className="form-label">
-        New label
-      </label>
-      <div className="d-flex align-items-center w-100 mt-2">
-        <input
-          type="text"
-          id="new-label"
-          value={createLabelValue}
-          onChange={handleCreateLabelChange}
-          placeholder="Enter new label"
-          className="form-control w-50"
-        />
-        <button onClick={createLabel} className="btn btn p-0">
-          <FaPlusCircle size={20} className="m-2" />
-        </button>
-      </div>
-      <label htmlFor="select-label" className="form-label mt-2">
-        Convert label
-      </label>
-      <div className="d-flex align-items-center">
-        Replace selected label to the new one
-        <button onClick={replaceLabel} className="btn btn p-0">
-          <RiFindReplaceLine size={20} className="m-2" />
-        </button>
+
+      <div className="rounded-2xl bg-white">
+        <table>
+          <thead className="text-xs text-gray-600 uppercase bg-gray-100">
+            <tr>
+              <th scope="col" className="px-4 py-3">
+                Label
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Count
+              </th>
+              <th scope="col" className="px-4 py-3 text-center"></th>
+              <th scope="col" className="px-4 py-3 text-center"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {availableLabels.map((label, _) => (
+              <LabelCard
+                key={label}
+                label={label}
+                removeLabel={() => deleteLabel(label)}
+                renameLabel={renameLabel}
+              />
+            ))}
+            <hr className="table-delimiter" />
+            <tr>
+              <td>
+                <input
+                  type="text"
+                  id="new-label"
+                  value={createLabelValue}
+                  onChange={handleCreateLabelChange}
+                  placeholder="Enter new label"
+                  className="form-control"
+                />
+              </td>
+              <td>
+                <button onClick={createLabel} className="btn btn p-0">
+                  <FaPlusCircle size={20} className="m-2" />
+                </button>
+              </td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );
