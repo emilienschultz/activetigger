@@ -16,7 +16,6 @@ import { ProjectExportPage } from '../components/pages/ProjectExportPage';
 import { GenPage } from '../components/pages/ProjectGenPage';
 import { ProjectNewPage } from '../components/pages/ProjectNewPage';
 import { ProjectPage } from '../components/pages/ProjectPage';
-import { ProjectPreparePage } from '../components/pages/ProjectPreparePage';
 import { ProjectTestPage } from '../components/pages/ProjectTestPage';
 import { ProjectsPage } from '../components/pages/ProjectsPage';
 import { TrainPage } from '../components/pages/TrainPage';
@@ -91,18 +90,10 @@ export function getRouter() {
           element: <ProjectPage />,
         },
         {
-          path: '/projects/:projectName/annotate/:elementId',
+          path: '/projects/:projectName/tag/:elementId',
           element: <ProjectAnnotationPage />,
         },
-        {
-          path: '/projects/:projectName/prepare/',
-          element: (
-            <>
-              <RoleSelector allowedRoles={['manager', 'root']} />
-              <ProjectPreparePage />
-            </>
-          ),
-        },
+
         {
           path: '/projects/:projectName/explore',
           element: (
@@ -113,7 +104,7 @@ export function getRouter() {
           ),
         },
         {
-          path: '/projects/:projectName/annotate/',
+          path: '/projects/:projectName/tag/',
           element: (
             <>
               <ProjectAnnotationPage />

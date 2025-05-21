@@ -23,7 +23,7 @@ export const BackButton: FC<BackButtonProps> = ({ projectName, history, setAppCo
       if (isFormField) return;
 
       if (ev.code === 'Backspace') {
-        navigate(`/projects/${projectName}/annotate/${history[history.length - 1]}`);
+        navigate(`/projects/${projectName}/tag/${history[history.length - 1]}`);
         setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
       }
     },
@@ -41,7 +41,7 @@ export const BackButton: FC<BackButtonProps> = ({ projectName, history, setAppCo
 
   return (
     <Link
-      to={`/projects/${projectName}/annotate/${history[history.length - 1]}`}
+      to={`/projects/${projectName}/tag/${history[history.length - 1]}`}
       className="btn previouselement"
       onClick={() => {
         setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));

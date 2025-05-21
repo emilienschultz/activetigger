@@ -117,9 +117,9 @@ export const ProjectAnnotationPage: FC = () => {
               [res.element_id]: JSON.stringify(selectionConfig),
             },
           }));
-          navigate(`/projects/${projectName}/annotate/${res.element_id}`);
+          navigate(`/projects/${projectName}/tag/${res.element_id}`);
         } else {
-          navigate(`/projects/${projectName}/annotate/noelement`);
+          navigate(`/projects/${projectName}/tag/noelement`);
           setElement(null);
         }
       });
@@ -127,7 +127,7 @@ export const ProjectAnnotationPage: FC = () => {
       getElementById(elementId, phase).then((element) => {
         if (element) setElement(element);
         else {
-          navigate(`/projects/${projectName}/annotate/noelement`);
+          navigate(`/projects/${projectName}/tag/noelement`);
           setElement(null);
         }
       });
@@ -182,7 +182,7 @@ export const ProjectAnnotationPage: FC = () => {
           {
             setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
             setComment('');
-            navigate(`/projects/${projectName}/annotate/`); // got to next element
+            navigate(`/projects/${projectName}/tag/`); // got to next element
           },
         );
         // does not do nothing as we remount through navigate reFetchStatistics();
@@ -203,9 +203,9 @@ export const ProjectAnnotationPage: FC = () => {
     getNextElementId().then((res) => {
       console.log('res', res);
       if (res && res.n_sample) setNSample(res.n_sample);
-      if (res && res.element_id) navigate(`/projects/${projectName}/annotate/${res.element_id}`);
+      if (res && res.element_id) navigate(`/projects/${projectName}/tag/${res.element_id}`);
       else {
-        navigate(`/projects/${projectName}/annotate/noelement`);
+        navigate(`/projects/${projectName}/tag/noelement`);
       }
     });
   };
@@ -222,7 +222,7 @@ export const ProjectAnnotationPage: FC = () => {
   console.log('history', history);
 
   return (
-    <ProjectPageLayout projectName={projectName || null} currentAction="annotate">
+    <ProjectPageLayout projectName={projectName || null} currentAction="tag">
       <div className="container-fluid">
         <div className="row mb-3 mt-3">
           {

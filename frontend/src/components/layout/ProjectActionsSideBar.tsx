@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import { FC } from 'react';
 import { FaClipboardCheck, FaCloudDownloadAlt } from 'react-icons/fa';
 import { FiTarget } from 'react-icons/fi';
-import { MdModelTraining, MdOutlineHomeMax, MdOutlineTransform } from 'react-icons/md';
+import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
 import { TbListSearch } from 'react-icons/tb';
@@ -87,17 +87,7 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Project</span>
             </Link>
           </li>
-          <li className="nav-item">
-            <Link
-              to={`/projects/${projectName}/prepare`}
-              className={classNames('nav-link', currentProjectAction === 'prepare' && 'active')}
-              aria-current="page"
-              title="Prepare"
-            >
-              <MdOutlineTransform />
-              <span className="ms-1">Prepare</span>
-            </Link>
-          </li>
+
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/explore`}
@@ -111,13 +101,13 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/annotate`}
-              className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
+              to={`/projects/${projectName}/tag`}
+              className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
-              title="Annotate"
+              title="Tag"
             >
               <PiTagDuotone />
-              <span className="ms-1">Annotate</span>
+              <span className="ms-1">Tag</span>
             </Link>
           </li>
           {/* {developmentMode && (
@@ -239,13 +229,13 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/annotate`}
-              className={classNames('nav-link', currentProjectAction === 'annotate' && 'active')}
+              to={`/projects/${projectName}/tag`}
+              className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
-              title="Annotate"
+              title="Tag"
             >
               <PiTagDuotone />
-              <span> Annotate</span>
+              <span> Tag</span>
             </Link>
           </li>
         </ul>

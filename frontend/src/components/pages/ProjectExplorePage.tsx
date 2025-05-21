@@ -88,7 +88,7 @@ export const ProjectExplorePage: FC = () => {
       width: 180,
       renderCell: (props) => (
         <div className={props.row.id in modifiedRows ? 'modified-cell' : ''}>
-          <Link to={`/projects/${projectName}/annotate/${props.row.id}`}>{props.row.id}</Link>
+          <Link to={`/projects/${projectName}/tag/${props.row.id}`}>{props.row.id}</Link>
         </div>
       ),
     },

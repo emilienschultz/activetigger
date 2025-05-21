@@ -340,7 +340,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   <button
                     className="btn btn-primary mt-3"
                     onClick={() =>
-                      navigate(`/projects/${projectName}/annotate/${selectedElement.element_id}`)
+                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}`)
                     }
                   >
                     Annotate

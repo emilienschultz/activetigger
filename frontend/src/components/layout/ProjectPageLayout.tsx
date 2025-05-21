@@ -6,10 +6,9 @@ import { PageLayout } from './PageLayout';
 import { ProjectActionsSidebar } from './ProjectActionsSideBar';
 
 export type PossibleProjectActions =
-  | 'annotate'
+  | 'tag'
   | 'train'
   | 'parameters'
-  | 'prepare'
   | 'explore'
   | 'curate'
   | 'monitor'
