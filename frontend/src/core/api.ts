@@ -4,6 +4,7 @@ import { toPairs, values } from 'lodash';
 import createClient, { Middleware } from 'openapi-fetch';
 import { useCallback, useState } from 'react';
 
+import streamSaver from 'streamsaver';
 import type { paths } from '../generated/openapi';
 import {
   AnnotationModel,
@@ -1392,53 +1393,131 @@ export function useDropGeneratedElements(projectSlug: string | null, username: s
 /**
  * Get model file static url
  */
-export function useGetModelUrl(projectSlug: string | null, model: string | null) {
-  const getModelUrl = useAsyncMemo(async () => {
-    if (projectSlug && model) {
-      const res = await api.GET('/export/bert', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-            name: model,
-          },
-        },
-      });
+// export function useGetModelUrl(projectSlug: string | null, model: string | null) {
+//   const getModelUrl = useAsyncMemo(async () => {
+//     if (projectSlug && model) {
+//       const res = await api.GET('/export/bert', {
+//         params: {
+//           query: {
+//             project_slug: projectSlug,
+//             name: model,
+//           },
+//         },
+//       });
 
-      if (!res.error) {
-        const url = config.api.url.replace(/\/$/, '');
-        return url + '/' + res.data.path;
+//       if (!res.error) {
+//         const url = config.api.url.replace(/\/$/, '');
+//         return url + '/' + res.data.path;
+//       }
+//       return null;
+//     }
+//     return null;
+//   }, [projectSlug, model]);
+//   return { modelUrl: getAsyncMemoData(getModelUrl) };
+// }
+
+/**
+ * Get model file
+ */
+export function useGetModelFile(projectSlug: string | null | undefined) {
+  const { notify } = useNotifications();
+
+  const getModelFile = useCallback(
+    async (model: string | null) => {
+      const fileStream = streamSaver.createWriteStream(model + 'tar.gz');
+      if (model && projectSlug) {
+        const res = await api.GET('/export/bert', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: model,
+            },
+          },
+          parseAs: 'stream',
+        });
+
+        const readableStream = res.data;
+        if (!readableStream) {
+          notify({ type: 'error', message: 'Error when downloading the model' });
+          return null;
+        }
+        // more optimized
+        if (window.WritableStream && readableStream.pipeTo) {
+          await readableStream.pipeTo(fileStream);
+          notify({ type: 'success', message: 'Model downloaded' });
+        } else {
+          notify({ type: 'error', message: 'Error when downloading the model' });
+        }
       }
-      return null;
-    }
-    return null;
-  }, [projectSlug, model]);
-  return { modelUrl: getAsyncMemoData(getModelUrl) };
+      return true;
+    },
+    [projectSlug, notify],
+  );
+
+  return { getModelFile };
 }
 
 /**
- * Get dataset file static url
+ * Get raw data file
  */
-export function useGetDatasetUrl(projectSlug: string | null) {
-  const getDatasetUrl = useAsyncMemo(async () => {
+export function useGetRawDataFile(projectSlug: string | null | undefined) {
+  const { notify } = useNotifications();
+
+  const getRawDataFile = useCallback(async () => {
     if (projectSlug) {
+      const fileStream = streamSaver.createWriteStream(projectSlug + '_dataset.parquet');
       const res = await api.GET('/export/raw', {
         params: {
           query: {
             project_slug: projectSlug,
           },
         },
+        parseAs: 'stream',
       });
 
-      if (!res.error) {
-        const url = config.api.url.replace(/\/$/, '');
-        return url + '/' + res.data.path;
+      const readableStream = res.data;
+      if (!readableStream) {
+        notify({ type: 'error', message: 'Error when downloading the model' });
+        return null;
       }
-      return null;
+      // more optimized
+      if (window.WritableStream && readableStream.pipeTo) {
+        await readableStream.pipeTo(fileStream);
+        notify({ type: 'success', message: 'Model downloaded' });
+      } else {
+        notify({ type: 'error', message: 'Error when downloading the model' });
+      }
     }
-    return null;
-  }, [projectSlug]);
-  return { datasetUrl: getAsyncMemoData(getDatasetUrl) };
+    return true;
+  }, [projectSlug, notify]);
+
+  return { getRawDataFile };
 }
+
+// /**
+//  * Get dataset file static url
+//  */
+// export function useGetDatasetUrl(projectSlug: string | null) {
+//   const getDatasetUrl = useAsyncMemo(async () => {
+//     if (projectSlug) {
+//       const res = await api.GET('/export/raw', {
+//         params: {
+//           query: {
+//             project_slug: projectSlug,
+//           },
+//         },
+//       });
+
+//       if (!res.error) {
+//         const url = config.api.url.replace(/\/$/, '');
+//         return url + '/' + res.data.path;
+//       }
+//       return null;
+//     }
+//     return null;
+//   }, [projectSlug]);
+//   return { datasetUrl: getAsyncMemoData(getDatasetUrl) };
+// }
 
 /**
  * Get table of elements

@@ -754,7 +754,7 @@ class Project:
         path_target = f"{config.data_path}/projects/static/{project_slug}/{name}"
         if not Path(path_target).exists():
             shutil.copyfile(path_origin, path_target)
-        return StaticFileModel(name=name, path=f"static/{project_slug}/{name}")
+        return StaticFileModel(name=name, path=f"{project_slug}/{name}")
 
     def update_project(self, update: ProjectUpdateModel) -> None:
         """

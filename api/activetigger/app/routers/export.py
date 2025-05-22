@@ -10,6 +10,7 @@ from fastapi import (
     Response,
 )
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import Response as FastAPIResponse
 
 from activetigger.app.dependencies import (
     get_project,
@@ -18,7 +19,6 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     ExportGenerationsParams,
-    StaticFileModel,
     UserInDBModel,
 )
 from activetigger.project import Project
@@ -90,9 +90,7 @@ async def export_prediction(
     """
     try:
         filename = f"predict_{dataset}.parquet"
-        r = project.languagemodels.export_prediction(
-            name=name, file_name=filename, format=format
-        )
+        r = project.languagemodels.export_prediction(name=name, file_name=filename, format=format)
         return FileResponse(r["path"], filename=r["name"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -103,13 +101,23 @@ async def export_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(),
-) -> StaticFileModel:
+) -> FastAPIResponse:
     """
-    Export fine-tuned BERT model
+    Export fine-tuned BERT model - file with redirect with nginx
     """
     test_rights("modify project", current_user.username, project.name)
     try:
-        return project.languagemodels.export_bert(name=name)
+        file_path = project.languagemodels.export_bert(name=name)
+        # Assuming file_path is like 'models/bert_export.bin'
+        print("FILE PATH", file_path)
+        return FastAPIResponse(
+            status_code=200,
+            headers={
+                "X-Accel-Redirect": f"/privatefiles/{file_path.path}",
+                "Content-Disposition": f'attachment; filename="{name}.tar.gz"',
+                "Content-Type": "application/octet-stream",
+            },
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -118,15 +126,54 @@ async def export_bert(
 async def export_raw(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> StaticFileModel:
+) -> FastAPIResponse:
     """
     Export raw data of the project
     """
     test_rights("modify project", current_user.username, project.name)
     try:
-        return project.export_raw(project.name)
+        file_path = project.export_raw(project.name)
+        return FastAPIResponse(
+            status_code=200,
+            headers={
+                "X-Accel-Redirect": f"/privatefiles/{file_path.path}",
+                "Content-Disposition": f'attachment; filename="{project.name}.parquet"',
+                "Content-Type": "application/octet-stream",
+            },
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.get("/export/bert", dependencies=[Depends(verified_user)])
+# async def export_bert(
+#     project: Annotated[Project, Depends(get_project)],
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+#     name: str = Query(),
+# ) -> StaticFileModel:
+#     """
+#     Export fine-tuned BERT model
+#     """
+#     test_rights("modify project", current_user.username, project.name)
+#     try:
+#         return project.languagemodels.export_bert(name=name)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.get("/export/raw", dependencies=[Depends(verified_user)])
+# async def export_raw(
+#     project: Annotated[Project, Depends(get_project)],
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+# ) -> StaticFileModel:
+#     """
+#     Export raw data of the project
+#     """
+#     test_rights("modify project", current_user.username, project.name)
+#     try:
+#         return project.export_raw(project.name)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/export/generations", dependencies=[Depends(verified_user)])

@@ -430,7 +430,7 @@ class LanguageModels:
             raise FileNotFoundError("file does not exist")
         return StaticFileModel(
             name=f"{name}.tar.gz",
-            path=f"static/{self.project_slug}/{name}.tar.gz",
+            path=f"{self.project_slug}/{name}.tar.gz",
         )
 
     def add(self, element: LMComputing):
