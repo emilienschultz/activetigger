@@ -1227,7 +1227,7 @@ export function useGetFeaturesFile(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the predictions of the model' });
+          notify({ type: 'success', message: 'Exporting the features of the model' });
           saveAs(res.data, `features_${features.join('-')}_${projectSlug}.${format}`);
         }
         return true;
@@ -1238,6 +1238,38 @@ export function useGetFeaturesFile(projectSlug: string | null) {
   );
 
   return { getFeaturesFile };
+}
+
+/**
+ * Get file projection
+ */
+export function useGetProjectionFile(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const getProjectionFile = useCallback(
+    async (format: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/projection', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              format: format,
+            },
+          },
+          parseAs: 'blob',
+        });
+
+        if (!res.error) {
+          notify({ type: 'success', message: 'Exporting the projection of the model' });
+          saveAs(res.data, `projection_${projectSlug}.${format}`);
+        }
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { getProjectionFile };
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   useGetModelFile,
   useGetPredictionsFile,
   useGetPredictionsSimplemodelFile,
+  useGetProjectionFile,
   useGetRawDataFile,
   useGetStaticUrls,
 } from '../../core/api';
@@ -33,6 +34,10 @@ export const ProjectExportPage: FC = () => {
   const [model, setModel] = useState<string | null>(null);
 
   const availableFeatures = project?.features.available ? project?.features.available : [];
+  const availableProjection =
+    authenticatedUser?.username && project?.projections.available[authenticatedUser?.username]
+      ? project?.projections.available[authenticatedUser?.username]
+      : null;
   const availableModels =
     currentScheme && project?.languagemodels.available[currentScheme]
       ? Object.keys(project?.languagemodels.available[currentScheme])
@@ -54,14 +59,13 @@ export const ProjectExportPage: FC = () => {
   const { getModelFile } = useGetModelFile(projectName || null);
   const { getRawDataFile } = useGetRawDataFile(projectName || null);
   const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
+  const { getProjectionFile } = useGetProjectionFile(projectName || null);
   const { staticUrls } = useGetStaticUrls(projectName || null, model);
 
   const isSimpleModel =
     authenticatedUser &&
     currentScheme &&
     project?.simplemodel.available[authenticatedUser.username]?.[currentScheme];
-
-  console.log('STATIC URLS', staticUrls);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="export">
@@ -131,6 +135,22 @@ export const ProjectExportPage: FC = () => {
                   Export selected features
                 </button>
               </div>
+
+              {availableProjection && (
+                <div>
+                  <button
+                    className="btn btn-primary mt-3"
+                    onClick={() => {
+                      if (availableProjection) {
+                        getProjectionFile(format);
+                      }
+                    }}
+                  >
+                    Export current projection
+                  </button>
+                </div>
+              )}
+
               <h4 className="subsection">Fine-tuned models and predictions</h4>
 
               {isSimpleModel && (

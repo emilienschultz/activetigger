@@ -85,9 +85,9 @@ async def get_projection(
         # add predictions if available
         if current_user.username in project.simplemodels.existing:
             if scheme in project.simplemodels.existing[current_user.username]:
-                projection.predictions = project.simplemodels.existing[
-                    current_user.username
-                ][scheme].proba["prediction"]
+                projection.predictions = list(
+                    project.simplemodels.existing[current_user.username][scheme].proba["prediction"]
+                )
 
         return projection
     except Exception as e:
@@ -111,9 +111,7 @@ async def compute_projection(
         # get features from project
         features = project.features.get(projection.features)
         # compute the projection
-        project.projections.compute(
-            project.name, current_user.username, projection, features
-        )
+        project.projections.compute(project.name, current_user.username, projection, features)
         orchestrator.log_action(
             current_user.username,
             f"COMPUTE PROJECTION: {projection.method}",
@@ -140,9 +138,9 @@ async def get_list_elements(
     try:
         extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
         df = extract.batch.fillna(" ")
-        table = (
-            df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]
-        ).to_dict(orient="records")
+        table = (df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]).to_dict(
+            orient="records"
+        )
         return TableOutModel(
             items=table,
             total=extract.total,
@@ -327,9 +325,7 @@ async def post_reconciliation(
     try:
         # for each user
         for u in users:
-            project.schemes.push_annotation(
-                element_id, label, scheme, u, "train", "reconciliation"
-            )
+            project.schemes.push_annotation(element_id, label, scheme, u, "train", "reconciliation")
 
         # add a new tag for the reconciliator
         project.schemes.push_annotation(

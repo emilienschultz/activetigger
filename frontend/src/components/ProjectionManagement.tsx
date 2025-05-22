@@ -14,6 +14,7 @@ import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
 import chroma from 'chroma-js';
+import { FaLock } from 'react-icons/fa';
 
 interface ProjectionManagementProps {
   projectName: string | null;
@@ -193,14 +194,33 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   return (
     <div>
-      {!projectionTraining && (
-        <button
-          className="btn btn-primary btn-validation mb-3"
-          onClick={() => setFormNewProjection(!formNewProjection)}
-        >
-          Compute new projection
-        </button>
-      )}
+      <div className="d-flex align-items-center">
+        {!projectionTraining && (
+          <button
+            className="btn btn-primary btn-validation mb-3"
+            onClick={() => setFormNewProjection(!formNewProjection)}
+          >
+            Compute new projection
+          </button>
+        )}
+        <label style={{ display: 'block' }} className="mx-4">
+          <FaLock /> Lock on selection
+          <input
+            type="checkbox"
+            checked={selectionConfig.frameSelection}
+            className="mx-2"
+            onChange={(_) => {
+              setAppContext((prev) => ({
+                ...prev,
+                selectionConfig: {
+                  ...selectionConfig,
+                  frameSelection: !selectionConfig.frameSelection,
+                },
+              }));
+            }}
+          />
+        </label>
+      </div>
 
       {projectionTraining && (
         <div className="col-8 d-flex justify-content-center">

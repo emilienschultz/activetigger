@@ -133,3 +133,26 @@ class Projections:
             available={i: self.available[i]["id"] for i in self.available},
             training=self.training(),
         )
+
+    def export(
+        self,
+        user_name: str,
+        format: str = "csv",
+    ) -> dict[str, str]:
+        """
+        Export the projection for a user
+        """
+        if user_name not in self.available:
+            raise Exception("No projection available")
+        if "data" not in self.available[user_name]:
+            raise Exception("No projection available")
+        data = self.available[user_name]["data"]
+        file_name = f"projection_{user_name}.{format}"
+        if format == "csv":
+            data.to_csv(self.path.joinpath(file_name))
+        if format == "parquet":
+            data.to_parquet(self.path.joinpath(file_name))
+        if format == "xlsx":
+            data.to_excel(self.path.joinpath(file_name))
+
+        return {"name": file_name, "path": str(self.path.joinpath(file_name))}

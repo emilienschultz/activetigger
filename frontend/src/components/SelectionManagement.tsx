@@ -1,4 +1,5 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
+import { FaLock } from 'react-icons/fa';
 import { FcStatistics } from 'react-icons/fc';
 import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -63,6 +64,7 @@ export const SelectionManagement: FC = () => {
   ) : (
     <div className="w-100">
       <div className="d-flex align-items-center">
+        {selectionConfig.frameSelection && <FaLock className="m-2" size={20} />}
         <div className="mx-2 w-25">
           <label>Selection</label>
           <select
@@ -140,7 +142,7 @@ export const SelectionManagement: FC = () => {
           />
         </div>
       </div>
-      <div className="d-flex align-items-top">
+      <div className="d-flex align-items-top align-items-center">
         <details className="mx-2">
           <summary className="explanations">
             Active model <FcStatistics />{' '}
@@ -168,35 +170,6 @@ export const SelectionManagement: FC = () => {
                       ),
                     )}
                 </tbody>
-                {/* <thead>
-                  <tr>
-                    <th>Indicators</th>
-                    <th>Exact</th>
-                    <th>CV10</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentModel.params &&
-                    (currentModel.statistics && Object.entries(currentModel.statistics))
-                      .filter(([key]) => key !== 'false_predictions')
-                      .map(([key, value], i) => (
-                        <tr key={i}>
-                          <td>{key}</td>
-                          <td> {JSON.stringify(value)}</td>
-                          <td>
-                            {' '}
-                            {JSON.stringify(
-                              (
-                                currentModel.statistics_cv10 as Record<
-                                  string,
-                                  string | Record<string, number>
-                                >
-                              )[key],
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                </tbody> */}
               </table>
               <div>
                 <h5>Statistics</h5>
@@ -207,26 +180,6 @@ export const SelectionManagement: FC = () => {
               </div>
             </div>
           )}
-        </details>
-        <details className="mx-2">
-          <summary className="explanations">Advanced options</summary>
-          <label className="mx-4" style={{ display: 'block' }}>
-            <input
-              type="checkbox"
-              checked={selectionConfig.frameSelection}
-              className="mx-2"
-              onChange={(_) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frameSelection: !selectionConfig.frameSelection,
-                  },
-                }));
-              }}
-            />
-            Use visualisation frame to lock the selection
-          </label>
         </details>
       </div>
     </div>

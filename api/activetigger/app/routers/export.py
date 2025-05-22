@@ -62,6 +62,24 @@ async def export_features(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/export/projection", dependencies=[Depends(verified_user)])
+async def export_projection(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    format: str = Query(),
+) -> FileResponse:
+    """
+    Export features
+    """
+    try:
+        r = project.projections.export(user_name=current_user.username, format=format)
+        if r is None:
+            raise HTTPException(status_code=404, detail="No projection available")
+        return FileResponse(r["path"], filename=r["name"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/export/prediction/simplemodel", dependencies=[Depends(verified_user)])
 async def export_simplemodel_predictions(
     project: Annotated[Project, Depends(get_project)],
