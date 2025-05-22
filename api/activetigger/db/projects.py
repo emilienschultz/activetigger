@@ -225,6 +225,7 @@ class ProjectsService:
             # Main query: join back on element_id and time to get full rows
             stmt = (
                 select(
+                    Annotations.scheme_name,
                     Annotations.element_id,
                     Annotations.annotation,
                     Annotations.user_name,
@@ -234,7 +235,9 @@ class ProjectsService:
                 .join(
                     subq,
                     and_(
-                        Annotations.element_id == subq.c.element_id, Annotations.time == subq.c.time
+                        Annotations.scheme_name == scheme,
+                        Annotations.element_id == subq.c.element_id,
+                        Annotations.time == subq.c.time,
                     ),
                 )
                 .where(subq.c.element_id.is_not(None), subq.c.time.is_not(None))
