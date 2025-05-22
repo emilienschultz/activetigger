@@ -25,7 +25,6 @@ export const ProjectActionsSidebar: FC<{
   currentProjectAction,
   projectState,
   currentUser,
-  currentMode,
   currentScheme,
   //  developmentMode,
 }) => {
