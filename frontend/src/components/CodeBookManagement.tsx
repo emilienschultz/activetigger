@@ -34,11 +34,24 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
     reFetchCodebook();
   };
 
+  // Downoad
+  const downloadMarkdown = () => {
+    const blob = new Blob([modifiedCodebook || ''], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'codebook.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="container mt-3">
+      <div className="explanations">Keep track of the tagging rules</div>
       <MDEditor
-        preview="preview"
-        value={modifiedCodebook}
+        value={modifiedCodebook || ''}
         onChange={setModifiedCodebook}
         previewOptions={{
           rehypePlugins: [[rehypeSanitize]],
@@ -46,6 +59,9 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
       />
       <button className="btn btn-primary mt-3" onClick={saveCodebook}>
         Save modifications
+      </button>
+      <button className="btn btn-secondary mt-3 ms-2" onClick={downloadMarkdown}>
+        Download
       </button>
     </div>
   );

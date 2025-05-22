@@ -29,10 +29,7 @@ def manage_fifo_queue():
     """
     if len(orchestrator.projects) >= orchestrator.max_projects:
         old_element = sorted(
-            [
-                [p, orchestrator.projects[p].starting_time]
-                for p in orchestrator.projects
-            ],
+            [[p, orchestrator.projects[p].starting_time] for p in orchestrator.projects],
             key=lambda x: x[1],
         )[0]
         if (
@@ -70,10 +67,10 @@ async def get_project(project_slug: str) -> ProjectModel:
     try:
         orchestrator.start_project(project_slug)
     except Exception as e:
-        print("PROBLEM IN THE PROJECT LOADING", e)
         raise HTTPException(
             status_code=500,
-            detail="There is a problem with the project loading. Please contact the administrator",
+            detail="There is a problem with the project loading. Please contact the administrator"
+            + str(e),
         )
 
     # return loaded project

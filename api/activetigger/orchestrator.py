@@ -6,7 +6,9 @@ import asyncio
 import logging
 import os
 import shutil
+import sys
 import time
+import traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -300,7 +302,9 @@ class Orchestrator:
             )
             return {"success": "Project loaded"}
         except Exception as e:
-            raise Exception from e
+            raise Exception(
+                f"Error while loading project {project_slug}: {e} - {traceback.format_exc()}"
+            ) from e
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """
@@ -571,6 +575,9 @@ class Orchestrator:
 
         # delete the initial file
         params.dir.joinpath(params.filename).unlink()
+
+        if params.force_computation:
+            print("Force computation of the features")
 
         return project_slug
 

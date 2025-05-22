@@ -4,7 +4,7 @@ from typing import Any, TypedDict
 
 from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
-from sqlalchemy.orm import aliased, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from activetigger.datamodels import FeatureDescriptionModel
 from activetigger.db import DBException
@@ -86,7 +86,7 @@ class ProjectsService:
     ):
         if not labels:
             labels = []
-        params = {"labels": labels, "codebook": None, "kind": kind}
+        params = {"labels": labels, "codebook": "", "kind": kind}
         with self.Session.begin() as session:
             scheme = Schemes(
                 project_slug=project_slug,

@@ -36,6 +36,7 @@ class ProjectBaseModel(BaseModel):
     stratify_train: bool = False
     stratify_test: bool = False
     force_label: bool = False
+    force_computation: bool = False
 
 
 class ProjectModel(ProjectBaseModel):
