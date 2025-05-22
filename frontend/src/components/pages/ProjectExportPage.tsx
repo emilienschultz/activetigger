@@ -1,5 +1,5 @@
 import { FC, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 import {
   useGetAnnotationsFile,
@@ -8,8 +8,10 @@ import {
   useGetPredictionsFile,
   useGetPredictionsSimplemodelFile,
   useGetRawDataFile,
+  useGetStaticUrls,
 } from '../../core/api';
 import { useAuth } from '../../core/auth';
+import config from '../../core/config';
 import { useAppContext } from '../../core/context';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
@@ -52,11 +54,14 @@ export const ProjectExportPage: FC = () => {
   const { getModelFile } = useGetModelFile(projectName || null);
   const { getRawDataFile } = useGetRawDataFile(projectName || null);
   const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
+  const { staticUrls } = useGetStaticUrls(projectName || null, model);
 
   const isSimpleModel =
     authenticatedUser &&
     currentScheme &&
     project?.simplemodel.available[authenticatedUser.username]?.[currentScheme];
+
+  console.log('STATIC URLS', staticUrls);
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="export">
@@ -155,30 +160,29 @@ export const ProjectExportPage: FC = () => {
                   </select>
                 </div>
                 <div>
-                  {model && (
-                    <button
-                      className="btn btn-primary mt-3"
-                      onClick={() => {
-                        getModelFile(model);
-                      }}
-                    >
-                      Export fine-tuned model
-                    </button>
-                  )}
-                  {/* 
-                  <Link to={modelUrl} target="_blank" download className="btn btn-primary mt-3">
-                      Export fine-tuned model
-                    </Link>
-                  <button
-                    className="btn btn-primary mt-3"
-                    onClick={() => {
-                      if (model) {
-                        getModelFile(model);
-                      }
-                    }}
-                  >
-                    Export model
-                  </button> */}
+                  {/*
+            small fix for the direct link when no nging
+            */}
+                  {model &&
+                    (staticUrls && staticUrls.model ? (
+                      <Link
+                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model.path}
+                        target="_blank"
+                        download
+                        className="btn btn-primary mt-3"
+                      >
+                        Export fine-tuned model
+                      </Link>
+                    ) : (
+                      <button
+                        className="btn btn-primary mt-3"
+                        onClick={() => {
+                          getModelFile(model);
+                        }}
+                      >
+                        Export fine-tuned model
+                      </button>
+                    ))}
                 </div>
                 <div>
                   {availablePrediction && (
@@ -212,14 +216,28 @@ export const ProjectExportPage: FC = () => {
             </div>
             <hr />
 
-            <button
-              className="btn btn-primary mt-3"
-              onClick={() => {
-                getRawDataFile();
-              }}
-            >
-              Export raw dataset in parquet
-            </button>
+            {/*
+            small fix for the direct link when no nging
+            */}
+            {staticUrls ? (
+              <Link
+                to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.dataset.path}
+                target="_blank"
+                download
+                className="btn btn-primary mt-3"
+              >
+                Export raw dataset in parquet
+              </Link>
+            ) : (
+              <button
+                className="btn btn-primary mt-3"
+                onClick={() => {
+                  getRawDataFile();
+                }}
+              >
+                Export raw dataset in parquet
+              </button>
+            )}
           </div>
         </div>
       </div>

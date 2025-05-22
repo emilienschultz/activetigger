@@ -879,7 +879,7 @@ export interface paths {
         };
         /**
          * Export Bert
-         * @description Export fine-tuned BERT model
+         * @description Export fine-tuned BERT model - file with redirect with nginx
          */
         get: operations["export_bert_export_bert_get"];
         put?: never;
@@ -902,6 +902,26 @@ export interface paths {
          * @description Export raw data of the project
          */
         get: operations["export_raw_export_raw_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/export/static": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Static
+         * @description Get static links of the project
+         */
+        get: operations["export_static_export_static_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1914,9 +1934,9 @@ export interface components {
             /** Training */
             training: {
                 [key: string]: {
-                    [key: string]: {
-                        [key: string]: (string | null) | undefined;
-                    } | undefined;
+                    [key: string]: (string | number | {
+                        [key: string]: unknown;
+                    } | null) | undefined;
                 } | undefined;
             };
             base_parameters: components["schemas"]["LMParametersModel"];
@@ -2090,6 +2110,11 @@ export interface components {
              * @default false
              */
             force_label: boolean;
+            /**
+             * Force Computation
+             * @default false
+             */
+            force_computation: boolean;
         };
         /**
          * ProjectDescriptionModel
@@ -2203,6 +2228,11 @@ export interface components {
              * @default false
              */
             force_label: boolean;
+            /**
+             * Force Computation
+             * @default false
+             */
+            force_computation: boolean;
             /** Project Slug */
             project_slug: string;
             /** All Columns */
@@ -2227,6 +2257,11 @@ export interface components {
             memory?: number | null;
             /** Last Activity */
             last_activity?: string | null;
+        };
+        /** ProjectStaticFiles */
+        ProjectStaticFiles: {
+            dataset: components["schemas"]["StaticFileModel"];
+            model?: components["schemas"]["StaticFileModel"] | null;
         };
         /** ProjectSummaryModel */
         ProjectSummaryModel: {
@@ -4056,7 +4091,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StaticFileModel"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -4087,7 +4122,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StaticFileModel"];
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_static_export_static_get: {
+        parameters: {
+            query: {
+                model?: string | null;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectStaticFiles"] | null;
                 };
             };
             /** @description Validation Error */

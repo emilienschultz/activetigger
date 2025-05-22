@@ -1494,30 +1494,30 @@ export function useGetRawDataFile(projectSlug: string | null | undefined) {
   return { getRawDataFile };
 }
 
-// /**
-//  * Get dataset file static url
-//  */
-// export function useGetDatasetUrl(projectSlug: string | null) {
-//   const getDatasetUrl = useAsyncMemo(async () => {
-//     if (projectSlug) {
-//       const res = await api.GET('/export/raw', {
-//         params: {
-//           query: {
-//             project_slug: projectSlug,
-//           },
-//         },
-//       });
+/**
+ * Get dataset file static url
+ */
+export function useGetStaticUrls(projectSlug: string | null, model: string | null | undefined) {
+  const getStaticUrls = useAsyncMemo(async () => {
+    if (projectSlug) {
+      const res = await api.GET('/export/static', {
+        params: {
+          query: {
+            project_slug: projectSlug,
+            model: model || null,
+          },
+        },
+      });
 
-//       if (!res.error) {
-//         const url = config.api.url.replace(/\/$/, '');
-//         return url + '/' + res.data.path;
-//       }
-//       return null;
-//     }
-//     return null;
-//   }, [projectSlug]);
-//   return { datasetUrl: getAsyncMemoData(getDatasetUrl) };
-// }
+      if (!res.error) {
+        return res.data;
+      }
+      return null;
+    }
+    return null;
+  }, [projectSlug]);
+  return { staticUrls: getAsyncMemoData(getStaticUrls) };
+}
 
 /**
  * Get table of elements

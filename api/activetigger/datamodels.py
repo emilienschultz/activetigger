@@ -202,8 +202,8 @@ class SimpleModelModel(BaseModel):
     TODO : model for parameters
     """
 
-    features: list
     model: str
+    features: list
     params: (
         dict[str, str | float | bool | int | None]
         | dict[str, dict[str, str | float | bool | int | None]]
@@ -547,7 +547,7 @@ class FeaturesProjectStateModel(BaseModel):
 
 class SimpleModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
-    available: dict[str, dict[str, dict[str, SimpleModelModel]]]
+    available: dict[str, dict[str, dict[str, Any]]]
     training: dict[str, list[str]]
 
 
@@ -700,6 +700,11 @@ class ServerStateModel(BaseModel):
 class StaticFileModel(BaseModel):
     name: str
     path: str
+
+
+class ProjectStaticFiles(BaseModel):
+    dataset: StaticFileModel
+    model: StaticFileModel | None = None
 
 
 class FeatureDescriptionModel(BaseModel):

@@ -1,5 +1,5 @@
 from io import StringIO
-from typing import Annotated
+from typing import Annotated, Dict
 
 import pandas as pd
 from fastapi import (
@@ -17,8 +17,11 @@ from activetigger.app.dependencies import (
     test_rights,
     verified_user,
 )
+from activetigger.config import config
 from activetigger.datamodels import (
     ExportGenerationsParams,
+    ProjectStaticFiles,
+    StaticFileModel,
     UserInDBModel,
 )
 from activetigger.project import Project
@@ -109,7 +112,6 @@ async def export_bert(
     try:
         file_path = project.languagemodels.export_bert(name=name)
         # Assuming file_path is like 'models/bert_export.bin'
-        print("FILE PATH", file_path)
         return FastAPIResponse(
             status_code=200,
             headers={
@@ -141,6 +143,29 @@ async def export_raw(
                 "Content-Type": "application/octet-stream",
             },
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# This is a temporary fix for the sqlite issue
+@router.get("/export/static", dependencies=[Depends(verified_user)])
+async def export_static(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    model: str | None = Query(default=None),
+) -> ProjectStaticFiles | None:
+    """
+    Get static links of the project
+    """
+    test_rights("modify project", current_user.username, project.name)
+    try:
+        # don't return nothing if not direct with sqlite
+        if "sqlite" not in config.database_url:
+            return None
+        r = ProjectStaticFiles(dataset=project.export_raw(project.name))
+        if model is not None:
+            r.model = project.languagemodels.export_bert(name=model)
+        return r
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
