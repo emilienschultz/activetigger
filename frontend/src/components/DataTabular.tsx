@@ -62,7 +62,7 @@ export const DataTabular: FC<DataTabularModel> = ({
   // selection elements
   const [page, setPage] = useState<number | null>(0);
   const [search, setSearch] = useState<string | null>(null);
-  const [sample, setSample] = useState<string>('all');
+  const [sample, setSample] = useState<string>('recent');
   const [pageSize, setPageSize] = useState(20);
 
   // get API elements when table shape change

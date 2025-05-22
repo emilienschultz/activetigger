@@ -59,9 +59,7 @@ export const ProjectActionsSidebar: FC<{
   const errors = projectState?.errors.map((arr) => arr.join(' - ')) || [];
 
   return (
-    <div
-      className={`project-sidebar d-flex flex-column flex-shrink-0 ${currentMode == 'train' ? 'bg-light' : 'bg-info'}`}
-    >
+    <div className={`project-sidebar d-flex flex-column flex-shrink-0 bg-light`}>
       {!onlyAnnotator && (
         <ul className="nav nav-pills flex-column mb-auto">
           <li className="nav-item">

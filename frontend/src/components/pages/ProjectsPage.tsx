@@ -10,6 +10,7 @@ import { AvailableProjectsModel } from '../../types';
 
 export const ProjectsPage: FC = () => {
   const projects = useUserProjects();
+  console.log('projects', projects);
   const [rows, setRows] = useState<AvailableProjectsModel[]>([]);
   useEffect(() => {
     setRows(projects || []);

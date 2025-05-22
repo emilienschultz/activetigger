@@ -250,7 +250,7 @@ class ProjectsService:
     def get_recent_annotations(self, project_slug: str, user_name: str, scheme: str, limit: int):
         with self.Session() as session:
             stmt = (
-                select(Annotations.element_id)
+                select(Annotations.element_id, Annotations.time)
                 .filter_by(
                     project_slug=project_slug,
                     scheme_name=scheme,

@@ -24,15 +24,17 @@ export const ProjectCard: FC<ProjectCardProps> = ({ project }) => {
     navigate(0);
   };
 
+  // function to navigate to the project page
+  const navigateToProject = () => {
+    navigate(`/projects/${project.parameters.project_slug}?fromProjectPage=true`);
+  };
+
   return (
     <div
       key={project.parameters.project_slug}
       className="project-card d-flex justify-content-between"
     >
-      <div
-        onClick={() => navigate(`/projects/${project.parameters.project_slug}`)}
-        className="w-75"
-      >
+      <div onClick={navigateToProject} className="w-75">
         <h3 className="project-title">{project.parameters.project_name}</h3>
         <p className="project-details">
           <span>Creator: {project.created_by}</span>

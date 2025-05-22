@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
@@ -38,6 +38,16 @@ export const ProjectPage: FC = () => {
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme]['kind']
       : '';
+
+  // manage redirect if at least 2 tags
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromProjectPage = searchParams.get('fromProjectPage') === 'true';
+  if (fromProjectPage) {
+    if (availableLabels.length > 1) {
+      navigate(`/projects/${projectSlug}/tag`);
+    }
+  }
 
   if (!projectSlug || !project) return;
 
