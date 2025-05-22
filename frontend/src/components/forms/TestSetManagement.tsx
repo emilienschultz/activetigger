@@ -88,20 +88,20 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
     <div className="container">
       {testSetExist && (
         <div className="row">
-          <h4 className="subsection">Import a test set</h4>
-          <div className="alert alert-info">
-            A test set already exists. You can drop it and create a new one.
+          <div className="col-12">
+            <h4 className="subsection">Import a test set</h4>
+
+            <button
+              className="delete-button mt-3"
+              onClick={() => {
+                dropTestSet().then(() => {
+                  navigate(0);
+                });
+              }}
+            >
+              Drop existing testset
+            </button>
           </div>
-          <button
-            className="btn btn-danger"
-            onClick={() => {
-              dropTestSet().then(() => {
-                navigate(0);
-              });
-            }}
-          >
-            Drop existing testset
-          </button>
         </div>
       )}
       {!testSetExist && (

@@ -1,63 +1,35 @@
-import { FC, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { FC } from 'react';
+import { useParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
-import { useDeleteProject, useGetLogs } from '../../core/api';
 
-import Modal from 'react-bootstrap/Modal';
-import DataGrid, { Column } from 'react-data-grid';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
 import { CodebookManagement } from '../CodeBookManagement';
 import { FeaturesManagement } from '../FeaturesManagement';
-import { ProjectUpdateForm } from '../forms/ProjectUpdateForm';
 import { TestSetManagement } from '../forms/TestSetManagement';
 import { ImportAnnotations } from '../ImportAnnotations';
 import { LabelsManagement } from '../LabelsManagement';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
+import { ProjectHistory } from '../ProjectHistory';
+import { ProjectParameters } from '../ProjectParameters';
 import { SchemesManagement } from '../SchemesManagement';
 
 /**
  * Component to display the project page
  */
 
-interface Row {
-  time: string;
-  user: string;
-  action: string;
-}
-
 export const ProjectPage: FC = () => {
+  // get data
   const { projectName } = useParams();
-
+  const projectSlug = projectName;
   const {
     appContext: { currentScheme, currentProject: project, history },
     setAppContext,
   } = useAppContext();
 
-  const navigate = useNavigate();
-
-  // get logs
-  const { logs } = useGetLogs(projectName || null, 100);
-
-  // function to delete project
-  const deleteProject = useDeleteProject();
-  const actionDelete = async () => {
-    if (projectName) {
-      await deleteProject(projectName);
-      navigate(`/projects/`);
-    }
-  };
-
-  // function to clear history
-  const actionClearHistory = () => {
-    setAppContext((prev) => ({ ...prev, history: [] }));
-    // setAppContext((prev) => ({ ...prev, selectionHistory: {} }));
-  };
-
+  // define variables
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme]['labels'] || []
@@ -66,181 +38,55 @@ export const ProjectPage: FC = () => {
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme]['kind']
       : '';
-  const columns: readonly Column<Row>[] = [
-    {
-      name: 'Time',
-      key: 'time',
-      resizable: true,
-    },
-    {
-      name: 'User',
-      key: 'user',
-      resizable: true,
-    },
-    {
-      name: 'Project',
-      key: 'project',
-    },
-    {
-      name: 'Action',
-      key: 'action',
-    },
-  ];
 
-  // modals to delete
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-
-  // expand trainset
-  // const expandTrainSet = useExpandTrainSet(projectName || null);
-  // const [nElements, setNElements] = useState<number | undefined>(undefined);
+  if (!projectSlug || !project) return;
 
   return (
-    projectName && (
-      <ProjectPageLayout projectName={projectName}>
-        {project && (
-          <div className="container-fluid">
-            <Tabs id="panel" className="mt-3" defaultActiveKey="schemes">
-              <Tab eventKey="schemes" title="Schemes">
-                <div className="row">
-                  <SchemesManagement projectSlug={projectName} />
-                </div>
-                <hr />
-                <div>
-                  <LabelsManagement
-                    projectSlug={projectName}
-                    currentScheme={currentScheme || null}
-                    availableLabels={availableLabels as string[]}
-                    kindScheme={kindScheme as string}
-                    reFetchCurrentProject={() => {
-                      setAppContext((prev) => ({ ...prev, currentProject: null }));
-                    }}
-                  />
-                </div>
-              </Tab>
-              <Tab eventKey="features" title="Features">
-                <FeaturesManagement />
-              </Tab>
-              <Tab eventKey="codebook" title="Codebook">
-                <CodebookManagement
-                  projectName={projectName}
-                  currentScheme={currentScheme || null}
-                />
-              </Tab>
-              <Tab eventKey="import" title="Import">
-                <div className="explanations">Import data to this project</div>
-                <ImportAnnotations
-                  projectName={project.params.project_slug}
-                  currentScheme={currentScheme || null}
-                />
-                <TestSetManagement
-                  projectSlug={projectName}
-                  currentScheme={currentScheme || ''}
-                  testSetExist={project?.params.test}
-                />
-              </Tab>
-              <Tab eventKey="parameters" title="Parameters">
-                <div className="explanations">Parameters of this project</div>
-                <button onClick={handleShow} className="delete-button mt-1">
-                  Delete project now
-                </button>
-                <table className="table-statistics">
-                  <tbody>
-                    <tr className="table-delimiter">
-                      <td>Parameters</td>
-                      <td>Value</td>
-                    </tr>
-                    <tr>
-                      <td>Project name</td>
-                      <td>{project.params.project_name}</td>
-                    </tr>
-                    <tr>
-                      <td>Project slug</td>
-                      <td>{project.params.project_slug}</td>
-                    </tr>
-                    <tr>
-                      <td>Filename</td>
-                      <td>{project.params.filename}</td>
-                    </tr>
-                    <tr>
-                      <td>Total rows file</td>
-                      <td>{project.params.n_total}</td>
-                    </tr>
-                    <tr>
-                      <td>Language</td>
-                      <td>{project.params.language}</td>
-                    </tr>
-                    <tr>
-                      <td>Columns text</td>
-                      <td>{project.params.cols_text}</td>
-                    </tr>
-                    <tr>
-                      <td>Column id</td>
-                      <td>{project.params.col_id}</td>
-                    </tr>
-                    <tr>
-                      <td>Colums context</td>
-                      <td>{JSON.stringify(project.params.cols_context)}</td>
-                    </tr>
-                    <tr>
-                      <td>Is test dataset</td>
-                      <td>{JSON.stringify(project.params.test)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                <details className="custom-details">
-                  <summary>Update project</summary>
-                  <ProjectUpdateForm />
-                </details>
-
-                <div>
-                  <Modal show={show} onHide={actionDelete}>
-                    <Modal.Header>
-                      <Modal.Title>Delete the project</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>Do you really want to delete this project</Modal.Body>
-                    <Modal.Footer>
-                      <button onClick={handleClose}>No</button>
-                      <button onClick={actionDelete}>Delete</button>
-                    </Modal.Footer>
-                  </Modal>
-                </div>
-              </Tab>
-              <Tab eventKey="session" title="History session">
-                <span className="explanations">History of the current session</span>
-                <div>
-                  Session counter{' '}
-                  <a className="history">
-                    <HiOutlineQuestionMarkCircle />
-                  </a>
-                  <Tooltip anchorSelect=".history" place="top">
-                    Element annotated during this session. If you annotate already annotated data,
-                    it prevents you to see an element twice. Clear it if you want to be able to
-                    re-annotate again.
-                  </Tooltip>{' '}
-                  <span
-                    className="badge rounded-pill text-bg-light text-muted me-2"
-                    key={history.length}
-                  >
-                    {history.length}
-                  </span>
-                </div>
-                <button onClick={actionClearHistory} className="delete-button">
-                  Clear history
-                </button>
-                <div className="subsection">Activity on this project</div>
-                <DataGrid<Row>
-                  className="fill-grid mt-2"
-                  columns={columns}
-                  rows={(logs as unknown as Row[]) || []}
-                />
-              </Tab>
-            </Tabs>
-          </div>
-        )}
-      </ProjectPageLayout>
-    )
+    <ProjectPageLayout projectName={projectSlug}>
+      <div className="container-fluid">
+        <Tabs id="panel" className="mt-3" defaultActiveKey="schemes">
+          <Tab eventKey="schemes" title="Schemes">
+            <SchemesManagement projectSlug={projectSlug} />
+            <LabelsManagement
+              projectSlug={projectSlug}
+              currentScheme={currentScheme || null}
+              availableLabels={availableLabels as string[]}
+              kindScheme={kindScheme as string}
+              reFetchCurrentProject={() => {
+                setAppContext((prev) => ({ ...prev, currentProject: null }));
+              }}
+            />
+          </Tab>
+          <Tab eventKey="features" title="Features">
+            <FeaturesManagement />
+          </Tab>
+          <Tab eventKey="codebook" title="Codebook">
+            <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
+          </Tab>
+          <Tab eventKey="import" title="Import">
+            <div className="explanations">Import data to this project</div>
+            <ImportAnnotations
+              projectName={project.params.project_slug}
+              currentScheme={currentScheme || null}
+            />
+            <TestSetManagement
+              projectSlug={projectSlug}
+              currentScheme={currentScheme || ''}
+              testSetExist={project?.params.test}
+            />
+          </Tab>
+          <Tab eventKey="parameters" title="Parameters">
+            <ProjectParameters project={project} projectSlug={projectSlug} />
+          </Tab>
+          <Tab eventKey="session" title="History session">
+            <ProjectHistory
+              projectSlug={projectSlug}
+              history={history}
+              setAppContext={setAppContext}
+            />
+          </Tab>
+        </Tabs>
+      </div>
+    </ProjectPageLayout>
   );
 };
