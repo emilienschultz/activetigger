@@ -145,7 +145,7 @@ export const SelectionManagement: FC = () => {
       <div className="d-flex align-items-top align-items-center">
         <details className="mx-2">
           <summary className="explanations">
-            Active model <FcStatistics />{' '}
+            Quick model <FcStatistics />{' '}
             <span className="badge bg-light text-dark">
               {currentModel ? currentModel['model'] : 'No model trained'}
             </span>

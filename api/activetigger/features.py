@@ -285,7 +285,7 @@ class Features:
         Compute new feature
         """
         if len(self.current_user_processes(username)) > 0:
-            raise ValueError("You have already a process running")
+            raise ValueError("A process is already running")
 
         if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
             raise ValueError("Kind not recognized")

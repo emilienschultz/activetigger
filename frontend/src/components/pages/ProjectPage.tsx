@@ -88,7 +88,7 @@ export const ProjectPage: FC = () => {
           <Tab eventKey="parameters" title="Parameters">
             <ProjectParameters project={project} projectSlug={projectSlug} />
           </Tab>
-          <Tab eventKey="session" title="History session">
+          <Tab eventKey="session" title="Session history">
             <ProjectHistory
               projectSlug={projectSlug}
               history={history}

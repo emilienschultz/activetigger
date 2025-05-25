@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -12,6 +12,7 @@ import { Tooltip } from 'react-tooltip';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
+  useGetServer,
   useModelInformations,
   useRenameBertModel,
   useStopTrainBertModel,
@@ -130,6 +131,7 @@ export const FinetunePage: FC = () => {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
     control,
+    setValue,
   } = useForm<newBertModel>({
     defaultValues: {
       class_balance: false,
@@ -148,6 +150,14 @@ export const FinetunePage: FC = () => {
       },
     },
   });
+
+  // deactivate GPU if not available
+  const { gpu } = useGetServer(project || null);
+  useEffect(() => {
+    if (!gpu) {
+      setValue('parameters.gpu', false);
+    }
+  }, [gpu, setValue]);
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     console.log(data);
@@ -715,7 +725,7 @@ export const FinetunePage: FC = () => {
                         onClick={() => testModel()}
                         disabled={isComputing}
                       >
-                        Compute prediction testset
+                        Compute testset predictions
                       </button>
                     </div>
                   )}

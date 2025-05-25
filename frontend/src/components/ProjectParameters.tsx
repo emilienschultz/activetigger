@@ -57,7 +57,7 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
             <td>{project.params.filename}</td>
           </tr>
           <tr>
-            <td>Total rows file</td>
+            <td>Total rows</td>
             <td>{project.params.n_total}</td>
           </tr>
           <tr>
