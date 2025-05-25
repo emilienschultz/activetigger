@@ -1531,6 +1531,8 @@ export function useGetRawDataFile(projectSlug: string | null | undefined) {
  * Get dataset file static url
  */
 export function useGetStaticUrls(projectSlug: string | null, model: string | null | undefined) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
   const getStaticUrls = useAsyncMemo(async () => {
     if (projectSlug) {
       const res = await api.GET('/export/static', {
@@ -1548,8 +1550,10 @@ export function useGetStaticUrls(projectSlug: string | null, model: string | nul
       return null;
     }
     return null;
-  }, [projectSlug]);
-  return { staticUrls: getAsyncMemoData(getStaticUrls) };
+  }, [projectSlug, fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+  return { staticUrls: getAsyncMemoData(getStaticUrls), reFetchUrl: reFetch };
 }
 
 /**

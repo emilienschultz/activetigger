@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import {
@@ -60,7 +60,11 @@ export const ProjectExportPage: FC = () => {
   const { getRawDataFile } = useGetRawDataFile(projectName || null);
   const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
   const { getProjectionFile } = useGetProjectionFile(projectName || null);
-  const { staticUrls } = useGetStaticUrls(projectName || null, model);
+  const { staticUrls, reFetchUrl } = useGetStaticUrls(projectName || null, model);
+
+  useEffect(() => {
+    reFetchUrl();
+  }, [model, reFetchUrl]);
 
   const isSimpleModel =
     authenticatedUser &&
@@ -184,9 +188,9 @@ export const ProjectExportPage: FC = () => {
             small fix for the direct link when no nging
             */}
                   {model &&
-                    (staticUrls ? (
+                    (staticUrls && staticUrls.model ? (
                       <Link
-                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model?.path}
+                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model.path}
                         target="_blank"
                         download
                         className="btn btn-primary mt-3"
