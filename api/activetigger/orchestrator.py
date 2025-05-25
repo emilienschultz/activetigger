@@ -466,11 +466,9 @@ class Orchestrator:
 
         # case where there is no test set and the selection is deterministic
         if not params.random_selection and params.n_test == 0:
-            print("deterministic selection of the trainset")
             trainset = content[0 : params.n_train]
         # case to force the max of label from one column
         elif params.force_label and len(params.cols_label) > 0:
-            print("force the selection of labels")
             f_notna = content[params.cols_label[0]].notna()
             f_na = content[params.cols_label[0]].isna()
             # different case regarding the number of labels
@@ -481,7 +479,6 @@ class Orchestrator:
                 trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
         # case there is stratification on the trainset
         elif len(params.cols_stratify) > 0 and params.stratify_train:
-            print("stratification of the trainset")
             df_grouped = content.groupby(params.cols_stratify, group_keys=False)
             nb_cat = len(df_grouped)
             nb_elements_cat = round(params.n_train / nb_cat)

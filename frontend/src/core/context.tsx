@@ -48,7 +48,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
     numberOfTokens: 512,
   },
   selectionConfig: {
-    mode: 'deterministic',
+    mode: 'fixed',
     sample: 'untagged',
     frameSelection: false,
     frame: [],

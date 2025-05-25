@@ -341,7 +341,7 @@ class Project:
     def get_next(
         self,
         scheme: str,
-        selection: str = "deterministic",
+        selection: str = "fixed",
         sample: str = "untagged",
         user: str = "user",
         label: None | str = None,
@@ -351,7 +351,7 @@ class Project:
     ) -> dict:
         """
         Get next item for a specific scheme with a specific selection method
-        - deterministic
+        - fixed
         - random
         - active
         - maxprob
@@ -436,9 +436,9 @@ class Project:
                     )
                     f = f & f_frame
                 else:
-                    raise ValueError("No projection data available")
+                    raise ValueError("No vizualisation data available")
             else:
-                raise ValueError("No projection available")
+                raise ValueError("No vizualisation available")
 
         # test if there is at least one element available
         if sum(f) == 0:
@@ -452,7 +452,7 @@ class Project:
         n_sample = f.sum()  # use len(ss) for adding history
 
         # select type of selection
-        if selection == "deterministic":  # next row
+        if selection == "fixed":  # next row
             element_id = ss.index[0]
 
         if selection == "random":  # random row
@@ -649,8 +649,8 @@ class Project:
         return ProjectStateModel(
             params=self.params,
             next=NextProjectStateModel(
-                methods_min=["deterministic", "random"],
-                methods=["deterministic", "random", "maxprob", "active"],
+                methods_min=["fixed", "random"],
+                methods=["fixed", "random", "maxprob", "active"],
                 sample=["untagged", "all", "tagged"],
             ),
             schemes=self.schemes.state(),
@@ -1008,11 +1008,11 @@ class Project:
                     self.errors.append(
                         [
                             datetime.now(TIMEZONE),
-                            "Error in feature projections queue",
+                            "Error in feature vizualisation queue",
                             str(ex),
                         ]
                     )
-                    logging.error("Error in feature projections queue", ex)
+                    logging.error("Error in feature vizualisation queue", ex)
                 finally:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)

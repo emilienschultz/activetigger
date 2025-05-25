@@ -3,6 +3,7 @@ import { FC } from 'react';
 export interface DisplayMatrixProps {
   labels: string[];
   matrix: number[][];
+  f1Labels?: Record<string, string>;
 }
 
 export const DisplayMatrix: FC<DisplayMatrixProps> = ({ matrix, labels }) => {

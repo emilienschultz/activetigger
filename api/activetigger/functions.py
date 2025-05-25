@@ -195,14 +195,47 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
     Compute metrics for a prediction
     """
     labels = list(Y_true.unique())
+    precision = [
+        round(i, decimals)
+        for i in precision_score(
+            list(Y_true),
+            list(Y_pred),
+            average=None,
+            labels=labels,
+            zero_division=1,
+        )
+    ]
+    f1 = [
+        round(i, decimals)
+        for i in f1_score(list(Y_true), list(Y_pred), average=None, labels=labels)
+    ]
+    confusion = confusion_matrix(Y_true, Y_pred, labels=labels)
+
+    recall = [
+        round(i, decimals)
+        for i in recall_score(list(Y_true), list(Y_pred), average=None, labels=labels)
+    ]
+    f1_val = round(f1_score(Y_true, Y_pred, average="micro"), decimals)
+    recall_val = round(recall_score(Y_true, Y_pred, average="micro"), decimals)
+    precision_val = round(
+        precision_score(list(Y_true), list(Y_pred), average="micro", zero_division=1),
+        decimals,
+    )
+
+    table = pd.DataFrame(confusion, index=labels, columns=labels)
+    table["Total"] = table.sum(axis=1)
+    table = table.T
+    table["Total"] = table.sum(axis=1)
+    table["F1"] = list(f1) + [f1_val]
+    table["Recall"] = list(recall) + [recall_val]
+    table["Precision"] = list(precision) + [precision_val]
+    table = table.T
+
     statistics = MLStatisticsModel(
         f1_label=dict(
             zip(
                 labels,
-                [
-                    round(i, decimals)
-                    for i in f1_score(list(Y_true), list(Y_pred), average=None, labels=labels)
-                ],
+                f1,
             )
         ),
         f1_weighted=round(f1_score(Y_true, Y_pred, average="weighted"), decimals),
@@ -216,29 +249,18 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
         precision_label=dict(
             zip(
                 labels,
-                [
-                    round(i, decimals)
-                    for i in precision_score(
-                        list(Y_true),
-                        list(Y_pred),
-                        average=None,
-                        labels=labels,
-                        zero_division=1,
-                    )
-                ],
+                precision,
             )
         ),
         recall_label=dict(
             zip(
                 labels,
-                [
-                    round(i, decimals)
-                    for i in recall_score(list(Y_true), list(Y_pred), average=None, labels=labels)
-                ],
+                recall,
             )
         ),
-        confusion_matrix=confusion_matrix(Y_true, Y_pred, labels=labels).tolist(),
+        confusion_matrix=confusion.tolist(),
         false_predictions=(Y_true != Y_pred).loc[lambda x: x].index.tolist(),
+        table=table.to_dict(orient="split"),
     )
     return statistics
 

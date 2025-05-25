@@ -62,6 +62,8 @@ export type ProjectUpdateModel = components['schemas']['ProjectUpdateModel'];
 
 export type TextDatasetModel = components['schemas']['TextDatasetModel'];
 
+export type MLStatisticsModel = components['schemas']['MLStatisticsModel'];
+
 export type ProjectionModelParams =
   | components['schemas']['TsneModel']
   | components['schemas']['UmapModel'];

@@ -1259,7 +1259,7 @@ export function useGetProjectionFile(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the projection of the model' });
+          notify({ type: 'success', message: 'Exporting the vizualisation of the model' });
           saveAs(res.data, `projection_${projectSlug}.${format}`);
         }
         return true;
@@ -1623,7 +1623,7 @@ export function useUpdateProjection(
             params: formData.params,
           },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Projection is being computed' });
+        if (!res.error) notify({ type: 'warning', message: 'Vizualisation is being computed' });
       }
       return true;
     },

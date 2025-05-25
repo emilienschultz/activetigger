@@ -830,6 +830,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/export/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Projection
+         * @description Export features
+         */
+        get: operations["export_projection_export_projection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/export/prediction/simplemodel": {
         parameters: {
             query?: never;
@@ -1975,6 +1995,10 @@ export interface components {
             false_predictions?: {
                 [key: string]: unknown;
             } | unknown[] | null;
+            /** Table */
+            table?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * NextInModel
@@ -2437,10 +2461,10 @@ export interface components {
          *     TODO : model for parameters
          */
         SimpleModelModel: {
-            /** Features */
-            features: unknown[];
             /** Model */
             model: string;
+            /** Features */
+            features: unknown[];
             /** Params */
             params: {
                 [key: string]: (string | number | boolean | null) | undefined;
@@ -2493,7 +2517,7 @@ export interface components {
             available: {
                 [key: string]: {
                     [key: string]: {
-                        [key: string]: components["schemas"]["SimpleModelModel"] | undefined;
+                        [key: string]: unknown;
                     } | undefined;
                 } | undefined;
             };
@@ -3977,6 +4001,38 @@ export interface operations {
         parameters: {
             query: {
                 features: unknown[];
+                format: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_projection_export_projection_get: {
+        parameters: {
+            query: {
                 format: string;
                 project_slug: string;
             };

@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Hashable, Literal, Optional
 
 from pandas import DataFrame
 from pydantic import BaseModel, ConfigDict  # for dataframe
@@ -90,7 +90,7 @@ class NextInModel(BaseModel):
     """
 
     scheme: str
-    selection: str = "deterministic"
+    selection: str = "fixed"
     sample: str = "untagged"
     label: str | None = None
     frame: list[Any] | None = None
@@ -393,6 +393,7 @@ class MLStatisticsModel(BaseModel):
     precision: float | dict[str, float] | None = None
     confusion_matrix: list[list[int]] | None = None
     false_predictions: dict[str, Any] | list[Any] | None = None
+    table: dict[str, Any] | None = None
 
 
 class GenerationRequest(BaseModel):
@@ -720,7 +721,7 @@ class FitModelResults(BaseModel):
     model: Any
     proba: DataFrame
     statistics: MLStatisticsModel
-    cv10: MLStatisticsModel
+    cv10: MLStatisticsModel | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
@@ -739,7 +740,7 @@ class SimpleModelOutModel(BaseModel):
     scheme: str
     username: str
     statistics: MLStatisticsModel
-    statistics_cv10: MLStatisticsModel
+    statistics_cv10: MLStatisticsModel | None = None
 
 
 class ReturnTaskPredictModel(BaseModel):

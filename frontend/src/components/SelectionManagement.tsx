@@ -174,6 +174,7 @@ export const SelectionManagement: FC = () => {
               <div>
                 <h5>Statistics</h5>
                 <DisplayScores
+                  title="Quick model"
                   scores={currentModel.statistics as unknown as Record<string, number>}
                   scores_cv10={currentModel.statistics_cv10 as unknown as Record<string, number>}
                 />

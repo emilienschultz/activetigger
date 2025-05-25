@@ -15,11 +15,14 @@ class FitModel(BaseTask):
 
     kind = "fit_model"
 
-    def __init__(self, model: BaseEstimator, X: pd.DataFrame, Y: pd.Series, **kwargs):
+    def __init__(
+        self, model: BaseEstimator, X: pd.DataFrame, Y: pd.Series, cv10: bool = False, **kwargs
+    ):
         super().__init__()
         self.model = model
         self.X = X
         self.Y = Y
+        self.cv10 = cv10
 
     def __call__(self) -> FitModelResults:
         """
@@ -48,10 +51,13 @@ class FitModel(BaseTask):
         statistics = get_metrics(Yf, Y_pred)
 
         # compute 10-crossvalidation
-        num_folds = 10
-        kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
-        Y_pred_10cv = cross_val_predict(self.model, Xf, Yf, cv=kf)
-        cv10 = get_metrics(Yf, Y_pred_10cv)
+        if self.cv10:
+            num_folds = 10
+            kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+            Y_pred_10cv = cross_val_predict(self.model, Xf, Yf, cv=kf)
+            cv10 = get_metrics(Yf, Y_pred_10cv)
+        else:
+            cv10 = None
 
         return FitModelResults(
             model=self.model,

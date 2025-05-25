@@ -116,7 +116,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       );
       setLabelColorMapping(labeledColors);
     }
-  }, [projectionData]);
+  }, [projectionData, uniqueLabels, colormap]);
 
   // manage projection refresh (could be AMELIORATED)
   useEffect(() => {
@@ -128,7 +128,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     ) {
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
-      console.log('Fetch projection data');
     }
     // case if the projection changed
     if (
@@ -136,7 +135,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       currentProjection &&
       currentProjection != availableProjections?.available[authenticatedUser?.username]
     ) {
-      console.log('Refetch projection data');
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
     }
@@ -200,7 +198,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             className="btn btn-primary btn-validation mb-3"
             onClick={() => setFormNewProjection(!formNewProjection)}
           >
-            Compute new projection
+            Compute new vizualization
           </button>
         )}
         <label style={{ display: 'block' }} className="mx-4">

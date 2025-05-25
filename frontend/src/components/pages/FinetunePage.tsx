@@ -617,6 +617,7 @@ export const FinetunePage: FC = () => {
                           <div>
                             <h4 className="subsection">Validation scores</h4>
                             <DisplayScores
+                              title="Validation scores"
                               scores={
                                 model.valid_scores as Record<
                                   string,
@@ -638,6 +639,7 @@ export const FinetunePage: FC = () => {
                           {model.train_scores && (
                             <div>
                               <DisplayScores
+                                title="Train scores"
                                 scores={
                                   model.train_scores as Record<
                                     string,
@@ -734,6 +736,7 @@ export const FinetunePage: FC = () => {
                   {model && model.test_scores && (
                     <div>
                       <DisplayScores
+                        title="Test scores"
                         scores={
                           model.test_scores as Record<
                             string,
