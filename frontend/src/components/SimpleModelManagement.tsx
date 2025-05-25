@@ -67,14 +67,11 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   // action when form validated
   const onSubmit: SubmitHandler<SimpleModelModel> = async (formData) => {
     const watchedFeatures = watch('features');
-    console.log(watchedFeatures);
     if (watchedFeatures.length == 0) {
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
     }
-
     await updateSimpleModel(formData);
-    //reset();
   };
 
   // build default features selected
@@ -211,7 +208,11 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             )}
           />
         </div>
-        <button className="btn btn-primary btn-validation">Train quick model</button>
+        <div className="d-flex align-items-center">
+          <label htmlFor="cv10">10-fold cross validation</label>
+          <input type="checkbox" id="cv10" {...register('cv10')} className="mx-3" />
+        </div>
+
         <div className="d-flex align-items-center">
           <label htmlFor="frequencySlider">Refresh</label>
           Every
@@ -229,6 +230,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           />
           annotations (0 for no refreshing)
         </div>
+        <button className="btn btn-primary btn-validation">Train quick model</button>
       </form>
     </div>
   );

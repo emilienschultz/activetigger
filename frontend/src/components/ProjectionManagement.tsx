@@ -116,7 +116,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       );
       setLabelColorMapping(labeledColors);
     }
-  }, [projectionData, uniqueLabels, colormap]);
+  }, [projectionData]);
 
   // manage projection refresh (could be AMELIORATED)
   useEffect(() => {

@@ -209,10 +209,10 @@ class SimpleModelModel(BaseModel):
         | dict[str, dict[str, str | float | bool | int | None]]
         | None
     )
-    # TODO CAN BE BETTER
     scheme: str
     standardize: bool | None = True
     dichotomize: str | None = None
+    cv10: bool = False
 
 
 class LMParametersModel(BaseModel):
@@ -467,8 +467,9 @@ class SimpleModelComputing(ProcessComputing):
     standardize: bool
     model: BaseEstimator
     proba: DataFrame | None = None
+    cv10: bool = False
     statistics: MLStatisticsModel | None = None
-    cv10: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
 
 
 class GenerationComputingOut(BaseModel):
@@ -721,7 +722,7 @@ class FitModelResults(BaseModel):
     model: Any
     proba: DataFrame
     statistics: MLStatisticsModel
-    cv10: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 

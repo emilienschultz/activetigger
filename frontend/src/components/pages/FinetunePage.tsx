@@ -272,7 +272,7 @@ export const FinetunePage: FC = () => {
               activeKey={activeKey}
               onSelect={(k) => setActiveKey(k || 'models')}
             >
-              <Tab eventKey="new" title="New model" onSelect={() => setActiveKey('new')}>
+              <Tab eventKey="new" title="Create" onSelect={() => setActiveKey('new')}>
                 <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
                   {kindScheme == 'multilabel' && (
                     <div role="alert" className="alert alert-warning">
@@ -525,7 +525,7 @@ export const FinetunePage: FC = () => {
               </Tab>
               <Tab
                 eventKey="models"
-                title="Existing models"
+                title="Fine-tuned models"
                 onSelect={() => setActiveKey('models')}
               >
                 <label htmlFor="selected-model">Existing models</label>
@@ -692,8 +692,13 @@ export const FinetunePage: FC = () => {
                   </div>
                 )}
               </Tab>
-              <Tab eventKey="testing" title="Testing">
+              <Tab eventKey="testing" title="Test">
+                <div className="explanations">
+                  Do not use testset statistics to select the best model, otherwise it’s only a
+                  validation model
+                </div>
                 <label htmlFor="selected-model">Existing models</label>
+
                 <div className="d-flex align-items-center">
                   <select
                     id="selected-model"

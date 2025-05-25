@@ -845,6 +845,7 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
             params: formData.params,
             standardize: false,
             dichotomize: formData.dichotomize,
+            cv10: formData.cv10,
           },
         });
 

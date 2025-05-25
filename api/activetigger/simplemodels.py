@@ -45,7 +45,7 @@ class SimpleModel(BaseModel):
     model: BaseEstimator
     proba: DataFrame | None = None
     statistics: MLStatisticsModel | None = None
-    cv10: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
 
 
 class SimpleModels:
@@ -90,7 +90,7 @@ class SimpleModels:
         """
         Available simplemodels
         """
-        r = {}
+        r: dict[str, dict[str, dict[str, Any]]] = {}
         for u in self.existing:
             r[u] = {}
             for s in self.existing[u]:
@@ -115,7 +115,7 @@ class SimpleModels:
                     params=sm.model_params,
                     features=sm.features,
                     statistics=sm.statistics,
-                    statistics_cv10=sm.cv10,
+                    statistics_cv10=sm.statistics_cv10,
                     scheme=scheme,
                     username=username,
                 )
@@ -203,6 +203,7 @@ class SimpleModels:
         col_features: list,
         standardize: bool = True,
         model_params: dict | None = None,
+        cv10: bool = False,
     ):
         """
         Add a new simplemodel for a user and a scheme
@@ -219,17 +220,20 @@ class SimpleModels:
         if name == "knn":
             params_knn = KnnParams(**model_params)
             model = KNeighborsClassifier(n_neighbors=int(params_knn.n_neighbors), n_jobs=-1)
+            model_params = params_knn.model_dump()
 
         if name == "lasso":
             params_lasso = LassoParams(**model_params)
             model = LogisticRegression(
                 penalty="l1", solver="liblinear", C=params_lasso.C, n_jobs=-1
             )
+            model_params = params_lasso.model_dump()
 
         if name == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
             params_lib = LiblinearParams(**model_params)
             model = LogisticRegression(penalty="l2", solver="lbfgs", C=params_lib.cost, n_jobs=-1)
+            model_params = params_lib.model_dump()
 
         if name == "randomforest":
             # params  Num. trees mtry  Sample fraction
@@ -245,6 +249,7 @@ class SimpleModels:
                 ),
                 n_jobs=-1,
             )
+            model_params = params_rf.model_dump()
 
         if name == "multi_naivebayes":
             # small workaround for parameters
@@ -260,9 +265,15 @@ class SimpleModels:
                 fit_prior=params_nb.fit_prior,
                 class_prior=class_prior,
             )
+            model_params = params_nb.model_dump()
 
         # launch the compuation (model + statistics) as a future process
-        args = {"model": model, "X": X, "Y": Y, "labels": labels}
+        args = {
+            "model": model,
+            "X": X,
+            "Y": Y,
+            "labels": labels,
+        }
         unique_id = self.queue.add_task("simplemodel", project_slug, FitModel(**args))
         del args
 
@@ -279,6 +290,7 @@ class SimpleModels:
                 model_params=model_params,
                 standardize=standardize,
                 model=model,
+                cv10=cv10,
             )
         )
 
@@ -307,7 +319,7 @@ class SimpleModels:
 
         element.model = results.model
         element.proba = results.proba
-        element.cv10 = results.cv10
+        element.statistics_cv10 = results.statistics_cv10
         element.statistics = results.statistics
         if element.user not in self.existing:
             self.existing[element.user] = {}

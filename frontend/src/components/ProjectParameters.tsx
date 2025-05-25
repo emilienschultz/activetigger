@@ -78,7 +78,7 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
           </tr>
           <tr>
             <td>Is test dataset</td>
-            <td>{JSON.stringify(project.params.test)}</td>
+            <td>{project.params.test ? project.params.n_test : 'no'}</td>
           </tr>
         </tbody>
       </table>

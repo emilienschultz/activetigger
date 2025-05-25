@@ -159,7 +159,9 @@ export const ProjectTagPage: FC = () => {
       history.length % freqRefreshSimpleModel == 0
     ) {
       setUpdatedSimpleModel(true);
-      updateSimpleModel(currentModel as unknown as SimpleModelModel);
+      const modelToRefresh = currentModel as unknown as SimpleModelModel;
+      modelToRefresh.cv10 = false; // do not use cross validation
+      updateSimpleModel(modelToRefresh);
     }
     if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
       setUpdatedSimpleModel(false);
@@ -270,7 +272,7 @@ export const ProjectTagPage: FC = () => {
                       {statistics ? (
                         <span className="badge text-bg-light currentstatistics">
                           Annotated :{' '}
-                          {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${nSample ? nSample : ''} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']}`}
+                          {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
                         </span>
                       ) : (
                         ''
@@ -493,17 +495,24 @@ export const ProjectTagPage: FC = () => {
         <Tab eventKey="prediction" title="Quick model">
           <div className="container-fluid">
             <div className="row mb-3 mt-3">
-              <div className="col-4">
-                <SimpleModelManagement
-                  projectName={projectName || null}
-                  currentScheme={currentScheme || null}
-                  availableSimpleModels={
-                    availableSimpleModels as unknown as Record<string, Record<string, number>>
-                  }
-                  availableFeatures={availableFeatures}
-                  availableLabels={availableLabels}
-                  kindScheme={kindScheme}
-                />
+              <div className="col-6">
+                {phase != 'test' && (
+                  <SimpleModelManagement
+                    projectName={projectName || null}
+                    currentScheme={currentScheme || null}
+                    availableSimpleModels={
+                      availableSimpleModels as unknown as Record<string, Record<string, number>>
+                    }
+                    availableFeatures={availableFeatures}
+                    availableLabels={availableLabels}
+                    kindScheme={kindScheme}
+                  />
+                )}
+                {phase == 'test' && (
+                  <div className="alert alert-warning">
+                    Test mode activated - quick model are disabled
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -518,11 +527,16 @@ export const ProjectTagPage: FC = () => {
           />
         </Tab>
         <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
-          <ProjectionManagement
-            projectName={projectName || null}
-            currentScheme={currentScheme || null}
-            availableFeatures={availableFeatures}
-          />
+          {phase != 'test' && (
+            <ProjectionManagement
+              projectName={projectName || null}
+              currentScheme={currentScheme || null}
+              availableFeatures={availableFeatures}
+            />
+          )}
+          {phase == 'test' && (
+            <div className="alert alert-warning">Test mode activated - vizualisation disabled</div>
+          )}
         </Tab>
       </Tabs>
     </ProjectPageLayout>

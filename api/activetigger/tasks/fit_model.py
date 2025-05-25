@@ -55,13 +55,15 @@ class FitModel(BaseTask):
             num_folds = 10
             kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
             Y_pred_10cv = cross_val_predict(self.model, Xf, Yf, cv=kf)
-            cv10 = get_metrics(Yf, Y_pred_10cv)
+            statistics_cv10 = get_metrics(Yf, Y_pred_10cv)
         else:
-            cv10 = None
+            statistics_cv10 = None
+
+        print("XXXXXXX end fit model", self.cv10, statistics_cv10)
 
         return FitModelResults(
             model=self.model,
             proba=proba,
             statistics=statistics,
-            cv10=cv10,
+            statistics_cv10=statistics_cv10,
         )

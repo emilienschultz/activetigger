@@ -76,7 +76,7 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}`}
               className={classNames('nav-link', !currentProjectAction && 'active')}
               aria-current="page"
-              title="Project"
+              title="Access and modify your project parameters"
             >
               <MdOutlineHomeMax />
               <span className="ms-1">Project</span>
@@ -88,7 +88,7 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/tag`}
               className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
-              title="Tag"
+              title="Tag your trainset/testset with your labels"
             >
               <PiTagDuotone />
               <span className="ms-1">Tag</span>
@@ -113,7 +113,7 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/finetune`}
               className={classNames('nav-link', currentProjectAction === 'finetune' && 'active')}
               aria-current="page"
-              title="Training"
+              title="Fine-tune a BERT model with your data"
             >
               <MdModelTraining />
               <span className="ms-1">Fine-tune </span>
@@ -125,7 +125,7 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/export`}
               className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
               aria-current="page"
-              title="Export"
+              title="Export your data and models"
             >
               <FaCloudDownloadAlt />
               <span className="ms-1">Export</span>
@@ -136,7 +136,7 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/generate`}
               className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
               aria-current="page"
-              title="Generate"
+              title="Use generative tools to annotate your data"
               style={{ color: '#df31e8' }}
             >
               <RiAiGenerate />

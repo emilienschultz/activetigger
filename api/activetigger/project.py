@@ -334,6 +334,7 @@ class Project:
             col_features=col_features,
             model_params=params,
             standardize=simplemodel.standardize or False,
+            cv10=simplemodel.cv10 or False,
         )
 
         return {"success": "Simplemodel updated"}
@@ -637,7 +638,7 @@ class Project:
 
         if self.simplemodels.exists(user, scheme):
             sm = self.simplemodels.get_model(user, scheme)  # get model
-            r["sm_10cv"] = sm.cv10
+            r["sm_10cv"] = sm.statistics_cv10
 
         return r
 
