@@ -191,7 +191,7 @@ export const ProjectExportPage: FC = () => {
                         download
                         className="btn btn-primary mt-3"
                       >
-                        Export fine-tuned model
+                        Export fine-tuned model (static)
                       </Link>
                     ) : (
                       <button
@@ -246,7 +246,7 @@ export const ProjectExportPage: FC = () => {
                 download
                 className="btn btn-primary mt-3"
               >
-                Export raw dataset in parquet
+                Export raw dataset in parquet (static)
               </Link>
             ) : (
               <button
