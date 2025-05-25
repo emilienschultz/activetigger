@@ -11,7 +11,6 @@ import { Tooltip } from 'react-tooltip';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
-  useGetServer,
   useModelInformations,
   useRenameBertModel,
   useTestModel,
@@ -75,10 +74,10 @@ export const FinetunePage: FC = () => {
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   useEffect(() => {
-    if (availableModels.length > 0) {
+    if (availableModels.length > 0 && !currentModel) {
       setCurrentModel(availableModels[0]);
     }
-  }, [availableModels]);
+  }, [availableModels, currentModel]);
 
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
@@ -134,7 +133,6 @@ export const FinetunePage: FC = () => {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
     control,
-    setValue,
   } = useForm<newBertModel>({
     defaultValues: {
       class_balance: false,
@@ -155,12 +153,12 @@ export const FinetunePage: FC = () => {
   });
 
   // deactivate GPU if not available
-  const { gpu } = useGetServer(project || null);
-  useEffect(() => {
-    if (!gpu) {
-      setValue('parameters.gpu', false);
-    }
-  }, [gpu, setValue]);
+  // const { gpu } = useGetServer(project || null);
+  // useEffect(() => {
+  //   if (!gpu) {
+  //     setValue('parameters.gpu', false);
+  //   }
+  // }, [gpu, setValue]);
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     console.log(data);
