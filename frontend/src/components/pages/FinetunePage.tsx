@@ -14,7 +14,6 @@ import {
   useGetServer,
   useModelInformations,
   useRenameBertModel,
-  useStopTrainBertModel,
   useTestModel,
   useTrainBertModel,
 } from '../../core/api';
@@ -131,7 +130,6 @@ export const FinetunePage: FC = () => {
 
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
-  const { stopTraining } = useStopTrainBertModel(projectSlug || null);
   const {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
@@ -208,13 +206,6 @@ export const FinetunePage: FC = () => {
       resizable: true,
     },
   ];
-
-  const displayAdvancement = (val: number | string | null) => {
-    if (!val) return 'process in the queue waiting to start';
-    const v = Math.round(Number(val));
-    if (v >= 100) return 'completed, please wait';
-    return v + '%';
-  };
 
   const downloadModel = () => {
     if (!model) return; // Ensure model is not null or undefined

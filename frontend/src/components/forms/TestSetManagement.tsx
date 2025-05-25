@@ -5,11 +5,10 @@ import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 
 import { omit } from 'lodash';
 import { unparse } from 'papaparse';
-import { useCreateTestSet, useDropTestSet } from '../../core/api';
+import { useCreateTestSet } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 
-import { useNavigate } from 'react-router-dom';
 import { TestSetModel } from '../../types';
 
 // format of the data table
@@ -37,11 +36,9 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
       defaultValues: { scheme: currentScheme },
     },
   );
-  const navigate = useNavigate();
 
   const createTestSet = useCreateTestSet(); // API call
   const { notify } = useNotifications();
-  const dropTestSet = useDropTestSet(projectSlug || null);
 
   const [data, setData] = useState<DataType | null>(null);
   const files = useWatch({ control, name: 'files' });
