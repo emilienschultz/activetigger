@@ -86,7 +86,7 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
 
   return (
     <div className="container">
-      {testSetExist && (
+      {/* {testSetExist && (
         <div className="row">
           <div className="col-12">
             <h4 className="subsection">Import a test set</h4>
@@ -103,7 +103,7 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
             </button>
           </div>
         </div>
-      )}
+      )} */}
       {!testSetExist && (
         <div className="row">
           <h4 className="subsection">Import a test set</h4>

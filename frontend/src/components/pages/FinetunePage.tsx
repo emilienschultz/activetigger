@@ -7,7 +7,6 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
-import PulseLoader from 'react-spinners/PulseLoader';
 import { Tooltip } from 'react-tooltip';
 import {
   useComputeModelPrediction,
@@ -23,7 +22,7 @@ import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { newBertModel } from '../../types';
 import { DisplayScores } from '../DisplayScores';
-import { TestSetManagement } from '../forms/TestSetManagement';
+import { DisplayTrainingProcesses } from '../DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { ModelPredict } from '../ModelPredict';
 import { LossChart } from '../vizualisation/lossChart';
@@ -69,7 +68,19 @@ export const FinetunePage: FC = () => {
       ? project.schemes.available[currentScheme]['labels'] || []
       : [];
 
+  // available models
+  const availableModels =
+    currentScheme && project?.languagemodels.available[currentScheme]
+      ? Object.keys(project?.languagemodels.available[currentScheme])
+      : [];
+
   const [currentModel, setCurrentModel] = useState<string | null>(null);
+  useEffect(() => {
+    if (availableModels.length > 0) {
+      setCurrentModel(availableModels[0]);
+    }
+  }, [availableModels]);
+
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
   const model_scores = model?.train_scores;
 
@@ -77,12 +88,6 @@ export const FinetunePage: FC = () => {
     currentScheme && project && project.schemes.available[currentScheme]
       ? (project.schemes.available[currentScheme]['kind'] as string)
       : 'multiclass';
-
-  // available models
-  const availableModels =
-    currentScheme && project?.languagemodels.available[currentScheme]
-      ? Object.keys(project?.languagemodels.available[currentScheme])
-      : [];
 
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
@@ -247,25 +252,7 @@ export const FinetunePage: FC = () => {
                 latter. If the problem persists, contact us.
               </Tooltip>
             </div>
-            {project?.languagemodels.training &&
-              Object.keys(project.languagemodels.training).length > 0 && (
-                <div className="mt-3">
-                  Current process:
-                  <ul>
-                    {Object.entries(
-                      project?.languagemodels.training as unknown as Record<
-                        string,
-                        Record<string, string | number | null>
-                      >,
-                    ).map(([_, v]) => (
-                      <li key={v.name}>
-                        {v.name} - {v.status} :{' '}
-                        <span style={{ fontWeight: 'bold' }}>{displayAdvancement(v.progress)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}{' '}
+
             <Tabs
               id="panel"
               className="mb-3"
@@ -534,6 +521,7 @@ export const FinetunePage: FC = () => {
                     id="selected-model"
                     className="form-select"
                     onChange={(e) => setCurrentModel(e.target.value)}
+                    value={currentModel || ''}
                   >
                     <option></option>
                     {availableModels.map((e) => (
@@ -553,41 +541,17 @@ export const FinetunePage: FC = () => {
                   </button>
                 </div>
 
-                {/* Display the progress of training models */}
-                {project?.languagemodels.training &&
-                  Object.keys(project.languagemodels.training).length > 0 && (
-                    <div className="mt-3">
-                      Current process:
-                      <ul>
-                        {Object.entries(
-                          project?.languagemodels.training as unknown as Record<
-                            string,
-                            Record<string, string | number | null>
-                          >,
-                        ).map(([_, v]) => (
-                          <li key={v.name}>
-                            {v.name} - {v.status} :{' '}
-                            <span style={{ fontWeight: 'bold' }}>
-                              {displayAdvancement(v.progress)}
-                              {
-                                <LossChart
-                                  loss={v.loss as unknown as LossData}
-                                  xmax={(v.epochs as number) || undefined}
-                                />
-                              }
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                <DisplayTrainingProcesses
+                  projectSlug={projectSlug || null}
+                  processes={project?.languagemodels.training}
+                />
 
                 {/* Display the parameters of the selected model */}
                 {currentModel && (
                   <div>
                     {model && (
                       <div>
-                        <details className="m-2">
+                        <details className="custom-details">
                           <summary>
                             <span>Parameters</span>
                           </summary>
@@ -609,43 +573,33 @@ export const FinetunePage: FC = () => {
                               )}
                             </tbody>
                           </table>
+                          <details className="m-2">
+                            <summary>Rename</summary>
+                            <form onSubmit={handleSubmitRename(onSubmitRename)}>
+                              <input
+                                id="new_name"
+                                className="form-control me-2 mt-2"
+                                type="text"
+                                placeholder="New name of the model"
+                                {...registerRename('new_name')}
+                              />
+                              <button className="btn btn-primary me-2 mt-2">Rename</button>
+                            </form>
+                          </details>
                         </details>
-                        <details className="m-2">
-                          <summary>Rename</summary>
-                          <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                            <input
-                              id="new_name"
-                              className="form-control me-2 mt-2"
-                              type="text"
-                              placeholder="New name of the model"
-                              {...registerRename('new_name')}
-                            />
-                            <button className="btn btn-primary me-2 mt-2">Rename</button>
-                          </form>
-                        </details>
-                        {model.valid_scores && (
-                          <div>
-                            <h4 className="subsection">Validation scores</h4>
-                            <DisplayScores
-                              title="Validation scores"
-                              scores={
-                                model.valid_scores as Record<
-                                  string,
-                                  string | number | Record<string, string> | Record<string, number>
-                                >
-                              }
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <div>
-                            <LossChart loss={loss} />
-                          </div>
-                        </div>
 
                         <details className="custom-details">
                           <summary>Prediction on the trainset</summary>
-
+                          {!isComputing && currentScheme && (
+                            <button
+                              className="btn btn-primary m-2 mt-2"
+                              onClick={() =>
+                                computeModelPrediction(currentModel, 'train', currentScheme)
+                              }
+                            >
+                              Predict on trainset
+                            </button>
+                          )}
                           {model.train_scores && (
                             <div>
                               <DisplayScores
@@ -675,18 +629,25 @@ export const FinetunePage: FC = () => {
                               </details>
                             </div>
                           )}
-                          {!isComputing && currentScheme && (
-                            <button
-                              className="btn btn-primary m-2 mt-2"
-                              onClick={() =>
-                                computeModelPrediction(currentModel, 'train', currentScheme)
-                              }
-                            >
-                              Compute on trainset for statistics
-                            </button>
-                          )}
+
                           {isComputing && <div>Computation in progress</div>}
                         </details>
+                        {model.valid_scores && (
+                          <DisplayScores
+                            title="Validation scores"
+                            scores={
+                              model.valid_scores as Record<
+                                string,
+                                string | number | Record<string, string> | Record<string, number>
+                              >
+                            }
+                          />
+                        )}
+                        <div>
+                          <div>
+                            <LossChart loss={loss} />
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -697,13 +658,14 @@ export const FinetunePage: FC = () => {
                   Do not use testset statistics to select the best model, otherwise it’s only a
                   validation model
                 </div>
+                {/* Select a model to compute testset predictions */}
                 <label htmlFor="selected-model">Existing models</label>
-
                 <div className="d-flex align-items-center">
                   <select
                     id="selected-model"
                     className="form-select"
                     onChange={(e) => setCurrentModel(e.target.value)}
+                    value={currentModel || ''}
                   >
                     <option></option>
                     {availableModels.map((e) => (
@@ -723,7 +685,7 @@ export const FinetunePage: FC = () => {
                   </button>
                 </div>
                 <div>
-                  {currentModel && currentScheme && !isComputing && (
+                  {model && project?.params.test && !isComputing && (
                     <div className="col-12">
                       <button
                         className="btn btn-primary m-3"
@@ -734,17 +696,20 @@ export const FinetunePage: FC = () => {
                       </button>
                     </div>
                   )}
-                  {currentModel && currentScheme && isComputing && (
-                    <div>
-                      <button
-                        key="stop"
-                        className="btn btn-primary mt-3 d-flex align-items-center"
-                        onClick={stopTraining}
-                      >
-                        <PulseLoader color={'white'} /> Stop current process
-                      </button>
+                  <DisplayTrainingProcesses
+                    projectSlug={projectSlug || null}
+                    processes={project?.languagemodels.training}
+                  />
+
+                  {model && !project?.params.test && (
+                    <div className="col-12">
+                      <div className="alert alert-warning m-4">
+                        No testset available for this project. Please create one to compute
+                        predictions on the project main page
+                      </div>
                     </div>
                   )}
+
                   {!(currentModel && currentScheme) && (
                     <div>Select a scheme & a model to start computation</div>
                   )}
@@ -774,7 +739,7 @@ export const FinetunePage: FC = () => {
                       </details>
                     </div>
                   )}
-                  {!project?.params.test && (
+                  {/* {!project?.params.test && (
                     <div className="row">
                       <div className="col-12">
                         <TestSetManagement
@@ -784,24 +749,13 @@ export const FinetunePage: FC = () => {
                         />
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </Tab>
               <Tab eventKey="predict" title="Predict">
                 <ModelPredict />
               </Tab>
             </Tabs>
-            {isComputing && (
-              <div>
-                <button
-                  key="stop"
-                  className="btn btn-primary mt-3 d-flex align-items-center"
-                  onClick={stopTraining}
-                >
-                  <PulseLoader color={'white'} /> Stop current process
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
