@@ -184,9 +184,9 @@ export const ProjectExportPage: FC = () => {
             small fix for the direct link when no nging
             */}
                   {model &&
-                    (staticUrls && staticUrls.model ? (
+                    (staticUrls ? (
                       <Link
-                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model.path}
+                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model?.path}
                         target="_blank"
                         download
                         className="btn btn-primary mt-3"
