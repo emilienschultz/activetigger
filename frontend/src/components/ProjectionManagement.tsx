@@ -21,6 +21,7 @@ interface ProjectionManagementProps {
   projectSlug?: string;
   currentScheme: string | null;
   availableFeatures: string[];
+  currentElementId?: string;
 }
 
 // define the component
@@ -28,6 +29,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   projectName,
   currentScheme,
   availableFeatures,
+  currentElementId,
 }) => {
   // hook for all the parameters
   const {
@@ -90,7 +92,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     const params = pick(formData.params, relevantParams) as ProjectionModelParams;
     const data = { ...formData, params };
     const watchedFeatures = watch('features');
-    console.log('watchedFeatures', watchedFeatures);
     if (watchedFeatures.length == 0) {
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
@@ -188,7 +189,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     return filtered;
   };
   const defaultFeatures = filterFeatures(features);
-  console.log(defaultFeatures);
 
   return (
     <div>
@@ -328,11 +328,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           </details>
           <div className="row align-items-start m-0" style={{ height: '500px' }}>
             <ProjectionVizSigma
-              //className={`${selectedElement ? 'col-8' : 'col-12'} border p-0 h-100`}
               className={`col-8 border p-0 h-100`}
               data={projectionData}
               //selection
-              selectedId={selectedElement?.element_id}
+              selectedId={currentElementId}
               setSelectedId={setSelectedId}
               frameBbox={frameAsBbox}
               setFrameBbox={(bbox?: MarqueBoundingBox) => {
@@ -358,7 +357,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   <button
                     className="btn btn-primary mt-3"
                     onClick={() =>
-                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}`)
+                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
                     }
                   >
                     Annotate

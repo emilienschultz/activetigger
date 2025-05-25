@@ -71,6 +71,7 @@ export const ProjectionVizSigma: FC<Props> = ({
   // color dictionary
   labelColorMapping,
 }) => {
+  console.log('ProjectionVizSigma render', selectedId);
   // internal bbox used by marquee. This state will be updated with setFrameBbox once drawing is done.
   // app state is used as default value
   const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);
@@ -109,16 +110,16 @@ export const ProjectionVizSigma: FC<Props> = ({
     (node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
       const res: Partial<NodeDisplayData> = { ...data };
 
-      if (selectedId === node) {
-        // built-in appearance in Sigma which forces showing the label
-        res.highlighted = true;
-      }
       // apply color for nodes
       res.color = labelColorMapping[data.label];
 
       // replace label by node id. Label is the default field in sigma to display the.. label
       res.label = node;
-
+      if (selectedId === node) {
+        // built-in appearance in Sigma which forces showing the label
+        res.highlighted = true;
+        res.color = 'black'; // highlight color
+      }
       return res;
     },
     [selectedId, labelColorMapping],

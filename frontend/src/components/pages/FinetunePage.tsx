@@ -75,7 +75,7 @@ export const FinetunePage: FC = () => {
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   useEffect(() => {
     if (availableModels.length > 0 && !currentModel) {
-      setCurrentModel(availableModels[0]);
+      setCurrentModel(availableModels[availableModels.length - 1]);
     }
   }, [availableModels, currentModel]);
 

@@ -32,11 +32,11 @@ export const SelectCurrentScheme: FC = () => {
     if (!currentScheme && availableSchemes.length > 0) {
       setAppContext((state) => ({
         ...state,
-        currentScheme: availableSchemes[availableSchemes.length - 1],
+        currentScheme: availableSchemes[0],
       }));
       notify({
         type: 'success',
-        message: `Scheme ${availableSchemes[availableSchemes.length - 1]} selected`,
+        message: `Scheme ${availableSchemes[0]} selected`,
       });
     }
     // case of the scheme have been deleted

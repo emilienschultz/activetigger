@@ -21,6 +21,7 @@ import { ElementOutModel } from '../../types';
 import { BackButton } from '../BackButton';
 import { ForwardButton } from '../ForwardButton';
 
+import { useLocation } from 'react-router-dom';
 import { SimpleModelModel } from '../../types';
 import { DataTabular } from '../DataTabular';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
@@ -37,6 +38,9 @@ export const ProjectTagPage: FC = () => {
   // parameters
   const { projectName, elementId } = useParams();
   const { authenticatedUser } = useAuth();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const tab = queryParams.get('tab');
   const {
     appContext: {
       currentScheme,
@@ -56,6 +60,10 @@ export const ProjectTagPage: FC = () => {
   const [nSample, setNSample] = useState<number | null>(null); // specific info
   const [displayComment, setDisplayComment] = useState(false);
   const [comment, setComment] = useState('');
+  const [activeTab, setActiveTab] = useState<string>('tag');
+  useEffect(() => {
+    setActiveTab(tab || 'tag');
+  }, [tab]);
 
   // Reinitialize scroll in frame
   const frameRef = useRef<HTMLDivElement>(null);
@@ -244,8 +252,8 @@ export const ProjectTagPage: FC = () => {
           Test mode
         </label>
       </div>
-      <Tabs defaultActiveKey="text" className="mb-3">
-        <Tab eventKey="text" title="Text">
+      <Tabs className="mb-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
+        <Tab eventKey="tag" title="Tag">
           <div className="container-fluid">
             <div className="row mb-3 mt-3">
               {
@@ -532,6 +540,7 @@ export const ProjectTagPage: FC = () => {
               projectName={projectName || null}
               currentScheme={currentScheme || null}
               availableFeatures={availableFeatures}
+              currentElementId={elementId}
             />
           )}
           {phase == 'test' && (
