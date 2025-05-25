@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -67,10 +67,12 @@ export const FinetunePage: FC = () => {
       : [];
 
   // available models
-  const availableModels =
-    currentScheme && project?.languagemodels.available[currentScheme]
-      ? Object.keys(project?.languagemodels.available[currentScheme])
-      : [];
+  const availableModels = useMemo(() => {
+    if (currentScheme && project?.languagemodels?.available?.[currentScheme]) {
+      return Object.keys(project.languagemodels.available[currentScheme]);
+    }
+    return [];
+  }, [project, currentScheme]);
 
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   useEffect(() => {
@@ -161,9 +163,7 @@ export const FinetunePage: FC = () => {
   // }, [gpu, setValue]);
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
-    console.log(data);
-    setActiveKey('models');
-    console.log(activeKey);
+    // setActiveKey('models');
     await trainBertModel(data);
   };
 
@@ -226,6 +226,8 @@ export const FinetunePage: FC = () => {
     label: value,
   }));
 
+  console.log(currentModel);
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
       <div className="container-fluid">
@@ -246,9 +248,13 @@ export const FinetunePage: FC = () => {
               id="panel"
               className="mb-3"
               activeKey={activeKey}
-              onSelect={(k) => setActiveKey(k || 'models')}
+              onSelect={(k) => setActiveKey(k || 'new')}
             >
               <Tab eventKey="new" title="Create" onSelect={() => setActiveKey('new')}>
+                <DisplayTrainingProcesses
+                  projectSlug={projectSlug || null}
+                  processes={project?.languagemodels.training}
+                />
                 <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
                   {kindScheme == 'multilabel' && (
                     <div role="alert" className="alert alert-warning">
@@ -529,11 +535,6 @@ export const FinetunePage: FC = () => {
                     <MdOutlineDeleteOutline size={30} />
                   </button>
                 </div>
-
-                <DisplayTrainingProcesses
-                  projectSlug={projectSlug || null}
-                  processes={project?.languagemodels.training}
-                />
 
                 {/* Display the parameters of the selected model */}
                 {currentModel && (
