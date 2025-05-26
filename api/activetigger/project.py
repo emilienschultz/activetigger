@@ -712,8 +712,6 @@ class Project:
             data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
             file_name = f"data_train_{self.name}_{scheme}.{format}"
 
-        print(data)
-
         # Create files
         if format == "csv":
             data.reset_index().to_csv(path.joinpath(file_name))
