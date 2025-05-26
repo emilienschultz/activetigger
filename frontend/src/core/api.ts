@@ -1576,7 +1576,7 @@ export function useTableElements(
     pageIndex: initialPage || 1,
     pageSize: initialPageSize || 10,
   });
-  const [total, setTotal] = useState<number>(0);
+  const [total, setTotal] = useState<number>(20);
 
   const getTableElements = useAsyncMemo(async () => {
     if (scheme && project_slug) {

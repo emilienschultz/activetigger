@@ -208,18 +208,50 @@ class Orchestrator:
         Get projects authorized for the user
         """
         projects_auth = self.users.get_auth_projects(username)
-        return [
-            ProjectSummaryModel(
-                user_right=i[1],
-                parameters=ProjectModel(**i[2]),
-                created_by=i[3],
-                created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
-                size=round(get_dir_size(config.data_path + "/projects/" + i[0]), 1),
-                last_activity=self.db_manager.logs_service.get_last_activity_project(i[0]),
-                project_slug=i[0],
+        projects = []
+        for i in list(reversed(projects_auth)):
+            # get the project slug
+            project_slug = i[0]
+            user_right = i[1]
+            parameters = self.db_manager.projects_service.get_project(project_slug)
+            if parameters is None:
+                continue
+            parameters = ProjectModel(**parameters["parameters"])
+            created_by = i[3]
+            created_at = i[4].strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                size = round(get_dir_size(config.data_path + "/projects/" + i[0]), 1)
+            except Exception as e:
+                print(e)
+                size = 0.0
+            last_activity = self.db_manager.logs_service.get_last_activity_project(i[0])
+
+            # create the project summary model
+            projects.append(
+                ProjectSummaryModel(
+                    project_slug=project_slug,
+                    user_right=user_right,
+                    parameters=parameters,
+                    created_by=created_by,
+                    created_at=created_at,
+                    size=size,
+                    last_activity=last_activity,
+                )
             )
-            for i in list(reversed(projects_auth))
-        ]
+        return projects
+
+        # return [
+        #     ProjectSummaryModel(
+        #         user_right=i[1],
+        #         parameters=ProjectModel(**i[2]),
+        #         created_by=i[3],
+        #         created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
+        #         size=round(get_dir_size(config.data_path + "/projects/" + i[0]), 1),
+        #         last_activity=self.db_manager.logs_service.get_last_activity_project(i[0]),
+        #         project_slug=i[0],
+        #     )
+        #     for i in list(reversed(projects_auth))
+        # ]
 
     def get_project_params(self, project_slug: str) -> ProjectModel | None:
         """

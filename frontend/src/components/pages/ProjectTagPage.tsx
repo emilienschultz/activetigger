@@ -286,7 +286,7 @@ export const ProjectTagPage: FC = () => {
                         ''
                       )}
                       <Tooltip anchorSelect=".currentstatistics" place="top">
-                        tagged / sample selected / total
+                        statistics for the current scheme
                       </Tooltip>
                       <div>
                         <button className="btn getelement" onClick={refetchElement}>
