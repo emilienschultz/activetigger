@@ -136,6 +136,9 @@ async def get_list_elements(
     Get a table of elements
     """
     try:
+        print(
+            f"Getting table for scheme {scheme} with min={min}, max={max}, mode={mode}, contains={contains}, dataset={dataset}"
+        )
         extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
         df = extract.batch.fillna(" ")
         table = (df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]).to_dict(

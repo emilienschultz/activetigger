@@ -123,17 +123,45 @@ class Schemes:
 
     def convert_annotations(
         self, former_label: str, new_label: str, scheme: str, username: str
-    ) -> TableBatch:
+    ) -> None:
         """
         Convert tags from a specific label to another
         """
-        # get id with the current tag
-        df = self.get_scheme_data(scheme)
-        to_recode = df[df["labels"] == former_label].index
-        # for each of them, push the new tag
-        for i in to_recode:
-            self.push_annotation(i, new_label, scheme, username, "train", "recoding")
-        return {"success": "All tags recoded"}
+        # add a new tag for the annotated id in the trainset
+        df_train = self.get_scheme_data(scheme, kind=["train"])
+        elements_train = [
+            {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
+            for element_id in list(df_train[df_train["labels"] == former_label].index)
+        ]
+        df_test = self.get_scheme_data(scheme, kind=["test"])
+        elements_test = [
+            {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
+            for element_id in list(df_test[df_test["labels"] == former_label].index)
+        ]
+
+        # add the new tags
+        self.db_manager.projects_service.add_annotations(
+            dataset="train",
+            user_name=username,
+            project_slug=self.project_slug,
+            scheme=scheme,
+            elements=elements_train,
+        )
+        self.db_manager.projects_service.add_annotations(
+            dataset="test",
+            user_name=username,
+            project_slug=self.project_slug,
+            scheme=scheme,
+            elements=elements_test,
+        )
+
+        # update the scheme (no need to add empty annotation in the database)
+        available = self.available()
+        if scheme not in available:
+            raise Exception("Scheme doesn't exist")
+        labels = available[scheme]["labels"]
+        labels.remove(former_label)
+        self.update_scheme(scheme, labels)
 
     def get_total(self, dataset: str = "train"):
         """
@@ -183,7 +211,7 @@ class Schemes:
         max: int,
         mode: str,
         contains: str | None = None,
-        set: str = "train",
+        dataset: str = "train",
         user: str = "all",
     ) -> TableBatch:
         """
@@ -205,13 +233,13 @@ class Schemes:
 
         # case of the test set, no fancy stuff
         df: DataFrame = self.get_scheme_data(
-            scheme, complete=True, kind=["test"] if set == "test" else [set]
+            scheme, complete=True, kind=["test"] if dataset == "test" else [dataset]
         )
 
         # case of recent annotations (no filter possible)
         if mode == "recent":
             list_ids = self.projects_service.get_recent_annotations(
-                self.project_slug, user, scheme, max - min
+                self.project_slug, user, scheme, max - min, dataset
             )
             df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index())
             return TableBatch(
@@ -243,7 +271,7 @@ class Schemes:
 
         # normalize size
         if max == 0:
-            max = len(df)
+            max = 20
         if max > len(df):
             max = len(df)
 

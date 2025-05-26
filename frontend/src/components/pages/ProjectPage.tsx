@@ -62,9 +62,6 @@ export const ProjectPage: FC = () => {
               currentScheme={currentScheme || null}
               availableLabels={availableLabels as string[]}
               kindScheme={kindScheme as string}
-              reFetchCurrentProject={() => {
-                setAppContext((prev) => ({ ...prev, currentProject: null }));
-              }}
             />
           </Tab>
           <Tab eventKey="features" title="Features">

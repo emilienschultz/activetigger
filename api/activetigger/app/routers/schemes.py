@@ -49,7 +49,7 @@ async def rename_label(
         project.schemes.convert_annotations(former_label, new_label, scheme, current_user.username)
 
         # delete previous label in the scheme
-        project.schemes.delete_label(former_label, scheme, current_user.username)
+        # project.schemes.delete_label(former_label, scheme, current_user.username)
 
         # log
         orchestrator.log_action(

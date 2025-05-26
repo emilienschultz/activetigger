@@ -250,14 +250,16 @@ class ProjectsService:
                 for row in results
             ]
 
-    def get_recent_annotations(self, project_slug: str, user_name: str, scheme: str, limit: int):
+    def get_recent_annotations(
+        self, project_slug: str, user_name: str, scheme: str, limit: int, dataset: str = "train"
+    ):
         with self.Session() as session:
             stmt = (
                 select(Annotations.element_id, Annotations.time)
                 .filter_by(
                     project_slug=project_slug,
                     scheme_name=scheme,
-                    dataset="train",
+                    dataset=dataset,
                 )
                 .order_by(Annotations.time.desc())
                 .limit(limit)
@@ -472,7 +474,7 @@ class ProjectsService:
             )
 
             # Delete the old scheme
-            session.execute(delete(Schemes).filter_by(project_slug=project_slug, name=old_name))
+            session.delete(old_scheme)
 
     def get_table_annotations_users(self, project_slug: str, scheme: str):
         with self.Session() as session:

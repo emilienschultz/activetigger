@@ -60,7 +60,7 @@ export const DataTabular: FC<DataTabularModel> = ({
   //     (currentScheme && project?.schemes?.available?.[currentScheme]?.labels) ?? [];
 
   // selection elements
-  const [page, setPage] = useState<number | null>(0);
+  const [page, setPage] = useState<number | null>(1);
   const [search, setSearch] = useState<string | null>(null);
   const [sample, setSample] = useState<string>('recent');
   const [pageSize, setPageSize] = useState(20);

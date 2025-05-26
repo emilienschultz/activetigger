@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
 import { FaEdit } from 'react-icons/fa';
@@ -16,7 +16,6 @@ interface LabelsManagementProps {
   currentScheme: string | null;
   availableLabels: string[];
   kindScheme: string;
-  reFetchCurrentProject: () => void;
 }
 
 interface LabelCardProps {
@@ -92,7 +91,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 }) => {
   const { notify } = useNotifications();
 
-  const { statistics } = useStatistics(projectSlug, currentScheme);
+  const { statistics, reFetchStatistics } = useStatistics(projectSlug, currentScheme);
 
   // hooks to manage labels
   const { addLabel } = useAddLabel(projectSlug || null, currentScheme || null);
@@ -112,6 +111,10 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
     addLabel(createLabelValue);
     setCreateLabelValue('');
   };
+
+  useEffect(() => {
+    reFetchStatistics();
+  }, [reFetchStatistics, currentScheme, availableLabels]);
 
   return (
     <div>
