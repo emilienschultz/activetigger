@@ -57,7 +57,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
       if (file.size > maxSize) {
         notify({
           type: 'error',
-          message: `File is too big (only file less than ${maxSizeMo} are allowed)`,
+          message: `File is too big (only file less than ${maxSizeMo} Mo are allowed)`,
         });
         return;
       }

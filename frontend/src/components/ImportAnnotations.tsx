@@ -24,7 +24,7 @@ export interface DataType {
 }
 
 export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme }) => {
-  const maxSizeMo = 50;
+  const maxSizeMo = 100;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
   const { notify } = useNotifications();
   const postAnnotationsFile = usePostAnnotationsFile(projectName || null);
@@ -45,7 +45,7 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
       if (file.size > maxSize) {
         notify({
           type: 'error',
-          message: `File is too big (only file less than ${maxSizeMo} are allowed)`,
+          message: `File is too big (only file less than ${maxSizeMo} Mo are allowed)`,
         });
         return;
       }

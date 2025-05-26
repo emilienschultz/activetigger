@@ -392,7 +392,7 @@ export const ProjectTagPage: FC = () => {
                         postAnnotation(e.currentTarget.value, elementId);
                       }}
                     >
-                      Predicted : {element?.predict.label as string} (proba:{' '}
+                      Predicted : {element?.predict.label as string} (
                       {element?.predict.proba as number})
                     </button>
                   </div>
