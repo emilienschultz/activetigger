@@ -507,19 +507,16 @@ export function useDuplicateScheme(projectSlug: string, schemeName: string) {
 /**
  * create a feature
  **/
-export function useAddFeature(projectSlug: string | null) {
+export function useAddFeature() {
   const { notify } = useNotifications();
 
   const addFeature = useCallback(
     async (
+      projectSlug: string | null,
       featureType: string,
       featureName: string,
       featureParameters: Record<string, string | number | undefined> | null,
     ) => {
-      // TODO fix types
-
-      console.log('add features');
-
       if (!featureName) featureName = featureType;
 
       if (featureType && featureParameters && projectSlug) {
@@ -534,7 +531,7 @@ export function useAddFeature(projectSlug: string | null) {
       }
       return false;
     },
-    [projectSlug, notify],
+    [notify],
   );
 
   return addFeature;

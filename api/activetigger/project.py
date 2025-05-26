@@ -12,7 +12,6 @@ import pandas as pd
 import pytz
 from fastapi.encoders import jsonable_encoder
 from pandas import DataFrame
-from slugify import slugify
 
 from activetigger.config import config
 from activetigger.datamodels import (
@@ -32,7 +31,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.functions import clean_regex, get_dir_size
+from activetigger.functions import clean_regex, get_dir_size, slugify
 from activetigger.generation.generations import Generations
 from activetigger.languagemodels import LanguageModels
 from activetigger.projections import Projections

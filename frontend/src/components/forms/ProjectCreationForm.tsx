@@ -10,7 +10,12 @@ import ClipLoader from 'react-spinners/ClipLoader';
 import { CanceledError } from 'axios';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
-import { useAddProjectFile, useCreateProject, useProjectNameAvailable } from '../../core/api';
+import {
+  useAddFeature,
+  useAddProjectFile,
+  useCreateProject,
+  useProjectNameAvailable,
+} from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
@@ -55,6 +60,8 @@ export const ProjectCreationForm: FC = () => {
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
   const availableProjectName = useProjectNameAvailable(); // check if the project name is available
+  const addFeature = useAddFeature();
+
   const { addProjectFile, progression, cancel } = useAddProjectFile(); // API call
   const files = useWatch({ control, name: 'files' }); // watch the files entry
   const force_label = useWatch({ control, name: 'force_label' }); // watch the force label entry
@@ -142,6 +149,9 @@ export const ProjectCreationForm: FC = () => {
           filename: data.filename,
         });
         setCreatingProject(false);
+        // compute a default feature
+        addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
+        // redirect to the project page
         navigate(`/projects/${slug}`);
       } catch (error) {
         // if error comes from axios being canceled by user than show a success else that's a real error

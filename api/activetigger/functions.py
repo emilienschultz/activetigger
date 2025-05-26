@@ -4,6 +4,7 @@ import string
 import unicodedata
 from getpass import getpass
 from typing import cast
+from urllib.parse import quote
 
 import bcrypt
 import pandas as pd
@@ -19,11 +20,24 @@ from sklearn.metrics import (  # type: ignore[import]
     recall_score,
 )
 from sklearn.preprocessing import OneHotEncoder  # type: ignore[import]
+from slugify import slugify as python_slugify  # type: ignore[import]
 from transformers import (  # type: ignore[import]
     BertTokenizer,
 )
 
 from activetigger.datamodels import MLStatisticsModel
+
+
+def slugify(text: str, way: str = "file") -> str:
+    """
+    Convert a string to a slug format
+    """
+    if way == "file":
+        return python_slugify(text)
+    elif way == "url":
+        return quote(text)
+    else:
+        raise ValueError("Invalid way parameter. Use 'file' or 'url'.")
 
 
 def remove_punctuation(text):

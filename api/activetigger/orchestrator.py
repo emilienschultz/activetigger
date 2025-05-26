@@ -6,7 +6,6 @@ import asyncio
 import logging
 import os
 import shutil
-import sys
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -17,8 +16,8 @@ import psutil
 from fastapi.encoders import jsonable_encoder
 from jose import jwt
 from sklearn.datasets import fetch_20newsgroups  # type: ignore[import]
-from slugify import slugify
 
+# from slugify import slugify
 from activetigger import __version__
 from activetigger.config import config
 from activetigger.datamodels import (
@@ -29,7 +28,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
-from activetigger.functions import get_dir_size, get_gpu_memory_info
+from activetigger.functions import get_dir_size, get_gpu_memory_info, slugify
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users

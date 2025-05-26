@@ -30,7 +30,7 @@ export const FeaturesManagement: FC = () => {
 
   // API calls
   const { featuresInfo } = useGetFeatureInfo(projectName || null, project);
-  const addFeature = useAddFeature(projectName || null);
+  const addFeature = useAddFeature();
   const deleteFeature = useDeleteFeature(projectName || null);
 
   // hooks to use the objets
@@ -58,6 +58,7 @@ export const FeaturesManagement: FC = () => {
   const createNewFeature: SubmitHandler<FeatureModelExtended> = async (formData) => {
     try {
       addFeature(
+        projectName || null,
         formData.type,
         formData.name,
         formData.parameters as unknown as Record<string, string | number | undefined>,
