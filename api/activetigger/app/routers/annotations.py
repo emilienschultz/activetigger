@@ -55,6 +55,7 @@ async def get_next(
             history=next.history,
             frame=next.frame,
             filter=next.filter,
+            dataset=next.dataset,
         )
         return ElementOutModel(**r)
 

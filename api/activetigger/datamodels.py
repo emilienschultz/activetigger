@@ -96,6 +96,7 @@ class NextInModel(BaseModel):
     frame: list[Any] | None = None
     history: list[str] = []
     filter: str | None = None
+    dataset: str = "train"
 
 
 class ElementOutModel(BaseModel):

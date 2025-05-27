@@ -348,6 +348,7 @@ class Project:
         history: list = [],
         frame: None | list = None,
         filter: str | None = None,
+        dataset: str = "train",
     ) -> dict:
         """
         Get next item for a specific scheme with a specific selection method
@@ -368,28 +369,31 @@ class Project:
         # size of the subsample
 
         # specific case of test, random element
-        if selection == "test":
-            df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
-            f = df["labels"].isnull()
-            if len(df[f]) == 0:
-                raise ValueError("No element available with this selection mode.")
-            element_id = df[f].sample(random_state=42).index[0]
-            element = {
-                "element_id": str(element_id),
-                "text": df.loc[element_id, "text"],
-                "selection": "test",
-                "context": {},
-                "info": "",
-                "predict": {"label": None, "proba": None},
-                "frame": [],
-                "limit": 1200,
-                "history": [],
-                "n_sample": f.sum(),
-            }
-            return element
+        # if selection == "test":
+        #     df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
+        #     f = df["labels"].isnull()
+        #     if len(df[f]) == 0:
+        #         raise ValueError("No element available with this selection mode.")
+        #     element_id = df[f].sample(random_state=42).index[0]
+        #     element = {
+        #         "element_id": str(element_id),
+        #         "text": df.loc[element_id, "text"],
+        #         "selection": "test",
+        #         "context": {},
+        #         "info": "",
+        #         "predict": {"label": None, "proba": None},
+        #         "frame": [],
+        #         "limit": 1200,
+        #         "history": [],
+        #         "n_sample": f.sum(),
+        #     }
+        #     return element
 
         # select the current state of annotation
-        df = self.schemes.get_scheme_data(scheme, complete=True)
+        if dataset == "test":
+            df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
+        else:
+            df = self.schemes.get_scheme_data(scheme, complete=True)
 
         # build first filter from the sample
         if sample == "untagged":
@@ -505,17 +509,27 @@ class Project:
             self.params.project_slug, scheme, element_id
         )
 
+        print(df)
+
+        if dataset == "test":
+            limit = 1200
+            context = {}
+        else:
+            limit = int(self.content.loc[element_id, "limit"])
+            # get context
+            context = dict(
+                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+            )
+
         element = {
             "element_id": element_id,
-            "text": self.content.fillna("NA").loc[element_id, "text"],
-            "context": dict(
-                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
-            ),
+            "text": df.fillna("NA").loc[element_id, "text"],
+            "context": context,
             "selection": selection,
             "info": indicator,
             "predict": predict,
             "frame": frame,
-            "limit": int(self.content.loc[element_id, "limit"]),
+            "limit": limit,
             "history": previous,
             "n_sample": n_sample,
         }

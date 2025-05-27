@@ -617,12 +617,13 @@ export function useGetNextElementId(
         params: { query: { project_slug: projectSlug } },
         body: {
           scheme: currentScheme,
-          selection: phase == 'test' ? 'test' : selectionConfig.mode,
+          selection: selectionConfig.mode,
           sample: selectionConfig.sample,
           label: selectionConfig.label,
           filter: selectionConfig.filter,
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
+          dataset: phase == 'test' ? 'test' : 'train',
         },
       });
       if (res.data?.element_id)
@@ -1378,7 +1379,6 @@ export function useGetGenerationsFile(projectSlug: string | null, filters: strin
   const { notify } = useNotifications();
   const getGenerationsFile = useCallback(async () => {
     if (projectSlug) {
-      console.log(filters);
       const res = await api.POST('/export/generations', {
         params: {
           query: {
@@ -1862,9 +1862,6 @@ export function useGenerate(
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
-    console.log('make a call');
-    console.log(projectSlug, modelId, prompt, n_batch, currentScheme, mode);
-
     if (projectSlug && modelId && prompt && n_batch && currentScheme && mode) {
       const res = await api.POST('/generate/start', {
         params: {
@@ -1937,7 +1934,6 @@ export function useGeneratedElements(
           filters: filters,
         },
       });
-      console.log(res);
       if (!res.error && res.data && 'items' in res.data) {
         return res.data.items;
       }
@@ -1956,7 +1952,6 @@ export function useGeneratedElements(
 export function useGetLogs(project_slug: string | null, limit: number) {
   const getLogs = useAsyncMemo(async () => {
     if (limit && project_slug) {
-      console.log(limit);
       const res = await api.GET('/logs', {
         params: {
           query: {
