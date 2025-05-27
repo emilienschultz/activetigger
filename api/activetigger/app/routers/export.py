@@ -21,7 +21,6 @@ from activetigger.config import config
 from activetigger.datamodels import (
     ExportGenerationsParams,
     ProjectStaticFiles,
-    StaticFileModel,
     UserInDBModel,
 )
 from activetigger.project import Project

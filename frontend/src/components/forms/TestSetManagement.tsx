@@ -1,14 +1,14 @@
-//import { omit } from 'lodash';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 
 import { omit } from 'lodash';
 import { unparse } from 'papaparse';
-import { useCreateTestSet } from '../../core/api';
+import { useCreateTestSet, useDropTestSet } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 
+import { useNavigate } from 'react-router-dom';
 import { TestSetModel } from '../../types';
 
 // format of the data table
@@ -39,6 +39,9 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
 
   const createTestSet = useCreateTestSet(); // API call
   const { notify } = useNotifications();
+
+  const dropTestSet = useDropTestSet(projectSlug); // API call to drop existing test set
+  const navigate = useNavigate(); // for navigation after drop
 
   const [data, setData] = useState<DataType | null>(null);
   const files = useWatch({ control, name: 'files' });
@@ -83,11 +86,9 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
 
   return (
     <div className="container">
-      {/* {testSetExist && (
+      {testSetExist && (
         <div className="row">
           <div className="col-12">
-            <h4 className="subsection">Import a test set</h4>
-
             <button
               className="delete-button mt-3"
               onClick={() => {
@@ -100,7 +101,7 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
             </button>
           </div>
         </div>
-      )} */}
+      )}
       {!testSetExist && (
         <div className="row">
           <h4 className="subsection">Import a test set</h4>
