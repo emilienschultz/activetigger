@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
@@ -40,14 +40,24 @@ export const ProjectPage: FC = () => {
       : '';
 
   // manage redirect if at least 2 tags
+
+  // get the fact that we come from the create page
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const fromProjectPage = searchParams.get('fromProjectPage') === 'true';
-  if (fromProjectPage) {
-    if (availableLabels.length > 1) {
-      navigate(`/projects/${projectSlug}/tag`);
-    }
+  const [fromProjectPage, setFromProjectPage] = useState<boolean>(false);
+  if (!fromProjectPage && searchParams.get('fromProjectPage') === 'true') {
+    setFromProjectPage(true);
   }
+
+  // if conditions, navigate to the tag page
+  useEffect(() => {
+    if (fromProjectPage && availableLabels.length > 1) {
+      navigate(`/projects/${projectSlug}/tag`);
+      setFromProjectPage(false);
+    }
+  }, [fromProjectPage, availableLabels.length, navigate, projectSlug]);
+
+  console.log(currentScheme, fromProjectPage);
 
   if (!projectSlug || !project) return;
 

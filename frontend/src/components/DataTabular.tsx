@@ -204,11 +204,6 @@ export const DataTabular: FC<DataTabularModel> = ({
   return (
     <div className="container-fluid">
       <div className="row mt-3">
-        {phase == 'test' && (
-          <div className="alert alert-warning">
-            Test mode activated - you are annotating the test set
-          </div>
-        )}
         <div className="col-12">
           {!isValidRegex(search || '') && <div className="alert alert-danger">Regex not valid</div>}
           {currentScheme && table && (

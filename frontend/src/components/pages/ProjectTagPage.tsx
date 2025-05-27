@@ -234,74 +234,61 @@ export const ProjectTagPage: FC = () => {
 
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="tag">
-      <div className="col-4 form-check form-switch">
-        <input
-          className="form-check-input bg-info"
-          type="checkbox"
-          role="switch"
-          id="flexSwitchCheckDefault"
-          onChange={(e) => {
-            setAppContext((prev) => ({
-              ...prev,
-              phase: e.target.checked ? 'test' : 'train',
-            }));
-          }}
-          checked={phase == 'test' ? true : false}
-        />
-        <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
-          Test mode
-        </label>
-      </div>
+      {statistics && statistics['test_set_n'] && statistics['test_set_n'] > 0 && (
+        <div className={phase == 'test' ? 'alert alert-info m-2' : 'alert m-2'}>
+          <div className="col-4 form-check form-switch">
+            <input
+              className="form-check-input bg-info"
+              type="checkbox"
+              role="switch"
+              id="flexSwitchCheckDefault"
+              onChange={(e) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  phase: e.target.checked ? 'test' : 'train',
+                }));
+              }}
+              checked={phase == 'test' ? true : false}
+            />
+            <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
+              Test mode
+            </label>
+          </div>
+        </div>
+      )}
+
       <Tabs className="mb-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
           <div className="container-fluid">
             <div className="row mb-3 mt-3">
               {
-                // test mode
-                phase == 'test' && (
-                  <div className="alert alert-info">
-                    Test mode activated - you are annotating the test set
-                    <div className="col-6">
-                      {statistics && (
-                        <span className="badge text-bg-light  m-3">
-                          Number of annotations :{' '}
-                          {`${statistics['test_annotated_n']} / ${statistics['test_set_n']}`}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )
-              }
-              {
                 // annotation mode
-                phase != 'test' && (
-                  <div>
-                    <div className="d-flex align-items-center mb-3">
-                      {statistics ? (
-                        <span className="badge text-bg-light currentstatistics">
-                          Annotated :{' '}
-                          {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
-                        </span>
-                      ) : (
-                        ''
-                      )}
-                      <Tooltip anchorSelect=".currentstatistics" place="top">
-                        statistics for the current scheme
-                      </Tooltip>
-                      <div>
-                        <button className="btn getelement" onClick={refetchElement}>
-                          <LuRefreshCw size={20} /> Get element
-                          <Tooltip anchorSelect=".getelement" place="top">
-                            Get next element with the selection mode
-                          </Tooltip>
-                        </button>
-                      </div>
-                    </div>
+                <div>
+                  <div className="d-flex align-items-center mb-3">
+                    {statistics ? (
+                      <span className="badge text-bg-light currentstatistics">
+                        Annotated :{' '}
+                        {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
+                      </span>
+                    ) : (
+                      ''
+                    )}
+                    <Tooltip anchorSelect=".currentstatistics" place="top">
+                      statistics for the current scheme
+                    </Tooltip>
                     <div>
-                      <SelectionManagement />
+                      <button className="btn getelement" onClick={refetchElement}>
+                        <LuRefreshCw size={20} /> Get element
+                        <Tooltip anchorSelect=".getelement" place="top">
+                          Get next element with the selection mode
+                        </Tooltip>
+                      </button>
                     </div>
                   </div>
-                )
+                  <div>
+                    <SelectionManagement />
+                  </div>
+                </div>
               }
             </div>
           </div>

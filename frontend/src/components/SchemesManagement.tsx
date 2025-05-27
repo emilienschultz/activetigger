@@ -29,14 +29,15 @@ export const SelectCurrentScheme: FC = () => {
   // manage scheme selection
   useEffect(() => {
     // case of there is no selected scheme and schemes are available
-    if (!currentScheme && availableSchemes.length > 0) {
+    const nonDefaultSchemes = availableSchemes.filter((element) => element !== 'default');
+    if (!currentScheme && nonDefaultSchemes.length > 0) {
       setAppContext((state) => ({
         ...state,
-        currentScheme: availableSchemes[0],
+        currentScheme: nonDefaultSchemes[0],
       }));
       notify({
         type: 'success',
-        message: `Scheme ${availableSchemes[0]} selected`,
+        message: `Scheme ${nonDefaultSchemes[0]} selected`,
       });
     }
     // case of the scheme have been deleted

@@ -59,11 +59,7 @@ export const SelectionManagement: FC = () => {
     }
   }, [availableLabels, selectionConfig, setAppContext]);
 
-  console.log(currentModel);
-
-  return phase == 'test' ? (
-    <div>Test mode activated - deactivate first before annotating train set</div>
-  ) : (
+  return (
     <div className="w-100">
       <div className="d-flex align-items-center">
         {selectionConfig.frameSelection && <FaLock className="m-2" size={20} />}

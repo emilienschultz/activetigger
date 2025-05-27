@@ -152,7 +152,7 @@ export const ProjectCreationForm: FC = () => {
         // compute a default feature
         addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
         // redirect to the project page
-        navigate(`/projects/${slug}`);
+        navigate(`/projects/${slug}?fromProjectPage=true`);
       } catch (error) {
         // if error comes from axios being canceled by user than show a success else that's a real error
         if (!(error instanceof CanceledError)) notify({ type: 'error', message: error + '' });
