@@ -32,6 +32,7 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
     x: epoch as number,
     y: val_eval_loss[i] as number,
   }));
+  const minValLossPoint = valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min));
 
   if (valEvalLossData.length < 1)
     return (
@@ -88,9 +89,18 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
             data: { fill: '#0000ff' },
           }}
         />
+        <VictoryLine
+          data={[
+            { x: minValLossPoint.x, y: 0 }, // bottom of chart
+            { x: minValLossPoint.x, y: 2 }, // top of chart
+          ]}
+          style={{
+            data: { stroke: 'green', strokeWidth: 2, strokeDasharray: '5,5' }, // dashed red line
+          }}
+        />
         <VictoryLegend
           x={100}
-          y={350}
+          y={0}
           title="Legend"
           centerTitle
           orientation="horizontal"
@@ -99,6 +109,14 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
           data={[
             { name: 'Train Loss', symbol: { fill: '#c43a31' } },
             { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
+            {
+              name: 'Model Selected',
+              symbol: {
+                fill: 'green',
+                type: 'square',
+                size: 3,
+              },
+            },
           ]}
           standalone={true}
         />

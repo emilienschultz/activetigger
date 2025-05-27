@@ -23,10 +23,10 @@ from transformers import (  # type: ignore[import]
     TrainingArguments,
 )
 
+from activetigger.config import config
 from activetigger.datamodels import LMParametersModel
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
-from activetigger.config import config
 
 pd.set_option("future.no_silent_downcasting", True)
 
@@ -223,7 +223,7 @@ class TrainBert(BaseTask):
                 warmup_steps=int(warmup_steps),
                 eval_strategy="steps",
                 eval_steps=eval_steps,
-                save_strategy="steps",
+                save_strategy="best",  # steps
                 save_steps=int(eval_steps),
                 logging_steps=int(eval_steps),
                 do_eval=True,

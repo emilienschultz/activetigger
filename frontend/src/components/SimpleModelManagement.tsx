@@ -33,6 +33,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const { notify } = useNotifications();
 
   // available features
+  console.log('Available features:', availableFeatures);
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // function to change refresh frequency

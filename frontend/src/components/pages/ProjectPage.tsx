@@ -56,6 +56,12 @@ export const ProjectPage: FC = () => {
       <div className="container-fluid">
         <Tabs id="panel" className="mt-3" defaultActiveKey="schemes">
           <Tab eventKey="schemes" title="Schemes">
+            {availableLabels.length === 0 && (
+              <div className="alert alert-info col-8 m-2">
+                No labels available for this scheme. Please add labels to use this scheme, or create
+                a new scheme.
+              </div>
+            )}
             <SchemesManagement projectSlug={projectSlug} />
             <LabelsManagement
               projectSlug={projectSlug}
