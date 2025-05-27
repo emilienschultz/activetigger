@@ -405,10 +405,12 @@ class Project:
         # add a regex condition to the selection
         if filter:
             # sanitize
+            df["ID"] = df.index  # duplicate the id column
             filter_san = clean_regex(filter)
             if "CONTEXT=" in filter_san:  # case to search in the context
+                print("CONTEXT", filter_san.replace("CONTEXT=", ""))
                 f_regex: pd.Series = (
-                    df[self.params.cols_context]
+                    df[self.params.cols_context + ["ID"]]
                     .apply(lambda row: " ".join(row.values.astype(str)), axis=1)
                     .str.contains(
                         filter_san.replace("CONTEXT=", ""),
