@@ -32,7 +32,10 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
     x: epoch as number,
     y: val_eval_loss[i] as number,
   }));
-  const minValLossPoint = valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min));
+  const minValLossPoint = valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min), {
+    x: 0,
+    y: 0,
+  });
 
   if (valEvalLossData.length < 1)
     return (

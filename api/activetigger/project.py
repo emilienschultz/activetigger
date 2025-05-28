@@ -507,9 +507,6 @@ class Project:
         previous = self.schemes.projects_service.get_annotations_by_element(
             self.params.project_slug, scheme, element_id
         )
-
-        print(df)
-
         if dataset == "test":
             limit = 1200
             context = {}
