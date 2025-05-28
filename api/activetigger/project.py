@@ -91,10 +91,11 @@ class Project:
         """
         Delete completely a project
         """
-
-        # remove static files
-        if Path(f"{config.data_path}/projects/static/{self.name}").exists():
-            shutil.rmtree(f"{config.data_path}/projects/static/{self.name}")
+        # remove from database
+        try:
+            self.db_manager.projects_service.delete_project(self.name)
+        except Exception as e:
+            raise ValueError("Problem with the database", str(e))
 
         # remove folder of the project
         try:
@@ -102,11 +103,9 @@ class Project:
         except Exception as e:
             raise ValueError("No directory to delete", str(e))
 
-        # remove from database
-        try:
-            self.db_manager.projects_service.delete_project(self.name)
-        except Exception as e:
-            raise ValueError("Problem with the database", str(e))
+        # remove static files
+        if Path(f"{config.data_path}/projects/static/{self.name}").exists():
+            shutil.rmtree(f"{config.data_path}/projects/static/{self.name}")
 
     def load_project(self, project_slug: str):
         """

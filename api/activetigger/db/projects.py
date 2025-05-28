@@ -141,7 +141,7 @@ class ProjectsService:
                 "time": str(scheme.time_modified),
             }
 
-    def delete_project(self, project_slug: str):
+    def delete_project(self, project_slug: str) -> None:
         with self.Session.begin() as session:
             project = session.scalars(select(Projects).filter_by(project_slug=project_slug)).first()
             if project is None:
