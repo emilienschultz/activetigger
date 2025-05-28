@@ -177,9 +177,14 @@ export const FinetunePage: FC = () => {
   const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
 
   // display table false prediction
-  const falsePredictions =
+  const falsePredictionsTrain =
     model?.train_scores && model.train_scores['false_predictions']
       ? model.train_scores['false_predictions']
+      : null;
+
+  const falsePredictionsTest =
+    model?.test_scores && model.test_scores['false_predictions']
+      ? model.test_scores['false_predictions']
       : null;
 
   const columns: readonly Column<Row>[] = [
@@ -611,7 +616,7 @@ export const FinetunePage: FC = () => {
                                   <DataGrid<Row>
                                     className="fill-grid"
                                     columns={columns}
-                                    rows={falsePredictions as Row[]}
+                                    rows={falsePredictionsTrain as Row[]}
                                   />
                                 ) : (
                                   <div>Compute prediction first</div>
@@ -717,11 +722,11 @@ export const FinetunePage: FC = () => {
                       <button onClick={() => downloadModel()}>Download as json</button>
                       <details className="m-3">
                         <summary>False predictions</summary>
-                        {falsePredictions ? (
+                        {falsePredictionsTest ? (
                           <DataGrid<Row>
                             className="fill-grid"
                             columns={columns}
-                            rows={(falsePredictions as Row[]) || []}
+                            rows={(falsePredictionsTest as Row[]) || []}
                           />
                         ) : (
                           <div>Compute prediction first</div>
