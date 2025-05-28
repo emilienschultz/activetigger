@@ -3,6 +3,7 @@ import { omit } from 'lodash';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { usePostAnnotationsFile } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { loadFile } from '../core/utils';
@@ -28,6 +29,7 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
   const { notify } = useNotifications();
   const postAnnotationsFile = usePostAnnotationsFile(projectName || null);
+  const navigate = useNavigate();
 
   // form management
   const { register, control, handleSubmit, reset } = useForm<
@@ -71,6 +73,11 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
       });
       setData(null);
       reset();
+      notify({
+        type: 'success',
+        message: 'Annotations imported successfully',
+      });
+      navigate(0);
     }
   };
 
@@ -154,7 +161,7 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
                   </select>
                 </div>
                 <button type="submit" className="btn btn-primary form-button">
-                  Send those annotations
+                  Import annotations
                 </button>
               </div>
             )

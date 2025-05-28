@@ -298,6 +298,7 @@ class ProjectsService:
         project_slug: str,
         scheme: str,
         elements: list[dict],  # [{"element_id": str, "annotation": str, "comment": str}]
+        selection: str = "not defined",
     ):
         session = self.Session()
         for e in elements:
@@ -310,6 +311,7 @@ class ProjectsService:
                 scheme_name=scheme,
                 annotation=e["annotation"],
                 comment=e["comment"],
+                selection=selection,
             )
             session.add(annotation)
         session.commit()
