@@ -10,7 +10,7 @@ import { DisplayScores } from './DisplayScores';
 export const SelectionManagement: FC = () => {
   const { authenticatedUser } = useAuth();
   const {
-    appContext: { currentScheme, selectionConfig, currentProject: project, phase },
+    appContext: { currentScheme, selectionConfig, currentProject: project },
     setAppContext,
   } = useAppContext();
 
