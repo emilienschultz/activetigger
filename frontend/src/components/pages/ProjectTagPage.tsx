@@ -229,6 +229,13 @@ export const ProjectTagPage: FC = () => {
       return false;
     }
   };
+  const highlightTextRaw = [selectionConfig.filter, ...displayConfig.highlightText.split('\n')];
+  const highlightText = highlightTextRaw.filter(
+    (text): text is string => typeof text === 'string' && text.trim() !== '',
+  );
+
+  // Now filter by valid regex
+  const validHighlightText = highlightText.filter(isValidRegex);
 
   if (!projectName || !currentScheme) return;
 
@@ -333,11 +340,7 @@ export const ProjectTagPage: FC = () => {
 
                   <Highlighter
                     highlightClassName="Search"
-                    searchWords={
-                      selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                        ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
-                        : displayConfig.highlightText.split('\n')
-                    }
+                    searchWords={validHighlightText}
                     autoEscape={false}
                     textToHighlight={textInFrame}
                     highlightStyle={{
