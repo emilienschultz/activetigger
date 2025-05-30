@@ -49,7 +49,6 @@ export const CurrentProjectMonitoring: FC = () => {
 
       setAppContext((prev) => {
         if (!isEqual(prev.currentProject, project)) {
-          console.log('refresh project in app context');
           return { ...prev, currentProject: project, isComputing };
         }
         if (prev.isComputing !== isComputing) return { ...prev, isComputing };

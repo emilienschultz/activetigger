@@ -695,6 +695,7 @@ export const FinetunePage: FC = () => {
                   <DisplayTrainingProcesses
                     projectSlug={projectSlug || null}
                     processes={project?.languagemodels.training}
+                    processStatus="testing"
                   />
 
                   {model && !project?.params.test && (
@@ -706,9 +707,6 @@ export const FinetunePage: FC = () => {
                     </div>
                   )}
 
-                  {!(currentModel && currentScheme) && (
-                    <div>Select a scheme & a model to start computation</div>
-                  )}
                   {model && model.test_scores && (
                     <div>
                       <DisplayScores

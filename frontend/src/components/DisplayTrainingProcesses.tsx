@@ -21,6 +21,7 @@ export interface DisplayTrainingProcessesProps {
           | undefined;
       }
     | undefined;
+  processStatus?: string;
 }
 
 interface LossData {
@@ -32,6 +33,7 @@ interface LossData {
 export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
   projectSlug,
   processes,
+  processStatus,
 }) => {
   const { stopTraining } = useStopTrainBertModel(projectSlug || null);
 
@@ -41,6 +43,14 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
     if (v >= 100) return 'completed, please wait';
     return v + '%';
   };
+
+  if (
+    processStatus &&
+    processes &&
+    Object.values(processes).filter((p) => p && p.status === processStatus).length === 0
+  ) {
+    return <div className="overflow-x-auto p-4"></div>;
+  }
 
   return (
     <div className="overflow-x-auto p-4">
