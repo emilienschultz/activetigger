@@ -90,10 +90,12 @@ async def predict(
         # get the data
 
         if dataset == "train":
+            # data from the training dataset used for the model
             df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
+            # ids_train = project.languagemodels.get_train_ids(model_name)
+            # df = df.loc[ids_train]
             col_label = "labels"
             col_id = None
-            # df = project.content[["text"]]  # get data
         elif dataset == "all":
             df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
             df[project.params.col_id] = project.features.get_column_raw(

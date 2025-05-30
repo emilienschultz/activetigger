@@ -9,7 +9,7 @@ from activetigger.datamodels import AnnotationsDataModel, SchemesProjectStateMod
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import Codebook, ProjectsService
-from activetigger.functions import clean_regex
+from activetigger.functions import clean_regex, slugify
 
 
 class Schemes:
@@ -580,8 +580,11 @@ class Schemes:
         else:
             labels = self.available()[annotationsdata.scheme]["labels"]
 
-        # convert the data, set the index, drop empty
+        # convert the data, slugiy the index, set the index, drop empty
         df = pd.read_csv(StringIO(annotationsdata.csv))
+        df[annotationsdata.col_id] = df[annotationsdata.col_id].astype(str).apply(slugify)
+        if len(set(df[annotationsdata.col_id])) != len(df):
+            raise Exception("Duplicate IDs after slugify in the column selected as ID")
         df = df.set_index(annotationsdata.col_id)
         df = df[df[annotationsdata.col_label].notna()]
         col = df[annotationsdata.col_label]

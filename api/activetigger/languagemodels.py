@@ -529,7 +529,15 @@ class LanguageModels:
             return None
 
     def get_parameters(self, model_name) -> dict | None:
-        with open(self.path.joinpath(model_name).joinpath("parameters.json"), "r") as jsonfile:
+        """
+        Get the parameters of the model
+        """
+        path = self.path.joinpath(model_name).joinpath("parameters.json")
+
+        if not path.exists():
+            return None
+
+        with open(path, "r") as jsonfile:
             params = json.load(jsonfile)
         return params
 
@@ -609,3 +617,27 @@ class LanguageModels:
             training=self.training(),
             base_parameters=self.params_default,
         )
+
+    def get_eval_ids(self, model_name: str) -> list[str]:
+        """
+        Get the evaluation ids from the eval dataset of the model
+        """
+        path = self.path.joinpath(model_name).joinpath("test_dataset_eval.csv")
+        if not path.exists():
+            raise FileNotFoundError("Evaluation ids file does not exist")
+
+        ids = [str(i) for i in pd.read_csv(path, index_col=0).index]
+
+        return ids
+
+    def get_train_ids(self, model_name: str) -> list[str]:
+        """
+        Get the training ids from the train dataset of the model
+        """
+        path = self.path.joinpath(model_name).joinpath("train_dataset.csv")
+        if not path.exists():
+            raise FileNotFoundError("Training ids file does not exist")
+
+        ids = [str(i) for i in pd.read_csv(path, index_col=0).index]
+
+        return ids

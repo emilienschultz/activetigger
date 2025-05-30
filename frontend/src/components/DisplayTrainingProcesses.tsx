@@ -57,7 +57,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
       )}
       {Object.keys(processes || {}).length > 0 && (
         <div className="mt-3">
-          Current process:
+          Process running:
           <ul>
             {Object.entries(
               processes as Record<string, Record<string, string | number | null>>,

@@ -103,6 +103,7 @@ class TrainBert(BaseTask):
         self.path = path
         self.project_slug = project_slug
         self.name = model_name
+        df.index.name = "id"
         self.df = df
         self.col_text = col_text
         self.col_label = col_label
@@ -212,8 +213,8 @@ class TrainBert(BaseTask):
                 eval_steps = 1
 
             training_args = TrainingArguments(
-                output_dir=current_path.joinpath("train"),
-                logging_dir=current_path.joinpath("logs"),
+                output_dir=str(current_path.joinpath("train")),
+                logging_dir=str(current_path.joinpath("logs")),
                 learning_rate=float(self.params.lrate),
                 weight_decay=float(self.params.wdecay),
                 num_train_epochs=float(self.params.epochs),
@@ -243,28 +244,35 @@ class TrainBert(BaseTask):
                     CustomLoggingCallback(self.event, current_path=current_path, logger=logger)
                 ],
             )
-            trainer.train()
+            trainer.train()  # type: ignore[attr-defined]
 
             # predict on the validset and get the labels
-            predictions = trainer.predict(self.df["test"])
-            true_labels = [id2label[i] for i in predictions.label_ids]
-            pred_labels = [id2label[i] for i in np.argmax(predictions.predictions, axis=1)]
-            df_preds = pd.DataFrame(
-                {
-                    "true_label": true_labels,
-                    "predicted_label": pred_labels,
-                }
-            )
-            df_preds.to_csv(current_path.joinpath("predictions_eval.csv"))
+            predictions = trainer.predict(self.df["test"])  # type: ignore[attr-defined]
 
-            # compute metrics
-            metrics = get_metrics(df_preds["true_label"], df_preds["predicted_label"])
+            # shape and write the data of the test set
+            test = self.df["test"].to_pandas().set_index("id")
+            test["true_label"] = [id2label[i] for i in predictions.label_ids]
+            test["predicted_label"] = [
+                id2label[i] for i in np.argmax(predictions.predictions, axis=1)
+            ]
+            test[["true_label", "predicted_label"]].to_csv(
+                current_path.joinpath("test_dataset_eval.csv")
+            )
+
+            # compute metrics and write
+            metrics = get_metrics(test["true_label"], test["predicted_label"])
             with open(str(current_path.joinpath("metrics_validation.json")), "w") as f:
                 json.dump(metrics.model_dump(mode="json"), f)
+
+            # shape and write the data of the train set
+            train = self.df["train"].to_pandas().set_index("id")
+            train["labels"] = train["labels"].apply(lambda x: id2label[x])
+            train[["labels"]].to_csv(current_path.joinpath("train_dataset.csv"))
 
             # save model
             bert.save_pretrained(current_path)
             logger.info(f"Model trained {current_path}")
+
             # save training data in a file
             training_data.to_parquet(current_path.joinpath("training_data.parquet"))
 

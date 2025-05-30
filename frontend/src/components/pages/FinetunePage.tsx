@@ -231,8 +231,6 @@ export const FinetunePage: FC = () => {
     label: value,
   }));
 
-  console.log(currentModel);
-
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
       <div className="container-fluid">
@@ -256,10 +254,17 @@ export const FinetunePage: FC = () => {
               onSelect={(k) => setActiveKey(k || 'new')}
             >
               <Tab eventKey="new" title="Create" onSelect={() => setActiveKey('new')}>
-                <DisplayTrainingProcesses
-                  projectSlug={projectSlug || null}
-                  processes={project?.languagemodels.training}
-                />
+                <div className="explanations">
+                  The model will be trained on annotated data. A good practice is to have around 50
+                  annotated elements per class before starting the training. You can exclude
+                  elements with specific labels
+                </div>
+                {isComputing && (
+                  <DisplayTrainingProcesses
+                    projectSlug={projectSlug || null}
+                    processes={project?.languagemodels.training}
+                  />
+                )}
                 <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
                   {kindScheme == 'multilabel' && (
                     <div role="alert" className="alert alert-warning">
@@ -275,11 +280,6 @@ export const FinetunePage: FC = () => {
                     </div>
                   )}
 
-                  <div className="explanations">
-                    The model will be trained on annotated data. A good practice is to have around
-                    50 annotated elements per class before starting the training. You can exclude
-                    elements with specific labels
-                  </div>
                   <label htmlFor="new-model-type"></label>
                   <div>
                     <label>Name for the model</label>
@@ -558,14 +558,15 @@ export const FinetunePage: FC = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {Object.entries(model.params as Record<string, unknown>).map(
-                                ([key, value]) => (
-                                  <tr key={key}>
-                                    <td>{key}</td>
-                                    <td>{JSON.stringify(value)}</td>
-                                  </tr>
-                                ),
-                              )}
+                              {model.params &&
+                                Object.entries(model.params as Record<string, unknown>).map(
+                                  ([key, value]) => (
+                                    <tr key={key}>
+                                      <td>{key}</td>
+                                      <td>{JSON.stringify(value)}</td>
+                                    </tr>
+                                  ),
+                                )}
                             </tbody>
                           </table>
                           <details className="m-2">
