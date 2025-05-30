@@ -733,17 +733,6 @@ export const FinetunePage: FC = () => {
                       </details>
                     </div>
                   )}
-                  {/* {!project?.params.test && (
-                    <div className="row">
-                      <div className="col-12">
-                        <TestSetManagement
-                          projectSlug={projectSlug || ''}
-                          currentScheme={currentScheme || ''}
-                          testSetExist={project?.params.test || false}
-                        />
-                      </div>
-                    </div>
-                  )} */}
                 </div>
               </Tab>
               <Tab eventKey="predict" title="Predict">

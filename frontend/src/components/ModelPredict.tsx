@@ -1,15 +1,11 @@
 import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import PulseLoader from 'react-spinners/PulseLoader';
 import { Tooltip } from 'react-tooltip';
 
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import {
-  useComputeModelPrediction,
-  useModelInformations,
-  useStopTrainBertModel,
-} from '../core/api';
+import { useComputeModelPrediction, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
+import { DisplayTrainingProcesses } from './DisplayTrainingProcesses';
 import { ImportPredictionDataset } from './forms/ImportPredictionDataset';
 
 export const ModelPredict: FC = () => {
@@ -19,7 +15,7 @@ export const ModelPredict: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
   const [batchSize, setBatchSize] = useState<number>(32);
-  const { stopTraining } = useStopTrainBertModel(projectSlug || null);
+  // const { stopTraining } = useStopTrainBertModel(projectSlug || null);
 
   // available labels from context
   const [currentModel, setCurrentModel] = useState<string | null>(null);
@@ -60,25 +56,11 @@ export const ModelPredict: FC = () => {
             </select>
           </div>
 
-          {/* Display the progress of training models */}
-          {project?.languagemodels.training &&
-            Object.keys(project.languagemodels.training).length > 0 && (
-              <div className="mt-3">
-                Current process:
-                <ul>
-                  {Object.entries(project?.languagemodels.training).map(([_, v]) =>
-                    v ? (
-                      <li key={v.name as unknown as string}>
-                        {v.name as unknown as string} - {v.status as unknown as string} :{' '}
-                        <span style={{ fontWeight: 'bold' }}>
-                          {Math.round(Number(v.progress))} %
-                        </span>
-                      </li>
-                    ) : null,
-                  )}
-                </ul>
-              </div>
-            )}
+          <DisplayTrainingProcesses
+            projectSlug={projectSlug || null}
+            processes={project?.languagemodels.training}
+            processStatus="predicting"
+          />
           <div className="d-flex align-items-center">
             <label>Batch size</label>
             <a className="batch">
@@ -95,7 +77,7 @@ export const ModelPredict: FC = () => {
               onChange={(e) => setBatchSize(Number(e.target.value))}
             />
           </div>
-          {isComputing && (
+          {/* {isComputing && (
             <div>
               <button
                 key="stop"
@@ -105,7 +87,7 @@ export const ModelPredict: FC = () => {
                 <PulseLoader color={'white'} /> Stop current process
               </button>
             </div>
-          )}
+          )} */}
 
           {currentModel && currentScheme && (
             <div>

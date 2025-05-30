@@ -54,7 +54,7 @@ class Orchestrator:
     path: Path
     path_models: Path
     db: Path
-    projects: dict
+    projects: dict[str, Project]
     db_manager: DatabaseManager
     queue: Queue
     users: Users
