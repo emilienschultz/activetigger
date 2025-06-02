@@ -198,7 +198,7 @@ export const ProjectActionsSidebar: FC<{
               title="Tag"
             >
               <PiTagDuotone />
-              <span> Tag</span>
+              <span>Tag</span>
             </Link>
           </li>
         </ul>

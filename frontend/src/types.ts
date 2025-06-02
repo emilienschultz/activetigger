@@ -107,6 +107,7 @@ export interface SelectionConfig {
   mode: string;
   sample: string;
   label?: string;
+  label_maxprob?: string; // label to use for maxprob selection
   frame?: number[];
   frameSelection?: boolean; // true/false to use frame to select
   filter?: string;

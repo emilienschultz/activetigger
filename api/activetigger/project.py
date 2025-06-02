@@ -344,6 +344,7 @@ class Project:
         sample: str = "untagged",
         user: str = "user",
         label: None | str = None,
+        label_maxprob: None | str = None,
         history: list = [],
         frame: None | list = None,
         filter: str | None = None,
@@ -364,29 +365,6 @@ class Project:
 
         if scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
-
-        # size of the subsample
-
-        # specific case of test, random element
-        # if selection == "test":
-        #     df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
-        #     f = df["labels"].isnull()
-        #     if len(df[f]) == 0:
-        #         raise ValueError("No element available with this selection mode.")
-        #     element_id = df[f].sample(random_state=42).index[0]
-        #     element = {
-        #         "element_id": str(element_id),
-        #         "text": df.loc[element_id, "text"],
-        #         "selection": "test",
-        #         "context": {},
-        #         "info": "",
-        #         "predict": {"label": None, "proba": None},
-        #         "frame": [],
-        #         "limit": 1200,
-        #         "history": [],
-        #         "n_sample": f.sum(),
-        #     }
-        #     return element
 
         # select the current state of annotation
         if dataset == "test":
@@ -431,8 +409,8 @@ class Project:
         # manage frame selection (if projection, only in the box)
         if frame and len(frame) == 4:
             if user in self.projections.available:
-                if "data" in self.projections.available[user]:
-                    projection = self.projections.available[user]["data"]
+                if self.projections.available[user].data:
+                    projection = self.projections.available[user].data
                     f_frame = (
                         (projection[0] > frame[0])
                         & (projection[0] < frame[1])
@@ -463,21 +441,21 @@ class Project:
         if selection == "random":  # random row
             element_id = ss.sample(frac=1).index[0]
 
-        # higher prob, only possible if the model has been trained
+        # higher prob for the label_maxprob, only possible if the model has been trained
         if selection == "maxprob":
             if not self.simplemodels.exists(user, scheme):
                 raise Exception("Simplemodel doesn't exist")
-            if label is None:  # default label to first
-                raise Exception("Label is required")
+            if label_maxprob is None:  # default label to first
+                raise Exception("Label maxprob is required")
             sm = self.simplemodels.get_model(user, scheme)  # get model
             proba = sm.proba.reindex(f.index)
             # use the history to not send already tagged data
             ss = (
-                proba[f][label].drop(history, errors="ignore").sort_values(ascending=False)
+                proba[f][label_maxprob].drop(history, errors="ignore").sort_values(ascending=False)
             )  # get max proba id
             element_id = ss.index[0]
             n_sample = f.sum()
-            indicator = f"probability: {round(proba.loc[element_id, label], 2)}"
+            indicator = f"probability: {round(proba.loc[element_id, label_maxprob], 2)}"
 
         # higher entropy, only possible if the model has been trained
         if selection == "active":

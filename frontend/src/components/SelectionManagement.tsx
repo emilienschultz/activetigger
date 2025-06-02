@@ -64,27 +64,27 @@ export const SelectionManagement: FC = () => {
       <div className="d-flex align-items-center">
         {selectionConfig.frameSelection && <FaLock className="m-2" size={20} />}
         <div className="mx-2 w-25">
-          <label>Selection</label>
+          <label>Sample</label>
           <select
             className="form-select"
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+            onChange={(e) => {
               setAppContext((prev) => ({
                 ...prev,
-                selectionConfig: { ...selectionConfig, mode: e.target.value },
+                selectionConfig: { ...selectionConfig, sample: e.target.value },
               }));
             }}
-            value={selectionConfig.mode}
+            value={selectionConfig.sample}
           >
-            {availableModes.map((e, i) => (
+            {availableSamples.map((e, i) => (
               <option key={i}>{e}</option>
-            ))}
+            ))}{' '}
           </select>
         </div>
         {
-          // label selection for maxprob OR when sample is tagged
-          (selectionConfig.mode == 'maxprob' || selectionConfig.sample == 'tagged') && (
+          // label selection for tagged elemnts
+          selectionConfig.sample == 'tagged' && (
             <div className="mx-2 w-25">
-              <label>Label</label>
+              <label>Filter on label</label>
               <select
                 onChange={(e) => {
                   setAppContext((prev) => ({
@@ -104,22 +104,45 @@ export const SelectionManagement: FC = () => {
           )
         }
         <div className="mx-2 w-25">
-          <label>On</label>
+          <label>Selection</label>
           <select
             className="form-select"
-            onChange={(e) => {
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
               setAppContext((prev) => ({
                 ...prev,
-                selectionConfig: { ...selectionConfig, sample: e.target.value },
+                selectionConfig: { ...selectionConfig, mode: e.target.value },
               }));
             }}
-            value={selectionConfig.sample}
+            value={selectionConfig.mode}
           >
-            {availableSamples.map((e, i) => (
+            {availableModes.map((e, i) => (
               <option key={i}>{e}</option>
-            ))}{' '}
+            ))}
           </select>
         </div>
+        {
+          // label selection for maxprob
+          selectionConfig.mode == 'maxprob' && (
+            <div className="mx-2 w-25">
+              <label>Maxprob on</label>
+              <select
+                onChange={(e) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
+                  }));
+                }}
+                className="form-select"
+                value={selectionConfig.label_maxprob}
+              >
+                {availableLabels.map((e, i) => (
+                  <option key={i}>{e}</option>
+                ))}{' '}
+              </select>
+            </div>
+          )
+        }
+
         {
           // input validated on deselect
         }

@@ -58,6 +58,7 @@ async def get_next(
             frame=next.frame,
             filter=next.filter,
             dataset=next.dataset,
+            label_maxprob=next.label_maxprob,
         )
         return ElementOutModel(**r)
 

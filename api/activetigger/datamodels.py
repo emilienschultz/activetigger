@@ -93,6 +93,7 @@ class NextInModel(BaseModel):
     selection: str = "fixed"
     sample: str = "untagged"
     label: str | None = None
+    label_maxprob: str | None = None
     frame: list[Any] | None = None
     history: list[str] = []
     filter: str | None = None
