@@ -9,12 +9,13 @@ import { useGetElementById, useGetProjectionData, useUpdateProjection } from '..
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
-import { ElementOutModel, ProjectionInStrictModel, ProjectionModelParams } from '../types';
+import { ElementOutModel, ProjectionModelParams, ProjectionParametersModel } from '../types';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
 import chroma from 'chroma-js';
 import { FaLock } from 'react-icons/fa';
+import { Tooltip } from 'react-tooltip';
 
 interface ProjectionManagementProps {
   projectName: string | null;
@@ -55,10 +56,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   // form management
   const availableProjections = useMemo(() => project?.projections, [project?.projections]);
 
-  const { register, handleSubmit, watch, control, reset } = useForm<ProjectionInStrictModel>({
+  const { register, handleSubmit, watch, control, reset } = useForm<ProjectionParametersModel>({
     defaultValues: {
       method: 'umap',
-      params: {
+      parameters: {
         //common
         n_components: 2,
         // T-SNE
@@ -79,7 +80,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   // action when form validated
   const { updateProjection } = useUpdateProjection(projectName, currentScheme);
-  const onSubmit: SubmitHandler<ProjectionInStrictModel> = async (formData) => {
+  const onSubmit: SubmitHandler<ProjectionParametersModel> = async (formData) => {
     // fromData has all fields whatever the selected method
 
     // discard unrelevant fields depending on selected method
@@ -89,7 +90,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         : selectedMethod === 'umap'
           ? ['n_neighbors', 'min_dist', 'metric', 'n_components']
           : [];
-    const params = pick(formData.params, relevantParams) as ProjectionModelParams;
+    const params = pick(formData.parameters, relevantParams) as ProjectionModelParams;
     const data = { ...formData, params };
     const watchedFeatures = watch('features');
     if (watchedFeatures.length == 0) {
@@ -202,7 +203,9 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           </button>
         )}
         <label style={{ display: 'block' }} className="mx-4">
-          <FaLock /> Lock on selection
+          <span className="lock">
+            <FaLock /> Lock on selection
+          </span>
           <input
             type="checkbox"
             checked={selectionConfig.frameSelection}
@@ -217,6 +220,11 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               }));
             }}
           />
+          <Tooltip anchorSelect=".lock" place="top">
+            Once a vizualisation computed, you can use the square tool to select an area (or remove
+            the square).<br></br> Then you can lock the selection, and only elements in the selected
+            area will be available for annoation.
+          </Tooltip>
         </label>
       </div>
 
@@ -265,16 +273,16 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 type="number"
                 step="1"
                 id="perplexity"
-                {...register('params.perplexity', { valueAsNumber: true })}
+                {...register('parameters.perplexity', { valueAsNumber: true })}
               ></input>
               <label>Learning rate</label>
-              <select {...register('params.learning_rate')}>
+              <select {...register('parameters.learning_rate')}>
                 <option key="auto" value="auto">
                   auto
                 </option>
               </select>
               <label>Init</label>
-              <select {...register('params.init')}>
+              <select {...register('parameters.init')}>
                 <option key="random" value="random">
                   random
                 </option>
@@ -288,17 +296,17 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 type="number"
                 step="1"
                 id="n_neighbors"
-                {...register('params.n_neighbors', { valueAsNumber: true })}
+                {...register('parameters.n_neighbors', { valueAsNumber: true })}
               ></input>
               <label htmlFor="min_dist">min_dist</label>
               <input
                 type="number"
                 id="min_dist"
                 step="0.01"
-                {...register('params.min_dist', { valueAsNumber: true })}
+                {...register('parameters.min_dist', { valueAsNumber: true })}
               ></input>
               <label htmlFor="metric">Metric</label>
-              <select {...register('params.metric')}>
+              <select {...register('parameters.metric')}>
                 <option key="cosine" value="cosine">
                   cosine
                 </option>
@@ -313,7 +321,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             type="number"
             id="n_components"
             step="1"
-            {...register('params.n_components', { valueAsNumber: true, required: true })}
+            {...register('parameters.n_components', { valueAsNumber: true, required: true })}
           ></input>
 
           <button className="btn btn-primary btn-validation">Compute</button>

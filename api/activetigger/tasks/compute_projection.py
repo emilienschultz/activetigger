@@ -25,8 +25,10 @@ class ComputeProjection(BaseTask):
     """
 
     kind = "projection"
+    features: DataFrame
+    params: dict
 
-    def __init__(self, kind: str, features: DataFrame, params: TsneModel | UmapModel):
+    def __init__(self, kind: str, features: DataFrame, params: dict):
         super().__init__()
         self.kind = kind
         self.features = features
@@ -37,8 +39,10 @@ class ComputeProjection(BaseTask):
         Compute projection
         """
         if self.kind == "umap":
+            self.params = UmapModel(**self.params).model_dump()
             return self.compute_umap()
         elif self.kind == "tsne":
+            self.params = TsneModel(**self.params).model_dump()
             return self.compute_tsne()
         else:
             raise ValueError(f"Unknown kind {self.kind}")
@@ -51,10 +55,10 @@ class ComputeProjection(BaseTask):
 
         # Check if cuML is available for GPU acceleration
         try:
-            reducer = cuml.UMAP(**self.params.__dict__)
+            reducer = cuml.UMAP(**self.params)
             print("Using cuML for UMAP computation")
         except Exception:
-            reducer = umap.UMAP(**self.params.__dict__)
+            reducer = umap.UMAP(**self.params)
             print("Using standard UMAP for computation")
 
         reduced_features = reducer.fit_transform(scaled_features)
@@ -67,7 +71,7 @@ class ComputeProjection(BaseTask):
         Compute TSNE
         """
         scaled_features = StandardScaler().fit_transform(self.features)
-        reduced_features = TSNE(**self.params.__dict__).fit_transform(scaled_features)
+        reduced_features = TSNE(**self.params).fit_transform(scaled_features)
         df = pd.DataFrame(reduced_features, index=self.features.index)
         df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
         return df_scaled

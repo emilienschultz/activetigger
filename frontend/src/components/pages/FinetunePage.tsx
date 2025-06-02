@@ -617,7 +617,7 @@ export const FinetunePage: FC = () => {
                                   <DataGrid<Row>
                                     className="fill-grid"
                                     columns={columns}
-                                    rows={falsePredictionsTrain as Row[]}
+                                    rows={falsePredictionsTrain as unknown as Row[]}
                                   />
                                 ) : (
                                   <div>Compute prediction first</div>

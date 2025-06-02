@@ -260,8 +260,8 @@ class UmapModel(BaseModel):
     Params UmapModel
     """
 
-    n_components: int
     n_neighbors: int
+    n_components: int
     min_dist: float
     metric: str
 
@@ -277,24 +277,21 @@ class TsneModel(BaseModel):
     perplexity: int
 
 
-class ProjectionInModel(BaseModel):
+class ProjectionParametersModel(BaseModel):
     """
     Request projection
     """
 
     method: str
     features: list
-    params: dict[str, Any]
+    parameters: dict[str, Any]
 
 
-class ProjectionInStrictModel(BaseModel):
-    """
-    Request projection
-    """
-
-    method: str
-    features: list
-    params: TsneModel | UmapModel
+class ProjectionDataModel(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    id: str
+    data: DataFrame
+    parameters: ProjectionParametersModel
 
 
 class ProjectionOutModel(BaseModel):
@@ -306,7 +303,7 @@ class ProjectionOutModel(BaseModel):
     index: list
     x: list
     y: list
-    parameters: ProjectionInStrictModel
+    parameters: ProjectionParametersModel
     labels: list[str] | None = None
     predictions: list[str] | None = None
 
@@ -435,7 +432,7 @@ class ProjectionComputing(ProcessComputing):
     kind: Literal["projection"]
     name: str
     method: str
-    params: ProjectionInStrictModel
+    params: ProjectionParametersModel
 
 
 class FeatureComputing(ProcessComputing):

@@ -7,9 +7,11 @@ from pandas import DataFrame
 
 from activetigger.datamodels import (
     ProjectionComputing,
-    ProjectionInStrictModel,
-    ProjectionOutModel,
+    ProjectionDataModel,
+    ProjectionParametersModel,
     ProjectionsProjectStateModel,
+    TsneModel,
+    UmapModel,
 )
 from activetigger.queue import Queue
 from activetigger.tasks.compute_projection import ComputeProjection
@@ -22,7 +24,7 @@ class Projections:
 
     # TODO: Transform available type to dict[str, UserProjection]
     path: Path
-    available: dict
+    available: dict[str, ProjectionDataModel]
     options: dict[str, dict[str, Any]]
     computing: list
     queue: Queue
@@ -72,12 +74,12 @@ class Projections:
         """
         Add projection after computation
         """
-        self.available[element.user] = {
-            "data": results,
-            "method": element.method,
-            "parameters": element.params,
-            "id": element.unique_id,
-        }
+        self.available[element.user] = ProjectionDataModel(
+            id=element.unique_id,
+            data=results,
+            parameters=element.params,
+        )
+
         try:
             pickle.dump(self.available, open(self.path.joinpath("projections.pickle"), "wb"))
         except Exception as e:
@@ -87,16 +89,19 @@ class Projections:
         self,
         project_slug: str,
         username: str,
-        projection: ProjectionInStrictModel,
+        projection: ProjectionParametersModel,
         features: DataFrame,
     ) -> None:
         """
         Launch the projection computation in the queue
         """
+
         unique_id = self.queue.add_task(
             "projection",
             project_slug,
-            ComputeProjection(kind=projection.method, features=features, params=projection.params),
+            ComputeProjection(
+                kind=projection.method, features=features, params=projection.parameters
+            ),
         )
         self.computing.append(
             ProjectionComputing(
@@ -110,27 +115,19 @@ class Projections:
             )
         )
 
-    def get(self, user_name: str) -> ProjectionOutModel | None:
+    def get(self, user_name: str) -> ProjectionDataModel | None:
         """
         Get the projection for a user
         """
         if user_name not in self.available:
             return None
-        if "data" not in self.available[user_name]:
-            return None
-        data = self.available[user_name]["data"]
-        return ProjectionOutModel(
-            index=list(data.index),
-            x=list(data[0]),
-            y=list(data[1]),
-            status=self.available[user_name]["id"],
-            parameters=self.available[user_name]["parameters"],
-        )
+
+        return self.available[user_name]
 
     def state(self) -> ProjectionsProjectStateModel:
         return ProjectionsProjectStateModel(
             options=self.options,
-            available={i: self.available[i]["id"] for i in self.available},
+            available={i: self.available[i].id for i in self.available},
             training=self.training(),
         )
 
@@ -144,9 +141,7 @@ class Projections:
         """
         if user_name not in self.available:
             raise Exception("No projection available")
-        if "data" not in self.available[user_name]:
-            raise Exception("No projection available")
-        data = self.available[user_name]["data"]
+        data = self.available[user_name].data
         file_name = f"projection_{user_name}.{format}"
         if format == "csv":
             data.to_csv(self.path.joinpath(file_name))

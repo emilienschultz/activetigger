@@ -15,7 +15,7 @@ import {
   ProjectBaseModel,
   ProjectStateModel,
   ProjectUpdateModel,
-  ProjectionInStrictModel,
+  ProjectionParametersModel,
   SimpleModelModel,
   SupportedAPI,
   TestSetDataModel,
@@ -1611,8 +1611,8 @@ export function useUpdateProjection(
   const { notify } = useNotifications();
 
   const updateProjection = useCallback(
-    async (formData: ProjectionInStrictModel) => {
-      if (projectSlug && formData.features && scheme && formData.params) {
+    async (formData: ProjectionParametersModel) => {
+      if (projectSlug && formData.features && scheme && formData.parameters) {
         const res = await api.POST('/elements/projection/compute', {
           params: {
             query: {
@@ -1622,7 +1622,7 @@ export function useUpdateProjection(
           body: {
             method: formData.method,
             features: formData.features,
-            params: formData.params,
+            parameters: formData.parameters,
           },
         });
         if (!res.error) notify({ type: 'warning', message: 'Vizualisation is being computed' });

@@ -19,11 +19,13 @@ from activetigger.datamodels import (
     AnnotationsDataModel,
     ElementOutModel,
     NextInModel,
-    ProjectionInStrictModel,
     ProjectionOutModel,
+    ProjectionParametersModel,
     ReconciliationModel,
     TableAnnotationsModel,
     TableOutModel,
+    TsneModel,
+    UmapModel,
     UserInDBModel,
     WaitingModel,
 )
@@ -79,18 +81,31 @@ async def get_projection(
         if projection is None:
             return None
 
-        # add existing annotations
-        df = project.schemes.get_scheme_data(scheme, complete=True)
-        projection.labels = list(df["labels"].fillna("NA"))
+        data = projection.data
 
-        # add predictions if available
+        # get annotations
+        df = project.schemes.get_scheme_data(scheme, complete=True)
+        data["labels"] = df["labels"].fillna("NA")
+
+        # get & add predictions if available
         if current_user.username in project.simplemodels.existing:
             if scheme in project.simplemodels.existing[current_user.username]:
-                projection.predictions = list(
-                    project.simplemodels.existing[current_user.username][scheme].proba["prediction"]
-                )
+                data["prediction"] = project.simplemodels.existing[current_user.username][
+                    scheme
+                ].proba["prediction"]
 
-        return projection
+        r = ProjectionOutModel(
+            index=list(data.index),
+            x=list(data[0]),
+            y=list(data[1]),
+            status=projection.id,
+            parameters=projection.parameters,
+            labels=list(data["labels"]),
+        )
+        if "prediction" in data:
+            r.predictions = list(data["prediction"])
+        return r
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -99,7 +114,7 @@ async def get_projection(
 async def compute_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    projection: ProjectionInStrictModel,
+    projection: ProjectionParametersModel,
 ) -> WaitingModel:
     """
     Start projection computation using futures
