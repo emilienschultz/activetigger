@@ -154,6 +154,35 @@ async def get_logs(
     )
 
 
+@app.post("/stop", dependencies=[Depends(verified_user)])
+async def stop_process(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> None:
+    """
+    Stop all the ongoing process for the connected user
+    """
+    test_rights("kill process", current_user.username)
+    try:
+        # get all processes for the user
+        processes = [
+            orchestrator.projects[p].get_process(
+                ["train_bert", "predict_bert", "generation"], current_user.username
+            )
+            for p in orchestrator.projects
+        ]
+        processes = [i for p in processes for i in p if p is not None]
+
+        # kill all processes
+        for process in processes:
+            orchestrator.queue.kill(process.unique_id)
+            orchestrator.log_action(
+                current_user.username, f"KILL PROCESS: {process.unique_id}", "all"
+            )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/kill", dependencies=[Depends(verified_user)])
 async def kill_process(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],

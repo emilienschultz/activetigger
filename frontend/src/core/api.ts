@@ -1096,6 +1096,20 @@ export function useStopTrainBertModel(projectSlug: string | null) {
 }
 
 /**
+ * Stop process for the user
+ */
+export function useStopProcesses() {
+  const { notify } = useNotifications();
+  const stopProcesses = useCallback(async () => {
+    const res = await api.POST('/stop', {});
+    if (!res.error) notify({ type: 'success', message: 'All processes stop' });
+    return true;
+  }, [notify]);
+
+  return { stopProcesses };
+}
+
+/**
  * Rename bert model
  */
 export function useRenameBertModel(projectSlug: string | null) {

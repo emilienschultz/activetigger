@@ -90,7 +90,8 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
     return filtered;
   };
-  const defaultFeatures = filterFeatures(features);
+  const predictions = filterFeatures(features);
+  const defaultFeatures = [predictions[predictions.length - 1]];
 
   return (
     <div>

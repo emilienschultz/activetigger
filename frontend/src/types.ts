@@ -64,10 +64,6 @@ export type TextDatasetModel = components['schemas']['TextDatasetModel'];
 
 export type MLStatisticsModel = components['schemas']['MLStatisticsModel'];
 
-export type ProjectionModelParams =
-  | components['schemas']['TsneModel']
-  | components['schemas']['UmapModel'];
-
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

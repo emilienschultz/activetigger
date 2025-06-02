@@ -1,11 +1,12 @@
 import cx from 'classnames';
 import { FC, useState } from 'react';
+import { FaStopCircle } from 'react-icons/fa';
 import { FiRefreshCcw } from 'react-icons/fi';
 import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import logo from '../../assets/at.png';
-import { useGetServer } from '../../core/api';
+import { useGetServer, useStopProcesses } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 
@@ -26,7 +27,9 @@ interface NavBarPropsType {
 
 const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
   const { authenticatedUser, logout } = useAuth();
+  const currentUser = authenticatedUser?.username;
   const navigate = useNavigate();
+  const { stopProcesses } = useStopProcesses();
 
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -41,6 +44,15 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
 
   // display the number of current processes on the server
   const { queueState, gpu } = useGetServer(currentProject || null);
+
+  // test if computation is currently undergoing
+  const currentComputation =
+    currentProject && currentUser && currentProject.languagemodels
+      ? currentUser in currentProject.languagemodels.training ||
+        currentUser in currentProject.simplemodel.training ||
+        currentUser in currentProject.projections.training ||
+        Object.values(currentProject.features.training).length > 0
+      : false;
 
   return (
     <div className="bg-primary">
@@ -115,19 +127,29 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
 
             {authenticatedUser ? (
               <ul className="d-flex navbar-nav me-auto mb-2 mb-lg-0 navbar-text navbar-text-margins align-items-center">
+                {currentComputation && (
+                  <li className="d-flex nav-item">
+                    <button className="btn btn-primary  stopprocess" onClick={stopProcesses}>
+                      <FaStopCircle style={{ color: 'red' }} />
+                    </button>
+                    <Tooltip anchorSelect=".stopprocess" place="top">
+                      Stop the current process
+                    </Tooltip>
+                  </li>
+                )}
                 <li className="d-flex nav-item">
                   <button className="btn btn-primary clearhistory" onClick={actionClearHistory}>
                     <FiRefreshCcw />
                     <span className="badge badge-warning">{history.length}</span>
                   </button>
+                  <Tooltip anchorSelect=".clearhistory" place="top">
+                    Clear the current session (you can only annotate once each element by session)
+                  </Tooltip>
                 </li>
                 <li className="nav-item">
                   <span>Logged as {authenticatedUser.username}</span>
                 </li>
                 <li className="nav-item">
-                  <Tooltip anchorSelect=".clearhistory" place="top">
-                    Clear the current session (you can only annotate once each element by session)
-                  </Tooltip>
                   <button
                     className="btn btn-primary"
                     onClick={async () => {

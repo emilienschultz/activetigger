@@ -634,7 +634,7 @@ class Project:
         # part test
         if self.params.test:
             df = self.schemes.get_scheme_data(scheme, kind=["test"])
-            r["test_set_n"] = len(self.schemes.test)
+            r["test_set_n"] = len(self.schemes.test) if self.schemes.test is not None else 0
             r["test_annotated_n"] = len(df.dropna(subset=["labels"]))
             if kind == "multiclass":
                 r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())

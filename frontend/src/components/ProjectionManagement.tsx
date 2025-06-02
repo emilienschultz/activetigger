@@ -9,7 +9,7 @@ import { useGetElementById, useGetProjectionData, useUpdateProjection } from '..
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
-import { ElementOutModel, ProjectionModelParams, ProjectionParametersModel } from '../types';
+import { ElementOutModel, ProjectionParametersModel } from '../types';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
@@ -90,7 +90,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         : selectedMethod === 'umap'
           ? ['n_neighbors', 'min_dist', 'metric', 'n_components']
           : [];
-    const params = pick(formData.parameters, relevantParams) as ProjectionModelParams;
+    const params = pick(formData.parameters, relevantParams);
     const data = { ...formData, params };
     const watchedFeatures = watch('features');
     if (watchedFeatures.length == 0) {
