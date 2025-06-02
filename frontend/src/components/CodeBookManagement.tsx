@@ -48,7 +48,7 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
   };
 
   return (
-    <div className="container mt-3">
+    <div className="container">
       <div className="explanations">Keep track of the tagging rules</div>
       <MDEditor
         value={modifiedCodebook || ''}

@@ -117,25 +117,23 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   }, [reFetchStatistics, currentScheme, availableLabels]);
 
   return (
-    <div>
+    <div className="row">
       <span className="explanations px-4">
-        {' '}
         The current scheme is a <b>{kindScheme}</b>
       </span>
 
       <div className="rounded-2xl bg-white">
-        <div className="d-flex ">
+        <div className="d-flex align-items-center justify-content-between col-8 col-md-4">
           <input
             type="text"
             id="new-label"
             value={createLabelValue}
             onChange={handleCreateLabelChange}
             placeholder="Enter new label"
-            className="form-control w-25 m-4"
+            className="form-control m-4"
           />
-
           <button onClick={createLabel} className="btn btn p-0">
-            <FaPlusCircle size={20} className="m-2" />
+            <FaPlusCircle size={20} />
           </button>
         </div>
         <table className="table table-hover">

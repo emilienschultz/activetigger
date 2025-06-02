@@ -41,7 +41,7 @@ export const ModelPredict: FC = () => {
   return (
     <div className="container-fluid">
       <div className="row">
-        <div className="col-8">
+        <div className="col-12">
           <label htmlFor="selected-model">Existing models</label>
           <div className="d-flex align-items-center">
             <select
@@ -55,7 +55,6 @@ export const ModelPredict: FC = () => {
               ))}
             </select>
           </div>
-
           <DisplayTrainingProcesses
             projectSlug={projectSlug || null}
             processes={project?.languagemodels.training}

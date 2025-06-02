@@ -79,30 +79,31 @@ export const SelectionManagement: FC = () => {
               <option key={i}>{e}</option>
             ))}{' '}
           </select>
+          {
+            // label selection for tagged elemnts
+            selectionConfig.sample == 'tagged' && (
+              <label>
+                Filter on label
+                <select
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: { ...selectionConfig, label: e.target.value },
+                    }));
+                  }}
+                  className="form-select"
+                  value={selectionConfig.label}
+                >
+                  {selectionConfig.sample == 'tagged' && <option key="">All</option>}
+                  {availableLabels.map((e, i) => (
+                    <option key={i}>{e}</option>
+                  ))}{' '}
+                </select>
+              </label>
+            )
+          }
         </div>
-        {
-          // label selection for tagged elemnts
-          selectionConfig.sample == 'tagged' && (
-            <div className="mx-2 w-25">
-              <label>Filter on label</label>
-              <select
-                onChange={(e) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: { ...selectionConfig, label: e.target.value },
-                  }));
-                }}
-                className="form-select"
-                value={selectionConfig.label}
-              >
-                {selectionConfig.sample == 'tagged' && <option key="">All</option>}
-                {availableLabels.map((e, i) => (
-                  <option key={i}>{e}</option>
-                ))}{' '}
-              </select>
-            </div>
-          )
-        }
+
         <div className="mx-2 w-25">
           <label>Selection</label>
           <select
@@ -119,29 +120,29 @@ export const SelectionManagement: FC = () => {
               <option key={i}>{e}</option>
             ))}
           </select>
+          {
+            // label selection for maxprob
+            selectionConfig.mode == 'maxprob' && (
+              <label>
+                Maxprob on
+                <select
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
+                    }));
+                  }}
+                  className="form-select"
+                  value={selectionConfig.label_maxprob}
+                >
+                  {availableLabels.map((e, i) => (
+                    <option key={i}>{e}</option>
+                  ))}{' '}
+                </select>
+              </label>
+            )
+          }
         </div>
-        {
-          // label selection for maxprob
-          selectionConfig.mode == 'maxprob' && (
-            <div className="mx-2 w-25">
-              <label>Maxprob on</label>
-              <select
-                onChange={(e) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
-                  }));
-                }}
-                className="form-select"
-                value={selectionConfig.label_maxprob}
-              >
-                {availableLabels.map((e, i) => (
-                  <option key={i}>{e}</option>
-                ))}{' '}
-              </select>
-            </div>
-          )
-        }
 
         {
           // input validated on deselect

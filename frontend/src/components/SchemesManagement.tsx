@@ -142,26 +142,27 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
   return (
     <div className="container-fluid m-3">
       <div className="d-flex flex-wrap align-items-center">
-        <div className="mt-3">
+        <div className="mt-3 col-12 col-md-4">
           <SelectCurrentScheme />
         </div>
         <button onClick={deleteSelectedScheme} className="btn btn-primary mx-2">
-          <FaRegTrashAlt size={20} /> Delete
+          <FaRegTrashAlt size={20} /> <span className="d-none d-sm-inline ms-2">Delete</span>
         </button>
         <button
           onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
           className="btn btn-primary"
         >
-          <FaPlusCircle size={20} /> Add
+          <FaPlusCircle size={20} /> <span className="d-none d-sm-inline ms-2">Add</span>
         </button>
         {true && (
           <button onClick={() => setShowRename(!showRename)} className="btn btn-primary mx-2">
-            <MdDriveFileRenameOutline size={20} /> Rename
+            <MdDriveFileRenameOutline size={20} />{' '}
+            <span className="d-none d-sm-inline ms-2">Rename</span>
           </button>
         )}
         {true && (
           <button onClick={() => duplicateScheme()} className="btn btn-primary">
-            <IoDuplicate size={20} /> Duplicate
+            <IoDuplicate size={20} /> <span className="d-none d-sm-inline ms-2">Duplicate</span>
           </button>
         )}
       </div>
@@ -170,8 +171,8 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
           // only display if click on the add button
           showCreateNewScheme && (
             <div className="row">
-              <form onSubmit={handleSubmit(createNewScheme)}>
-                <div className="col-4">
+              <div className="col-12 col-md-6 m-2 alert alert-primary">
+                <form onSubmit={handleSubmit(createNewScheme)}>
                   <input
                     className="form-control"
                     id="scheme_name"
@@ -190,8 +191,8 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
                     <option value="multilabel">Multilabel (expertimental)</option>
                   </select>
                   <button className="btn btn-primary btn-validation">Create</button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           )
         }
@@ -199,7 +200,7 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
           // only display if click on the rename button
           showRename && (
             <div className="row">
-              <div className="col-4 d-flex justify-content-center align-items-center">
+              <div className="col-8 col-md-4 d-flex m-2 alert alert-primary">
                 <input
                   className="form-control me-2"
                   id="scheme_rename"

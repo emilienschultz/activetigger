@@ -75,14 +75,14 @@ export const ProjectExportPage: FC = () => {
     <ProjectPageLayout projectName={projectName || null} currentAction="export">
       <div className="container-fluid">
         <div className="row">
-          <div className="col-8">
+          <div className="col-12">
             <div className="explanations">
               Download data (annotations, features, predictions) and fine-tuned models
             </div>
 
             <div>Select a format</div>
             <select
-              className="form-select"
+              className="form-select w-50 w-md-25"
               onChange={(e) => {
                 setFormat(e.currentTarget.value);
               }}

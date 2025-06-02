@@ -235,7 +235,7 @@ export const FinetunePage: FC = () => {
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
       <div className="container-fluid">
         <div className="row">
-          <div className="col-8">
+          <div className="col-12">
             <div className="explanations">
               Train and modify models
               <a className="problems m-2">
