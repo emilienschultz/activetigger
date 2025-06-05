@@ -277,6 +277,9 @@ class SimpleModels:
         unique_id = self.queue.add_task("simplemodel", project_slug, FitModel(**args))
         del args
 
+        # add features in the params
+        model_params["features"] = features
+
         self.computing.append(
             SimpleModelComputing(
                 user=user,

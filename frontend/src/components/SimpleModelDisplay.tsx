@@ -25,10 +25,16 @@ export const SimpleModelDisplay: FC = () => {
       <table className="table table-striped table-hover">
         <tbody>
           {currentModel.params &&
-            (currentModel.params && Object.entries(currentModel.params)).map(([key, value], i) => (
+            Object.entries(currentModel.params).map(([key, value], i) => (
               <tr key={i}>
                 <td>{key}</td>
-                <td>{value}</td>
+                <td>
+                  {Array.isArray(value)
+                    ? value.join(', ') // or use bullets if you prefer
+                    : typeof value === 'object' && value !== null
+                      ? JSON.stringify(value, null, 2)
+                      : String(value)}
+                </td>
               </tr>
             ))}
         </tbody>

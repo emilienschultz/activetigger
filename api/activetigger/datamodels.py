@@ -733,7 +733,7 @@ class SimpleModelOutModel(BaseModel):
     features: list
     model: str
     params: (
-        dict[str, str | float | bool | None]
+        dict[str, str | float | bool | list | None]
         | dict[str, dict[str, str | float | bool | None]]
         | None
     )
