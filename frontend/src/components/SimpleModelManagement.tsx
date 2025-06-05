@@ -196,7 +196,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           <Controller
             name="features"
             control={control}
-            defaultValue={defaultFeatures.map((e) => e.value)}
+            defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
             render={({ field: { onChange, value } }) => (
               <Select
                 options={features}
