@@ -4,7 +4,6 @@ import { FcStatistics } from 'react-icons/fc';
 import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
-import { DisplayScores } from './DisplayScores';
 
 // define the component to configure selection mode
 export const SelectionManagement: FC = () => {
@@ -61,6 +60,10 @@ export const SelectionManagement: FC = () => {
 
   return (
     <div className="w-100">
+      <div className="explanations">
+        Quick model available
+        <FcStatistics />{' '}
+      </div>
       <div className="d-flex align-items-center">
         {selectionConfig.frameSelection && <FaLock className="m-2" size={20} />}
         <div className="mx-2 w-25">
@@ -163,47 +166,6 @@ export const SelectionManagement: FC = () => {
             }}
           />
         </div>
-      </div>
-      <div className="d-flex align-items-top align-items-center">
-        <details className="mx-2">
-          <summary className="explanations">
-            Quick model <FcStatistics />{' '}
-            <span className="badge bg-light text-dark">
-              {currentModel ? currentModel['model'] : 'No model trained'}
-            </span>
-          </summary>
-          {currentModel && (
-            <div>
-              <table className="table table-striped table-hover">
-                <thead>
-                  <tr>
-                    <th>Model parameters</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentModel.params &&
-                    (currentModel.params && Object.entries(currentModel.params)).map(
-                      ([key, value], i) => (
-                        <tr key={i}>
-                          <td>{key}</td>
-                          <td>{value}</td>
-                        </tr>
-                      ),
-                    )}
-                </tbody>
-              </table>
-              <div>
-                <h5>Statistics</h5>
-                <DisplayScores
-                  title="Quick model"
-                  scores={currentModel.statistics as unknown as Record<string, number>}
-                  scores_cv10={currentModel.statistics_cv10 as unknown as Record<string, number>}
-                />
-              </div>
-            </div>
-          )}
-        </details>
       </div>
     </div>
   );

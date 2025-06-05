@@ -29,6 +29,7 @@ import { MulticlassInput } from '../MulticlassInput';
 import { MultilabelInput } from '../MultilabelInput';
 import { ProjectionManagement } from '../ProjectionManagement';
 import { SelectionManagement } from '../SelectionManagement';
+import { SimpleModelDisplay } from '../SimpleModelDisplay';
 import { SimpleModelManagement } from '../SimpleModelManagement';
 import { TagDisplayParameters } from '../TagDisplayParameters';
 /**
@@ -494,22 +495,27 @@ export const ProjectTagPage: FC = () => {
           <div className="container-fluid">
             <div className="row mb-3 mt-3">
               <div className="col-6">
-                {phase != 'test' && (
-                  <SimpleModelManagement
-                    projectName={projectName || null}
-                    currentScheme={currentScheme || null}
-                    availableSimpleModels={
-                      availableSimpleModels as unknown as Record<string, Record<string, number>>
-                    }
-                    availableFeatures={availableFeatures}
-                    availableLabels={availableLabels}
-                    kindScheme={kindScheme}
-                  />
-                )}
                 {phase == 'test' && (
                   <div className="alert alert-warning">
                     Test mode activated - quick model are disabled
                   </div>
+                )}
+
+                {phase != 'test' && (
+                  <>
+                    <div className="explanations">Current quick model parameters and train</div>
+                    <SimpleModelManagement
+                      projectName={projectName || null}
+                      currentScheme={currentScheme || null}
+                      availableSimpleModels={
+                        availableSimpleModels as unknown as Record<string, Record<string, number>>
+                      }
+                      availableFeatures={availableFeatures}
+                      availableLabels={availableLabels}
+                      kindScheme={kindScheme}
+                    />
+                    <SimpleModelDisplay />
+                  </>
                 )}
               </div>
             </div>
