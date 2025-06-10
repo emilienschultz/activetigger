@@ -236,17 +236,6 @@ export const FinetunePage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
-            <div className="explanations">
-              Train and modify models
-              <a className="problems m-2">
-                <FaTools />
-              </a>
-              <Tooltip anchorSelect=".problems" place="top">
-                If the model doesn't train, the reason can be the limit of available GPU. Please try
-                latter. If the problem persists, contact us.
-              </Tooltip>
-            </div>
-
             <Tabs
               id="panel"
               className="mb-3"
@@ -255,9 +244,15 @@ export const FinetunePage: FC = () => {
             >
               <Tab eventKey="new" title="Create" onSelect={() => setActiveKey('new')}>
                 <div className="explanations">
-                  The model will be trained on annotated data. A good practice is to have around 50
-                  annotated elements per class before starting the training. You can exclude
-                  elements with specific labels
+                  The model will be trained on annotated data. A good practice is to have at least
+                  50 annotated elements. You can exclude elements with specific labels.{' '}
+                  <a className="problems m-2">
+                    <FaTools />
+                    <Tooltip anchorSelect=".problems" place="top">
+                      If the model doesn't train, the reason can be the limit of available GPU.
+                      Please try latter. If the problem persists, contact us.
+                    </Tooltip>
+                  </a>
                 </div>
                 {isComputing && (
                   <DisplayTrainingProcesses
@@ -652,7 +647,7 @@ export const FinetunePage: FC = () => {
               <Tab eventKey="testing" title="Test">
                 <div className="explanations">
                   Do not use testset statistics to select the best model, otherwise it’s only a
-                  validation model
+                  validation set.
                 </div>
                 {/* Select a model to compute testset predictions */}
                 <label htmlFor="selected-model">Existing models</label>

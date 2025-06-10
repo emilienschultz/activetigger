@@ -443,12 +443,18 @@ class Orchestrator:
             keep_id.append(params.col_id)
             content.set_index("id", inplace=True)
 
-        # convert columns that can be numeric or force text
-        for col in content.columns:
+        # convert columns that can be numeric or force text, exception for the text/labels
+        for col in [i for i in content.columns if i not in params.cols_label]:
             try:
                 content[col] = pd.to_numeric(content[col], errors="raise")
             except Exception:
                 content[col] = content[col].astype(str).replace("nan", None)
+        for col in params.cols_label:
+            try:
+                content[col] = content[col].astype(str).replace("nan", None)
+            except Exception:
+                # if the column is not convertible to string, keep it as is
+                pass
 
         # create the text column, merging the different columns
         content["text"] = content[params.cols_text].apply(
