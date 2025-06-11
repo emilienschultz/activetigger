@@ -17,16 +17,15 @@ _Note: ActiveTigger currently only works for multiclass/multilabel annotation, n
 
 ## Table of contents
 1. [Creating a project](#creating-a-project)
-2. [Project tab](#project-page)
-3. [Explore](#explore)
-4. [Prepare](#prepare)
-5. [Annotate](#annotate)
-6. [Validation](#validation)
-7. [Export](#export)
-8. [User management](#user-management)
-9. [Account](#account)
-10.[Storage](#storage)
-11.[Further resources](#further-resources)
+2. [Workflow](#workflow)
+3. [Project](#project-page)
+4. [Tag](#tag)
+5. [Fine-tune](#fine-tune)
+6. [Export](#export)
+7. [User management](#user-management)
+8. [Account](#account)
+9.[Storage](#storage)
+10.[Further resources](#further-resources)
 
 
 ## Creating a project
@@ -68,9 +67,24 @@ Once the project is created, you can start working on it.
 
     By default, a project is only visible to the user who created it (and the administrator of the service). You can add users on a project if you want to work collaboratively.
 
-## Project page
+## Workflow
+Once you have created your project, below are the suggested steps that will help you develop, evaluate, and apply your model:
+- Define your labels in your coding scheme
+- Tag at least a couple hundred (randomly selected) elements (at least a few dozen per label)
+- Train a Quick Model: define features under **Project**, train Quick Model under **Tag**
+- Go back and annotate, alternating between Active Learning and random modes to ensure a diverse pool of annotated data in your training dataset. Check performance metrics (scores, visualizations) periodically to assess your annotation strategy.
+- Once content with preliminary prediction performance, train a full BERT model under **Fine-tune**. You may need to go back and revise your annotation strategy if you are not happy with model performance.
+- Once content with your fine-tuned model, apply it on a test set (unseen data) to evaluate it more robustly.
+- Once content with these results, apply your model on the full dataset.
+- Export the results and proceed with your analysis.
 
-Click on the name of your project in the left-hand menu to see a summary of your situation.
+In this guide, we go into more detail on each of these steps, going through the Active Tigger interface tab by tab.
+
+
+
+## Project
+
+Click on the name of your project in the left-hand menu to see a summary of your where your project is at.
 
 Each project can have several **coding schemes**. A scheme is a set of specific labels that you can use to annotate the corpus. Each scheme works as an independant layer of annotation. One is created by default when you create a project.
 
@@ -94,17 +108,12 @@ Once you entered the annotation phase, you will have an history of already annot
 
 ![Overview of project tab](img/project.png)
 
-## Explore
 
-The **Explore tab**  gives you an overview of your data. You can filter to see elements with certain keywords or regex patterns and get an overview of your annotations so far. You can click on elements to switch to annotation.
+### Prepare your project
 
-![Overview of the Project tab](img/explore.png)
+#### Schemes
 
-## Prepare
-
-### Define labels
-
-Before annotating, you need to define your labels.
+Before annotating, you need to define your labels. You do this by creating labels in a coding scheme.
 
 We recommend keeping your labels simple. If you are aiming to train a model, binary categorizations tend to be easier to handle. For example, if you are annotating newspaper headlines, it is easier to classify it as "politics/not politics", rather than to include all possible subjects as multiple categories. You can layer different binary categorizations as different coding scheme, or add labels at a later stage.
 
@@ -121,21 +130,33 @@ You can also delete or replace labels.
 
     If you want to merge 2 labels in one, you just have to rename one with the name of the other.
 
-### Define features
+#### Features
 
-The **Prepare** tab also lets you define the **features** you want to use for your model. 
+The **Project** tab also lets you define the **features** you want to use for your model. 
 
 Features means that each text element is represented by a numerical vector. This is necessary to train certain models (especially for active learning) or to do projections.
 
 By default, we recommend using the SBERT feature, which is a pre-trained model that converts your text into a numerical representation. This is a good starting point for most projects.
 
-### Write your codebook
+#### Codebook
 
 Under the **Codebook** tab, you can also include written instructions on how to distinguish your categories. It is helpful if you work collaboratively.
 
-## Annotate
+#### Import 
 
-The **Annotate** tab is where you will spend most of your time.
+Here you can import:
+- additional annotations to your train set (make sure they have the same id)
+- a test set to validate your model (more on this below)
+
+#### Parameters
+Here you can see (or change, if needed) a summary of the main parameters for your project.
+
+#### Session history
+This tab logs all activities undertaken on your project (can be particularly helpful if you work with collaborators).
+
+## Tag
+
+The **Tag** tab is where you will spend most of your time. Here is where you annotate your data and perform your first measures to create and validate a model.
 
 ### Selection mode
 
@@ -174,9 +195,9 @@ First, make sure you have at least one _feature_ created under the **Prepare** t
 
 ![Training a prediction model](img/featuretab.png)
 
-Second, you need to train a current prediction model based on the annotations you have made so far. You do this at the bottom of the annotation tab. The basic parameters can be used for the first model and refined latter. 
+Second, you need to **select features** under the Project tab and train a **Quick Model**
 
-Once the prediction model is trained, you can now choose the _active_ and _maxprob_ selection modes when picking elements. That means you can use the prediction of this model to guide your selection.  
+Once the quick prediction model is trained, you can now choose the _active_ and _maxprob_ selection modes when picking elements. That means you can use the prediction of this model to guide your selection.  
 
 ![Overview of the selection modes](img/selectionmode.png)
 
@@ -195,51 +216,42 @@ You can see, by **clicking on active model**, if your model works well on your d
 
 The **Exact score** is calculated on all the data you have annotated. The model uses this same data for training and then evaluating its performance. It is normal for this score to be very high (close to 1.0), because the model has already seen all this data during training. For the **CV10 score** , the model automatically divides all your annotations into 10 equal parts and trains on 9 parts that represent 90% of the annotations. It does not take into account the remaining part, which corresponds to 10% of the annotations, during training. It then uses this set-aside part to test whether the model can correctly predict these annotations that it has not seen during training. Then it repeats the following operation 10 times. 
 
-Further in this Quickstart, we provide a brief overview of how other metrics work, such as the F1 score.
 
-Once you judge that the score obtained is satisfactory, you can then train a larger model (which we explain in the Fine-tune your BERT classifier part), with more parameters that you can modify, which will serve to obtain more precise annotations.
 
-### Vizualisation
-
-To improve your coding, you can use the Visualization mode. Select your SBERT feature (you can also add your trained model if you have one), then click compute. This will project your models into two dimensions. This projection allows you to see how your models group similar texts naturally. You can either visualize the elements you have annotated or the model’s predictions. The separation (or overlap) of the different groups can give you a visual indication of your model's performance – clear separation suggests a model that distinguishes categories well. Points appearing in "incorrect regions" (e.g., isolated orange points in a mostly blue area) may indicate classification errors or interesting edge cases to analyze.
-When you spot such cases, you can click on a point and annotate it.
-
-### Workflow
+### Quick Model
 
 Once you have annotated a sufficient number of examples (ideally a few hundred in total, at least around 50 per class/category) you can begin training classification models to assist and scale your annotation work. ActiveTigger supports a progressive workflow for model training.
 
 **Training Quick Models to Evaluate Intermediary Performance**
-You can train one or more "quick", intermediary models to see how well your model is performing based on your existing annotations. These can provide preliminary insights on baseline performance. This can help you in early stages of annotation, identifying cases where a model may struggle on ambiguities or other inconsistencies in your coding scheme/data.
+You can train one or more "quick", intermediary models to see how well your model is performing based on your existing annotations. These can provide preliminary insights on baseline performance. This can help you in early stages of annotation, identifying cases where a model may struggle on ambiguities or other inconsistencies in your coding scheme/data. They will also permit you to use the **Active Learning** features.
 
-- Define your features under Prepare tab (we recommend SBERT). This is a pre-trained model that converts your text into a numerical representation (embeddings). This allows you to use the Visualization feature to see how this preliminary model groups texts. A clear visual separation indicates that the model is capturing how your categories should be distinguished.
-- You can follow the steps in **Fine-tune your BERT classifier** to train your first models on your actual annotations, even with a more limited annotation set. See guide on validation metrics for ways to assess performance.
-- Once you start seeing decent results in your first trained models, you can use the predictions of your latest model in visualizations, prediction export, and further annotation (active learning). In particular, the loss curve is a useful evaluation tool (see below). The entropy score (provided alongside predictions) can also be a useful metric for evaluation at this stage. High entropy suggests low confidence, helping you pinpoint ambiguous cases or inconsistencies in your annotations.
+- Define your features under Prepare tab (we recommend SBERT). This is a pre-trained model that converts your text into a numerical representation (embeddings). This also allows you to use the Visualization feature to see how this preliminary model groups texts. 
+- Under **Create a new quick model**, you can set up the basic parameters for your quick model. We recommend keeping them at default for your first try.
+- Optionally, you can tick the box to include a **10-fold cross validation**. This means that your quick model will "test itself" on your training data, 10 times. This gives you a first indication of your model's performance, but since you are using only training data, this should be taken with a grain of salt.
+- Once you are done, you will see a series of metrics, of which the F1 score is generally the most interesting. See explanation of metrics under the **Fine-tune** section below.
 
+Later, once you have trained a full BERT model (see **Fine-tune** section) you can also use this model instead of a quick model to make predictions.
+
+You can the predictions of your latest (quick or no) model in visualizations, exporting predictions, and further annotation (active learning).
+
+Once you feel that you may have a large enough set of annotations and your quick model shows signs of understanding your coding scheme, you can then train a larger model (see **Fine-tune** section) with more parameters that you can modify, which can serve to obtain even more precise annotations.
 !!! info "Keep your coding scheme consistent"
 
     It can be tempting to adjust your annotations according to initial performance metrics (for example, a lower F1 score in a certain category may incite you to tag more examples as positives for this category). Ensure that your annotations are first and foremost consistent with your codebook. Mixing annotation strategies in the middle of the same scheme can cause issues with training models due to inconsistencies. If you are unhappy with model results, consider adjusting your codebook - maybe your categories are too vaguely defined? You can start a new coding scheme to test various annotation strategies.
 
-### Monitoring the Training Process
-During model training, ActiveTigger displays loss curves for both training and evaluation datasets. These curves help you assess the model's learning progress. The overall goal should be to minimize **loss**: a number that tells us how far off the model's predictions are from the correct answers. It is the difference between the model's predictions and the actual labeled data.
+### Tabular
+This tab gives you an overview of all tagged elements. You can get a quick picture of their distribution in the dataset. If you want to relabel an element, you can do so by **double-clicking** on the assigned label.
 
-During the traning phase, we calculate loss on training data. **Training loss** shows how well the model is doing on the examples it has already seen. **Evaluation loss** is measured on a separate sample of data that was not used during training. This gives a more realistic idea of how the model will perform on new, unseen data.
+### Vizualisation
 
-This will give you two curves. They should be interpreted as follows:
-- Decreasing Loss: Indicates effective learning. If the loss remains flat, consider increasing the learning rate.
-- Increasing Loss: Suggests the learning rate may be too high, try lowering it.
-- Chaotic Loss Patterns: May indicate the model is learning from noise; adjust the learning rate accordingly.
-Overfitting: If the evaluation loss is significantly higher than the training loss, the model may be overfitting (= the model "memorizes" rather than "learns" and will perform poorly on unseen data).
-- Stalled Learning: If both curves are flat, consider reducing the number of epochs.
+To improve your coding, you can use the Visualization mode. Select your SBERT feature (you can also add your trained model if you have one), then click compute. This will project your models into two dimensions. This projection allows you to see how your models group similar texts naturally. You can either visualize the elements you have annotated or the model’s predictions. The separation (or overlap) of the different groups can give you a visual indication of your model's performance – clear separation suggests a model that distinguishes categories well. Points appearing in "incorrect regions" (e.g., isolated orange points in a mostly blue area) may indicate classification errors or interesting edge cases to analyze.
+When you spot such cases, you can click on a point and annotate it. 
 
-You can also adjust the batch size (= how many examples the model looks at before updating itself) and gradient accumulation (= simulating large-batch training). The product of these two settings gives the effective batch size, which is displayed in the interface.
+## Fine-tune
 
-These evaluation tools can help you define the parameters for your final model to be applied on the whole dataset.
+Active Tigger allows you to train a BERT classifier model on your annotated data with two goals: extending your annotation on the complete dataset, or retrieving this classifier for other uses. Basically, this is a process of fine-tuning: the pre-trained base model  will be adjusted to your specific data.
 
-## Fine-tune your BERT classifier
-
-Active Tigger allows you to train a BERT classifier model on your annotated data with two goals: extending your annotation on the complete dataset, or retrieving this classifier for other uses. Basically, it is fine-tuning: the base model pre-trained will be adjusted to your specific data.
-
-This is done on the **Train** tab. Click on **New Model** to train a new model.
+Click on **Create** to train a new model.
 
 Name it and pick which BERT model base you would like to use (note that some are language-specific, by default ModernBert in English and CamemBert in French).
 
@@ -249,13 +261,13 @@ You can adjust the parameters for the model, or leave it at default values.
 
 Leave some time for the training process (you can follow the progress). Depending the parameters it will consume more or less computational power, especially GPU. It can take some time depending on the number of elements. Once the model is available, you can consult it under the **Models** tab.
 
-!!! warning "GPU load"
+!!! "GPU load" warning
 
-    When available, the process will use GPU. Since resources are limited, overload can happen. Consequently, a process can failed if there is no enough memory. You can follow the current state of the GPU use in the left menu of the screen. 
+    When available, the process will use GPU. Since resources are limited, overloads can happen. Consequently, a process can fail if there is no enough memory. You can follow the current state of the GPU use in the left menu of the screen. 
 
-![Overview of the selecting models](img/existingmodels.png)
+##Fine-tuned models
 
-For the moment, you only have the model. Now, you can decide to apply it on your data, either on the training dataset to see metrics of its performance, or to extend it on the whole initial dataset.
+Once your model is trained, it will be selectable under this tab. At this point, you can evaluate its performance to decide to apply it on your data (train or test sets) to see metrics of its performance, or to extend it on the whole initial dataset.
 
 Choose the name of the model under **Existing models**, click on the **Scores tab**, and click **Predict using train set**. it will use the model on the training dataset (so on the elements you haven't annotated yet).
 
@@ -281,15 +293,33 @@ If you find yourself with low scores, it is a good idea to first consider your c
 
 To improve your score, you can also check in the False Prediction tab for texts where discrepancies between your coding and the model's coding is indicated. Try to understand the reason for the difference and revise your coding accordingly.
 
+### Monitoring the Training Process
+During model training, ActiveTigger displays loss curves for both training and evaluation datasets. These curves help you assess the model's learning progress. The overall goal should be to minimize **loss**: a number that tells us how far off the model's predictions are from the correct answers. It is the difference between the model's predictions and the actual labeled data.
+
+CLick on **Predict on train set** to see the loss curves during training. 
+
+During the traning phase, we calculate loss on training data. **Training loss** shows how well the model is doing on the examples it has already seen. **Evaluation loss** is measured on a separate sample of data that was not used during training. This gives a more realistic idea of how the model will perform on new, unseen data.
+
+This will give you two curves. They should be interpreted as follows:
+- Decreasing Loss: Indicates effective learning. If the loss remains flat, consider increasing the learning rate.
+- Increasing Loss: Suggests the learning rate may be too high, try lowering it.
+- Chaotic Loss Patterns: May indicate the model is learning from noise; adjust the learning rate accordingly.
+Overfitting: If the evaluation loss is significantly higher than the training loss, the model may be overfitting (= the model "memorizes" rather than "learns" and will perform poorly on unseen data).
+- Stalled Learning: If both curves are flat, consider reducing the number of epochs.
+
+You can also adjust the batch size (= how many examples the model looks at before updating itself) and gradient accumulation (= simulating large-batch training). The product of these two settings gives the effective batch size, which is displayed in the interface.
+
+These evaluation tools can help you define the parameters for your final model to be applied on the whole dataset.
+
 Another way to improve your coding is by going to the Visualization tab (under the Annotate tab), which helps you identify ambiguous cases.
 
 Once you find the model satisfactory, you can apply it to the whole dataset in the tab **Compute prediction**. This will apply the model to all the elements in the dataset, and you can then export the results.
 
-## Test your model
+### Test
 
 If you have defined or imported a test set, you can also apply the model on it. This is useful to see how the model performs on unseen data. It is seen as good practice to validate a model on a dedicated test set. The first step is to import the test set, then to select "test set mode". You should then go the the annotation tab. Once you have annotated enough data, you can calculate your scores to see if your model is robust.
 
-## Predict 
+### Predict 
 
 To extend the annotations across all your data, select a model that you have trained and click on « Launch prediction complete dataset ». The file (which you can export from the Export tab) will then provide the probability associated with each text in your dataset. 
 
