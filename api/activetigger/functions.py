@@ -221,7 +221,7 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
     ]
     f1 = [
         round(i, decimals)
-        for i in f1_score(list(Y_true), list(Y_pred), average="macro", labels=labels)
+        for i in f1_score(list(Y_true), list(Y_pred), average=None, labels=labels)
     ]
     confusion = confusion_matrix(Y_true, Y_pred, labels=labels)
 
@@ -229,7 +229,7 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
         round(i, decimals)
         for i in recall_score(list(Y_true), list(Y_pred), average=None, labels=labels)
     ]
-    f1_val = round(f1_score(Y_true, Y_pred, average="micro"), decimals)
+    f1_val = round(f1_score(Y_true, Y_pred, average="macro"), decimals)
     recall_val = round(recall_score(Y_true, Y_pred, average="micro"), decimals)
     precision_val = round(
         precision_score(list(Y_true), list(Y_pred), average="micro", zero_division=1),

@@ -32,10 +32,8 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
     x: epoch as number,
     y: val_eval_loss[i] as number,
   }));
-  const minValLossPoint = valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min), {
-    x: 0,
-    y: 0,
-  });
+
+  const minValLossPoint = valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min));
 
   if (valEvalLossData.length < 1)
     return (
@@ -43,6 +41,14 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
         Loss chart will be displayed when enough data is available
       </div>
     );
+
+  console.log(
+    valEvalLossData,
+    valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min), {
+      x: 0,
+      y: 0,
+    }),
+  );
 
   return (
     <>
@@ -104,7 +110,6 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
         <VictoryLegend
           x={100}
           y={0}
-          title="Legend"
           centerTitle
           orientation="horizontal"
           gutter={20}

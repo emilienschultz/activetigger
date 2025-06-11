@@ -251,6 +251,7 @@ class TrainBert(BaseTask):
 
             # shape and write the data of the test set
             test = self.df["test"].to_pandas().set_index("id")
+
             test["true_label"] = [id2label[i] for i in predictions.label_ids]
             test["predicted_label"] = [
                 id2label[i] for i in np.argmax(predictions.predictions, axis=1)
@@ -258,7 +259,6 @@ class TrainBert(BaseTask):
             test[["true_label", "predicted_label"]].to_csv(
                 current_path.joinpath("test_dataset_eval.csv")
             )
-
             # compute metrics and write
             metrics = get_metrics(test["true_label"], test["predicted_label"])
             with open(str(current_path.joinpath("metrics_validation.json")), "w") as f:

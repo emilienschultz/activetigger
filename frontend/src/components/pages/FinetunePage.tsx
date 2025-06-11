@@ -578,6 +578,16 @@ export const FinetunePage: FC = () => {
                             </form>
                           </details>
                         </details>
+                        {!isComputing && currentScheme && (
+                          <button
+                            className="btn btn-primary m-2 mt-2"
+                            onClick={() =>
+                              computeModelPrediction(currentModel, 'train', currentScheme)
+                            }
+                          >
+                            Predict on trainset
+                          </button>
+                        )}
 
                         <details className="custom-details">
                           <summary>Prediction on the trainset</summary>
