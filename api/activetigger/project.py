@@ -960,6 +960,8 @@ class Project:
                     if error:
                         raise Exception(str(error))
                     results = future.result()
+                    print("SIMPLEMODEL")
+                    print(results)
                     self.simplemodels.add(sm, results)
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")

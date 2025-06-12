@@ -240,9 +240,9 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
     table["Total"] = table.sum(axis=1)
     table = table.T
     table["Total"] = table.sum(axis=1)
-    table["F1"] = list(f1) + [f1_val]
-    table["Recall"] = list(recall) + [recall_val]
-    table["Precision"] = list(precision) + [precision_val]
+    table["F1"] = list(f1) + [""]
+    table["Recall"] = list(recall) + [""]
+    table["Precision"] = list(precision) + [""]
     table = table.T
 
     statistics = MLStatisticsModel(

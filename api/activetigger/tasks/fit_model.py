@@ -59,8 +59,6 @@ class FitModel(BaseTask):
         else:
             statistics_cv10 = None
 
-        print("XXXXXXX end fit model", self.cv10, statistics_cv10)
-
         return FitModelResults(
             model=self.model,
             proba=proba,

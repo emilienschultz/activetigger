@@ -299,8 +299,14 @@ async def delete_bert(
     test_rights("modify project", current_user.username, project.name)
 
     try:
+        # delete the model
         project.languagemodels.delete(bert_name)
-        orchestrator.log_action(current_user.username, f"DELETE MODEL: {bert_name}", project.name)
+        # delete the features associated with the model
+        for f in [i for i in project.features.map.keys() if bert_name.replace("__", "_") in i]:
+            project.features.delete(f)
+        orchestrator.log_action(
+            current_user.username, f"DELETE MODEL + FEATURES: {bert_name}", project.name
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
