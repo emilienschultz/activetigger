@@ -20,6 +20,7 @@ import { DisplayScoresMenu } from '../DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../DisplayTrainingProcesses';
 import { ModelCreationForm } from '../forms/ModelCreationForm';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
+import { ModelParametersTab } from '../ModelParametersTab';
 import { ModelPredict } from '../ModelPredict';
 import { LossChart } from '../vizualisation/lossChart';
 
@@ -112,8 +113,6 @@ export const FinetunePage: FC = () => {
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
 
-  console.log(model);
-
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
       <div className="container-fluid">
@@ -190,25 +189,7 @@ export const FinetunePage: FC = () => {
                           <summary>
                             <span>Parameters of the model</span>
                           </summary>
-                          <table className="table">
-                            <thead>
-                              <tr>
-                                <th scope="col">Key</th>
-                                <th scope="col">Value</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {model.params &&
-                                Object.entries(model.params as Record<string, unknown>).map(
-                                  ([key, value]) => (
-                                    <tr key={key}>
-                                      <td>{key}</td>
-                                      <td>{JSON.stringify(value)}</td>
-                                    </tr>
-                                  ),
-                                )}
-                            </tbody>
-                          </table>
+                          <ModelParametersTab params={model.params as Record<string, unknown>} />
                           <details className="m-2">
                             <summary>Rename</summary>
                             <form onSubmit={handleSubmitRename(onSubmitRename)}>
