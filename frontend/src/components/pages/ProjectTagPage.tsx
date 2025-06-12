@@ -243,7 +243,7 @@ export const ProjectTagPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="tag">
       {statistics && statistics['test_set_n'] && statistics['test_set_n'] > 0 && (
-        <div className={phase == 'test' ? 'alert alert-info m-2' : 'alert m-2'}>
+        <div className={phase == 'test' ? 'alert alert-info m-2' : 'm-2'}>
           <div className="col-4 form-check form-switch">
             <input
               className="form-check-input bg-info"
@@ -265,7 +265,7 @@ export const ProjectTagPage: FC = () => {
         </div>
       )}
 
-      <Tabs className="mb-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
+      <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
           <div className="container-fluid">
             <div className="row mb-3 mt-3">

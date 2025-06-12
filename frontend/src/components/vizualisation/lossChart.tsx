@@ -113,7 +113,7 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
             { name: 'Train Loss', symbol: { fill: '#c43a31' } },
             { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
             {
-              name: 'Model Selected',
+              name: 'Best model',
               symbol: {
                 fill: 'green',
                 type: 'square',

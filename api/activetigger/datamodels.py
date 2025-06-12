@@ -233,6 +233,16 @@ class LMParametersModel(BaseModel):
     adapt: bool = True
 
 
+class LMParametersModelTrained(LMParametersModel):
+    """
+    Parameters for bertmodel once trained
+    """
+
+    base_model: str
+    n_train: int
+    test_size: float
+
+
 class LMParametersDbModel(LMParametersModel):
     predicted: bool = False
     compressed: bool = False

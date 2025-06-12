@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { DisplayScores } from './DisplayScores';
 
 interface DisplayScoresMenuPropos {
@@ -14,6 +14,13 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
 }) => {
   const keys = Object.keys(scores || {});
   const [currentScore, setCurrentScore] = useState<string>(keys[0] || '');
+
+  // Ensure currentScore is still valid when scores change
+  useEffect(() => {
+    if (!keys.includes(currentScore)) {
+      setCurrentScore(keys[0] || '');
+    }
+  }, [scores, currentScore, keys]);
 
   if (!scores || Object.keys(scores).length === 0) {
     return <div>No scores available</div>;

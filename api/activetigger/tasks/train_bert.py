@@ -285,10 +285,12 @@ class TrainBert(BaseTask):
             # save training data in a file
             training_data.to_parquet(current_path.joinpath("training_data.parquet"))
 
-            # save parameters in a file
+            # save parameters of the trained model in a file
             params_to_save = self.params.model_dump()
             params_to_save["test_size"] = self.test_size
             params_to_save["base_model"] = self.base_model
+            params_to_save["n_train"] = len(self.df["train"])
+
             with open(current_path.joinpath("parameters.json"), "w") as f:
                 json.dump(params_to_save, f)
 
