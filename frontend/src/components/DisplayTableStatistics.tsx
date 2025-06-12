@@ -1,9 +1,9 @@
 import { FC } from 'react';
 import { MLStatisticsModel } from '../types';
 
-export interface DisplayTableProps {
+export interface DisplayTableStatisticsProps {
   scores: MLStatisticsModel;
-  title: string;
+  title?: string | null;
 }
 
 interface TableModel {
@@ -12,7 +12,7 @@ interface TableModel {
   data: [number, number, number, number, number][];
 }
 
-export const DisplayTable: FC<DisplayTableProps> = ({ scores, title }) => {
+export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores, title }) => {
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
 
   const labels = Object.keys(scores['f1_label'] || []);
@@ -20,10 +20,14 @@ export const DisplayTable: FC<DisplayTableProps> = ({ scores, title }) => {
   const colCount = table?.columns.length || 0;
 
   return (
-    <div className="overflow-x-auto p-4">
+    <div className="overflow-x-auto">
       {table && (
         <table className="table-auto border-collapse border border-gray-300 w-full text-sm">
-          <caption className="caption-top text-lg font-medium mb-2 text-gray-700">{title}</caption>
+          {title && (
+            <caption className="caption-top text-lg font-medium mb-2 text-gray-700">
+              {title}
+            </caption>
+          )}
           <thead>
             <tr>
               <th></th>

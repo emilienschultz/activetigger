@@ -125,6 +125,12 @@ class Features:
         num_rows = parquet_file.metadata.num_rows
         return dic, num_rows
 
+    def exists(self, name: str) -> bool:
+        """
+        Check if a feature exists
+        """
+        return name in self.map
+
     def add(
         self,
         name: str,

@@ -37,11 +37,11 @@ class PredictBert(BaseTask):
     event : possibility to interrupt
     unique_id : unique id for the current task
 
-    if col_label, compute the statistics in a file
-
+    if statistic & col_label, compute specific statistics
     """
 
     kind = "predict_bert"
+    statistics: Optional[str] = None
 
     def __init__(
         self,
@@ -52,6 +52,7 @@ class PredictBert(BaseTask):
         col_id: str | None = None,
         batch: int = 32,
         file_name: str = "predict.parquet",
+        statistics: str | None = None,
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,
         **kwargs,
@@ -66,6 +67,12 @@ class PredictBert(BaseTask):
         self.unique_id = unique_id
         self.file_name = file_name
         self.batch = batch
+
+        # indicate if the statistics should be computed
+        if statistics is not None and col_label is not None:
+            self.statistics = statistics
+        else:
+            self.statistics = None
 
     def __call__(self) -> ReturnTaskPredictModel:
         """
@@ -153,31 +160,59 @@ class PredictBert(BaseTask):
 
             # calculate label
             pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
-
-            # if labels available, compute statistics
             print("Prediction ended")
-            if self.col_label:
+
+            metrics = None
+
+            # Optional, compute statistics
+            if self.statistics:
                 # add elements in the dataframe
                 pred["label"] = self.df[self.col_label]
                 pred["text"] = self.df[self.col_text]
-                # only non null values
-                filter = pred["label"].notna()
-                metrics = get_metrics(pred[filter]["label"], pred[filter]["prediction"])
-                # add full text disagreement
-                metrics.false_predictions = (
-                    pred[["label", "prediction", "text"]]
-                    .loc[list(metrics.false_predictions)]
-                    .reset_index()
-                ).to_dict(orient="records")
-                # save in a dedicated file
-                with open(str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w") as f:
-                    json.dump(metrics.model_dump(mode="json"), f)
+                filter = pred["label"].notna()  # only non null values
+
+                # case the statistics should be computed on all values
+                if self.statistics == "full":
+                    metrics = get_metrics(pred[filter]["label"], pred[filter]["prediction"])
+                    # add full text disagreement
+                    metrics.false_predictions = (
+                        pred[["label", "prediction", "text"]]
+                        .loc[list(metrics.false_predictions)]
+                        .reset_index()
+                    ).to_dict(orient="records")
+                    # save in a dedicated file
+                    with open(str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w") as f:
+                        json.dump(metrics.model_dump(mode="json"), f)
+
+                # case the statistics should be computed only on element not in the training set
+                # only if there is more than 10 elements
+                if self.statistics == "outofsample":
+                    index_model = pd.read_parquet(
+                        self.path.joinpath("training_data.parquet"), columns=[]
+                    ).index
+                    filter_oos = ~pred.index.isin(index_model) & filter
+                    if filter_oos.sum() > 10:
+                        metrics = get_metrics(
+                            pred[filter_oos]["label"], pred[filter_oos]["prediction"]
+                        )
+                        print(index_model)
+                        metrics.false_predictions = (
+                            pred[["label", "prediction", "text"]]
+                            .loc[list(metrics.false_predictions)]
+                            .reset_index()
+                        ).to_dict(orient="records")
+                        # save in a dedicated file
+                        with open(str(self.path.joinpath("metrics_outofsample.json")), "w") as f:
+                            json.dump(metrics.model_dump(mode="json"), f)
+                    else:
+                        print(
+                            "Not enough out of sample data to compute statistics, only "
+                            f"{filter_oos.sum()} elements"
+                        )
+
                 # drop the temporary text col
                 pred.drop(columns=["text"], inplace=True)
                 print("Add statistics")
-
-            else:
-                metrics = None
 
             # add the column id original if available
             if self.col_id:

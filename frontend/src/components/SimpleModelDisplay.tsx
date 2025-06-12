@@ -44,8 +44,13 @@ export const SimpleModelDisplay: FC = () => {
         <DisplayScores
           title="Quick model"
           scores={currentModel.statistics as unknown as Record<string, number>}
-          scores_cv10={currentModel.statistics_cv10 as unknown as Record<string, number>}
         />
+        {currentModel.statistics_cv10 && (
+          <DisplayScores
+            title="Cross validation"
+            scores={currentModel.statistics_cv10 as unknown as Record<string, number>}
+          />
+        )}
       </div>
     </div>
   );

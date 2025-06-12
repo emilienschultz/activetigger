@@ -1,6 +1,5 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
-import DataGrid, { Column } from 'react-data-grid';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaTools } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
@@ -20,6 +19,7 @@ import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { newBertModel } from '../../types';
 import { DisplayScores } from '../DisplayScores';
+import { DisplayScoresMenu } from '../DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { ModelPredict } from '../ModelPredict';
@@ -31,13 +31,6 @@ import { LossChart } from '../vizualisation/lossChart';
 
 interface renameModel {
   new_name: string;
-}
-
-interface Row {
-  id: string;
-  label: string;
-  prediction: string;
-  text: string;
 }
 
 type BertModel = {
@@ -82,7 +75,6 @@ export const FinetunePage: FC = () => {
   }, [availableModels, currentModel]);
 
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
-  const model_scores = model?.train_scores;
 
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
@@ -176,60 +168,20 @@ export const FinetunePage: FC = () => {
   // loss chart shape data
   const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
 
-  // display table false prediction
-  const falsePredictionsTrain =
-    model?.train_scores && model.train_scores['false_predictions']
-      ? model.train_scores['false_predictions']
-      : null;
-
-  const falsePredictionsTest =
-    model?.test_scores && model.test_scores['false_predictions']
-      ? model.test_scores['false_predictions']
-      : null;
-
-  const columns: readonly Column<Row>[] = [
-    {
-      name: 'Id',
-      key: 'id',
-      resizable: true,
-    },
-    {
-      name: 'Label',
-      key: 'label',
-      resizable: true,
-    },
-    {
-      name: 'Prediction',
-      key: 'prediction',
-      resizable: true,
-    },
-    {
-      name: 'Text',
-      key: 'text',
-      resizable: true,
-    },
-  ];
-
-  const downloadModel = () => {
-    if (!model) return; // Ensure model is not null or undefined
-
-    // Convert the model object to a JSON string
-    const modelJson = JSON.stringify(model, null, 2);
-
-    // Create a Blob from the JSON string
-    const blob = new Blob([modelJson], { type: 'application/json' });
-
-    // Create a temporary link element
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = currentModel || 'model.json';
-    link.click();
-  };
-
   const existingLabels = Object.entries(availableLabels).map(([key, value]) => ({
     value: key,
     label: value,
   }));
+
+  const possibleStatistics = [
+    ['Validation (model)', model ? model.valid_scores : null],
+    ['Train (model)', model ? model.train_scores : null],
+    ['Out of sample', model ? model.outofsample_scores : null],
+  ];
+
+  const existingStatistics = Object.fromEntries(
+    possibleStatistics.filter(([_, scores]) => scores != null),
+  );
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
@@ -541,9 +493,9 @@ export const FinetunePage: FC = () => {
                   <div>
                     {model && (
                       <div>
-                        <details className="custom-details">
+                        <details style={{ color: 'gray' }}>
                           <summary>
-                            <span>Parameters</span>
+                            <span>Parameters of the model</span>
                           </summary>
                           <table className="table">
                             <thead>
@@ -578,76 +530,38 @@ export const FinetunePage: FC = () => {
                             </form>
                           </details>
                         </details>
-                        {!isComputing && currentScheme && (
-                          <button
-                            className="btn btn-primary m-2 mt-2"
-                            onClick={() =>
-                              computeModelPrediction(currentModel, 'train', currentScheme)
-                            }
-                          >
-                            Predict on trainset
-                          </button>
-                        )}
-
-                        <details className="custom-details">
-                          <summary>Prediction on the trainset</summary>
-                          {!isComputing && currentScheme && (
-                            <button
-                              className="btn btn-primary m-2 mt-2"
-                              onClick={() =>
-                                computeModelPrediction(currentModel, 'train', currentScheme)
-                              }
-                            >
-                              Predict on trainset
-                            </button>
-                          )}
-                          {model.train_scores && (
-                            <div>
-                              <DisplayScores
-                                title="Train scores"
-                                scores={
-                                  model.train_scores as Record<
-                                    string,
-                                    | string
-                                    | number
-                                    | Record<string, string>
-                                    | Record<string, number>
-                                  >
-                                }
-                              />
-                              <button onClick={() => downloadModel()}>Download as json</button>
-                              <details className="m-3">
-                                <summary>False predictions</summary>
-                                {model_scores ? (
-                                  <DataGrid<Row>
-                                    className="fill-grid"
-                                    columns={columns}
-                                    rows={falsePredictionsTrain as unknown as Row[]}
-                                  />
-                                ) : (
-                                  <div>Compute prediction first</div>
-                                )}
-                              </details>
-                            </div>
-                          )}
-
-                          {isComputing && <div>Computation in progress</div>}
-                        </details>
-                        {model.valid_scores && (
-                          <DisplayScores
-                            title="Validation scores"
-                            scores={
-                              model.valid_scores as Record<
-                                string,
-                                string | number | Record<string, string> | Record<string, number>
-                              >
-                            }
+                        {isComputing && (
+                          <DisplayTrainingProcesses
+                            projectSlug={projectSlug || null}
+                            processes={project?.languagemodels.training}
                           />
                         )}
-                        <div>
-                          <div>
-                            <LossChart loss={loss} />
-                          </div>
+                        <button
+                          className="btn btn-primary my-2"
+                          onClick={() =>
+                            computeModelPrediction(currentModel, 'train', currentScheme || '')
+                          }
+                          disabled={isComputing}
+                        >
+                          Transform to feature
+                          <a className="toFeature">
+                            <HiOutlineQuestionMarkCircle
+                              style={{ color: 'white' }}
+                              className="mx-2"
+                            />
+                            <Tooltip anchorSelect=".toFeature" place="top">
+                              And calculate statistics for the out of sample.<br></br>If the feature
+                              already exists, it will be overwritten.
+                            </Tooltip>
+                          </a>
+                        </button>
+
+                        <div className="mt-2">
+                          <DisplayScoresMenu scores={existingStatistics} modelName={currentModel} />
+                        </div>
+
+                        <div className="mt-2">
+                          <LossChart loss={loss} />
                         </div>
                       </div>
                     )}
@@ -712,31 +626,16 @@ export const FinetunePage: FC = () => {
                     </div>
                   )}
 
-                  {model && model.test_scores && (
-                    <div>
-                      <DisplayScores
-                        title="Test scores"
-                        scores={
-                          model.test_scores as Record<
-                            string,
-                            string | number | Record<string, string> | Record<string, number>
-                          >
-                        }
-                      />
-                      <button onClick={() => downloadModel()}>Download as json</button>
-                      <details className="m-3">
-                        <summary>False predictions</summary>
-                        {falsePredictionsTest ? (
-                          <DataGrid<Row>
-                            className="fill-grid"
-                            columns={columns}
-                            rows={(falsePredictionsTest as Row[]) || []}
-                          />
-                        ) : (
-                          <div>Compute prediction first</div>
-                        )}
-                      </details>
-                    </div>
+                  {model && (
+                    <DisplayScores
+                      title="Train scores"
+                      scores={
+                        model.test_scores as Record<
+                          string,
+                          string | number | Record<string, string> | Record<string, number>
+                        >
+                      }
+                    />
                   )}
                 </div>
               </Tab>

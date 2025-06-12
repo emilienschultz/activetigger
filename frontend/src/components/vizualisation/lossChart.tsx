@@ -33,22 +33,17 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
     y: val_eval_loss[i] as number,
   }));
 
-  const minValLossPoint = valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min));
-
+  const initial = { x: 0, y: Infinity };
+  const minValLossPoint = valEvalLossData.reduce(
+    (min, curr) => (curr.y < min.y ? curr : min),
+    initial,
+  );
   if (valEvalLossData.length < 1)
     return (
       <div className="alert alert-info m-3">
         Loss chart will be displayed when enough data is available
       </div>
     );
-
-  console.log(
-    valEvalLossData,
-    valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min), {
-      x: 0,
-      y: 0,
-    }),
-  );
 
   return (
     <>

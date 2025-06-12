@@ -754,6 +754,7 @@ class LMInformationsModel(BaseModel):
     train_scores: dict | None = None
     test_scores: dict | None = None
     valid_scores: dict | None = None
+    outofsample_scores: dict | None = None
 
 
 class ProjectUpdateModel(BaseModel):

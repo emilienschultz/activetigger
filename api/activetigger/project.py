@@ -1055,6 +1055,10 @@ class Project:
                 df = df.drop(columns=["entropy", "prediction"])
                 df = df[df.columns[0:-1]]
                 name = f.replace("__", "_")  # avoid __ in the name for features
+                # if the feature already exists, delete it first
+                if self.features.exists(name):
+                    self.features.delete(name)
+                # add it
                 self.features.add(
                     name=name,
                     kind="prediction",
