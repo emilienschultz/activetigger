@@ -494,7 +494,7 @@ export const ProjectTagPage: FC = () => {
         <Tab eventKey="prediction" title="Quick model">
           <div className="container-fluid">
             <div className="row mb-3 mt-3">
-              <div className="col-6">
+              <div className="col-8">
                 {phase == 'test' && (
                   <div className="alert alert-warning">
                     Test mode activated - quick model are disabled

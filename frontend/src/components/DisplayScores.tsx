@@ -62,6 +62,9 @@ export const DisplayScores: FC<DisplayScores> = ({ title, scores, modelName }) =
   if (!scores) return;
   return (
     <div>
+      <span className="explanations">
+        The current model has a f1 macro of <b>{scores.f1_macro}</b>
+      </span>
       <DisplayTableStatistics scores={scores} title={title} />
       <details>
         <summary>False predictions</summary>
