@@ -21,6 +21,7 @@ import { ElementOutModel } from '../../types';
 import { BackButton } from '../BackButton';
 import { ForwardButton } from '../ForwardButton';
 
+import { MdDisplaySettings } from 'react-icons/md';
 import { useLocation } from 'react-router-dom';
 import { SimpleModelModel } from '../../types';
 import { DataTabular } from '../DataTabular';
@@ -62,6 +63,7 @@ export const ProjectTagPage: FC = () => {
   const [displayComment, setDisplayComment] = useState(false);
   const [comment, setComment] = useState('');
   const [activeTab, setActiveTab] = useState<string>('tag');
+  const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   useEffect(() => {
     setActiveTab(tab || 'tag');
   }, [tab]);
@@ -284,6 +286,7 @@ export const ProjectTagPage: FC = () => {
                     <Tooltip anchorSelect=".currentstatistics" place="top">
                       statistics for the current scheme
                     </Tooltip>
+
                     <div>
                       <button className="btn getelement" onClick={refetchElement}>
                         <LuRefreshCw size={20} /> Get element
@@ -420,16 +423,6 @@ export const ProjectTagPage: FC = () => {
                   setAppContext={setAppContext}
                 />
 
-                <button
-                  className="btn addcomment"
-                  onClick={() => setDisplayComment(!displayComment)}
-                >
-                  <FaPencilAlt />
-                  <Tooltip anchorSelect=".addcomment" place="top">
-                    Add a commentary
-                  </Tooltip>
-                </button>
-
                 {kindScheme == 'multiclass' && (
                   <MulticlassInput
                     elementId={elementId || 'noelement'}
@@ -468,6 +461,27 @@ export const ProjectTagPage: FC = () => {
                   />
                 )}
               </div>
+              <div className="d-flex flex-wrap gap-2 justify-content-center">
+                <button
+                  className="btn addcomment"
+                  onClick={() => setDisplayComment(!displayComment)}
+                >
+                  <FaPencilAlt />
+                  <Tooltip anchorSelect=".addcomment" place="top">
+                    Add a commentary
+                  </Tooltip>
+                </button>
+
+                <button
+                  className="btn displayconfig"
+                  onClick={() => setShowDisplayConfig(!showDisplayConfig)}
+                >
+                  <MdDisplaySettings />
+                  <Tooltip anchorSelect=".displayconfig" place="top">
+                    Display config menu
+                  </Tooltip>
+                </button>
+              </div>
 
               {displayComment && (
                 <div className="m-3">
@@ -482,13 +496,8 @@ export const ProjectTagPage: FC = () => {
               )}
             </div>
           )}
-          {phase != 'test' && (
-            <div className="container col-12 w-50">
-              <details className="custom-details">
-                <summary>Display config</summary>
-                <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
-              </details>
-            </div>
+          {phase != 'test' && showDisplayConfig && (
+            <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
           )}
         </Tab>
         <Tab eventKey="prediction" title="Quick model">
