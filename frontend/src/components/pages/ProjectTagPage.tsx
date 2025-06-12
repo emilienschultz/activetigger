@@ -504,6 +504,7 @@ export const ProjectTagPage: FC = () => {
                 {phase != 'test' && (
                   <>
                     <div className="explanations">Current quick model parameters and train</div>
+
                     <SimpleModelManagement
                       projectName={projectName || null}
                       currentScheme={currentScheme || null}
@@ -513,8 +514,10 @@ export const ProjectTagPage: FC = () => {
                       availableFeatures={availableFeatures}
                       availableLabels={availableLabels}
                       kindScheme={kindScheme}
+                      currentModel={currentModel || undefined}
                     />
-                    <SimpleModelDisplay />
+
+                    <SimpleModelDisplay currentModel={currentModel || undefined} />
                   </>
                 )}
               </div>

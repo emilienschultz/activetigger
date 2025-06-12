@@ -49,6 +49,7 @@ class FitModel(BaseTask):
         Y_pred = self.model.predict(Xf)
 
         statistics = get_metrics(Yf, Y_pred)
+        statistics.false_predictions = None
 
         # compute 10-crossvalidation
         if self.cv10:

@@ -66,14 +66,17 @@ export const DisplayScores: FC<DisplayScores> = ({ title, scores, modelName }) =
         The current model has a f1 macro of <b>{scores.f1_macro}</b>
       </span>
       <DisplayTableStatistics scores={scores} title={title} />
-      <details>
-        <summary>False predictions</summary>
-        <DataGrid<Row>
-          className="fill-grid"
-          columns={columns}
-          rows={scores['false_predictions'] as unknown as Row[]}
-        />
-      </details>
+      {scores['false_predictions'] && (
+        <details>
+          <summary>False predictions</summary>
+
+          <DataGrid<Row>
+            className="fill-grid"
+            columns={columns}
+            rows={scores['false_predictions'] as unknown as Row[]}
+          />
+        </details>
+      )}
       <a
         href="#"
         onClick={(e) => {
