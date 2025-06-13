@@ -23,29 +23,29 @@ import { SchemesManagement } from '../SchemesManagement';
 
 export const ProjectPage: FC = () => {
   // get data
-  const { projectName } = useParams();
-  const projectSlug = projectName;
+  const { projectName: projectSlug } = useParams();
   const {
     appContext: { currentScheme, currentProject: project, history, displayConfig },
     setAppContext,
   } = useAppContext();
 
   // define variables
+  const kindScheme =
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme]['kind']
+      : '';
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme]['labels'] || []
       : [];
+
   // sort labels according to the displayConfig
   const availableLabelsSorted = reorderLabels(
     availableLabels as string[],
     displayConfig.labelsOrder || [],
   );
-  const kindScheme =
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme]['kind']
-      : '';
 
-  // manage redirect if at least 2 tags
+  // redirect if at least 2 tags
 
   // get the fact that we come from the create page
   const navigate = useNavigate();

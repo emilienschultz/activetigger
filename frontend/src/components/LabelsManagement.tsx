@@ -114,6 +114,16 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
     })),
   );
 
+  // update labels when availableLabels change
+  useEffect(() => {
+    setLabels(
+      availableLabels.map((label, index) => ({
+        id: index,
+        label: label,
+      })),
+    );
+  }, [availableLabels]);
+
   // manage label creation
   const [createLabelValue, setCreateLabelValue] = useState('');
   const handleCreateLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +195,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               <LabelCard
                 key={label.label}
                 label={label.label}
-                removeLabel={() => deleteLabel(label.label)}
+                removeLabel={() => {
+                  deleteLabel(label.label);
+                }}
                 renameLabel={renameLabel}
                 countTrain={
                   statistics ? Number(statistics['train_annotated_distribution'][label.label]) : 0
