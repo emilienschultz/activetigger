@@ -63,11 +63,7 @@ export const ProjectPage: FC = () => {
     }
   }, [fromProjectPage, availableLabels.length, navigate, projectSlug]);
 
-  console.log(currentScheme, fromProjectPage);
-
   if (!projectSlug || !project) return;
-
-  console.log(displayConfig);
 
   return (
     <ProjectPageLayout projectName={projectSlug}>
@@ -86,6 +82,7 @@ export const ProjectPage: FC = () => {
               currentScheme={currentScheme || null}
               availableLabels={availableLabelsSorted as string[]}
               kindScheme={kindScheme as string}
+              setAppContext={setAppContext}
             />
           </Tab>
           <Tab eventKey="features" title="Features">
