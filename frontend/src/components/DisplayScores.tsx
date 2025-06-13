@@ -3,7 +3,7 @@ import DataGrid, { Column } from 'react-data-grid';
 import { MLStatisticsModel } from '../types';
 import { DisplayTableStatistics } from './DisplayTableStatistics';
 
-export interface DisplayScores {
+export interface DisplayScoresProps {
   title: string | null;
   scores: MLStatisticsModel;
   modelName?: string;
@@ -43,7 +43,7 @@ const columns: readonly Column<Row>[] = [
  * DisplayScores component to show model statistics and false predictions.
  * It includes a table of statistics and a data grid for false predictions.
  **/
-export const DisplayScores: FC<DisplayScores> = ({ title, scores, modelName }) => {
+export const DisplayScores: FC<DisplayScoresProps> = ({ title, scores, modelName }) => {
   const downloadModel = () => {
     if (!scores) return; // Ensure model is not null or undefined
 
@@ -69,11 +69,10 @@ export const DisplayScores: FC<DisplayScores> = ({ title, scores, modelName }) =
       {scores['false_predictions'] && (
         <details>
           <summary>False predictions</summary>
-
           <DataGrid<Row>
             className="fill-grid"
             columns={columns}
-            rows={scores['false_predictions'] as unknown as Row[]}
+            rows={scores['false_predictions'] as Row[]}
           />
         </details>
       )}

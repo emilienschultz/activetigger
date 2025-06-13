@@ -260,7 +260,7 @@ class TrainBert(BaseTask):
                 current_path.joinpath("test_dataset_eval.csv")
             )
             # compute metrics and write
-            metrics_test = get_metrics(test["true_label"], test["predicted_label"])
+            metrics_test = get_metrics(test["true_label"], test["predicted_label"], test["text"])
             with open(str(current_path.joinpath("metrics_validation.json")), "w") as f:
                 json.dump(metrics_test.model_dump(mode="json"), f)
 
@@ -274,7 +274,9 @@ class TrainBert(BaseTask):
                 current_path.joinpath("train_dataset_eval.csv")
             )
             # compute metrics and write
-            metrics_train = get_metrics(train["true_label"], train["predicted_label"])
+            metrics_train = get_metrics(
+                train["true_label"], train["predicted_label"], train["text"]
+            )
             with open(str(current_path.joinpath("metrics_train.json")), "w") as f:
                 json.dump(metrics_train.model_dump(mode="json"), f)
 

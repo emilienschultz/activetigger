@@ -25,6 +25,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   if (!scores || Object.keys(scores).length === 0) {
     return <div>No scores available</div>;
   }
+
   return (
     <div>
       <label htmlFor="statistics">

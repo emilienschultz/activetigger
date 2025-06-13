@@ -124,6 +124,7 @@ async def delete_project(
         orchestrator.delete_project(project_slug)
         return None
     except Exception as e:
+        print(f"Error deleting project {project_slug}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

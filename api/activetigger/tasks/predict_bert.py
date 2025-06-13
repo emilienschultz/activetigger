@@ -173,13 +173,9 @@ class PredictBert(BaseTask):
 
                 # case the statistics should be computed on all values
                 if self.statistics == "full":
-                    metrics = get_metrics(pred[filter]["label"], pred[filter]["prediction"])
-                    # add full text disagreement
-                    metrics.false_predictions = (
-                        pred[["label", "prediction", "text"]]
-                        .loc[list(metrics.false_predictions)]
-                        .reset_index()
-                    ).to_dict(orient="records")
+                    metrics = get_metrics(
+                        pred[filter]["label"], pred[filter]["prediction"], pred["text"]
+                    )
                     # save in a dedicated file
                     with open(str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w") as f:
                         json.dump(metrics.model_dump(mode="json"), f)
@@ -193,14 +189,8 @@ class PredictBert(BaseTask):
                     filter_oos = ~pred.index.isin(index_model) & filter
                     if filter_oos.sum() > 10:
                         metrics = get_metrics(
-                            pred[filter_oos]["label"], pred[filter_oos]["prediction"]
+                            pred[filter_oos]["label"], pred[filter_oos]["prediction"], pred["text"]
                         )
-                        print(index_model)
-                        metrics.false_predictions = (
-                            pred[["label", "prediction", "text"]]
-                            .loc[list(metrics.false_predictions)]
-                            .reset_index()
-                        ).to_dict(orient="records")
                         # save in a dedicated file
                         with open(str(self.path.joinpath("metrics_outofsample.json")), "w") as f:
                             json.dump(metrics.model_dump(mode="json"), f)

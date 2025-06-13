@@ -204,7 +204,9 @@ def decrypt(text: str | None, secret_key: str | None) -> str:
     return decrypted_token.decode()
 
 
-def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisticsModel:
+def get_metrics(
+    Y_true: Series, Y_pred: Series, texts: Series | None = None, decimals: int = 3
+) -> MLStatisticsModel:
     """
     Compute metrics for a prediction
     """
@@ -245,6 +247,19 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
     #    table["Precision"] = list(precision) + [precision_val]
     #    table = table.T
 
+    # Create a table of false predictions
+    filter_false_prediction = Y_true != Y_pred
+    if texts is not None:
+        false_prediction = pd.concat(
+            [Y_true[filter_false_prediction], Y_pred[filter_false_prediction], texts],
+            axis=1,
+            join="inner",
+        ).reset_index()
+        false_prediction.columns = ["id", "label", "prediction", "text"]
+        false_prediction = false_prediction.to_dict(orient="records")
+    else:
+        false_prediction = filter_false_prediction.loc[lambda x: x].index.tolist()
+
     statistics = MLStatisticsModel(
         f1_label=dict(
             zip(
@@ -273,7 +288,7 @@ def get_metrics(Y_true: Series, Y_pred: Series, decimals: int = 3) -> MLStatisti
             )
         ),
         confusion_matrix=confusion.tolist(),
-        false_predictions=(Y_true != Y_pred).loc[lambda x: x].index.tolist(),
+        false_predictions=false_prediction,
         table=table.to_dict(orient="split"),
     )
     return statistics

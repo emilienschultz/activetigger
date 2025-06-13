@@ -113,6 +113,10 @@ export const FinetunePage: FC = () => {
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
 
+  console.log('Model', model);
+  console.log('existingStatistics', existingStatistics);
+  console.log(currentModel);
+
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
       <div className="container-fluid">

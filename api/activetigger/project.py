@@ -93,15 +93,15 @@ class Project:
         """
         # remove from database
         try:
-            self.db_manager.projects_service.delete_project(self.name)
+            self.db_manager.projects_service.delete_project(self.params.project_slug)
         except Exception as e:
-            raise ValueError("Problem with the database", str(e))
+            raise ValueError("Problem with the database " + str(e))
 
         # remove folder of the project
         try:
             shutil.rmtree(self.params.dir)
         except Exception as e:
-            raise ValueError("No directory to delete", str(e))
+            raise ValueError("No directory to delete " + str(e))
 
         # remove static files
         if Path(f"{config.data_path}/projects/static/{self.name}").exists():
@@ -960,8 +960,6 @@ class Project:
                     if error:
                         raise Exception(str(error))
                     results = future.result()
-                    print("SIMPLEMODEL")
-                    print(results)
                     self.simplemodels.add(sm, results)
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
