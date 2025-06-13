@@ -12,6 +12,7 @@ import { ImportAnnotations } from '../ImportAnnotations';
 import { LabelsManagement } from '../LabelsManagement';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
+import { reorderLabels } from '../../core/utils';
 import { ProjectHistory } from '../ProjectHistory';
 import { ProjectParameters } from '../ProjectParameters';
 import { SchemesManagement } from '../SchemesManagement';
@@ -25,7 +26,7 @@ export const ProjectPage: FC = () => {
   const { projectName } = useParams();
   const projectSlug = projectName;
   const {
-    appContext: { currentScheme, currentProject: project, history },
+    appContext: { currentScheme, currentProject: project, history, displayConfig },
     setAppContext,
   } = useAppContext();
 
@@ -34,6 +35,11 @@ export const ProjectPage: FC = () => {
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme]['labels'] || []
       : [];
+  // sort labels according to the displayConfig
+  const availableLabelsSorted = reorderLabels(
+    availableLabels as string[],
+    displayConfig.labelsOrder || [],
+  );
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme]['kind']
@@ -61,6 +67,8 @@ export const ProjectPage: FC = () => {
 
   if (!projectSlug || !project) return;
 
+  console.log(displayConfig);
+
   return (
     <ProjectPageLayout projectName={projectSlug}>
       <div className="container-fluid">
@@ -76,7 +84,7 @@ export const ProjectPage: FC = () => {
             <LabelsManagement
               projectSlug={projectSlug}
               currentScheme={currentScheme || null}
-              availableLabels={availableLabels as string[]}
+              availableLabels={availableLabelsSorted as string[]}
               kindScheme={kindScheme as string}
             />
           </Tab>

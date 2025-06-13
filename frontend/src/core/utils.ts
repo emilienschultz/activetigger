@@ -175,3 +175,22 @@ export function dateToFromAgo(date: Date): string {
       .reduce((acc, curr) => (acc === null && curr !== null ? curr : null), null) || 'now'
   );
 }
+
+// reorder function
+export const reorderLabels = (labels: string[], orderedList: string[] | null): string[] => {
+  if (!orderedList || orderedList.length === 0) {
+    return labels;
+  }
+  const orderedSet = new Set(orderedList);
+  const inOrder: string[] = [];
+  const leftovers: string[] = [];
+  for (const label of labels) {
+    if (orderedSet.has(label)) {
+      inOrder.push(label);
+    } else {
+      leftovers.push(label);
+    }
+  }
+  inOrder.sort((a, b) => orderedList.indexOf(a) - orderedList.indexOf(b));
+  return [...inOrder, ...leftovers];
+};
