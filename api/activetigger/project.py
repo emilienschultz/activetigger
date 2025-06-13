@@ -475,7 +475,7 @@ class Project:
         # get prediction of the id if it exists
         predict = {"label": None, "proba": None}
 
-        if self.simplemodels.exists(user, scheme):
+        if self.simplemodels.exists(user, scheme) and dataset == "train":
             sm = self.simplemodels.get_model(user, scheme)
             predicted_label = sm.proba.loc[element_id, "prediction"]
             predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)

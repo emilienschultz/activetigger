@@ -113,9 +113,8 @@ export const FinetunePage: FC = () => {
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
 
-  console.log('Model', model);
-  console.log('existingStatistics', existingStatistics);
   console.log(currentModel);
+  console.log(model);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
@@ -307,12 +306,7 @@ export const FinetunePage: FC = () => {
                   {model && (
                     <DisplayScores
                       title="Train scores"
-                      scores={
-                        model.test_scores as Record<
-                          string,
-                          string | number | Record<string, string> | Record<string, number>
-                        >
-                      }
+                      scores={model.test_scores as unknown as Record<string, number>}
                     />
                   )}
                 </div>
