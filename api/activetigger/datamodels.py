@@ -295,7 +295,7 @@ class ProjectionParametersModel(BaseModel):
 
     method: str
     features: list
-    parameters: dict[str, Any]
+    parameters: dict[str, float | str | bool | list] = {}
 
 
 class ProjectionDataModel(BaseModel):

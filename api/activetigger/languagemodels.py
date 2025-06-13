@@ -102,7 +102,8 @@ class LanguageModels:
             if m.scheme not in r:
                 r[m.scheme] = {}
             r[m.scheme][m.name] = {
-                "predicted": m.parameters["predicted"],
+                "predicted": m.parameters.get("predicted", False),
+                "tested": m.parameters.get("tested", False),
                 "predicted_external": m.parameters.get("predicted_external", False),
             }
         return r
@@ -409,11 +410,11 @@ class LanguageModels:
         if format == "parquet":
             pass
         elif format == "csv":
-            file_name = "predict.csv"
+            file_name = file_name + ".csv"
             path = self.path.joinpath(name).joinpath(file_name)
             df.to_csv(path)
         elif format == "xlsx":
-            file_name = "predict.xlsx"
+            file_name = file_name + ".xlsx"
             path = self.path.joinpath(name).joinpath(file_name)
             df.to_excel(path)
         else:
@@ -461,7 +462,13 @@ class LanguageModels:
             )
             print("Model trained")
         if element.status == "testing":
-            print("Model tested")
+            self.language_models_service.set_model_params(
+                self.project_slug,
+                element.model_name,
+                flag="tested",
+                value=True,
+            )
+            print("Testing finished")
         if element.status == "predicting":
             # update flag if there is a prediction of the whole dataset
             if element.dataset == "all":

@@ -62,7 +62,7 @@ export const FinetunePage: FC = () => {
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // compute model preduction
-  const [batchSize] = useState<number>(32);
+  const [batchSize, setBatchSize] = useState<number>(32);
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
 
   const { testModel } = useTestModel(
@@ -112,9 +112,6 @@ export const FinetunePage: FC = () => {
   const existingStatistics = Object.fromEntries(
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
-
-  console.log(currentModel);
-  console.log(model);
 
   return (
     <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
@@ -183,7 +180,6 @@ export const FinetunePage: FC = () => {
                   </button>
                 </div>
 
-                {/* Display the parameters of the selected model */}
                 {currentModel && (
                   <div>
                     {model && (
@@ -192,6 +188,23 @@ export const FinetunePage: FC = () => {
                           <summary>
                             <span>Parameters of the model</span>
                           </summary>
+                          <div className="d-flex align-items-center">
+                            <label>Batch size</label>
+                            <a className="batch">
+                              <HiOutlineQuestionMarkCircle />
+                            </a>
+                            <Tooltip anchorSelect=".batch" place="top">
+                              Batch used for predict. Keep it small (16 or 32) for small GPU.
+                            </Tooltip>
+                            <input
+                              type="number"
+                              step="1"
+                              className="m-2"
+                              style={{ width: '50px' }}
+                              value={batchSize}
+                              onChange={(e) => setBatchSize(Number(e.target.value))}
+                            />
+                          </div>
                           <ModelParametersTab params={model.params as Record<string, unknown>} />
                           <details className="m-2">
                             <summary>Rename</summary>
@@ -305,8 +318,9 @@ export const FinetunePage: FC = () => {
 
                   {model && (
                     <DisplayScores
-                      title="Train scores"
                       scores={model.test_scores as unknown as Record<string, number>}
+                      modelName={currentModel || ''}
+                      title={null}
                     />
                   )}
                 </div>

@@ -2343,8 +2343,13 @@ export interface components {
             method: string;
             /** Features */
             features: unknown[];
-            /** Parameters */
-            parameters: Record<string, never>;
+            /**
+             * Parameters
+             * @default {}
+             */
+            parameters: {
+                [key: string]: (number | string | boolean | unknown[]) | undefined;
+            };
         };
         /** ProjectionsProjectStateModel */
         ProjectionsProjectStateModel: {
