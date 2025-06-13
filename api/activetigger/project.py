@@ -171,6 +171,9 @@ class Project:
     def drop_testset(self) -> None:
         """
         Clean all the test data of the project
+        - remove the file
+        - remove all the annotations in the database
+        - set the flag to False
         """
         if not self.params.dir:
             raise Exception("No directory for project")
@@ -178,6 +181,7 @@ class Project:
         if not path_testset.exists():
             raise Exception("No test data available")
         os.remove(path_testset)
+        self.db_manager.projects_service.delete_annotations_testset(self.params.project_slug)
         self.schemes.test = None
         self.params.test = False
         self.db_manager.projects_service.update_project(
