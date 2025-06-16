@@ -106,7 +106,6 @@ Once you entered the annotation phase, you will have an history of already annot
 
     Be aware that you can only see any particular element once during a unique session, so if you need to re-annotate them, you will need to clear the history first.
 
-![Overview of project tab](img/project.png)
 
 
 ### Prepare your project
@@ -119,7 +118,7 @@ We recommend keeping your labels simple. If you are aiming to train a model, bin
 
 Enter the name of each label under "New label" and click the plus sign.
 
-![Overview of the Prepare tab](img/picklabels.png)
+![Overview of labels](img/labels.png)
 
 You can also delete or replace labels. 
 
@@ -245,6 +244,7 @@ This tab gives you an overview of all tagged elements. You can get a quick pictu
 ### Vizualisation
 
 To improve your coding, you can use the Visualization mode. Select your SBERT feature (you can also add your trained model if you have one), then click compute. This will project your models into two dimensions. This projection allows you to see how your models group similar texts naturally. You can either visualize the elements you have annotated or the model’s predictions. The separation (or overlap) of the different groups can give you a visual indication of your model's performance – clear separation suggests a model that distinguishes categories well. Points appearing in "incorrect regions" (e.g., isolated orange points in a mostly blue area) may indicate classification errors or interesting edge cases to analyze.
+
 When you spot such cases, you can click on a point and annotate it. 
 
 ## Fine-tune
