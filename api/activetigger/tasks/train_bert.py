@@ -246,28 +246,39 @@ class TrainBert(BaseTask):
             )
             trainer.train()  # type: ignore[attr-defined]
 
-            # predict on the validset and get the labels
-            predictions = trainer.predict(self.df["test"])  # type: ignore[attr-defined]
+            # predict on the data (separation validation set and training set)
+            predictions_test = trainer.predict(self.df["test"])  # type: ignore[attr-defined]
+            predictions_train = trainer.predict(self.df["train"])  # type: ignore[attr-defined]
 
             # shape and write the data of the test set
             test = self.df["test"].to_pandas().set_index("id")
-            test["true_label"] = [id2label[i] for i in predictions.label_ids]
+            test["true_label"] = [id2label[i] for i in predictions_test.label_ids]
             test["predicted_label"] = [
-                id2label[i] for i in np.argmax(predictions.predictions, axis=1)
+                id2label[i] for i in np.argmax(predictions_test.predictions, axis=1)
             ]
             test[["true_label", "predicted_label"]].to_csv(
                 current_path.joinpath("test_dataset_eval.csv")
             )
-
             # compute metrics and write
-            metrics = get_metrics(test["true_label"], test["predicted_label"])
+            metrics_test = get_metrics(test["true_label"], test["predicted_label"], test["text"])
             with open(str(current_path.joinpath("metrics_validation.json")), "w") as f:
-                json.dump(metrics.model_dump(mode="json"), f)
+                json.dump(metrics_test.model_dump(mode="json"), f)
 
             # shape and write the data of the train set
             train = self.df["train"].to_pandas().set_index("id")
-            train["labels"] = train["labels"].apply(lambda x: id2label[x])
-            train[["labels"]].to_csv(current_path.joinpath("train_dataset.csv"))
+            train["true_label"] = [id2label[i] for i in predictions_train.label_ids]
+            train["predicted_label"] = [
+                id2label[i] for i in np.argmax(predictions_train.predictions, axis=1)
+            ]
+            train[["true_label", "predicted_label"]].to_csv(
+                current_path.joinpath("train_dataset_eval.csv")
+            )
+            # compute metrics and write
+            metrics_train = get_metrics(
+                train["true_label"], train["predicted_label"], train["text"]
+            )
+            with open(str(current_path.joinpath("metrics_train.json")), "w") as f:
+                json.dump(metrics_train.model_dump(mode="json"), f)
 
             # save model
             bert.save_pretrained(current_path)
@@ -276,10 +287,12 @@ class TrainBert(BaseTask):
             # save training data in a file
             training_data.to_parquet(current_path.joinpath("training_data.parquet"))
 
-            # save parameters in a file
+            # save parameters of the trained model in a file
             params_to_save = self.params.model_dump()
             params_to_save["test_size"] = self.test_size
             params_to_save["base_model"] = self.base_model
+            params_to_save["n_train"] = len(self.df["train"])
+
             with open(current_path.joinpath("parameters.json"), "w") as f:
                 json.dump(params_to_save, f)
 

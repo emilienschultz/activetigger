@@ -102,7 +102,8 @@ class LanguageModels:
             if m.scheme not in r:
                 r[m.scheme] = {}
             r[m.scheme][m.name] = {
-                "predicted": m.parameters["predicted"],
+                "predicted": m.parameters.get("predicted", False),
+                "tested": m.parameters.get("tested", False),
                 "predicted_external": m.parameters.get("predicted_external", False),
             }
         return r
@@ -301,6 +302,7 @@ class LanguageModels:
                 basemodel=self.get_base_model(name),
                 file_name="predict_test.parquet",
                 batch=32,
+                statistics="full",
             ),
             queue="gpu",
         )
@@ -356,6 +358,7 @@ class LanguageModels:
                 basemodel=self.get_base_model(name),
                 file_name=f"predict_{dataset}.parquet",
                 batch=batch_size,
+                statistics="outofsample",
             ),
             queue="gpu",
         )
@@ -407,11 +410,11 @@ class LanguageModels:
         if format == "parquet":
             pass
         elif format == "csv":
-            file_name = "predict.csv"
+            file_name = file_name + ".csv"
             path = self.path.joinpath(name).joinpath(file_name)
             df.to_csv(path)
         elif format == "xlsx":
-            file_name = "predict.xlsx"
+            file_name = file_name + ".xlsx"
             path = self.path.joinpath(name).joinpath(file_name)
             df.to_excel(path)
         else:
@@ -459,7 +462,13 @@ class LanguageModels:
             )
             print("Model trained")
         if element.status == "testing":
-            print("Model tested")
+            self.language_models_service.set_model_params(
+                self.project_slug,
+                element.model_name,
+                flag="tested",
+                value=True,
+            )
+            print("Testing finished")
         if element.status == "predicting":
             # update flag if there is a prediction of the whole dataset
             if element.dataset == "all":
@@ -541,16 +550,38 @@ class LanguageModels:
             params = json.load(jsonfile)
         return params
 
+    # def get_trainscores(self, model_name) -> dict | None:
+    #     if (self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json")).exists():
+    #         with open(
+    #             self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json"),
+    #             "r",
+    #         ) as f:
+    #             train_scores = json.load(f)
+    #     else:
+    #         train_scores = None
+    #     return train_scores
+
     def get_trainscores(self, model_name) -> dict | None:
-        if (self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json")).exists():
+        if (self.path.joinpath(model_name).joinpath("metrics_train.json")).exists():
             with open(
-                self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json"),
+                self.path.joinpath(model_name).joinpath("metrics_train.json"),
                 "r",
             ) as f:
                 train_scores = json.load(f)
         else:
             train_scores = None
         return train_scores
+
+    def get_outofsamplescores(self, model_name) -> dict | None:
+        if (self.path.joinpath(model_name).joinpath("metrics_outofsample.json")).exists():
+            with open(
+                self.path.joinpath(model_name).joinpath("metrics_outofsample.json"),
+                "r",
+            ) as f:
+                outofsample_scores = json.load(f)
+        else:
+            outofsample_scores = None
+        return outofsample_scores
 
     def get_testscores(self, model_name) -> dict | None:
         if (self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json")).exists():
@@ -582,9 +613,10 @@ class LanguageModels:
 
         loss = self.get_loss(model_name)
         params = self.get_parameters(model_name)
-        train_scores = self.get_trainscores(model_name)
         valid_scores = self.get_validscores(model_name)
+        train_scores = self.get_trainscores(model_name)
         test_scores = self.get_testscores(model_name)
+        outofsample_scores = self.get_outofsamplescores(model_name)
 
         return LMInformationsModel(
             params=params,
@@ -592,6 +624,7 @@ class LanguageModels:
             train_scores=train_scores,
             test_scores=test_scores,
             valid_scores=valid_scores,
+            outofsample_scores=outofsample_scores,
         )
 
     def get_base_model(self, model_name) -> dict | None:
@@ -634,7 +667,7 @@ class LanguageModels:
         """
         Get the training ids from the train dataset of the model
         """
-        path = self.path.joinpath(model_name).joinpath("train_dataset.csv")
+        path = self.path.joinpath(model_name).joinpath("train_dataset_eval.csv")
         if not path.exists():
             raise FileNotFoundError("Training ids file does not exist")
 

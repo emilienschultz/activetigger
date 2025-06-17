@@ -1,6 +1,5 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
-import { FcStatistics } from 'react-icons/fc';
 import { useGetSimpleModel } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -60,10 +59,6 @@ export const SelectionManagement: FC = () => {
 
   return (
     <div className="w-100">
-      <div className="explanations">
-        Quick model available
-        <FcStatistics />{' '}
-      </div>
       <div className="d-flex align-items-center">
         {selectionConfig.frameSelection && <FaLock className="m-2" size={20} />}
         <div className="mx-2 w-25">

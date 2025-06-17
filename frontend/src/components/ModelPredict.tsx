@@ -2,8 +2,13 @@ import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 
+import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { useComputeModelPrediction, useModelInformations } from '../core/api';
+import {
+  useComputeModelPrediction,
+  useGetPredictionsFile,
+  useModelInformations,
+} from '../core/api';
 import { useAppContext } from '../core/context';
 import { DisplayTrainingProcesses } from './DisplayTrainingProcesses';
 import { ImportPredictionDataset } from './forms/ImportPredictionDataset';
@@ -20,6 +25,7 @@ export const ModelPredict: FC = () => {
   // available labels from context
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
+  const { getPredictionsFile } = useGetPredictionsFile(projectSlug || null);
 
   const availablePrediction =
     currentScheme &&
@@ -71,22 +77,12 @@ export const ModelPredict: FC = () => {
             <input
               type="number"
               step="1"
-              className="m-2 form-control w-25"
+              className="m-2 form-control"
+              style={{ width: '100px' }}
               value={batchSize}
               onChange={(e) => setBatchSize(Number(e.target.value))}
             />
           </div>
-          {/* {isComputing && (
-            <div>
-              <button
-                key="stop"
-                className="btn btn-primary mt-3 d-flex align-items-center"
-                onClick={stopTraining}
-              >
-                <PulseLoader color={'white'} /> Stop current process
-              </button>
-            </div>
-          )} */}
 
           {currentModel && currentScheme && (
             <div>
@@ -95,6 +91,16 @@ export const ModelPredict: FC = () => {
                   {availablePrediction ? (
                     <div className="alert alert-success m-4">
                       Prediction computed for this model, you can export it
+                      <button
+                        onClick={() => {
+                          if (model) {
+                            getPredictionsFile(currentModel, 'csv');
+                          }
+                        }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        <FaCloudDownloadAlt />
+                      </button>
                     </div>
                   ) : isComputing ? (
                     <div></div>

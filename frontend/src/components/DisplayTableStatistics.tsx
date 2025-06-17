@@ -1,77 +1,88 @@
 import { FC } from 'react';
 import { MLStatisticsModel } from '../types';
 
-export interface DisplayTableProps {
+export interface DisplayTableStatisticsProps {
   scores: MLStatisticsModel;
-  title: string;
+  title?: string | null;
 }
 
 interface TableModel {
   index: string[];
   columns: string[];
-  data: [number, number, number, number, number][];
+  data: number[][];
 }
 
-export const DisplayTable: FC<DisplayTableProps> = ({ scores, title }) => {
+export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores, title }) => {
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
-
   const labels = Object.keys(scores['f1_label'] || []);
-  const rowCount = table?.data.length || 0;
   const colCount = table?.columns.length || 0;
 
   return (
-    <div className="overflow-x-auto p-4">
+    <div className="overflow-x-auto">
       {table && (
         <table className="table-auto border-collapse border border-gray-300 w-full text-sm">
-          <caption className="caption-top text-lg font-medium mb-2 text-gray-700">{title}</caption>
+          {title && (
+            <caption className="caption-top text-lg font-medium mb-2 text-gray-700">
+              {title}
+            </caption>
+          )}
           <thead>
             <tr>
               <th></th>
               <th></th>
-              <td colSpan={labels.length} className="bg-gray-300 text-center px-4 py-2">
+              <td colSpan={labels.length} className="bg-gray-300 text-center p-2">
                 Predicted
+              </td>
+              <td colSpan={3} className="bg-gray-300 text-center p-2">
+                Scores
               </td>
             </tr>
             <tr className="bg-gray-100">
               <th></th>
-              <td className="px-4 py-2">Label</td>
-              {table?.columns.map((col, index) => (
-                <td key={col} className="px-4 py-2 capitalize font-semibold">
-                  {index < labels.length ? <b>{col}</b> : col}
+              <td className="p-1">Label</td>
+              {table?.columns.map((col) => (
+                <td key={col} className="p-1 capitalize font-semibold">
+                  <b>{col}</b>
                 </td>
               ))}
+              <td className="p-1 text-center">Recall</td>
+              <td className="p-1 text-center">f1</td>
             </tr>
           </thead>
           <tbody>
             {table.data.map((row, rowIndex) => (
-              <tr
-                key={table.index[rowIndex]}
-                className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-              >
+              <tr key={table.index[rowIndex]}>
                 {rowIndex === 0 && (
-                  <td
-                    rowSpan={colCount}
-                    className="bg-blue-100 font-semibold text-center px-4 py-2"
-                  >
+                  <td rowSpan={colCount} className="bg-blue-100 font-semibold text-center p-3">
                     Truth
                   </td>
                 )}
-                {rowIndex === colCount && (
-                  <td
-                    rowSpan={rowCount - colCount}
-                    className="bg-green-100 font-semibold text-center px-4 py-2"
-                  >
-                    Metrics
-                  </td>
-                )}
-                <td className="font-medium px-4 py-2">{table.index[rowIndex]}</td>
+                <td className="font-medium p-1">
+                  <b>{table.index[rowIndex]}</b>
+                </td>
                 {row.map((cell, colIndex) => (
-                  <td key={colIndex} className="px-4 py-2 text-center">
-                    {cell}
+                  <td key={colIndex} className="p-1 text-center">
+                    <b>{cell}</b>
                   </td>
                 ))}
+
+                <td className="p-1 text-center">
+                  {scores.recall_label && scores.recall_label[labels[rowIndex]]}
+                </td>
+                <td className="p-1 text-center">
+                  {scores.f1_label && scores.f1_label[labels[rowIndex]]}
+                </td>
               </tr>
             ))}
+            <tr>
+              <td></td>
+              <td className="p-1 text-center">f1</td>
+              {table.columns.map((col, colIndex) => (
+                <td key={colIndex} className="p-1 text-center">
+                  {scores.f1_label && scores.f1_label[col]}
+                </td>
+              ))}
+            </tr>
           </tbody>
         </table>
       )}

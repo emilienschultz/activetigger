@@ -233,6 +233,16 @@ class LMParametersModel(BaseModel):
     adapt: bool = True
 
 
+class LMParametersModelTrained(LMParametersModel):
+    """
+    Parameters for bertmodel once trained
+    """
+
+    base_model: str
+    n_train: int
+    test_size: float
+
+
 class LMParametersDbModel(LMParametersModel):
     predicted: bool = False
     compressed: bool = False
@@ -285,7 +295,7 @@ class ProjectionParametersModel(BaseModel):
 
     method: str
     features: list
-    parameters: dict[str, Any]
+    parameters: dict[str, float | str | bool | list] = {}
 
 
 class ProjectionDataModel(BaseModel):
@@ -754,6 +764,7 @@ class LMInformationsModel(BaseModel):
     train_scores: dict | None = None
     test_scores: dict | None = None
     valid_scores: dict | None = None
+    outofsample_scores: dict | None = None
 
 
 class ProjectUpdateModel(BaseModel):

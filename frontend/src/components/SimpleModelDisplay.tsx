@@ -1,27 +1,18 @@
 import { FC } from 'react';
-import { useGetSimpleModel } from '../core/api';
-import { useAppContext } from '../core/context';
 import { DisplayScores } from './DisplayScores';
 
-export const SimpleModelDisplay: FC = () => {
-  // get the current project and scheme from the context
-  const {
-    appContext: { currentProject: project, currentScheme },
-  } = useAppContext();
-  // API call to get the current model & refetch
-  const { currentModel } = useGetSimpleModel(
-    project ? project.params.project_slug : null,
-    currentScheme || null,
-    project,
-  );
+interface SimpleModelDisplayProps {
+  currentModel?: Record<string, never>;
+}
 
+export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }) => {
   // if no model, return nothing
   if (!currentModel) return null;
 
   return (
     <div>
       <hr />
-      <h5>Parameters</h5>
+      <h5>Current {currentModel.model} model</h5>
       <table className="table table-striped table-hover">
         <tbody>
           {currentModel.params &&
@@ -44,8 +35,13 @@ export const SimpleModelDisplay: FC = () => {
         <DisplayScores
           title="Quick model"
           scores={currentModel.statistics as unknown as Record<string, number>}
-          scores_cv10={currentModel.statistics_cv10 as unknown as Record<string, number>}
         />
+        {currentModel.statistics_cv10 && (
+          <DisplayScores
+            title="Cross validation"
+            scores={currentModel.statistics_cv10 as unknown as Record<string, number>}
+          />
+        )}
       </div>
     </div>
   );

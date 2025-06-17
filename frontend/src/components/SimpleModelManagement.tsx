@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
 import { useUpdateSimpleModel } from '../core/api';
@@ -15,6 +15,7 @@ interface SimpleModelManagementProps {
   availableFeatures: string[];
   availableLabels: string[];
   kindScheme: string;
+  currentModel?: Record<string, never>;
 }
 
 export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
@@ -24,6 +25,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   availableFeatures,
   availableLabels,
   kindScheme,
+  currentModel,
 }) => {
   // display the form
   const [showForm, setShowForm] = useState(false);
@@ -44,7 +46,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   };
 
   // create form
-  const { register, handleSubmit, control, watch } = useForm<SimpleModelModel>({
+  const { register, handleSubmit, control, watch, setValue } = useForm<SimpleModelModel>({
     defaultValues: {
       model: 'liblinear',
       // features: Object.values(availableFeatures),
@@ -60,6 +62,29 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
       dichotomize: kindScheme == 'multilabel' ? availableLabels[0] : undefined,
     },
   });
+
+  // update the values from the current model if it exists
+  useEffect(() => {
+    if (currentModel?.params) {
+      const filteredParams = Object.entries(currentModel.params)
+        .filter(([key]) => key !== 'features') // key is the param name
+        .reduce(
+          (acc, [key, value]) => {
+            if (
+              typeof value === 'string' ||
+              typeof value === 'number' ||
+              typeof value === 'boolean'
+            ) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {} as Record<string, string | number | boolean>,
+        );
+
+      setValue('params', filteredParams);
+    }
+  }, [currentModel, setValue]);
 
   // state for the model selected to modify parameters
   const selectedModel = watch('model');

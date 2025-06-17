@@ -93,15 +93,15 @@ class Project:
         """
         # remove from database
         try:
-            self.db_manager.projects_service.delete_project(self.name)
+            self.db_manager.projects_service.delete_project(self.params.project_slug)
         except Exception as e:
-            raise ValueError("Problem with the database", str(e))
+            raise ValueError("Problem with the database " + str(e))
 
         # remove folder of the project
         try:
             shutil.rmtree(self.params.dir)
         except Exception as e:
-            raise ValueError("No directory to delete", str(e))
+            raise ValueError("No directory to delete " + str(e))
 
         # remove static files
         if Path(f"{config.data_path}/projects/static/{self.name}").exists():
@@ -171,6 +171,9 @@ class Project:
     def drop_testset(self) -> None:
         """
         Clean all the test data of the project
+        - remove the file
+        - remove all the annotations in the database
+        - set the flag to False
         """
         if not self.params.dir:
             raise Exception("No directory for project")
@@ -178,6 +181,7 @@ class Project:
         if not path_testset.exists():
             raise Exception("No test data available")
         os.remove(path_testset)
+        self.db_manager.projects_service.delete_annotations_testset(self.params.project_slug)
         self.schemes.test = None
         self.params.test = False
         self.db_manager.projects_service.update_project(
@@ -475,7 +479,7 @@ class Project:
         # get prediction of the id if it exists
         predict = {"label": None, "proba": None}
 
-        if self.simplemodels.exists(user, scheme):
+        if self.simplemodels.exists(user, scheme) and dataset == "train":
             sm = self.simplemodels.get_model(user, scheme)
             predicted_label = sm.proba.loc[element_id, "prediction"]
             predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
@@ -1055,6 +1059,10 @@ class Project:
                 df = df.drop(columns=["entropy", "prediction"])
                 df = df[df.columns[0:-1]]
                 name = f.replace("__", "_")  # avoid __ in the name for features
+                # if the feature already exists, delete it first
+                if self.features.exists(name):
+                    self.features.delete(name)
+                # add it
                 self.features.add(
                     name=name,
                     kind="prediction",

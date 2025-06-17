@@ -6,6 +6,8 @@ import { useAddLabel, useDeleteLabel, useRenameLabel, useStatistics } from '../c
 import { useNotifications } from '../core/notifications';
 
 import { FaCheck } from 'react-icons/fa';
+import { ReactSortable } from 'react-sortablejs';
+import { AppContextValue } from '../core/context';
 
 /**
  * Component to manage one label
@@ -16,6 +18,7 @@ interface LabelsManagementProps {
   currentScheme: string | null;
   availableLabels: string[];
   kindScheme: string;
+  setAppContext: React.Dispatch<React.SetStateAction<AppContextValue>>;
 }
 
 interface LabelCardProps {
@@ -24,6 +27,11 @@ interface LabelCardProps {
   countTest?: number;
   removeLabel: (label: string) => void;
   renameLabel: (formerLabel: string, newLabel: string) => void;
+}
+
+interface LabelType {
+  id: number;
+  label: string;
 }
 
 export const LabelCard: FC<LabelCardProps> = ({
@@ -88,6 +96,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   currentScheme,
   availableLabels,
   kindScheme,
+  setAppContext,
 }) => {
   const { notify } = useNotifications();
 
@@ -97,6 +106,23 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   const { addLabel } = useAddLabel(projectSlug || null, currentScheme || null);
   const { deleteLabel } = useDeleteLabel(projectSlug || null, currentScheme || null);
   const { renameLabel } = useRenameLabel(projectSlug || null, currentScheme || null);
+
+  const [labels, setLabels] = useState<LabelType[]>(
+    availableLabels.map((label, index) => ({
+      id: index,
+      label: label,
+    })),
+  );
+
+  // update labels when availableLabels change
+  useEffect(() => {
+    setLabels(
+      availableLabels.map((label, index) => ({
+        id: index,
+        label: label,
+      })),
+    );
+  }, [availableLabels]);
 
   // manage label creation
   const [createLabelValue, setCreateLabelValue] = useState('');
@@ -115,6 +141,18 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   useEffect(() => {
     reFetchStatistics();
   }, [reFetchStatistics, currentScheme, availableLabels]);
+
+  // update the labels in the state and context
+  const updateLabels = (newLabels: LabelType[]) => {
+    setLabels(newLabels);
+    setAppContext((state) => ({
+      ...state,
+      displayConfig: {
+        ...state.displayConfig,
+        labelsOrder: newLabels.map((e) => e.label),
+      },
+    }));
+  };
 
   return (
     <div className="row">
@@ -152,23 +190,27 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               <th scope="col" className="px-4 py-3 text-center"></th>
             </tr>
           </thead>
-          <tbody>
-            {availableLabels.map((label, _) => (
+          <ReactSortable list={labels} setList={updateLabels} tag="tbody">
+            {labels.map((label) => (
               <LabelCard
-                key={label}
-                label={label}
-                removeLabel={() => deleteLabel(label)}
+                key={label.label}
+                label={label.label}
+                removeLabel={() => {
+                  deleteLabel(label.label);
+                }}
                 renameLabel={renameLabel}
                 countTrain={
-                  statistics ? Number(statistics['train_annotated_distribution'][label]) : 0
+                  statistics ? Number(statistics['train_annotated_distribution'][label.label]) : 0
                 }
                 countTest={
                   statistics && statistics['test_annotated_distribution']
-                    ? Number(statistics['test_annotated_distribution'][label])
+                    ? Number(statistics['test_annotated_distribution'][label.label])
                     : 0
                 }
               />
             ))}
+          </ReactSortable>
+          <tbody>
             <tr>
               <td className="px-4 py-3">
                 <b>Annotated</b>

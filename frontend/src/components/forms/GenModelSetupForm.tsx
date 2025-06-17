@@ -137,6 +137,7 @@ export const GenModelSetupForm: FC<{
                     id="credentials"
                     className="form-control"
                     placeholder="API key"
+                    autoComplete="off"
                     {...register('credentials')}
                   />
                   <label htmlFor="credentials" className="mt-0">

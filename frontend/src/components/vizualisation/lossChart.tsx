@@ -32,11 +32,12 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
     x: epoch as number,
     y: val_eval_loss[i] as number,
   }));
-  const minValLossPoint = valEvalLossData.reduce((min, curr) => (curr.y < min.y ? curr : min), {
-    x: 0,
-    y: 0,
-  });
 
+  const initial = { x: 0, y: Infinity };
+  const minValLossPoint = valEvalLossData.reduce(
+    (min, curr) => (curr.y < min.y ? curr : min),
+    initial,
+  );
   if (valEvalLossData.length < 1)
     return (
       <div className="alert alert-info m-3">
@@ -104,7 +105,6 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
         <VictoryLegend
           x={100}
           y={0}
-          title="Legend"
           centerTitle
           orientation="horizontal"
           gutter={20}
@@ -113,7 +113,7 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
             { name: 'Train Loss', symbol: { fill: '#c43a31' } },
             { name: 'Eval Loss', symbol: { fill: '#0000ff' } },
             {
-              name: 'Model Selected',
+              name: 'Best model',
               symbol: {
                 fill: 'green',
                 type: 'square',

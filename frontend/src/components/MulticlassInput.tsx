@@ -1,5 +1,7 @@
 import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactSortable } from 'react-sortablejs';
+import { useAppContext } from '../core/context';
+import { reorderLabels } from '../core/utils';
 
 interface MulticlassInputProps {
   elementId: string;
@@ -17,8 +19,14 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   postAnnotation,
   labels,
 }) => {
+  // get the context and set the labels
+  const {
+    appContext: { displayConfig },
+    setAppContext,
+  } = useAppContext();
+
   const [availableLabels, setAvailableLabels] = useState<LabelType[]>(
-    (labels || []).map((label, index) => ({
+    reorderLabels(labels || [], displayConfig.labelsOrder || []).map((label, index) => ({
       id: index,
       label: label,
     })),
@@ -56,8 +64,20 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
     };
   }, [availableLabels, handleKeyboardEvents]);
 
+  // update the labels in the state and context
+  const updateLabels = (newLabels: LabelType[]) => {
+    setAvailableLabels(newLabels);
+    setAppContext((state) => ({
+      ...state,
+      displayConfig: {
+        ...state.displayConfig,
+        labelsOrder: newLabels.map((e) => e.label),
+      },
+    }));
+  };
+
   return (
-    <ReactSortable list={availableLabels} setList={setAvailableLabels} tag="div">
+    <ReactSortable list={availableLabels} setList={updateLabels} tag="div">
       {
         // display buttons for label from the user
         availableLabels.map((e, i) => (

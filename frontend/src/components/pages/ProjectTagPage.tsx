@@ -21,6 +21,7 @@ import { ElementOutModel } from '../../types';
 import { BackButton } from '../BackButton';
 import { ForwardButton } from '../ForwardButton';
 
+import { MdDisplaySettings } from 'react-icons/md';
 import { useLocation } from 'react-router-dom';
 import { SimpleModelModel } from '../../types';
 import { DataTabular } from '../DataTabular';
@@ -62,6 +63,7 @@ export const ProjectTagPage: FC = () => {
   const [displayComment, setDisplayComment] = useState(false);
   const [comment, setComment] = useState('');
   const [activeTab, setActiveTab] = useState<string>('tag');
+  const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   useEffect(() => {
     setActiveTab(tab || 'tag');
   }, [tab]);
@@ -243,7 +245,7 @@ export const ProjectTagPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName || null} currentAction="tag">
       {statistics && statistics['test_set_n'] && statistics['test_set_n'] > 0 && (
-        <div className={phase == 'test' ? 'alert alert-info m-2' : 'alert m-2'}>
+        <div className={phase == 'test' ? 'alert alert-info m-2' : 'm-2'}>
           <div className="col-4 form-check form-switch">
             <input
               className="form-check-input bg-info"
@@ -265,7 +267,7 @@ export const ProjectTagPage: FC = () => {
         </div>
       )}
 
-      <Tabs className="mb-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
+      <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
           <div className="container-fluid">
             <div className="row mb-3 mt-3">
@@ -284,6 +286,7 @@ export const ProjectTagPage: FC = () => {
                     <Tooltip anchorSelect=".currentstatistics" place="top">
                       statistics for the current scheme
                     </Tooltip>
+
                     <div>
                       <button className="btn getelement" onClick={refetchElement}>
                         <LuRefreshCw size={20} /> Get element
@@ -420,16 +423,6 @@ export const ProjectTagPage: FC = () => {
                   setAppContext={setAppContext}
                 />
 
-                <button
-                  className="btn addcomment"
-                  onClick={() => setDisplayComment(!displayComment)}
-                >
-                  <FaPencilAlt />
-                  <Tooltip anchorSelect=".addcomment" place="top">
-                    Add a commentary
-                  </Tooltip>
-                </button>
-
                 {kindScheme == 'multiclass' && (
                   <MulticlassInput
                     elementId={elementId || 'noelement'}
@@ -468,6 +461,27 @@ export const ProjectTagPage: FC = () => {
                   />
                 )}
               </div>
+              <div className="d-flex flex-wrap gap-2 justify-content-center">
+                <button
+                  className="btn addcomment"
+                  onClick={() => setDisplayComment(!displayComment)}
+                >
+                  <FaPencilAlt />
+                  <Tooltip anchorSelect=".addcomment" place="top">
+                    Add a commentary
+                  </Tooltip>
+                </button>
+
+                <button
+                  className="btn displayconfig"
+                  onClick={() => setShowDisplayConfig(!showDisplayConfig)}
+                >
+                  <MdDisplaySettings />
+                  <Tooltip anchorSelect=".displayconfig" place="top">
+                    Display config menu
+                  </Tooltip>
+                </button>
+              </div>
 
               {displayComment && (
                 <div className="m-3">
@@ -482,19 +496,14 @@ export const ProjectTagPage: FC = () => {
               )}
             </div>
           )}
-          {phase != 'test' && (
-            <div className="container col-12 w-50">
-              <details className="custom-details">
-                <summary>Display config</summary>
-                <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
-              </details>
-            </div>
+          {phase != 'test' && showDisplayConfig && (
+            <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
           )}
         </Tab>
         <Tab eventKey="prediction" title="Quick model">
           <div className="container-fluid">
             <div className="row mb-3 mt-3">
-              <div className="col-6">
+              <div className="col-8">
                 {phase == 'test' && (
                   <div className="alert alert-warning">
                     Test mode activated - quick model are disabled
@@ -504,6 +513,7 @@ export const ProjectTagPage: FC = () => {
                 {phase != 'test' && (
                   <>
                     <div className="explanations">Current quick model parameters and train</div>
+
                     <SimpleModelManagement
                       projectName={projectName || null}
                       currentScheme={currentScheme || null}
@@ -513,8 +523,10 @@ export const ProjectTagPage: FC = () => {
                       availableFeatures={availableFeatures}
                       availableLabels={availableLabels}
                       kindScheme={kindScheme}
+                      currentModel={currentModel || undefined}
                     />
-                    <SimpleModelDisplay />
+
+                    <SimpleModelDisplay currentModel={currentModel || undefined} />
                   </>
                 )}
               </div>

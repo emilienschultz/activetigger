@@ -132,6 +132,7 @@ export interface DisplayConfig {
   numberOfTokens: number;
   frameSize: number;
   highlightText: string;
+  labelsOrder?: string[];
 }
 
 export interface newBertModel {

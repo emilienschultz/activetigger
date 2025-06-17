@@ -70,7 +70,7 @@ export const MonitorPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
-            <Tabs id="panel2" className="mb-3" defaultActiveKey="logs">
+            <Tabs id="panel2" className="mt-3" defaultActiveKey="logs">
               <Tab eventKey="logs" title="Logs">
                 <h2 className="subtitle">Recent activity on all projects</h2>
                 {logs ? (

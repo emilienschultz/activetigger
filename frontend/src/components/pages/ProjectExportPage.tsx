@@ -42,10 +42,15 @@ export const ProjectExportPage: FC = () => {
     currentScheme && project?.languagemodels.available[currentScheme]
       ? Object.keys(project?.languagemodels.available[currentScheme])
       : [];
-  const availablePrediction =
+  const availablePredictionAll =
     (currentScheme &&
       model &&
       project?.languagemodels?.available?.[currentScheme]?.[model]?.['predicted']) ??
+    false;
+  const availablePredictionTest =
+    (currentScheme &&
+      model &&
+      project?.languagemodels?.available?.[currentScheme]?.[model]?.['tested']) ??
     false;
   const availablePredictionExternal =
     (currentScheme &&
@@ -183,33 +188,9 @@ export const ProjectExportPage: FC = () => {
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  {/*
-            small fix for the direct link when no nging
-            */}
-                  {model &&
-                    (staticUrls && staticUrls.model ? (
-                      <Link
-                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model.path}
-                        target="_blank"
-                        download
-                        className="btn btn-primary mt-3"
-                      >
-                        Export fine-tuned model (static)
-                      </Link>
-                    ) : (
-                      <button
-                        className="btn btn-primary mt-3"
-                        onClick={() => {
-                          getModelFile(model);
-                        }}
-                      >
-                        Export fine-tuned model
-                      </button>
-                    ))}
-                </div>
-                <div>
-                  {availablePrediction && (
+                  {availablePredictionAll && (
                     <button
                       className="btn btn-primary mt-3"
                       onClick={() => {
@@ -219,6 +200,20 @@ export const ProjectExportPage: FC = () => {
                       }}
                     >
                       Export prediction complete dataset
+                    </button>
+                  )}
+                </div>
+                <div>
+                  {availablePredictionTest && (
+                    <button
+                      className="btn btn-primary mt-3"
+                      onClick={() => {
+                        if (model) {
+                          getPredictionsFile(model, format, 'test');
+                        }
+                      }}
+                    >
+                      Export prediction testset
                     </button>
                   )}
                 </div>
@@ -235,6 +230,31 @@ export const ProjectExportPage: FC = () => {
                       Export prediction external dataset
                     </button>
                   )}
+                </div>
+                {/*
+            small fix for the direct link when no nging
+            */}
+                <div>
+                  {model &&
+                    (staticUrls && staticUrls.model ? (
+                      <Link
+                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model.path}
+                        target="_blank"
+                        download
+                        className="btn btn-secondary mt-3"
+                      >
+                        Export fine-tuned model (large file)
+                      </Link>
+                    ) : (
+                      <button
+                        className="btn btn-primary mt-3"
+                        onClick={() => {
+                          getModelFile(model);
+                        }}
+                      >
+                        Export fine-tuned model
+                      </button>
+                    ))}
                 </div>
               </div>
             </div>

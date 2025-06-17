@@ -49,6 +49,7 @@ class FitModel(BaseTask):
         Y_pred = self.model.predict(Xf)
 
         statistics = get_metrics(Yf, Y_pred)
+        statistics.false_predictions = None
 
         # compute 10-crossvalidation
         if self.cv10:
@@ -58,8 +59,6 @@ class FitModel(BaseTask):
             statistics_cv10 = get_metrics(Yf, Y_pred_10cv)
         else:
             statistics_cv10 = None
-
-        print("XXXXXXX end fit model", self.cv10, statistics_cv10)
 
         return FitModelResults(
             model=self.model,

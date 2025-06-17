@@ -12,6 +12,7 @@ import { ImportAnnotations } from '../ImportAnnotations';
 import { LabelsManagement } from '../LabelsManagement';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 
+import { reorderLabels } from '../../core/utils';
 import { ProjectHistory } from '../ProjectHistory';
 import { ProjectParameters } from '../ProjectParameters';
 import { SchemesManagement } from '../SchemesManagement';
@@ -22,24 +23,29 @@ import { SchemesManagement } from '../SchemesManagement';
 
 export const ProjectPage: FC = () => {
   // get data
-  const { projectName } = useParams();
-  const projectSlug = projectName;
+  const { projectName: projectSlug } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, history },
+    appContext: { currentScheme, currentProject: project, history, displayConfig },
     setAppContext,
   } = useAppContext();
 
   // define variables
-  const availableLabels =
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme]['labels'] || []
-      : [];
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme]['kind']
       : '';
+  const availableLabels =
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme]['labels'] || []
+      : [];
 
-  // manage redirect if at least 2 tags
+  // sort labels according to the displayConfig
+  const availableLabelsSorted = reorderLabels(
+    availableLabels as string[],
+    displayConfig.labelsOrder || [],
+  );
+
+  // redirect if at least 2 tags
 
   // get the fact that we come from the create page
   const navigate = useNavigate();
@@ -56,8 +62,6 @@ export const ProjectPage: FC = () => {
       setFromProjectPage(false);
     }
   }, [fromProjectPage, availableLabels.length, navigate, projectSlug]);
-
-  console.log(currentScheme, fromProjectPage);
 
   if (!projectSlug || !project) return;
 
@@ -76,8 +80,9 @@ export const ProjectPage: FC = () => {
             <LabelsManagement
               projectSlug={projectSlug}
               currentScheme={currentScheme || null}
-              availableLabels={availableLabels as string[]}
+              availableLabels={availableLabelsSorted as string[]}
               kindScheme={kindScheme as string}
+              setAppContext={setAppContext}
             />
           </Tab>
           <Tab eventKey="features" title="Features">
