@@ -16,7 +16,7 @@ Designed primarily by researchers in social sciences, its use can extend to all 
 
 [Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
 
-Stable version mid-June 2025
+Stable version mid-June 2025 (hopefully) 🚧
 
 
 
