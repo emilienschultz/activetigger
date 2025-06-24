@@ -128,6 +128,7 @@ class Orchestrator:
         try:
             while self._running:
                 print("update orchestrator")
+                print(get_gpu_memory_info())
                 self.update()
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
