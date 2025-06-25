@@ -16,6 +16,7 @@ This guide explains the basics of all functionalities, but you do not have to us
 _Note: ActiveTigger currently only works for multiclass/multilabel annotation, not span annotation._
 
 ## Table of contents
+
 1. [Creating a project](#creating-a-project)
 2. [Workflow](#workflow)
 3. [Project](#project-page)
@@ -68,7 +69,9 @@ Once the project is created, you can start working on it.
     By default, a project is only visible to the user who created it (and the administrator of the service). You can add users on a project if you want to work collaboratively.
 
 ## Workflow
+
 Once you have created your project, below are the suggested steps that will help you develop, evaluate, and apply your model:
+
 - Define your labels in your coding scheme
 - Tag at least a couple hundred (randomly selected) elements (at least a few dozen per label)
 - Train a Quick Model: define features under **Project**, train Quick Model under **Tag**
@@ -151,6 +154,7 @@ Here you can import:
 Here you can see (or change, if needed) a summary of the main parameters for your project.
 
 #### Session history
+
 This tab logs all activities undertaken on your project (can be particularly helpful if you work with collaborators).
 
 ## Tag
@@ -239,6 +243,7 @@ Once you feel that you may have a large enough set of annotations and your quick
     It can be tempting to adjust your annotations according to initial performance metrics (for example, a lower F1 score in a certain category may incite you to tag more examples as positives for this category). Ensure that your annotations are first and foremost consistent with your codebook. Mixing annotation strategies in the middle of the same scheme can cause issues with training models due to inconsistencies. If you are unhappy with model results, consider adjusting your codebook - maybe your categories are too vaguely defined? You can start a new coding scheme to test various annotation strategies.
 
 ### Tabular
+
 This tab gives you an overview of all tagged elements. You can get a quick picture of their distribution in the dataset. If you want to relabel an element, you can do so by **double-clicking** on the assigned label.
 
 ### Vizualisation
@@ -265,7 +270,7 @@ Leave some time for the training process (you can follow the progress). Dependin
 
     When available, the process will use GPU. Since resources are limited, overloads can happen. Consequently, a process can fail if there is no enough memory. You can follow the current state of the GPU use in the left menu of the screen. 
 
-##Fine-tuned models
+## Fine-tuned models
 
 Once your model is trained, it will be selectable under this tab. At this point, you can evaluate its performance to decide to apply it on your data (train or test sets) to see metrics of its performance, or to extend it on the whole initial dataset.
 
@@ -294,6 +299,7 @@ If you find yourself with low scores, it is a good idea to first consider your c
 To improve your score, you can also check in the False Prediction tab for texts where discrepancies between your coding and the model's coding is indicated. Try to understand the reason for the difference and revise your coding accordingly.
 
 ### Monitoring the Training Process
+
 During model training, ActiveTigger displays loss curves for both training and evaluation datasets. These curves help you assess the model's learning progress. The overall goal should be to minimize **loss**: a number that tells us how far off the model's predictions are from the correct answers. It is the difference between the model's predictions and the actual labeled data.
 
 CLick on **Predict on train set** to see the loss curves during training. 
@@ -346,6 +352,7 @@ You can add users to your project. This is useful if you want to work collaborat
 You can change your password.
 
 ## Storage
+
 Please make sure to regularly delete unused models and archive projects no longer in active use, as these will take up unnecessary space.
 
 ## Further resources
