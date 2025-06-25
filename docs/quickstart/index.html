@@ -210,15 +210,17 @@
 <p>By default, a project is only visible to the user who created it (and the administrator of the service). You can add users on a project if you want to work collaboratively.</p>
 </div>
 <h2 id="workflow">Workflow</h2>
-<p>Once you have created your project, below are the suggested steps that will help you develop, evaluate, and apply your model:
-- Define your labels in your coding scheme
-- Tag at least a couple hundred (randomly selected) elements (at least a few dozen per label)
-- Train a Quick Model: define features under <strong>Project</strong>, train Quick Model under <strong>Tag</strong>
-- Go back and annotate, alternating between Active Learning and random modes to ensure a diverse pool of annotated data in your training dataset. Check performance metrics (scores, visualizations) periodically to assess your annotation strategy.
-- Once content with preliminary prediction performance, train a full BERT model under <strong>Fine-tune</strong>. You may need to go back and revise your annotation strategy if you are not happy with model performance.
-- Once content with your fine-tuned model, apply it on a test set (unseen data) to evaluate it more robustly.
-- Once content with these results, apply your model on the full dataset.
-- Export the results and proceed with your analysis.</p>
+<p>Once you have created your project, below are the suggested steps that will help you develop, evaluate, and apply your model:</p>
+<ul>
+<li>Define your labels in your coding scheme</li>
+<li>Tag at least a couple hundred (randomly selected) elements (at least a few dozen per label)</li>
+<li>Train a Quick Model: define features under <strong>Project</strong>, train Quick Model under <strong>Tag</strong></li>
+<li>Go back and annotate, alternating between Active Learning and random modes to ensure a diverse pool of annotated data in your training dataset. Check performance metrics (scores, visualizations) periodically to assess your annotation strategy.</li>
+<li>Once content with preliminary prediction performance, train a full BERT model under <strong>Fine-tune</strong>. You may need to go back and revise your annotation strategy if you are not happy with model performance.</li>
+<li>Once content with your fine-tuned model, apply it on a test set (unseen data) to evaluate it more robustly.</li>
+<li>Once content with these results, apply your model on the full dataset.</li>
+<li>Export the results and proceed with your analysis.</li>
+</ul>
 <p>In this guide, we go into more detail on each of these steps, going through the Active Tigger interface tab by tab.</p>
 <h2 id="project">Project</h2>
 <p>Click on the name of your project in the left-hand menu to see a summary of your where your project is at.</p>
