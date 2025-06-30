@@ -125,6 +125,7 @@ def get_gpu_memory_info() -> dict:
     Get info on GPU
     """
     if not torch.cuda.is_available():
+        # print("No GPU available")
         return {"gpu_available": False, "total_memory": 0, "available_memory": 0}
 
     torch.cuda.empty_cache()
