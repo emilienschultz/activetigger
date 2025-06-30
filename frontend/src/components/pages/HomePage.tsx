@@ -10,6 +10,7 @@ export const HomePage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { users } = useGetActiveUsers();
 
+  // add a development mode switch
   // const {
   //   appContext: { developmentMode },
   //   setAppContext,

@@ -2023,6 +2023,11 @@ export function useGetActiveUsers() {
   return { users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
 }
 
+/**
+ * Get scheme codebook
+ * @param project_slug - The slug of the project
+ * @param scheme - The name of the scheme
+ */
 export function useGetSchemeCodebook(project_slug: string | null, scheme: string | null) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 

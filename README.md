@@ -97,10 +97,10 @@ pip install activetigger
 
 #### Optional: Install GPU Support for UMAP
 
-To enable GPU support, [install Rapids Cuml](https://docs.rapids.ai/install/#system-req). For instance, for CUDA 12
+To enable GPU support, [install Rapids Cuml](https://docs.rapids.ai/install/). For instance, for CUDA 12
 
 ```bash
-pip install --extra-index-url=https://pypi.nvidia.com "cuml-cu12==24.10.*"
+pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
 ```
 
 #### Troubleshooting

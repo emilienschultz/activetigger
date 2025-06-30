@@ -9,13 +9,16 @@ import { IoIosAddCircle } from 'react-icons/io';
 import { AvailableProjectsModel } from '../../types';
 
 export const ProjectsPage: FC = () => {
+  // api call
   const projects = useUserProjects();
-  console.log('projects', projects);
+
+  // rows to display
   const [rows, setRows] = useState<AvailableProjectsModel[]>([]);
   useEffect(() => {
     setRows(projects || []);
   }, [projects]);
 
+  // handle search input
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const searchValue = e.target.value.toLowerCase();
 
