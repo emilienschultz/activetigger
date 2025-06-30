@@ -103,6 +103,14 @@ To enable GPU support, [install Rapids Cuml](https://docs.rapids.ai/install/#sys
 pip install --extra-index-url=https://pypi.nvidia.com "cuml-cu12==24.10.*"
 ```
 
+#### Troubleshooting
+
+On Ubuntu, you need to install some drivers for the postgresql database and the python package psycopg2.
+
+```bash
+sudo apt-get install libpq-dev
+```
+
 #### Temporary: some models (ModernBERT) need unpublished versions of Huggingface Transformers
 
 The requirements contain the clone of the repository.

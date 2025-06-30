@@ -184,7 +184,9 @@ The selection mode refers both the general rule of getting new elements (e.g. ra
 
     You can add a comment to each annotation. This can be useful to explain why you chose a certain label, or to note any particularities about the text.
 
-You can also go back to the previous annotated element.
+You can also : 
+- go back to the previous annotated element (for instance, to re-annotate it)
+- skip an element in the current session (it will not be annotated, and you will need to clean the session to be able to see it again)
 
 ### Active learning
 
@@ -254,7 +256,7 @@ When you spot such cases, you can click on a point and annotate it.
 
 ## Fine-tune
 
-Active Tigger allows you to train a BERT classifier model on your annotated data with two goals: extending your annotation on the complete dataset, or retrieving this classifier for other uses. Basically, this is a process of fine-tuning: the pre-trained base model  will be adjusted to your specific data.
+Active Tigger allows you to adapt a existing BERT classifier model on your annotated data. Once you did that, you can extend your annotation pattern on the complete dataset, or download this classifier for other uses. Basically, this is a process of fine-tuning: the pre-trained base model will be adjusted to your specific data.
 
 Click on **Create** to train a new model.
 
