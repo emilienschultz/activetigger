@@ -8,9 +8,10 @@ import { AvailableProjectsModel } from '../types';
 
 interface ProjectCardProps {
   project: AvailableProjectsModel;
+  resetContext: (() => void) | undefined;
 }
 
-export const ProjectCard: FC<ProjectCardProps> = ({ project }) => {
+export const ProjectCard: FC<ProjectCardProps> = ({ project, resetContext }) => {
   const [showDelete, setShowDelete] = useState(false);
   const handleClose = () => setShowDelete(false);
   const handleShow = () => setShowDelete(true);
@@ -26,6 +27,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ project }) => {
 
   // function to navigate to the project page
   const navigateToProject = () => {
+    if (resetContext) resetContext();
     navigate(`/projects/${project.parameters.project_slug}?fromProjectPage=true`);
   };
 
