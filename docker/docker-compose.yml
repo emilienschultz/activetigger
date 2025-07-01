@@ -28,22 +28,10 @@ services:
       - ${DATA_PATH}/models:/api/models
       - ${DATA_PATH}/projects:/api/projects
       - ${PROJECT_PATH}/docker/api/venv:/home/python/venv
+    env_file: ".env"
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - ROOT_PASSWORD=${ROOT_PASSWORD}
-      - API_PORT=${API_PORT}
-      - MODE=${MODE}
       - DATA_PATH=/api
-      - ACTIVETIGGER_USER_HDD_MAX=${ACTIVETIGGER_USER_HDD_MAX}
-      - MAX_LOADED_PROJECTS=${MAX_LOADED_PROJECTS}
-      - N_WORKERS_GPU=${N_WORKERS_GPU}
-      - N_WORKERS_CPU=${N_WORKERS_CPU}
-      - UPDATE_TIMEOUT=${UPDATE_TIMEOUT}
-      - SECRET_KEY=${SECRET_KEY}
-      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - GPU=false
   frontend:
     image: node:${NODE_VERSION}
     entrypoint: /entrypoint.sh

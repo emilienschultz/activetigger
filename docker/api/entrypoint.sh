@@ -19,6 +19,11 @@ python -m venv /home/python/venv
 PATH="/home/python/venv/bin:$PATH"
 cd /api
 pip3 install -r requirements.txt
+if [ "$GPU" = "true" ]; then
+  echo "Mode GPU activated: installing cuml-cu12"
+  pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
+fi
+
 
 # Check for a config.yaml file in the api directory
 if [ ! -f activetigger/api/config.yaml ]; then
