@@ -114,7 +114,7 @@ export const FinetunePage: FC = () => {
   );
 
   return (
-    <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
+    <ProjectPageLayout projectName={projectSlug} currentAction="finetune">
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
