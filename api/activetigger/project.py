@@ -279,13 +279,15 @@ class Project:
 
         n_min: minimal number of elements annotated
         """
+        availabe_schemes = self.schemes.available()
+        simplemodel.features = [i for i in simplemodel.features if i is not None]
         if simplemodel.features is None or len(simplemodel.features) == 0:
             raise Exception("No features selected")
         if simplemodel.model not in list(self.simplemodels.available_models.keys()):
             raise Exception("Model not available")
-        if simplemodel.scheme not in self.schemes.available():
+        if simplemodel.scheme not in availabe_schemes:
             raise Exception("Scheme not available")
-        if len(self.schemes.available()[simplemodel.scheme]) < 2:
+        if len(availabe_schemes[simplemodel.scheme].labels) < 2:
             raise Exception("Scheme not available")
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
@@ -299,7 +301,6 @@ class Project:
             params = None
         else:
             params = dict(simplemodel.params)
-
         # add information on the target of the model
         if simplemodel.dichotomize is not None and params is not None:
             params["dichotomize"] = simplemodel.dichotomize

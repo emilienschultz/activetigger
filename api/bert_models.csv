@@ -17,7 +17,5 @@ hfl/chinese-roberta-wwm-ext,5,,cn, 400,,
 deepset/gbert-base,5,,de, 440, 111,
 deepset/gbert-large,4,,de, 1350, 440,
 tohoku-nlp/bert-base-japanese-v3,5,,ja, 100, 440,
-EuroBERT/EuroBERT-210m, 5,, multi, 310, 8100
-EuroBERT/EuroBERT-610m, 4,, multi, 610, 8100
 dccuchile/bert-base-spanish-wwm-cased,6,,es, 550, 110
 PlanTL-GOB-ES/roberta-base-bne,5,,es, 440, 125

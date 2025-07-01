@@ -243,7 +243,7 @@ export const ProjectTagPage: FC = () => {
   if (!projectName || !currentScheme) return;
 
   return (
-    <ProjectPageLayout projectName={projectName || null} currentAction="tag">
+    <ProjectPageLayout projectName={projectName} currentAction="tag">
       {statistics && statistics['test_set_n'] && statistics['test_set_n'] > 0 && (
         <div className={phase == 'test' ? 'alert alert-info m-2' : 'm-2'}>
           <div className="col-4 form-check form-switch">
