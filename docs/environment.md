@@ -1,6 +1,5 @@
 # What is the environmental impact of the models used on Active Tigger?
 
-
 For several years, [some academic research](https://arxiv.org/abs/1906.02243) and [journalistic articles](https://www.nytimes.com/2024/08/26/climate/ai-planet-climate-change.html) have rightfully raised concerns about the potential environmental impact of deep and machine learning models.
 
 The energy consumption associated with each Natural Language Processing (NLP) task **varies greatly depending on the country where the model is trained, the type of model used, and the methodology chosen** to evaluate the environmental impacts of these models.
