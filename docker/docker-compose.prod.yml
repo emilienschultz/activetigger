@@ -5,7 +5,7 @@ services:
       - 80:80
       - 443:443
     environment:
-      - CERBOT_EMAIL=${CERBOT_EMAIL}
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL}
       - DOMAIN=${DOMAIN}
     volumes:
       - ${PROJECT_PATH}/docker/template_start_nginx_prod.sh:/scripts/template_start.sh
