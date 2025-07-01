@@ -2,7 +2,6 @@ services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
     restart: ${RESTART_POLICY}
-    user: ${USER_ID}:${GROUP_ID}
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -36,7 +35,6 @@ services:
   frontend:
     image: node:${NODE_VERSION}
     entrypoint: /entrypoint.sh
-    user: ${USER_ID}:${GROUP_ID}
     restart: ${RESTART_POLICY}
     volumes:
       - ${PROJECT_PATH}/docker/frontend/entrypoint.sh:/entrypoint.sh

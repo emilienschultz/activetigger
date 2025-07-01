@@ -140,4 +140,20 @@ Tue Jul  1 10:55:16 2025
 
 ## configure docker
 
-## HTTPS
+Edit the `.env` file to suite your needs and more particularly:
+
+```bash
+MODE=prod
+# Required domain name to create SSL certificate on. Without that we can't do HTTPS which is unsecure.
+DOMAIN=yourdomain.com
+# email which will used to create the SSL certificate
+CERTBOT_EMAIL=admin@yourdomain.com
+# your private secret seed
+SECRET="a random 32 url-safe base64-encoded"
+```
+
+## start
+
+```bash
+docker compose -p activetigger -f docker-compose.yml -f docker-compose.nvidia.yml -f docker-compose.prod.yml up -d
+```
