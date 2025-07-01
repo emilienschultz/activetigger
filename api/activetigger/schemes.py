@@ -5,7 +5,12 @@ from typing import Any, cast
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.datamodels import AnnotationsDataModel, SchemesProjectStateModel, TableBatch
+from activetigger.datamodels import (
+    AnnotationsDataModel,
+    SchemeModel,
+    SchemesProjectStateModel,
+    TableBatch,
+)
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.projects import Codebook, ProjectsService
@@ -159,7 +164,7 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
-        labels = available[scheme]["labels"]
+        labels = available[scheme].labels
         labels.remove(former_label)
         self.update_scheme(scheme, labels)
 
@@ -317,9 +322,9 @@ class Schemes:
             raise Exception("Scheme doesn't exist")
         if available[scheme] is None:
             available[scheme] = []
-        if label in available[scheme]["labels"]:
+        if label in available[scheme].labels:
             return {"success": "label already in the scheme"}
-        labels = available[scheme]["labels"]
+        labels = available[scheme].labels
         labels.append(label)
         self.update_scheme(scheme, labels)
         return {"success": "scheme updated with a new label"}
@@ -331,7 +336,7 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
-        if label in available[scheme]["labels"]:
+        if label in available[scheme].labels:
             return True
         return False
 
@@ -342,9 +347,9 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
-        if label not in available[scheme]["labels"]:
+        if label not in available[scheme].labels:
             raise Exception("Label doesn't exist")
-        labels = available[scheme]["labels"]
+        labels = available[scheme].labels
         labels.remove(label)
         # push empty entry for tagged elements
         # both for train
@@ -421,12 +426,17 @@ class Schemes:
             return True
         return False
 
-    def available(self) -> dict[str, dict[str, str | list[str]]]:
+    def available(self) -> dict[str, SchemeModel]:
         """
         Available schemes {scheme:[labels]}
         """
         r = self.projects_service.available_schemes(self.project_slug)
-        return {i["name"]: {"labels": i["labels"], "kind": i["kind"]} for i in r}
+        return {
+            i["name"]: SchemeModel(
+                name=i["name"], labels=i["labels"], kind=i["kind"], project_slug=self.project_slug
+            )
+            for i in r
+        }
 
     def get(self) -> dict:
         """
@@ -492,11 +502,11 @@ class Schemes:
         if label is None:
             print("Add null label for ", element_id)
         elif "|" in label:
-            er = [i for i in label.split("|") if i not in a[scheme]["labels"]]
+            er = [i for i in label.split("|") if i not in a[scheme].labels]
             if len(er) > 0:
                 raise Exception(f"Labels {er} not in the scheme")
         else:
-            if label not in a[scheme]["labels"]:
+            if label not in a[scheme].labels:
                 raise Exception(f"Label {label} not in the scheme")
 
         self.projects_service.add_annotation(
@@ -578,7 +588,7 @@ class Schemes:
         if annotationsdata.scheme not in self.available():
             raise Exception("Scheme doesn't exist")
         else:
-            labels = self.available()[annotationsdata.scheme]["labels"]
+            labels = self.available()[annotationsdata.scheme].labels
 
         # convert the data, slugiy the index, set the index, drop empty
         df = pd.read_csv(StringIO(annotationsdata.csv))

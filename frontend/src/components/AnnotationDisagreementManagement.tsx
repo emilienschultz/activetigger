@@ -17,22 +17,12 @@ export const AnnotationDisagreementManagement: FC<{
   } = useAppContext();
 
   // type of scheme
-  const kindScheme =
-    currentScheme &&
-    project &&
-    project.schemes.available &&
-    project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
-      : 'multiclass';
+  const kindScheme = currentScheme
+    ? project?.schemes?.available?.[currentScheme]?.kind
+    : 'multiclass';
 
   // available labels from context
-  const availableLabels =
-    currentScheme &&
-    project &&
-    project.schemes.available &&
-    project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['labels'] as string[]) || []
-      : [];
+  const availableLabels = currentScheme ? project?.schemes?.available?.[currentScheme]?.labels : [];
 
   // get disagreement table
   const { tableDisagreement, users, reFetchTable } = useTableDisagreement(
@@ -94,7 +84,7 @@ export const AnnotationDisagreementManagement: FC<{
                     }
                   >
                     <option>Select a label to arbitrage</option>
-                    {availableLabels.map((e) => (
+                    {(availableLabels || []).map((e) => (
                       <option key={e}>{e}</option>
                     ))}
                   </select>
@@ -103,7 +93,7 @@ export const AnnotationDisagreementManagement: FC<{
                   <Select
                     isMulti
                     className="flex-grow-1"
-                    options={availableLabels.map((e) => ({ value: e, label: e }))}
+                    options={(availableLabels || []).map((e) => ({ value: e, label: e }))}
                     onChange={(e) => {
                       setChanges({
                         ...changes,

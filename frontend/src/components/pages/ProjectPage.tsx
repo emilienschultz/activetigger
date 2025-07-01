@@ -32,11 +32,11 @@ export const ProjectPage: FC = () => {
   // define variables
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme]['kind']
+      ? project.schemes.available[currentScheme].kind
       : '';
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme]['labels'] || []
+      ? project.schemes.available[currentScheme].labels || []
       : [];
 
   // sort labels according to the displayConfig

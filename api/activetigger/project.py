@@ -594,7 +594,7 @@ class Project:
         schemes = self.schemes.available()
         if scheme not in schemes:
             raise Exception("Scheme not available")
-        kind = schemes[scheme]["kind"]
+        kind = schemes[scheme].kind
 
         # part train
         r = {"train_set_n": len(self.schemes.content)}

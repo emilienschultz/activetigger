@@ -547,7 +547,7 @@ class NextProjectStateModel(BaseModel):
 
 
 class SchemesProjectStateModel(BaseModel):
-    available: dict[str, dict[str, str | list[str]]]
+    available: dict[str, SchemeModel]
 
 
 class FeaturesProjectStateModel(BaseModel):

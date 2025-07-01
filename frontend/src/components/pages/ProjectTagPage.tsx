@@ -93,16 +93,16 @@ export const ProjectTagPage: FC = () => {
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
   const currentModel =
-    authenticatedUser &&
-    currentScheme &&
-    project?.simplemodel?.available?.[authenticatedUser.username]?.[currentScheme];
+    authenticatedUser && currentScheme
+      ? project?.simplemodel?.available?.[authenticatedUser.username]?.[currentScheme]
+      : null;
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['labels'] as string[])
+      ? project.schemes.available[currentScheme].labels
       : [];
   const [kindScheme] = useState<string>(
     currentScheme && project && project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
+      ? project.schemes.available[currentScheme].kind || 'multiclass'
       : 'multiclass',
   );
 
@@ -523,10 +523,12 @@ export const ProjectTagPage: FC = () => {
                       availableFeatures={availableFeatures}
                       availableLabels={availableLabels}
                       kindScheme={kindScheme}
-                      currentModel={currentModel || undefined}
+                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
                     />
 
-                    <SimpleModelDisplay currentModel={currentModel || undefined} />
+                    <SimpleModelDisplay
+                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
+                    />
                   </>
                 )}
               </div>

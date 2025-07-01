@@ -7,14 +7,15 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 
 /**
- * Component to actualise project state in the context
+ * Component to actualise project state in the context, called every N seconds.
  */
-export const CurrentProjectMonitoring: FC = () => {
+export const CurrentProjectState: FC = () => {
   const { projectName } = useParams();
   const { setAppContext, appContext, resetContext } = useAppContext();
   const { authenticatedUser } = useAuth();
 
-  const { project, reFetch } = useProject(projectName); // api call
+  // api call
+  const { project, reFetch } = useProject(projectName);
 
   // set a default scheme if there is none
   useEffect(() => {
@@ -34,14 +35,13 @@ export const CurrentProjectMonitoring: FC = () => {
   // reset context if project change
   useEffect(() => {
     if (projectName != appContext.currentProject?.params.project_slug) {
-      console.log('Reset context');
       resetContext();
     }
-  }, [projectName, appContext.currentProject?.params.project_slug, resetContext]);
+  }, [projectName, appContext.currentProject?.params.project_slug, resetContext, setAppContext]);
 
+  // update isComputing context value
   useEffect(() => {
     if (!isNil(project)) {
-      // check if training process, and refresh the value
       const isComputing =
         !isNil(authenticatedUser) &&
         !isNil(project.languagemodels.training) &&
@@ -57,8 +57,7 @@ export const CurrentProjectMonitoring: FC = () => {
     }
   }, [project, setAppContext, authenticatedUser]);
 
-  // Effect to poll project data regularly to monitor long lasting server tasks
-  // each time reFetch change
+  // get project state every time interval
   useEffect(() => {
     //expose refetch method into context
     setAppContext((prev) => ({ ...prev, reFetchCurrentProject: reFetch }));
