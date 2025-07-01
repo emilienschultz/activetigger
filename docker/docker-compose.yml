@@ -20,6 +20,7 @@ services:
         - GROUP_ID=${GROUP_ID}
     entrypoint: /entrypoint.sh
     restart: ${RESTART_POLICY}
+    user: ${USER_ID}:${GROUP_ID}
     depends_on:
       - postgres
     volumes:
@@ -35,7 +36,7 @@ services:
   frontend:
     image: node:${NODE_VERSION}
     entrypoint: /entrypoint.sh
-    user: node
+    user: ${USER_ID}:${GROUP_ID}
     restart: ${RESTART_POLICY}
     volumes:
       - ${PROJECT_PATH}/docker/frontend/entrypoint.sh:/entrypoint.sh
@@ -44,15 +45,3 @@ services:
       - API_PORT=${API_PORT}
       - MODE=${MODE}
       - VITE_API_URL=${API_URL}
-  nginx:
-    image: nginx:${NGINX_VERSION}
-    restart: ${RESTART_POLICY}
-    ports:
-      - ${NGINX_PORT}:80
-    depends_on:
-      - api
-      - frontend
-    volumes:
-      - ${PROJECT_PATH}/docker/nginx.${MODE}.conf:/etc/nginx/conf.d/default.conf
-      - ${PROJECT_PATH}/frontend/dist:/var/www/frontend
-      - ${DATA_PATH}/projects/static:/api/static
