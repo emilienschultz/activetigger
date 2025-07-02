@@ -68,7 +68,6 @@ class ComputeSbert(BaseTask):
                 # check if the user want to stop the process
                 if self.event is not None:
                     if self.event.is_set():
-                        self.logger.info("Event set, stopping process.")
                         raise Exception("Process interrupted by user")
                 # create the batch
                 batch_texts = list(self.texts.iloc[start : start + self.batch_size])

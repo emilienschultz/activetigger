@@ -166,7 +166,7 @@ async def stop_process(
         # get all processes for the user
         processes = [
             orchestrator.projects[p].get_process(
-                ["train_bert", "predict_bert", "generation"], current_user.username
+                ["train_bert", "predict_bert", "generation", "feature"], current_user.username
             )
             for p in orchestrator.projects
         ]
