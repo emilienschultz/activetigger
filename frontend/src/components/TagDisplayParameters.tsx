@@ -82,13 +82,13 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
         Element history
       </label>
       <label style={{ display: 'block', marginBottom: '10px' }}>
-        Tokens approximation {displayConfig.numberOfTokens} (4 c / token)
-        <span className="m-2">Min: 100</span>
+        <span>Tokens approximation (4 c / token)</span>
         <input
-          type="range"
+          type="number"
           min="100"
           max="10000"
-          className="form-input"
+          className="form-input mx-2"
+          value={displayConfig.numberOfTokens}
           onChange={(e) => {
             setAppContext((prev) => ({
               ...prev,
@@ -100,7 +100,6 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
           }}
           style={{ marginRight: '10px' }}
         />
-        <span>Max: 10000</span>
       </label>
       <label style={{ display: 'block', marginBottom: '10px' }}>
         Text frame size
