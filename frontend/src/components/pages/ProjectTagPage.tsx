@@ -414,6 +414,9 @@ export const ProjectTagPage: FC = () => {
                 </div>
               )
             }
+            {phase != 'test' && showDisplayConfig && (
+              <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
+            )}
           </div>
           {elementId !== 'noelement' && (
             <div className="row">
@@ -498,9 +501,6 @@ export const ProjectTagPage: FC = () => {
                 </div>
               )}
             </div>
-          )}
-          {phase != 'test' && showDisplayConfig && (
-            <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
           )}
         </Tab>
         <Tab eventKey="prediction" title="Quick model">
