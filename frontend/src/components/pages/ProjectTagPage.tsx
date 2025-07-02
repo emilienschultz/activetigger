@@ -355,16 +355,17 @@ export const ProjectTagPage: FC = () => {
                     caseSensitive={true}
                   />
                   {/* text out of frame */}
-                  <span className="text-out-context" title="Outside 512 token window ">
+                  <span className="text-out-context" title="Outside context window ">
                     <Highlighter
                       highlightClassName="Search"
-                      searchWords={
-                        selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                          ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
-                          : []
-                      }
+                      searchWords={validHighlightText}
                       autoEscape={false}
                       textToHighlight={textOutFrame}
+                      highlightStyle={{
+                        backgroundColor: 'yellow',
+                        margin: '0px',
+                        padding: '0px',
+                      }}
                       caseSensitive={true}
                     />
                   </span>
@@ -474,7 +475,9 @@ export const ProjectTagPage: FC = () => {
 
                 <button
                   className="btn displayconfig"
-                  onClick={() => setShowDisplayConfig(!showDisplayConfig)}
+                  onClick={() => {
+                    setShowDisplayConfig(!showDisplayConfig);
+                  }}
                 >
                   <MdDisplaySettings />
                   <Tooltip anchorSelect=".displayconfig" place="top">
