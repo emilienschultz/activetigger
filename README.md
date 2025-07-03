@@ -18,8 +18,6 @@ Designed primarily by researchers in social sciences, its use can extend to all 
 
 Stable version mid-June 2025 (hopefully) 🚧
 
-
-
 ## Run the app with Docker (recommended)
 
 If you don't already have it installed, install docker first.
@@ -34,7 +32,7 @@ Then, you can run the app with docker compose. You need to be in the `docker` di
 
 ```bash
 cd docker
-docker compose -p activetigger up
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -p activetigger up
 ```
 
 The configuration file is `./docker/.env`.
@@ -46,7 +44,9 @@ Docker will start:
 - frontend
 - a reverse proxy with Nginx
 
-*By default the docker stack is in mode DEV.* This means that both API and FRONTEND are started using the local code in watch mode. You can update the code the service will be restarted. You can therefor use docker for development.
+_By default the docker stack is in mode DEV._ This means that both API and FRONTEND are started using the local code in watch mode. You can update the code the service will be restarted. You can therefor use docker for development.
+
+If you want to use a GPU inside docker locally you need to first follow the `NVIDIA GPU` section from the [deploy documentation](./deploy.md).
 
 ## Install the app
 

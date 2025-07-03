@@ -112,6 +112,9 @@ mkdir -p $DATA_PATH/projects/static
 ### NVIDIA driver
 
 You first have to install the Nvidia card driver available here: https://www.nvidia.com/en-us/drivers/
+It is recommended to use the package method rather than the "runner" one.
+
+For Ubuntu for instance we've successfully tested the package method documented here: https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/index.html#ubuntu-installation-network
 
 ### NVIDIA Container Toolkit
 
