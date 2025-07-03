@@ -11,7 +11,6 @@ services:
   nginx:
     image: nginx:${NGINX_VERSION}
     restart: ${RESTART_POLICY}
-    user: ${USER_ID}:${GROUP_ID}
     ports:
       - ${NGINX_PORT}:80
     depends_on:

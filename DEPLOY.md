@@ -84,6 +84,29 @@ git clone https://github.com/emilienschultz/activetigger.git .
 git checkout production
 ```
 
+5- prepare Data path
+
+If you need the application data (projects data, models data and database data) to be mounted in a specific point in your filesystem you can use the `DATA_PATH` env variable.
+
+But if you change the `DATA_PATH` env variable you need to create the right folder architecture in this directory with the right user privileges **before** staring docker.
+Here is a small script you can use the create the `DATA_PATH` directory.
+
+```bash
+# make sure to use the application user
+sudo su activetigger
+# first edit the DATA_PATH variable in .env
+vi docker/.env
+...
+# for instance let's use /data
+DATA_PATH=/home/activetigger/data
+...
+source .env
+mkdir -p $DATA_PATH
+mkdir -p $DATA_PATH/venv
+mkdir -p $DATA_PATH/models
+mkdir -p $DATA_PATH/projects/static
+```
+
 ## NVIDIA GPU
 
 ### NVIDIA driver
@@ -154,6 +177,14 @@ SECRET="a random 32 url-safe base64-encoded"
 
 ## start
 
+If you server has a configured nvidia GPU:
+
 ```bash
 docker compose -p activetigger -f docker-compose.yml -f docker-compose.nvidia.yml -f docker-compose.prod.yml up -d
+```
+
+If not:
+
+```bash
+docker compose -p activetigger -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
