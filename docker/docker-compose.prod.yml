@@ -12,7 +12,7 @@ services:
       - ${PROJECT_PATH}/docker/template_start_nginx_prod.sh:/scripts/template_start.sh
       - ${PROJECT_PATH}/docker/nginx.prod_template.conf:/etc/nginx/nginx.prod.template
       - ${PROJECT_PATH}/frontend/dist:/var/www/frontend
-      - ${DATA_PATH}/projects/static:/api/static
+      - ${DATA_PATH}/projects:/api
       - ${PROJECT_PATH}/docker/certificates:/etc/letsencrypt/live/activetigger/
     command: ["bash", "/scripts/template_start.sh"]
     depends_on:
