@@ -8,5 +8,6 @@ services:
               count: 1
               capabilities: [gpu]
     environment:
-      - DATA_PATH=/api
+      - DATA_PATH=/data
       - GPU=true
+    env_file: ".env"
