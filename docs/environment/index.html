@@ -123,9 +123,10 @@
                 <h1 id="what-is-the-environmental-impact-of-the-models-used-on-active-tigger">What is the environmental impact of the models used on Active Tigger?</h1>
 <p>Using AI models come with a consumption of energy and resources that are important to consider. This page discusses the environmental impact of models.</p>
 <h2 id="the-environmental-impact-of-ai-models">The environmental impact of AI models</h2>
-<p>Environmental impacts of AI raise <a href="https://www.nytimes.com/2024/08/26/climate/ai-planet-climate-change.html">important concerns</a> and became an <a href="https://arxiv.org/abs/2111.00364">important issue for research</a>.</p>
-<p>For NLP, the energy consumption can varie greatly depending on the <strong>type of technology used</strong>, <strong>the energy origin used to run the servers</strong> but also on the <strong>the methodology chosen</strong> to evaluate the impacts.</p>
+<p>Environmental impacts of AI raise <a href="https://www.nytimes.com/2024/08/26/climate/ai-planet-climate-change.html">important concerns</a> and became an <a href="https://arxiv.org/abs/2111.00364">important issue for research</a> with <a href="https://iopscience.iop.org/article/10.1088/2515-7620/acf81b">methodologies to mesure it</a>.</p>
+<p>For NLP, the energy consumption can varie greatly depending on the <a href="https://dl.acm.org/doi/abs/10.1145/3729396"><strong>type of technology used</strong></a>, <strong>the energy origin used to run the servers</strong> but also on the <strong>the methodology chosen</strong> to evaluate the impacts.</p>
 <p>Active Tigger is designed to be frugal. It uses <strong>BERT</strong> models, which are small, and then <strong>less energy-intensive than large generative models</strong>. However, it is still important to understand the environmental impact of these models and the methodologies used to evaluate them.</p>
+<p><em>Reminder : a flight between Paris and New York emits about <a href="https://co2.myclimate.org/en/portfolios?calculation_id=8052722&amp;localized_currency=EURs">2 tonnes of CO₂ per passenger</a>.</em></p>
 <h2 id="when-does-a-model-consume-energy">When does a model consume energy ?</h2>
 <p>There are 3 main phases in the life cycle of a model that can consume energy and have an environmental impact : the <strong>training phase</strong>, the <strong>fine-tuning phase</strong>, and the <strong>inference phase</strong>.</p>
 <h3 id="training-phase">⚙️ Training phase</h3>
@@ -134,7 +135,7 @@
 <p><a href="https://arxiv.org/abs/1906.02243">Another study</a> measured 1,438 kg of CO₂ for training a BERT base model on 64 V100 GPUs — <strong>showing how emissions depend heavily on the hardware used and the data volume processed</strong>.</p>
 <h3 id="fine-tuning-phase">🧪 Fine-tuning phase</h3>
 <p>Fine-tuning involves adapting a pre-trained language model to a specific task. <strong>This phase is less energy-intensive than the initial training</strong>. Nevertheless, it is performed far more frequently than the initial training.</p>
-<p><a href="https://arxiv.org/abs/2311.10267">One study</a> showed that energy consumption during fine-tuning depends mainly on the total number of tokens processed (rather than their individual size) and the wall clock time.</p>
+<p><a href="https://arxiv.org/abs/2311.10267">One study "Energy and Carbon Considerations of Fine-Tuning BERT"</a> showed that energy consumption during fine-tuning depends mainly on the total number of tokens processed (rather than their individual size) and the wall clock time.</p>
 <h3 id="inference-phase">🔍 Inference phase</h3>
 <p>Inference is the phase where the model is used to make predictions or generate text based on new inputs. It is generally less energy-intensive than training, but it can still have a significant environmental impact, especially when the model is used frequently or at scale.</p>
 <p>In the case of research, models are not scaled for millions of users, so their use is less energy-intensive than general public applications. However, <strong>the energy consumption of inference can still be significant</strong>, especially for large models or when processing large volumes of data.</p>
