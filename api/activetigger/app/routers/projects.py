@@ -28,6 +28,21 @@ from activetigger.project import Project
 router = APIRouter(tags=["projects"])
 
 
+@router.post("/projects/close/{project_slug}", dependencies=[Depends(verified_user)])
+async def close_project(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project_slug: str,
+) -> None:
+    """
+    Close a project from memory
+    """
+    test_rights("create project", current_user.username)
+    try:
+        orchestrator.stop_project(project_slug)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
 async def get_project_statistics(
     project: Annotated[Project, Depends(get_project)],

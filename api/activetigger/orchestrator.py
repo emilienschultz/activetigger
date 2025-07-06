@@ -338,6 +338,18 @@ class Orchestrator:
                 f"Error while loading project {project_slug}: {e} - {traceback.format_exc()}"
             ) from e
 
+    def stop_project(self, project_slug: str) -> None:
+        """
+        Stop a project
+        """
+        if project_slug not in self.projects:
+            return None
+
+        # remove it from memory
+        del self.projects[project_slug]
+
+        return None
+
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """
         Update project parameters in the DB

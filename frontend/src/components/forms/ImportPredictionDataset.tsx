@@ -29,7 +29,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
   scheme,
   modelName,
 }) => {
-  const maxSizeMo = 50;
+  const maxSizeMo = 300;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
 
   // form management
