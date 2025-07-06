@@ -4,11 +4,13 @@ Using AI models come with a consumption of energy and resources that are importa
 
 ## The environmental impact of AI models
 
-Environmental impacts of AI raise [important concerns](https://www.nytimes.com/2024/08/26/climate/ai-planet-climate-change.html) and became an [important issue for research](https://arxiv.org/abs/2111.00364).
+Environmental impacts of AI raise [important concerns](https://www.nytimes.com/2024/08/26/climate/ai-planet-climate-change.html) and became an [important issue for research](https://arxiv.org/abs/2111.00364) with [methodologies to mesure it](https://iopscience.iop.org/article/10.1088/2515-7620/acf81b).
 
-For NLP, the energy consumption can varie greatly depending on the **type of technology used**, **the energy origin used to run the servers** but also on the **the methodology chosen** to evaluate the impacts.
+For NLP, the energy consumption can varie greatly depending on the [**type of technology used**](https://dl.acm.org/doi/abs/10.1145/3729396), **the energy origin used to run the servers** but also on the **the methodology chosen** to evaluate the impacts.
 
 Active Tigger is designed to be frugal. It uses **BERT** models, which are small, and then **less energy-intensive than large generative models**. However, it is still important to understand the environmental impact of these models and the methodologies used to evaluate them.
+
+*Reminder : a flight between Paris and New York emits about [2 tonnes of CO₂ per passenger](https://co2.myclimate.org/en/portfolios?calculation_id=8052722&localized_currency=EURs).*
 
 ## When does a model consume energy ?
 
@@ -26,7 +28,7 @@ By contrast, **models smaller such as BERT (~100 millions parameters) consume le
 
 Fine-tuning involves adapting a pre-trained language model to a specific task. **This phase is less energy-intensive than the initial training**. Nevertheless, it is performed far more frequently than the initial training.
 
-[One study](https://arxiv.org/abs/2311.10267) showed that energy consumption during fine-tuning depends mainly on the total number of tokens processed (rather than their individual size) and the wall clock time.
+[One study "Energy and Carbon Considerations of Fine-Tuning BERT"](https://arxiv.org/abs/2311.10267) showed that energy consumption during fine-tuning depends mainly on the total number of tokens processed (rather than their individual size) and the wall clock time.
 
 ### 🔍 Inference phase
 
