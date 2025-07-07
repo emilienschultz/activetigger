@@ -111,10 +111,11 @@ async def predict(
                 csv_buffer,
             )
             df["text"] = df[external_dataset.text]
-            if len(df[external_dataset.id].unique()) == len(df):
-                df["index"] = df[external_dataset.id].apply(str)
-            else:
-                df["index"] = ["external-" + str(i) for i in range(len(df))]
+            df["index"] = df[external_dataset.id].apply(str)
+            # if len(df[external_dataset.id].unique()) == len(df):
+            #     df["index"] = df[external_dataset.id].apply(str)
+            # else:
+            #     df["index"] = ["external-" + str(i) for i in range(len(df))]
             df.set_index("index", inplace=True)
             df = df[["text"]].dropna()
             col_label = None
@@ -132,7 +133,7 @@ async def predict(
             col_text="text",
             col_label=col_label,
             col_id=col_id,
-            dataset=dataset,
+            dataset="external",
             batch_size=batch_size,
         )
         orchestrator.log_action(current_user.username, f"PREDICT MODEL: {model_name}", project.name)
