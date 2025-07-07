@@ -215,7 +215,6 @@ export const ProjectTagPage: FC = () => {
 
   const refetchElement = () => {
     getNextElementId().then((res) => {
-      console.log('res', res);
       if (res && res.n_sample) setNSample(res.n_sample);
       if (res && res.element_id) navigate(`/projects/${projectName}/tag/${res.element_id}`);
       else {

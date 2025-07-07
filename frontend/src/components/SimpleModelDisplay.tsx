@@ -38,7 +38,7 @@ export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }
         />
         {currentModel.statistics_cv10 && (
           <DisplayScores
-            title="Cross validation"
+            title="Cross validation CV10"
             scores={currentModel.statistics_cv10 as unknown as Record<string, number>}
           />
         )}
