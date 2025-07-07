@@ -8,7 +8,7 @@ Environmental impacts of AI raise [important concerns](https://www.nytimes.com/2
 
 For NLP, the energy consumption can varie greatly depending on the [**type of technology used**](https://dl.acm.org/doi/abs/10.1145/3729396), **the energy origin used to run the servers** but also on the **the methodology chosen** to evaluate the impacts.
 
-Active Tigger is designed to be frugal. It uses **BERT** models, which are small, and then **less energy-intensive than large generative models**. However, it is still important to understand the environmental impact of these models and the methodologies used to evaluate them.
+Active Tigger is designed to take benefits of small models with reduced energy dependency (compared to genAI). It uses **BERT** models, which are small, and then **less energy-intensive than large generative models**. However, it is still important to understand the environmental impact of these models and the methodologies used to evaluate them.
 
 *Reminder : a flight between Paris and New York emits about [2 tonnes of CO₂ per passenger](https://co2.myclimate.org/en/portfolios?calculation_id=8052722&localized_currency=EURs).*
 
