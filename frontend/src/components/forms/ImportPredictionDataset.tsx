@@ -5,7 +5,8 @@ import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 
 import { omit } from 'lodash';
 import { unparse } from 'papaparse';
-import { usePredictOnDataset } from '../../core/api';
+import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { useGetPredictionsFile, usePredictOnDataset } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 import { TextDatasetModel } from '../../types';
@@ -21,6 +22,7 @@ export interface ImportPredictionDatasetProps {
   projectSlug: string;
   scheme: string;
   modelName: string;
+  availablePredictionExternal?: boolean;
 }
 
 // component
@@ -28,9 +30,12 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
   projectSlug,
   scheme,
   modelName,
+  availablePredictionExternal,
 }) => {
   const maxSizeMo = 300;
   const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
+
+  const { getPredictionsFile } = useGetPredictionsFile(projectSlug || null);
 
   // form management
   const { register, control, handleSubmit, reset } = useForm<
@@ -92,11 +97,26 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
     <div className="container-fluid">
       <div className="row">
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
-          <h4 className="subsection">Import external texts to predict</h4>
           <div className="explanations">
             One predicted, you can export them in Export as the external dataset. If you predict on
             a new dataset, it will erase the previous one.
           </div>
+          {availablePredictionExternal && (
+            <div className="alert alert-warning">
+              You already have a prediction for this model.{' '}
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  getPredictionsFile(modelName, 'csv', 'external');
+                }}
+                className="text-blue-600 hover:underline"
+              >
+                You can export it <FaCloudDownloadAlt />.
+              </a>{' '}
+              If you continue, it will be replaced.
+            </div>
+          )}
           <div>
             <label className="form-label" htmlFor="csvFile">
               Import text dataset to predict

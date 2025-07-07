@@ -44,6 +44,16 @@ export const ModelPredict: FC = () => {
   // compute model preduction
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
 
+  // display external form
+  const [displayExternalForm, setDisplayExternalForm] = useState<boolean>(false);
+  const availablePredictionExternal =
+    (currentScheme &&
+      currentModel &&
+      project?.languagemodels?.available?.[currentScheme]?.[currentModel]?.[
+        'predicted_external'
+      ]) ??
+    false;
+
   return (
     <div className="container-fluid">
       <div className="row">
@@ -105,21 +115,30 @@ export const ModelPredict: FC = () => {
                   ) : isComputing ? (
                     <div></div>
                   ) : (
-                    <button
-                      className="btn btn-info my-4  col-6"
-                      onClick={() => computeModelPrediction(currentModel, 'all', currentScheme)}
-                    >
-                      Launch prediction complete dataset
-                    </button>
+                    <>
+                      <button
+                        className="btn btn-info m-2"
+                        onClick={() => computeModelPrediction(currentModel, 'all', currentScheme)}
+                      >
+                        Prediction complete dataset
+                      </button>
+                      <button
+                        className="btn btn-info m-2"
+                        onClick={() => setDisplayExternalForm(!displayExternalForm)}
+                      >
+                        Prediction external dataset
+                      </button>
+                    </>
                   )}
                 </div>
               )}
-              {model && (
+              {model && displayExternalForm && (
                 <div>
                   <ImportPredictionDataset
                     projectSlug={projectSlug || ''}
                     modelName={currentModel}
                     scheme={currentScheme}
+                    availablePredictionExternal={availablePredictionExternal || false}
                   />
                 </div>
               )}
