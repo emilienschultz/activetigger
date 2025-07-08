@@ -1,7 +1,6 @@
 from io import StringIO
-from typing import Annotated, Dict
+from typing import Annotated
 
-import pandas as pd
 from fastapi import (
     APIRouter,
     Depends,
@@ -39,8 +38,7 @@ async def export_data(
     Export labelled data
     """
     try:
-        r = project.export_data(format=format, scheme=scheme, dataset=dataset)
-        return FileResponse(r["path"], filename=r["name"])
+        return project.export_data(format=format, scheme=scheme, dataset=dataset)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -55,8 +53,7 @@ async def export_features(
     Export features
     """
     try:
-        r = project.export_features(features=features, format=format)
-        return FileResponse(r["path"], filename=r["name"])
+        return project.export_features(features=features, format=format)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -71,10 +68,7 @@ async def export_projection(
     Export features
     """
     try:
-        r = project.projections.export(user_name=current_user.username, format=format)
-        if r is None:
-            raise HTTPException(status_code=404, detail="No projection available")
-        return FileResponse(r["path"], filename=r["name"])
+        return project.projections.export(user_name=current_user.username, format=format)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -109,9 +103,9 @@ async def export_prediction(
     Export annotations
     """
     try:
-        filename = f"predict_{dataset}.parquet"
-        r = project.languagemodels.export_prediction(name=name, file_name=filename, format=format)
-        return FileResponse(r["path"], filename=r["name"])
+        return project.languagemodels.export_prediction(
+            name=name, file_name=f"predict_{dataset}.parquet", format=format
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -128,7 +122,6 @@ async def export_bert(
     test_rights("modify project", current_user.username, project.name)
     try:
         file_path = project.languagemodels.export_bert(name=name)
-        # Assuming file_path is like 'models/bert_export.bin'
         return FastAPIResponse(
             status_code=200,
             headers={
@@ -164,7 +157,7 @@ async def export_raw(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# This is a temporary fix for the sqlite issue
+# This is a temporary fix for the sqlite issue that will send static links only when sql database (without nginx redirection)
 @router.get("/export/static", dependencies=[Depends(verified_user)])
 async def export_static(
     project: Annotated[Project, Depends(get_project)],
@@ -187,37 +180,6 @@ async def export_static(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# @router.get("/export/bert", dependencies=[Depends(verified_user)])
-# async def export_bert(
-#     project: Annotated[Project, Depends(get_project)],
-#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-#     name: str = Query(),
-# ) -> StaticFileModel:
-#     """
-#     Export fine-tuned BERT model
-#     """
-#     test_rights("modify project", current_user.username, project.name)
-#     try:
-#         return project.languagemodels.export_bert(name=name)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-
-# @router.get("/export/raw", dependencies=[Depends(verified_user)])
-# async def export_raw(
-#     project: Annotated[Project, Depends(get_project)],
-#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-# ) -> StaticFileModel:
-#     """
-#     Export raw data of the project
-#     """
-#     test_rights("modify project", current_user.username, project.name)
-#     try:
-#         return project.export_raw(project.name)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.post("/export/generations", dependencies=[Depends(verified_user)])
 async def export_generations(
     project: Annotated[Project, Depends(get_project)],
@@ -227,23 +189,16 @@ async def export_generations(
     """
     Export annotations
     """
-    print(params)
     try:
-        # get the elements
-        table = project.generations.get_generated(
+        table = project.export_generations(
             project_slug=project.name,
-            user_name=current_user.username,
+            username=current_user.username,
+            params=params,
         )
-
-        # apply filters on the generated
-        table["answer"] = project.generations.filter(table["answer"], params.filters)
-
-        # join the text
-        table = table.join(project.content["text"], on="index")
 
         # convert to payload
         output = StringIO()
-        pd.DataFrame(table).to_csv(output, index=False)
+        table.to_csv(output, index=False)
         csv_data = output.getvalue()
         output.close()
         headers = {

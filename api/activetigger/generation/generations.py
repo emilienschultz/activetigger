@@ -61,7 +61,8 @@ class Generations:
         )
         df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model name"])
         df["time"] = pd.to_datetime(df["time"])
-        df["time"] = df["time"].dt.tz_localize("UTC")
+        if df["time"].dt.tz is None:
+            df["time"] = df["time"].dt.tz_localize("UTC")
         df["time"] = df["time"].dt.tz_convert("Europe/Paris")
         return df
 

@@ -11,11 +11,13 @@ from typing import cast
 import pandas as pd
 import pytz
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse
 from pandas import DataFrame
 
 from activetigger.config import config
 from activetigger.datamodels import (
     ElementOutModel,
+    ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
     GenerationResult,
@@ -684,7 +686,7 @@ class Project:
             ),
         )
 
-    def export_features(self, features: list, format: str = "parquet"):
+    def export_features(self, features: list, format: str = "parquet") -> FileResponse:
         """
         Export features data in different formats
         """
@@ -707,13 +709,11 @@ class Project:
         if format == "xlsx":
             data.to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path.joinpath(file_name)}
-
-        return r
+        return FileResponse(path=path.joinpath(file_name), name=file_name)
 
     def export_data(
         self, scheme: str, dataset: str = "train", format: str = "parquet", dropna: bool = True
-    ):
+    ) -> FileResponse:
         """
         Export annotation data in different formats
         """
@@ -749,8 +749,24 @@ class Project:
             data["timestamp"] = data["timestamp"].dt.tz_localize(None)
             data.to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path.joinpath(file_name)}
-        return r
+        return FileResponse(path.joinpath(file_name), file_name)
+
+    def export_generations(
+        self, project_slug: str, username: str, params: ExportGenerationsParams
+    ) -> DataFrame:
+        # get the elements
+        table = self.generations.get_generated(
+            project_slug=project_slug,
+            user_name=username,
+        )
+
+        # apply filters on the generated
+        table["answer"] = self.generations.filter(table["answer"], params.filters)
+
+        # join the text
+        table = table.join(self.content["text"], on="index")
+
+        return table
 
     def get_active_users(self, period: int = 300):
         """

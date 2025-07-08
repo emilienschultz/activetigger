@@ -260,6 +260,9 @@ async def post_annotation(
     raise HTTPException(status_code=400, detail="Wrong action")
 
 
+# TODO : check following routes
+
+
 @router.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
 async def get_reconciliation_table(
     project: Annotated[Project, Depends(get_project)], scheme: str

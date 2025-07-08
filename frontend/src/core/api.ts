@@ -1437,32 +1437,6 @@ export function useDropGeneratedElements(projectSlug: string | null, username: s
 }
 
 /**
- * Get model file static url
- */
-// export function useGetModelUrl(projectSlug: string | null, model: string | null) {
-//   const getModelUrl = useAsyncMemo(async () => {
-//     if (projectSlug && model) {
-//       const res = await api.GET('/export/bert', {
-//         params: {
-//           query: {
-//             project_slug: projectSlug,
-//             name: model,
-//           },
-//         },
-//       });
-
-//       if (!res.error) {
-//         const url = config.api.url.replace(/\/$/, '');
-//         return url + '/' + res.data.path;
-//       }
-//       return null;
-//     }
-//     return null;
-//   }, [projectSlug, model]);
-//   return { modelUrl: getAsyncMemoData(getModelUrl) };
-// }
-
-/**
  * Get model file
  */
 export function useGetModelFile(projectSlug: string | null | undefined) {

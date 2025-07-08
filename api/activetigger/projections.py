@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from fastapi.responses import FileResponse
 from pandas import DataFrame
 
 from activetigger.datamodels import (
@@ -10,8 +11,6 @@ from activetigger.datamodels import (
     ProjectionDataModel,
     ProjectionParametersModel,
     ProjectionsProjectStateModel,
-    TsneModel,
-    UmapModel,
 )
 from activetigger.queue import Queue
 from activetigger.tasks.compute_projection import ComputeProjection
@@ -135,7 +134,7 @@ class Projections:
         self,
         user_name: str,
         format: str = "csv",
-    ) -> dict[str, str]:
+    ) -> FileResponse:
         """
         Export the projection for a user
         """
@@ -150,4 +149,7 @@ class Projections:
         if format == "xlsx":
             data.to_excel(self.path.joinpath(file_name))
 
-        return {"name": file_name, "path": str(self.path.joinpath(file_name))}
+        return FileResponse(
+            path=self.path.joinpath(file_name),
+            name=file_name,
+        )
