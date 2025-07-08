@@ -6,6 +6,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import joinedload, sessionmaker
 
+from activetigger.config import config
 from activetigger.datamodels import (
     GenerationAvailableModel,
     GenerationCreationModel,
@@ -14,7 +15,6 @@ from activetigger.datamodels import (
 )
 from activetigger.db.models import Generations, GenModels, Prompts
 from activetigger.functions import decrypt, encrypt
-from activetigger.config import config
 
 
 class GenerationsService:
@@ -46,9 +46,7 @@ class GenerationsService:
         session.commit()
         session.close()
 
-    def get_generated(
-        self, project_slug: str, user_name: str, n_elements: int | None = None
-    ):
+    def get_generated(self, project_slug: str, user_name: str, n_elements: int | None = None):
         """
         Get elements from generated table by order desc
         """
@@ -79,36 +77,6 @@ class GenerationsService:
                 for el in generated
             ]
 
-    def get_available_models(self) -> list[GenerationModelApi]:
-        """
-        Get the available models for generation
-
-        Currently, this is hardwired in code
-        """
-        return [
-            GenerationModelApi(
-                name="Ollama",
-                models=[
-                    GenerationAvailableModel(
-                        slug="llama3.1:70b", api="Ollama", name="Llama3.1 - 70b"
-                    )
-                ],
-            ),
-            GenerationModelApi(
-                name="OpenAI",
-                models=[
-                    GenerationAvailableModel(
-                        slug="gpt-4o-mini", api="OpenAI", name="ChatGPT 4o mini"
-                    ),
-                    GenerationAvailableModel(
-                        slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"
-                    ),
-                ],
-            ),
-            GenerationModelApi(name="HuggingFace", models=[]),
-            GenerationModelApi(name="OpenRouter", models=[]),
-        ]
-
     def get_project_gen_models(self, project_slug: str) -> Sequence[GenModels]:
         """
         Get the GenAI model configured for the given project
@@ -116,9 +84,7 @@ class GenerationsService:
         Returns a list of GenerationModel
         """
         with self.Session() as session:
-            models = session.scalars(
-                select(GenModels).filter_by(project_slug=project_slug)
-            ).all()
+            models = session.scalars(select(GenModels).filter_by(project_slug=project_slug)).all()
         return models
 
     def get_gen_model(self, model_id: int) -> GenModels:
@@ -157,9 +123,7 @@ class GenerationsService:
         Delete a GenAI model from the given project
         """
         with self.Session.begin() as session:
-            session.execute(
-                delete(GenModels).filter_by(project_slug=project_slug, id=model_id)
-            )
+            session.execute(delete(GenModels).filter_by(project_slug=project_slug, id=model_id))
 
     def add_prompt(
         self,
@@ -187,9 +151,7 @@ class GenerationsService:
         Get all prompts for a project
         """
         with self.Session() as session:
-            elements = session.scalars(
-                select(Prompts).filter_by(project_slug=project_slug)
-            ).all()
+            elements = session.scalars(select(Prompts).filter_by(project_slug=project_slug)).all()
         return [
             PromptModel(
                 id=el.id,
@@ -202,9 +164,7 @@ class GenerationsService:
     def drop_generated(self, project_slug: str, user_name: str) -> None:
         with self.Session.begin() as session:
             session.execute(
-                delete(Generations).filter_by(
-                    project_slug=project_slug, user_name=user_name
-                )
+                delete(Generations).filter_by(project_slug=project_slug, user_name=user_name)
             )
 
         return None

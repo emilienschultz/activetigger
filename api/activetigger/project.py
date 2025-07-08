@@ -20,6 +20,8 @@ from activetigger.datamodels import (
     ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
+    GenerationModel,
+    GenerationRequest,
     GenerationResult,
     LMComputing,
     NextInModel,
@@ -43,6 +45,7 @@ from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
 from activetigger.simplemodels import SimpleModels
+from activetigger.tasks.generate_call import GenerateCall
 
 MODELS = "bert_models.csv"
 TIMEZONE = pytz.timezone("Europe/Paris")
@@ -907,6 +910,42 @@ class Project:
             raise ValueError("No directory for project")
         self.content[[]].to_parquet(self.params.dir.joinpath("features.parquet"), index=True)
         self.features.projects_service.delete_all_features(self.name)
+
+    def start_generation(self, request: GenerationRequest, username: str) -> None:
+        """
+        Start a generation process
+        """
+        extract = self.schemes.get_sample(request.scheme, request.n_batch, request.mode)
+        if len(extract) == 0:
+            raise Exception("No elements available for generation")
+        model = self.generations.generations_service.get_gen_model(request.model_id)
+        # add task to the queue
+        unique_id = self.queue.add_task(
+            "generation",
+            self.name,
+            GenerateCall(
+                path_process=self.params.dir,
+                username=username,
+                project_slug=self.name,
+                df=extract,
+                prompt=request.prompt,
+                model=GenerationModel(**model.__dict__),
+            ),
+        )
+        self.computing.append(
+            GenerationComputing(
+                unique_id=unique_id,
+                user=username,
+                project=self.name,
+                model_id=request.model_id,
+                number=request.n_batch,
+                time=datetime.now(),
+                kind="generation",
+                get_progress=GenerateCall.get_progress_callback(
+                    self.params.dir.joinpath(unique_id) if self.params.dir is not None else None
+                ),
+            )
+        )
 
     def update_processes(self) -> None:
         """

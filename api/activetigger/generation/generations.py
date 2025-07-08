@@ -2,10 +2,14 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (  # ignore[import]
+    GenerationAvailableModel,
     GenerationComputing,
     GenerationComputingOut,
     GenerationCreationModel,
+    GenerationModel,
+    GenerationModelApi,
     GenerationsProjectStateModel,
+    PromptInputModel,
     PromptModel,
 )
 from activetigger.db.generations import GenerationsService
@@ -20,6 +24,35 @@ class Generations:
 
     computing: list
     generations_service: GenerationsService
+
+    @staticmethod
+    def get_available_models() -> list[GenerationModelApi]:
+        """
+        Get the available models for generation
+
+        Currently, this is hardwired in code
+        """
+        return [
+            GenerationModelApi(
+                name="Ollama",
+                models=[
+                    GenerationAvailableModel(
+                        slug="llama3.1:70b", api="Ollama", name="Llama3.1 - 70b"
+                    )
+                ],
+            ),
+            GenerationModelApi(
+                name="OpenAI",
+                models=[
+                    GenerationAvailableModel(
+                        slug="gpt-4o-mini", api="OpenAI", name="ChatGPT 4o mini"
+                    ),
+                    GenerationAvailableModel(slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"),
+                ],
+            ),
+            GenerationModelApi(name="HuggingFace", models=[]),
+            GenerationModelApi(name="OpenRouter", models=[]),
+        ]
 
     def __init__(self, db_manager: DatabaseManager, computing: list[GenerationComputing]) -> None:
         self.generations_service = db_manager.generations_service
@@ -93,20 +126,25 @@ class Generations:
         all_models = self.generations_service.get_project_gen_models(project_slug)
         return any([model.name == name for model in all_models])
 
-    def add_model(self, project_slug: str, model: GenerationCreationModel, user_name: str) -> int:
-        """
-        Add a model in the database
-        """
-        return self.generations_service.add_project_gen_model(project_slug, model, user_name)
-
-    def save_prompt(self, user_name: str, project_slug: str, prompt: str, name: str) -> None:
+    def save_prompt(self, prompt: PromptInputModel, username: str, project_slug: str) -> None:
         """
         Save a prompt in the database
         """
+
+        # if no name, use the beginning of the text
+        if prompt.name is not None:
+            name = prompt.name
+        else:
+            name = prompt.text[0 : max(30, len(prompt.text))]
+
+        # check if the name is already used
+        if self.prompt_exists(project_slug, name):
+            raise Exception("A prompt with this name already exists")
+
         self.generations_service.add_prompt(
-            user_name=user_name,
+            user_name=username,
             project_slug=project_slug,
-            text=prompt,
+            text=prompt.text,
             parameters={"name": name},
         )
         return None
@@ -149,3 +187,23 @@ class Generations:
 
     def state(self) -> GenerationsProjectStateModel:
         return GenerationsProjectStateModel(training=self.training())
+
+    def available_models(self, project_slug: str) -> list[GenerationModel]:
+        """
+        Get the available models for generation
+        """
+        r = self.generations_service.get_project_gen_models(project_slug)
+        return [GenerationModel(**i.__dict__) for i in r]
+
+    def add_model(self, project_slug: str, model: GenerationCreationModel, user_name: str) -> int:
+        """
+        Add a GenAI model to the project
+        """
+        return self.generations_service.add_project_gen_model(project_slug, model, user_name)
+
+    def delete_model(self, project_slug: str, model_id: int) -> None:
+        """
+        Delete a GenAI model from the project
+        """
+        self.generations_service.delete_project_gen_model(project_slug, model_id)
+        return None

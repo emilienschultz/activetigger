@@ -338,19 +338,19 @@ class Orchestrator:
         del self.projects[project_slug]
         return None
 
-    def stop_process(self, username: str, process_id: str) -> None:
+    def stop_process(
+        self, username: str, process_id: str = "all", kind: list | None = None
+    ) -> None:
         """
         Stop process (all or specific) for a user
         """
 
+        if kind is None:
+            kind = ["train_bert", "predict_bert", "generation", "feature"]
+
         # all process for the user
         if process_id == "all":
-            processes = [
-                self.projects[p].get_process(
-                    ["train_bert", "predict_bert", "generation", "feature"], username
-                )
-                for p in self.projects
-            ]
+            processes = [self.projects[p].get_process(kind, username) for p in self.projects]
             processes = [i for p in processes for i in p if p is not None]
 
             # kill all processes

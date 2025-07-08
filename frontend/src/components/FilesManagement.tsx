@@ -1,3 +1,7 @@
+/**
+ * THIS COMPONENT IS NOT USED FOR THE MOMENT
+ */
+
 import { FC, useState } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { useDeleteFile, useGetFiles } from '../core/api';
