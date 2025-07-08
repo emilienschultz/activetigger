@@ -1,21 +1,21 @@
 from io import StringIO
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (
     AnnotationsDataModel,
+    CodebookModel,
     SchemeModel,
     SchemesProjectStateModel,
-    TableBatch,
     TableBatchInModel,
     TableOutModel,
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.projects import Codebook, ProjectsService
+from activetigger.db.projects import ProjectsService
 from activetigger.functions import clean_regex, slugify
 
 
@@ -128,12 +128,14 @@ class Schemes:
         # return the result
         return df, users
 
-    def convert_annotations(
-        self, former_label: str, new_label: str, scheme: str, username: str
-    ) -> None:
+    def rename_label(self, former_label: str, new_label: str, scheme: str, username: str) -> None:
         """
         Convert tags from a specific label to another
         """
+        # test if the new label exist, either create it
+        if not self.exists_label(scheme, new_label):
+            self.add_label(new_label, scheme, username)
+
         # add a new tag for the annotated id in the trainset
         df_train = self.get_scheme_data(scheme, kind=["train"])
         elements_train = [
@@ -146,7 +148,7 @@ class Schemes:
             for element_id in list(df_test[df_test["labels"] == former_label].index)
         ]
 
-        # add the new tags
+        # add the new tags in train/test
         self.db_manager.projects_service.add_annotations(
             dataset="train",
             user_name=username,
@@ -559,12 +561,17 @@ class Schemes:
                 raise Exception("Codebook not added") from e
             raise Exception("Codebook in conflict, please refresh and arbitrate")
 
-    def get_codebook(self, scheme: str) -> Codebook:
+    def get_codebook(self, scheme: str) -> CodebookModel:
         """
         Get codebook
         """
         try:
-            return self.projects_service.get_scheme_codebook(self.project_slug, scheme)
+            r = self.projects_service.get_scheme_codebook(self.project_slug, scheme)
+            return CodebookModel(
+                scheme=scheme,
+                content=str(r["codebook"]),
+                time=str(r["time"]),
+            )
         except DBException as e:
             raise Exception from e
 

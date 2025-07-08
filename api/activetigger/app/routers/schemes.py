@@ -33,25 +33,11 @@ async def rename_label(
 ) -> None:
     """
     Rename a a label
-    - create new label (the order is important)
-    - convert existing annotations (need the label to exist, add a new element for each former)
-    - delete former label
     """
     test_rights("modify project element", current_user.username, project.name)
 
     try:
-        # test if the new label exist, either create it
-        exists = project.schemes.exists_label(scheme, new_label)
-        if not exists:
-            project.schemes.add_label(new_label, scheme, current_user.username)
-
-        # convert the tags from the previous label
-        project.schemes.convert_annotations(former_label, new_label, scheme, current_user.username)
-
-        # delete previous label in the scheme
-        # project.schemes.delete_label(former_label, scheme, current_user.username)
-
-        # log
+        project.schemes.rename_label(former_label, new_label, scheme, current_user.username)
         orchestrator.log_action(
             current_user.username,
             f"RENAME LABEL: in {scheme} label {former_label} to {new_label}",
@@ -135,13 +121,7 @@ async def get_codebook(
     Get the codebook of a scheme for a project
     """
     try:
-        r = project.schemes.get_codebook(scheme)
-        return CodebookModel(
-            scheme=scheme,
-            content=str(r["codebook"]),
-            time=str(r["time"]),
-        )
-
+        return project.schemes.get_codebook(scheme)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

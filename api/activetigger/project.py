@@ -27,6 +27,7 @@ from activetigger.datamodels import (
     LMComputing,
     NextInModel,
     NextProjectStateModel,
+    ProjectDescriptionModel,
     ProjectionComputing,
     ProjectionOutModel,
     ProjectModel,
@@ -583,7 +584,7 @@ class Project:
         """
         return self.params
 
-    def get_statistics(self, scheme: str | None, user: str | None) -> dict:
+    def get_statistics(self, scheme: str | None, user: str | None) -> ProjectDescriptionModel:
         """
         Generate a description of a current project/scheme/user
         Return:
@@ -634,7 +635,7 @@ class Project:
             sm = self.simplemodels.get_model(user, scheme)  # get model
             r["sm_10cv"] = sm.statistics_cv10
 
-        return r
+        return ProjectDescriptionModel(**r)
 
     def get_projection(self, username: str, scheme: str) -> ProjectionOutModel | None:
         """
