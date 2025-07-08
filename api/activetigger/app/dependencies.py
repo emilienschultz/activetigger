@@ -227,3 +227,15 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
             raise HTTPException(500, "No rights for this action")
 
     raise HTTPException(404, "No action found")
+
+
+def check_storage(username: str) -> None:
+    """
+    Check if the user storage is not exceeded
+    """
+    limit = orchestrator.users.get_storage_limit(username)
+    if orchestrator.users.get_storage(username) > limit * 1000:
+        raise HTTPException(
+            status_code=500,
+            detail=f"User storage limit exceeded ({limit} Gb), please delete some models in your projects",
+        )

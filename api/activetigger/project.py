@@ -16,6 +16,7 @@ from pandas import DataFrame
 
 from activetigger.config import config
 from activetigger.datamodels import (
+    BertModelModel,
     ElementOutModel,
     ExportGenerationsParams,
     FeatureComputing,
@@ -910,6 +911,58 @@ class Project:
             raise ValueError("No directory for project")
         self.content[[]].to_parquet(self.params.dir.joinpath("features.parquet"), index=True)
         self.features.projects_service.delete_all_features(self.name)
+
+    def start_languagemodel_training(self, bert: BertModelModel, username: str) -> None:
+        """
+        Launch a training process
+        """
+        # Check if there is no other competing processes : 1 active process by user
+        if len(self.languagemodels.current_user_processes(username)) > 0:
+            raise Exception(
+                "User already has a process launched, please wait before launching another one"
+            )
+        # get data
+        df = self.schemes.get_scheme_data(bert.scheme, complete=True)
+        df = df[["text", "labels"]].dropna()
+
+        # management for multilabels / dichotomize
+        if bert.dichotomize is not None:
+            df["labels"] = df["labels"].apply(
+                lambda x: self.schemes.dichotomize(x, bert.dichotomize)
+            )
+            bert.name = f"{bert.name}_multilabel_on_{bert.dichotomize}"
+
+        # remove class under the threshold
+        label_counts = df["labels"].value_counts()
+        df = df[df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)]
+
+        # remove class requested by the user
+        if len(bert.exclude_labels) > 0:
+            df = df[~df["labels"].isin(bert.exclude_labels)]
+            bert.name = f"{bert.name}_exclude_labels_"
+
+        # balance the dataset based on the min class
+        if bert.class_balance:
+            min_freq = df["labels"].value_counts().sort_values().min()
+            df = (
+                df.groupby("labels")
+                .apply(lambda x: x.sample(min_freq))
+                .reset_index(level=0, drop=True)
+            )
+
+        # launch training process
+        self.languagemodels.start_training_process(
+            name=bert.name,
+            project=self.name,
+            user=username,
+            scheme=bert.scheme,
+            df=df,
+            col_text=df.columns[0],
+            col_label=df.columns[1],
+            base_model=bert.base_model,
+            params=bert.params,
+            test_size=bert.test_size,
+        )
 
     def start_generation(self, request: GenerationRequest, username: str) -> None:
         """

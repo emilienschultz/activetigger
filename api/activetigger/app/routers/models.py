@@ -9,6 +9,7 @@ from fastapi import (
 )
 
 from activetigger.app.dependencies import (
+    check_storage,
     get_project,
     test_rights,
     verified_user,
@@ -66,8 +67,7 @@ async def get_bert(
     Get Bert parameters and statistics
     """
     try:
-        statistics = project.languagemodels.get_informations(name)
-        return statistics
+        return project.languagemodels.get_informations(name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -85,15 +85,10 @@ async def predict(
     """
     Start prediction with a model
     """
-
     try:
         # get the data
-
         if dataset == "train":
-            # data from the training dataset used for the model
             df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
-            # ids_train = project.languagemodels.get_train_ids(model_name)
-            # df = df.loc[ids_train]
             col_label = "labels"
             col_id = None
         elif dataset == "all":
@@ -112,10 +107,6 @@ async def predict(
             )
             df["text"] = df[external_dataset.text]
             df["index"] = df[external_dataset.id].apply(str)
-            # if len(df[external_dataset.id].unique()) == len(df):
-            #     df["index"] = df[external_dataset.id].apply(str)
-            # else:
-            #     df["index"] = ["external-" + str(i) for i in range(len(df))]
             df.set_index("index", inplace=True)
             df = df[["text"]].dropna()
             col_label = None
@@ -184,66 +175,11 @@ async def post_bert(
     Compute bertmodel
     TODO : move the methods to specific class
     """
-    print(f"bertmodel : {bert}")
     try:
-        # check in the size limit is not exceeded
-        limit = orchestrator.users.get_storage_limit(current_user.username)
-        if orchestrator.users.get_storage(current_user.username) > limit * 1000:
-            raise HTTPException(
-                status_code=500,
-                detail=f"User storage limit exceeded ({limit} Gb), please delete some models in your projects",
-            )
-
-        # Check if there is no other competing processes : 1 active process by user
-        if len(project.languagemodels.current_user_processes(current_user.username)) > 0:
-            raise Exception(
-                "User already has a process launched, please wait before launching another one"
-            )
-
-        # get data
-        df = project.schemes.get_scheme_data(bert.scheme, complete=True)
-        df = df[["text", "labels"]].dropna()
-
-        # management for multilabels / dichotomize
-        if bert.dichotomize is not None:
-            df["labels"] = df["labels"].apply(
-                lambda x: project.schemes.dichotomize(x, bert.dichotomize)
-            )
-            bert.name = f"{bert.name}_multilabel_on_{bert.dichotomize}"
-
-        # remove class under the threshold
-        label_counts = df["labels"].value_counts()
-        df = df[df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)]
-
-        # remove class requested by the user
-        if len(bert.exclude_labels) > 0:
-            print(f"Excluding labels : {bert.exclude_labels}")
-            print(len(df))
-            df = df[~df["labels"].isin(bert.exclude_labels)]
-            bert.name = f"{bert.name}_exclude_labels_"
-            print(len(df))
-
-        # balance the dataset based on the min class
-        if bert.class_balance:
-            min_freq = df["labels"].value_counts().sort_values().min()
-            df = (
-                df.groupby("labels")
-                .apply(lambda x: x.sample(min_freq))
-                .reset_index(level=0, drop=True)
-            )
-
-        # launch training process
-        project.languagemodels.start_training_process(
-            name=bert.name,
-            project=project.name,
-            user=current_user.username,
-            scheme=bert.scheme,
-            df=df,
-            col_text=df.columns[0],
-            col_label=df.columns[1],
-            base_model=bert.base_model,
-            params=bert.params,
-            test_size=bert.test_size,
+        check_storage(current_user.username)
+        project.start_languagemodel_training(
+            bert=bert,
+            username=current_user.username,
         )
         orchestrator.log_action(current_user.username, f"TRAIN MODEL: {bert.name}", project.name)
         return None
@@ -261,29 +197,14 @@ async def stop_bert(
     """
     Stop user process
     """
-
     test_rights("modify project", current_user.username, project.name)
-
-    # get BERT process for username
     try:
         if specific_user is not None:
             user = specific_user
         else:
             user = current_user.username
 
-        p = project.get_process(["train_bert", "predict_bert"], user)
-        if len(p) == 0:
-            raise HTTPException(status_code=400, detail="No process found")
-
-        # get id
-        unique_id = p[0].unique_id
-        # kill the process
-        orchestrator.queue.kill(unique_id)
-        # delete it in the database if it is a training
-        if p[0].kind == "train_bert":
-            project.db_manager.language_models_service.delete_model(project.name, p[0].model_name)
-        orchestrator.log_action(current_user.username, "STOP MODEL TRAINING", project.name)
-        return None
+        orchestrator.stop_process(user, kind=["train_bert", "predict_bert"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -298,7 +219,6 @@ async def delete_bert(
     Delete trained bert model
     """
     test_rights("modify project", current_user.username, project.name)
-
     try:
         # delete the model
         project.languagemodels.delete(bert_name)
@@ -323,7 +243,6 @@ async def save_bert(
     Rename bertmodel
     """
     test_rights("modify project", current_user.username, project.name)
-
     try:
         project.languagemodels.rename(former_name, new_name)
         orchestrator.log_action(

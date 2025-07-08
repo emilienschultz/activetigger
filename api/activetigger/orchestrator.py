@@ -350,13 +350,17 @@ class Orchestrator:
 
         # all process for the user
         if process_id == "all":
-            processes = [self.projects[p].get_process(kind, username) for p in self.projects]
-            processes = [i for p in processes for i in p if p is not None]
+            processes = {p: self.projects[p].get_process(kind, username) for p in self.projects}
 
-            # kill all processes
-            for process in processes:
-                self.queue.kill(process.unique_id)
-                self.log_action(username, f"KILL PROCESS: {process.unique_id}", "all")
+            # kill all processes associated
+            for project in processes:
+                for process in processes[project]:
+                    self.queue.kill(process.unique_id)
+                    if process.kind == "train_bert":
+                        self.db_manager.language_models_service.delete_model(
+                            project, process.model_name
+                        )
+                    self.log_action(username, f"KILL PROCESS: {process.unique_id}", "all")
         # specific process
         else:
             self.queue.kill(process_id)
