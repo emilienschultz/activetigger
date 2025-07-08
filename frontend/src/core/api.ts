@@ -2363,3 +2363,16 @@ export function useAddProjectFile() {
     cancel: controller,
   };
 }
+
+/**
+ * Restart the queue
+ */
+export function useRestartQueue() {
+  const { notify } = useNotifications();
+  const restartQueue = useCallback(async () => {
+    const res = await api.POST('/queue/restart', {});
+    if (!res.error) notify({ type: 'success', message: 'Queue restarted' });
+    return true;
+  }, [notify]);
+  return { restartQueue };
+}

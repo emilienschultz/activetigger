@@ -117,9 +117,12 @@ class Orchestrator:
         print("Ending the server")
         logger.error("Disconnect server")
         self._running = False
-        self.queue.executor.shutdown(wait=False)
-        self.queue.close()
+        del self.queue
         print("Server off")
+
+    def reset(self):
+        self.queue.restart()
+        self.projects = {}
 
     async def _update(self, timeout: int = 1) -> None:
         """
@@ -127,8 +130,7 @@ class Orchestrator:
         """
         try:
             while self._running:
-                print("update orchestrator")
-                # print(get_gpu_memory_info())
+                print("update orchestrator - projets in memory:", len(self.projects))
                 self.update()
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
@@ -239,19 +241,6 @@ class Orchestrator:
                 )
             )
         return projects
-
-        # return [
-        #     ProjectSummaryModel(
-        #         user_right=i[1],
-        #         parameters=ProjectModel(**i[2]),
-        #         created_by=i[3],
-        #         created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
-        #         size=round(get_dir_size(config.data_path + "/projects/" + i[0]), 1),
-        #         last_activity=self.db_manager.logs_service.get_last_activity_project(i[0]),
-        #         project_slug=i[0],
-        #     )
-        #     for i in list(reversed(projects_auth))
-        # ]
 
     def get_project_params(self, project_slug: str) -> ProjectModel | None:
         """

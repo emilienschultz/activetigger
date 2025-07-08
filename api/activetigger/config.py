@@ -62,7 +62,7 @@ class Config(metaclass=_Singleton):
             else "dev"
         )
         self.user_hdd_max = parse_environ("ACTIVETIGGER_USER_HDD_MAX", float, 30.0)
-        self.max_loaded_projects = parse_environ("MAX_LOADED_PROJECTS", int, 20)
+        self.max_loaded_projects = parse_environ("MAX_LOADED_PROJECTS", int, 30)
         self.n_workers_gpu = parse_environ("N_WORKERS_GPU", int, 1)
         self.n_workers_cpu = parse_environ("N_WORKERS_CPU", int, 5)
         self.update_timeout = parse_environ("UPDATE_TIMEOUT", int, 1)

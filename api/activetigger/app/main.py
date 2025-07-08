@@ -51,7 +51,6 @@ async def lifespan(app: FastAPI):
     print("Active Tigger starting")
     yield
     print("Active Tigger closing")
-    orchestrator.queue.close()
 
 
 # starting the app
@@ -112,6 +111,21 @@ async def get_queue() -> ServerStateModel:
     Get the state of the server
     """
     return orchestrator.server_state
+
+
+@app.post("/queue/restart", dependencies=[Depends(verified_user)])
+async def restart_queue(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> None:
+    """
+    Restart the queue
+    """
+    test_rights("server operation", current_user.username)
+    try:
+        orchestrator.reset()
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/token")
