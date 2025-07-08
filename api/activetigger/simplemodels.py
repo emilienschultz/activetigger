@@ -120,7 +120,6 @@ class SimpleModels:
                     scheme=scheme,
                     username=username,
                 )
-                print("Simplemodel XXXXX", r, flush=True)
                 return r
 
         return None

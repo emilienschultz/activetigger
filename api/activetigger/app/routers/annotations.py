@@ -23,9 +23,8 @@ from activetigger.datamodels import (
     ProjectionParametersModel,
     ReconciliationModel,
     TableAnnotationsModel,
+    TableBatchInModel,
     TableOutModel,
-    TsneModel,
-    UmapModel,
     UserInDBModel,
     WaitingModel,
 )
@@ -48,20 +47,10 @@ async def get_next(
     Get next element
     """
     try:
-        r = project.get_next(
-            scheme=next.scheme,
-            selection=next.selection,
-            sample=next.sample,
-            user=current_user.username,
-            label=next.label,
-            history=next.history,
-            frame=next.frame,
-            filter=next.filter,
-            dataset=next.dataset,
-            label_maxprob=next.label_maxprob,
+        return project.get_next(
+            next=next,
+            username=current_user.username,
         )
-        return ElementOutModel(**r)
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -77,35 +66,10 @@ async def get_projection(
     """
 
     try:
-        # get the projection
-        projection = project.projections.get(current_user.username)
-        if projection is None:
-            return None
-
-        data = projection.data
-
-        # get annotations
-        df = project.schemes.get_scheme_data(scheme, complete=True)
-        data["labels"] = df["labels"].fillna("NA")
-
-        # get & add predictions if available
-        if current_user.username in project.simplemodels.existing:
-            if scheme in project.simplemodels.existing[current_user.username]:
-                data["prediction"] = project.simplemodels.existing[current_user.username][
-                    scheme
-                ].proba["prediction"]
-
-        r = ProjectionOutModel(
-            index=list(data.index),
-            x=list(data[0]),
-            y=list(data[1]),
-            status=projection.id,
-            parameters=projection.parameters,
-            labels=list(data["labels"]),
+        return project.get_projection(
+            username=current_user.username,
+            scheme=scheme,
         )
-        if "prediction" in data:
-            r.predictions = list(data["prediction"])
-        return r
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -125,9 +89,7 @@ async def compute_projection(
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
     try:
-        # get features from project
-        features = project.features.get(projection.features)
-        # compute the projection
+        features = project.features.get(projection.features)  # get features from project
         project.projections.compute(project.name, current_user.username, projection, features)
         orchestrator.log_action(
             current_user.username,
@@ -139,32 +101,17 @@ async def compute_projection(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/elements/table", dependencies=[Depends(verified_user)])
+@router.post("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(
     project: Annotated[Project, Depends(get_project)],
-    scheme: str,
-    min: int = 0,
-    max: int = 0,
-    contains: str | None = None,
-    mode: str = "all",
-    dataset: str = "train",
+    batch: TableBatchInModel,
 ) -> TableOutModel:
     """
     Get a table of elements
     """
     try:
-        print(
-            f"Getting table for scheme {scheme} with min={min}, max={max}, mode={mode}, contains={contains}, dataset={dataset}"
-        )
-        extract = project.schemes.get_table(scheme, min, max, mode, contains, dataset)
-        df = extract.batch.fillna(" ")
-        table = (df.reset_index()[["id", "timestamp", "labels", "text", "comment"]]).to_dict(
-            orient="records"
-        )
-        return TableOutModel(
-            items=table,
-            total=extract.total,
-        )
+        print(batch)
+        return project.schemes.get_table(batch)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -232,7 +179,6 @@ async def post_annotation_file(
         )
         return None
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -248,10 +194,9 @@ async def get_element(
     Get specific element
     """
     try:
-        r = project.get_element(
+        return project.get_element(
             element_id, scheme=scheme, user=current_user.username, dataset=dataset
         )
-        return ElementOutModel(**r)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

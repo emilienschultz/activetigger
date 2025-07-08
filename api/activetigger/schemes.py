@@ -10,6 +10,8 @@ from activetigger.datamodels import (
     SchemeModel,
     SchemesProjectStateModel,
     TableBatch,
+    TableBatchInModel,
+    TableOutModel,
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
@@ -211,14 +213,9 @@ class Schemes:
 
     def get_table(
         self,
-        scheme: str,
-        min: int,
-        max: int,
-        mode: str,
-        contains: str | None = None,
-        dataset: str = "train",
+        batch: TableBatchInModel,
         user: str = "all",
-    ) -> TableBatch:
+    ) -> TableOutModel:
         """
         Get data table
         scheme : the annotations
@@ -231,66 +228,69 @@ class Schemes:
         Choice to order by index.
         """
         # check for errors
-        if mode not in ["tagged", "untagged", "all", "recent"]:
-            mode = "all"
-        if scheme not in self.available():
-            raise Exception(f"Scheme {scheme} is not available")
+        if batch.mode not in ["tagged", "untagged", "all", "recent"]:
+            batch.mode = "all"
+        if batch.scheme not in self.available():
+            raise Exception(f"Scheme {batch.scheme} is not available")
 
         # case of the test set, no fancy stuff
         df: DataFrame = self.get_scheme_data(
-            scheme, complete=True, kind=["test"] if dataset == "test" else [dataset]
+            batch.scheme,
+            complete=True,
+            kind=["test"] if batch.dataset == "test" else [batch.dataset],
         )
 
         # case of recent annotations (no filter possible)
-        if mode == "recent":
+        if batch.mode == "recent":
             list_ids = self.projects_service.get_recent_annotations(
-                self.project_slug, user, scheme, max - min, dataset
+                self.project_slug, user, batch.scheme, batch.max - batch.min, batch.dataset
             )
-            df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index())
-            return TableBatch(
-                batch=df_r,
-                total=len(df_r),
-                min=0,
-                max=len(df_r),
-                filter="recent",
+            df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index().fillna(" "))
+            table = df_r.sort_index().reset_index()[
+                ["id", "timestamp", "labels", "text", "comment"]
+            ]
+            return TableOutModel(
+                items=table.to_dict(orient="records"),
+                total=len(table),
             )
 
         # build dataset
-        if mode == "tagged":
+        if batch.mode == "tagged":
             df = cast(DataFrame, df[df["labels"].notnull()])
 
-        if mode == "untagged":
+        if batch.mode == "untagged":
             df = cast(DataFrame, df[df["labels"].isnull()])
 
         # filter for contains
-        if contains:
-            print(contains)
-            if contains.startswith("ALL:") and len(contains) > 4:
-                contains_f = contains.replace("ALL:", "")
+        if batch.contains:
+            if batch.contains.startswith("ALL:") and len(batch.contains) > 4:
+                contains_f = batch.contains.replace("ALL:", "")
                 f_labels = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
                 f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
                 f_contains = f_labels | f_text
             else:
-                f_contains = df["text"].str.contains(clean_regex(contains))
+                f_contains = df["text"].str.contains(clean_regex(batch.contains))
             df = cast(DataFrame, df[f_contains]).fillna(False)
 
         # normalize size
-        if max == 0:
-            max = 20
-        if max > len(df):
-            max = len(df)
+        if batch.max == 0:
+            batch.max = 20
+        if batch.max > len(df):
+            batch.max = len(df)
 
-        if min > len(df):
+        if batch.min > len(df):
             raise Exception(
-                f"Minimal value {min} is too high. It should not exced the size of the data ({len(df)})"
+                f"Minimal value {batch.min} is too high. It should not exced the size of the data ({len(df)})"
             )
 
-        return TableBatch(
-            batch=df.sort_index().iloc[min:max].reset_index(),
-            total=len(df),
-            min=min,
-            max=max,
-            filter=contains,
+        table = (
+            df.sort_index()
+            .iloc[batch.min : batch.max]
+            .reset_index()[["id", "timestamp", "labels", "text", "comment"]]
+        )
+        return TableOutModel(
+            items=table.to_dict(orient="records"),
+            total=len(table),
         )
 
     def add_scheme(

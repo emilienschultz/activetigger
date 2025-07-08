@@ -336,8 +336,30 @@ class Orchestrator:
 
         # remove it from memory
         del self.projects[project_slug]
-
         return None
+
+    def stop_process(self, username: str, process_id: str) -> None:
+        """
+        Stop process (all or specific) for a user
+        """
+
+        # all process for the user
+        if process_id == "all":
+            processes = [
+                self.projects[p].get_process(
+                    ["train_bert", "predict_bert", "generation", "feature"], username
+                )
+                for p in self.projects
+            ]
+            processes = [i for p in processes for i in p if p is not None]
+
+            # kill all processes
+            for process in processes:
+                self.queue.kill(process.unique_id)
+                self.log_action(username, f"KILL PROCESS: {process.unique_id}", "all")
+        # specific process
+        else:
+            self.queue.kill(process_id)
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """

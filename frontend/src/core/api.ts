@@ -1592,18 +1592,21 @@ export function useTableElements(
   const [total, setTotal] = useState<number>(20);
 
   const getTableElements = useAsyncMemo(async () => {
+    // if no project or scheme, return null
     if (scheme && project_slug) {
-      const res = await api.GET('/elements/table', {
+      const res = await api.POST('/elements/table', {
         params: {
           query: {
             project_slug: project_slug,
-            scheme: scheme,
-            min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
-            max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
-            contains: search,
-            mode: sample ? sample : 'all',
-            dataset: dataset ? dataset : 'train',
           },
+        },
+        body: {
+          scheme: scheme,
+          min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
+          max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
+          contains: search,
+          mode: sample ? sample : 'all',
+          dataset: dataset ? dataset : 'train',
         },
       });
       if (!res.error) {
@@ -2092,7 +2095,7 @@ export function useStopProcess() {
   const { notify } = useNotifications();
   const stopProcess = useCallback(
     async (uniqueId: string) => {
-      const res = await api.POST('/kill', {
+      const res = await api.POST('/stop', {
         params: {
           query: {
             unique_id: uniqueId,
@@ -2370,7 +2373,7 @@ export function useAddProjectFile() {
 export function useRestartQueue() {
   const { notify } = useNotifications();
   const restartQueue = useCallback(async () => {
-    const res = await api.POST('/queue/restart', {});
+    const res = await api.POST('/server/restart', {});
     if (!res.error) notify({ type: 'success', message: 'Queue restarted' });
     return true;
   }, [notify]);
