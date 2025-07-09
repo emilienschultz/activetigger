@@ -481,13 +481,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Get List Elements
          * @description Get a table of elements
          */
-        get: operations["get_list_elements_elements_table_get"];
-        put?: never;
-        post?: never;
+        post: operations["get_list_elements_elements_table_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -613,9 +613,6 @@ export interface paths {
         /**
          * Rename Label
          * @description Rename a a label
-         *     - create new label (the order is important)
-         *     - convert existing annotations (need the label to exist, add a new element for each former)
-         *     - delete former label
          */
         post: operations["rename_label_schemes_label_rename_post"];
         delete?: never;
@@ -1232,9 +1229,6 @@ export interface paths {
         /**
          * Postgenerate
          * @description Launch a call to generate from a prompt
-         *     Only one possible by user
-         *
-         *     TODO : move to a module
          */
         post: operations["postgenerate_generate_start_post"];
         delete?: never;
@@ -1274,7 +1268,7 @@ export interface paths {
         put?: never;
         /**
          * Getgenerate
-         * @description Get elements from prediction
+         * @description Get elements generated
          */
         post: operations["getgenerate_generate_elements_post"];
         delete?: never;
@@ -3440,7 +3434,7 @@ export interface operations {
             };
         };
     };
-    get_list_elements_elements_table_get: {
+    get_list_elements_elements_table_post: {
         parameters: {
             query: {
                 project_slug: string;

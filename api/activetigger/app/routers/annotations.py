@@ -110,7 +110,6 @@ async def get_list_elements(
     Get a table of elements
     """
     try:
-        print(batch)
         return project.schemes.get_table(batch)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

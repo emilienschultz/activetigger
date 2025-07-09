@@ -64,7 +64,7 @@ git clone https://github.com/emilienschultz/activetigger.git
 
 ### Install the Python API
 
-Create a virtual environnement with Python 3.11, for instance with Anaconda
+Create a virtual environnement with Python 3.11, for instance with Anaconda/Miniconda ([documentation here for Ubuntu](https://doc.ubuntu-fr.org/miniconda))
 
 ```bash
 conda create -n activetigger python=3.11

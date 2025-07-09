@@ -496,7 +496,7 @@ class TableOutModel(BaseModel):
     """
 
     items: list
-    total: int
+    total: int | float
 
 
 class TableInModel(BaseModel):

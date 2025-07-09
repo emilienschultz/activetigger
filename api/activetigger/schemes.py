@@ -242,15 +242,20 @@ class Schemes:
             kind=["test"] if batch.dataset == "test" else [batch.dataset],
         )
 
+        # manage NaT
+        df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
+
         # case of recent annotations (no filter possible)
         if batch.mode == "recent":
             list_ids = self.projects_service.get_recent_annotations(
                 self.project_slug, user, batch.scheme, batch.max - batch.min, batch.dataset
             )
             df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index().fillna(" "))
-            table = df_r.sort_index().reset_index()[
-                ["id", "timestamp", "labels", "text", "comment"]
-            ]
+            table = (
+                df_r.sort_index()
+                .reset_index()
+                .fillna("")[["id", "timestamp", "labels", "text", "comment"]]
+            )
             return TableOutModel(
                 items=table.to_dict(orient="records"),
                 total=len(table),
@@ -287,9 +292,11 @@ class Schemes:
 
         table = (
             df.sort_index()
-            .iloc[batch.min : batch.max]
-            .reset_index()[["id", "timestamp", "labels", "text", "comment"]]
+            .reset_index()
+            .iloc[int(batch.min) : int(batch.max)]
+            .fillna("")[["id", "timestamp", "labels", "text", "comment"]]
         )
+
         return TableOutModel(
             items=table.to_dict(orient="records"),
             total=len(table),
