@@ -46,7 +46,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     project &&
     project.schemes.available &&
     project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme]['labels'] || []
+      ? project.schemes.available[currentScheme].labels
       : [];
   const existingLabels = Object.entries(availableLabels).map(([key, value]) => ({
     value: key,
@@ -55,7 +55,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['kind'] as string)
+      ? project.schemes.available[currentScheme].kind
       : 'multiclass';
 
   const {

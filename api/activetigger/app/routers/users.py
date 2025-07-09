@@ -54,9 +54,8 @@ async def existing_users(
     Get existing users
     """
     try:
-        users = orchestrator.users.existing_users()
         return UsersServerModel(
-            users=users,
+            users=orchestrator.users.existing_users(),
             auth=["manager", "annotator"],
         )
     except Exception as e:
@@ -91,9 +90,7 @@ async def create_user(
         )
         if dummy:
             # as a background task
-            background_tasks.add_task(
-                orchestrator.create_dummy_project, username_to_create
-            )
+            background_tasks.add_task(orchestrator.create_dummy_project, username_to_create)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
     return None
@@ -133,9 +130,7 @@ async def change_password(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post(
-    "/users/auth/{action}", dependencies=[Depends(verified_user)], tags=["users"]
-)
+@router.post("/users/auth/{action}", dependencies=[Depends(verified_user)], tags=["users"])
 async def set_auth(
     action: AuthActions,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -152,9 +147,7 @@ async def set_auth(
             raise HTTPException(status_code=400, detail="Missing status")
         try:
             orchestrator.users.set_auth(username, project_slug, status)
-            orchestrator.log_action(
-                current_user.username, f"ADD AUTH USER: {username}", "all"
-            )
+            orchestrator.log_action(current_user.username, f"ADD AUTH USER: {username}", "all")
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -163,9 +156,7 @@ async def set_auth(
     if action == "delete":
         try:
             orchestrator.users.delete_auth(username, project_slug)
-            orchestrator.log_action(
-                current_user.username, f"DELETE AUTH USER: {username}", "all"
-            )
+            orchestrator.log_action(current_user.username, f"DELETE AUTH USER: {username}", "all")
         except Exception as e:
             raise HTTPException(status_code=500) from e
 

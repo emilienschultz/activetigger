@@ -1,6 +1,6 @@
 import { Outlet, createHashRouter } from 'react-router-dom';
 
-import { CurrentProjectMonitoring } from '../components/CurrentProjectMonitoring';
+import { CurrentProjectState } from '../components/CurrentProjectState';
 import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
@@ -77,7 +77,7 @@ export function getRouter() {
       path: '/projects/:projectName',
       element: (
         <APIMiddlewares>
-          <CurrentProjectMonitoring />
+          <CurrentProjectState />
           <Outlet />
         </APIMiddlewares>
       ),

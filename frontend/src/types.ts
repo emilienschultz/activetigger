@@ -64,6 +64,8 @@ export type TextDatasetModel = components['schemas']['TextDatasetModel'];
 
 export type MLStatisticsModel = components['schemas']['MLStatisticsModel'];
 
+export type LMInformationsModel = components['schemas']['LMInformationsModel'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

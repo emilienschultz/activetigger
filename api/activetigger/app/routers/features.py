@@ -57,9 +57,7 @@ async def post_embeddings(
         orchestrator.log_action(
             current_user.username, f"COMPUTE FEATURE: {feature.type}", project.name
         )
-        return WaitingModel(
-            detail=f"computing {feature.type}, it could take a few minutes"
-        )
+        return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -77,9 +75,7 @@ async def delete_feature(
     test_rights("modify project", current_user.username, project.name)
     try:
         project.features.delete(name)
-        orchestrator.log_action(
-            current_user.username, f"DELETE FEATURE: {name}", project.name
-        )
+        orchestrator.log_action(current_user.username, f"DELETE FEATURE: {name}", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -93,7 +89,6 @@ async def get_feature_info(
     Get feature info
     """
     try:
-        r = project.features.get_available()
-        return r
+        return project.features.get_available()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

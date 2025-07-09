@@ -117,9 +117,12 @@ class Orchestrator:
         print("Ending the server")
         logger.error("Disconnect server")
         self._running = False
-        self.queue.executor.shutdown(wait=False)
-        self.queue.close()
+        del self.queue
         print("Server off")
+
+    def reset(self):
+        self.queue.restart()
+        self.projects = {}
 
     async def _update(self, timeout: int = 1) -> None:
         """
@@ -127,8 +130,7 @@ class Orchestrator:
         """
         try:
             while self._running:
-                print("update orchestrator")
-                # print(get_gpu_memory_info())
+                print("update orchestrator - projets in memory:", len(self.projects))
                 self.update()
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
@@ -240,19 +242,6 @@ class Orchestrator:
             )
         return projects
 
-        # return [
-        #     ProjectSummaryModel(
-        #         user_right=i[1],
-        #         parameters=ProjectModel(**i[2]),
-        #         created_by=i[3],
-        #         created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
-        #         size=round(get_dir_size(config.data_path + "/projects/" + i[0]), 1),
-        #         last_activity=self.db_manager.logs_service.get_last_activity_project(i[0]),
-        #         project_slug=i[0],
-        #     )
-        #     for i in list(reversed(projects_auth))
-        # ]
-
     def get_project_params(self, project_slug: str) -> ProjectModel | None:
         """
         Get project params from database
@@ -337,6 +326,44 @@ class Orchestrator:
             raise Exception(
                 f"Error while loading project {project_slug}: {e} - {traceback.format_exc()}"
             ) from e
+
+    def stop_project(self, project_slug: str) -> None:
+        """
+        Stop a project
+        """
+        if project_slug not in self.projects:
+            return None
+
+        # remove it from memory
+        del self.projects[project_slug]
+        return None
+
+    def stop_process(
+        self, username: str, process_id: str = "all", kind: list | None = None
+    ) -> None:
+        """
+        Stop process (all or specific) for a user
+        """
+
+        if kind is None:
+            kind = ["train_bert", "predict_bert", "generation", "feature"]
+
+        # all process for the user
+        if process_id == "all":
+            processes = {p: self.projects[p].get_process(kind, username) for p in self.projects}
+
+            # kill all processes associated
+            for project in processes:
+                for process in processes[project]:
+                    self.queue.kill(process.unique_id)
+                    if process.kind == "train_bert":
+                        self.db_manager.language_models_service.delete_model(
+                            project, process.model_name
+                        )
+                    self.log_action(username, f"KILL PROCESS: {process.unique_id}", "all")
+        # specific process
+        else:
+            self.queue.kill(process_id)
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
         """

@@ -3,6 +3,10 @@ import notfound from '../../assets/notfound.png';
 
 import { PageLayout } from './../layout/PageLayout';
 
+/**
+ * NotFound component displays a 404 Not Found page with an image and message.
+ * It is used when the requested page does not exist.
+ */
 export const NotFound: FC = () => {
   return (
     <PageLayout currentPage="notfound">

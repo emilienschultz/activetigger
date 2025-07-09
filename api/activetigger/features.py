@@ -212,6 +212,7 @@ class Features:
         """
         Get content for specific features
         """
+        features = [i for i in features if i is not None]
         if features == "all":
             features = list(self.map.keys())
         if type(features) is str:

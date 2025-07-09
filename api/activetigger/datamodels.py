@@ -496,7 +496,7 @@ class TableOutModel(BaseModel):
     """
 
     items: list
-    total: int
+    total: int | float
 
 
 class TableInModel(BaseModel):
@@ -508,6 +508,19 @@ class TableInModel(BaseModel):
     list_labels: list
     scheme: str
     action: str
+
+
+class TableBatchInModel(BaseModel):
+    """
+    Requesting a batch of elements
+    """
+
+    scheme: str
+    min: int = 0
+    max: int = 0
+    mode: str = "all"
+    contains: str | None = None
+    dataset: str = "train"
 
 
 class ProjectsServerModel(BaseModel):
@@ -547,7 +560,7 @@ class NextProjectStateModel(BaseModel):
 
 
 class SchemesProjectStateModel(BaseModel):
-    available: dict[str, dict[str, str | list[str]]]
+    available: dict[str, SchemeModel]
 
 
 class FeaturesProjectStateModel(BaseModel):

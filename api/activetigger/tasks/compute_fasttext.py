@@ -1,5 +1,7 @@
+import multiprocessing
 import os
 from pathlib import Path
+from typing import Optional
 
 import fasttext  # type: ignore[import]
 import pandas as pd
@@ -32,6 +34,7 @@ class ComputeFasttext(BaseTask):
         self.path_models = path_models
         self.language = language
         self.model = model
+        event: Optional[multiprocessing.synchronize.Event] = (None,)
 
     def __call__(self) -> DataFrame:
         """
@@ -69,6 +72,10 @@ class ComputeFasttext(BaseTask):
                 with open(self.path_process.joinpath(self.unique_id), "w") as f:
                     f.write(str(round(progress_percent, 1)))
                 print(progress_percent)
+            # check if the user want to stop the process
+            if self.event is not None:
+                if self.event.is_set():
+                    raise Exception("Process interrupted by user")
 
         # emb = [ft.get_sentence_vector(t.replace("\n", " ")) for t in texts_tk]
         df = pd.DataFrame(emb, index=self.texts.index)

@@ -1,14 +1,21 @@
 from io import StringIO
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import pandas as pd
 from pandas import DataFrame
 
-from activetigger.datamodels import AnnotationsDataModel, SchemesProjectStateModel, TableBatch
+from activetigger.datamodels import (
+    AnnotationsDataModel,
+    CodebookModel,
+    SchemeModel,
+    SchemesProjectStateModel,
+    TableBatchInModel,
+    TableOutModel,
+)
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.projects import Codebook, ProjectsService
+from activetigger.db.projects import ProjectsService
 from activetigger.functions import clean_regex, slugify
 
 
@@ -121,12 +128,14 @@ class Schemes:
         # return the result
         return df, users
 
-    def convert_annotations(
-        self, former_label: str, new_label: str, scheme: str, username: str
-    ) -> None:
+    def rename_label(self, former_label: str, new_label: str, scheme: str, username: str) -> None:
         """
         Convert tags from a specific label to another
         """
+        # test if the new label exist, either create it
+        if not self.exists_label(scheme, new_label):
+            self.add_label(new_label, scheme, username)
+
         # add a new tag for the annotated id in the trainset
         df_train = self.get_scheme_data(scheme, kind=["train"])
         elements_train = [
@@ -139,7 +148,7 @@ class Schemes:
             for element_id in list(df_test[df_test["labels"] == former_label].index)
         ]
 
-        # add the new tags
+        # add the new tags in train/test
         self.db_manager.projects_service.add_annotations(
             dataset="train",
             user_name=username,
@@ -159,7 +168,7 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
-        labels = available[scheme]["labels"]
+        labels = available[scheme].labels
         labels.remove(former_label)
         self.update_scheme(scheme, labels)
 
@@ -206,14 +215,9 @@ class Schemes:
 
     def get_table(
         self,
-        scheme: str,
-        min: int,
-        max: int,
-        mode: str,
-        contains: str | None = None,
-        dataset: str = "train",
+        batch: TableBatchInModel,
         user: str = "all",
-    ) -> TableBatch:
+    ) -> TableOutModel:
         """
         Get data table
         scheme : the annotations
@@ -226,66 +230,76 @@ class Schemes:
         Choice to order by index.
         """
         # check for errors
-        if mode not in ["tagged", "untagged", "all", "recent"]:
-            mode = "all"
-        if scheme not in self.available():
-            raise Exception(f"Scheme {scheme} is not available")
+        if batch.mode not in ["tagged", "untagged", "all", "recent"]:
+            batch.mode = "all"
+        if batch.scheme not in self.available():
+            raise Exception(f"Scheme {batch.scheme} is not available")
 
         # case of the test set, no fancy stuff
         df: DataFrame = self.get_scheme_data(
-            scheme, complete=True, kind=["test"] if dataset == "test" else [dataset]
+            batch.scheme,
+            complete=True,
+            kind=["test"] if batch.dataset == "test" else [batch.dataset],
         )
 
+        # manage NaT
+        df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
+
         # case of recent annotations (no filter possible)
-        if mode == "recent":
+        if batch.mode == "recent":
             list_ids = self.projects_service.get_recent_annotations(
-                self.project_slug, user, scheme, max - min, dataset
+                self.project_slug, user, batch.scheme, batch.max - batch.min, batch.dataset
             )
-            df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index())
-            return TableBatch(
-                batch=df_r,
-                total=len(df_r),
-                min=0,
-                max=len(df_r),
-                filter="recent",
+            df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index().fillna(" "))
+            table = (
+                df_r.sort_index()
+                .reset_index()
+                .fillna("")[["id", "timestamp", "labels", "text", "comment"]]
+            )
+            return TableOutModel(
+                items=table.to_dict(orient="records"),
+                total=len(table),
             )
 
         # build dataset
-        if mode == "tagged":
+        if batch.mode == "tagged":
             df = cast(DataFrame, df[df["labels"].notnull()])
 
-        if mode == "untagged":
+        if batch.mode == "untagged":
             df = cast(DataFrame, df[df["labels"].isnull()])
 
         # filter for contains
-        if contains:
-            print(contains)
-            if contains.startswith("ALL:") and len(contains) > 4:
-                contains_f = contains.replace("ALL:", "")
+        if batch.contains:
+            if batch.contains.startswith("ALL:") and len(batch.contains) > 4:
+                contains_f = batch.contains.replace("ALL:", "")
                 f_labels = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
                 f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
                 f_contains = f_labels | f_text
             else:
-                f_contains = df["text"].str.contains(clean_regex(contains))
+                f_contains = df["text"].str.contains(clean_regex(batch.contains))
             df = cast(DataFrame, df[f_contains]).fillna(False)
 
         # normalize size
-        if max == 0:
-            max = 20
-        if max > len(df):
-            max = len(df)
+        if batch.max == 0:
+            batch.max = 20
+        if batch.max > len(df):
+            batch.max = len(df)
 
-        if min > len(df):
+        if batch.min > len(df):
             raise Exception(
-                f"Minimal value {min} is too high. It should not exced the size of the data ({len(df)})"
+                f"Minimal value {batch.min} is too high. It should not exced the size of the data ({len(df)})"
             )
 
-        return TableBatch(
-            batch=df.sort_index().iloc[min:max].reset_index(),
-            total=len(df),
-            min=min,
-            max=max,
-            filter=contains,
+        table = (
+            df.sort_index()
+            .reset_index()
+            .iloc[int(batch.min) : int(batch.max)]
+            .fillna("")[["id", "timestamp", "labels", "text", "comment"]]
+        )
+
+        return TableOutModel(
+            items=table.to_dict(orient="records"),
+            total=len(table),
         )
 
     def add_scheme(
@@ -317,9 +331,9 @@ class Schemes:
             raise Exception("Scheme doesn't exist")
         if available[scheme] is None:
             available[scheme] = []
-        if label in available[scheme]["labels"]:
+        if label in available[scheme].labels:
             return {"success": "label already in the scheme"}
-        labels = available[scheme]["labels"]
+        labels = available[scheme].labels
         labels.append(label)
         self.update_scheme(scheme, labels)
         return {"success": "scheme updated with a new label"}
@@ -331,7 +345,7 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
-        if label in available[scheme]["labels"]:
+        if label in available[scheme].labels:
             return True
         return False
 
@@ -342,9 +356,9 @@ class Schemes:
         available = self.available()
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
-        if label not in available[scheme]["labels"]:
+        if label not in available[scheme].labels:
             raise Exception("Label doesn't exist")
-        labels = available[scheme]["labels"]
+        labels = available[scheme].labels
         labels.remove(label)
         # push empty entry for tagged elements
         # both for train
@@ -421,12 +435,17 @@ class Schemes:
             return True
         return False
 
-    def available(self) -> dict[str, dict[str, str | list[str]]]:
+    def available(self) -> dict[str, SchemeModel]:
         """
         Available schemes {scheme:[labels]}
         """
         r = self.projects_service.available_schemes(self.project_slug)
-        return {i["name"]: {"labels": i["labels"], "kind": i["kind"]} for i in r}
+        return {
+            i["name"]: SchemeModel(
+                name=i["name"], labels=i["labels"], kind=i["kind"], project_slug=self.project_slug
+            )
+            for i in r
+        }
 
     def get(self) -> dict:
         """
@@ -492,11 +511,11 @@ class Schemes:
         if label is None:
             print("Add null label for ", element_id)
         elif "|" in label:
-            er = [i for i in label.split("|") if i not in a[scheme]["labels"]]
+            er = [i for i in label.split("|") if i not in a[scheme].labels]
             if len(er) > 0:
                 raise Exception(f"Labels {er} not in the scheme")
         else:
-            if label not in a[scheme]["labels"]:
+            if label not in a[scheme].labels:
                 raise Exception(f"Label {label} not in the scheme")
 
         self.projects_service.add_annotation(
@@ -549,12 +568,17 @@ class Schemes:
                 raise Exception("Codebook not added") from e
             raise Exception("Codebook in conflict, please refresh and arbitrate")
 
-    def get_codebook(self, scheme: str) -> Codebook:
+    def get_codebook(self, scheme: str) -> CodebookModel:
         """
         Get codebook
         """
         try:
-            return self.projects_service.get_scheme_codebook(self.project_slug, scheme)
+            r = self.projects_service.get_scheme_codebook(self.project_slug, scheme)
+            return CodebookModel(
+                scheme=scheme,
+                content=str(r["codebook"]),
+                time=str(r["time"]),
+            )
         except DBException as e:
             raise Exception from e
 
@@ -578,7 +602,7 @@ class Schemes:
         if annotationsdata.scheme not in self.available():
             raise Exception("Scheme doesn't exist")
         else:
-            labels = self.available()[annotationsdata.scheme]["labels"]
+            labels = self.available()[annotationsdata.scheme].labels
 
         # convert the data, slugiy the index, set the index, drop empty
         df = pd.read_csv(StringIO(annotationsdata.csv))

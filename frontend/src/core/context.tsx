@@ -37,6 +37,7 @@ export type AppContextValue = {
 export const CONTEXT_LOCAL_STORAGE_KEY = 'activeTigger.context';
 
 export const DEFAULT_CONTEXT: AppContextValue = {
+  currentScheme: undefined,
   notifications: [],
   displayConfig: {
     displayAnnotation: true,

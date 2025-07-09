@@ -1,5 +1,4 @@
 import asyncio
-import concurrent.futures
 import datetime
 import logging
 import multiprocessing
@@ -20,10 +19,10 @@ class Queue:
     """
     Managining parallel processes for computation
 
-    Use Loky as a backend for the executor
+    Use Loky as a backend for one common executor
 
-    A waiting queue is needed to differentiate between CPU and GPU jobs
-    otherwise there is concurrency in the memory usage
+    With 2 waiting queues to differentiate between CPU and GPU jobs
+    (to limit concurrency in GPU memory usage)
     """
 
     path: Path
@@ -31,8 +30,6 @@ class Queue:
     nb_workers: int
     nb_workers_cpu: int
     nb_workers_gpu: int
-    executor: concurrent.futures.ProcessPoolExecutor
-    executor_gpu: concurrent.futures.ProcessPoolExecutor
     manager: SyncManager
     current: list
     last_restart: datetime.datetime
@@ -47,51 +44,44 @@ class Queue:
         self.nb_workers_cpu = nb_workers_cpu
         self.nb_workers_gpu = nb_workers_gpu
         self.nb_workers = nb_workers_cpu + nb_workers_gpu
-        # self.executor = get_reusable_executor(
-        #     max_workers=(self.nb_workers), timeout=10, kill_workers=True
-        # )
         self.manager = Manager()
         self.current = []
 
-        # launch the queue with a regular update
+        # launch a regular update on the queue
         self.task = asyncio.create_task(self._update_queue(timeout=1))
         logger.info("Init Queue")
+
+    def __del__(self) -> None:
+        """
+        Destructor to close the queue
+        """
+        if hasattr(self, "manager"):
+            self.manager.shutdown()
+            logger.info("Queue closed on destructor")
+        if hasattr(self, "task"):
+            self.task.cancel()
+            logger.info("Queue task cancelled on destructor")
 
     async def _update_queue(self, timeout: int = 1) -> None:
         """
         Update the queue with new tasks every X seconds
         """
         while True:
+            # jobs in the executor
             nb_active_processes_gpu = len(
-                [
-                    i
-                    for i in self.current
-                    if i["queue"] == "gpu" and i["state"] == "running"
-                ]
+                [i for i in self.current if i["queue"] == "gpu" and i["state"] == "running"]
             )
             nb_active_processes_cpu = len(
-                [
-                    i
-                    for i in self.current
-                    if i["queue"] == "cpu" and i["state"] == "running"
-                ]
+                [i for i in self.current if i["queue"] == "cpu" and i["state"] == "running"]
             )
 
-            task_gpu = [
-                i
-                for i in self.current
-                if i["queue"] == "gpu" and i["state"] == "pending"
-            ]
-            task_cpu = [
-                i
-                for i in self.current
-                if i["queue"] == "cpu" and i["state"] == "pending"
-            ]
+            task_gpu = [i for i in self.current if i["queue"] == "gpu" and i["state"] == "pending"]
+            task_cpu = [i for i in self.current if i["queue"] == "cpu" and i["state"] == "pending"]
+
             # a worker available and possible to have gpu
             if (
                 nb_active_processes_gpu < self.nb_workers_gpu
-                and (nb_active_processes_gpu + nb_active_processes_cpu)
-                < self.nb_workers
+                and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
                 and len(task_gpu) > 0
             ):
                 print("Add gpu task to the workers")
@@ -99,19 +89,15 @@ class Queue:
                 executor = get_reusable_executor(
                     max_workers=(self.nb_workers), timeout=1000, reuse=True
                 )
-                # task_gpu[0]["future"] = await asyncio.to_thread(
-                #     executor.submit, task_gpu[0]["task"]
-                # )
                 task_gpu[0]["future"] = executor.submit(task_gpu[0]["task"])
                 task_gpu[0]["state"] = "running"
                 task_gpu[0]["task"] = None
-                print("element added, continue")
+                print("Task added to the workers")
 
             # a worker available and possible to have cpu
             if (
                 nb_active_processes_cpu < self.nb_workers_cpu
-                and (nb_active_processes_gpu + nb_active_processes_cpu)
-                < self.nb_workers
+                and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
                 and len(task_cpu) > 0
             ):
                 print("Add cpu task to the workers")
@@ -122,10 +108,7 @@ class Queue:
                 task_cpu[0]["future"] = executor.submit(task_cpu[0]["task"])
                 task_cpu[0]["state"] = "running"
                 task_cpu[0]["task"] = None
-
                 print("Task added to the workers")
-
-            # self.clean_old_processes(timeout=2)
 
             print(
                 "nb_active_processes_cpu",
@@ -134,28 +117,9 @@ class Queue:
                 nb_active_processes_gpu,
             )
 
-            # self.display_info()
-
             await asyncio.sleep(timeout)  # Non-blocking sleep
 
-    def clean_old_processes(self, timeout: int = 2) -> None:
-        """
-        Remove old processes
-        """
-        n = len(self.current)
-        self.current = [
-            i
-            for i in self.current
-            if (datetime.datetime.now() - i["starting_time"]).total_seconds() / 3600
-            < timeout
-        ]
-        if n != len(self.current):
-            print(f"Cleaned {n - len(self.current)} processes")
-        return None
-
-    def add_task(
-        self, kind: str, project_slug: str, task: Any, queue: str = "cpu"
-    ) -> str:
+    def add_task(self, kind: str, project_slug: str, task: Any, queue: str = "cpu") -> str:
         """
         Add a task in the queue, first as pending
         """
@@ -245,36 +209,13 @@ class Queue:
         """
         Number of waiting processes
         """
-        return len(
-            [f for f in self.current if f["queue"] == queue and f["state"] == "pending"]
-        )
-
-    # def get_workers_info(self) -> dict:
-    #     """
-    #     Get info on the workers
-    #     """
-    #     process_info = {}
-
-    #     # extract the info
-    #     for pid in self.executor._processes.keys():
-    #         try:
-    #             p = psutil.Process(pid)
-    #             process_info[pid] = {
-    #                 "alive": p.is_running(),
-    #                 "memory_mb": p.memory_info().rss / (1024 * 1024),
-    #             }
-    #         except Exception as e:
-    #             print("Error", e, self.executor._processes)
-    #             process_info[pid] = {"alive": False, "memory_mb": None}
-
-    #     return process_info
+        return len([f for f in self.current if f["queue"] == queue and f["state"] == "pending"])
 
     def display_info(self, renew: int = 20) -> None:
         """
         Check if the exector still works
         if not, recreate it
         """
-        # print("workers", self.get_workers_info())
         print(self.state())
         print(
             "waiting",
@@ -283,12 +224,26 @@ class Queue:
         )
         return None
 
-    def close(self) -> None:
+    def clean_old_processes(self, timeout: int = 2) -> None:
         """
-        Close the executor
+        Remove old processes
         """
-        # if self.executor is not None:
-        #     self.executor.shutdown(wait=False)
+        n = len(self.current)
+        self.current = [
+            i
+            for i in self.current
+            if (datetime.datetime.now() - i["starting_time"]).total_seconds() / 3600 < timeout
+        ]
+        if n != len(self.current):
+            print(f"Cleaned {n - len(self.current)} processes")
+        return None
+
+    def restart(self) -> None:
+        """
+        Restart the queue
+        """
+        executor = get_reusable_executor(max_workers=(self.nb_workers), timeout=1000, reuse=True)
+        executor.shutdown(wait=False)
         self.manager.shutdown()
-        logger.info("Close queue")
-        print("Queue closes")
+        self.manager = Manager()
+        self.current = []

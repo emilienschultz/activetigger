@@ -19,7 +19,6 @@ import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 /**
  * Component to display the export page
  */
-
 export const ProjectExportPage: FC = () => {
   const { projectName } = useParams();
 
@@ -77,7 +76,7 @@ export const ProjectExportPage: FC = () => {
     project?.simplemodel.available[authenticatedUser.username]?.[currentScheme];
 
   return (
-    <ProjectPageLayout projectName={projectName || null} currentAction="export">
+    <ProjectPageLayout projectName={projectName} currentAction="export">
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">

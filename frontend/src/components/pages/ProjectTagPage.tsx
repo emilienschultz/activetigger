@@ -93,16 +93,16 @@ export const ProjectTagPage: FC = () => {
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
   const currentModel =
-    authenticatedUser &&
-    currentScheme &&
-    project?.simplemodel?.available?.[authenticatedUser.username]?.[currentScheme];
+    authenticatedUser && currentScheme
+      ? project?.simplemodel?.available?.[authenticatedUser.username]?.[currentScheme]
+      : null;
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['labels'] as string[])
+      ? project.schemes.available[currentScheme].labels
       : [];
   const [kindScheme] = useState<string>(
     currentScheme && project && project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['kind'] as string) || 'multiclass'
+      ? project.schemes.available[currentScheme].kind || 'multiclass'
       : 'multiclass',
   );
 
@@ -215,7 +215,6 @@ export const ProjectTagPage: FC = () => {
 
   const refetchElement = () => {
     getNextElementId().then((res) => {
-      console.log('res', res);
       if (res && res.n_sample) setNSample(res.n_sample);
       if (res && res.element_id) navigate(`/projects/${projectName}/tag/${res.element_id}`);
       else {
@@ -243,7 +242,7 @@ export const ProjectTagPage: FC = () => {
   if (!projectName || !currentScheme) return;
 
   return (
-    <ProjectPageLayout projectName={projectName || null} currentAction="tag">
+    <ProjectPageLayout projectName={projectName} currentAction="tag">
       {statistics && statistics['test_set_n'] && statistics['test_set_n'] > 0 && (
         <div className={phase == 'test' ? 'alert alert-info m-2' : 'm-2'}>
           <div className="col-4 form-check form-switch">
@@ -355,16 +354,17 @@ export const ProjectTagPage: FC = () => {
                     caseSensitive={true}
                   />
                   {/* text out of frame */}
-                  <span className="text-out-context" title="Outside 512 token window ">
+                  <span className="text-out-context" title="Outside context window ">
                     <Highlighter
                       highlightClassName="Search"
-                      searchWords={
-                        selectionConfig.filter && isValidRegex(selectionConfig.filter)
-                          ? [selectionConfig.filter, ...displayConfig.highlightText.split('\n')]
-                          : []
-                      }
+                      searchWords={validHighlightText}
                       autoEscape={false}
                       textToHighlight={textOutFrame}
+                      highlightStyle={{
+                        backgroundColor: 'yellow',
+                        margin: '0px',
+                        padding: '0px',
+                      }}
                       caseSensitive={true}
                     />
                   </span>
@@ -413,6 +413,9 @@ export const ProjectTagPage: FC = () => {
                 </div>
               )
             }
+            {phase != 'test' && showDisplayConfig && (
+              <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
+            )}
           </div>
           {elementId !== 'noelement' && (
             <div className="row">
@@ -474,7 +477,9 @@ export const ProjectTagPage: FC = () => {
 
                 <button
                   className="btn displayconfig"
-                  onClick={() => setShowDisplayConfig(!showDisplayConfig)}
+                  onClick={() => {
+                    setShowDisplayConfig(!showDisplayConfig);
+                  }}
                 >
                   <MdDisplaySettings />
                   <Tooltip anchorSelect=".displayconfig" place="top">
@@ -495,9 +500,6 @@ export const ProjectTagPage: FC = () => {
                 </div>
               )}
             </div>
-          )}
-          {phase != 'test' && showDisplayConfig && (
-            <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
           )}
         </Tab>
         <Tab eventKey="prediction" title="Quick model">
@@ -523,10 +525,12 @@ export const ProjectTagPage: FC = () => {
                       availableFeatures={availableFeatures}
                       availableLabels={availableLabels}
                       kindScheme={kindScheme}
-                      currentModel={currentModel || undefined}
+                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
                     />
 
-                    <SimpleModelDisplay currentModel={currentModel || undefined} />
+                    <SimpleModelDisplay
+                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
+                    />
                   </>
                 )}
               </div>

@@ -32,7 +32,7 @@ export const SelectionManagement: FC = () => {
 
   const [availableLabels, setAvailableLabels] = useState<string[]>(
     currentScheme && project && project.schemes.available[currentScheme]
-      ? (project.schemes.available[currentScheme]['labels'] as unknown as string[])
+      ? project.schemes.available[currentScheme].labels
       : [],
   );
 

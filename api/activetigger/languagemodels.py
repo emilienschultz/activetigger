@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional, cast
 
 import pandas as pd
+from fastapi.responses import FileResponse
 from pandas import DataFrame
 
 import activetigger.functions as functions
@@ -392,7 +393,7 @@ class LanguageModels:
 
     def export_prediction(
         self, name: str, file_name: str = "predict.parquet", format: str = "parquet"
-    ):
+    ) -> FileResponse:
         """
         Export predict file if exists
         """
@@ -420,8 +421,10 @@ class LanguageModels:
         else:
             raise Exception("Format not supported")
 
-        r = {"name": file_name, "path": path}
-        return r
+        return FileResponse(
+            path=path,
+            name=file_name,
+        )
 
     def export_bert(self, name: str) -> StaticFileModel:
         """

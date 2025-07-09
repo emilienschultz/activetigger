@@ -23,7 +23,7 @@ export const SelectCurrentScheme: FC = () => {
   } = useAppContext();
 
   const availableSchemes = useMemo(() => {
-    return currentProject ? Object.keys(currentProject.schemes.available as unknown as object) : [];
+    return currentProject ? Object.keys(currentProject.schemes.available) : [];
   }, [currentProject]);
 
   // manage scheme selection
@@ -57,6 +57,8 @@ export const SelectCurrentScheme: FC = () => {
     }));
     notify({ type: 'success', message: 'Scheme selected' });
   };
+
+  console.log('currentScheme', currentScheme);
 
   return (
     <div className="row">
@@ -92,9 +94,7 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
     setAppContext,
   } = useAppContext();
 
-  const availableSchemes = currentProject
-    ? Object.keys(currentProject.schemes.available as unknown as object)
-    : [];
+  const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
 
   // hooks to use the objets
   const { register, handleSubmit } = useForm<SchemeModel>({});

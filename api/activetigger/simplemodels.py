@@ -100,6 +100,7 @@ class SimpleModels:
                     "params": sm.model_params,
                     "features": sm.features,
                     "statistics": sm.statistics,
+                    "statistics_cv10": sm.statistics_cv10,
                 }
         return r
 
@@ -110,7 +111,7 @@ class SimpleModels:
         if username in self.existing:
             if scheme in self.existing[username]:
                 sm = self.existing[username][scheme]
-                return SimpleModelOutModel(
+                r = SimpleModelOutModel(
                     model=sm.name,
                     params=sm.model_params,
                     features=sm.features,
@@ -119,6 +120,7 @@ class SimpleModels:
                     scheme=scheme,
                     username=username,
                 )
+                return r
 
         return None
 
@@ -273,6 +275,7 @@ class SimpleModels:
             "X": X,
             "Y": Y,
             "labels": labels,
+            "cv10": cv10,
         }
         unique_id = self.queue.add_task("simplemodel", project_slug, FitModel(**args))
         del args
@@ -322,8 +325,8 @@ class SimpleModels:
 
         element.model = results.model
         element.proba = results.proba
-        element.statistics_cv10 = results.statistics_cv10
         element.statistics = results.statistics
+        element.statistics_cv10 = results.statistics_cv10
         if element.user not in self.existing:
             self.existing[element.user] = {}
         self.existing[element.user][element.scheme] = element

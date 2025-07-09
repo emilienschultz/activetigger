@@ -6,16 +6,27 @@ import { useUserProjects } from '../../core/api';
 import { PageLayout } from '../layout/PageLayout';
 
 import { IoIosAddCircle } from 'react-icons/io';
+import { useAppContext } from '../../core/context';
 import { AvailableProjectsModel } from '../../types';
 
 export const ProjectsPage: FC = () => {
+  // hooks
+  const {
+    appContext: { currentProject },
+    resetContext,
+  } = useAppContext();
+  const currentProjectSlug = currentProject?.params.project_slug;
+
+  // api call
   const projects = useUserProjects();
-  console.log('projects', projects);
+
+  // rows to display
   const [rows, setRows] = useState<AvailableProjectsModel[]>([]);
   useEffect(() => {
     setRows(projects || []);
   }, [projects]);
 
+  // handle search input
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const searchValue = e.target.value.toLowerCase();
 
@@ -51,7 +62,15 @@ export const ProjectsPage: FC = () => {
                   onChange={handleSearch}
                 />
                 {rows.map((project) => (
-                  <ProjectCard project={project} key={project.parameters.project_slug} />
+                  <ProjectCard
+                    project={project}
+                    key={project.parameters.project_slug}
+                    resetContext={
+                      currentProjectSlug === project.parameters.project_slug
+                        ? undefined
+                        : resetContext
+                    }
+                  />
                 ))}
               </div>
             </div>

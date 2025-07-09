@@ -41,7 +41,7 @@ Give your project a name (the **project name**). Each name is unique in the appl
 
     Both the project name and the ID will be transformed to be url-compatible. This means for instance that accentuated characters will be replaced by their non-accentuated equivalent, and spaces/underscores will be replaced by a dash. Do anticipate if you need to match this data further in the process with other informations.
 
-Specify the name of the column that contains the unique (numerical or textual) IDs for each element (**id columns**), and the name of the column (or columns) that contains the text (**text(s) columns**). Specify the language of the texts.
+Specify the name of the column that contains the unique (numerical or textual) IDs for each element (**id columns**), and the name of the column (or columns) that contains the text (**text(s) columns**). Specify the language of the texts (used to priorize models and options in feature computation).
 
 If the file has already been annotated and you want to import these annotations, you can specify the column of **existing annotations**. 
 

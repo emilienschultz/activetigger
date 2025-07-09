@@ -28,6 +28,21 @@ from activetigger.project import Project
 router = APIRouter(tags=["projects"])
 
 
+@router.post("/projects/close/{project_slug}", dependencies=[Depends(verified_user)])
+async def close_project(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project_slug: str,
+) -> None:
+    """
+    Close a project from memory
+    """
+    test_rights("create project", current_user.username)
+    try:
+        orchestrator.stop_project(project_slug)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
 async def get_project_statistics(
     project: Annotated[Project, Depends(get_project)],
@@ -38,8 +53,7 @@ async def get_project_statistics(
     Statistics for a scheme and a user
     """
     try:
-        r = project.get_statistics(scheme=scheme, user=current_user.username)
-        return ProjectDescriptionModel(**r)
+        return project.get_statistics(scheme=scheme, user=current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -49,13 +63,10 @@ async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
     """
     Users auth on a project
     """
-    print("get_project_auth", project_slug)
     if not orchestrator.exists(project_slug):
-        print("error")
         raise HTTPException(status_code=404, detail="Project doesn't exist")
     try:
-        r = orchestrator.users.get_project_auth(project_slug)
-        return ProjectAuthsModel(auth=r)
+        return ProjectAuthsModel(auth=orchestrator.users.get_project_auth(project_slug))
     except Exception as e:
         raise HTTPException(status_code=500) from e
 
@@ -71,10 +82,7 @@ async def new_project(
     test_rights("create project", current_user.username)
     # check if the project already exists
     try:
-        orchestrator.check_project_name(project.project_name)
-        # create the project
         slug = orchestrator.create_project(project, current_user.username)
-        # log action
         orchestrator.log_action(current_user.username, "INFO CREATE PROJECT", slug)
         return slug
     except Exception as e:
@@ -122,7 +130,6 @@ async def delete_project(
     test_rights("modify project", current_user.username, project_slug)
     try:
         orchestrator.delete_project(project_slug)
-        return None
     except Exception as e:
         print(f"Error deleting project {project_slug}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -164,8 +171,9 @@ async def get_projects(
     depending of the status of connected user
     """
     try:
-        r = orchestrator.get_auth_projects(current_user.username)
-        return AvailableProjectsModel(projects=r)
+        return AvailableProjectsModel(
+            projects=orchestrator.get_auth_projects(current_user.username)
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -180,8 +188,6 @@ async def get_project_state(
     """
     Get the state of a specific project
     """
-    if project is None:
-        raise HTTPException(status_code=404, detail="Project not found")
     try:
         return project.state()
     except Exception as e:
