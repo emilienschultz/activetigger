@@ -60,7 +60,6 @@ async def add_label(
     Add a label to a scheme
     """
     test_rights("modify project element", current_user.username, project.name)
-
     if action == "add":
         try:
             project.schemes.add_label(label, scheme, current_user.username)
@@ -137,7 +136,6 @@ async def rename_scheme(
     Rename a scheme
     """
     test_rights("modify project element", current_user.username, project.name)
-
     try:
         project.schemes.rename_scheme(old_name, new_name)
         orchestrator.log_action(
@@ -160,7 +158,6 @@ async def duplicate_scheme(
     Duplicate a scheme
     """
     test_rights("modify project element", current_user.username, project.name)
-
     try:
         project.schemes.duplicate_scheme(scheme_name, scheme_name + "_copy", current_user.username)
         orchestrator.log_action(
@@ -184,7 +181,6 @@ async def post_schemes(
     Add, Update or Delete scheme
     """
     test_rights("modify project element", current_user.username, project.name)
-
     if action == "add":
         try:
             project.schemes.add_scheme(

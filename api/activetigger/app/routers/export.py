@@ -30,6 +30,7 @@ router = APIRouter(tags=["export"])
 @router.get("/export/data", dependencies=[Depends(verified_user)])
 async def export_data(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
     format: str,
     dataset: str = "train",
@@ -37,6 +38,7 @@ async def export_data(
     """
     Export labelled data
     """
+    test_rights("export data", current_user.username, project.name)
     try:
         return project.export_data(format=format, scheme=scheme, dataset=dataset)
     except Exception as e:
@@ -46,12 +48,14 @@ async def export_data(
 @router.get("/export/features", dependencies=[Depends(verified_user)])
 async def export_features(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     features: list = Query(),
     format: str = Query(),
 ) -> FileResponse:
     """
     Export features
     """
+    test_rights("export data", current_user.username, project.name)
     try:
         return project.export_features(features=features, format=format)
     except Exception as e:
@@ -67,6 +71,7 @@ async def export_projection(
     """
     Export features
     """
+    test_rights("export data", current_user.username, project.name)
     try:
         return project.projections.export(user_name=current_user.username, format=format)
     except Exception as e:
@@ -83,6 +88,7 @@ async def export_simplemodel_predictions(
     """
     Export prediction simplemodel for the project/user/scheme if any
     """
+    test_rights("export data", current_user.username, project.name)
     try:
         output, headers = project.simplemodels.export_prediction(
             scheme, current_user.username, format
@@ -95,6 +101,7 @@ async def export_simplemodel_predictions(
 @router.get("/export/prediction", dependencies=[Depends(verified_user)])
 async def export_prediction(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     format: str = Query(),
     name: str = Query(),
     dataset: str = Query("all"),
@@ -102,6 +109,7 @@ async def export_prediction(
     """
     Export annotations
     """
+    test_rights("export data", current_user.username, project.name)
     try:
         return project.languagemodels.export_prediction(
             name=name, file_name=f"predict_{dataset}.parquet", format=format
@@ -119,7 +127,7 @@ async def export_bert(
     """
     Export fine-tuned BERT model - file with redirect with nginx
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights("export data", current_user.username, project.name)
     try:
         file_path = project.languagemodels.export_bert(name=name)
         return FastAPIResponse(
@@ -142,7 +150,7 @@ async def export_raw(
     """
     Export raw data of the project
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights("export data", current_user.username, project.name)
     try:
         file_path = project.export_raw(project.name)
         return FastAPIResponse(
@@ -167,7 +175,7 @@ async def export_static(
     """
     Get static links of the project
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights("export data", current_user.username, project.name)
     try:
         # don't return nothing if not direct with sqlite
         if "sqlite" not in config.database_url:

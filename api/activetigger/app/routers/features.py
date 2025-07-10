@@ -43,13 +43,8 @@ async def post_embeddings(
     - same prcess
     - specific process : function + temporary file + update
     """
-    # manage rights
     test_rights("modify project", current_user.username, project.name)
-
-    # get the data (for the moment, Features has no access to the data)
     df = project.content["text"]
-
-    # compute the feature
     try:
         project.features.compute(
             df, feature.name, feature.type, feature.parameters, current_user.username

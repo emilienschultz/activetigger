@@ -136,9 +136,7 @@ async def login_for_access_token(
     Authentificate user from username/password and return token
     """
     try:
-        # authentificate the user
         user = orchestrator.users.authenticate_user(form_data.username, form_data.password)
-        # create new token for the user
         access_token = orchestrator.create_access_token(
             data={"sub": user.username}, expires_min=120
         )
@@ -175,7 +173,6 @@ async def stop_process(
     """
     Stop all the ongoing process for the connected user
     """
-    test_rights("kill process", current_user.username)
     try:
         orchestrator.stop_process(current_user.username, unique_id)
     except Exception as e:

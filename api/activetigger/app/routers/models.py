@@ -85,6 +85,7 @@ async def predict(
     """
     Start prediction with a model
     """
+    test_rights("modify project", current_user.username, project.name)
     try:
         # get the data
         if dataset == "train":
@@ -142,6 +143,7 @@ async def start_test(
     """
     Start testing the model on the test set
     """
+    test_rights("modify project", current_user.username, project.name)
     if project.schemes.test is None:
         raise HTTPException(status_code=500, detail="No test dataset for this project")
 
@@ -175,6 +177,7 @@ async def post_bert(
     Compute bertmodel
     TODO : move the methods to specific class
     """
+    test_rights("modify project", current_user.username, project.name)
     try:
         check_storage(current_user.username)
         project.start_languagemodel_training(

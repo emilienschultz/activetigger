@@ -226,6 +226,13 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
         else:
             raise HTTPException(500, "No rights for this action")
 
+    # export data
+    if action == "export data":
+        if (auth == "manager") or (status == "root"):
+            return True
+        else:
+            raise HTTPException(500, "No rights for this action")
+
     raise HTTPException(404, "No action found")
 
 

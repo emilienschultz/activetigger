@@ -64,7 +64,6 @@ async def get_projection(
     """
     Get projection if computed
     """
-
     try:
         return project.get_projection(
             username=current_user.username,
@@ -213,10 +212,7 @@ async def post_annotation(
     - For the moment add == update
     - No information kept of selection process
     """
-
-    # manage rights
     test_rights("modify annotation", current_user.username, project.name)
-
     if action in ["add", "update"]:
         try:
             project.schemes.push_annotation(
