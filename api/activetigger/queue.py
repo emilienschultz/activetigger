@@ -94,9 +94,7 @@ class Queue:
             if (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers and (
                 len(task_gpu) + len(task_cpu) > 0
             ):
-                executor = get_reusable_executor(
-                    max_workers=(self.nb_workers), timeout=1000, reuse=True
-                )
+                executor = get_reusable_executor(max_workers=(self.nb_workers))
 
             # a worker available and possible to have gpu
             if (

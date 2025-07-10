@@ -623,7 +623,7 @@ class Project:
             )
 
         # part test
-        if self.params.test and self.schemes.test:
+        if self.params.test and self.schemes.test is not None:
             df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
             test_set_n = len(self.schemes.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
