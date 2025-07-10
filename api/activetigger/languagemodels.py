@@ -208,7 +208,7 @@ class LanguageModels:
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
         if params.gpu:
             mem = functions.get_gpu_memory_info()
-            if self.estimate_memory_use(model_name, kind="train") > mem["available_memory"]:
+            if self.estimate_memory_use(model_name, kind="train") > mem.available_memory:
                 raise Exception("Not enough GPU memory available. Wait or reduce batch.")
 
         # launch as a independant process
