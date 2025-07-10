@@ -8,7 +8,6 @@ import asyncio
 import datetime
 import logging
 import multiprocessing
-import threading
 import uuid
 from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
@@ -40,7 +39,6 @@ class Queue:
     manager: SyncManager
     current: list[QueueTaskModel]
     last_restart: datetime.datetime
-    lock: threading.Lock
 
     def __init__(self, nb_workers_cpu: int = 3, nb_workers_gpu: int = 1) -> None:
         """
@@ -56,7 +54,6 @@ class Queue:
         self.nb_workers = nb_workers_cpu + nb_workers_gpu
         self.manager = Manager()
         self.current = []
-        self.lock = threading.Lock()
 
         # launch a regular update on the queue
         self.task = asyncio.create_task(self._update_queue(timeout=1))
@@ -77,24 +74,16 @@ class Queue:
         Add new tasks to the executor if there are available workers.
         """
         while True:
-            with self.lock:  # Ensure thread-safe access to shared state
-                # active tasks in the queue
-                nb_active_processes_gpu = len(
-                    [i for i in self.current if i.queue == "gpu" and i.state == "running"]
-                )
-                nb_active_processes_cpu = len(
-                    [i for i in self.current if i.queue == "cpu" and i.state == "running"]
-                )
+            nb_active_processes_gpu = len(
+                [i for i in self.current if i.queue == "gpu" and i.state == "running"]
+            )
+            nb_active_processes_cpu = len(
+                [i for i in self.current if i.queue == "cpu" and i.state == "running"]
+            )
 
-                # pending tasks in the queue
-                task_gpu = [i for i in self.current if i.queue == "gpu" and i.state == "pending"]
-                task_cpu = [i for i in self.current if i.queue == "cpu" and i.state == "pending"]
-
-            # get an executor if needed (task to send and available workers)
-            if (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers and (
-                len(task_gpu) + len(task_cpu) > 0
-            ):
-                executor = get_reusable_executor(max_workers=(self.nb_workers))
+            # pending tasks in the queue
+            task_gpu = [i for i in self.current if i.queue == "gpu" and i.state == "pending"]
+            task_cpu = [i for i in self.current if i.queue == "cpu" and i.state == "pending"]
 
             # a worker available and possible to have gpu
             if (
@@ -102,8 +91,12 @@ class Queue:
                 and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
                 and len(task_gpu) > 0
             ):
+                executor = get_reusable_executor(
+                    max_workers=(self.nb_workers), timeout=1000, reuse=True
+                )
                 task_gpu[0].future = executor.submit(task_gpu[0].task)
                 task_gpu[0].state = "running"
+                task_gpu[0].task = None
 
             # a worker available and possible to have cpu
             if (
@@ -111,8 +104,12 @@ class Queue:
                 and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
                 and len(task_cpu) > 0
             ):
+                executor = get_reusable_executor(
+                    max_workers=(self.nb_workers), timeout=1000, reuse=True
+                )
                 task_cpu[0].future = executor.submit(task_cpu[0].task)
                 task_cpu[0].state = "running"
+                task_gpu[0].task = None
 
             print(
                 "nb_active_processes_cpu",
@@ -127,33 +124,32 @@ class Queue:
         """
         Add a task in the queue, first as pending in the current list
         """
-        with self.lock:
-            # test if the queue is not full
-            if len(self.current) > self.max_processes:
-                raise Exception("Queue is full. Wait for process to finish.")
+        # test if the queue is not full
+        if len(self.current) > self.max_processes:
+            raise Exception("Queue is full. Wait for process to finish.")
 
-            # generate a unique id
-            unique_id = str(uuid.uuid4())
-            # set an event to inform the end of the process
-            event = self.manager.Event()
-            # add informartion in the task
-            task.event = event
-            task.unique_id = unique_id
+        # generate a unique id
+        unique_id = str(uuid.uuid4())
+        # set an event to inform the end of the process
+        event = self.manager.Event()
+        # add informartion in the task
+        task.event = event
+        task.unique_id = unique_id
 
-            # add it in the current processes
-            self.current.append(
-                QueueTaskModel(
-                    unique_id=unique_id,
-                    kind=kind,
-                    project_slug=project_slug,
-                    state="pending",
-                    future=None,
-                    event=event,
-                    starting_time=datetime.datetime.now(),
-                    queue=queue,
-                    task=task,
-                )
+        # add it in the current processes
+        self.current.append(
+            QueueTaskModel(
+                unique_id=unique_id,
+                kind=kind,
+                project_slug=project_slug,
+                state="pending",
+                future=None,
+                event=event,
+                starting_time=datetime.datetime.now(),
+                queue=queue,
+                task=task,
             )
+        )
 
         return unique_id
 
