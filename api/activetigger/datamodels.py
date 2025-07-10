@@ -10,33 +10,6 @@ from sklearn.base import BaseEstimator  # type: ignore[import]
 # Data model to use of the API
 
 
-class QueueTaskModel(BaseModel):
-    """
-    Task in the queue
-    """
-
-    unique_id: str
-    kind: str
-    project_slug: str
-    state: str
-    future: Optional[Any] = None  # Future object from concurrent.futures
-    event: Any = None  # Event object for signaling
-    starting_time: datetime.datetime
-    queue: str
-    task: Callable[..., Any] | None
-
-
-class QueueStateTaskModel(BaseModel):
-    """
-    Task in the queue with state
-    """
-
-    unique_id: str
-    kind: str
-    state: str
-    exception: Any = None
-
-
 class ProjectBaseModel(BaseModel):
     """
     Parameters of a project to save in the database

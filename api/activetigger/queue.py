@@ -15,7 +15,6 @@ from multiprocessing.managers import SyncManager
 # manage the executor
 from loky import get_reusable_executor  # type: ignore[import]
 
-from activetigger.datamodels import QueueStateTaskModel
 from activetigger.tasks.base_task import BaseTask
 
 logger = logging.getLogger("server")
@@ -183,21 +182,28 @@ class Queue:
                 print("Deleting a unfinished process")
             self.current.remove(i)
 
-    def state(self) -> list[QueueStateTaskModel]:
+    def state(self) -> dict:
         """
         Return state of the queue
         """
-        return [
-            QueueStateTaskModel(
-                unique_id=process["unique_id"],
-                state="done"
-                if process["future"] and process["future"].done()
-                else process["state"],
-                exception=process["future"].exception() if process["future"] else None,
-                kind=process["kind"],
-            )
-            for process in self.current
-        ]
+        r = {}
+        for process in self.current:
+            if process["state"] == "pending":
+                info = "pending"
+                exception = None
+            if process["state"] == "running":
+                info = "running"
+                exception = None
+            if process["future"] is not None and process["future"].done():
+                info = "done"
+                exception = process["future"].exception()
+
+            r[process["unique_id"]] = {
+                "state": info,
+                "exception": exception,
+                "kind": process["kind"],
+            }
+        return r
 
     def get_nb_waiting_processes(self, queue: str = "cpu") -> int:
         """

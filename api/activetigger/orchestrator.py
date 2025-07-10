@@ -193,11 +193,8 @@ class Orchestrator:
         }
 
         # running processes in the queue
-        queue = {
-            i.unique_id: i.model_dump()
-            for i in self.queue.state()
-            if i.state in ["pending", "running"]
-        }
+        q = self.queue.state()
+        queue = {i: q[i] for i in q if q[i]["state"] in ["pending", "running"]}
 
         # server state
         cpu = psutil.cpu_percent()
