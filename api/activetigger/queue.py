@@ -195,7 +195,7 @@ class Queue:
             QueueStateTaskModel(
                 unique_id=process.unique_id,
                 state="done" if process.future and process.future.done() else process.state,
-                exception=process.future.exception() if process.future else None,
+                exception=None,
                 kind=process.kind,
             )
             for process in self.current
