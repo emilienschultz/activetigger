@@ -94,7 +94,7 @@ class Queue:
                 executor = get_reusable_executor(
                     max_workers=self.nb_workers, timeout=1000, reuse=True
                 )
-                task_gpu[0]["future"] = executor.submit(task_gpu[0].task)
+                task_gpu[0]["future"] = executor.submit(task_gpu[0]["task"])
                 task_gpu[0]["state"] = "running"
                 task_gpu[0]["task"] = None
 
@@ -107,7 +107,7 @@ class Queue:
                 executor = get_reusable_executor(
                     max_workers=self.nb_workers, timeout=1000, reuse=True
                 )
-                task_cpu[0]["future"] = executor.submit(task_cpu[0].task)
+                task_cpu[0]["future"] = executor.submit(task_cpu[0]["task"])
                 task_cpu[0]["state"] = "running"
                 task_gpu[0]["task"] = None
 
