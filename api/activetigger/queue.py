@@ -15,7 +15,7 @@ from multiprocessing.managers import SyncManager
 # manage the executor
 from loky import get_reusable_executor  # type: ignore[import]
 
-from activetigger.datamodels import QueueStateTaskModel, QueueTaskModel
+from activetigger.datamodels import QueueStateTaskModel
 from activetigger.tasks.base_task import BaseTask
 
 logger = logging.getLogger("server")
@@ -37,7 +37,7 @@ class Queue:
     nb_workers_cpu: int
     nb_workers_gpu: int
     manager: SyncManager
-    current: list[QueueTaskModel]
+    current: list
     last_restart: datetime.datetime
 
     def __init__(self, nb_workers_cpu: int = 3, nb_workers_gpu: int = 1) -> None:
@@ -75,15 +75,15 @@ class Queue:
         """
         while True:
             nb_active_processes_gpu = len(
-                [i for i in self.current if i.queue == "gpu" and i.state == "running"]
+                [i for i in self.current if i["queue"] == "gpu" and i["state"] == "running"]
             )
             nb_active_processes_cpu = len(
-                [i for i in self.current if i.queue == "cpu" and i.state == "running"]
+                [i for i in self.current if i["queue"] == "cpu" and i["state"] == "running"]
             )
 
             # pending tasks in the queue
-            task_gpu = [i for i in self.current if i.queue == "gpu" and i.state == "pending"]
-            task_cpu = [i for i in self.current if i.queue == "cpu" and i.state == "pending"]
+            task_gpu = [i for i in self.current if i["queue"] == "gpu" and i["state"] == "pending"]
+            task_cpu = [i for i in self.current if i["queue"] == "cpu" and i["state"] == "pending"]
 
             # a worker available and possible to have gpu
             if (
@@ -92,11 +92,11 @@ class Queue:
                 and len(task_gpu) > 0
             ):
                 executor = get_reusable_executor(
-                    max_workers=(self.nb_workers), timeout=1000, reuse=True
+                    max_workers=self.nb_workers, timeout=1000, reuse=True
                 )
-                task_gpu[0].future = executor.submit(task_gpu[0].task)
-                task_gpu[0].state = "running"
-                task_gpu[0].task = None
+                task_gpu[0]["future"] = executor.submit(task_gpu[0].task)
+                task_gpu[0]["state"] = "running"
+                task_gpu[0]["task"] = None
 
             # a worker available and possible to have cpu
             if (
@@ -105,11 +105,11 @@ class Queue:
                 and len(task_cpu) > 0
             ):
                 executor = get_reusable_executor(
-                    max_workers=(self.nb_workers), timeout=1000, reuse=True
+                    max_workers=self.nb_workers, timeout=1000, reuse=True
                 )
-                task_cpu[0].future = executor.submit(task_cpu[0].task)
-                task_cpu[0].state = "running"
-                task_gpu[0].task = None
+                task_cpu[0]["future"] = executor.submit(task_cpu[0].task)
+                task_cpu[0]["state"] = "running"
+                task_gpu[0]["task"] = None
 
             print(
                 "nb_active_processes_cpu",
@@ -138,26 +138,26 @@ class Queue:
 
         # add it in the current processes
         self.current.append(
-            QueueTaskModel(
-                unique_id=unique_id,
-                kind=kind,
-                project_slug=project_slug,
-                state="pending",
-                future=None,
-                event=event,
-                starting_time=datetime.datetime.now(),
-                queue=queue,
-                task=task,
-            )
+            {
+                "unique_id": unique_id,
+                "kind": kind,
+                "project_slug": project_slug,
+                "state": "pending",
+                "future": None,
+                "event": event,
+                "starting_time": datetime.datetime.now(),
+                "queue": queue,
+                "task": task,
+            }
         )
 
         return unique_id
 
-    def get(self, unique_id: str) -> QueueTaskModel | None:
+    def get(self, unique_id: str) -> dict | None:
         """
         Get a process
         """
-        element = [i for i in self.current if i.unique_id == unique_id]
+        element = [i for i in self.current if i["unique_id"] == unique_id]
         if len(element) == 0:
             return None
         return element[0]
@@ -166,10 +166,10 @@ class Queue:
         """
         Send a kill process with the event manager
         """
-        element = [i for i in self.current if i.unique_id == unique_id]
+        element = [i for i in self.current if i["unique_id"] == unique_id]
         if len(element) == 0:
             raise Exception("Process not found")
-        element[0].event.set()  # TODO update status to flag the killing
+        element[0]["event"].set()  # TODO update status to flag the killing
         self.delete(unique_id)  # TODO move this to the cleaning method
 
     def delete(self, ids: str | list) -> None:
@@ -178,8 +178,8 @@ class Queue:
         """
         if type(ids) is str:
             ids = [ids]
-        for i in [t for t in self.current if t.unique_id in ids]:
-            if i.future is None or not i.future.done():
+        for i in [t for t in self.current if t["unique_id"] in ids]:
+            if i["future"] is None or not i["future"].done():
                 print("Deleting a unfinished process")
             self.current.remove(i)
 
@@ -189,10 +189,12 @@ class Queue:
         """
         return [
             QueueStateTaskModel(
-                unique_id=process.unique_id,
-                state="done" if process.future and process.future.done() else process.state,
-                exception=process.future.exception() if process.future else None,
-                kind=process.kind,
+                unique_id=process["unique_id"],
+                state="done"
+                if process["future"] and process["future"].done()
+                else process["state"],
+                exception=process["future"].exception() if process["future"] else None,
+                kind=process["kind"],
             )
             for process in self.current
         ]
@@ -201,7 +203,7 @@ class Queue:
         """
         Number of waiting processes
         """
-        return len([f for f in self.current if f.queue == queue and f.state == "pending"])
+        return len([f for f in self.current if f["queue"] == queue and f["state"] == "pending"])
 
     def display_info(self, renew: int = 20) -> None:
         """
@@ -224,7 +226,7 @@ class Queue:
         self.current = [
             i
             for i in self.current
-            if (datetime.datetime.now() - i.starting_time).total_seconds() / 3600 < timeout
+            if (datetime.datetime.now() - i["starting_time"]).total_seconds() / 3600 < timeout
         ]
         if n != len(self.current):
             print(f"Cleaned {n - len(self.current)} processes")

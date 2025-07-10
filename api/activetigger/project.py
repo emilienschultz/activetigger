@@ -1039,11 +1039,11 @@ class Project:
                 continue
 
             # check if the process is done, else continue
-            if process.future is None or not process.future.done():
+            if process["future"] is None or not process["future"].done():
                 continue
 
             # get the future for process done
-            future = process.future
+            future = process["future"]
 
             # manage different tasks
 
