@@ -6,10 +6,9 @@ import shutil
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pandas as pd
-import pytz
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from pandas import DataFrame
@@ -49,9 +48,6 @@ from activetigger.schemes import Schemes
 from activetigger.simplemodels import SimpleModels
 from activetigger.tasks.generate_call import GenerateCall
 
-MODELS = "bert_models.csv"
-TIMEZONE = pytz.timezone("Europe/Paris")
-
 
 class Project:
     """
@@ -73,6 +69,7 @@ class Project:
     generations: Generations
     projections: Projections
     errors: list[list]
+    selection_params: NextProjectStateModel
 
     def __init__(
         self,
@@ -94,7 +91,15 @@ class Project:
         self.name = project_slug
         self.load_project(project_slug)
 
+        # selection parameters
+        self.selection_params = NextProjectStateModel(
+            methods_min=["fixed", "random"],
+            methods=["fixed", "random", "maxprob", "active"],
+            sample=["untagged", "all", "tagged"],
+        )
+
     def __del__(self):
+        print(f"Project {self.name} deleted")
         pass
 
     def delete(self):
@@ -137,14 +142,14 @@ class Project:
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
-            self.params.dir.joinpath("train.parquet"),
-            self.params.dir.joinpath("test.parquet"),
+            self.params.dir.joinpath(config.train_file),
+            self.params.dir.joinpath(config.test_file),
             self.db_manager,
         )
         self.features = Features(
             project_slug,
-            self.params.dir.joinpath("features.parquet"),
-            self.params.dir.joinpath("data_all.parquet"),
+            self.params.dir.joinpath(config.features_file),
+            self.params.dir.joinpath(config.data_all),
             self.path_models,
             self.queue,
             cast(list[FeatureComputing], self.computing),
@@ -157,16 +162,14 @@ class Project:
             self.queue,
             self.computing,
             self.db_manager,
-            MODELS,
+            config.file_models,
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
-        # TODO: Computings should be filtered here based on their type, each type in a different list given to the appropriate class.
-        # It would render the cast here and the for-loop in the class unecessary
         self.generations = Generations(
             self.db_manager, cast(list[GenerationComputing], self.computing)
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
-        self.errors = []  # Move to specific class / db in the future
+        self.errors = []  # TODO Move to specific class / db in the future
 
     def load_params(self, project_slug: str) -> ProjectModel:
         """
@@ -253,7 +256,7 @@ class Project:
         # import labels if specified + scheme // check if the labels are in the scheme
         if testset.col_label and testset.scheme:
             # Check the label columns if they match the scheme or raise error
-            scheme = self.schemes.available()[testset.scheme]["labels"]
+            scheme = self.schemes.available()[testset.scheme].labels
             for label in df["label"].dropna().unique():
                 if label not in scheme:
                     raise Exception(f"Label {label} not in the scheme {testset.scheme}")
@@ -272,7 +275,7 @@ class Project:
             print("Testset labels imported")
 
         # write the dataset
-        df[["text"]].to_parquet(self.params.dir.joinpath("test.parquet"))
+        df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
         # load the data
         self.schemes.test = df[["text"]]
         # update parameters
@@ -282,12 +285,11 @@ class Project:
             self.params.project_slug, jsonable_encoder(self.params)
         )
 
-    def update_simplemodel(self, simplemodel: SimpleModelModel, username: str) -> dict:
+    def update_simplemodel(
+        self, simplemodel: SimpleModelModel, username: str, n_min_annotated: int = 3
+    ) -> None:
         """
-        Update simplemodel on the base of an already existing
-        simplemodel object
-
-        n_min: minimal number of elements annotated
+        Compute or update simplemodel
         """
         availabe_schemes = self.schemes.available()
         simplemodel.features = [i for i in simplemodel.features if i is not None]
@@ -298,7 +300,7 @@ class Project:
         if simplemodel.scheme not in availabe_schemes:
             raise Exception("Scheme not available")
         if len(availabe_schemes[simplemodel.scheme].labels) < 2:
-            raise Exception("Scheme not available")
+            raise Exception("Not enough labels in the scheme")
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
         if simplemodel.model == "multi_naivebayes":
@@ -327,9 +329,11 @@ class Project:
 
         # test for a minimum of annotated elements
         counts = df_scheme["labels"].value_counts()
-        valid_categories = counts[counts >= 3]
+        valid_categories = counts[counts >= n_min_annotated]
         if len(valid_categories) < 2:
-            raise Exception("Not enough annotated elements")
+            raise Exception(
+                f"Not enough annotated elements (should be more than {n_min_annotated})"
+            )
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -349,8 +353,6 @@ class Project:
             standardize=simplemodel.standardize or False,
             cv10=simplemodel.cv10 or False,
         )
-
-        return {"success": "Simplemodel updated"}
 
     def get_next(
         self,
@@ -396,8 +398,7 @@ class Project:
             df["ID"] = df.index  # duplicate the id column
             filter_san = clean_regex(next.filter)
             if "CONTEXT=" in filter_san:  # case to search in the context
-                print("CONTEXT", filter_san.replace("CONTEXT=", ""))
-                f_regex: pd.Series = (
+                f_regex = (
                     df[self.params.cols_context + ["ID"]]
                     .apply(lambda row: " ".join(row.values.astype(str)), axis=1)
                     .str.contains(
@@ -408,7 +409,9 @@ class Project:
                     )
                 )
             elif "QUERY=" in filter_san:  # case to use a query
-                f_regex = df[self.params.cols_context].eval(filter_san.replace("QUERY=", ""))
+                f_regex = cast(
+                    pd.Series, df[self.params.cols_context].eval(filter_san.replace("QUERY=", ""))
+                )
             else:
                 f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
             f = f & f_regex
@@ -527,14 +530,13 @@ class Project:
         """
         Get an element of the database
         Separate train/test dataset
-        TODO: better homogeneise with get_next ?
         """
         if dataset == "test" and self.schemes.test is not None:
             if element_id not in self.schemes.test.index:
                 raise Exception("Element does not exist.")
             return ElementOutModel(
                 element_id=element_id,
-                text=self.schemes.test.loc[element_id, "text"],
+                text=str(self.schemes.test.loc[element_id, "text"]),
                 context={},
                 selection="test",
                 info="",
@@ -558,21 +560,30 @@ class Project:
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
-            history = self.schemes.projects_service.get_annotations_by_element(
-                self.params.project_slug, scheme, element_id
+            if scheme is None:
+                history = None
+            else:
+                history = self.schemes.projects_service.get_annotations_by_element(
+                    self.params.project_slug, scheme, element_id
+                )
+
+            context = cast(
+                dict[str, Any],
+                self.content.loc[element_id, self.params.cols_context]  # type: ignore[index]
+                .fillna("NA")
+                .astype(str)
+                .to_dict(),
             )
 
             return ElementOutModel(
                 element_id=element_id,
-                text=self.content.loc[element_id, "text"],
-                context=dict(
-                    self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
-                ),
+                text=str(self.content.loc[element_id, "text"]),
+                context=context,
                 selection="request",
                 predict=predict,
                 info="get specific",
                 frame=None,
-                limit=int(self.content.loc[element_id, "limit"]),
+                limit=cast(int, self.content.loc[element_id, "limit"]),
                 history=history,
             )
 
@@ -599,43 +610,51 @@ class Project:
         kind = schemes[scheme].kind
 
         # part train
-        r = {"train_set_n": len(self.schemes.content)}
-        r["users"] = self.db_manager.users_service.get_coding_users(
-            scheme, self.params.project_slug
-        )
+        users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
 
-        df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
+        df_train = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
 
         # different treatment if the scheme is multilabel or multiclass
-        r["train_annotated_n"] = len(df.dropna(subset=["labels"]))
         if kind == "multiclass":
-            r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+            train_annotated_distribution = json.loads(df_train["labels"].value_counts().to_json())
         else:
-            r["train_annotated_distribution"] = json.loads(
-                df["labels"].str.split("|").explode().value_counts().to_json()
+            train_annotated_distribution = json.loads(
+                df_train["labels"].str.split("|").explode().value_counts().to_json()
             )
 
         # part test
-        if self.params.test:
-            df = self.schemes.get_scheme_data(scheme, kind=["test"])
-            r["test_set_n"] = len(self.schemes.test) if self.schemes.test is not None else 0
-            r["test_annotated_n"] = len(df.dropna(subset=["labels"]))
+        if self.params.test and self.schemes.test:
+            df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
+            test_set_n = len(self.schemes.test)
+            test_annotated_n = len(df_test.dropna(subset=["labels"]))
             if kind == "multiclass":
-                r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+                test_annotated_distribution = json.loads(df_test["labels"].value_counts().to_json())
             else:
-                r["test_annotated_distribution"] = json.loads(
-                    df["labels"].str.split("|").explode().value_counts().to_json()
+                test_annotated_distribution = json.loads(
+                    df_test["labels"].str.split("|").explode().value_counts().to_json()
                 )
         else:
-            r["test_set_n"] = None
-            r["test_annotated_n"] = None
-            r["test_annotated_distribution"] = None
+            test_set_n = None
+            test_annotated_n = None
+            test_annotated_distribution = None
 
-        if self.simplemodels.exists(user, scheme):
-            sm = self.simplemodels.get_model(user, scheme)  # get model
-            r["sm_10cv"] = sm.statistics_cv10
+        if user and self.simplemodels.exists(user, scheme):
+            sm_10cv = self.simplemodels.get_model(user, scheme).statistics_cv10
+        else:
+            sm_10cv = None
 
-        return ProjectDescriptionModel(**r)
+        # return ProjectDescriptionModel(**r)
+
+        return ProjectDescriptionModel(
+            users=users,
+            train_set_n=len(self.schemes.content),
+            train_annotated_n=len(df_train.dropna(subset=["labels"])),
+            train_annotated_distribution=train_annotated_distribution,
+            test_set_n=test_set_n,
+            test_annotated_n=test_annotated_n,
+            test_annotated_distribution=test_annotated_distribution,
+            sm_10cv=sm_10cv,
+        )
 
     def get_projection(self, username: str, scheme: str) -> ProjectionOutModel | None:
         """
@@ -673,11 +692,7 @@ class Project:
 
         return ProjectStateModel(
             params=self.params,
-            next=NextProjectStateModel(
-                methods_min=["fixed", "random"],
-                methods=["fixed", "random", "maxprob", "active"],
-                sample=["untagged", "all", "tagged"],
-            ),
+            next=self.selection_params,
             schemes=self.schemes.state(),
             features=self.features.state(),
             simplemodel=self.simplemodels.state(),
@@ -714,7 +729,7 @@ class Project:
         if format == "xlsx":
             data.to_excel(path.joinpath(file_name))
 
-        return FileResponse(path=path.joinpath(file_name), name=file_name)
+        return FileResponse(path=path.joinpath(file_name), filename=file_name)
 
     def export_data(
         self, scheme: str, dataset: str = "train", format: str = "parquet", dropna: bool = True
@@ -754,7 +769,7 @@ class Project:
             data["timestamp"] = data["timestamp"].dt.tz_localize(None)
             data.to_excel(path.joinpath(file_name))
 
-        return FileResponse(path.joinpath(file_name), file_name)
+        return FileResponse(path.joinpath(file_name), filename=file_name)
 
     def export_generations(
         self, project_slug: str, username: str, params: ExportGenerationsParams
@@ -1027,7 +1042,7 @@ class Project:
             if process.future is None or not process.future.done():
                 continue
 
-            # get the future
+            # get the future for process done
             future = process.future
 
             # manage different tasks
@@ -1049,7 +1064,7 @@ class Project:
                     )
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in bert model training",
                             str(ex),
                         ]
@@ -1080,7 +1095,7 @@ class Project:
                 except Exception as ex:
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in model predicting",
                             str(ex),
                         ]
@@ -1101,7 +1116,9 @@ class Project:
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
+                    self.errors.append(
+                        [datetime.now(config.timezone), "simplemodel failed", str(ex)]
+                    )
                     logging.error("Simplemodel failed", ex)
                 finally:
                     self.computing.remove(e)
@@ -1125,7 +1142,7 @@ class Project:
                     print("Feature added", feature_computation.name)
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(TIMEZONE), "Error in feature processing", str(ex)]
+                        [datetime.now(config.timezone), "Error in feature processing", str(ex)]
                     )
                     print("Error in feature processing", ex)
                 finally:
@@ -1143,7 +1160,7 @@ class Project:
                 except Exception as ex:
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in feature vizualisation queue",
                             str(ex),
                         ]
@@ -1173,7 +1190,7 @@ class Project:
                 except Exception as ex:
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in generation queue",
                             getattr(ex, "message", repr(ex)),
                         ]
@@ -1207,7 +1224,7 @@ class Project:
             except Exception as ex:
                 self.errors.append(
                     [
-                        datetime.now(TIMEZONE),
+                        datetime.now(config.timezone),
                         "Error in adding prediction",
                         str(ex),
                     ]
@@ -1215,7 +1232,7 @@ class Project:
                 logging.error("Error in addind prediction", ex)
 
         # clean errors older than 15 minutes
-        delta = datetime.now(TIMEZONE) - timedelta(minutes=15)
+        delta = datetime.now(config.timezone) - timedelta(minutes=15)
         self.errors = [error for error in self.errors if error[0] >= delta]
 
         return None

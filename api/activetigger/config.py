@@ -2,6 +2,7 @@ import os
 from collections.abc import Callable
 from enum import StrEnum
 
+import pytz
 from dotenv import load_dotenv
 
 
@@ -53,11 +54,13 @@ class Config(metaclass=_Singleton):
     n_workers_gpu: int
     n_workers_cpu: int
     update_timeout: int
-    default_user: str
-    test_file: str
-    train_file: str
-    features_file: str
-    data_all: str
+    timezone: pytz.BaseTzInfo
+    default_user: str = "root"
+    test_file: str = "test.parquet"
+    train_file: str = "train.parquet"
+    features_file: str = "features.parquet"
+    data_all: str = "data_all.parquet"
+    file_models: str = "bert_models.csv"
 
     def __init__(self):
         # for variables which needs cast or other treatment we do that work in the constructor
@@ -75,11 +78,7 @@ class Config(metaclass=_Singleton):
             "DATABASE_URL",
             f"sqlite:///{os.path.join(self.data_path, 'projects', 'activetigger.db')}",
         )
-        self.data_all = "data_all.parquet"
-        self.features_file = "features.parquet"
-        self.train_file = "train.parquet"
-        self.test_file = "test.parquet"
-        self.default_user = "root"
+        self.timezone = pytz.timezone("Europe/Paris")
 
 
 # the configuration is safe to share as it's a singleton (initialized only once)
