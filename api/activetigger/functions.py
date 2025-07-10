@@ -3,7 +3,7 @@ import os
 import string
 import unicodedata
 from getpass import getpass
-from typing import cast
+from typing import Any, cast
 from urllib.parse import quote
 
 import bcrypt
@@ -40,7 +40,7 @@ def slugify(text: str, way: str = "file") -> str:
         raise ValueError("Invalid way parameter. Use 'file' or 'url'.")
 
 
-def remove_punctuation(text):
+def remove_punctuation(text) -> str:
     return text.translate(str.maketrans("", "", string.punctuation))
 
 
@@ -85,7 +85,7 @@ def get_hash(text: str) -> bytes:
     return hashed
 
 
-def compare_to_hash(text: str, hash: str | bytes):
+def compare_to_hash(text: str, hash: str | bytes) -> bool:
     """
     Compare string to its hash
     """
@@ -95,8 +95,7 @@ def compare_to_hash(text: str, hash: str | bytes):
         bytes_hash = hash.encode()
     else:
         bytes_hash = cast(bytes, hash)
-    r = bcrypt.checkpw(text.encode(), bytes_hash)
-    return r
+    return bcrypt.checkpw(text.encode(), bytes_hash)
 
 
 def tokenize(texts: Series, language: str = "fr", batch_size=100) -> Series:
@@ -110,6 +109,7 @@ def tokenize(texts: Series, language: str = "fr", batch_size=100) -> Series:
         "de": "de_core_news_sm",
         "ja": "ja_core_news_sm",
         "cn": "zh_core_web_sm",
+        "es": "es_core_news_sm",
     }
     if language not in models:
         raise Exception(f"Language {language} is not supported")
@@ -141,10 +141,6 @@ def get_gpu_memory_info() -> GpuInformationModel:
         )
 
 
-def get_gpu_estimate():
-    return None
-
-
 def truncate_text(text: str, max_tokens: int = 512):
     """
     Limit a text to a specific number of tokens
@@ -173,7 +169,7 @@ def cat2num(df):
     return encoded
 
 
-def clean_regex(text: str):
+def clean_regex(text: str) -> str:
     """
     Remove special characters from a string
     """
@@ -190,7 +186,6 @@ def encrypt(text: str | None, secret_key: str | None) -> str:
     """
     if text is None or secret_key is None:
         raise Exception("Text or secret key is None")
-    print(secret_key)
     cipher = Fernet(secret_key)
     encrypted_token = cipher.encrypt(text.encode())
     return encrypted_token.decode()
@@ -235,32 +230,22 @@ def get_metrics(
         round(i, decimals)
         for i in recall_score(list(Y_true), list(Y_pred), average=None, labels=labels)
     ]
-    f1_val = round(f1_score(Y_true, Y_pred, average="macro"), decimals)
-    recall_val = round(recall_score(Y_true, Y_pred, average="micro"), decimals)
-    precision_val = round(
-        precision_score(list(Y_true), list(Y_pred), average="micro", zero_division=1),
-        decimals,
-    )
 
     table = pd.DataFrame(confusion, index=labels, columns=labels)
     table["Total"] = table.sum(axis=1)
     table = table.T
     table["Total"] = table.sum(axis=1)
-    #    table["F1"] = list(f1) + [f1_val]
-    #    table["Recall"] = list(recall) + [recall_val]
-    #    table["Precision"] = list(precision) + [precision_val]
-    #    table = table.T
 
     # Create a table of false predictions
     filter_false_prediction = Y_true != Y_pred
     if texts is not None:
-        false_prediction = pd.concat(
+        tab = pd.concat(
             [Y_true[filter_false_prediction], Y_pred[filter_false_prediction], texts],
             axis=1,
             join="inner",
         ).reset_index()
-        false_prediction.columns = ["id", "label", "prediction", "text"]
-        false_prediction = false_prediction.to_dict(orient="records")
+        tab.columns = pd.Index(["id", "label", "prediction", "text"])
+        false_prediction = tab.to_dict(orient="records")
     else:
         false_prediction = filter_false_prediction.loc[lambda x: x].index.tolist()
 
@@ -293,7 +278,7 @@ def get_metrics(
         ),
         confusion_matrix=confusion.tolist(),
         false_predictions=false_prediction,
-        table=table.to_dict(orient="split"),
+        table=cast(dict[str, Any], table.to_dict(orient="split")),
     )
     return statistics
 
@@ -312,9 +297,9 @@ def get_dir_size(path: str = ".") -> float:
     return total
 
 
-def process_payload_csv(csv_str: str, cols: list[str]):
+def process_payload_csv(csv_str: str, cols: list[str]) -> pd.DataFrame:
     """
-    Process payload from a CSV file in str
+    Process payload from a CSV file in str to get a DataFrame with specific columns
     """
     csv_buffer = io.StringIO(csv_str)
     df = pd.read_csv(
