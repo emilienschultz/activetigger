@@ -17,7 +17,6 @@ from fastapi.encoders import jsonable_encoder
 from jose import jwt
 from sklearn.datasets import fetch_20newsgroups  # type: ignore[import]
 
-# from slugify import slugify
 from activetigger import __version__
 from activetigger.config import config
 from activetigger.datamodels import (
@@ -38,7 +37,8 @@ logger = logging.getLogger("server")
 
 class Orchestrator:
     """
-    Server to manage backend
+    Server to manage the API
+    Mono-process
     """
 
     db_name: str
@@ -60,43 +60,41 @@ class Orchestrator:
     users: Users
     max_projects: int
 
-    def __init__(self, path, path_models) -> None:
+    def __init__(self, path: str, path_models: str) -> None:
         """
         Start the server
         """
+        self.starting_time = time.time()
 
         self.max_projects = config.max_loaded_projects
-        self.data_all = "data_all.parquet"
-        self.features_file = "features.parquet"
-        self.train_file = "train.parquet"
-        self.test_file = "test.parquet"
-        self.default_user = "root"
+        self.data_all = config.data_all
+        self.features_file = config.features_file
+        self.train_file = config.train_file
+        self.test_file = config.test_file
+        self.default_user = config.default_user
         self.jwt_algorithm = config.jwt_algorithm
         self.n_workers_cpu = config.n_workers_cpu
         self.n_workers_gpu = config.n_workers_gpu
-
-        self.starting_time = time.time()
 
         # Define path
         self.path = Path(path)
         self.path_models = Path(path_models)
 
-        # create directories
+        # create directories parent/static/models
         self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
 
         # attributes of the server
-        self.projects = {}
         self.db_manager = DatabaseManager()
         self.queue = Queue(
             nb_workers_cpu=self.n_workers_cpu,
             nb_workers_gpu=self.n_workers_gpu,
         )
         self.users = Users(self.db_manager)
+        self.projects = {}
 
-        # update
-        # TODO : manage better the closing
+        # update the projects asynchronously
         self._running = True
         self._update_task = asyncio.create_task(self._update(timeout=config.update_timeout))
 
@@ -115,22 +113,44 @@ class Orchestrator:
         """
         print("Ending the server")
         logger.error("Disconnect server")
+        if self._update_task:
+            self._update_task.cancel()
         self._running = False
         del self.queue
         print("Server off")
 
     def reset(self):
+        """
+        Erase the waiting queue and projects in memory
+        """
         self.queue.restart()
         self.projects = {}
 
-    async def _update(self, timeout: int = 1) -> None:
+    async def _update(self, timeout: int = 1, project_lifetime: int = 7200) -> None:
         """
-        Update the queue with new tasks every X seconds
+        Update each project in memory every X seconds.
+        Remove projects that are older than project_lifetime seconds.
         """
         try:
             while self._running:
                 print("update orchestrator - projets in memory:", len(self.projects))
-                self.update()
+                self.queue.clean_old_processes()
+                timer = time.time()
+                to_del = []
+                for p, project in self.projects.items():
+                    # if project existing since one day, remove it from memory
+                    if (timer - project.starting_time) > project_lifetime:
+                        to_del.append(p)
+                        continue
+                    # update the project
+                    project.update_processes()
+
+                # remove the projects from memory
+                for p in to_del:
+                    del self.projects[p]
+
+                # update the information on the state of the project
+                self.server_state = self.get_server_state()
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
             print("Update task cancelled.")
@@ -162,20 +182,17 @@ class Orchestrator:
         return df
 
     def get_server_state(self) -> ServerStateModel:
-        # active projects
-        active_projects = {}
-        for p in self.projects:
-            active_projects[p] = [
-                {
-                    "unique_id": c.unique_id,
-                    "user": c.user,
-                    "kind": c.kind,
-                    "time": c.time,
-                }
-                for c in self.projects[p].computing
-            ]
+        """
+        Build server state
+        """
+        # active projects in the orchestrator
+        active_projects = {
+            p: {"unique_id": c.unique_id, "user": c.user, "kind": c.kind, "time": c.time}
+            for p in self.projects
+            for c in self.projects[p].computing
+        }
 
-        # running processes
+        # running processes in the queue
         queue = {
             i.unique_id: i.model_dump()
             for i in self.queue.state()
@@ -312,7 +329,7 @@ class Orchestrator:
         payload = jwt.decode(token, config.secret_key, algorithms=[self.jwt_algorithm])
         return payload
 
-    def start_project(self, project_slug: str) -> dict:
+    def start_project(self, project_slug: str) -> None:
         """
         Load project in server
         """
@@ -323,7 +340,6 @@ class Orchestrator:
             self.projects[project_slug] = Project(
                 project_slug, self.queue, self.db_manager, path_models=self.path_models
             )
-            return {"success": "Project loaded"}
         except Exception as e:
             raise Exception(
                 f"Error while loading project {project_slug}: {e} - {traceback.format_exc()}"
@@ -335,10 +351,7 @@ class Orchestrator:
         """
         if project_slug not in self.projects:
             return None
-
-        # remove it from memory
         del self.projects[project_slug]
-        return None
 
     def stop_process(
         self, username: str, process_id: str = "all", kind: list | None = None
@@ -367,11 +380,10 @@ class Orchestrator:
         else:
             self.queue.kill(process_id)
 
-    def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
+    def set_project_parameters(self, project: ProjectModel, username: str) -> None:
         """
         Update project parameters in the DB
         """
-
         # get project
         existing_project = self.db_manager.projects_service.get_project(project.project_slug)
 
@@ -380,20 +392,17 @@ class Orchestrator:
             self.db_manager.projects_service.update_project(
                 project.project_slug, jsonable_encoder(project)
             )
-            return {"success": "project updated"}
         else:
             # Insert a new project
             self.db_manager.projects_service.add_project(
                 project.project_slug, jsonable_encoder(project), username
             )
-            return {"success": "project added"}
 
     def existing_projects(self) -> list:
         """
         Get existing projects
         """
-        existing_projects = self.db_manager.projects_service.existing_projects()
-        return existing_projects
+        return self.db_manager.projects_service.existing_projects()
 
     def create_project(self, params: ProjectBaseModel, username: str) -> str:
         """
@@ -671,11 +680,11 @@ class Orchestrator:
         if project_slug in self.projects:
             del self.projects[project_slug]
 
-    def clean_project(
+    def clean_unfinished_project(
         self, project_slug: str | None = None, project_name: str | None = None
     ) -> None:
         """
-        Clean a project
+        Clean a project that is not loadable
         """
 
         if project_slug is not None:
@@ -695,30 +704,6 @@ class Orchestrator:
             ## remove static files
             if Path(f"{config.data_path}/projects/static/{project_slug_verif}").exists():
                 shutil.rmtree(f"{config.data_path}/projects/static/{project_slug_verif}")
-
-    def update(self):
-        """
-        Update the state of the orchestrator
-        - projects
-        - state of the server
-        """
-        self.queue.clean_old_processes()
-        timer = time.time()
-        to_del = []
-        for p, project in self.projects.items():
-            # if project existing since one day, remove it from memory
-            if (timer - project.starting_time) > 86400:
-                to_del.append(p)
-                continue
-            # update the project
-            project.update_processes()
-
-        # remove the projects from memory
-        for p in to_del:
-            del self.projects[p]
-
-        # update the information on the state of the project
-        self.server_state = self.get_server_state()
 
     def create_dummy_project(self, username: str) -> None:
         """

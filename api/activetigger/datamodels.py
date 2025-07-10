@@ -733,7 +733,7 @@ class GpuInformationModel(BaseModel):
 class ServerStateModel(BaseModel):
     version: str
     queue: dict[str, dict[str, str | None]]
-    active_projects: dict[Any, list[dict[str, Any]]]
+    active_projects: dict[str, dict[str, Any]]
     gpu: GpuInformationModel
     cpu: dict
     memory: dict

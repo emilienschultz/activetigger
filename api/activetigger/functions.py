@@ -25,7 +25,7 @@ from transformers import (  # type: ignore[import]
     BertTokenizer,
 )
 
-from activetigger.datamodels import MLStatisticsModel
+from activetigger.datamodels import GpuInformationModel, MLStatisticsModel
 
 
 def slugify(text: str, way: str = "file") -> str:
@@ -120,22 +120,25 @@ def tokenize(texts: Series, language: str = "fr", batch_size=100) -> Series:
     return pd.Series(textes_tk, index=texts.index)
 
 
-def get_gpu_memory_info() -> dict:
+def get_gpu_memory_info() -> GpuInformationModel:
     """
     Get info on GPU
     """
     if not torch.cuda.is_available():
-        # print("No GPU available")
-        return {"gpu_available": False, "total_memory": 0, "available_memory": 0}
+        return GpuInformationModel(
+            gpu_available=False,
+            total_memory=0.0,
+            available_memory=0.0,
+        )
+    else:
+        torch.cuda.empty_cache()
+        mem = torch.cuda.mem_get_info()
 
-    torch.cuda.empty_cache()
-    mem = torch.cuda.mem_get_info()
-
-    return {
-        "gpu_available": True,
-        "total_memory": round(mem[1] / 1e9, 2),  # Convert to GB
-        "available_memory": round(mem[0] / 1e9, 2),  # Convert to GB
-    }
+        return GpuInformationModel(
+            gpu_available=True,
+            total_memory=round(mem[1] / 1e9, 2),  # Convert to GB
+            available_memory=round(mem[0] / 1e9, 2),  # Convert to GB
+        )
 
 
 def get_gpu_estimate():
