@@ -1,13 +1,40 @@
 import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Callable, Hashable, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 from pandas import DataFrame
 from pydantic import BaseModel, ConfigDict  # for dataframe
 from sklearn.base import BaseEstimator  # type: ignore[import]
 
 # Data model to use of the API
+
+
+class QueueTaskModel(BaseModel):
+    """
+    Task in the queue
+    """
+
+    unique_id: str
+    kind: str
+    project_slug: str
+    state: str
+    future: Optional[Any] = None  # Future object from concurrent.futures
+    event: Any = None  # Event object for signaling
+    starting_time: datetime.datetime
+    queue: str
+    task: Callable[..., Any] | None
+
+
+class QueueStateTaskModel(BaseModel):
+    """
+    Task in the queue with state
+    """
+
+    unique_id: str
+    kind: str
+    state: str
+    exception: Any = None
 
 
 class ProjectBaseModel(BaseModel):
@@ -612,14 +639,6 @@ class ProjectStateModel(BaseModel):
     errors: list[list]
     memory: float | None = None
     last_activity: str | None = None
-
-
-class QueueModel(BaseModel):
-    """
-    Response for current queue
-    """
-
-    content: dict[str, dict[str, Any]]
 
 
 class ProjectDescriptionModel(BaseModel):

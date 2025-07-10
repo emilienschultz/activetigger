@@ -92,7 +92,6 @@ class Orchestrator:
         self.queue = Queue(
             nb_workers_cpu=self.n_workers_cpu,
             nb_workers_gpu=self.n_workers_gpu,
-            path=self.path,
         )
         self.users = Users(self.db_manager)
 
@@ -177,8 +176,11 @@ class Orchestrator:
             ]
 
         # running processes
-        q = self.queue.state()
-        queue = {i: q[i] for i in q if q[i]["state"] in ["pending", "running"]}
+        queue = {
+            i.unique_id: i.model_dump()
+            for i in self.queue.state()
+            if i.state in ["pending", "running"]
+        }
 
         # server state
         cpu = psutil.cpu_percent()
