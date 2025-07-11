@@ -497,6 +497,7 @@ class Project:
         previous = self.schemes.projects_service.get_annotations_by_element(
             self.params.project_slug, next.scheme, element_id
         )
+
         if next.dataset == "test":
             limit = 1200
             context = {}
@@ -531,9 +532,14 @@ class Project:
         Get an element of the database
         Separate train/test dataset
         """
+        history = None
         if dataset == "test" and self.schemes.test is not None:
             if element_id not in self.schemes.test.index:
                 raise Exception("Element does not exist.")
+            if scheme is not None:
+                history = self.schemes.projects_service.get_annotations_by_element(
+                    self.params.project_slug, scheme, element_id
+                )
             return ElementOutModel(
                 element_id=element_id,
                 text=str(self.schemes.test.loc[element_id, "text"]),
@@ -543,7 +549,7 @@ class Project:
                 predict={"label": None, "proba": None},
                 frame=None,
                 limit=1200,
-                history=[],
+                history=history,
             )
 
         if dataset == "train":
@@ -560,9 +566,7 @@ class Project:
                     predict = {"label": predicted_label, "proba": predicted_proba}
 
             # get element tags
-            if scheme is None:
-                history = None
-            else:
+            if scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
                     self.params.project_slug, scheme, element_id
                 )

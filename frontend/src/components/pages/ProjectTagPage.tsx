@@ -413,7 +413,7 @@ export const ProjectTagPage: FC = () => {
                 </div>
               )
             }
-            {phase != 'test' && showDisplayConfig && (
+            {showDisplayConfig && (
               <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
             )}
           </div>
