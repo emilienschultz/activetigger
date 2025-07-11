@@ -190,7 +190,7 @@ class AnnotationModel(BaseModel):
     scheme: str
     element_id: str
     label: str | None
-    dataset: str | None = "train"
+    dataset: str = "train"
     comment: str | None = None
     selection: str | None = None
 

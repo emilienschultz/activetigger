@@ -133,6 +133,8 @@ class SimpleModels:
             raise ValueError("No model for this user")
         if scheme not in self.existing[username]:
             raise ValueError("No model for this scheme")
+        if self.existing[username][scheme].proba is None:
+            raise ValueError("No prediction available for this model")
         return self.existing[username][scheme].proba
 
     def training(self) -> dict[str, list[str]]:

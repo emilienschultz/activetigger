@@ -58,9 +58,6 @@ class Schemes:
         if len(available) == 0:
             self.add_scheme(name="default", labels=[])
 
-    def __repr__(self) -> str:
-        return f"Coding schemes available {self.available()}"
-
     def get_scheme_data(
         self, scheme: str, complete: bool = False, kind: list[str] = ["train"]
     ) -> DataFrame:
@@ -88,9 +85,9 @@ class Schemes:
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "timestamp", "comment"]
         ).set_index("id")
-        df.index = [str(i) for i in df.index]
+        df.index = pd.Index([str(i) for i in df.index])
         if complete:  # all the elements
-            if "test" in kind:
+            if "test" in kind and self.test is not None:
                 if len(kind) > 1:
                     raise Exception("Cannot ask for both train and test")
                 # case if the test, join the text data
@@ -100,7 +97,7 @@ class Schemes:
                 return self.content.join(df, rsuffix="_content")
         return df
 
-    def get_reconciliation_table(self, scheme: str):
+    def get_reconciliation_table(self, scheme: str) -> tuple[DataFrame, list[str]]:
         """
         Get reconciliation table
         TODO : add the filter on action
@@ -172,7 +169,7 @@ class Schemes:
         labels.remove(former_label)
         self.update_scheme(scheme, labels)
 
-    def get_total(self, dataset: str = "train"):
+    def get_total(self, dataset: str = "train") -> int:
         """
         Number of element in the dataset
         """
@@ -308,18 +305,15 @@ class Schemes:
         labels: list[str],
         kind: str = "multiclass",
         user: str = "server",
-    ):
+    ) -> None:
         """
         Add new scheme
         """
         if self.exists(name):
             raise Exception("Scheme already exists")
-
         self.projects_service.add_scheme(self.project_slug, name, labels, kind, user)
 
-        return {"success": "scheme created"}
-
-    def add_label(self, label: str, scheme: str, user: str):
+    def add_label(self, label: str, scheme: str, user: str) -> None:
         """
         Add label in a scheme
         """
@@ -330,15 +324,14 @@ class Schemes:
         if scheme not in available:
             raise Exception("Scheme doesn't exist")
         if available[scheme] is None:
-            available[scheme] = []
+            raise Exception("Scheme is not defined")
         if label in available[scheme].labels:
-            return {"success": "label already in the scheme"}
+            return None
         labels = available[scheme].labels
         labels.append(label)
         self.update_scheme(scheme, labels)
-        return {"success": "scheme updated with a new label"}
 
-    def exists_label(self, scheme: str, label: str):
+    def exists_label(self, scheme: str, label: str) -> bool:
         """
         Test if a label exist in a scheme
         """
@@ -349,7 +342,7 @@ class Schemes:
             return True
         return False
 
-    def delete_label(self, label: str, scheme: str, user: str):
+    def delete_label(self, label: str, scheme: str, user: str) -> None:
         """
         Delete a label in a scheme
         """
@@ -373,16 +366,14 @@ class Schemes:
             self.push_annotation(i, None, scheme, user, "test", "delete")
         # update scheme
         self.update_scheme(scheme, labels)
-        return {"success": "scheme updated removing a label"}
 
-    def update_scheme(self, scheme: str, labels: list):
+    def update_scheme(self, scheme: str, labels: list) -> None:
         """
         Update existing schemes from database
         """
         self.projects_service.update_scheme_labels(self.project_slug, scheme, labels)
-        return {"success": "scheme updated"}
 
-    def duplicate_scheme(self, scheme_name: str, new_scheme_name: str, username: str):
+    def duplicate_scheme(self, scheme_name: str, new_scheme_name: str, username: str) -> None:
         """
         Duplicate a scheme
         """
@@ -398,11 +389,10 @@ class Schemes:
             self.project_slug, scheme_name, new_scheme_name, username
         )
 
-    def rename_scheme(self, old_name: str, new_name: str):
+    def rename_scheme(self, old_name: str, new_name: str) -> None:
         """
         Rename a scheme
         """
-
         schemes = self.available()
 
         if old_name not in schemes:
@@ -412,20 +402,17 @@ class Schemes:
 
         self.projects_service.rename_scheme(self.project_slug, old_name, new_name)
 
-    def delete_scheme(self, name) -> dict:
+    def delete_scheme(self, name) -> None:
         """
         Delete a scheme
         """
-
         schemes = self.available()
-
         if name not in schemes:
             raise Exception("Scheme does not exist")
         if len(schemes) == 1:
             raise Exception("Cannot delete the last scheme")
 
         self.projects_service.delete_scheme(self.project_slug, name)
-        return {"success": "scheme deleted"}
 
     def exists(self, name: str) -> bool:
         """
@@ -451,12 +438,11 @@ class Schemes:
         """
         state of the schemes
         """
-        r = {"project_slug": self.project_slug, "availables": self.available()}
-        return r
+        return {"project_slug": self.project_slug, "availables": self.available()}
 
     def delete_annotation(
-        self, element_id: str, scheme: str, dataset: str | None, user: str = "server"
-    ) -> bool:
+        self, element_id: str, scheme: str, dataset: str, user: str = "server"
+    ) -> None:
         """
         Delete a recorded tag
         i.e. : add empty label
@@ -478,8 +464,6 @@ class Schemes:
             scheme=scheme,
             annotation=None,
         )
-
-        return True
 
     def push_annotation(
         self,
@@ -533,10 +517,9 @@ class Schemes:
         """
         Get users action for a scheme
         """
-        results = self.db_manager.users_service.get_coding_users(scheme, self.project_slug)
-        return results
+        return self.db_manager.users_service.get_coding_users(scheme, self.project_slug)
 
-    def add_codebook(self, scheme: str, codebook: str, time: str):
+    def add_codebook(self, scheme: str, codebook: str, time: str) -> None:
         """
         Add codebook
         if mismatch between date, keep both and return error
@@ -549,7 +532,6 @@ class Schemes:
                 self.projects_service.update_scheme_codebook(self.project_slug, scheme, codebook)
             except DBException as e:
                 raise Exception("Codebook not added") from e
-            return {"success": "Codebook added"}
         # if scheme have been modified since the last time
         else:
             new_codebook = f"""
@@ -593,7 +575,9 @@ class Schemes:
             raise Exception("No label")
         return label if label in annotation.split("|") else "not-" + label
 
-    def add_file_annotations(self, annotationsdata: AnnotationsDataModel, user: str, dataset: str):
+    def add_file_annotations(
+        self, annotationsdata: AnnotationsDataModel, user: str, dataset: str
+    ) -> None:
         """
         Add annotations from a file
         Create labels if not exist
@@ -642,8 +626,6 @@ class Schemes:
                 f"Some elements annoted in the dataset where not added (index mismatch) or not in the trainset. \
                     Number of elements added : {len(common_id)} (total annotated : {len(df)})"
             )
-
-        # TODO : return message ?
 
     def state(self) -> SchemesProjectStateModel:
         """
