@@ -11,10 +11,10 @@ import traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import pandas as pd
-import psutil
+import pandas as pd  # type: ignore[import]
+import psutil  # type: ignore[import]
 from fastapi.encoders import jsonable_encoder
-from jose import jwt
+from jose import jwt  # type: ignore[import]
 from sklearn.datasets import fetch_20newsgroups  # type: ignore[import]
 
 from activetigger import __version__
@@ -59,6 +59,7 @@ class Orchestrator:
     queue: Queue
     users: Users
     max_projects: int
+    project_creation_ongoing: dict[str, datetime]
 
     def __init__(self, path: str, path_models: str) -> None:
         """
@@ -94,6 +95,9 @@ class Orchestrator:
         self.users = Users(self.db_manager)
         self.projects = {}
 
+        # timestamp of project creation
+        self.project_creation_ongoing = {}
+
         # update the projects asynchronously
         self._running = True
         self._update_task = asyncio.create_task(self._update(timeout=config.update_timeout))
@@ -126,6 +130,31 @@ class Orchestrator:
         self.queue.restart()
         self.projects = {}
 
+    def starting_project_creation(self, project_slug: str) -> None:
+        """
+        Keep information that a project is in creation
+        """
+        # add the project slug to the ongoing projects
+        self.project_creation_ongoing[project_slug] = datetime.now(timezone.utc)
+
+    def ending_project_creation(self, project_slug: str) -> None:
+        """
+        Remove the information that a project is in creation
+        """
+        # remove the project slug from the ongoing projects
+        if project_slug in self.project_creation_ongoing:
+            del self.project_creation_ongoing[project_slug]
+
+    def updating_project_creation(self, delay: int = 120) -> None:
+        print("Project in creation:", len(self.project_creation_ongoing))
+        # remove old project creation (more than 2 minutes)
+        for p in [
+            p
+            for p, t in self.project_creation_ongoing.items()
+            if (datetime.now(timezone.utc) - t).total_seconds() > delay
+        ]:
+            self.ending_project_creation(p)
+
     async def _update(self, timeout: int = 1, project_lifetime: int = 7200) -> None:
         """
         Update each project in memory every X seconds.
@@ -151,6 +180,7 @@ class Orchestrator:
 
                 # update the information on the state of the project
                 self.server_state = self.get_server_state()
+                self.updating_project_creation()
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
             print("Update task cancelled.")
@@ -651,6 +681,9 @@ class Orchestrator:
 
         if params.force_computation:
             print("Force computation of the features")
+
+        # ending project creation
+        self.ending_project_creation(project_slug)
 
         return project_slug
 

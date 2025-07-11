@@ -7,13 +7,13 @@ from fastapi import (
     Request,
 )
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
+from jose import JWTError  # type: ignore[import]
 
 from activetigger.datamodels import (
-    ProjectModel,
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
+from activetigger.project import Project
 
 
 def get_orchestrator():
@@ -45,7 +45,7 @@ def manage_fifo_queue():
             )
 
 
-async def get_project(project_slug: str) -> ProjectModel:
+async def get_project(project_slug: str) -> Project:
     """
     Dependency to get existing project
     - if already loaded, return it

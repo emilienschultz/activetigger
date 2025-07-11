@@ -1,7 +1,7 @@
 import io
 from typing import Annotated
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from fastapi import (
     APIRouter,
     Depends,

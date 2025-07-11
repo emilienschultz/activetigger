@@ -4,6 +4,8 @@
 
 import logging
 import os
+import random
+import time
 from pathlib import Path
 from typing import Annotated, List
 
@@ -55,6 +57,9 @@ async def new_project_file(file: UploadFile, username: str, project_name: str) -
     project_slug = orchestrator.check_project_name(project_name)
     project_path = Path(f"{config.data_path}/projects/{project_slug}")
 
+    # setting the project in creation
+    orchestrator.starting_project_creation(project_slug)
+
     if file.filename is None:
         raise Exception("Problem with the file name")
 
@@ -84,6 +89,10 @@ async def upload_file(
     use: type de file
     """
     test_rights("manage files", current_user.username)
+
+    # add a delay if projects are already being created
+    if len(orchestrator.project_creation_ongoing) >= 3:
+        time.sleep(random.randint(1, 4))
 
     # check if the project does not already exist
     if orchestrator.exists(project_name):
