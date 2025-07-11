@@ -68,8 +68,7 @@ export const MonitorPage: FC = () => {
     },
   ];
 
-  console.log(userStatistics);
-
+  console.log(activeProjects);
   return (
     <PageLayout currentPage="monitor">
       <div className="container-fluid">

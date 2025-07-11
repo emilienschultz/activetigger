@@ -153,6 +153,7 @@ class Orchestrator:
             for p, t in self.project_creation_ongoing.items()
             if (datetime.now(timezone.utc) - t).total_seconds() > delay
         ]:
+            print("The project", p, "is still not created, remove it")
             self.ending_project_creation(p)
 
     async def _update(self, timeout: int = 1, project_lifetime: int = 7200) -> None:
@@ -217,9 +218,11 @@ class Orchestrator:
         """
         # active projects in the orchestrator
         active_projects = {
-            p: {"unique_id": c.unique_id, "user": c.user, "kind": c.kind, "time": c.time}
+            p: [
+                {"unique_id": c.unique_id, "user": c.user, "kind": c.kind, "time": c.time}
+                for c in self.projects[p].computing
+            ]
             for p in self.projects
-            for c in self.projects[p].computing
         }
 
         # running processes in the queue
