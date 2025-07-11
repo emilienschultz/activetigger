@@ -2,7 +2,7 @@ import os
 from collections.abc import Callable
 from enum import StrEnum
 
-import pytz
+import pytz  # type: ignore
 from dotenv import load_dotenv
 
 
@@ -61,6 +61,7 @@ class Config(metaclass=_Singleton):
     features_file: str = "features.parquet"
     data_all: str = "data_all.parquet"
     file_models: str = "bert_models.csv"
+    simplemodels_file: str = "simplemodels.pickle"
 
     def __init__(self):
         # for variables which needs cast or other treatment we do that work in the constructor

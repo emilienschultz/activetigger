@@ -3,7 +3,7 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Callable, Literal, Optional
 
-from pandas import DataFrame
+from pandas import DataFrame  # type: ignore[import]
 from pydantic import BaseModel, ConfigDict  # for dataframe
 from sklearn.base import BaseEstimator  # type: ignore[import]
 
@@ -150,7 +150,8 @@ class UserModel(BaseModel):
     """
 
     username: str
-    status: str | None
+    status: str | None = None
+    contact: str | None = None
 
 
 class UserInDBModel(UserModel):
@@ -166,7 +167,7 @@ class UsersServerModel(BaseModel):
     list of users on the server
     """
 
-    users: dict[str, dict[str, str]]
+    users: dict[str, UserModel]
     auth: list[str]
 
 
@@ -596,9 +597,27 @@ class FeaturesProjectStateModel(BaseModel):
     training: dict[str, dict[str, str | None]]
 
 
+class SimpleModelOutModel(BaseModel):
+    """
+    Trained simplemodel
+    """
+
+    features: list
+    model: str
+    params: (
+        dict[str, str | float | bool | list | None]
+        | dict[str, dict[str, str | float | bool | None]]
+        | None
+    )
+    scheme: str
+    username: str
+    statistics: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
+
+
 class SimpleModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
-    available: dict[str, dict[str, dict[str, Any]]]
+    available: dict[str, dict[str, SimpleModelOutModel]]
     training: dict[str, list[str]]
 
 
@@ -765,24 +784,6 @@ class FitModelResults(BaseModel):
     statistics: MLStatisticsModel
     statistics_cv10: MLStatisticsModel | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-
-class SimpleModelOutModel(BaseModel):
-    """
-    Trained simplemodel
-    """
-
-    features: list
-    model: str
-    params: (
-        dict[str, str | float | bool | list | None]
-        | dict[str, dict[str, str | float | bool | None]]
-        | None
-    )
-    scheme: str
-    username: str
-    statistics: MLStatisticsModel
-    statistics_cv10: MLStatisticsModel | None = None
 
 
 class ReturnTaskPredictModel(BaseModel):

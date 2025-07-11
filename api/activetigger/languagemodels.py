@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Optional, cast
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from fastapi.responses import FileResponse
 from pandas import DataFrame
 

@@ -7,7 +7,7 @@ from typing import Any, cast
 from urllib.parse import quote
 
 import bcrypt
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 import spacy
 import torch
 from cryptography.fernet import Fernet

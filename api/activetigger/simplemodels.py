@@ -5,7 +5,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 from pydantic import BaseModel, ConfigDict
 from sklearn.base import BaseEstimator  # type: ignore[import]
@@ -15,6 +15,7 @@ from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
 
+from activetigger.config import config
 from activetigger.datamodels import (
     KnnParams,
     LassoParams,
@@ -59,7 +60,7 @@ class SimpleModels:
     path: Path
     queue: Queue
     available_models: dict[str, Any]
-    existing: dict
+    existing: dict[str, dict[str, SimpleModelComputing]]
     computing: list
     save_file: str
 
@@ -80,28 +81,30 @@ class SimpleModels:
         self.computing: list = computing  # currently under computation
         self.path: Path = path  # path to operate
         self.queue = queue  # access to executor for multiprocessing
-        self.save_file: str = "simplemodels.pickle"  # file to save current state
+        self.save_file: str = config.simplemodels_file  # file to save current state
         self.loads()  # load existing simplemodels for the project
 
     def __repr__(self) -> str:
         return str(self.available())
 
-    def available(self) -> dict[str, dict[str, dict[str, Any]]]:
+    def available(self) -> dict[str, dict[str, SimpleModelOutModel]]:
         """
         Available simplemodels
         """
-        r: dict[str, dict[str, dict[str, Any]]] = {}
+        r: dict[str, dict[str, SimpleModelOutModel]] = {}
         for u in self.existing:
             r[u] = {}
             for s in self.existing[u]:
                 sm = self.existing[u][s]
-                r[u][s] = {
-                    "model": sm.name,
-                    "params": sm.model_params,
-                    "features": sm.features,
-                    "statistics": sm.statistics,
-                    "statistics_cv10": sm.statistics_cv10,
-                }
+                r[u][s] = SimpleModelOutModel(
+                    scheme=s,
+                    username=u,
+                    model=sm.name,
+                    params=sm.model_params,
+                    features=sm.features,
+                    statistics=sm.statistics,
+                    statistics_cv10=sm.statistics_cv10,
+                )
         return r
 
     def get(self, scheme: str, username: str) -> SimpleModelOutModel | None:
@@ -111,7 +114,7 @@ class SimpleModels:
         if username in self.existing:
             if scheme in self.existing[username]:
                 sm = self.existing[username][scheme]
-                r = SimpleModelOutModel(
+                return SimpleModelOutModel(
                     model=sm.name,
                     params=sm.model_params,
                     features=sm.features,
@@ -120,8 +123,6 @@ class SimpleModels:
                     scheme=scheme,
                     username=username,
                 )
-                return r
-
         return None
 
     def get_prediction(self, scheme: str, username: str) -> DataFrame:
@@ -132,17 +133,15 @@ class SimpleModels:
             raise ValueError("No model for this user")
         if scheme not in self.existing[username]:
             raise ValueError("No model for this scheme")
-        sm = self.existing[username][scheme]
-        return sm.proba
+        return self.existing[username][scheme].proba
 
     def training(self) -> dict[str, list[str]]:
         """
         Currently under training
         """
-        r = {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
-        return r
+        return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
 
-    def exists(self, user: str, scheme: str):
+    def exists(self, user: str, scheme: str) -> bool:
         """
         Test if a simplemodel exists for a user/scheme
         """
@@ -151,17 +150,19 @@ class SimpleModels:
                 return True
         return False
 
-    def get_model(self, user: str, scheme: str):
+    def get_model(self, user: str, scheme: str) -> SimpleModelComputing:
         """
         Select a specific model in the repo
         """
         if user not in self.existing:
-            return "This user has no model"
+            raise Exception("The user does not exist")
         if scheme not in self.existing[user]:
-            return "The model for this scheme does not exist"
+            raise Exception("The scheme does not exist")
         return self.existing[user][scheme]
 
-    def load_data(self, data, col_label, col_predictors, standardize):
+    def load_data(
+        self, data, col_label, col_predictors, standardize
+    ) -> tuple[DataFrame, DataFrame, list]:
         """
         Load data
         """
@@ -185,7 +186,7 @@ class SimpleModels:
 
         return X, Y, labels
 
-    def standardize(self, df):
+    def standardize(self, df) -> DataFrame:
         """
         Apply standardization
         """
@@ -206,7 +207,7 @@ class SimpleModels:
         standardize: bool = True,
         model_params: dict | None = None,
         cv10: bool = False,
-    ):
+    ) -> None:
         """
         Add a new simplemodel for a user and a scheme
         """
@@ -300,7 +301,7 @@ class SimpleModels:
             )
         )
 
-    def dumps(self):
+    def dumps(self) -> None:
         """
         Dumps all simplemodels to a pickle
         """
@@ -319,8 +320,8 @@ class SimpleModels:
 
     def add(self, element: SimpleModelComputing, results) -> None:
         """
-        Add simplemodel after computation
-        TODO : refactor to avoid using element.model
+        Add simplemodel after computation in the list of existing simplemodels
+        And save the element
         """
 
         element.model = results.model
@@ -332,7 +333,12 @@ class SimpleModels:
         self.existing[element.user][element.scheme] = element
         self.dumps()
 
-    def export_prediction(self, scheme: str, username: str, format: str = "csv"):
+    def export_prediction(
+        self, scheme: str, username: str, format: str = "csv"
+    ) -> tuple[BytesIO, dict[str, str]]:
+        """
+        Function to export the prediction of a simplemodel
+        """
         # get data
         table = self.get_prediction(scheme, username)
         # convert to payload

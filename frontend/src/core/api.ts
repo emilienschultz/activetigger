@@ -947,7 +947,7 @@ export function useUsers() {
 
   const users = useAsyncMemo(async () => {
     const res = await api.GET('/users', {});
-    if (!res.error) return res.data.users as unknown as string[];
+    if (!res.error) return res.data;
     return null;
   }, [fetchTrigger]);
 

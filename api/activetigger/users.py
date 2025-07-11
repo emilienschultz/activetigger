@@ -1,13 +1,12 @@
 import logging
-import os
 from pathlib import Path
 
 import yaml  # type: ignore[import]
 
-from activetigger.datamodels import UserInDBModel, UserStatistics
+from activetigger.config import config
+from activetigger.datamodels import UserInDBModel, UserModel, UserStatistics
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import compare_to_hash, get_dir_size, get_hash
-from activetigger.config import config
 
 
 class Users:
@@ -37,7 +36,6 @@ class Users:
         """
         Get user auth for a project
         """
-        print("function")
         return self.db_manager.projects_service.get_project_auth(project_slug)
 
     def set_auth(self, username: str, project_slug: str, status: str) -> None:
@@ -76,17 +74,16 @@ class Users:
             auth = self.db_manager.projects_service.get_user_auth(username, project_slug)
         return auth
 
-    def existing_users(self, username: str = "root", active: bool = True) -> dict:
+    def existing_users(self, username: str = "root", active: bool = True) -> dict[str, UserModel]:
         """
         Get existing users which have been created by one user
         (except root which can't be modified)
         TODO : better rules
         """
         if username == "root":
-            users = self.db_manager.users_service.get_users_created_by("all", active)
+            return self.db_manager.users_service.get_users_created_by("all", active)
         else:
-            users = self.db_manager.users_service.get_users_created_by(username, active)
-        return users
+            return self.db_manager.users_service.get_users_created_by(username, active)
 
     def add_user(
         self,
@@ -146,7 +143,7 @@ class Users:
             raise Exception("Wrong password")
         return user
 
-    def auth(self, username: str, project_slug: str):
+    def auth(self, username: str, project_slug: str) -> str | None:
         """
         Check auth for a specific project
         """
@@ -185,9 +182,7 @@ class Users:
         Get total size for user projects in Gb
         """
         projects = self.db_manager.users_service.get_user_created_projects(username)
-        return sum(
-            [get_dir_size(f"{config.data_path}/projects/{project}") for project in projects]
-        )
+        return sum([get_dir_size(f"{config.data_path}/projects/{project}") for project in projects])
 
     def get_storage_limit(self, username: str) -> float:
         """

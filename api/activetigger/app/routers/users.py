@@ -13,7 +13,6 @@ from activetigger.datamodels import (
     AuthActions,
     UserInDBModel,
     UserModel,
-    UsersServerModel,
     UserStatistics,
 )
 from activetigger.orchestrator import orchestrator
@@ -28,7 +27,6 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
     """
     try:
         orchestrator.revoke_access_token(token)
-        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -49,15 +47,12 @@ async def read_users_me(
 @router.get("/users", tags=["users"])
 async def existing_users(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> UsersServerModel:
+) -> dict[str, UserModel]:
     """
     Get existing users
     """
     try:
-        return UsersServerModel(
-            users=orchestrator.users.existing_users(),
-            auth=["manager", "annotator"],
-        )
+        return orchestrator.users.existing_users()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -93,7 +88,6 @@ async def create_user(
             background_tasks.add_task(orchestrator.create_dummy_project, username_to_create)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
-    return None
 
 
 @router.post("/users/delete", dependencies=[Depends(verified_user)], tags=["users"])
@@ -110,7 +104,6 @@ async def delete_user(
         orchestrator.users.delete_user(user_to_delete, current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
-    return None
 
 
 @router.post("/users/changepwd", dependencies=[Depends(verified_user)], tags=["users"])
@@ -125,7 +118,6 @@ async def change_password(
     """
     try:
         orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
-        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

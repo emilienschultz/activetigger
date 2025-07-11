@@ -2,7 +2,7 @@ from io import StringIO
 from pathlib import Path
 from typing import cast
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 
 from activetigger.datamodels import (
