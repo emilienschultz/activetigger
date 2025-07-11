@@ -29,6 +29,7 @@ interface Row {
 /**
  * MonitorPage component displays server monitoring information including logs, resources, active projects, and user statistics.
  */
+
 export const MonitorPage: FC = () => {
   const { activeProjects, gpu, cpu, memory, disk, reFetchQueueState } = useGetServer(null);
   const { restartQueue } = useRestartQueue();
