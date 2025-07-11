@@ -151,5 +151,5 @@ class Projections:
 
         return FileResponse(
             path=self.path.joinpath(file_name),
-            name=file_name,
+            filename=file_name,
         )

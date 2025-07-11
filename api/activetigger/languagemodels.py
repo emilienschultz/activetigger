@@ -423,7 +423,7 @@ class LanguageModels:
 
         return FileResponse(
             path=path,
-            name=file_name,
+            filename=file_name,
         )
 
     def export_bert(self, name: str) -> StaticFileModel:
