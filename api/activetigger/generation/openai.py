@@ -2,6 +2,7 @@ import logging
 
 from openai import OpenAI as OpenAIClient
 from openai import RateLimitError
+from openai.types.chat import ChatCompletionUserMessageParam
 
 from activetigger.generation.client import GenerationModelClient
 
@@ -17,16 +18,12 @@ class OpenAI(GenerationModelClient):
             response = self.client.chat.completions.create(
                 model=model,
                 messages=[
-                    {
-                        "role": "developer",
-                        "content": "Your are a careful assistant who annotates texts for a research project in a JSON format. You follow precisely the guidelines, which can be in different languages. ",
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },
+                    ChatCompletionUserMessageParam(
+                        role="user",
+                        content=prompt,
+                    ),
                 ],
-            )  # type: ignore
+            )
         except RateLimitError as rle:
             msg = "Not enough credits on this endpoint"
             logging.error(msg)
