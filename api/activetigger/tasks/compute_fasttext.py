@@ -34,7 +34,7 @@ class ComputeFasttext(BaseTask):
         self.path_models = path_models
         self.language = language
         self.model = model
-        event: Optional[multiprocessing.synchronize.Event] = (None,)
+        event: Optional[multiprocessing.synchronize.Event] = None
 
     def __call__(self) -> DataFrame:
         """

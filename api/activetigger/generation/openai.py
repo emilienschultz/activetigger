@@ -26,7 +26,7 @@ class OpenAI(GenerationModelClient):
                         "content": prompt,
                     },
                 ],
-            )
+            )  # type: ignore
         except RateLimitError as rle:
             msg = "Not enough credits on this endpoint"
             logging.error(msg)

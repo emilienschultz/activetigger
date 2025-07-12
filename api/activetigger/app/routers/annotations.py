@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import (
     APIRouter,
@@ -267,7 +267,10 @@ async def get_reconciliation_table(
     """
     try:
         df, users = project.schemes.get_reconciliation_table(scheme)
-        return ReconciliationModel(table=df.to_dict(orient="records"), users=users)
+        return ReconciliationModel(
+            table=cast(list[dict[str, str | dict[str, str]]], df.to_dict(orient="records")),
+            users=users,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

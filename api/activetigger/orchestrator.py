@@ -407,7 +407,7 @@ class Orchestrator:
                 for process in processes[project]:
                     self.queue.kill(process.unique_id)
                     if process.kind == "train_bert":
-                        cast(LMComputing, process)
+                        process = cast(LMComputing, process)
                         self.db_manager.language_models_service.delete_model(
                             project, process.model_name
                         )
