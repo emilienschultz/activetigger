@@ -10,6 +10,11 @@ from sklearn.base import BaseEstimator  # type: ignore[import]
 # Data model to use of the API
 
 
+class PredictedLabel(BaseModel):
+    label: str | None
+    proba: float | None
+
+
 class QueueTaskModel(BaseModel):
     """
     Task in the queue
@@ -137,7 +142,7 @@ class ElementOutModel(BaseModel):
     context: dict[str, Any]
     selection: str
     info: str | None
-    predict: dict[str, Any]
+    predict: PredictedLabel
     frame: list | None
     limit: int | None
     history: list | None = None
@@ -274,6 +279,12 @@ class LMParametersModelTrained(LMParametersModel):
 class LMParametersDbModel(LMParametersModel):
     predicted: bool = False
     compressed: bool = False
+
+
+class LMStatusModel(BaseModel):
+    predicted: bool = False
+    tested: bool = False
+    predicted_external: bool = False
 
 
 class BertModelModel(BaseModel):
@@ -467,6 +478,14 @@ class LMComputing(ProcessComputing):
     params: dict[str, Any] | None = None
 
 
+class LMComputingOutModel(BaseModel):
+    name: str
+    status: str
+    progress: float | None = None
+    loss: dict[str, dict] | None = None
+    epochs: float | None = None
+
+
 class ProjectionComputing(ProcessComputing):
     kind: Literal["projection"]
     name: str
@@ -623,8 +642,8 @@ class SimpleModelsProjectStateModel(BaseModel):
 
 class LanguageModelsProjectStateModel(BaseModel):
     options: list[dict[str, Any]]
-    available: dict[str, dict[str, dict[str, bool]]]
-    training: dict[str, dict[str, str | float | int | dict | None]]
+    available: dict[str, dict[str, LMStatusModel]]
+    training: dict[str, LMComputingOutModel]
     base_parameters: LMParametersModel
 
 

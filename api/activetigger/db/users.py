@@ -81,21 +81,6 @@ class UsersService:
         with self.SessionMaker.begin() as session:
             _ = session.execute(update(Users).filter_by(user_name=user_name).values(key=password))
 
-    def get_distinct_users(self, project_slug: str, timespan: int | None) -> Sequence[Users]:
-        with self.SessionMaker() as session:
-            stmt = (
-                select(Projects.user)
-                .join_from(Projects, Users)
-                .where(Projects.project_slug == project_slug)
-                .distinct()
-            )
-            if timespan:
-                time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
-                stmt = stmt.join(Annotations).where(
-                    Annotations.time > time_threshold,
-                )
-            return session.scalars(stmt).all()
-
     def get_current_users(self, timespan: int = 600):
         with self.SessionMaker() as session:
             time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)

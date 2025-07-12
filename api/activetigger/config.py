@@ -79,6 +79,7 @@ class Config(metaclass=_Singleton):
             "DATABASE_URL",
             f"sqlite:///{os.path.join(self.data_path, 'projects', 'activetigger.db')}",
         )
+        self.model_path = os.environ.get("MODEL_PATH", os.path.join(self.data_path, "models"))
         self.timezone = pytz.timezone("Europe/Paris")
 
 

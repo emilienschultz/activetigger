@@ -26,6 +26,7 @@ from activetigger.datamodels import (
     LMComputing,
     NextInModel,
     NextProjectStateModel,
+    PredictedLabel,
     ProjectDescriptionModel,
     ProjectionComputing,
     ProjectionOutModel,
@@ -69,7 +70,6 @@ class Project:
     generations: Generations
     projections: Projections
     errors: list[list]
-    selection_params: NextProjectStateModel
 
     def __init__(
         self,
@@ -91,21 +91,18 @@ class Project:
         self.name = project_slug
         self.load_project(project_slug)
 
-        # selection parameters
-        self.selection_params = NextProjectStateModel(
-            methods_min=["fixed", "random"],
-            methods=["fixed", "random", "maxprob", "active"],
-            sample=["untagged", "all", "tagged"],
-        )
-
     def __del__(self):
         print(f"Project {self.name} deleted")
         pass
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Delete completely a project
         """
+
+        if self.params.dir is None:
+            raise ValueError("No directory exists for this project")
+
         # remove from database
         try:
             self.db_manager.projects_service.delete_project(self.params.project_slug)
@@ -122,7 +119,7 @@ class Project:
         if Path(f"{config.data_path}/projects/static/{self.name}").exists():
             shutil.rmtree(f"{config.data_path}/projects/static/{self.name}")
 
-    def load_project(self, project_slug: str):
+    def load_project(self, project_slug: str) -> None:
         """
         Load existing project
         """
@@ -457,15 +454,15 @@ class Project:
                 raise Exception("Simplemodel doesn't exist")
             if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
-            sm = self.simplemodels.get_model(username, next.scheme)  # get model
-            proba = sm.proba.reindex(f.index)
+            prediction = self.simplemodels.get_prediction(username, next.scheme)  # get model
+            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
-            ss = (
+            ss_maxprob = (
                 proba[f][next.label_maxprob]
                 .drop(next.history, errors="ignore")
                 .sort_values(ascending=False)
             )  # get max proba id
-            element_id = ss.index[0]
+            element_id = ss_maxprob.index[0]
             n_sample = f.sum()
             indicator = f"probability: {round(proba.loc[element_id, next.label_maxprob], 2)}"
 
@@ -473,25 +470,25 @@ class Project:
         if next.selection == "active":
             if not self.simplemodels.exists(username, next.scheme):
                 raise ValueError("Simplemodel doesn't exist")
-            sm = self.simplemodels.get_model(username, next.scheme)  # get model
-            proba = sm.proba.reindex(f.index)
+            prediction = self.simplemodels.get_prediction(username, next.scheme)  # get model
+            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
-            ss = (
+            ss_active = (
                 proba[f]["entropy"].drop(next.history, errors="ignore").sort_values(ascending=False)
             )  # get max entropy id
-            element_id = ss.index[0]
+            element_id = ss_active.index[0]
             n_sample = f.sum()
             indicator = round(proba.loc[element_id, "entropy"], 2)
             indicator = f"entropy: {indicator}"
 
         # get prediction of the id if it exists
-        predict = {"label": None, "proba": None}
+        predict = PredictedLabel(label=None, proba=None)
 
         if self.simplemodels.exists(username, next.scheme) and next.dataset == "train":
-            sm = self.simplemodels.get_model(username, next.scheme)
-            predicted_label = sm.proba.loc[element_id, "prediction"]
-            predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
-            predict = {"label": predicted_label, "proba": predicted_proba}
+            prediction = self.simplemodels.get_prediction(username, next.scheme)
+            predicted_label = prediction.loc[element_id, "prediction"]
+            predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
+            predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
         # get all tags already existing for the element
         previous = self.schemes.projects_service.get_annotations_by_element(
@@ -546,7 +543,7 @@ class Project:
                 context={},
                 selection="test",
                 info="",
-                predict={"label": None, "proba": None},
+                predict=PredictedLabel(label=None, proba=None),
                 frame=None,
                 limit=1200,
                 history=history,
@@ -557,13 +554,15 @@ class Project:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
-            predict = {"label": None, "proba": None}
+            predict = PredictedLabel(label=None, proba=None)
             if (user is not None) and (scheme is not None):
                 if self.simplemodels.exists(user, scheme):
-                    sm = self.simplemodels.get_model(user, scheme)
-                    predicted_label = sm.proba.loc[element_id, "prediction"]
-                    predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
-                    predict = {"label": predicted_label, "proba": predicted_proba}
+                    prediction = self.simplemodels.get_prediction(user, scheme)
+                    predicted_label = cast(str, prediction.loc[element_id, "prediction"])
+                    predicted_proba = round(
+                        cast(float, prediction.loc[element_id, predicted_label]), 2
+                    )
+                    predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
             # get element tags
             if scheme is not None:
@@ -673,11 +672,8 @@ class Project:
         data["labels"] = df["labels"].fillna("NA")
 
         # get & add predictions if available
-        if username in self.simplemodels.existing:
-            if scheme in self.simplemodels.existing[username]:
-                data["prediction"] = self.simplemodels.existing[username][scheme].proba[
-                    "prediction"
-                ]
+        if self.simplemodels.exists(username, scheme):
+            data["prediction"] = self.simplemodels.get_prediction(username, scheme)["prediction"]
 
         return ProjectionOutModel(
             index=list(data.index),
@@ -696,7 +692,11 @@ class Project:
 
         return ProjectStateModel(
             params=self.params,
-            next=self.selection_params,
+            next=NextProjectStateModel(
+                methods_min=["fixed", "random"],
+                methods=["fixed", "random", "maxprob", "active"],
+                sample=["untagged", "all", "tagged"],
+            ),
             schemes=self.schemes.state(),
             features=self.features.state(),
             simplemodel=self.simplemodels.state(),
@@ -792,14 +792,9 @@ class Project:
 
         return table
 
-    def get_active_users(self, period: int = 300):
-        """
-        Get current active users on the time period
-        """
-        users = self.db_manager.users_service.get_distinct_users(self.name, period)
-        return users
-
-    def get_process(self, kind: str | list, user: str):
+    def get_process(
+        self, kind: str | list, user: str
+    ) -> list[FeatureComputing | LMComputing | SimpleModelComputing]:
         """
         Get current processes
         """
@@ -807,7 +802,7 @@ class Project:
             kind = [kind]
         return [e for e in self.computing if e.user == user and e.kind in kind]
 
-    def export_raw(self, project_slug: str):
+    def export_raw(self, project_slug: str) -> StaticFileModel:
         """
         Export raw data
         To be able to export, need to copy in the static folder

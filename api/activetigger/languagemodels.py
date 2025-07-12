@@ -14,9 +14,11 @@ from activetigger.config import config
 from activetigger.datamodels import (
     LanguageModelsProjectStateModel,
     LMComputing,
+    LMComputingOutModel,
     LMInformationsModel,
     LMParametersDbModel,
     LMParametersModel,
+    LMStatusModel,
     StaticFileModel,
 )
 from activetigger.db.languagemodels import LanguageModelsService
@@ -89,27 +91,23 @@ class LanguageModels:
         if not self.path.exists():
             os.mkdir(self.path)
 
-    def __repr__(self) -> str:
-        return f"Trained models : {self.available()}"
-
-    def available(self) -> dict[str, dict[str, dict[str, bool]]]:
+    def available(self) -> dict[str, dict[str, LMStatusModel]]:
         """
         Available models
-        TODO : change structure ?
         """
         models = self.language_models_service.available_models(self.project_slug)
         r: dict = {}
         for m in models:
             if m.scheme not in r:
                 r[m.scheme] = {}
-            r[m.scheme][m.name] = {
-                "predicted": m.parameters.get("predicted", False),
-                "tested": m.parameters.get("tested", False),
-                "predicted_external": m.parameters.get("predicted_external", False),
-            }
+            r[m.scheme][m.name] = LMStatusModel(
+                predicted=m.parameters.get("predicted", False),
+                tested=m.parameters.get("tested", False),
+                predicted_external=m.parameters.get("predicted_external", False),
+            )
         return r
 
-    def training(self) -> dict[str, dict[str, dict[str, str | None]]]:
+    def training(self) -> dict[str, LMComputingOutModel]:
         """
         Currently under training
         - name
@@ -118,16 +116,17 @@ class LanguageModels:
         """
 
         r = {
-            e.user: {
-                "name": e.model_name,
-                "status": e.status,
-                "progress": (e.get_progress() if e.get_progress else None),
-                "loss": self.get_loss(e.model_name),
-                "epochs": e.params["epochs"] if e.params else None,
-            }
+            e.user: LMComputingOutModel(
+                name=e.model_name,
+                status=e.status,
+                progress=e.get_progress() if e.get_progress else None,
+                loss=self.get_loss(e.model_name),
+                epochs=e.params["epochs"] if e.params else None,
+            )
             for e in self.computing
             if e.kind in ["bert", "train_bert", "predict_bert"]
         }
+        print(r)
         return r
 
     def delete(self, name: str) -> None:
@@ -178,7 +177,7 @@ class LanguageModels:
         test_size: float = 0.2,
         num_min_annotations: int = 10,
         num_min_annotations_per_label: int = 5,
-    ):
+    ) -> None:
         """
         Manage the training of a model from the API
         """
@@ -257,7 +256,7 @@ class LanguageModels:
         df: DataFrame,
         col_text: str,
         col_labels: str,
-    ):
+    ) -> None:
         """
         Start testing process
         - launch as an independant process functions.test_bert
@@ -321,8 +320,6 @@ class LanguageModels:
             )
         )
 
-        return {"success": "bert testing predicting"}
-
     def start_predicting_process(
         self,
         project_slug: str,
@@ -334,7 +331,7 @@ class LanguageModels:
         col_label: str | None = None,
         col_id: str | None = None,
         batch_size: int = 32,
-    ):
+    ) -> None:
         """
         Start predicting process
         """
@@ -375,9 +372,8 @@ class LanguageModels:
                 get_progress=self.get_progress(name, status="predicting"),
             )
         )
-        return {"success": "bert model predicting"}
 
-    def rename(self, former_name: str, new_name: str):
+    def rename(self, former_name: str, new_name: str) -> None:
         """
         Rename a model (copy it)
         """
@@ -389,7 +385,6 @@ class LanguageModels:
             raise Exception("Model is currently computing")
         self.language_models_service.rename_model(self.project_slug, former_name, new_name)
         os.rename(model.path, model.path.replace(former_name, new_name))
-        return {"success": "model renamed"}
 
     def export_prediction(
         self, name: str, file_name: str = "predict.parquet", format: str = "parquet"
@@ -439,7 +434,7 @@ class LanguageModels:
             path=f"{self.project_slug}/{name}.tar.gz",
         )
 
-    def add(self, element: LMComputing):
+    def add(self, element: LMComputing) -> None:
         """
         Manage computed process for model
         """
@@ -553,17 +548,6 @@ class LanguageModels:
             params = json.load(jsonfile)
         return params
 
-    # def get_trainscores(self, model_name) -> dict | None:
-    #     if (self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json")).exists():
-    #         with open(
-    #             self.path.joinpath(model_name).joinpath("metrics_predict_train.parquet.json"),
-    #             "r",
-    #         ) as f:
-    #             train_scores = json.load(f)
-    #     else:
-    #         train_scores = None
-    #     return train_scores
-
     def get_trainscores(self, model_name) -> dict | None:
         if (self.path.joinpath(model_name).joinpath("metrics_train.json")).exists():
             with open(
@@ -630,18 +614,16 @@ class LanguageModels:
             outofsample_scores=outofsample_scores,
         )
 
-    def get_base_model(self, model_name) -> dict | None:
+    def get_base_model(self, model_name) -> dict:
         """
         Get the base model for a model
         """
         with open(self.path.joinpath(model_name).joinpath("parameters.json"), "r") as jsonfile:
             data = json.load(jsonfile)
             if "base_model" in data:
-                basemodel = data["base_model"]
+                return data["base_model"]
             else:
                 raise ValueError("No model type found in config.json. Please check the file.")
-
-        return basemodel
 
     def state(self) -> LanguageModelsProjectStateModel:
         """
@@ -662,9 +644,7 @@ class LanguageModels:
         if not path.exists():
             raise FileNotFoundError("Evaluation ids file does not exist")
 
-        ids = [str(i) for i in pd.read_csv(path, index_col=0).index]
-
-        return ids
+        return [str(i) for i in pd.read_csv(path, index_col=0).index]
 
     def get_train_ids(self, model_name: str) -> list[str]:
         """
@@ -673,7 +653,4 @@ class LanguageModels:
         path = self.path.joinpath(model_name).joinpath("train_dataset_eval.csv")
         if not path.exists():
             raise FileNotFoundError("Training ids file does not exist")
-
-        ids = [str(i) for i in pd.read_csv(path, index_col=0).index]
-
-        return ids
+        return [str(i) for i in pd.read_csv(path, index_col=0).index]

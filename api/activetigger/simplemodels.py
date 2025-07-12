@@ -125,17 +125,24 @@ class SimpleModels:
                 )
         return None
 
-    def get_prediction(self, scheme: str, username: str) -> DataFrame:
+    def get_model(self, username: str, scheme: str) -> SimpleModelComputing:
+        """
+        Select a specific model in the repo
+        """
+        if username not in self.existing:
+            raise Exception("The user does not exist")
+        if scheme not in self.existing[username]:
+            raise Exception("The scheme does not exist")
+        return self.existing[username][scheme]
+
+    def get_prediction(self, username: str, scheme: str) -> DataFrame:
         """
         Get a specific simplemodel
         """
-        if username not in self.existing:
-            raise ValueError("No model for this user")
-        if scheme not in self.existing[username]:
-            raise ValueError("No model for this scheme")
-        if self.existing[username][scheme].proba is None:
-            raise ValueError("No prediction available for this model")
-        return self.existing[username][scheme].proba
+        sm = self.get_model(username, scheme)
+        if sm.proba is None:
+            raise ValueError("No probability available for this model")
+        return sm.proba
 
     def training(self) -> dict[str, list[str]]:
         """
@@ -151,16 +158,6 @@ class SimpleModels:
             if scheme in self.existing[user]:
                 return True
         return False
-
-    def get_model(self, user: str, scheme: str) -> SimpleModelComputing:
-        """
-        Select a specific model in the repo
-        """
-        if user not in self.existing:
-            raise Exception("The user does not exist")
-        if scheme not in self.existing[user]:
-            raise Exception("The scheme does not exist")
-        return self.existing[user][scheme]
 
     def load_data(
         self, data, col_label, col_predictors, standardize
@@ -342,7 +339,7 @@ class SimpleModels:
         Function to export the prediction of a simplemodel
         """
         # get data
-        table = self.get_prediction(scheme, username)
+        table = self.get_prediction(username, scheme)
         # convert to payload
         if format == "csv":
             output = BytesIO()

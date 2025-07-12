@@ -10,6 +10,7 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import cast
 
 import pandas as pd  # type: ignore[import]
 import psutil  # type: ignore[import]
@@ -20,6 +21,7 @@ from sklearn.datasets import fetch_20newsgroups  # type: ignore[import]
 from activetigger import __version__
 from activetigger.config import config
 from activetigger.datamodels import (
+    LMComputing,
     ProjectBaseModel,
     ProjectModel,
     ProjectSummaryModel,
@@ -61,7 +63,7 @@ class Orchestrator:
     max_projects: int
     project_creation_ongoing: dict[str, datetime]
 
-    def __init__(self, path: str, path_models: str) -> None:
+    def __init__(self) -> None:
         """
         Start the server
         """
@@ -78,8 +80,8 @@ class Orchestrator:
         self.n_workers_gpu = config.n_workers_gpu
 
         # Define path
-        self.path = Path(path)
-        self.path_models = Path(path_models)
+        self.path = Path(config.data_path + "/projects")
+        self.path_models = Path(config.data_path + "/models")
 
         # create directories parent/static/models
         self.path.mkdir(parents=True, exist_ok=True)
@@ -405,6 +407,7 @@ class Orchestrator:
                 for process in processes[project]:
                     self.queue.kill(process.unique_id)
                     if process.kind == "train_bert":
+                        cast(LMComputing, process)
                         self.db_manager.language_models_service.delete_model(
                             project, process.model_name
                         )
@@ -774,7 +777,4 @@ class Orchestrator:
 
 
 # launch the instance
-orchestrator = Orchestrator(
-    config.data_path + "/projects",
-    config.data_path + "/models",
-)
+orchestrator = Orchestrator()
