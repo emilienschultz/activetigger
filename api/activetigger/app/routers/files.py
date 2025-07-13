@@ -1,7 +1,6 @@
 #####
 # Those route are not used for the moment
 #####
-
 import asyncio
 import logging
 import os
@@ -9,6 +8,7 @@ import random
 from pathlib import Path
 from typing import Annotated, List
 
+import aiofiles
 from fastapi import (
     APIRouter,
     Depends,
@@ -49,35 +49,6 @@ async def get_files(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def new_project_file(file: UploadFile, username: str, project_name: str) -> None:
-    """
-    Stream the uploaded file in a new project folder with the same name
-    """
-    # create a folder for the project to be created
-    project_slug = orchestrator.check_project_name(project_name)
-    project_path = Path(f"{config.data_path}/projects/{project_slug}")
-
-    # setting the project in creation
-    orchestrator.starting_project_creation(project_slug)
-
-    if file.filename is None:
-        raise Exception("Problem with the file name")
-
-    try:
-        os.makedirs(project_path)
-
-        # Read and write the file asynchronously
-        with (project_path.joinpath(file.filename)).open("wb") as buffer:
-            while chunk := await file.read(1024 * 1024):  # Read in 1MB chunks
-                print("writing chunk")
-                buffer.write(chunk)
-    except Exception as e:
-        # if failed, remove the project folder
-        if project_path.exists():
-            project_path.rmdir()
-        raise HTTPException(status_code=500, detail=f"File writing error: {str(e)}")
-
-
 @router.post("/files/add/project")
 async def upload_file(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -110,9 +81,23 @@ async def upload_file(
         raise HTTPException(status_code=500, detail="Only csv and parquet files are allowed")
     # try to upload the file
     try:
-        await new_project_file(file, current_user.username, project_name)
-        return None
+        # create a folder for the project to be created
+        project_slug = orchestrator.check_project_name(project_name)
+        project_path = Path(f"{config.data_path}/projects/{project_slug}")
+
+        # setting the project in creation
+        orchestrator.starting_project_creation(project_slug)
+        os.makedirs(project_path)
+
+        # Read and write the file asynchronously
+        async with aiofiles.open(project_path.joinpath(file.filename), "wb") as out_file:
+            while chunk := await file.read(1024 * 1024):
+                await out_file.write(chunk)
+
     except Exception as e:
+        # if failed, remove the project folder
+        if project_path.exists():
+            project_path.rmdir()
         raise HTTPException(status_code=500, detail=str(e))
 
 
