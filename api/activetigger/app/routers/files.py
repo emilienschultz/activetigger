@@ -2,10 +2,10 @@
 # Those route are not used for the moment
 #####
 
+import asyncio
 import logging
 import os
 import random
-import time
 from pathlib import Path
 from typing import Annotated, List
 
@@ -92,7 +92,7 @@ async def upload_file(
 
     # add a delay if projects are already being created
     if len(orchestrator.project_creation_ongoing) >= 3:
-        time.sleep(random.randint(1, 4))
+        await asyncio.sleep(random.randint(1, 4))
 
     # check if the project does not already exist
     if orchestrator.exists(project_name):
