@@ -7,16 +7,14 @@
 
 Hi❗
 
-ActiveTigger[^1] is a text annotation web tool dedicated to computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to annotate text dataset relying on active learning.
+ActiveTigger[^1] is a text annotation web tool dedicated to computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to classify text dataset relying on active learning.
 
 Designed primarily by researchers in social sciences, its use can extend to all users that need to annotate textual data.
 
 > [!IMPORTANT]
-> The app is currently 🚧 **under the beta test phase** 🚧. The stable version is planned for mid-June.
+> The app is currently 🚧 **under the beta test phase** 🚧. The stable version is planned for August 2025.
 
 [Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
-
-Stable version mid-June 2025 (hopefully) 🚧
 
 ## Run the app with Docker (recommended)
 
