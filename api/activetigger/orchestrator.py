@@ -8,6 +8,7 @@ import os
 import shutil
 import time
 import traceback
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import cast
@@ -35,6 +36,10 @@ from activetigger.queue import Queue
 from activetigger.users import Users
 
 logger = logging.getLogger("server")
+
+
+def write_parquet(df, path):
+    df.to_parquet(path, engine="pyarrow", compression="snappy", index=True)
 
 
 class Orchestrator:
@@ -546,7 +551,9 @@ class Orchestrator:
         content["limit"] = content["text"].apply(limit)
         t2 = time.time()
         # save a complete copy of the dataset
-        content.to_parquet(params.dir.joinpath(self.data_all), index=True)
+        # content.to_parquet(params.dir.joinpath(self.data_all), index=True)
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            executor.submit(write_parquet, content, params.dir.joinpath(self.data_all))
         t3 = time.time()
         # ------------------------
         # End of the data cleaning
