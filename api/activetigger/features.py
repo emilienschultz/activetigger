@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 import pyarrow.parquet as pq  # type: ignore[import]
 import yaml  # type: ignore[import]
 from pandas import DataFrame, Series
@@ -212,6 +212,7 @@ class Features:
         """
         Get content for specific features
         """
+        features = [i for i in features if i is not None]
         if features == "all":
             features = list(self.map.keys())
         if type(features) is str:

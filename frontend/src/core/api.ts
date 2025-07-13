@@ -947,7 +947,7 @@ export function useUsers() {
 
   const users = useAsyncMemo(async () => {
     const res = await api.GET('/users', {});
-    if (!res.error) return res.data.users as unknown as string[];
+    if (!res.error) return res.data;
     return null;
   }, [fetchTrigger]);
 
@@ -1437,32 +1437,6 @@ export function useDropGeneratedElements(projectSlug: string | null, username: s
 }
 
 /**
- * Get model file static url
- */
-// export function useGetModelUrl(projectSlug: string | null, model: string | null) {
-//   const getModelUrl = useAsyncMemo(async () => {
-//     if (projectSlug && model) {
-//       const res = await api.GET('/export/bert', {
-//         params: {
-//           query: {
-//             project_slug: projectSlug,
-//             name: model,
-//           },
-//         },
-//       });
-
-//       if (!res.error) {
-//         const url = config.api.url.replace(/\/$/, '');
-//         return url + '/' + res.data.path;
-//       }
-//       return null;
-//     }
-//     return null;
-//   }, [projectSlug, model]);
-//   return { modelUrl: getAsyncMemoData(getModelUrl) };
-// }
-
-/**
  * Get model file
  */
 export function useGetModelFile(projectSlug: string | null | undefined) {
@@ -1592,18 +1566,21 @@ export function useTableElements(
   const [total, setTotal] = useState<number>(20);
 
   const getTableElements = useAsyncMemo(async () => {
+    // if no project or scheme, return null
     if (scheme && project_slug) {
-      const res = await api.GET('/elements/table', {
+      const res = await api.POST('/elements/table', {
         params: {
           query: {
             project_slug: project_slug,
-            scheme: scheme,
-            min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
-            max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
-            contains: search,
-            mode: sample ? sample : 'all',
-            dataset: dataset ? dataset : 'train',
           },
+        },
+        body: {
+          scheme: scheme,
+          min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
+          max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
+          contains: search,
+          mode: sample ? sample : 'all',
+          dataset: dataset ? dataset : 'train',
         },
       });
       if (!res.error) {
@@ -2092,7 +2069,7 @@ export function useStopProcess() {
   const { notify } = useNotifications();
   const stopProcess = useCallback(
     async (uniqueId: string) => {
-      const res = await api.POST('/kill', {
+      const res = await api.POST('/stop', {
         params: {
           query: {
             unique_id: uniqueId,
@@ -2362,4 +2339,17 @@ export function useAddProjectFile() {
     progression,
     cancel: controller,
   };
+}
+
+/**
+ * Restart the queue
+ */
+export function useRestartQueue() {
+  const { notify } = useNotifications();
+  const restartQueue = useCallback(async () => {
+    const res = await api.POST('/server/restart', {});
+    if (!res.error) notify({ type: 'success', message: 'Queue restarted' });
+    return true;
+  }, [notify]);
+  return { restartQueue };
 }

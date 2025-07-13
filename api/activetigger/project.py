@@ -6,21 +6,30 @@ import shutil
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
-import pandas as pd
-import pytz
+import pandas as pd  # type: ignore[import]
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse
 from pandas import DataFrame
 
 from activetigger.config import config
 from activetigger.datamodels import (
+    BertModelModel,
+    ElementOutModel,
+    ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
+    GenerationModel,
+    GenerationRequest,
     GenerationResult,
     LMComputing,
+    NextInModel,
     NextProjectStateModel,
+    PredictedLabel,
+    ProjectDescriptionModel,
     ProjectionComputing,
+    ProjectionOutModel,
     ProjectModel,
     ProjectStateModel,
     ProjectUpdateModel,
@@ -38,9 +47,7 @@ from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
 from activetigger.simplemodels import SimpleModels
-
-MODELS = "bert_models.csv"
-TIMEZONE = pytz.timezone("Europe/Paris")
+from activetigger.tasks.generate_call import GenerateCall
 
 
 class Project:
@@ -85,12 +92,17 @@ class Project:
         self.load_project(project_slug)
 
     def __del__(self):
+        print(f"Project {self.name} deleted")
         pass
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Delete completely a project
         """
+
+        if self.params.dir is None:
+            raise ValueError("No directory exists for this project")
+
         # remove from database
         try:
             self.db_manager.projects_service.delete_project(self.params.project_slug)
@@ -107,7 +119,7 @@ class Project:
         if Path(f"{config.data_path}/projects/static/{self.name}").exists():
             shutil.rmtree(f"{config.data_path}/projects/static/{self.name}")
 
-    def load_project(self, project_slug: str):
+    def load_project(self, project_slug: str) -> None:
         """
         Load existing project
         """
@@ -127,14 +139,14 @@ class Project:
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
-            self.params.dir.joinpath("train.parquet"),
-            self.params.dir.joinpath("test.parquet"),
+            self.params.dir.joinpath(config.train_file),
+            self.params.dir.joinpath(config.test_file),
             self.db_manager,
         )
         self.features = Features(
             project_slug,
-            self.params.dir.joinpath("features.parquet"),
-            self.params.dir.joinpath("data_all.parquet"),
+            self.params.dir.joinpath(config.features_file),
+            self.params.dir.joinpath(config.data_all),
             self.path_models,
             self.queue,
             cast(list[FeatureComputing], self.computing),
@@ -147,16 +159,14 @@ class Project:
             self.queue,
             self.computing,
             self.db_manager,
-            MODELS,
+            config.file_models,
         )
         self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
-        # TODO: Computings should be filtered here based on their type, each type in a different list given to the appropriate class.
-        # It would render the cast here and the for-loop in the class unecessary
         self.generations = Generations(
             self.db_manager, cast(list[GenerationComputing], self.computing)
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
-        self.errors = []  # Move to specific class / db in the future
+        self.errors = []  # TODO Move to specific class / db in the future
 
     def load_params(self, project_slug: str) -> ProjectModel:
         """
@@ -243,7 +253,7 @@ class Project:
         # import labels if specified + scheme // check if the labels are in the scheme
         if testset.col_label and testset.scheme:
             # Check the label columns if they match the scheme or raise error
-            scheme = self.schemes.available()[testset.scheme]["labels"]
+            scheme = self.schemes.available()[testset.scheme].labels
             for label in df["label"].dropna().unique():
                 if label not in scheme:
                     raise Exception(f"Label {label} not in the scheme {testset.scheme}")
@@ -262,7 +272,7 @@ class Project:
             print("Testset labels imported")
 
         # write the dataset
-        df[["text"]].to_parquet(self.params.dir.joinpath("test.parquet"))
+        df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
         # load the data
         self.schemes.test = df[["text"]]
         # update parameters
@@ -272,21 +282,22 @@ class Project:
             self.params.project_slug, jsonable_encoder(self.params)
         )
 
-    def update_simplemodel(self, simplemodel: SimpleModelModel, username: str) -> dict:
+    def update_simplemodel(
+        self, simplemodel: SimpleModelModel, username: str, n_min_annotated: int = 3
+    ) -> None:
         """
-        Update simplemodel on the base of an already existing
-        simplemodel object
-
-        n_min: minimal number of elements annotated
+        Compute or update simplemodel
         """
+        availabe_schemes = self.schemes.available()
+        simplemodel.features = [i for i in simplemodel.features if i is not None]
         if simplemodel.features is None or len(simplemodel.features) == 0:
             raise Exception("No features selected")
         if simplemodel.model not in list(self.simplemodels.available_models.keys()):
             raise Exception("Model not available")
-        if simplemodel.scheme not in self.schemes.available():
+        if simplemodel.scheme not in availabe_schemes:
             raise Exception("Scheme not available")
-        if len(self.schemes.available()[simplemodel.scheme]) < 2:
-            raise Exception("Scheme not available")
+        if len(availabe_schemes[simplemodel.scheme].labels) < 2:
+            raise Exception("Not enough labels in the scheme")
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
         if simplemodel.model == "multi_naivebayes":
@@ -299,7 +310,6 @@ class Project:
             params = None
         else:
             params = dict(simplemodel.params)
-
         # add information on the target of the model
         if simplemodel.dichotomize is not None and params is not None:
             params["dichotomize"] = simplemodel.dichotomize
@@ -316,9 +326,11 @@ class Project:
 
         # test for a minimum of annotated elements
         counts = df_scheme["labels"].value_counts()
-        valid_categories = counts[counts >= 3]
+        valid_categories = counts[counts >= n_min_annotated]
         if len(valid_categories) < 2:
-            raise Exception("Not enough annotated elements")
+            raise Exception(
+                f"Not enough annotated elements (should be more than {n_min_annotated})"
+            )
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
@@ -339,21 +351,11 @@ class Project:
             cv10=simplemodel.cv10 or False,
         )
 
-        return {"success": "Simplemodel updated"}
-
     def get_next(
         self,
-        scheme: str,
-        selection: str = "fixed",
-        sample: str = "untagged",
-        user: str = "user",
-        label: None | str = None,
-        label_maxprob: None | str = None,
-        history: list = [],
-        frame: None | list = None,
-        filter: str | None = None,
-        dataset: str = "train",
-    ) -> dict:
+        next: NextInModel,
+        username: str = "user",
+    ) -> ElementOutModel:
         """
         Get next item for a specific scheme with a specific selection method
         - fixed
@@ -367,34 +369,33 @@ class Project:
         filter is a regex to use on the corpus
         """
 
-        if scheme not in self.schemes.available():
+        if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 
         # select the current state of annotation
-        if dataset == "test":
-            df = self.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
+        if next.dataset == "test":
+            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["test"])
         else:
-            df = self.schemes.get_scheme_data(scheme, complete=True)
+            df = self.schemes.get_scheme_data(next.scheme, complete=True)
 
         # build first filter from the sample
-        if sample == "untagged":
+        if next.sample == "untagged":
             f = df["labels"].isna()
-        elif sample == "tagged":
-            if label is not None and label in df["labels"].unique():
-                f = df["labels"] == label
+        elif next.sample == "tagged":
+            if next.label is not None and next.label in df["labels"].unique():
+                f = df["labels"] == next.label
             else:
                 f = df["labels"].notna()
         else:
             f = df["labels"].apply(lambda x: True)
 
         # add a regex condition to the selection
-        if filter:
+        if next.filter:
             # sanitize
             df["ID"] = df.index  # duplicate the id column
-            filter_san = clean_regex(filter)
+            filter_san = clean_regex(next.filter)
             if "CONTEXT=" in filter_san:  # case to search in the context
-                print("CONTEXT", filter_san.replace("CONTEXT=", ""))
-                f_regex: pd.Series = (
+                f_regex = (
                     df[self.params.cols_context + ["ID"]]
                     .apply(lambda row: " ".join(row.values.astype(str)), axis=1)
                     .str.contains(
@@ -405,21 +406,23 @@ class Project:
                     )
                 )
             elif "QUERY=" in filter_san:  # case to use a query
-                f_regex = df[self.params.cols_context].eval(filter_san.replace("QUERY=", ""))
+                f_regex = cast(
+                    pd.Series, df[self.params.cols_context].eval(filter_san.replace("QUERY=", ""))
+                )
             else:
                 f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
             f = f & f_regex
 
         # manage frame selection (if projection, only in the box)
-        if frame and len(frame) == 4:
-            if user in self.projections.available:
-                if self.projections.available[user].data:
-                    projection = self.projections.available[user].data
+        if next.frame and len(next.frame) == 4:
+            if username in self.projections.available:
+                if self.projections.available[username].data:
+                    projection = self.projections.available[username].data
                     f_frame = (
-                        (projection[0] > frame[0])
-                        & (projection[0] < frame[1])
-                        & (projection[1] > frame[2])
-                        & (projection[1] < frame[3])
+                        (projection[0] > next.frame[0])
+                        & (projection[0] < next.frame[1])
+                        & (projection[1] > next.frame[2])
+                        & (projection[1] < next.frame[3])
                     )
                     f = f & f_frame
                 else:
@@ -432,64 +435,67 @@ class Project:
             raise ValueError("No element available with this selection mode.")
 
         # Take into account the session history
-        ss = df[f].drop(history, errors="ignore")
+        ss = df[f].drop(next.history, errors="ignore")
         if len(ss) == 0:
             raise ValueError("No element available with this selection mode.")
         indicator = None
         n_sample = f.sum()  # use len(ss) for adding history
 
         # select type of selection
-        if selection == "fixed":  # next row
+        if next.selection == "fixed":  # next row
             element_id = ss.index[0]
 
-        if selection == "random":  # random row
+        if next.selection == "random":  # random row
             element_id = ss.sample(frac=1).index[0]
 
         # higher prob for the label_maxprob, only possible if the model has been trained
-        if selection == "maxprob":
-            if not self.simplemodels.exists(user, scheme):
+        if next.selection == "maxprob":
+            if not self.simplemodels.exists(username, next.scheme):
                 raise Exception("Simplemodel doesn't exist")
-            if label_maxprob is None:  # default label to first
+            if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
-            sm = self.simplemodels.get_model(user, scheme)  # get model
-            proba = sm.proba.reindex(f.index)
+            prediction = self.simplemodels.get_prediction(username, next.scheme)  # get model
+            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
-            ss = (
-                proba[f][label_maxprob].drop(history, errors="ignore").sort_values(ascending=False)
+            ss_maxprob = (
+                proba[f][next.label_maxprob]
+                .drop(next.history, errors="ignore")
+                .sort_values(ascending=False)
             )  # get max proba id
-            element_id = ss.index[0]
+            element_id = ss_maxprob.index[0]
             n_sample = f.sum()
-            indicator = f"probability: {round(proba.loc[element_id, label_maxprob], 2)}"
+            indicator = f"probability: {round(proba.loc[element_id, next.label_maxprob], 2)}"
 
         # higher entropy, only possible if the model has been trained
-        if selection == "active":
-            if not self.simplemodels.exists(user, scheme):
+        if next.selection == "active":
+            if not self.simplemodels.exists(username, next.scheme):
                 raise ValueError("Simplemodel doesn't exist")
-            sm = self.simplemodels.get_model(user, scheme)  # get model
-            proba = sm.proba.reindex(f.index)
+            prediction = self.simplemodels.get_prediction(username, next.scheme)  # get model
+            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
-            ss = (
-                proba[f]["entropy"].drop(history, errors="ignore").sort_values(ascending=False)
+            ss_active = (
+                proba[f]["entropy"].drop(next.history, errors="ignore").sort_values(ascending=False)
             )  # get max entropy id
-            element_id = ss.index[0]
+            element_id = ss_active.index[0]
             n_sample = f.sum()
             indicator = round(proba.loc[element_id, "entropy"], 2)
             indicator = f"entropy: {indicator}"
 
         # get prediction of the id if it exists
-        predict = {"label": None, "proba": None}
+        predict = PredictedLabel(label=None, proba=None)
 
-        if self.simplemodels.exists(user, scheme) and dataset == "train":
-            sm = self.simplemodels.get_model(user, scheme)
-            predicted_label = sm.proba.loc[element_id, "prediction"]
-            predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
-            predict = {"label": predicted_label, "proba": predicted_proba}
+        if self.simplemodels.exists(username, next.scheme) and next.dataset == "train":
+            prediction = self.simplemodels.get_prediction(username, next.scheme)
+            predicted_label = prediction.loc[element_id, "prediction"]
+            predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
+            predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
         # get all tags already existing for the element
         previous = self.schemes.projects_service.get_annotations_by_element(
-            self.params.project_slug, scheme, element_id
+            self.params.project_slug, next.scheme, element_id
         )
-        if dataset == "test":
+
+        if next.dataset == "test":
             limit = 1200
             context = {}
         else:
@@ -499,20 +505,18 @@ class Project:
                 self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
             )
 
-        element = {
-            "element_id": element_id,
-            "text": df.fillna("NA").loc[element_id, "text"],
-            "context": context,
-            "selection": selection,
-            "info": indicator,
-            "predict": predict,
-            "frame": frame,
-            "limit": limit,
-            "history": previous,
-            "n_sample": n_sample,
-        }
-
-        return element
+        return ElementOutModel(
+            element_id=element_id,
+            text=df.fillna("NA").loc[element_id, "text"],
+            context=context,
+            selection=next.selection,
+            info=indicator,
+            predict=predict,
+            frame=next.frame,
+            limit=limit,
+            history=previous,
+            n_sample=n_sample,
+        )
 
     def get_element(
         self,
@@ -520,60 +524,72 @@ class Project:
         scheme: str | None = None,
         user: str | None = None,
         dataset: str = "train",
-    ):
+    ) -> ElementOutModel:
         """
         Get an element of the database
         Separate train/test dataset
-        TODO: better homogeneise with get_next ?
         """
+        history = None
         if dataset == "test" and self.schemes.test is not None:
             if element_id not in self.schemes.test.index:
                 raise Exception("Element does not exist.")
-            data: dict = {
-                "element_id": element_id,
-                "text": self.schemes.test.loc[element_id, "text"],
-                "context": {},
-                "selection": "test",
-                "predict": {"label": None, "proba": None},
-                "info": "",
-                "frame": None,
-                "limit": 1200,
-                "history": [],
-            }
-            return data
+            if scheme is not None:
+                history = self.schemes.projects_service.get_annotations_by_element(
+                    self.params.project_slug, scheme, element_id
+                )
+            return ElementOutModel(
+                element_id=element_id,
+                text=str(self.schemes.test.loc[element_id, "text"]),
+                context={},
+                selection="test",
+                info="",
+                predict=PredictedLabel(label=None, proba=None),
+                frame=None,
+                limit=1200,
+                history=history,
+            )
+
         if dataset == "train":
             if element_id not in self.content.index:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
-            predict = {"label": None, "proba": None}
+            predict = PredictedLabel(label=None, proba=None)
             if (user is not None) and (scheme is not None):
                 if self.simplemodels.exists(user, scheme):
-                    sm = self.simplemodels.get_model(user, scheme)
-                    predicted_label = sm.proba.loc[element_id, "prediction"]
-                    predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
-                    predict = {"label": predicted_label, "proba": predicted_proba}
+                    prediction = self.simplemodels.get_prediction(user, scheme)
+                    predicted_label = cast(str, prediction.loc[element_id, "prediction"])
+                    predicted_proba = round(
+                        cast(float, prediction.loc[element_id, predicted_label]), 2
+                    )
+                    predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
             # get element tags
-            history = self.schemes.projects_service.get_annotations_by_element(
-                self.params.project_slug, scheme, element_id
+            if scheme is not None:
+                history = self.schemes.projects_service.get_annotations_by_element(
+                    self.params.project_slug, scheme, element_id
+                )
+
+            context = cast(
+                dict[str, Any],
+                self.content.loc[element_id, self.params.cols_context]  # type: ignore[index]
+                .fillna("NA")
+                .astype(str)
+                .to_dict(),
             )
 
-            data = {
-                "element_id": element_id,
-                "text": self.content.loc[element_id, "text"],
-                "context": dict(
-                    self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
-                ),
-                "selection": "request",
-                "predict": predict,
-                "info": "get specific",
-                "frame": None,
-                "limit": int(self.content.loc[element_id, "limit"]),
-                "history": history,
-            }
+            return ElementOutModel(
+                element_id=element_id,
+                text=str(self.content.loc[element_id, "text"]),
+                context=context,
+                selection="request",
+                predict=predict,
+                info="get specific",
+                frame=None,
+                limit=cast(int, self.content.loc[element_id, "limit"]),
+                history=history,
+            )
 
-            return data
         raise Exception("Dataset does not exist.")
 
     def get_params(self) -> ProjectModel:
@@ -582,7 +598,7 @@ class Project:
         """
         return self.params
 
-    def get_statistics(self, scheme: str | None, user: str | None) -> dict:
+    def get_statistics(self, scheme: str | None, user: str | None) -> ProjectDescriptionModel:
         """
         Generate a description of a current project/scheme/user
         Return:
@@ -597,43 +613,77 @@ class Project:
         kind = schemes[scheme].kind
 
         # part train
-        r = {"train_set_n": len(self.schemes.content)}
-        r["users"] = self.db_manager.users_service.get_coding_users(
-            scheme, self.params.project_slug
-        )
+        users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
 
-        df = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
+        df_train = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
 
         # different treatment if the scheme is multilabel or multiclass
-        r["train_annotated_n"] = len(df.dropna(subset=["labels"]))
         if kind == "multiclass":
-            r["train_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+            train_annotated_distribution = json.loads(df_train["labels"].value_counts().to_json())
         else:
-            r["train_annotated_distribution"] = json.loads(
-                df["labels"].str.split("|").explode().value_counts().to_json()
+            train_annotated_distribution = json.loads(
+                df_train["labels"].str.split("|").explode().value_counts().to_json()
             )
 
         # part test
-        if self.params.test:
-            df = self.schemes.get_scheme_data(scheme, kind=["test"])
-            r["test_set_n"] = len(self.schemes.test) if self.schemes.test is not None else 0
-            r["test_annotated_n"] = len(df.dropna(subset=["labels"]))
+        if self.params.test and self.schemes.test is not None:
+            df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
+            test_set_n = len(self.schemes.test)
+            test_annotated_n = len(df_test.dropna(subset=["labels"]))
             if kind == "multiclass":
-                r["test_annotated_distribution"] = json.loads(df["labels"].value_counts().to_json())
+                test_annotated_distribution = json.loads(df_test["labels"].value_counts().to_json())
             else:
-                r["test_annotated_distribution"] = json.loads(
-                    df["labels"].str.split("|").explode().value_counts().to_json()
+                test_annotated_distribution = json.loads(
+                    df_test["labels"].str.split("|").explode().value_counts().to_json()
                 )
         else:
-            r["test_set_n"] = None
-            r["test_annotated_n"] = None
-            r["test_annotated_distribution"] = None
+            test_set_n = None
+            test_annotated_n = None
+            test_annotated_distribution = None
 
-        if self.simplemodels.exists(user, scheme):
-            sm = self.simplemodels.get_model(user, scheme)  # get model
-            r["sm_10cv"] = sm.statistics_cv10
+        if user and self.simplemodels.exists(user, scheme):
+            sm_10cv = self.simplemodels.get_model(user, scheme).statistics_cv10
+        else:
+            sm_10cv = None
 
-        return r
+        # return ProjectDescriptionModel(**r)
+
+        return ProjectDescriptionModel(
+            users=users,
+            train_set_n=len(self.schemes.content),
+            train_annotated_n=len(df_train.dropna(subset=["labels"])),
+            train_annotated_distribution=train_annotated_distribution,
+            test_set_n=test_set_n,
+            test_annotated_n=test_annotated_n,
+            test_annotated_distribution=test_annotated_distribution,
+            sm_10cv=sm_10cv,
+        )
+
+    def get_projection(self, username: str, scheme: str) -> ProjectionOutModel | None:
+        """
+        Get projection if computed
+        """
+        projection = self.projections.get(username)
+        if projection is None:
+            return None
+        # get annotations
+        df = self.schemes.get_scheme_data(scheme, complete=True)
+        data = projection.data
+        data["labels"] = df["labels"].fillna("NA")
+
+        # get & add predictions if available
+        if self.simplemodels.exists(username, scheme):
+            data["prediction"] = self.simplemodels.get_prediction(username, scheme)["prediction"]
+
+        return ProjectionOutModel(
+            index=list(data.index),
+            x=list(data[0]),
+            y=list(data[1]),
+            status=projection.id,
+            parameters=projection.parameters,
+            labels=list(data["labels"]),
+            predictions=list(data["prediction"]) if "prediction" in data else None,
+        )
 
     def state(self) -> ProjectStateModel:
         """
@@ -660,7 +710,7 @@ class Project:
             ),
         )
 
-    def export_features(self, features: list, format: str = "parquet"):
+    def export_features(self, features: list, format: str = "parquet") -> FileResponse:
         """
         Export features data in different formats
         """
@@ -683,13 +733,11 @@ class Project:
         if format == "xlsx":
             data.to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path.joinpath(file_name)}
-
-        return r
+        return FileResponse(path=path.joinpath(file_name), filename=file_name)
 
     def export_data(
         self, scheme: str, dataset: str = "train", format: str = "parquet", dropna: bool = True
-    ):
+    ) -> FileResponse:
         """
         Export annotation data in different formats
         """
@@ -725,17 +773,28 @@ class Project:
             data["timestamp"] = data["timestamp"].dt.tz_localize(None)
             data.to_excel(path.joinpath(file_name))
 
-        r = {"name": file_name, "path": path.joinpath(file_name)}
-        return r
+        return FileResponse(path.joinpath(file_name), filename=file_name)
 
-    def get_active_users(self, period: int = 300):
-        """
-        Get current active users on the time period
-        """
-        users = self.db_manager.users_service.get_distinct_users(self.name, period)
-        return users
+    def export_generations(
+        self, project_slug: str, username: str, params: ExportGenerationsParams
+    ) -> DataFrame:
+        # get the elements
+        table = self.generations.get_generated(
+            project_slug=project_slug,
+            user_name=username,
+        )
 
-    def get_process(self, kind: str | list, user: str):
+        # apply filters on the generated
+        table["answer"] = self.generations.filter(table["answer"], params.filters)
+
+        # join the text
+        table = table.join(self.content["text"], on="index")
+
+        return table
+
+    def get_process(
+        self, kind: str | list, user: str
+    ) -> list[FeatureComputing | LMComputing | SimpleModelComputing]:
         """
         Get current processes
         """
@@ -743,7 +802,7 @@ class Project:
             kind = [kind]
         return [e for e in self.computing if e.user == user and e.kind in kind]
 
-    def export_raw(self, project_slug: str):
+    def export_raw(self, project_slug: str) -> StaticFileModel:
         """
         Export raw data
         To be able to export, need to copy in the static folder
@@ -868,6 +927,94 @@ class Project:
         self.content[[]].to_parquet(self.params.dir.joinpath("features.parquet"), index=True)
         self.features.projects_service.delete_all_features(self.name)
 
+    def start_languagemodel_training(self, bert: BertModelModel, username: str) -> None:
+        """
+        Launch a training process
+        """
+        # Check if there is no other competing processes : 1 active process by user
+        if len(self.languagemodels.current_user_processes(username)) > 0:
+            raise Exception(
+                "User already has a process launched, please wait before launching another one"
+            )
+        # get data
+        df = self.schemes.get_scheme_data(bert.scheme, complete=True)
+        df = df[["text", "labels"]].dropna()
+
+        # management for multilabels / dichotomize
+        if bert.dichotomize is not None:
+            df["labels"] = df["labels"].apply(
+                lambda x: self.schemes.dichotomize(x, bert.dichotomize)
+            )
+            bert.name = f"{bert.name}_multilabel_on_{bert.dichotomize}"
+
+        # remove class under the threshold
+        label_counts = df["labels"].value_counts()
+        df = df[df["labels"].isin(label_counts[label_counts >= bert.class_min_freq].index)]
+
+        # remove class requested by the user
+        if len(bert.exclude_labels) > 0:
+            df = df[~df["labels"].isin(bert.exclude_labels)]
+            bert.name = f"{bert.name}_exclude_labels_"
+
+        # balance the dataset based on the min class
+        if bert.class_balance:
+            min_freq = df["labels"].value_counts().sort_values().min()
+            df = (
+                df.groupby("labels")
+                .apply(lambda x: x.sample(min_freq))
+                .reset_index(level=0, drop=True)
+            )
+
+        # launch training process
+        self.languagemodels.start_training_process(
+            name=bert.name,
+            project=self.name,
+            user=username,
+            scheme=bert.scheme,
+            df=df,
+            col_text=df.columns[0],
+            col_label=df.columns[1],
+            base_model=bert.base_model,
+            params=bert.params,
+            test_size=bert.test_size,
+        )
+
+    def start_generation(self, request: GenerationRequest, username: str) -> None:
+        """
+        Start a generation process
+        """
+        extract = self.schemes.get_sample(request.scheme, request.n_batch, request.mode)
+        if len(extract) == 0:
+            raise Exception("No elements available for generation")
+        model = self.generations.generations_service.get_gen_model(request.model_id)
+        # add task to the queue
+        unique_id = self.queue.add_task(
+            "generation",
+            self.name,
+            GenerateCall(
+                path_process=self.params.dir,
+                username=username,
+                project_slug=self.name,
+                df=extract,
+                prompt=request.prompt,
+                model=GenerationModel(**model.__dict__),
+            ),
+        )
+        self.computing.append(
+            GenerationComputing(
+                unique_id=unique_id,
+                user=username,
+                project=self.name,
+                model_id=request.model_id,
+                number=request.n_batch,
+                time=datetime.now(),
+                kind="generation",
+                get_progress=GenerateCall.get_progress_callback(
+                    self.params.dir.joinpath(unique_id) if self.params.dir is not None else None
+                ),
+            )
+        )
+
     def update_processes(self) -> None:
         """
         Update completed processes and do specific operations regarding their kind
@@ -891,11 +1038,11 @@ class Project:
                 continue
 
             # check if the process is done, else continue
-            if process["future"] is None or not process["future"].done():
+            if process.future is None or not process.future.done():
                 continue
 
-            # get the future
-            future = process["future"]
+            # get the future for process done
+            future = process.future
 
             # manage different tasks
 
@@ -916,7 +1063,7 @@ class Project:
                     )
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in bert model training",
                             str(ex),
                         ]
@@ -947,7 +1094,7 @@ class Project:
                 except Exception as ex:
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in model predicting",
                             str(ex),
                         ]
@@ -968,7 +1115,9 @@ class Project:
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
                 except Exception as ex:
-                    self.errors.append([datetime.now(TIMEZONE), "simplemodel failed", str(ex)])
+                    self.errors.append(
+                        [datetime.now(config.timezone), "simplemodel failed", str(ex)]
+                    )
                     logging.error("Simplemodel failed", ex)
                 finally:
                     self.computing.remove(e)
@@ -992,7 +1141,7 @@ class Project:
                     print("Feature added", feature_computation.name)
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(TIMEZONE), "Error in feature processing", str(ex)]
+                        [datetime.now(config.timezone), "Error in feature processing", str(ex)]
                     )
                     print("Error in feature processing", ex)
                 finally:
@@ -1010,7 +1159,7 @@ class Project:
                 except Exception as ex:
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in feature vizualisation queue",
                             str(ex),
                         ]
@@ -1040,7 +1189,7 @@ class Project:
                 except Exception as ex:
                     self.errors.append(
                         [
-                            datetime.now(TIMEZONE),
+                            datetime.now(config.timezone),
                             "Error in generation queue",
                             getattr(ex, "message", repr(ex)),
                         ]
@@ -1074,7 +1223,7 @@ class Project:
             except Exception as ex:
                 self.errors.append(
                     [
-                        datetime.now(TIMEZONE),
+                        datetime.now(config.timezone),
                         "Error in adding prediction",
                         str(ex),
                     ]
@@ -1082,7 +1231,7 @@ class Project:
                 logging.error("Error in addind prediction", ex)
 
         # clean errors older than 15 minutes
-        delta = datetime.now(TIMEZONE) - timedelta(minutes=15)
+        delta = datetime.now(config.timezone) - timedelta(minutes=15)
         self.errors = [error for error in self.errors if error[0] >= delta]
 
         return None

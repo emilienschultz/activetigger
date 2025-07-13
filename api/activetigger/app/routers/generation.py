@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import (
@@ -14,7 +13,6 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     GeneratedElementsIn,
-    GenerationComputing,
     GenerationCreationModel,
     GenerationModel,
     GenerationModelApi,
@@ -24,9 +22,9 @@ from activetigger.datamodels import (
     TableOutModel,
     UserInDBModel,
 )
+from activetigger.generation.generations import Generations
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
-from activetigger.tasks.generate_call import GenerateCall
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +38,7 @@ async def list_generation_models() -> list[GenerationModelApi]:
     API (not the models themselves)
     """
     try:
-        return orchestrator.db_manager.generations_service.get_available_models()
+        return Generations.get_available_models()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -53,10 +51,7 @@ async def list_project_generation_models(
     Returns the list of the available GenAI models configure for a project
     """
     try:
-        r = orchestrator.db_manager.generations_service.get_project_gen_models(
-            project.name
-        )
-        return [GenerationModel(**i.__dict__) for i in r]
+        return project.generations.available_models(project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -73,9 +68,7 @@ async def add_project_generation_models(
     try:
         # test if the model exists with this name for the project
         if project.generations.model_exists(project.name, model.name):
-            raise HTTPException(
-                status_code=400, detail="A model with this name already exists"
-            )
+            raise HTTPException(status_code=400, detail="A model with this name already exists")
 
         # add the model
         r = project.generations.add_model(project.name, model, current_user.username)
@@ -95,9 +88,7 @@ async def delete_project_generation_models(
     Delete a GenAI model from the project
     """
     try:
-        return orchestrator.db_manager.generations_service.delete_project_gen_model(
-            project.name, model_id
-        )
+        project.generations.delete_model(project.name, model_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -110,58 +101,10 @@ async def postgenerate(
 ) -> None:
     """
     Launch a call to generate from a prompt
-    Only one possible by user
-
-    TODO : move to a module
     """
 
     try:
-        # get subset of elements
-        extract = project.schemes.get_sample(
-            request.scheme, request.n_batch, request.mode
-        )
-
-        if len(extract) == 0:
-            raise HTTPException(
-                status_code=400, detail="No elements found for this scheme"
-            )
-
-        # get model
-        model = orchestrator.db_manager.generations_service.get_gen_model(
-            request.model_id
-        )
-
-        # add task to the queue
-        unique_id = orchestrator.queue.add_task(
-            "generation",
-            project.name,
-            GenerateCall(
-                path_process=project.params.dir,
-                username=current_user.username,
-                project_slug=project.name,
-                df=extract,
-                prompt=request.prompt,
-                model=GenerationModel(**model.__dict__),
-            ),
-        )
-
-        project.computing.append(
-            GenerationComputing(
-                unique_id=unique_id,
-                user=current_user.username,
-                project=project.name,
-                model_id=request.model_id,
-                number=request.n_batch,
-                time=datetime.now(),
-                kind="generation",
-                get_progress=GenerateCall.get_progress_callback(
-                    project.params.dir.joinpath(unique_id)
-                    if project.params.dir is not None
-                    else None
-                ),
-            )
-        )
-
+        project.start_generation(request, current_user.username)
         orchestrator.log_action(
             current_user.username,
             "START GENERATE",
@@ -182,16 +125,11 @@ async def stop_generation(
     Stop current generation
     """
     try:
-        p = project.get_process("generation", current_user.username)
-        if len(p) == 0:
-            raise HTTPException(
-                status_code=400, detail="No process found for this user"
-            )
-        unique_id = p[0].unique_id
-        orchestrator.queue.kill(unique_id)
-        orchestrator.log_action(
-            current_user.username, "STOP GENERATE", project.params.project_slug
+        orchestrator.stop_process(
+            current_user.username,
+            kind=["generation"],
         )
+        orchestrator.log_action(current_user.username, "STOP GENERATE", project.params.project_slug)
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -204,7 +142,7 @@ async def getgenerate(
     params: GeneratedElementsIn,
 ) -> TableOutModel:
     """
-    Get elements from prediction
+    Get elements generated
     """
     try:
         # get data
@@ -214,16 +152,13 @@ async def getgenerate(
 
         # apply filters
         table["answer"] = project.generations.filter(table["answer"], params.filters)
+
+        # join with the text
+        # table = table.join(project.content["text"], on="index")
+
+        return TableOutModel(items=table.to_dict(orient="records"), total=len(table))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail="Error in loading generated data" + str(e)
-        )
-
-    # join with the text
-    # table = table.join(project.content["text"], on="index")
-
-    r = table.to_dict(orient="records")
-    return TableOutModel(items=r, total=len(r))
+        raise HTTPException(status_code=500, detail="Error in loading generated data" + str(e))
 
 
 @router.post("/generate/elements/drop", dependencies=[Depends(verified_user)])
@@ -243,7 +178,6 @@ async def dropgenerate(
 @router.get("/generate/prompts", dependencies=[Depends(verified_user)])
 async def get_prompts(
     project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> list[PromptModel]:
     """
     Get the list of prompts for the user
@@ -264,23 +198,7 @@ async def add_prompt(
     Add a prompt to the project
     """
     try:
-        # if no name, use the beginning of the text
-        if prompt.name is not None:
-            name = prompt.name
-        else:
-            name = prompt.text[0 : max(30, len(prompt.text))]
-
-        # check if the name is already used
-        if project.generations.prompt_exists(project.name, name):
-            raise HTTPException(
-                status_code=400, detail="A prompt with this name already exists"
-            )
-
-        # save prompt
-        project.generations.save_prompt(
-            current_user.username, project.name, prompt.text, name
-        )
-        return None
+        project.generations.save_prompt(prompt, current_user.username, project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -288,14 +206,12 @@ async def add_prompt(
 @router.post("/generate/prompts/delete", dependencies=[Depends(verified_user)])
 async def delete_prompt(
     project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     prompt_id: str,
 ) -> None:
     """
     Delete a prompt from the project
     """
     try:
-        print(prompt_id, type(prompt_id))
         project.generations.delete_prompt(int(prompt_id))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

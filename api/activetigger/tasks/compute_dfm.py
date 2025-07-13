@@ -1,7 +1,10 @@
 import pandas as pd
-import spacy
 from pandas import DataFrame, Series
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer  # type: ignore[import]
+from spacy.lang.de import German
+from spacy.lang.en import English
+from spacy.lang.es import Spanish
+from spacy.lang.fr import French
 
 from activetigger.tasks.base_task import BaseTask
 
@@ -47,11 +50,16 @@ class ComputeDfm(BaseTask):
 
         # load stopwords
         if self.language == "fr":
-            nlp = spacy.blank("en")
-            stop_words = list(nlp.Defaults.stop_words)
+            stop_words = French.Defaults.stop_words
+        elif self.language == "es":
+            stop_words = Spanish.Defaults.stop_words
+        elif self.language == "de":
+            stop_words = German.Defaults.stop_words
+        elif self.language == "en":
+            stop_words = English.Defaults.stop_words
         else:
-            nlp = spacy.blank("en")
-            stop_words = list(nlp.Defaults.stop_words)
+            stop_words = English.Defaults.stop_words
+            print(f"Language {self.language} not supported, using English stop words.")
 
         # compute matrix
         if self.tfidf:

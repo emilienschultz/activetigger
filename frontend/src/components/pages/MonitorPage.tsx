@@ -7,6 +7,7 @@ import {
   useGetLogs,
   useGetServer,
   useGetUserStatistics,
+  useRestartQueue,
   useStopProcess,
   useUsers,
 } from '../../core/api';
@@ -25,8 +26,13 @@ interface Row {
   action: string;
 }
 
+/**
+ * MonitorPage component displays server monitoring information including logs, resources, active projects, and user statistics.
+ */
+
 export const MonitorPage: FC = () => {
   const { activeProjects, gpu, cpu, memory, disk, reFetchQueueState } = useGetServer(null);
+  const { restartQueue } = useRestartQueue();
   const { stopProcess } = useStopProcess();
   const { logs } = useGetLogs('all', 500);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -63,14 +69,13 @@ export const MonitorPage: FC = () => {
     },
   ];
 
-  console.log(userStatistics);
-
+  console.log(activeProjects);
   return (
     <PageLayout currentPage="monitor">
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
-            <Tabs id="panel2" className="mt-3" defaultActiveKey="logs">
+            <Tabs id="panel2" className="mt-3" defaultActiveKey="active">
               <Tab eventKey="logs" title="Logs">
                 <h2 className="subtitle">Recent activity on all projects</h2>
                 {logs ? (
@@ -116,7 +121,11 @@ export const MonitorPage: FC = () => {
                 <hr />
               </Tab>
               <Tab eventKey="active" title="Active Projects">
-                <h2 className="subtitle">Monitor the active project processes</h2>
+                <h2 className="subtitle">Monitor active projects</h2>
+
+                <button className="btn btn-danger m-1" onClick={restartQueue}>
+                  Restart memory & queue
+                </button>
 
                 {Object.keys(activeProjects || {}).map((project) => (
                   <div key={project}>

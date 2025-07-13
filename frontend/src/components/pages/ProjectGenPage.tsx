@@ -322,7 +322,7 @@ export const GenPage: FC = () => {
                     Select or craft your prompt with the element #INSERTTEXT to insert text
                   </div>
 
-                  <div className="d-flex align-items-center ">
+                  <div className="d-flex align-items-center " style={{ zIndex: 100 }}>
                     <Select
                       id="select-prompt"
                       className="w-75"
@@ -403,7 +403,9 @@ export const GenPage: FC = () => {
                       The request will send the data to an external API. Be sure you can trust the
                       API provider with respect to the level of privacy you need for you data
                     </span>
-                    <label htmlFor="prompt">Prompt </label>
+                    <label htmlFor="prompt" style={{ zIndex: 1 }}>
+                      Prompt
+                    </label>
                   </div>
                   <div className="col-12 text-center">
                     {isGenerating ? (

@@ -1,13 +1,45 @@
 import datetime
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Callable, Hashable, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
-from pandas import DataFrame
+from pandas import DataFrame  # type: ignore[import]
 from pydantic import BaseModel, ConfigDict  # for dataframe
 from sklearn.base import BaseEstimator  # type: ignore[import]
 
 # Data model to use of the API
+
+
+class PredictedLabel(BaseModel):
+    label: str | None
+    proba: float | None
+
+
+class QueueTaskModel(BaseModel):
+    """
+    Task in the queue
+    """
+
+    unique_id: str
+    kind: str
+    project_slug: str
+    state: str
+    future: Optional[Any] = None  # Future object from concurrent.futures
+    event: Any = None  # Event object for signaling
+    starting_time: datetime.datetime
+    queue: str
+    task: Callable[..., Any] | None
+
+
+class QueueStateTaskModel(BaseModel):
+    """
+    Task in the queue with state
+    """
+
+    unique_id: str
+    kind: str
+    state: str
+    exception: Any = None
 
 
 class ProjectBaseModel(BaseModel):
@@ -110,7 +142,7 @@ class ElementOutModel(BaseModel):
     context: dict[str, Any]
     selection: str
     info: str | None
-    predict: dict[str, Any]
+    predict: PredictedLabel
     frame: list | None
     limit: int | None
     history: list | None = None
@@ -123,7 +155,8 @@ class UserModel(BaseModel):
     """
 
     username: str
-    status: str | None
+    status: str | None = None
+    contact: str | None = None
 
 
 class UserInDBModel(UserModel):
@@ -139,7 +172,7 @@ class UsersServerModel(BaseModel):
     list of users on the server
     """
 
-    users: dict[str, dict[str, str]]
+    users: dict[str, UserModel]
     auth: list[str]
 
 
@@ -162,7 +195,7 @@ class AnnotationModel(BaseModel):
     scheme: str
     element_id: str
     label: str | None
-    dataset: str | None = "train"
+    dataset: str = "train"
     comment: str | None = None
     selection: str | None = None
 
@@ -246,6 +279,12 @@ class LMParametersModelTrained(LMParametersModel):
 class LMParametersDbModel(LMParametersModel):
     predicted: bool = False
     compressed: bool = False
+
+
+class LMStatusModel(BaseModel):
+    predicted: bool = False
+    tested: bool = False
+    predicted_external: bool = False
 
 
 class BertModelModel(BaseModel):
@@ -439,6 +478,14 @@ class LMComputing(ProcessComputing):
     params: dict[str, Any] | None = None
 
 
+class LMComputingOutModel(BaseModel):
+    name: str
+    status: str
+    progress: float | None = None
+    loss: dict[str, dict] | None = None
+    epochs: float | None = None
+
+
 class ProjectionComputing(ProcessComputing):
     kind: Literal["projection"]
     name: str
@@ -496,7 +543,7 @@ class TableOutModel(BaseModel):
     """
 
     items: list
-    total: int
+    total: int | float
 
 
 class TableInModel(BaseModel):
@@ -508,6 +555,19 @@ class TableInModel(BaseModel):
     list_labels: list
     scheme: str
     action: str
+
+
+class TableBatchInModel(BaseModel):
+    """
+    Requesting a batch of elements
+    """
+
+    scheme: str
+    min: int = 0
+    max: int = 0
+    mode: str = "all"
+    contains: str | None = None
+    dataset: str = "train"
 
 
 class ProjectsServerModel(BaseModel):
@@ -556,16 +616,34 @@ class FeaturesProjectStateModel(BaseModel):
     training: dict[str, dict[str, str | None]]
 
 
+class SimpleModelOutModel(BaseModel):
+    """
+    Trained simplemodel
+    """
+
+    features: list
+    model: str
+    params: (
+        dict[str, str | float | bool | list | None]
+        | dict[str, dict[str, str | float | bool | None]]
+        | None
+    )
+    scheme: str
+    username: str
+    statistics: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
+
+
 class SimpleModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
-    available: dict[str, dict[str, dict[str, Any]]]
+    available: dict[str, dict[str, SimpleModelOutModel]]
     training: dict[str, list[str]]
 
 
 class LanguageModelsProjectStateModel(BaseModel):
     options: list[dict[str, Any]]
-    available: dict[str, dict[str, dict[str, bool]]]
-    training: dict[str, dict[str, str | float | int | dict | None]]
+    available: dict[str, dict[str, LMStatusModel]]
+    training: dict[str, LMComputingOutModel]
     base_parameters: LMParametersModel
 
 
@@ -599,14 +677,6 @@ class ProjectStateModel(BaseModel):
     errors: list[list]
     memory: float | None = None
     last_activity: str | None = None
-
-
-class QueueModel(BaseModel):
-    """
-    Response for current queue
-    """
-
-    content: dict[str, dict[str, Any]]
 
 
 class ProjectDescriptionModel(BaseModel):
@@ -701,7 +771,7 @@ class GpuInformationModel(BaseModel):
 class ServerStateModel(BaseModel):
     version: str
     queue: dict[str, dict[str, str | None]]
-    active_projects: dict[Any, list[dict[str, Any]]]
+    active_projects: dict[str, list]
     gpu: GpuInformationModel
     cpu: dict
     memory: dict
@@ -733,24 +803,6 @@ class FitModelResults(BaseModel):
     statistics: MLStatisticsModel
     statistics_cv10: MLStatisticsModel | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-
-class SimpleModelOutModel(BaseModel):
-    """
-    Trained simplemodel
-    """
-
-    features: list
-    model: str
-    params: (
-        dict[str, str | float | bool | list | None]
-        | dict[str, dict[str, str | float | bool | None]]
-        | None
-    )
-    scheme: str
-    username: str
-    statistics: MLStatisticsModel
-    statistics_cv10: MLStatisticsModel | None = None
 
 
 class ReturnTaskPredictModel(BaseModel):

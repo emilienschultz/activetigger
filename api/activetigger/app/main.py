@@ -51,7 +51,6 @@ async def lifespan(app: FastAPI):
     print("Active Tigger starting")
     yield
     print("Active Tigger closing")
-    orchestrator.queue.close()
 
 
 # starting the app
@@ -106,6 +105,21 @@ async def get_version() -> str:
     return __version__
 
 
+@app.post("/server/restart", dependencies=[Depends(verified_user)])
+async def restart_queue(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> None:
+    """
+    Restart the queue & the memory
+    """
+    test_rights("server operation", current_user.username)
+    try:
+        orchestrator.reset()
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/server")
 async def get_queue() -> ServerStateModel:
     """
@@ -121,11 +135,8 @@ async def login_for_access_token(
     """
     Authentificate user from username/password and return token
     """
-
     try:
-        # authentificate the user
         user = orchestrator.users.authenticate_user(form_data.username, form_data.password)
-        # create new token for the user
         access_token = orchestrator.create_access_token(
             data={"sub": user.username}, expires_min=120
         )
@@ -157,44 +168,12 @@ async def get_logs(
 @app.post("/stop", dependencies=[Depends(verified_user)])
 async def stop_process(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    unique_id: str = "all",
 ) -> None:
     """
     Stop all the ongoing process for the connected user
     """
-    test_rights("kill process", current_user.username)
     try:
-        # get all processes for the user
-        processes = [
-            orchestrator.projects[p].get_process(
-                ["train_bert", "predict_bert", "generation"], current_user.username
-            )
-            for p in orchestrator.projects
-        ]
-        processes = [i for p in processes for i in p if p is not None]
-
-        # kill all processes
-        for process in processes:
-            orchestrator.queue.kill(process.unique_id)
-            orchestrator.log_action(
-                current_user.username, f"KILL PROCESS: {process.unique_id}", "all"
-            )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/kill", dependencies=[Depends(verified_user)])
-async def kill_process(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    unique_id: str,
-) -> None:
-    """
-    Kill a process with a unique id
-    """
-    test_rights("kill process", current_user.username)
-    try:
-        orchestrator.queue.kill(unique_id)
-        orchestrator.log_action(current_user.username, f"KILL PROCESS: {unique_id}", "all")
-        return None
+        orchestrator.stop_process(current_user.username, unique_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -18,7 +18,7 @@ export type PossibleProjectActions =
   | 'predict';
 
 type ProjectPageLayoutProps = PropsWithChildren<{
-  projectName: string | null;
+  projectName: string | undefined;
   currentAction?: PossibleProjectActions;
 }>;
 

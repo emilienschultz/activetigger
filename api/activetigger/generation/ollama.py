@@ -1,6 +1,6 @@
 import logging
 
-import requests
+import requests  # type: ignore[import]
 
 from activetigger.generation.client import GenerationModelClient
 

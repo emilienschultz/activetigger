@@ -37,6 +37,7 @@ export const ProjectCreationForm: FC = () => {
   const langages = [
     { value: 'en', label: 'English' },
     { value: 'fr', label: 'French' },
+    { value: 'es', label: 'Spanish' },
     { value: 'de', label: 'German' },
     { value: 'cn', label: 'Chinese' },
     { value: 'ja', label: 'Japanese' },
@@ -420,7 +421,7 @@ export const ProjectCreationForm: FC = () => {
                         <HiOutlineQuestionMarkCircle />
                       </a>
                       <Tooltip anchorSelect=".stratify_train" place="top">
-                        If selected, use the stratify columsn to stratify train set. Small variation
+                        If selected, use the stratify columns to stratify train set. Small variation
                         in the number of elements can happen.
                       </Tooltip>
                       <input
@@ -438,7 +439,7 @@ export const ProjectCreationForm: FC = () => {
                         <HiOutlineQuestionMarkCircle />
                       </a>
                       <Tooltip anchorSelect=".stratify_train" place="top">
-                        If selected, use the stratify columsn to stratify test set. Small variation
+                        If selected, use the stratify columns to stratify test set. Small variation
                         in the number of elements can happen.
                       </Tooltip>
                       <input

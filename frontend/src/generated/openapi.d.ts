@@ -206,6 +206,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/close/{project_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close Project
+         * @description Close a project from memory
+         */
+        post: operations["close_project_projects_close__project_slug__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{project_slug}/statistics": {
         parameters: {
             query?: never;
@@ -461,13 +481,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Get List Elements
          * @description Get a table of elements
          */
-        get: operations["get_list_elements_elements_table_get"];
-        put?: never;
-        post?: never;
+        post: operations["get_list_elements_elements_table_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -593,9 +613,6 @@ export interface paths {
         /**
          * Rename Label
          * @description Rename a a label
-         *     - create new label (the order is important)
-         *     - convert existing annotations (need the label to exist, add a new element for each former)
-         *     - delete former label
          */
         post: operations["rename_label_schemes_label_rename_post"];
         delete?: never;
@@ -1212,9 +1229,6 @@ export interface paths {
         /**
          * Postgenerate
          * @description Launch a call to generate from a prompt
-         *     Only one possible by user
-         *
-         *     TODO : move to a module
          */
         post: operations["postgenerate_generate_start_post"];
         delete?: never;
@@ -1254,7 +1268,7 @@ export interface paths {
         put?: never;
         /**
          * Getgenerate
-         * @description Get elements from prediction
+         * @description Get elements generated
          */
         post: operations["getgenerate_generate_elements_post"];
         delete?: never;
@@ -1444,6 +1458,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/server/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restart Queue
+         * @description Restart the queue & the memory
+         */
+        post: operations["restart_queue_server_restart_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/server": {
         parameters: {
             query?: never;
@@ -1518,26 +1552,6 @@ export interface paths {
          * @description Stop all the ongoing process for the connected user
          */
         post: operations["stop_process_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/kill": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Kill Process
-         * @description Kill a process with a unique id
-         */
-        post: operations["kill_process_kill_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2586,6 +2600,36 @@ export interface components {
             dataset: string | null;
         };
         /**
+         * TableBatchInModel
+         * @description Requesting a batch of elements
+         */
+        TableBatchInModel: {
+            /** Scheme */
+            scheme: string;
+            /**
+             * Min
+             * @default 0
+             */
+            min: number;
+            /**
+             * Max
+             * @default 0
+             */
+            max: number;
+            /**
+             * Mode
+             * @default all
+             */
+            mode: string;
+            /** Contains */
+            contains?: string | null;
+            /**
+             * Dataset
+             * @default train
+             */
+            dataset: string;
+        };
+        /**
          * TableOutModel
          * @description Response for table of elements
          */
@@ -2962,6 +3006,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserStatistics"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_project_projects_close__project_slug__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -3359,22 +3434,20 @@ export interface operations {
             };
         };
     };
-    get_list_elements_elements_table_get: {
+    get_list_elements_elements_table_post: {
         parameters: {
             query: {
-                scheme: string;
-                min?: number;
-                max?: number;
-                contains?: string | null;
-                mode?: string;
-                dataset?: string;
                 project_slug: string;
             };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TableBatchInModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -5048,6 +5121,26 @@ export interface operations {
             };
         };
     };
+    restart_queue_server_restart_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     get_queue_server_get: {
         parameters: {
             query?: never;
@@ -5135,28 +5228,8 @@ export interface operations {
     };
     stop_process_stop_post: {
         parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    kill_process_kill_post: {
-        parameters: {
-            query: {
-                unique_id: string;
+            query?: {
+                unique_id?: string;
             };
             header?: never;
             path?: never;

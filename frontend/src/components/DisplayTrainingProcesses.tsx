@@ -49,7 +49,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
     processes &&
     Object.values(processes).filter((p) => p && p.status === processStatus).length === 0
   ) {
-    return <div className="overflow-x-auto p-4"></div>;
+    return <div className="overflow-x-auto"></div>;
   }
 
   return (

@@ -2,6 +2,7 @@ import os
 from collections.abc import Callable
 from enum import StrEnum
 
+import pytz  # type: ignore
 from dotenv import load_dotenv
 
 
@@ -53,6 +54,14 @@ class Config(metaclass=_Singleton):
     n_workers_gpu: int
     n_workers_cpu: int
     update_timeout: int
+    timezone: pytz.BaseTzInfo
+    default_user: str = "root"
+    test_file: str = "test.parquet"
+    train_file: str = "train.parquet"
+    features_file: str = "features.parquet"
+    data_all: str = "data_all.parquet"
+    file_models: str = "bert_models.csv"
+    simplemodels_file: str = "simplemodels.pickle"
 
     def __init__(self):
         # for variables which needs cast or other treatment we do that work in the constructor
@@ -62,7 +71,7 @@ class Config(metaclass=_Singleton):
             else "dev"
         )
         self.user_hdd_max = parse_environ("ACTIVETIGGER_USER_HDD_MAX", float, 30.0)
-        self.max_loaded_projects = parse_environ("MAX_LOADED_PROJECTS", int, 20)
+        self.max_loaded_projects = parse_environ("MAX_LOADED_PROJECTS", int, 30)
         self.n_workers_gpu = parse_environ("N_WORKERS_GPU", int, 1)
         self.n_workers_cpu = parse_environ("N_WORKERS_CPU", int, 5)
         self.update_timeout = parse_environ("UPDATE_TIMEOUT", int, 1)
@@ -70,6 +79,8 @@ class Config(metaclass=_Singleton):
             "DATABASE_URL",
             f"sqlite:///{os.path.join(self.data_path, 'projects', 'activetigger.db')}",
         )
+        self.model_path = os.environ.get("MODEL_PATH", os.path.join(self.data_path, "models"))
+        self.timezone = pytz.timezone("Europe/Paris")
 
 
 # the configuration is safe to share as it's a singleton (initialized only once)

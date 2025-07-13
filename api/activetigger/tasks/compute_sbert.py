@@ -1,7 +1,9 @@
 import gc
 import logging
 import math
+import multiprocessing
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import torch
@@ -25,6 +27,7 @@ class ComputeSbert(BaseTask):
         model: str = "all-mpnet-base-v2",
         batch_size: int = 32,
         min_gpu: int = 6,
+        event: Optional[multiprocessing.synchronize.Event] = None,
     ):
         super().__init__()
         self.texts = texts
@@ -32,6 +35,7 @@ class ComputeSbert(BaseTask):
         self.batch_size = batch_size
         self.min_gpu = min_gpu
         self.path_process = path_process
+        self.event = event
 
     def __call__(self) -> DataFrame:
         """
@@ -40,15 +44,10 @@ class ComputeSbert(BaseTask):
 
         # test the data
         if self.texts.isnull().sum() > 0:
-            raise ValueError(
-                "There are missing values in the input data, so we can't proceed"
-            )
+            raise ValueError("There are missing values in the input data, so we can't proceed")
 
         if torch.cuda.is_available():
-            if (
-                torch.cuda.get_device_properties(0).total_memory / (1024**3)
-                > self.min_gpu
-            ):
+            if torch.cuda.get_device_properties(0).total_memory / (1024**3) > self.min_gpu:
                 device = torch.device("cuda")  # Use CUDA
             else:
                 print("Not enough GPU memory, fallback to CPU")
@@ -59,20 +58,21 @@ class ComputeSbert(BaseTask):
             device = torch.device("cpu")  # Fallback to CPU
 
         try:
-            sbert = SentenceTransformer(
-                self.model, device=str(device), trust_remote_code=True
-            )
+            sbert = SentenceTransformer(self.model, device=str(device), trust_remote_code=True)
             sbert.max_seq_length = 512
 
             print("start computation")
             embeddings = []
             total_batches = math.ceil(len(self.texts) / self.batch_size)
             for i, start in enumerate(range(0, len(self.texts), self.batch_size), 1):
+                # check if the user want to stop the process
+                if self.event is not None:
+                    if self.event.is_set():
+                        raise Exception("Process interrupted by user")
+                # create the batch
                 batch_texts = list(self.texts.iloc[start : start + self.batch_size])
                 embeddings.append(
-                    sbert.encode(
-                        batch_texts, device=str(device), normalize_embeddings=True
-                    )
+                    sbert.encode(batch_texts, device=str(device), normalize_embeddings=True)
                 )
 
                 # manage progress

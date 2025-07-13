@@ -13,7 +13,6 @@ from activetigger.datamodels import (
     AuthActions,
     UserInDBModel,
     UserModel,
-    UsersServerModel,
     UserStatistics,
 )
 from activetigger.orchestrator import orchestrator
@@ -28,7 +27,6 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
     """
     try:
         orchestrator.revoke_access_token(token)
-        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -49,16 +47,12 @@ async def read_users_me(
 @router.get("/users", tags=["users"])
 async def existing_users(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> UsersServerModel:
+) -> dict[str, UserModel]:
     """
     Get existing users
     """
     try:
-        users = orchestrator.users.existing_users()
-        return UsersServerModel(
-            users=users,
-            auth=["manager", "annotator"],
-        )
+        return orchestrator.users.existing_users()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -91,12 +85,9 @@ async def create_user(
         )
         if dummy:
             # as a background task
-            background_tasks.add_task(
-                orchestrator.create_dummy_project, username_to_create
-            )
+            background_tasks.add_task(orchestrator.create_dummy_project, username_to_create)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
-    return None
 
 
 @router.post("/users/delete", dependencies=[Depends(verified_user)], tags=["users"])
@@ -113,7 +104,6 @@ async def delete_user(
         orchestrator.users.delete_user(user_to_delete, current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
-    return None
 
 
 @router.post("/users/changepwd", dependencies=[Depends(verified_user)], tags=["users"])
@@ -128,14 +118,11 @@ async def change_password(
     """
     try:
         orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
-        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post(
-    "/users/auth/{action}", dependencies=[Depends(verified_user)], tags=["users"]
-)
+@router.post("/users/auth/{action}", dependencies=[Depends(verified_user)], tags=["users"])
 async def set_auth(
     action: AuthActions,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -152,9 +139,7 @@ async def set_auth(
             raise HTTPException(status_code=400, detail="Missing status")
         try:
             orchestrator.users.set_auth(username, project_slug, status)
-            orchestrator.log_action(
-                current_user.username, f"ADD AUTH USER: {username}", "all"
-            )
+            orchestrator.log_action(current_user.username, f"ADD AUTH USER: {username}", "all")
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -163,9 +148,7 @@ async def set_auth(
     if action == "delete":
         try:
             orchestrator.users.delete_auth(username, project_slug)
-            orchestrator.log_action(
-                current_user.username, f"DELETE AUTH USER: {username}", "all"
-            )
+            orchestrator.log_action(current_user.username, f"DELETE AUTH USER: {username}", "all")
         except Exception as e:
             raise HTTPException(status_code=500) from e
 

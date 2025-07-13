@@ -21,6 +21,7 @@ export const ProjectUpdateForm: FC = () => {
   const langages = [
     { value: 'en', label: 'English' },
     { value: 'fr', label: 'French' },
+    { value: 'es', label: 'Spanish' },
     { value: 'de', label: 'German' },
     { value: 'cn', label: 'Chinese' },
     { value: 'ja', label: 'Japanese' },

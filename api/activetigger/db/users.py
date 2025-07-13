@@ -4,13 +4,9 @@ from collections.abc import Sequence
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
+from activetigger.datamodels import UserModel
 from activetigger.db import DBException
-from activetigger.db.models import (
-    Annotations,
-    Logs,
-    Projects,
-    Users,
-)
+from activetigger.db.models import Annotations, Logs, Projects, Users
 
 
 class UsersService:
@@ -45,9 +41,7 @@ class UsersService:
             )
             session.add(user)
 
-    def get_users_created_by(
-        self, user_name: str, active: bool = True
-    ) -> dict[str, dict]:
+    def get_users_created_by(self, user_name: str, active: bool = True) -> dict[str, UserModel]:
         """
         get users created by *username*
         """
@@ -58,7 +52,10 @@ class UsersService:
             if active:
                 stmt = stmt.filter(Users.deactivated.is_(None))
             return {
-                row[0]: {"contact": row[1]}
+                row[0]: UserModel(
+                    username=row[0],
+                    contact=row[1] or "",
+                )
                 for row in session.execute(stmt).all()
                 if row[0] != "system"
             }
@@ -82,39 +79,13 @@ class UsersService:
         Change password for a specific user
         """
         with self.SessionMaker.begin() as session:
-            _ = session.execute(
-                update(Users).filter_by(user_name=user_name).values(key=password)
-            )
-
-    def get_distinct_users(
-        self, project_slug: str, timespan: int | None
-    ) -> Sequence[Users]:
-        with self.SessionMaker() as session:
-            stmt = (
-                select(Projects.user)
-                .join_from(Projects, Users)
-                .where(Projects.project_slug == project_slug)
-                .distinct()
-            )
-            if timespan:
-                time_threshold = datetime.datetime.now() - datetime.timedelta(
-                    seconds=timespan
-                )
-                stmt = stmt.join(Annotations).where(
-                    Annotations.time > time_threshold,
-                )
-            return session.scalars(stmt).all()
+            _ = session.execute(update(Users).filter_by(user_name=user_name).values(key=password))
 
     def get_current_users(self, timespan: int = 600):
         with self.SessionMaker() as session:
-            time_threshold = datetime.datetime.now() - datetime.timedelta(
-                seconds=timespan
-            )
+            time_threshold = datetime.datetime.now() - datetime.timedelta(seconds=timespan)
             users = (
-                session.query(Logs.user_name)
-                .filter(Logs.time > time_threshold)
-                .distinct()
-                .all()
+                session.query(Logs.user_name).filter(Logs.time > time_threshold).distinct().all()
             )
             return [u.user_name for u in users]
 

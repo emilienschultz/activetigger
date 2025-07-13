@@ -7,13 +7,13 @@ from fastapi import (
     Request,
 )
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
+from jose import JWTError  # type: ignore[import]
 
 from activetigger.datamodels import (
-    ProjectModel,
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
+from activetigger.project import Project
 
 
 def get_orchestrator():
@@ -33,8 +33,8 @@ def manage_fifo_queue():
             key=lambda x: x[1],
         )[0]
         if (
-            old_element[1] < time.time() - 3600
-        ):  # check if the project has a least one hour old to avoid destroying current projects
+            old_element[1] < time.time() - 600
+        ):  # check if the project has a least ten minutes old to avoid destroying current projects
             del orchestrator.projects[old_element[0]]
             print(f"Delete project {old_element[0]} to gain memory")
         else:
@@ -45,7 +45,7 @@ def manage_fifo_queue():
             )
 
 
-async def get_project(project_slug: str) -> ProjectModel:
+async def get_project(project_slug: str) -> Project:
     """
     Dependency to get existing project
     - if already loaded, return it
@@ -139,6 +139,13 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
     # general status
     status = user.status
 
+    # server operation
+    if action == "server operation":
+        if status in ["root"]:
+            return True
+        else:
+            raise HTTPException(500, "No rights for this action")
+
     # possibility to create project
     if action == "create project":
         if status in ["root", "manager"]:
@@ -219,4 +226,23 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
         else:
             raise HTTPException(500, "No rights for this action")
 
+    # export data
+    if action == "export data":
+        if (auth == "manager") or (status == "root"):
+            return True
+        else:
+            raise HTTPException(500, "No rights for this action")
+
     raise HTTPException(404, "No action found")
+
+
+def check_storage(username: str) -> None:
+    """
+    Check if the user storage is not exceeded
+    """
+    limit = orchestrator.users.get_storage_limit(username)
+    if orchestrator.users.get_storage(username) > limit * 1000:
+        raise HTTPException(
+            status_code=500,
+            detail=f"User storage limit exceeded ({limit} Gb), please delete some models in your projects",
+        )

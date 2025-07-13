@@ -32,6 +32,12 @@ interface renameModel {
   new_name: string;
 }
 
+interface LossData {
+  epoch: { [key: string]: number };
+  val_loss: { [key: string]: number };
+  val_eval_loss: { [key: string]: number };
+}
+
 export const FinetunePage: FC = () => {
   const { projectName: projectSlug } = useParams();
 
@@ -50,6 +56,7 @@ export const FinetunePage: FC = () => {
     return [];
   }, [project, currentScheme]);
 
+  // current model and automatic selection
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   useEffect(() => {
     if (availableModels.length > 0 && !currentModel) {
@@ -57,14 +64,16 @@ export const FinetunePage: FC = () => {
     }
   }, [availableModels, currentModel]);
 
+  // get model information from api
   const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
 
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
-  // compute model preduction
+  // compute model prediction
   const [batchSize, setBatchSize] = useState<number>(32);
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
 
+  // hook to api call to launch the test
   const { testModel } = useTestModel(
     projectSlug || null,
     currentScheme || null,
@@ -86,35 +95,21 @@ export const FinetunePage: FC = () => {
     } else notify({ type: 'error', message: 'New name is void' });
   };
 
-  // deactivate GPU if not available
-  // const { gpu } = useGetServer(project || null);
-  // useEffect(() => {
-  //   if (!gpu) {
-  //     setValue('parameters.gpu', false);
-  //   }
-  // }, [gpu, setValue]);
-
-  interface LossData {
-    epoch: { [key: string]: number };
-    val_loss: { [key: string]: number };
-    val_eval_loss: { [key: string]: number };
-  }
-
   // loss chart shape data
   const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
 
+  // display statistics options
   const possibleStatistics = [
     ['Validation (model)', model ? model.valid_scores : null],
     ['Train (model)', model ? model.train_scores : null],
     ['Out of sample', model ? model.outofsample_scores : null],
   ];
-
   const existingStatistics = Object.fromEntries(
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
 
   return (
-    <ProjectPageLayout projectName={projectSlug || null} currentAction="finetune">
+    <ProjectPageLayout projectName={projectSlug} currentAction="finetune">
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">

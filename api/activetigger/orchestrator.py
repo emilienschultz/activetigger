@@ -10,17 +10,18 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import cast
 
-import pandas as pd
-import psutil
+import pandas as pd  # type: ignore[import]
+import psutil  # type: ignore[import]
 from fastapi.encoders import jsonable_encoder
-from jose import jwt
+from jose import jwt  # type: ignore[import]
 from sklearn.datasets import fetch_20newsgroups  # type: ignore[import]
 
-# from slugify import slugify
 from activetigger import __version__
 from activetigger.config import config
 from activetigger.datamodels import (
+    LMComputing,
     ProjectBaseModel,
     ProjectModel,
     ProjectSummaryModel,
@@ -38,7 +39,8 @@ logger = logging.getLogger("server")
 
 class Orchestrator:
     """
-    Server to manage backend
+    Server to manage the API
+    Mono-process
     """
 
     db_name: str
@@ -59,45 +61,46 @@ class Orchestrator:
     queue: Queue
     users: Users
     max_projects: int
+    project_creation_ongoing: dict[str, datetime]
 
-    def __init__(self, path, path_models) -> None:
+    def __init__(self) -> None:
         """
         Start the server
         """
+        self.starting_time = time.time()
 
         self.max_projects = config.max_loaded_projects
-        self.data_all = "data_all.parquet"
-        self.features_file = "features.parquet"
-        self.train_file = "train.parquet"
-        self.test_file = "test.parquet"
-        self.default_user = "root"
+        self.data_all = config.data_all
+        self.features_file = config.features_file
+        self.train_file = config.train_file
+        self.test_file = config.test_file
+        self.default_user = config.default_user
         self.jwt_algorithm = config.jwt_algorithm
         self.n_workers_cpu = config.n_workers_cpu
         self.n_workers_gpu = config.n_workers_gpu
 
-        self.starting_time = time.time()
-
         # Define path
-        self.path = Path(path)
-        self.path_models = Path(path_models)
+        self.path = Path(config.data_path + "/projects")
+        self.path_models = Path(config.data_path + "/models")
 
-        # create directories
+        # create directories parent/static/models
         self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
 
         # attributes of the server
-        self.projects = {}
         self.db_manager = DatabaseManager()
         self.queue = Queue(
             nb_workers_cpu=self.n_workers_cpu,
             nb_workers_gpu=self.n_workers_gpu,
-            path=self.path,
         )
         self.users = Users(self.db_manager)
+        self.projects = {}
 
-        # update
-        # TODO : manage better the closing
+        # timestamp of project creation
+        self.project_creation_ongoing = {}
+
+        # update the projects asynchronously
         self._running = True
         self._update_task = asyncio.create_task(self._update(timeout=config.update_timeout))
 
@@ -116,20 +119,71 @@ class Orchestrator:
         """
         print("Ending the server")
         logger.error("Disconnect server")
+        if self._update_task:
+            self._update_task.cancel()
         self._running = False
-        self.queue.executor.shutdown(wait=False)
-        self.queue.close()
+        del self.queue
         print("Server off")
 
-    async def _update(self, timeout: int = 1) -> None:
+    def reset(self):
         """
-        Update the queue with new tasks every X seconds
+        Erase the waiting queue and projects in memory
+        """
+        self.queue.restart()
+        self.projects = {}
+
+    def starting_project_creation(self, project_slug: str) -> None:
+        """
+        Keep information that a project is in creation
+        """
+        # add the project slug to the ongoing projects
+        self.project_creation_ongoing[project_slug] = datetime.now(timezone.utc)
+
+    def ending_project_creation(self, project_slug: str) -> None:
+        """
+        Remove the information that a project is in creation
+        """
+        # remove the project slug from the ongoing projects
+        if project_slug in self.project_creation_ongoing:
+            del self.project_creation_ongoing[project_slug]
+
+    def updating_project_creation(self, delay: int = 120) -> None:
+        print("Project in creation:", len(self.project_creation_ongoing))
+        # remove old project creation (more than 2 minutes)
+        for p in [
+            p
+            for p, t in self.project_creation_ongoing.items()
+            if (datetime.now(timezone.utc) - t).total_seconds() > delay
+        ]:
+            print("The project", p, "is still not created, remove it")
+            self.ending_project_creation(p)
+
+    async def _update(self, timeout: int = 1, project_lifetime: int = 7200) -> None:
+        """
+        Update each project in memory every X seconds.
+        Remove projects that are older than project_lifetime seconds.
         """
         try:
             while self._running:
-                print("update orchestrator")
-                # print(get_gpu_memory_info())
-                self.update()
+                print("update orchestrator - projets in memory:", len(self.projects))
+                self.queue.clean_old_processes()
+                timer = time.time()
+                to_del = []
+                for p, project in self.projects.items():
+                    # if project existing since one day, remove it from memory
+                    if (timer - project.starting_time) > project_lifetime:
+                        to_del.append(p)
+                        continue
+                    # update the project
+                    project.update_processes()
+
+                # remove the projects from memory
+                for p in to_del:
+                    del self.projects[p]
+
+                # update the information on the state of the project
+                self.server_state = self.get_server_state()
+                self.updating_project_creation()
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
             print("Update task cancelled.")
@@ -161,22 +215,24 @@ class Orchestrator:
         return df
 
     def get_server_state(self) -> ServerStateModel:
-        # active projects
-        active_projects = {}
-        for p in self.projects:
-            active_projects[p] = [
-                {
-                    "unique_id": c.unique_id,
-                    "user": c.user,
-                    "kind": c.kind,
-                    "time": c.time,
-                }
+        """
+        Build server state
+        """
+        # active projects in the orchestrator
+        active_projects = {
+            p: [
+                {"unique_id": c.unique_id, "user": c.user, "kind": c.kind, "time": c.time}
                 for c in self.projects[p].computing
             ]
+            for p in self.projects
+        }
 
-        # running processes
-        q = self.queue.state()
-        queue = {i: q[i] for i in q if q[i]["state"] in ["pending", "running"]}
+        # running processes in the queue
+        queue = {
+            i.unique_id: i.model_dump()
+            for i in self.queue.state()
+            if i.state in ["pending", "running"]
+        }
 
         # server state
         cpu = psutil.cpu_percent()
@@ -239,19 +295,6 @@ class Orchestrator:
                 )
             )
         return projects
-
-        # return [
-        #     ProjectSummaryModel(
-        #         user_right=i[1],
-        #         parameters=ProjectModel(**i[2]),
-        #         created_by=i[3],
-        #         created_at=i[4].strftime("%Y-%m-%d %H:%M:%S"),
-        #         size=round(get_dir_size(config.data_path + "/projects/" + i[0]), 1),
-        #         last_activity=self.db_manager.logs_service.get_last_activity_project(i[0]),
-        #         project_slug=i[0],
-        #     )
-        #     for i in list(reversed(projects_auth))
-        # ]
 
     def get_project_params(self, project_slug: str) -> ProjectModel | None:
         """
@@ -321,7 +364,7 @@ class Orchestrator:
         payload = jwt.decode(token, config.secret_key, algorithms=[self.jwt_algorithm])
         return payload
 
-    def start_project(self, project_slug: str) -> dict:
+    def start_project(self, project_slug: str) -> None:
         """
         Load project in server
         """
@@ -332,17 +375,51 @@ class Orchestrator:
             self.projects[project_slug] = Project(
                 project_slug, self.queue, self.db_manager, path_models=self.path_models
             )
-            return {"success": "Project loaded"}
         except Exception as e:
             raise Exception(
                 f"Error while loading project {project_slug}: {e} - {traceback.format_exc()}"
             ) from e
 
-    def set_project_parameters(self, project: ProjectModel, username: str) -> dict:
+    def stop_project(self, project_slug: str) -> None:
+        """
+        Stop a project
+        """
+        if project_slug not in self.projects:
+            return None
+        del self.projects[project_slug]
+
+    def stop_process(
+        self, username: str, process_id: str = "all", kind: list | None = None
+    ) -> None:
+        """
+        Stop process (all or specific) for a user
+        """
+
+        if kind is None:
+            kind = ["train_bert", "predict_bert", "generation", "feature"]
+
+        # all process for the user
+        if process_id == "all":
+            processes = {p: self.projects[p].get_process(kind, username) for p in self.projects}
+
+            # kill all processes associated
+            for project in processes:
+                for process in processes[project]:
+                    self.queue.kill(process.unique_id)
+                    if process.kind == "train_bert":
+                        process = cast(LMComputing, process)
+                        self.db_manager.language_models_service.delete_model(
+                            project, process.model_name
+                        )
+                    self.log_action(username, f"KILL PROCESS: {process.unique_id}", "all")
+        # specific process
+        else:
+            self.queue.kill(process_id)
+
+    def set_project_parameters(self, project: ProjectModel, username: str) -> None:
         """
         Update project parameters in the DB
         """
-
         # get project
         existing_project = self.db_manager.projects_service.get_project(project.project_slug)
 
@@ -351,20 +428,17 @@ class Orchestrator:
             self.db_manager.projects_service.update_project(
                 project.project_slug, jsonable_encoder(project)
             )
-            return {"success": "project updated"}
         else:
             # Insert a new project
             self.db_manager.projects_service.add_project(
                 project.project_slug, jsonable_encoder(project), username
             )
-            return {"success": "project added"}
 
     def existing_projects(self) -> list:
         """
         Get existing projects
         """
-        existing_projects = self.db_manager.projects_service.existing_projects()
-        return existing_projects
+        return self.db_manager.projects_service.existing_projects()
 
     def create_project(self, params: ProjectBaseModel, username: str) -> str:
         """
@@ -614,6 +688,9 @@ class Orchestrator:
         if params.force_computation:
             print("Force computation of the features")
 
+        # ending project creation
+        self.ending_project_creation(project_slug)
+
         return project_slug
 
     def delete_project(self, project_slug: str) -> None:
@@ -642,11 +719,11 @@ class Orchestrator:
         if project_slug in self.projects:
             del self.projects[project_slug]
 
-    def clean_project(
+    def clean_unfinished_project(
         self, project_slug: str | None = None, project_name: str | None = None
     ) -> None:
         """
-        Clean a project
+        Clean a project that is not loadable
         """
 
         if project_slug is not None:
@@ -666,30 +743,6 @@ class Orchestrator:
             ## remove static files
             if Path(f"{config.data_path}/projects/static/{project_slug_verif}").exists():
                 shutil.rmtree(f"{config.data_path}/projects/static/{project_slug_verif}")
-
-    def update(self):
-        """
-        Update the state of the orchestrator
-        - projects
-        - state of the server
-        """
-        self.queue.clean_old_processes()
-        timer = time.time()
-        to_del = []
-        for p, project in self.projects.items():
-            # if project existing since one day, remove it from memory
-            if (timer - project.starting_time) > 86400:
-                to_del.append(p)
-                continue
-            # update the project
-            project.update_processes()
-
-        # remove the projects from memory
-        for p in to_del:
-            del self.projects[p]
-
-        # update the information on the state of the project
-        self.server_state = self.get_server_state()
 
     def create_dummy_project(self, username: str) -> None:
         """
@@ -724,7 +777,4 @@ class Orchestrator:
 
 
 # launch the instance
-orchestrator = Orchestrator(
-    config.data_path + "/projects",
-    config.data_path + "/models",
-)
+orchestrator = Orchestrator()

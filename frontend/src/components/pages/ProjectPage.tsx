@@ -20,7 +20,6 @@ import { SchemesManagement } from '../SchemesManagement';
 /**
  * Component to display the project page
  */
-
 export const ProjectPage: FC = () => {
   // get data
   const { projectName: projectSlug } = useParams();
