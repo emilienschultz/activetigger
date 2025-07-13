@@ -7,23 +7,30 @@
 
 Hi❗
 
-ActiveTigger[^1] is a text annotation web tool dedicated to computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to classify text dataset relying on active learning.
+ActiveTigger[^1] is a collaborative text annotation web tool dedicated to computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to classify text dataset relying on active learning.
 
 Designed primarily by researchers in social sciences, its use can extend to all users that need to annotate textual data.
 
 > [!IMPORTANT]
-> The app is currently 🚧 **under the beta test phase** 🚧. The stable version is planned for August 2025.
+> The app is currently 🚧 **in beta test** 🚧. The stable version is planned for August 2025.
 
 [Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
 
 ## Run the app with Docker (recommended)
 
-If you don't already have it installed, install docker first.
+If you don't already have it installed, install docker/docker compose first.
 
-Clone the repository
+Clone the current repository.
 
 ```bash
 git clone https://github.com/emilienschultz/activetigger.git
+```
+
+Favor the production branch.
+
+```bash
+cd activetigger
+git checkout production
 ```
 
 Then, you can run the app with docker compose. You need to be in the `docker` directory.
@@ -33,7 +40,7 @@ cd docker
 docker compose -f docker-compose.yml -f docker-compose.dev.yml -p activetigger up
 ```
 
-The configuration file is `./docker/.env`.
+The configuration file is `./docker/.env` to set the environment variables.
 
 Docker will start:
 
@@ -47,20 +54,19 @@ _By default the docker stack is in mode DEV._ This means that both API and FRONT
 > [!IMPORTANT]
 > If you want to use a GPU inside docker locally you need to first follow the `NVIDIA GPU` section from the [deploy documentation](./DEPLOY.md#nvidia-gpu).
 
-## Install the app
+## Install the app without Docker
 
 The app is built on a client/API/Database architecture :
 
 - the server runs an API with FastAPI
 - the client is in [React](https://reactjs.org/)
-- The database can be either SQLite or Postgresql (if you use Postgresql, you need to install it first)
+- The database can be either SQLite or Postgresql (if you use Postgresql, you need to install it first). For local non-docker installation, it is recommended to use SQLite.
 
 First, clone the repository
 
 ```bash
 git clone https://github.com/emilienschultz/activetigger.git
 ```
-
 
 ### Install the Python API
 
@@ -89,11 +95,7 @@ cd activetigger/api
 python -m activetigger
 ```
 
-You can also install the last stable version of the API from PyPi with
-
-```bash
-pip install activetigger
-```
+Check that the API is running by going to `http://localhost:5000` in your browser.
 
 #### Optional: Install GPU Support for UMAP
 
@@ -160,11 +162,6 @@ npm run build
 
 You can deploy the app with Github Pages for tests
 
-### Install Postgresql
-
-If you want to use Postgresql, you need to install it first. You can use the docker image or install it locally.
-
-**to write**
 
 ## Python client
 
@@ -190,6 +187,7 @@ The development of Active Tigger is supported by : [DRARI Île-de-France](https:
 
 ## How to cite
 
-🚧 please do not cite for the moment 🚧
+Boelaert J., Ollion É., Schultz É. (2025). ActiveTigger (Version 0.9.0) [Computer software]. https://github.com/emilienschultz/activetigger
+
 
 [^1]: The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger). Active Tigger name is a pun that draws on the similarity between the words 'Tagger' and 'Tigger.'
