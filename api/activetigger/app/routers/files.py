@@ -65,7 +65,6 @@ async def save_uploaded_file(file: UploadFile, file_path: Path, project_path: Pa
 
 @router.post("/files/add/project")
 async def upload_file(
-    background_tasks: BackgroundTasks,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     file: UploadFile = File(...),
@@ -103,15 +102,68 @@ async def upload_file(
         # setting the project in creation
         orchestrator.starting_project_creation(project_slug)
         os.makedirs(project_path)
-        file_path = project_path.joinpath(file.filename)
 
-        background_tasks.add_task(save_uploaded_file, file, file_path, project_path)
+        # Read and write the file asynchronously
+        async with aiofiles.open(project_path.joinpath(file.filename), "wb") as out_file:
+            while chunk := await file.read(1024 * 1024):
+                await out_file.write(chunk)
 
     except Exception as e:
         # if failed, remove the project folder
         if project_path.exists():
             project_path.rmdir()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.post("/files/add/project")
+# async def upload_file(
+#     background_tasks: BackgroundTasks,
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+#     project_name: str,
+#     file: UploadFile = File(...),
+# ) -> None:
+#     """
+#     Upload a file on the server to create a new project
+#     use: type de file
+#     """
+#     test_rights("manage files", current_user.username)
+
+#     # add a delay if projects are already being created
+#     if len(orchestrator.project_creation_ongoing) >= 3:
+#         await asyncio.sleep(random.randint(1, 4))
+
+#     # check if the project does not already exist
+#     if orchestrator.exists(project_name):
+#         raise HTTPException(
+#             status_code=500, detail="Project already exists, please choose another name"
+#         )
+#     # test the incoming file
+#     if file.filename is None:
+#         raise HTTPException(status_code=500, detail="Problem with the file")
+#     if (
+#         not file.filename.endswith("csv")
+#         and not file.filename.endswith("parquet")
+#         and not file.filename.endswith("xlsx")
+#     ):
+#         raise HTTPException(status_code=500, detail="Only csv and parquet files are allowed")
+#     # try to upload the file
+#     try:
+#         # create a folder for the project to be created
+#         project_slug = orchestrator.check_project_name(project_name)
+#         project_path = Path(f"{config.data_path}/projects/{project_slug}")
+
+#         # setting the project in creation
+#         orchestrator.starting_project_creation(project_slug)
+#         os.makedirs(project_path)
+#         file_path = project_path.joinpath(file.filename)
+
+#         background_tasks.add_task(save_uploaded_file, file, file_path, project_path)
+
+#     except Exception as e:
+#         # if failed, remove the project folder
+#         if project_path.exists():
+#             project_path.rmdir()
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/files/delete")
