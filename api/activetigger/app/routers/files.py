@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from typing import Annotated, List
 
-import aiofiles
+import aiofiles  # type: ignore[import]
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -103,10 +103,12 @@ async def upload_file(
         orchestrator.starting_project_creation(project_slug)
         os.makedirs(project_path)
 
+        print("Start uploading file")
         # Read and write the file asynchronously
         async with aiofiles.open(project_path.joinpath(file.filename), "wb") as out_file:
             while chunk := await file.read(1024 * 1024):
                 await out_file.write(chunk)
+        print("File uploaded successfully")
 
     except Exception as e:
         # if failed, remove the project folder

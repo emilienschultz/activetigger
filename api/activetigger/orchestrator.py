@@ -454,7 +454,7 @@ class Orchestrator:
 
         # check the unicity and get the slug of the project name as a key
         project_slug = self.check_project_name(params.project_name)
-
+        t0 = time.time()
         # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
             raise Exception("No column selected for the id")
@@ -477,7 +477,7 @@ class Orchestrator:
             content = pd.read_excel(params.dir.joinpath(params.filename))
         else:
             raise Exception("File format not supported (only csv, xlsx and parquet)")
-
+        t1 = time.time()
         # rename columns both for data & params to avoid confusion
         content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
         if params.col_id:
@@ -544,10 +544,10 @@ class Orchestrator:
             return 1200
 
         content["limit"] = content["text"].apply(limit)
-
+        t2 = time.time()
         # save a complete copy of the dataset
         content.to_parquet(params.dir.joinpath(self.data_all), index=True)
-
+        t3 = time.time()
         # ------------------------
         # End of the data cleaning
         # ------------------------
@@ -623,7 +623,7 @@ class Orchestrator:
             project_slug, "default", [], "multiclass", "system"
         )
         params.default_scheme = []
-
+        t4 = time.time()
         # add loaded schemes from columns
         for col in params.cols_label:
             # select the type of scheme
@@ -690,7 +690,8 @@ class Orchestrator:
 
         # ending project creation
         self.ending_project_creation(project_slug)
-
+        t5 = time.time()
+        print(t1 - t0, t2 - t1, t3 - t2, t4 - t3, t5 - t4)
         return project_slug
 
     def delete_project(self, project_slug: str) -> None:
