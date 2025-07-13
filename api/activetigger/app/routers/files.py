@@ -5,12 +5,14 @@ import asyncio
 import logging
 import os
 import random
+import shutil
 from pathlib import Path
 from typing import Annotated, List
 
 import aiofiles
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     HTTPException,
@@ -49,8 +51,21 @@ async def get_files(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def save_uploaded_file(file: UploadFile, file_path: Path, project_path: Path):
+    try:
+        async with aiofiles.open(file_path, "wb") as out_file:
+            while chunk := await file.read(1024 * 1024):  # 1 MB chunks
+                await out_file.write(chunk)
+    except Exception as e:
+        # Cleanup on failure
+        if project_path.exists():
+            shutil.rmtree(project_path)
+        print(f"Failed to write file: {e}")
+
+
 @router.post("/files/add/project")
 async def upload_file(
+    background_tasks: BackgroundTasks,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     file: UploadFile = File(...),
@@ -88,11 +103,9 @@ async def upload_file(
         # setting the project in creation
         orchestrator.starting_project_creation(project_slug)
         os.makedirs(project_path)
+        file_path = project_path.joinpath(file.filename)
 
-        # Read and write the file asynchronously
-        async with aiofiles.open(project_path.joinpath(file.filename), "wb") as out_file:
-            while chunk := await file.read(1024 * 1024):
-                await out_file.write(chunk)
+        background_tasks.add_task(save_uploaded_file, file, file_path, project_path)
 
     except Exception as e:
         # if failed, remove the project folder
