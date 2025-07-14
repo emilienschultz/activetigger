@@ -145,13 +145,13 @@ export const ProjectCreationForm: FC = () => {
         // send the data
         await addProjectFile(files[0], formData.project_name);
         console.log('file uploaded');
-        // create the project
+        // launch the project creation
         const slug = await createProject({
           ...omit(formData, 'files'),
           filename: data.filename,
         });
         console.log('project created', slug);
-        // wait until the project is available
+        // wait until the project is really available
         const intervalId = setInterval(async () => {
           try {
             const projects = await fetchUserProjects();
@@ -168,7 +168,6 @@ export const ProjectCreationForm: FC = () => {
           }
         }, 1000);
       } catch (error) {
-        // if error comes from axios being canceled by user than show a success else that's a real error
         if (!(error instanceof CanceledError)) notify({ type: 'error', message: error + '' });
         else notify({ type: 'success', message: 'Project creation aborted' });
       }

@@ -116,7 +116,7 @@ class Project:
 
     def start_project_creation(self, params: ProjectBaseModel, username: str, path: Path) -> None:
         """
-        Set up a new project by sending the heavy process to the queue
+        Manage process creation, sending the heavy process to the queue
         """
         self.status = "creating"
         # test if the name of the column is specified
@@ -154,9 +154,8 @@ class Project:
                 status="training",
             )
         )
-        print("Project sent to the queue")
 
-    def finishing_project_creation(
+    def finish_project_creation(
         self,
         username: str,
         project: ProjectModel,
@@ -164,9 +163,8 @@ class Project:
         import_testset_labels: pd.DataFrame | None = None,
     ) -> None:
         """
-        Set up a new project by sending eveything to the queue
+        Get the result of the queue and finish the creation process
         """
-        project.default_scheme = []
         # add the project to the database
         self.db_manager.projects_service.add_project(
             project.project_slug, jsonable_encoder(project), username
@@ -1182,7 +1180,7 @@ class Project:
                     if results is None:
                         print("No result from project creation")
                         raise Exception("No result from project creation")
-                    self.finishing_project_creation(e.username, results[0], results[1], results[2])
+                    self.finish_project_creation(e.username, results[0], results[1], results[2])
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(config.timezone), "Error in project creation", str(ex)]

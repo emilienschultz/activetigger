@@ -132,14 +132,12 @@ class Orchestrator:
         self.queue.restart()
         self.projects = {}
 
-    def starting_project_creation(
-        self, project_name: str, project: ProjectBaseModel, username: str
-    ) -> str:
+    def starting_project_creation(self, project: ProjectBaseModel, username: str) -> str:
         """
-        Keep information that a project is in creation
+        Start the project creation
         """
-        project_slug = self.check_project_name(project_name)
-        print("Starting project creation", project_name)
+        project_slug = self.check_project_name(project.project_name)
+        print("Starting project creation", project.project_name)
         # create a object project and start creation
         p = Project(
             project_slug,
@@ -676,7 +674,7 @@ class Orchestrator:
     #             scheme=scheme_name,
     #             elements=elements,
     #         )
-    #         # add the labels from the trainset in the database if exists & not clear
+    #         # add the labels from the testset in the database if exists & not clear
     #         if isinstance(testset, pd.DataFrame) and not params.clear_test:
     #             elements = [
     #                 {"element_id": element_id, "annotation": label, "comment": ""}

@@ -35,14 +35,14 @@ class CreateProject(BaseTask):
 
     def __call__(self) -> tuple[ProjectModel, pd.DataFrame | None, pd.DataFrame | None]:
         """
-        Create the project with the given name and file
+        Create the project with the given name and file, return the project model
+        and the train/test schemes to import in the database
         """
         print(f"Start queue project {self.project_slug} for {self.username}")
         # check if the directory already exists + file (should with the data)
         if self.params.dir is None or not self.params.dir.exists():
             print("The directory does not exist and should", self.params.dir)
             raise Exception("The directory does not exist and should")
-        print("Directory exists, continue")
         # Step 1 : load all data and index to str and rename columns
         file_path = self.params.dir.joinpath(self.params.filename)
         if self.params.filename.endswith(".csv"):
@@ -202,5 +202,4 @@ class CreateProject(BaseTask):
         # delete the initial file
         self.params.dir.joinpath(self.params.filename).unlink()
 
-        print(f"End project queue {self.project_slug} created for {self.username}")
         return ProjectModel(**project), import_trainset, import_testset

@@ -82,9 +82,7 @@ async def new_project(
     test_rights("create project", current_user.username)
     # check if the project already exists
     try:
-        print(f"Start creating project {project.project_name}")
         project_slug = orchestrator.starting_project_creation(
-            project_name=project.project_name,
             project=project,
             username=current_user.username,
         )
