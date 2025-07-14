@@ -866,3 +866,12 @@ class LanguageModelScheme(BaseModel):
     scheme: str
     parameters: dict[str, Any]
     path: str
+
+
+class ProjectCreatingModel(BaseModel):
+    project_slug: str
+    username: str
+    unique_id: str
+    time: datetime.datetime
+    kind: str
+    status: str

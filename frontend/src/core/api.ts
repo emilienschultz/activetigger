@@ -168,8 +168,9 @@ export async function me(token: string) {
  * retrieve authenticated user's projects list
  * @returns AvailableProjectsModel[] | undefined
  */
-export function useUserProjects(): AvailableProjectsModel[] | undefined {
+export function useUserProjects() {
   const { notify } = useNotifications();
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   // This method is a GET it retrieves data by querying the API
   // but a hook can not be async it has to be a pure function
@@ -187,10 +188,20 @@ export function useUserProjects(): AvailableProjectsModel[] | undefined {
       notify({ type: 'error', message: JSON.stringify(res.error) });
       throw new HttpError(res.response.status, '');
     }
-  }, []);
+  }, [fetchTrigger]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
   // here we use the getAsyncMemoData to return only the data or undefined and not the internal status
-  return getAsyncMemoData(projects);
+  return { projects: getAsyncMemoData(projects), reFetchProjects: reFetch };
+}
+
+export async function fetchUserProjects(): Promise<AvailableProjectsModel[]> {
+  const res = await api.GET('/projects');
+  if (res.data && !res.error) {
+    return values(res.data.projects) as unknown as AvailableProjectsModel[];
+  } else {
+    throw new Error(JSON.stringify(res.error));
+  }
 }
 
 /**

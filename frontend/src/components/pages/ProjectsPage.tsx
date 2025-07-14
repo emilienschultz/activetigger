@@ -18,7 +18,7 @@ export const ProjectsPage: FC = () => {
   const currentProjectSlug = currentProject?.params.project_slug;
 
   // api call
-  const projects = useUserProjects();
+  const { projects } = useUserProjects();
 
   // rows to display
   const [rows, setRows] = useState<AvailableProjectsModel[]>([]);

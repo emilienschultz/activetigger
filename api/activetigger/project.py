@@ -27,6 +27,8 @@ from activetigger.datamodels import (
     NextInModel,
     NextProjectStateModel,
     PredictedLabel,
+    ProjectBaseModel,
+    ProjectCreatingModel,
     ProjectDescriptionModel,
     ProjectionComputing,
     ProjectionOutModel,
@@ -47,7 +49,9 @@ from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.schemes import Schemes
 from activetigger.simplemodels import SimpleModels
+from activetigger.tasks.create_project import CreateProject
 from activetigger.tasks.generate_call import GenerateCall
+from activetigger.users import Users
 
 
 class Project:
@@ -55,6 +59,7 @@ class Project:
     Project object
     """
 
+    status: str
     starting_time: float
     name: str
     queue: Queue
@@ -81,19 +86,143 @@ class Project:
         """
         Load existing project
         """
+        self.status = "initial"
         self.starting_time = time.time()
         self.queue = queue
         self.computing = []
         self.db_manager = db_manager
         self.path_models = path_models
-
-        # load the project
         self.name = project_slug
-        self.load_project(project_slug)
+        self.project_slug = project_slug
+        self.errors = []  # TODO Move to specific class / db in the future
+        self.users = Users(self.db_manager)
+
+        # load the project if exist
+        if self.exists():
+            self.status = "created"
+            self.load_project(project_slug)
 
     def __del__(self):
         print(f"Project {self.name} deleted")
         pass
+
+    def exists(self) -> bool:
+        """
+        Check if the project exists
+        """
+        if self.db_manager.projects_service.get_project(self.project_slug):
+            return True
+        return False
+
+    def start_project_creation(self, params: ProjectBaseModel, username: str, path: Path) -> None:
+        """
+        Set up a new project by sending the heavy process to the queue
+        """
+        self.status = "creating"
+        # test if the name of the column is specified
+        if params.col_id is None or params.col_id == "":
+            raise Exception("No column selected for the id")
+        if params.cols_text is None or len(params.cols_text) == 0:
+            raise Exception("No column selected for the text")
+        # add the dedicated directory
+        params.dir = path.joinpath(self.project_slug)
+
+        print("Adding project to the queue")
+        # send the process to the queue
+        unique_id = self.queue.add_task(
+            "create_project",
+            self.project_slug,
+            CreateProject(
+                self.project_slug,
+                params,
+                username,
+                data_all=config.data_all,
+                train_file=config.train_file,
+                test_file=config.test_file,
+                features_file=config.features_file,
+            ),
+            queue="cpu",
+        )
+        # Update the register
+        self.computing.append(
+            ProjectCreatingModel(
+                username=username,
+                project_slug=self.project_slug,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="create_project",
+                status="training",
+            )
+        )
+        print("Project sent to the queue")
+
+    def finishing_project_creation(
+        self,
+        username: str,
+        project: ProjectModel,
+        import_trainset_labels: pd.DataFrame | None = None,
+        import_testset_labels: pd.DataFrame | None = None,
+    ) -> None:
+        """
+        Set up a new project by sending eveything to the queue
+        """
+        project.default_scheme = []
+        # add the project to the database
+        self.db_manager.projects_service.add_project(
+            project.project_slug, jsonable_encoder(project), username
+        )
+        # add the default scheme
+        self.db_manager.projects_service.add_scheme(
+            self.project_slug, "default", [], "multiclass", "system"
+        )
+        # if labels/schemes to import, add them to the database
+        if import_trainset_labels is not None:
+            for col in import_trainset_labels.columns:
+                scheme_name = col.replace("dataset_", "")
+                delimiters = import_trainset_labels[col].str.contains("|", regex=False).sum()
+                if delimiters < 5:
+                    scheme_type = "multiclass"
+                    scheme_labels = list(import_trainset_labels[col].dropna().unique())
+                else:
+                    scheme_type = "multilabel"
+                    scheme_labels = list(
+                        import_trainset_labels[col].dropna().str.split("|").explode().unique()
+                    )
+                self.db_manager.projects_service.add_scheme(
+                    self.project_slug,
+                    scheme_name,
+                    scheme_labels,
+                    scheme_type,
+                    "system",
+                )
+                elements = [
+                    {"element_id": element_id, "annotation": label, "comment": ""}
+                    for element_id, label in import_trainset_labels[col].dropna().items()
+                ]
+                self.db_manager.projects_service.add_annotations(
+                    dataset="train",
+                    user_name=username,
+                    project_slug=self.project_slug,
+                    scheme=scheme_name,
+                    elements=elements,
+                )
+                if import_testset_labels is not None and col in import_testset_labels.columns:
+                    elements = [
+                        {"element_id": element_id, "annotation": label, "comment": ""}
+                        for element_id, label in import_testset_labels[col].dropna().items()
+                    ]
+                    self.db_manager.projects_service.add_annotations(
+                        dataset="test",
+                        user_name=username,
+                        project_slug=self.project_slug,
+                        scheme=scheme_name,
+                        elements=elements,
+                    )
+
+        # create user authorizations
+        self.users.set_auth(username, project.project_slug, "manager")
+        self.users.set_auth("root", project.project_slug, "manager")
+        self.status = "created"
 
     def delete(self) -> None:
         """
@@ -166,7 +295,6 @@ class Project:
             self.db_manager, cast(list[GenerationComputing], self.computing)
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
-        self.errors = []  # TODO Move to specific class / db in the future
 
     def load_params(self, project_slug: str) -> ProjectModel:
         """
@@ -1045,6 +1173,24 @@ class Project:
             future = process.future
 
             # manage different tasks
+
+            # case for project creation
+            if e.kind == "create_project":
+                e = cast(ProjectCreatingModel, e)
+                try:
+                    results = future.result()
+                    if results is None:
+                        print("No result from project creation")
+                        raise Exception("No result from project creation")
+                    self.finishing_project_creation(e.username, results[0], results[1], results[2])
+                except Exception as ex:
+                    self.errors.append(
+                        [datetime.now(config.timezone), "Error in project creation", str(ex)]
+                    )
+                    logging.error("Error in project creation", ex)
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
 
             # case for bert fine-tuning
             if e.kind == "train_bert":

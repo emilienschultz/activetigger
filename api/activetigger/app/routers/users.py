@@ -83,9 +83,9 @@ async def create_user(
         orchestrator.users.add_user(
             username_to_create, password, status, current_user.username, mail
         )
-        if dummy:
-            # as a background task
-            background_tasks.add_task(orchestrator.create_dummy_project, username_to_create)
+        # if dummy:
+        #     # as a background task
+        #     background_tasks.add_task(orchestrator.create_dummy_project, username_to_create)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

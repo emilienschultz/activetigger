@@ -98,12 +98,7 @@ async def upload_file(
         # create a folder for the project to be created
         project_slug = orchestrator.check_project_name(project_name)
         project_path = Path(f"{config.data_path}/projects/{project_slug}")
-
-        # setting the project in creation
-        orchestrator.starting_project_creation(project_slug)
         os.makedirs(project_path)
-
-        print("Start uploading file")
         # Read and write the file asynchronously
         async with aiofiles.open(project_path.joinpath(file.filename), "wb") as out_file:
             while chunk := await file.read(1024 * 1024):

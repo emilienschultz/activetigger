@@ -25,7 +25,7 @@ interface newUser {
 }
 
 export const UsersPage: FC = () => {
-  const projects = useUserProjects();
+  const { projects } = useUserProjects();
   const [currentProjectSlug, setCurrentProjectSlug] = useState<string | null>(null);
   const { notify } = useNotifications();
 

@@ -11,6 +11,7 @@ import { CanceledError } from 'axios';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import {
+  fetchUserProjects,
   useAddFeature,
   useAddProjectFile,
   useCreateProject,
@@ -149,18 +150,27 @@ export const ProjectCreationForm: FC = () => {
           ...omit(formData, 'files'),
           filename: data.filename,
         });
-        setCreatingProject(false);
-        // compute a default feature
-        addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
-        // redirect to the project page
-        navigate(`/projects/${slug}?fromProjectPage=true`);
+        console.log('project created', slug);
+        // wait until the project is available
+        const intervalId = setInterval(async () => {
+          try {
+            const projects = await fetchUserProjects();
+            const exists = (projects || []).some((p) => p.parameters.project_slug === slug);
+            console.log('Waiting for project to be available');
+            if (exists) {
+              clearInterval(intervalId);
+              addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
+              navigate(`/projects/${slug}?fromProjectPage=true`);
+            }
+          } catch (error) {
+            console.error('Error fetching projects:', error);
+            clearInterval(intervalId);
+          }
+        }, 1000);
       } catch (error) {
         // if error comes from axios being canceled by user than show a success else that's a real error
         if (!(error instanceof CanceledError)) notify({ type: 'error', message: error + '' });
         else notify({ type: 'success', message: 'Project creation aborted' });
-      } finally {
-        // anyway stop the loading state
-        setCreatingProject(false);
       }
     }
   };

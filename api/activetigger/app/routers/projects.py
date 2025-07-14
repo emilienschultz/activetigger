@@ -77,14 +77,19 @@ async def new_project(
     project: ProjectBaseModel,
 ) -> str:
     """
-    Load new project
+    Start the creation of a new project
     """
     test_rights("create project", current_user.username)
     # check if the project already exists
     try:
-        slug = orchestrator.create_project(project, current_user.username)
-        orchestrator.log_action(current_user.username, "INFO CREATE PROJECT", slug)
-        return slug
+        print(f"Start creating project {project.project_name}")
+        project_slug = orchestrator.starting_project_creation(
+            project_name=project.project_name,
+            project=project,
+            username=current_user.username,
+        )
+        orchestrator.log_action(current_user.username, "START CREATING PROJECT", project_slug)
+        return project_slug
     except Exception as e:
         orchestrator.clean_unfinished_project(project_name=project.project_name)
         raise HTTPException(status_code=500, detail=str(e))
