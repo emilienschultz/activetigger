@@ -5,7 +5,7 @@ import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../components/pages/AccountPage';
 import { CuratePage } from '../components/pages/CurationPage';
 import { DocPage } from '../components/pages/DocPage';
-import { ExperimentalPage } from '../components/pages/ExperimentalPage';
+/*import { ExperimentalPage } from '../components/pages/ExperimentalPage';*/
 import { FinetunePage } from '../components/pages/FinetunePage';
 import { HomePage } from '../components/pages/HomePage';
 import { LoginPage } from '../components/pages/LoginPage';
@@ -58,14 +58,14 @@ export function getRouter() {
         </APIMiddlewares>
       ),
     },
-    {
+    /*{
       path: '/experimental',
       element: (
         <APIMiddlewares>
           <ExperimentalPage />
         </APIMiddlewares>
       ),
-    },
+    },*/
     {
       path: '/projects/',
       element: (
