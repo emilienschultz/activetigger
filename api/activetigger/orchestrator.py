@@ -6,6 +6,7 @@ import asyncio
 import logging
 import os
 import shutil
+import threading
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -545,8 +546,16 @@ class Orchestrator:
 
         content["limit"] = content["text"].apply(limit)
         t2 = time.time()
+
         # save a complete copy of the dataset
-        content.to_parquet(params.dir.joinpath(self.data_all), index=True)
+        # content.to_parquet(params.dir.joinpath(self.data_all), index=True)
+        def save_parquet(df, path):
+            df.to_parquet(path, index=True)
+
+        thread = threading.Thread(
+            target=save_parquet, args=(content, params.dir.joinpath(self.data_all))
+        )
+        thread.start()
         t3 = time.time()
         # ------------------------
         # End of the data cleaning
