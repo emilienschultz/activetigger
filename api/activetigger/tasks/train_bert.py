@@ -164,7 +164,7 @@ class TrainBert(BaseTask):
         self.df = datasets.Dataset.from_pandas(self.df[["text", "labels"]])
 
         # Tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(self.base_model)
+        tokenizer = AutoTokenizer.from_pretrained(self.base_model, trust_remote_code=True)
         if self.params.adapt:
             self.df = self.df.map(
                 lambda e: tokenizer(
@@ -198,6 +198,7 @@ class TrainBert(BaseTask):
             num_labels=len(labels),
             id2label=id2label,
             label2id=label2id,
+            trust_remote_code=True,
         )
 
         logger.info("Model loaded")

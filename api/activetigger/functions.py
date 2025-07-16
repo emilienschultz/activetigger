@@ -235,6 +235,7 @@ def get_metrics(
     table["Total"] = table.sum(axis=1)
     table = table.T
     table["Total"] = table.sum(axis=1)
+    table = table.T
 
     # Create a table of false predictions
     filter_false_prediction = Y_true != Y_pred

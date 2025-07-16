@@ -230,7 +230,6 @@ class Features:
             print("Missing features:", missing)
 
         # load only needed data from file
-        print("read parquet")
         data = pd.read_parquet(self.path_features, columns=cols)
 
         return data

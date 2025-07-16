@@ -19,3 +19,4 @@ deepset/gbert-large,4,,de, 1350, 440,
 tohoku-nlp/bert-base-japanese-v3,5,,ja, 100, 440,
 dccuchile/bert-base-spanish-wwm-cased,6,,es, 550, 110,
 PlanTL-GOB-ES/roberta-base-bne,5,,es, 440, 125,
+EuroBERT/EuroBERT-610m,6,,multi,3000,610

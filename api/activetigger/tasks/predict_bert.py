@@ -105,8 +105,10 @@ class PredictBert(BaseTask):
                 modeltype = data["base_model"]
             else:
                 raise ValueError("No model type found in config.json. Please check the file.")
-        tokenizer = AutoTokenizer.from_pretrained(modeltype)
-        model = AutoModelForSequenceClassification.from_pretrained(self.path)
+        tokenizer = AutoTokenizer.from_pretrained(modeltype, trust_remote_code=True)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            self.path, trust_remote_code=True
+        )
 
         print("function prediction : start")
         if torch.cuda.is_available():

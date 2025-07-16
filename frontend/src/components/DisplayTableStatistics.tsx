@@ -42,7 +42,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               <td className="p-1">Label</td>
               {table?.columns.map((col) => (
                 <td key={col} className="p-1 capitalize font-semibold">
-                  <b>{col}</b>
+                  {col}
                 </td>
               ))}
               <td className="p-1 text-center">Recall</td>
@@ -57,12 +57,10 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                     Truth
                   </td>
                 )}
-                <td className="font-medium p-1">
-                  <b>{table.index[rowIndex]}</b>
-                </td>
+                <td className="font-medium p-1">{table.index[rowIndex]}</td>
                 {row.map((cell, colIndex) => (
                   <td key={colIndex} className="p-1 text-center">
-                    <b>{cell}</b>
+                    {colIndex === row.length - 1 ? cell : <b>{cell}</b>}
                   </td>
                 ))}
 
@@ -80,6 +78,15 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               {table.columns.map((col, colIndex) => (
                 <td key={colIndex} className="p-1 text-center">
                   {scores.f1_label && scores.f1_label[col]}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td></td>
+              <td className="p-1 text-center">Precision</td>
+              {table.columns.map((col, colIndex) => (
+                <td key={colIndex} className="p-1 text-center">
+                  {scores.precision_label && scores.precision_label[col]}
                 </td>
               ))}
             </tr>
