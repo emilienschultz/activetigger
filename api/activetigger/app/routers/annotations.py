@@ -8,11 +8,7 @@ from fastapi import (
     Query,
 )
 
-from activetigger.app.dependencies import (
-    get_project,
-    test_rights,
-    verified_user,
-)
+from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
 from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
@@ -212,7 +208,7 @@ async def post_annotation(
     - For the moment add == update
     - No information kept of selection process
     """
-    test_rights("modify annotation", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_ANNOTATION, current_user.username, project.name)
     if action in ["add", "update"]:
         try:
             project.schemes.push_annotation(

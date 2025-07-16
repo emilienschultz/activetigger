@@ -2,7 +2,7 @@
 
 An instance of Active Tigger is running on GENES servers with a GPU.
 
-The beta test phase started October 30, 2024 and will last until mid-June 2025.
+The beta test phase started October 30, 2024 and will last until August 2025.
 
 - The main aim is to **report bugs and problems**
 - The secondary aim is to identify potential **enhancements**

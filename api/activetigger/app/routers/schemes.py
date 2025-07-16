@@ -6,11 +6,7 @@ from fastapi import (
     HTTPException,
 )
 
-from activetigger.app.dependencies import (
-    get_project,
-    test_rights,
-    verified_user,
-)
+from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
 from activetigger.datamodels import (
     ActionModel,
     CodebookModel,
@@ -34,7 +30,7 @@ async def rename_label(
     """
     Rename a a label
     """
-    test_rights("modify project element", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
 
     try:
         project.schemes.rename_label(former_label, new_label, scheme, current_user.username)
@@ -59,7 +55,7 @@ async def add_label(
     """
     Add a label to a scheme
     """
-    test_rights("modify project element", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
     if action == "add":
         try:
             project.schemes.add_label(label, scheme, current_user.username)
@@ -97,7 +93,7 @@ async def post_codebook(
     """
     Add codebook
     """
-    test_rights("modify project element", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
 
     try:
         project.schemes.add_codebook(codebook.scheme, codebook.content, codebook.time)
@@ -135,7 +131,7 @@ async def rename_scheme(
     """
     Rename a scheme
     """
-    test_rights("modify project element", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
     try:
         project.schemes.rename_scheme(old_name, new_name)
         orchestrator.log_action(
@@ -157,7 +153,7 @@ async def duplicate_scheme(
     """
     Duplicate a scheme
     """
-    test_rights("modify project element", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
     try:
         project.schemes.duplicate_scheme(scheme_name, scheme_name + "_copy", current_user.username)
         orchestrator.log_action(
@@ -180,7 +176,7 @@ async def post_schemes(
     """
     Add, Update or Delete scheme
     """
-    test_rights("modify project element", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
     if action == "add":
         try:
             project.schemes.add_scheme(

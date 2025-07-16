@@ -1,4 +1,5 @@
 import time
+from enum import Enum
 from typing import Annotated
 
 from fastapi import (
@@ -119,17 +120,34 @@ async def check_auth_exists(
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights") from e
 
 
-def test_rights(action: str, username: str, project_slug: str | None = None) -> bool:
+class ServerAction(str, Enum):
+    MANAGE_USERS = "manage users"
+    MANAGE_SERVER = "manage server"
+    KILL_PROCESS = "kill process"
+    CREATE_PROJECT = "create project"
+    DELETE_PROJECT = "delete project"
+    MANAGE_FILES = "manage files"
+
+
+class ProjectAction(str, Enum):
+    GET_PROJECT_INFO = "get project information"
+    MODIFY_ANNOTATION = "modify annotation"
+    EXPORT_DATA = "export data"
+    MODIFY_PROJECT = "modify project"
+    MODIFY_PROJECT_ELEMENT = "modify project element"
+    MANAGE_FILES = "manage files"
+
+
+def test_rights(
+    action: ServerAction | ProjectAction,
+    username: str,
+    project_slug: str | None = None,
+    scheme: str | None = None,
+) -> bool:
     """
     Management of rights on the routes
-    Different types of action:
-    - create project (only user status)
-    - modify user (only user status)
-    - modify project (user - project)
-    - modify project element (user - project)
-    Based on:
-    - status of the account
-    - relation to the project
+
+    Based on an action, a user, a project
     """
     try:
         user = orchestrator.users.get_user(name=username)
@@ -139,101 +157,37 @@ def test_rights(action: str, username: str, project_slug: str | None = None) -> 
     # general status
     status = user.status
 
-    # server operation
-    if action == "server operation":
-        if status in ["root"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
+    # root user can do anything
+    if status == "root":
+        return True
 
-    # possibility to create project
-    if action == "create project":
-        if status in ["root", "manager"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
+    print(f"Test rights for {username} on {action} with status {status} and project {project_slug}")
 
-    # manage files
-    if action == "manage files":
-        if status in ["root", "manager"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to create user
-    if action == "create user":
-        if status in ["root"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to kill a process directly
-    if action == "kill process":
-        if status in ["root"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to modify user
-    if action == "modify user":
-        if status in ["root"]:
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # get all information
-    if action == "get all server information":
-        if status == "root":
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
+    match action:
+        case ServerAction.MANAGE_USERS | ServerAction.MANAGE_SERVER | ServerAction.KILL_PROCESS:
+            return False
+        case ServerAction.CREATE_PROJECT | ServerAction.DELETE_PROJECT | ServerAction.MANAGE_FILES:
+            if status in ["manager"]:
+                return True
 
     if not project_slug:
         raise HTTPException(500, "Project name missing")
-
     auth = orchestrator.users.auth(username, project_slug)
-    # print(auth)
 
-    # possibility to modify project (create/delete)
-    if action == "modify project":
-        if (auth == "manager") or (status == "root"):
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
+    match action:
+        case (
+            ProjectAction.GET_PROJECT_INFO
+            | ProjectAction.MODIFY_ANNOTATION
+            | ProjectAction.EXPORT_DATA
+        ):
+            if auth in ["manager", "annotator"]:
+                return True
+        case ProjectAction.MODIFY_PROJECT | ProjectAction.MODIFY_PROJECT_ELEMENT:
+            if auth in ["manager"]:
+                return True
 
-    # possibility to create elements of a project
-    if action == "modify project element":
-        if (auth == "manager") or (status == "root"):
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # possibility to add/update annotations : everyone
-    if action == "modify annotation":
-        if (auth == "manager") or (status == "root"):
-            return True
-        elif auth == "annotator":
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # get project information
-    if action == "get project information":
-        if (auth == "manager") or (status == "root"):
-            return True
-        elif auth == "annotator":
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    # export data
-    if action == "export data":
-        if (auth == "manager") or (status == "root"):
-            return True
-        else:
-            raise HTTPException(500, "No rights for this action")
-
-    raise HTTPException(404, "No action found")
+    # by default, no rights
+    return False
 
 
 def check_storage(username: str) -> None:

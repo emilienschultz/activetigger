@@ -8,6 +8,7 @@ from fastapi import (
 )
 
 from activetigger.app.dependencies import (
+    ProjectAction,
     get_project,
     test_rights,
     verified_user,
@@ -43,7 +44,7 @@ async def post_embeddings(
     - same prcess
     - specific process : function + temporary file + update
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     df = project.content["text"]
     try:
         project.features.compute(
@@ -67,7 +68,7 @@ async def delete_feature(
     """
     Delete a specific feature
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         project.features.delete(name)
         orchestrator.log_action(current_user.username, f"DELETE FEATURE: {name}", project.name)

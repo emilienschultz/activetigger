@@ -9,6 +9,7 @@ from fastapi import (
 )
 
 from activetigger.app.dependencies import (
+    ProjectAction,
     check_storage,
     get_project,
     test_rights,
@@ -85,7 +86,7 @@ async def predict(
     """
     Start prediction with a model
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         # get the data
         if dataset == "train":
@@ -143,7 +144,7 @@ async def start_test(
     """
     Start testing the model on the test set
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     if project.schemes.test is None:
         raise HTTPException(status_code=500, detail="No test dataset for this project")
 
@@ -177,7 +178,7 @@ async def post_bert(
     Compute bertmodel
     TODO : move the methods to specific class
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         check_storage(current_user.username)
         project.start_languagemodel_training(
@@ -200,7 +201,7 @@ async def stop_bert(
     """
     Stop user process
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         if specific_user is not None:
             user = specific_user
@@ -221,7 +222,7 @@ async def delete_bert(
     """
     Delete trained bert model
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         # delete the model
         project.languagemodels.delete(bert_name)
@@ -245,7 +246,7 @@ async def save_bert(
     """
     Rename bertmodel
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         project.languagemodels.rename(former_name, new_name)
         orchestrator.log_action(

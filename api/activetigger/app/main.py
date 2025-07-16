@@ -15,10 +15,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 
 from activetigger import __version__
-from activetigger.app.dependencies import (
-    test_rights,
-    verified_user,
-)
+from activetigger.app.dependencies import ProjectAction, ServerAction, test_rights, verified_user
 from activetigger.app.routers import (
     annotations,
     export,
@@ -112,7 +109,7 @@ async def restart_queue(
     """
     Restart the queue & the memory
     """
-    test_rights("server operation", current_user.username)
+    test_rights(ServerAction.MANAGE_SERVER, current_user.username)
     try:
         orchestrator.reset()
         return None
@@ -155,9 +152,9 @@ async def get_logs(
     Get all logs for a username/project
     """
     if project_slug == "all":
-        test_rights("get all server information", current_user.username)
+        test_rights(ServerAction.MANAGE_SERVER, current_user.username)
     else:
-        test_rights("get project information", current_user.username, project_slug)
+        test_rights(ProjectAction.GET_PROJECT_INFO, current_user.username, project_slug)
     df = orchestrator.get_logs(project_slug, limit)
     return TableOutModel(
         items=df.to_dict(orient="records"),

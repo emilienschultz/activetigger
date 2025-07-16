@@ -1194,7 +1194,6 @@ class Project:
             if e.kind == "train_bert":
                 model = cast(LMComputing, e)
                 try:
-                    print(process)
                     error = future.exception()
                     if error:
                         raise Exception(str(error))

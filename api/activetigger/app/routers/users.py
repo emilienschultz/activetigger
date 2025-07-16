@@ -8,7 +8,13 @@ from fastapi import (
     Query,
 )
 
-from activetigger.app.dependencies import oauth2_scheme, test_rights, verified_user
+from activetigger.app.dependencies import (
+    ProjectAction,
+    ServerAction,
+    oauth2_scheme,
+    test_rights,
+    verified_user,
+)
 from activetigger.datamodels import (
     AuthActions,
     UserInDBModel,
@@ -78,7 +84,7 @@ async def create_user(
     """
     Create user
     """
-    test_rights("create user", current_user.username)
+    test_rights(ServerAction.MANAGE_USERS, current_user.username)
     try:
         orchestrator.users.add_user(
             username_to_create, password, status, current_user.username, mail
@@ -99,7 +105,7 @@ async def delete_user(
     - root can delete all
     - users can only delete account they created
     """
-    test_rights("modify user", current_user.username)
+    test_rights(ServerAction.MANAGE_USERS, current_user.username)
     try:
         orchestrator.users.delete_user(user_to_delete, current_user.username)
     except Exception as e:
@@ -133,7 +139,7 @@ async def set_auth(
     """
     Modify user auth on a specific project
     """
-    test_rights("modify project", current_user.username, project_slug)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project_slug)
     if action == "add":
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")

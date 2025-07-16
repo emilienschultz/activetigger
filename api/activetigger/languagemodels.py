@@ -63,8 +63,6 @@ class LanguageModels:
             self.base_models = cast(
                 list[dict[str, Any]], pd.read_csv(list_models).to_dict(orient="records")
             )
-
-            print(self.base_models)
         else:
             self.base_models = [
                 {
@@ -126,7 +124,6 @@ class LanguageModels:
             for e in self.computing
             if e.kind in ["bert", "train_bert", "predict_bert"]
         }
-        print(r)
         return r
 
     def delete(self, name: str) -> None:

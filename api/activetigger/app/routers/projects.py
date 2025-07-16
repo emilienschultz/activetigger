@@ -7,6 +7,8 @@ from fastapi import (
 )
 
 from activetigger.app.dependencies import (
+    ProjectAction,
+    ServerAction,
     check_auth_exists,
     get_project,
     test_rights,
@@ -36,7 +38,7 @@ async def close_project(
     """
     Close a project from memory
     """
-    test_rights("create project", current_user.username)
+    test_rights(ServerAction.CREATE_PROJECT, current_user.username)
     try:
         orchestrator.stop_project(project_slug)
     except Exception as e:
@@ -79,7 +81,7 @@ async def new_project(
     """
     Start the creation of a new project
     """
-    test_rights("create project", current_user.username)
+    test_rights(ServerAction.CREATE_PROJECT, current_user.username)
     # check if the project already exists
     try:
         project_slug = orchestrator.starting_project_creation(
@@ -110,7 +112,7 @@ async def update_project(
     - change text cols
     - expand the number of elements in the trainset
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         project.update_project(update)
         orchestrator.log_action(current_user.username, "INFO UPDATE PROJECT", project.name)
@@ -130,7 +132,7 @@ async def delete_project(
     """
     Delete a project
     """
-    test_rights("modify project", current_user.username, project_slug)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project_slug)
     try:
         orchestrator.delete_project(project_slug)
     except Exception as e:
@@ -148,7 +150,7 @@ async def add_testdata(
     """
     Add a dataset for test when there is none available
     """
-    test_rights("modify project", current_user.username, project.name)
+    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
     try:
         if action == "create":
             if testset is None:
