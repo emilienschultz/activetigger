@@ -125,7 +125,7 @@ async def predict(
             col_text="text",
             col_label=col_label,
             col_id=col_id,
-            dataset="external",
+            dataset=dataset,
             batch_size=batch_size,
         )
         orchestrator.log_action(current_user.username, f"PREDICT MODEL: {model_name}", project.name)

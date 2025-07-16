@@ -516,7 +516,7 @@ export const ProjectCreationForm: FC = () => {
                 <div className="position-absolute bg-white w-100 h-100 top-0 left-0 d-flex flex-column justify-content-center bg-opacity-50">
                   <div className="d-flex flex-column bg-white p-4 border border-dark gap-2">
                     <div className="d-flex align-items-center gap-2 ">
-                      <ClipLoader /> <span>Uploading</span>{' '}
+                      <ClipLoader /> <span>Uploading and creating the project</span>{' '}
                       <span>
                         {progression.loaded && progression.total
                           ? `${((progression.loaded / progression.total) * 100).toFixed(2)}%`
