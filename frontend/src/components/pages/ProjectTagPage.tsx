@@ -514,7 +514,11 @@ export const ProjectTagPage: FC = () => {
 
                 {phase != 'test' && (
                   <>
-                    <div className="explanations">Current quick model parameters and train</div>
+                    <div className="explanations">
+                      The quick model is used during tagging, for the active and maxprob models.
+                      Recommended features to train on are embeddings (eg. SBERT) before training a
+                      large fine-tuned model, and BERT predictions once you have fine-tuned one.
+                    </div>
 
                     <SimpleModelManagement
                       projectName={projectName || null}

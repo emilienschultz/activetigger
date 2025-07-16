@@ -38,15 +38,15 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               </td>
             </tr>
             <tr className="bg-gray-100">
-              <th></th>
+              <td></td>
               <td className="p-1">Label</td>
-              {table?.columns.map((col) => (
+              {table?.columns.map((col, colIndex) => (
                 <td key={col} className="p-1 capitalize font-semibold">
-                  {col}
+                  {colIndex === table?.columns.length - 1 ? col : <b>{col}</b>}
                 </td>
               ))}
               <td className="p-1 text-center">Recall</td>
-              <td className="p-1 text-center">f1</td>
+              <td className="p-1 text-center">F1</td>
             </tr>
           </thead>
           <tbody>
@@ -57,10 +57,21 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                     Truth
                   </td>
                 )}
-                <td className="font-medium p-1">{table.index[rowIndex]}</td>
+                <td className="font-medium p-1">
+                  {rowIndex === table.data.length - 1 ? (
+                    table.index[rowIndex]
+                  ) : (
+                    <b>{table.index[rowIndex]}</b>
+                  )}
+                </td>
                 {row.map((cell, colIndex) => (
                   <td key={colIndex} className="p-1 text-center">
-                    {colIndex === row.length - 1 ? cell : <b>{cell}</b>}
+                    {(colIndex < row.length - 1 && rowIndex < table.data.length - 1) ||
+                    (rowIndex === row.length - 1 && colIndex === table.data.length - 1) ? (
+                      <b>{cell}</b>
+                    ) : (
+                      cell
+                    )}
                   </td>
                 ))}
 
@@ -72,23 +83,35 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                 </td>
               </tr>
             ))}
+
             <tr>
               <td></td>
-              <td className="p-1 text-center">f1</td>
+              <td className="p-1">Precision</td>
+              {table.columns.map((col, colIndex) => (
+                <td key={colIndex} className="p-1 text-center">
+                  {scores.precision_label && scores.precision_label[col]}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td></td>
+              <td className="p-1">F1</td>
               {table.columns.map((col, colIndex) => (
                 <td key={colIndex} className="p-1 text-center">
                   {scores.f1_label && scores.f1_label[col]}
                 </td>
               ))}
             </tr>
-            <tr>
+            <tr className="bg-gray-100">
               <td></td>
-              <td className="p-1 text-center">Precision</td>
-              {table.columns.map((col, colIndex) => (
-                <td key={colIndex} className="p-1 text-center">
-                  {scores.precision_label && scores.precision_label[col]}
+              <td className="p-1"></td>
+              {table?.columns.slice(0, -1).map((col) => (
+                <td key={col} className="p-1 capitalize font-semibold">
+                  {col}
                 </td>
               ))}
+              <td className="p-1 text-center"></td>
+              <td className="p-1 text-center"></td>
             </tr>
           </tbody>
         </table>
