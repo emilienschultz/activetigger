@@ -30,7 +30,7 @@ const _useAuth = (): AuthContext => {
   const storedAuth = localStorage.getItem('activeTigger.auth');
   // TODO check for session deprecation
 
-  const { setAppContext } = useAppContext();
+  const { appContext, setAppContext } = useAppContext();
 
   // internal state to store the current authenticated user
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | undefined>(
@@ -62,6 +62,15 @@ const _useAuth = (): AuthContext => {
                 //reset context
                 setAppContext(DEFAULT_CONTEXT);
               }
+              // force the type of interface
+              console.log('User status:', user.status);
+              if (user.status === 'annotator') {
+                appContext.displayConfig.interfaceType = 'annotator';
+              } else {
+                appContext.displayConfig.interfaceType = 'default';
+              }
+              setAppContext(appContext);
+
               return authUser;
             });
             notify({ type: 'success', message: `Logged in as ${user.username}` });

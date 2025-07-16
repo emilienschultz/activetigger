@@ -154,14 +154,18 @@ def test_rights(
     except Exception as e:
         raise HTTPException(404) from e
 
+    if action not in ServerAction and action not in ProjectAction:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Action {action} is not a valid action",
+        )
+
     # general status
     status = user.status
 
     # root user can do anything
     if status == "root":
         return True
-
-    print(f"Test rights for {username} on {action} with status {status} and project {project_slug}")
 
     match action:
         case ServerAction.MANAGE_USERS | ServerAction.MANAGE_SERVER | ServerAction.KILL_PROCESS:
@@ -187,7 +191,10 @@ def test_rights(
                 return True
 
     # by default, no rights
-    return False
+    raise HTTPException(
+        status_code=408,
+        detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
+    )
 
 
 def check_storage(username: str) -> None:

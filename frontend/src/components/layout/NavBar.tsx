@@ -10,14 +10,6 @@ import { useGetServer, useStopProcesses } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 
-const PAGES: { id: string; label: string; href: string }[] = [
-  { id: 'projects', label: 'Projects', href: '/projects' },
-  // { id: 'monitor', label: 'Monitor', href: '/monitor' },
-  // { id: 'help', label: 'Help', href: '/help' },
-  { id: 'account', label: 'Account', href: '/account' },
-  { id: 'users', label: 'Users', href: '/users' },
-];
-
 const DOCUMENTATION_LINK = 'https://emilienschultz.github.io/activetigger/docs';
 
 interface NavBarPropsType {
@@ -35,7 +27,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
 
   // function to clear history
   const {
-    appContext: { history, currentProject },
+    appContext: { history, currentProject, displayConfig },
     setAppContext,
   } = useAppContext();
   const actionClearHistory = () => {
@@ -54,6 +46,17 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
         Object.values(currentProject.features.training).length > 0
       : false;
 
+  const PAGES: { id: string; label: string; href: string }[] =
+    displayConfig.interfaceType === 'default'
+      ? [
+          { id: 'projects', label: 'Projects', href: '/projects' },
+          { id: 'account', label: 'Account', href: '/account' },
+          { id: 'users', label: 'Users', href: '/users' },
+        ]
+      : [
+          { id: 'projects', label: 'Projects', href: '/projects' },
+          { id: 'account', label: 'Account', href: '/account' },
+        ];
   return (
     <div className="bg-primary">
       <nav className="navbar navbar-dark navbar-expand-lg bg-primary">

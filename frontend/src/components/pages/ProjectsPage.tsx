@@ -12,7 +12,7 @@ import { AvailableProjectsModel } from '../../types';
 export const ProjectsPage: FC = () => {
   // hooks
   const {
-    appContext: { currentProject },
+    appContext: { currentProject, displayConfig },
     resetContext,
   } = useAppContext();
   const currentProjectSlug = currentProject?.params.project_slug;
@@ -39,6 +39,7 @@ export const ProjectsPage: FC = () => {
       }),
     );
   };
+  console.log(displayConfig.interfaceType);
 
   return (
     <PageLayout currentPage="projects">
@@ -47,12 +48,14 @@ export const ProjectsPage: FC = () => {
           <div className="row">
             <div className="col-0 col-lg-3" />
             <div className="col-12 col-lg-6">
-              <div className="w-100 d-flex align-items-center justify-content-center">
-                <Link to="/projects/new" className="btn btn-warning w-75 mt-3">
-                  <IoIosAddCircle className="m-1" size={30} />
-                  Create new project
-                </Link>
-              </div>
+              {displayConfig.interfaceType !== 'annotator' && (
+                <div className="w-100 d-flex align-items-center justify-content-center">
+                  <Link to="/projects/new" className="btn btn-warning w-75 mt-3">
+                    <IoIosAddCircle className="m-1" size={30} />
+                    Create new project
+                  </Link>
+                </div>
+              )}
 
               <div className="project-list">
                 <input

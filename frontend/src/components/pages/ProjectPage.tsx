@@ -75,36 +75,44 @@ export const ProjectPage: FC = () => {
                 a new scheme.
               </div>
             )}
-            <SchemesManagement projectSlug={projectSlug} />
+            <SchemesManagement
+              projectSlug={projectSlug}
+              deactivateModifications={displayConfig.interfaceType === 'annotator'}
+            />
             <LabelsManagement
               projectSlug={projectSlug}
               currentScheme={currentScheme || null}
               availableLabels={availableLabelsSorted as string[]}
               kindScheme={kindScheme as string}
               setAppContext={setAppContext}
+              deactivateModifications={displayConfig.interfaceType === 'annotator'}
             />
-          </Tab>
-          <Tab eventKey="features" title="Features">
-            <FeaturesManagement />
           </Tab>
           <Tab eventKey="codebook" title="Codebook">
             <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
           </Tab>
-          <Tab eventKey="import" title="Import">
-            <div className="explanations">Import data to this project</div>
-            <ImportAnnotations
-              projectName={project.params.project_slug}
-              currentScheme={currentScheme || null}
-            />
-            <TestSetManagement
-              projectSlug={projectSlug}
-              currentScheme={currentScheme || ''}
-              testSetExist={project?.params.test}
-            />
-          </Tab>
-          <Tab eventKey="parameters" title="Parameters">
-            <ProjectParameters project={project} projectSlug={projectSlug} />
-          </Tab>
+          {displayConfig.interfaceType !== 'annotator' && (
+            <>
+              <Tab eventKey="features" title="Features">
+                <FeaturesManagement />
+              </Tab>
+              <Tab eventKey="import" title="Import">
+                <div className="explanations">Import data to this project</div>
+                <ImportAnnotations
+                  projectName={project.params.project_slug}
+                  currentScheme={currentScheme || null}
+                />
+                <TestSetManagement
+                  projectSlug={projectSlug}
+                  currentScheme={currentScheme || ''}
+                  testSetExist={project?.params.test}
+                />
+              </Tab>
+              <Tab eventKey="parameters" title="Parameters">
+                <ProjectParameters project={project} projectSlug={projectSlug} />
+              </Tab>
+            </>
+          )}
           <Tab eventKey="session" title="Session history">
             <ProjectHistory
               projectSlug={projectSlug}

@@ -19,6 +19,7 @@ interface LabelsManagementProps {
   availableLabels: string[];
   kindScheme: string;
   setAppContext: React.Dispatch<React.SetStateAction<AppContextValue>>;
+  deactivateModifications?: boolean;
 }
 
 interface LabelCardProps {
@@ -27,6 +28,7 @@ interface LabelCardProps {
   countTest?: number;
   removeLabel: (label: string) => void;
   renameLabel: (formerLabel: string, newLabel: string) => void;
+  deactivateModifications?: boolean;
 }
 
 interface LabelType {
@@ -40,6 +42,7 @@ export const LabelCard: FC<LabelCardProps> = ({
   countTest,
   removeLabel,
   renameLabel,
+  deactivateModifications,
 }) => {
   const [showRename, setShowRename] = useState(false);
   const [newLabel, setNewLabel] = useState(label);
@@ -48,20 +51,28 @@ export const LabelCard: FC<LabelCardProps> = ({
       <td className="px-4 py-3">{label}</td>
       <td className="px-4 py-3 text-center">{countTrain ? countTrain : 0}</td>
       <td className="px-4 py-3 text-center">{countTest ? countTest : 0}</td>
-      <td className="flex justify-center gap-4">
-        <div
-          title="Delete"
-          onClick={() => removeLabel(label)}
-          className="cursor-pointer trash-wrapper"
-        >
-          <FaRegTrashAlt />
-        </div>
-      </td>
-      <td className="flex justify-center gap-4">
-        <div title="Rename" onClick={() => setShowRename(!showRename)} className="cursor-pointer">
-          <FaEdit />
-        </div>
-      </td>
+      {!deactivateModifications && (
+        <>
+          <td className="flex justify-center gap-4">
+            <div
+              title="Delete"
+              onClick={() => removeLabel(label)}
+              className="cursor-pointer trash-wrapper"
+            >
+              <FaRegTrashAlt />
+            </div>
+          </td>
+          <td className="flex justify-center gap-4">
+            <div
+              title="Rename"
+              onClick={() => setShowRename(!showRename)}
+              className="cursor-pointer"
+            >
+              <FaEdit />
+            </div>
+          </td>
+        </>
+      )}
       {showRename && (
         <td>
           <div className="d-flex align-items-center">
@@ -97,6 +108,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   availableLabels,
   kindScheme,
   setAppContext,
+  deactivateModifications,
 }) => {
   const { notify } = useNotifications();
 
@@ -161,19 +173,21 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
       </span>
 
       <div className="rounded-2xl bg-white">
-        <div className="d-flex align-items-center justify-content-between col-8 col-md-4">
-          <input
-            type="text"
-            id="new-label"
-            value={createLabelValue}
-            onChange={handleCreateLabelChange}
-            placeholder="Enter new label"
-            className="form-control m-4"
-          />
-          <button onClick={createLabel} className="btn btn p-0">
-            <FaPlusCircle size={20} />
-          </button>
-        </div>
+        {!deactivateModifications && (
+          <div className="d-flex align-items-center justify-content-between col-8 col-md-4">
+            <input
+              type="text"
+              id="new-label"
+              value={createLabelValue}
+              onChange={handleCreateLabelChange}
+              placeholder="Enter new label"
+              className="form-control m-4"
+            />
+            <button onClick={createLabel} className="btn btn p-0">
+              <FaPlusCircle size={20} />
+            </button>
+          </div>
+        )}
         <table className="table table-hover">
           <thead className="text-xs text-gray-600 uppercase bg-gray-100">
             <tr>
@@ -207,6 +221,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                     ? Number(statistics['test_annotated_distribution'][label.label])
                     : 0
                 }
+                deactivateModifications={deactivateModifications}
               />
             ))}
           </ReactSortable>

@@ -56,6 +56,7 @@ async def add_label(
     Add a label to a scheme
     """
     test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
+    print("action", action, "scheme", scheme, "label", label)
     if action == "add":
         try:
             project.schemes.add_label(label, scheme, current_user.username)

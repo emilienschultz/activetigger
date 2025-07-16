@@ -132,7 +132,7 @@ async def delete_project(
     """
     Delete a project
     """
-    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project_slug)
+    test_rights(ServerAction.DELETE_PROJECT, current_user.username, project_slug)
     try:
         orchestrator.delete_project(project_slug)
     except Exception as e:

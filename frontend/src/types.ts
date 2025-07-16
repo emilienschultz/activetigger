@@ -127,6 +127,7 @@ export interface GenerateConfig {
 }
 
 export interface DisplayConfig {
+  interfaceType: string;
   displayAnnotation: boolean;
   displayPrediction: boolean;
   displayContext: boolean;

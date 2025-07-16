@@ -13,6 +13,11 @@ import { SchemeModel } from '../types';
  * Select current scheme
  */
 
+interface SchemeManagementProps {
+  projectSlug: string;
+  deactivateModifications?: boolean;
+}
+
 export const SelectCurrentScheme: FC = () => {
   const { notify } = useNotifications();
 
@@ -87,7 +92,10 @@ export const SelectCurrentScheme: FC = () => {
  * Select ; Delete ; Add
  */
 
-export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) => {
+export const SchemesManagement: FC<SchemeManagementProps> = ({
+  projectSlug,
+  deactivateModifications,
+}) => {
   // get element from the context
   const {
     appContext: { currentProject, currentScheme, reFetchCurrentProject },
@@ -145,25 +153,25 @@ export const SchemesManagement: FC<{ projectSlug: string }> = ({ projectSlug }) 
         <div className="mt-3 col-12 col-md-4">
           <SelectCurrentScheme />
         </div>
-        <button onClick={deleteSelectedScheme} className="btn btn-primary mx-2">
-          <FaRegTrashAlt size={20} /> <span className="d-none d-sm-inline ms-2">Delete</span>
-        </button>
-        <button
-          onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
-          className="btn btn-primary"
-        >
-          <FaPlusCircle size={20} /> <span className="d-none d-sm-inline ms-2">Add</span>
-        </button>
-        {true && (
-          <button onClick={() => setShowRename(!showRename)} className="btn btn-primary mx-2">
-            <MdDriveFileRenameOutline size={20} />{' '}
-            <span className="d-none d-sm-inline ms-2">Rename</span>
-          </button>
-        )}
-        {true && (
-          <button onClick={() => duplicateScheme()} className="btn btn-primary">
-            <IoDuplicate size={20} /> <span className="d-none d-sm-inline ms-2">Duplicate</span>
-          </button>
+        {!deactivateModifications && (
+          <>
+            <button onClick={deleteSelectedScheme} className="btn btn-primary mx-2">
+              <FaRegTrashAlt size={20} /> <span className="d-none d-sm-inline ms-2">Delete</span>
+            </button>
+            <button
+              onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
+              className="btn btn-primary"
+            >
+              <FaPlusCircle size={20} /> <span className="d-none d-sm-inline ms-2">Add</span>
+            </button>
+            <button onClick={() => setShowRename(!showRename)} className="btn btn-primary mx-2">
+              <MdDriveFileRenameOutline size={20} />{' '}
+              <span className="d-none d-sm-inline ms-2">Rename</span>
+            </button>
+            <button onClick={() => duplicateScheme()} className="btn btn-primary">
+              <IoDuplicate size={20} /> <span className="d-none d-sm-inline ms-2">Duplicate</span>
+            </button>
+          </>
         )}
       </div>
       <div>

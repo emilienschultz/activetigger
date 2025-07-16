@@ -40,6 +40,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   currentScheme: undefined,
   notifications: [],
   displayConfig: {
+    interfaceType: 'default',
     displayAnnotation: true,
     displayContext: false,
     displayPrediction: true,
