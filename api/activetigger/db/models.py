@@ -105,7 +105,7 @@ class Schemes(Base):
         ForeignKey("projects.project_slug", ondelete="CASCADE")
     )
     project: Mapped[Projects] = relationship(back_populates="schemes")
-    models: Mapped[list["Models"]] = relationship()
+    models: Mapped[list["Models"]] = relationship(passive_deletes=True, back_populates="scheme")
     params: Mapped[dict[str, Any]]
 
 

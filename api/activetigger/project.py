@@ -232,8 +232,10 @@ class Project:
 
         # remove from database
         try:
+            print("Deleting project from the database")
             self.db_manager.projects_service.delete_project(self.params.project_slug)
         except Exception as e:
+            print(f"Problem with the database: {e}")
             raise ValueError("Problem with the database " + str(e))
 
         # remove folder of the project
