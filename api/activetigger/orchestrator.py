@@ -469,12 +469,8 @@ class Orchestrator:
             self.start_project(project_slug)
             project = self.projects[project_slug]
 
-        print("Deleting project", project_slug)
-        print("Loaded project:", project.name)
-
         # delete the project
         try:
-            print("Deleting project from the database")
             project.delete()
         except Exception as e:
             raise Exception from e

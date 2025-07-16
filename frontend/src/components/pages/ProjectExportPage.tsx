@@ -102,19 +102,26 @@ export const ProjectExportPage: FC = () => {
                 if (currentScheme) getAnnotationsFile(currentScheme, format, 'train');
               }}
             >
-              Export train tags
+              Export current scheme train tags
             </button>
-
             {project?.params.test && (
               <button
-                className="btn btn-primary m-3"
+                className="btn btn-primary mx-2"
                 onClick={() => {
                   if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
                 }}
               >
-                Export test tags
+                Export current scheme test tags
               </button>
             )}
+            <button
+              className="btn btn-primary mx-2"
+              onClick={() => {
+                if (currentScheme) getAnnotationsFile('all', format, 'train');
+              }}
+            >
+              Export all tags
+            </button>
 
             <h4 className="subsection">Features</h4>
             <div>

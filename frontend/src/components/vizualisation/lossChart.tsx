@@ -33,6 +33,10 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
     y: val_eval_loss[i] as number,
   }));
 
+  const allYValues = [...valLossData.map((d) => d.y), ...valEvalLossData.map((d) => d.y)];
+
+  const maxY = Math.max(...allYValues);
+
   const initial = { x: 0, y: Infinity };
   const minValLossPoint = valEvalLossData.reduce(
     (min, curr) => (curr.y < min.y ? curr : min),
@@ -50,7 +54,7 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
       <VictoryChart
         theme={VictoryTheme.material}
         minDomain={{ y: 0 }}
-        maxDomain={{ x: xmax }}
+        maxDomain={{ x: xmax, y: maxY * 1.1 }}
         width={1000}
         height={500}
       >

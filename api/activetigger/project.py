@@ -868,6 +868,8 @@ class Project:
     ) -> FileResponse:
         """
         Export annotation data in different formats
+        - for a scheme
+        - for all schemes
         """
         path = self.params.dir  # path of the data
         if path is None:
@@ -877,11 +879,39 @@ class Project:
         if dataset == "test":
             if not self.params.test:
                 raise Exception("No test data available")
-            data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
-            file_name = f"data_test_{self.name}_{scheme}.{format}"
+            if scheme == "all":
+                schemes = self.schemes.available()
+                if len(schemes) == 0:
+                    raise Exception("No scheme available")
+                data = pd.concat(
+                    {
+                        s: self.schemes.get_scheme_data(s, complete=True, kind=["test"])["labels"]
+                        for s in schemes
+                    },
+                    axis=1,
+                )
+                file_name = f"data_test_{self.name}_all_schemes.{format}"
+                dropna = False
+            else:
+                data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
+                file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
-            data = self.schemes.get_scheme_data(scheme=scheme, complete=True)
-            file_name = f"data_train_{self.name}_{scheme}.{format}"
+            if scheme == "all":
+                schemes = self.schemes.available()
+                if len(schemes) == 0:
+                    raise Exception("No scheme available")
+                data = pd.concat(
+                    {
+                        s: self.schemes.get_scheme_data(s, complete=True, kind=["train"])["labels"]
+                        for s in schemes
+                    },
+                    axis=1,
+                )
+                file_name = f"data_train_{self.name}_all_schemes.{format}"
+                dropna = False
+            else:
+                data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
+                file_name = f"data_train_{self.name}_{scheme}.{format}"
 
         # transformation
         if dropna:
