@@ -91,28 +91,26 @@ export const ProjectPage: FC = () => {
           <Tab eventKey="codebook" title="Codebook">
             <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
           </Tab>
-          {displayConfig.interfaceType !== 'annotator' && (
-            <>
-              <Tab eventKey="features" title="Features">
-                <FeaturesManagement />
-              </Tab>
-              <Tab eventKey="import" title="Import">
-                <div className="explanations">Import data to this project</div>
-                <ImportAnnotations
-                  projectName={project.params.project_slug}
-                  currentScheme={currentScheme || null}
-                />
-                <TestSetManagement
-                  projectSlug={projectSlug}
-                  currentScheme={currentScheme || ''}
-                  testSetExist={project?.params.test}
-                />
-              </Tab>
-              <Tab eventKey="parameters" title="Parameters">
-                <ProjectParameters project={project} projectSlug={projectSlug} />
-              </Tab>
-            </>
-          )}
+
+          <Tab eventKey="features" title="Features">
+            <FeaturesManagement />
+          </Tab>
+          <Tab eventKey="import" title="Import">
+            <div className="explanations">Import data to this project</div>
+            <ImportAnnotations
+              projectName={project.params.project_slug}
+              currentScheme={currentScheme || null}
+            />
+            <TestSetManagement
+              projectSlug={projectSlug}
+              currentScheme={currentScheme || ''}
+              testSetExist={project?.params.test}
+            />
+          </Tab>
+          <Tab eventKey="parameters" title="Parameters">
+            <ProjectParameters project={project} projectSlug={projectSlug} />
+          </Tab>
+
           <Tab eventKey="session" title="Session history">
             <ProjectHistory
               projectSlug={projectSlug}
