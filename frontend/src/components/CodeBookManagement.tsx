@@ -1,4 +1,5 @@
 import MDEditor from '@uiw/react-md-editor';
+import { marked } from 'marked';
 import { FC, useEffect, useState } from 'react';
 import rehypeSanitize from 'rehype-sanitize';
 import { useGetSchemeCodebook, usePostSchemeCodebook } from '../core/api';
@@ -47,6 +48,26 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
     URL.revokeObjectURL(url);
   };
 
+  const openAsHTML = () => {
+    const htmlContent = `
+    <html>
+      <head>
+        <title>Codebook</title>
+        <meta charset="UTF-8" />
+        <style>
+          body { font-family: sans-serif; padding: 2em; }
+        </style>
+      </head>
+      <body>
+        <div>${marked.parse(modifiedCodebook || '')}</div>
+      </body>
+    </html>
+  `;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="container">
       <div className="explanations">Keep track of the tagging rules</div>
@@ -57,10 +78,13 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
           rehypePlugins: [[rehypeSanitize]],
         }}
       />
-      <button className="btn btn-primary mt-3" onClick={saveCodebook}>
-        Save modifications
+      <button className="btn btn-secondary mt-3" onClick={saveCodebook}>
+        Save
       </button>
-      <button className="btn btn-secondary mt-3 ms-2" onClick={downloadMarkdown}>
+      <button className="btn btn-primary mt-3 ms-2" onClick={openAsHTML}>
+        Open
+      </button>
+      <button className="btn btn-primary mt-3 ms-2" onClick={downloadMarkdown}>
         Download
       </button>
     </div>

@@ -1681,6 +1681,18 @@ export interface components {
              */
             file: string;
         };
+        /**
+         * ChangePasswordModel
+         * @description Model for changing password
+         */
+        ChangePasswordModel: {
+            /** Pwdold */
+            pwdold: string;
+            /** Pwd1 */
+            pwd1: string;
+            /** Pwd2 */
+            pwd2: string;
+        };
         /** CodebookModel */
         CodebookModel: {
             /** Content */
@@ -2868,16 +2880,16 @@ export interface operations {
     };
     change_password_users_changepwd_post: {
         parameters: {
-            query: {
-                pwdold: string;
-                pwd1: string;
-                pwd2: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

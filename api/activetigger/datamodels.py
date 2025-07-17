@@ -10,6 +10,16 @@ from sklearn.base import BaseEstimator  # type: ignore[import]
 # Data model to use of the API
 
 
+class ChangePasswordModel(BaseModel):
+    """
+    Model for changing password
+    """
+
+    pwdold: str
+    pwd1: str
+    pwd2: str
+
+
 class PredictedLabel(BaseModel):
     label: str | None
     proba: float | None

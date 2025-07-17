@@ -292,3 +292,20 @@ class Prompts(Base):
     project: Mapped[Projects] = relationship(back_populates="prompts")
     value: Mapped[str]
     parameters: Mapped[dict[str, Any]]
+
+
+# TO IMPLEMENT
+# class Messages(Base):
+#     __tablename__ = "messages"
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+#     time: Mapped[datetime.datetime] = mapped_column(
+#         DateTime(timezone=True), server_default=func.now()
+#     )
+#     created_by: Mapped[str]
+#     kind: Mapped[str]
+#     content: Mapped[str]
+#     for_project: Mapped[str | None] = mapped_column(
+#         ForeignKey("projects.project_slug", ondelete="CASCADE")
+#     )
+#     for_user: Mapped[str | None] = mapped_column(ForeignKey("users.user_name"))

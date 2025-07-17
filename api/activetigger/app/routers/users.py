@@ -17,6 +17,7 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     AuthActions,
+    ChangePasswordModel,
     UserInDBModel,
     UserModel,
     UserStatistics,
@@ -115,15 +116,15 @@ async def delete_user(
 @router.post("/users/changepwd", dependencies=[Depends(verified_user)], tags=["users"])
 async def change_password(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    pwdold: str = Query(),
-    pwd1: str = Query(),
-    pwd2: str = Query(),
+    changepwd: ChangePasswordModel,
 ) -> None:
     """
     Change password for an account
     """
     try:
-        orchestrator.users.change_password(current_user.username, pwdold, pwd1, pwd2)
+        orchestrator.users.change_password(
+            current_user.username, changepwd.pwdold, changepwd.pwd1, changepwd.pwd2
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

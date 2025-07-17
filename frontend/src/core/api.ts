@@ -1979,12 +1979,10 @@ export function useChangePassword() {
   const changePassword = useCallback(
     async (pwdold: string, pwd1: string, pwd2: string) => {
       const res = await api.POST('/users/changepwd', {
-        params: {
-          query: {
-            pwdold: pwdold,
-            pwd1: pwd1,
-            pwd2: pwd2,
-          },
+        body: {
+          pwdold: pwdold,
+          pwd1: pwd1,
+          pwd2: pwd2,
         },
       });
       if (!res.error) notify({ type: 'success', message: 'Password changed' });
