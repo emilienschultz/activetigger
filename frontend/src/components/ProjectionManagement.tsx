@@ -98,7 +98,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       return;
     }
     await updateProjection(data);
-    setFormNewProjection(false);
     reset();
   };
 
@@ -179,7 +178,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       ? authenticatedUser?.username in project.projections.training
       : false;
 
-  const [formNewProjection, setFormNewProjection] = useState<boolean>(false);
+  // const [formNewProjection, setFormNewProjection] = useState<boolean>(false);
 
   type Feature = {
     label: string;
@@ -194,14 +193,14 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   return (
     <div>
       <div className="d-flex align-items-center">
-        {!projectionTraining && (
+        {/* {!projectionTraining && (
           <button
             className="btn btn-primary btn-validation mb-3"
             onClick={() => setFormNewProjection(!formNewProjection)}
           >
             Compute new vizualization
           </button>
-        )}
+        )} */}
         <label style={{ display: 'block' }} className="mx-4">
           <span className="lock">
             <FaLock /> Lock on selection
@@ -236,105 +235,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         </div>
       )}
 
-      {!projectionTraining && formNewProjection && (
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 col-8">
-          <h4 className="subsection">Compute new projection</h4>
-          <label htmlFor="model">Select a model</label>
-          <select id="model" {...register('method')}>
-            <option value=""></option>
-            {Object.keys(availableProjections?.options || {}).map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}{' '}
-          </select>
-          <div>
-            <label htmlFor="features">Select features</label>
-            <Controller
-              name="features"
-              control={control}
-              defaultValue={defaultFeatures.map((e) => e.value)}
-              render={({ field: { onChange, value } }) => (
-                <Select
-                  options={features}
-                  isMulti
-                  value={features.filter((option) => value.includes(option.value))}
-                  onChange={(selectedOptions) => {
-                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
-                  }}
-                />
-              )}
-            />
-          </div>
-          {availableProjections?.options && selectedMethod == 'tsne' && (
-            <div>
-              <label htmlFor="perplexity">perplexity</label>
-              <input
-                type="number"
-                step="1"
-                id="perplexity"
-                {...register('parameters.perplexity', { valueAsNumber: true })}
-              ></input>
-              <label>Learning rate</label>
-              <select {...register('parameters.learning_rate')}>
-                <option key="auto" value="auto">
-                  auto
-                </option>
-              </select>
-              <label>Init</label>
-              <select {...register('parameters.init')}>
-                <option key="random" value="random">
-                  random
-                </option>
-              </select>
-            </div>
-          )}
-          {availableProjections?.options && selectedMethod == 'umap' && (
-            <div>
-              <label htmlFor="n_neighbors">n_neighbors</label>
-              <input
-                type="number"
-                step="1"
-                id="n_neighbors"
-                {...register('parameters.n_neighbors', { valueAsNumber: true })}
-              ></input>
-              <label htmlFor="min_dist">min_dist</label>
-              <input
-                type="number"
-                id="min_dist"
-                step="0.01"
-                {...register('parameters.min_dist', { valueAsNumber: true })}
-              ></input>
-              <label htmlFor="metric">Metric</label>
-              <select {...register('parameters.metric')}>
-                <option key="cosine" value="cosine">
-                  cosine
-                </option>
-                <option key="euclidean" value="euclidean">
-                  euclidean
-                </option>
-              </select>
-            </div>
-          )}
-          <label htmlFor="n_components">n_components</label>
-          <input
-            type="number"
-            id="n_components"
-            step="1"
-            {...register('parameters.n_components', { valueAsNumber: true, required: true })}
-          ></input>
-
-          <button className="btn btn-primary btn-validation">Compute</button>
-        </form>
-      )}
-
       {projectionData && labelColorMapping && (
         <div>
-          <details>
-            <summary>parameters</summary>
+          <details className="m-2">
+            <summary>Parameters of the current vizualisation</summary>
             {JSON.stringify(projectionData?.parameters, null, 2)}
           </details>
-          <div className="row align-items-start m-0" style={{ height: '500px' }}>
+          <div className="row align-items-start m-0" style={{ height: '400px' }}>
             <ProjectionVizSigma
               className={`col-8 border p-0 h-100`}
               data={projectionData}
@@ -378,6 +285,100 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           </div>
         </div>
       )}
+      <div className="row mt-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="col-8">
+          <h5 className="subsection">Compute new vizualisation</h5>
+          <div>
+            <label htmlFor="features">Select features</label>
+            <Controller
+              name="features"
+              control={control}
+              defaultValue={defaultFeatures.map((e) => e.value)}
+              render={({ field: { onChange, value } }) => (
+                <Select
+                  options={features}
+                  isMulti
+                  value={features.filter((option) => value.includes(option.value))}
+                  onChange={(selectedOptions) => {
+                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+                  }}
+                />
+              )}
+            />
+          </div>
+          <details className="custom-details">
+            <summary>Advanced parameters</summary>
+            <label htmlFor="model">Select a model</label>
+            <select id="model" {...register('method')}>
+              <option value=""></option>
+              {Object.keys(availableProjections?.options || {}).map((e) => (
+                <option key={e} value={e}>
+                  {e}
+                </option>
+              ))}{' '}
+            </select>
+            {availableProjections?.options && selectedMethod == 'tsne' && (
+              <div>
+                <label htmlFor="perplexity">perplexity</label>
+                <input
+                  type="number"
+                  step="1"
+                  id="perplexity"
+                  {...register('parameters.perplexity', { valueAsNumber: true })}
+                ></input>
+                <label>Learning rate</label>
+                <select {...register('parameters.learning_rate')}>
+                  <option key="auto" value="auto">
+                    auto
+                  </option>
+                </select>
+                <label>Init</label>
+                <select {...register('parameters.init')}>
+                  <option key="random" value="random">
+                    random
+                  </option>
+                </select>
+              </div>
+            )}
+            {availableProjections?.options && selectedMethod == 'umap' && (
+              <div>
+                <label htmlFor="n_neighbors">n_neighbors</label>
+                <input
+                  type="number"
+                  step="1"
+                  id="n_neighbors"
+                  {...register('parameters.n_neighbors', { valueAsNumber: true })}
+                ></input>
+                <label htmlFor="min_dist">min_dist</label>
+                <input
+                  type="number"
+                  id="min_dist"
+                  step="0.01"
+                  {...register('parameters.min_dist', { valueAsNumber: true })}
+                ></input>
+                <label htmlFor="metric">Metric</label>
+                <select {...register('parameters.metric')}>
+                  <option key="cosine" value="cosine">
+                    cosine
+                  </option>
+                  <option key="euclidean" value="euclidean">
+                    euclidean
+                  </option>
+                </select>
+              </div>
+            )}
+            {/* <label htmlFor="n_components">n_components</label>
+          <input
+            type="number"
+            id="n_components"
+            step="1"
+            {...register('parameters.n_components', { valueAsNumber: true, required: true })}
+          ></input> */}
+          </details>
+          <button className="btn btn-primary btn-validation">Compute</button>
+        </form>
+      </div>
+      <div className="m-3"></div>
     </div>
   );
 };
