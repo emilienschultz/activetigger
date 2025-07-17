@@ -11,29 +11,31 @@ export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }
 
   return (
     <div>
-      <hr />
-      <h5>Current {currentModel.model} model</h5>
-      <table className="table table-striped table-hover">
-        <tbody>
-          {currentModel.params &&
-            Object.entries(currentModel.params).map(([key, value], i) => (
-              <tr key={i}>
-                <td>{key}</td>
-                <td>
-                  {Array.isArray(value)
-                    ? value.join(', ') // or use bullets if you prefer
-                    : typeof value === 'object' && value !== null
-                      ? JSON.stringify(value, null, 2)
-                      : String(value)}
-                </td>
-              </tr>
-            ))}
-        </tbody>
-      </table>
+      <h5 className="subsection">Current {currentModel.model} model</h5>
+      <details className="m-2">
+        <summary>Model parameters</summary>
+
+        <table className="table table-striped table-hover">
+          <tbody>
+            {currentModel.params &&
+              Object.entries(currentModel.params).map(([key, value], i) => (
+                <tr key={i}>
+                  <td>{key}</td>
+                  <td>
+                    {Array.isArray(value)
+                      ? value.join(', ') // or use bullets if you prefer
+                      : typeof value === 'object' && value !== null
+                        ? JSON.stringify(value, null, 2)
+                        : String(value)}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </details>
       <div>
-        <h5>Statistics</h5>
         <DisplayScores
-          title="Quick model"
+          title=""
           scores={currentModel.statistics as unknown as Record<string, number>}
         />
         {currentModel.statistics_cv10 && (

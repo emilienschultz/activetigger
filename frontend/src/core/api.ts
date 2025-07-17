@@ -249,9 +249,7 @@ export function useCreateTestSet() {
   const { notify } = useNotifications();
   const createTestSet = useCallback(
     async (projectSlug: string, testset: TestSetDataModel) => {
-      // do the new projects POST call
       const res = await api.POST('/projects/testset/{action}', {
-        // POST has a body
         params: {
           path: { action: 'create' },
           query: { project_slug: projectSlug },

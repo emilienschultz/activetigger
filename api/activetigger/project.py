@@ -337,6 +337,9 @@ class Project:
         The id will be modified to indicate imported
 
         """
+        if len(testset.cols_text) == 0:
+            raise Exception("No text column selected for the testset")
+
         if self.schemes.test is not None:
             raise Exception("There is already a test dataset")
 
@@ -349,21 +352,25 @@ class Project:
         csv_buffer = io.StringIO(testset.csv)
         df = pd.read_csv(
             csv_buffer,
-            dtype={testset.col_id: str, testset.col_text: str},
+            dtype={testset.col_id: str, **{col: str for col in testset.cols_text}},
             nrows=testset.n_test,
         )
 
         if len(df) > 10000:
             raise Exception("You testset is too large")
 
+        # create text column
+        df["text"] = df[testset.cols_text].apply(
+            lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
+        )
+
         # change names
         if not testset.col_label:
-            df = df.rename(columns={testset.col_id: "id", testset.col_text: "text"})
+            df = df.rename(columns={testset.col_id: "id"})
         else:
             df = df.rename(
                 columns={
                     testset.col_id: "id",
-                    testset.col_text: "text",
                     testset.col_label: "label",
                 }
             )

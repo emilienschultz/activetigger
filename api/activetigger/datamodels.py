@@ -97,7 +97,7 @@ class AnnotationsDataModel(BaseModel):
 
 
 class TestSetDataModel(BaseModel):
-    col_text: str
+    cols_text: list[str]
     col_id: str
     n_test: int
     filename: str
@@ -165,15 +165,6 @@ class UserInDBModel(UserModel):
     """
 
     hashed_password: str
-
-
-class UsersServerModel(BaseModel):
-    """
-    list of users on the server
-    """
-
-    users: dict[str, UserModel]
-    auth: list[str]
 
 
 class TokenModel(BaseModel):

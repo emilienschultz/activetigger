@@ -3,7 +3,7 @@ import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import Highlighter from 'react-highlight-words';
-import { FaPencilAlt } from 'react-icons/fa';
+import { FaPencilAlt, FaTools } from 'react-icons/fa';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -516,10 +516,19 @@ export const ProjectTagPage: FC = () => {
                   <>
                     <div className="explanations">
                       The quick model is used during tagging, for the active and maxprob models.
-                      Recommended features to train on are embeddings (eg. SBERT) before training a
-                      large fine-tuned model, and BERT predictions once you have fine-tuned one.
+                      <a className="problems m-2">
+                        <FaTools />
+                        <Tooltip anchorSelect=".problems" place="top">
+                          Recommended features to train on are embeddings (eg. SBERT) before
+                          training a large fine-tuned model, and BERT predictions once you have
+                          fine-tuned one.
+                        </Tooltip>
+                      </a>
                     </div>
 
+                    <SimpleModelDisplay
+                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
+                    />
                     <SimpleModelManagement
                       projectName={projectName || null}
                       currentScheme={currentScheme || null}
@@ -529,10 +538,6 @@ export const ProjectTagPage: FC = () => {
                       availableFeatures={availableFeatures}
                       availableLabels={availableLabels}
                       kindScheme={kindScheme}
-                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
-                    />
-
-                    <SimpleModelDisplay
                       currentModel={(currentModel as unknown as Record<string, never>) || undefined}
                     />
                   </>

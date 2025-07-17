@@ -46,8 +46,6 @@ export type TableAnnotationsModel = components['schemas']['TableAnnotationsModel
 
 export type SimpleModelModel = components['schemas']['SimpleModelModel'];
 
-export type UsersServerModel = components['schemas']['UsersServerModel'];
-
 export type LMParametersModel = components['schemas']['LMParametersModel'];
 
 export type TestSetDataModel = components['schemas']['TestSetDataModel'];
@@ -151,7 +149,7 @@ export interface newBertModel {
 
 export interface TestSetModel {
   col_id: string;
-  col_text: string;
+  cols_text: string[];
   col_label?: string | null;
   scheme?: string | null;
   n_test: number;

@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
 import { useUpdateSimpleModel } from '../core/api';
@@ -28,7 +28,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   currentModel,
 }) => {
   // display the form
-  const [showForm, setShowForm] = useState(false);
+  //const [showForm, setShowForm] = useState(false);
 
   // element from the context
   const {
@@ -100,7 +100,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
       return;
     }
     await updateSimpleModel(formData);
-    setShowForm(false);
+    //    setShowForm(false);
   };
 
   // build default features selected
@@ -124,17 +124,56 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   return (
     <>
-      <button
+      {/* <button
         className="btn btn-primary mb-2"
         onClick={() => {
           setShowForm(!showForm);
         }}
       >
         {showForm ? 'Hide form' : 'Train a new quick model'}
-      </button>
-      {showForm && (
-        <div>
-          <form onSubmit={handleSubmit(onSubmit)}>
+      </button> */}
+      <div>
+        <h5 className="subsection">Train a new quick model</h5>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div>
+            <label htmlFor="features">Features used to predict</label>
+            {/* Specific management of the component with the react-form controller */}
+            <Controller
+              name="features"
+              control={control}
+              defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
+              render={({ field: { onChange, value } }) => (
+                <Select
+                  options={features}
+                  isMulti
+                  value={features.filter((option) => value.includes(option.value))}
+                  onChange={(selectedOptions) => {
+                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+                  }}
+                />
+              )}
+            />
+          </div>
+          <div className="d-flex align-items-center">
+            <label htmlFor="frequencySlider">Refresh</label>
+            Every
+            <input
+              type="number"
+              id="frequencySlider"
+              min="0"
+              max="500"
+              value={freqRefreshSimpleModel}
+              onChange={(e) => {
+                refreshFreq(Number(e.currentTarget.value));
+              }}
+              step="1"
+              style={{ width: '80px', margin: '10px' }}
+            />
+            annotations (0 for no refreshing)
+          </div>
+          <details className="custom-details">
+            <summary>Advanced parameters</summary>
+
             <label htmlFor="model">Select a model</label>
             <select id="model" {...register('model')}>
               {Object.keys(availableSimpleModels).map((e) => (
@@ -225,53 +264,16 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
                   </div>
                 ))
             }
-            <div>
-              <label htmlFor="features">Features used to predict</label>
-              {/* Specific management of the component with the react-form controller */}
-              <Controller
-                name="features"
-                control={control}
-                defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={features}
-                    isMulti
-                    value={features.filter((option) => value.includes(option.value))}
-                    onChange={(selectedOptions) => {
-                      onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                      );
-                    }}
-                  />
-                )}
-              />
-            </div>
+
             <div className="d-flex align-items-center">
               <label htmlFor="cv10">10-fold cross validation</label>
               <input type="checkbox" id="cv10" {...register('cv10')} className="mx-3" />
             </div>
+          </details>
 
-            <div className="d-flex align-items-center">
-              <label htmlFor="frequencySlider">Refresh</label>
-              Every
-              <input
-                type="number"
-                id="frequencySlider"
-                min="0"
-                max="500"
-                value={freqRefreshSimpleModel}
-                onChange={(e) => {
-                  refreshFreq(Number(e.currentTarget.value));
-                }}
-                step="1"
-                style={{ width: '80px', margin: '10px' }}
-              />
-              annotations (0 for no refreshing)
-            </div>
-            <button className="btn btn-primary btn-validation">Train quick model</button>
-          </form>
-        </div>
-      )}
+          <button className="btn btn-primary btn-validation">Train quick model</button>
+        </form>
+      </div>
     </>
   );
 };

@@ -277,7 +277,7 @@ export interface paths {
         put?: never;
         /**
          * New Project
-         * @description Load new project
+         * @description Start the creation of a new project
          */
         post: operations["new_project_projects_new_post"];
         delete?: never;
@@ -1585,7 +1585,7 @@ export interface components {
              * Dataset
              * @default train
              */
-            dataset: string | null;
+            dataset: string;
             /** Comment */
             comment?: string | null;
             /** Selection */
@@ -1700,17 +1700,12 @@ export interface components {
             /** Text */
             text: string;
             /** Context */
-            context: {
-                [key: string]: unknown;
-            };
+            context: Record<string, never>;
             /** Selection */
             selection: string;
             /** Info */
             info: string | null;
-            /** Predict */
-            predict: {
-                [key: string]: unknown;
-            };
+            predict: components["schemas"]["PredictedLabel"];
             /** Frame */
             frame: unknown[] | null;
             /** Limit */
@@ -1733,9 +1728,7 @@ export interface components {
             /** Name */
             name: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
             /** User */
             user: string;
             /** Time */
@@ -1763,9 +1756,7 @@ export interface components {
         FeaturesProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: string[];
@@ -1897,32 +1888,35 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** LMComputingOutModel */
+        LMComputingOutModel: {
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            /** Progress */
+            progress?: number | null;
+            /** Loss */
+            loss?: {
+                [key: string]: Record<string, never> | undefined;
+            } | null;
+            /** Epochs */
+            epochs?: number | null;
+        };
         /** LMInformationsModel */
         LMInformationsModel: {
             /** Params */
-            params?: {
-                [key: string]: unknown;
-            } | null;
+            params?: Record<string, never> | null;
             /** Loss */
-            loss?: {
-                [key: string]: unknown;
-            } | null;
+            loss?: Record<string, never> | null;
             /** Train Scores */
-            train_scores?: {
-                [key: string]: unknown;
-            } | null;
+            train_scores?: Record<string, never> | null;
             /** Test Scores */
-            test_scores?: {
-                [key: string]: unknown;
-            } | null;
+            test_scores?: Record<string, never> | null;
             /** Valid Scores */
-            valid_scores?: {
-                [key: string]: unknown;
-            } | null;
+            valid_scores?: Record<string, never> | null;
             /** Outofsample Scores */
-            outofsample_scores?: {
-                [key: string]: unknown;
-            } | null;
+            outofsample_scores?: Record<string, never> | null;
         };
         /**
          * LMParametersModel
@@ -1975,27 +1969,37 @@ export interface components {
              */
             adapt: boolean;
         };
+        /** LMStatusModel */
+        LMStatusModel: {
+            /**
+             * Predicted
+             * @default false
+             */
+            predicted: boolean;
+            /**
+             * Tested
+             * @default false
+             */
+            tested: boolean;
+            /**
+             * Predicted External
+             * @default false
+             */
+            predicted_external: boolean;
+        };
         /** LanguageModelsProjectStateModel */
         LanguageModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            }[];
+            options: Record<string, never>[];
             /** Available */
             available: {
                 [key: string]: {
-                    [key: string]: {
-                        [key: string]: boolean | undefined;
-                    } | undefined;
+                    [key: string]: components["schemas"]["LMStatusModel"] | undefined;
                 } | undefined;
             };
             /** Training */
             training: {
-                [key: string]: {
-                    [key: string]: (string | number | {
-                        [key: string]: unknown;
-                    } | null) | undefined;
-                } | undefined;
+                [key: string]: components["schemas"]["LMComputingOutModel"] | undefined;
             };
             base_parameters: components["schemas"]["LMParametersModel"];
         };
@@ -2030,13 +2034,9 @@ export interface components {
             /** Confusion Matrix */
             confusion_matrix?: number[][] | null;
             /** False Predictions */
-            false_predictions?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
+            false_predictions?: Record<string, never> | unknown[] | null;
             /** Table */
-            table?: {
-                [key: string]: unknown;
-            } | null;
+            table?: Record<string, never> | null;
         };
         /**
          * NextInModel
@@ -2082,6 +2082,13 @@ export interface components {
             methods: string[];
             /** Sample */
             sample: string[];
+        };
+        /** PredictedLabel */
+        PredictedLabel: {
+            /** Label */
+            label: string | null;
+            /** Proba */
+            proba: number | null;
         };
         /**
          * ProjectAuthsModel
@@ -2197,17 +2204,13 @@ export interface components {
             /** Train Annotated N */
             train_annotated_n: number;
             /** Train Annotated Distribution */
-            train_annotated_distribution: {
-                [key: string]: unknown;
-            };
+            train_annotated_distribution: Record<string, never>;
             /** Test Set N */
             test_set_n?: number | null;
             /** Test Annotated N */
             test_annotated_n?: number | null;
             /** Test Annotated Distribution */
-            test_annotated_distribution?: {
-                [key: string]: unknown;
-            } | null;
+            test_annotated_distribution?: Record<string, never> | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -2401,9 +2404,7 @@ export interface components {
         ProjectionsProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: {
@@ -2428,9 +2429,7 @@ export interface components {
             /** Text */
             text: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
         };
         /**
          * ReconciliationModel
@@ -2485,23 +2484,15 @@ export interface components {
             };
             /** Active Projects */
             active_projects: {
-                [key: string]: {
-                    [key: string]: unknown;
-                }[] | undefined;
+                [key: string]: unknown[] | undefined;
             };
             gpu: components["schemas"]["GpuInformationModel"];
             /** Cpu */
-            cpu: {
-                [key: string]: unknown;
-            };
+            cpu: Record<string, never>;
             /** Memory */
-            memory: {
-                [key: string]: unknown;
-            };
+            memory: Record<string, never>;
             /** Disk */
-            disk: {
-                [key: string]: unknown;
-            };
+            disk: Record<string, never>;
         };
         /**
          * SimpleModelModel
@@ -2557,21 +2548,17 @@ export interface components {
             scheme: string;
             /** Username */
             username: string;
-            statistics: components["schemas"]["MLStatisticsModel"];
+            statistics?: components["schemas"]["MLStatisticsModel"] | null;
             statistics_cv10?: components["schemas"]["MLStatisticsModel"] | null;
         };
         /** SimpleModelsProjectStateModel */
         SimpleModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            };
+            options: Record<string, never>;
             /** Available */
             available: {
                 [key: string]: {
-                    [key: string]: {
-                        [key: string]: unknown;
-                    } | undefined;
+                    [key: string]: components["schemas"]["SimpleModelOutModel"] | undefined;
                 } | undefined;
             };
             /** Training */
@@ -2641,8 +2628,8 @@ export interface components {
         };
         /** TestSetDataModel */
         TestSetDataModel: {
-            /** Col Text */
-            col_text: string;
+            /** Cols Text */
+            cols_text: string[];
             /** Col Id */
             col_id: string;
             /** N Test */
@@ -2687,7 +2674,9 @@ export interface components {
             /** Username */
             username: string;
             /** Status */
-            status: string | null;
+            status?: string | null;
+            /** Contact */
+            contact?: string | null;
         };
         /** UserStatistics */
         UserStatistics: {
@@ -2697,20 +2686,6 @@ export interface components {
             projects: {
                 [key: string]: string | undefined;
             };
-        };
-        /**
-         * UsersServerModel
-         * @description list of users on the server
-         */
-        UsersServerModel: {
-            /** Users */
-            users: {
-                [key: string]: {
-                    [key: string]: string | undefined;
-                } | undefined;
-            };
-            /** Auth */
-            auth: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -2798,7 +2773,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UsersServerModel"];
+                    "application/json": {
+                        [key: string]: components["schemas"]["UserModel"] | undefined;
+                    };
                 };
             };
         };

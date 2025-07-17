@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
-import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
+import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form';
+import Select from 'react-select';
 
 import { omit } from 'lodash';
 import { unparse } from 'papaparse';
@@ -47,7 +48,7 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
   const files = useWatch({ control, name: 'files' });
   // available columns
   const columns = data?.headers.map((h) => (
-    <option key={h} value={h}>
+    <option key={`${h}`} value={`${h}`}>
       {h}
     </option>
   ));
@@ -71,7 +72,7 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
   // action when form validated
   const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async (formData) => {
     if (data) {
-      if (!formData.col_id || !formData.col_text || !formData.n_test) {
+      if (!formData.col_id || !formData.cols_text || !formData.n_test) {
         notify({ type: 'error', message: 'Please fill all the fields' });
         return;
       }
@@ -163,19 +164,24 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="form-label" htmlFor="col_text">
-                      Column for text
+                    <label className="form-label" htmlFor="cols_text">
+                      Text columns (all the selected fields will be concatenated)
                     </label>
-                    <select
-                      className="form-control"
-                      id="col_text"
-                      disabled={data === null}
-                      {...register('col_text')}
-                    >
-                      <option key="none"></option>
-
-                      {columns}
-                    </select>
+                    <Controller
+                      name="cols_text"
+                      control={control}
+                      render={({ field: { onChange } }) => (
+                        <Select
+                          options={(data?.headers || []).map((e) => ({ value: e, label: e }))}
+                          isMulti
+                          onChange={(selectedOptions) => {
+                            onChange(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
+                          }}
+                        />
+                      )}
+                    />
                     <label className="form-label" htmlFor="col_label">
                       Column for label (optional but they need to exist in the scheme)
                     </label>
