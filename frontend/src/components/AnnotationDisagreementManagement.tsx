@@ -51,14 +51,18 @@ export const AnnotationDisagreementManagement: FC<{
             Disagreements between users on annotations. Abitrate for the correct label.
           </div>
           <div>
-            <div>{users?.length} users involved in annotation</div>
+            <div>
+              <span>{users?.length}</span> user(s) involved in annotation
+            </div>
             <div>
               <b>{tableDisagreement?.length} disagreements</b>
             </div>
           </div>
-          <button className="btn btn-warning my-3" onClick={validateChanges}>
-            Validate changes
-          </button>
+          {Object.entries(changes).length > 0 && (
+            <button className="btn btn-warning my-3" onClick={validateChanges}>
+              Validate changes
+            </button>
+          )}
         </div>
       </div>
       {tableDisagreement?.map((element, index) => (
