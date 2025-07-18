@@ -10,6 +10,7 @@ from activetigger.app.dependencies import ProjectAction, get_project, test_right
 from activetigger.datamodels import (
     ActionModel,
     CodebookModel,
+    CompareSchemesModel,
     SchemeModel,
     UserInDBModel,
 )
@@ -163,6 +164,21 @@ async def duplicate_scheme(
             project.name,
         )
         return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/schemes/compare", dependencies=[Depends(verified_user)])
+async def compare_schemes(
+    project: Annotated[Project, Depends(get_project)],
+    schemeA: str,
+    schemeB: str,
+) -> CompareSchemesModel:
+    """
+    Compare two schemes
+    """
+    try:
+        return project.schemes.compare(schemeA, schemeB)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

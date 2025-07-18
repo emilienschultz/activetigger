@@ -1715,7 +1715,7 @@ export function useTableDisagreement(project_slug?: string, scheme?: string) {
 
   const getTable = useAsyncMemo(async () => {
     if (scheme && project_slug) {
-      const res = await api.GET('/elements/reconciliate', {
+      const res = await api.GET('/annotation/reconciliate', {
         params: {
           query: {
             project_slug: project_slug,
@@ -1747,7 +1747,7 @@ export function useReconciliate(projectSlug: string, scheme: string | null) {
   const postReconciliate = useCallback(
     async (element_id: string, label: string, users: string[]) => {
       if (scheme && projectSlug) {
-        const res = await api.POST('/elements/reconciliate', {
+        const res = await api.POST('/annotation/reconciliate', {
           params: {
             query: {
               project_slug: projectSlug,
@@ -2069,6 +2069,38 @@ export function usePostSchemeCodebook(project_slug: string | null, scheme: strin
   );
 
   return { postCodebook };
+}
+
+/**
+ * Get compare 2 schemes
+ */
+export function useGetCompareSchemes(project_slug: string, schemeA: string, schemeB: string) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getCompareSchemes = useAsyncMemo(async () => {
+    if (project_slug && schemeA && schemeB) {
+      const res = await api.GET('/schemes/compare', {
+        params: {
+          query: {
+            project_slug: project_slug,
+            schemeA: schemeA,
+            schemeB: schemeB,
+          },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [schemeA, schemeB, project_slug, fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  const data = getAsyncMemoData(getCompareSchemes);
+
+  return {
+    compare: data,
+    reFetchCompare: reFetch,
+  };
 }
 
 /**

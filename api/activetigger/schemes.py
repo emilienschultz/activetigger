@@ -1,13 +1,16 @@
+import datetime
 from io import StringIO
 from pathlib import Path
 from typing import cast
 
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
+from sklearn.metrics import cohen_kappa_score
 
 from activetigger.datamodels import (
     AnnotationsDataModel,
     CodebookModel,
+    CompareSchemesModel,
     SchemeModel,
     SchemesProjectStateModel,
     TableBatchInModel,
@@ -111,6 +114,8 @@ class Schemes:
         results = self.projects_service.get_table_annotations_users(self.project_slug, scheme)
         # Shape the data
         df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
+
+        print(df)
 
         def agg(x):
             return list(x)[0] if len(x) > 0 else None  # take the label else None
@@ -635,3 +640,50 @@ class Schemes:
         Get the state of the project
         """
         return SchemesProjectStateModel(available=self.available())
+
+    def compare(self, schemeA: str, schemeB: str) -> CompareSchemesModel:
+        """
+        Compare two schemes
+        """
+
+        labels = self.available()
+        if schemeA not in labels:
+            raise Exception("Scheme A doesn't exist")
+        if schemeB not in labels:
+            raise Exception("Scheme B doesn't exist")
+
+        schemeA_labels = labels[schemeA].labels
+        schemeB_labels = labels[schemeB].labels
+
+        # proportion of similar labels
+        labels_overlapping = round(
+            100
+            * len([i for i in schemeA_labels if i in schemeB_labels])
+            / len(set(schemeA_labels + schemeB_labels)),
+            2,
+        )
+
+        df_A = self.get_scheme_data(schemeA)
+        df_B = self.get_scheme_data(schemeB)
+
+        # only keeps elements that have been annotated in both schemes
+        df = pd.concat({"schemeA": df_A["labels"], "schemeB": df_B["labels"]}, axis=1).dropna()
+
+        # compute scores
+        n_overlapping_annotations = len(df)
+        score_ck = None
+        percentage = 0
+        if n_overlapping_annotations > 0:
+            score_ck = cohen_kappa_score(df["schemeA"], df["schemeB"])
+            percentage = len(df[df["schemeA"] == df["schemeB"]]) / n_overlapping_annotations
+
+        return CompareSchemesModel(
+            datetime=datetime.datetime.now(),
+            project_slug=self.project_slug,
+            schemeA=schemeA,
+            schemeB=schemeB,
+            labels_overlapping=labels_overlapping,
+            n_annotated=n_overlapping_annotations,
+            cohen_kappa=score_ck,
+            percentage=percentage,
+        )

@@ -195,6 +195,63 @@ async def get_element(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@router.get("/annotation/reconciliate", dependencies=[Depends(verified_user)])
+async def get_reconciliation_table(
+    project: Annotated[Project, Depends(get_project)], scheme: str = Query()
+) -> ReconciliationModel:
+    """
+    Get the reconciliation table
+    """
+    try:
+        print(scheme)
+        df, users = project.schemes.get_reconciliation_table(scheme)
+        return ReconciliationModel(
+            table=cast(list[dict[str, str | dict[str, str]]], df.to_dict(orient="records")),
+            users=users,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.post("/annotation/reconciliate", dependencies=[Depends(verified_user)])
+async def post_reconciliation(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project: Annotated[Project, Depends(get_project)],
+    users: list = Query(),
+    element_id: str = Query(),
+    label: str = Query(),
+    scheme: str = Query(),
+) -> None:
+    """
+    Post a label for all user in a list
+    """
+
+    try:
+        # for each user
+        for u in users:
+            project.schemes.push_annotation(element_id, label, scheme, u, "train", "reconciliation")
+
+        # add a new tag for the reconciliator
+        project.schemes.push_annotation(
+            element_id,
+            label,
+            scheme,
+            current_user.username,
+            "reconciliation",
+            "reconciliation",
+        )
+
+        # log
+        orchestrator.log_action(
+            current_user.username,
+            f"RECONCILIATE ANNOTATION: in {scheme} element {element_id} as {label}",
+            project.name,
+        )
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 @router.post("/annotation/{action}", dependencies=[Depends(verified_user)])
 async def post_annotation(
     action: ActionModel,
@@ -249,62 +306,3 @@ async def post_annotation(
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     raise HTTPException(status_code=400, detail="Wrong action")
-
-
-# TODO : check following routes
-
-
-@router.get("/elements/reconciliate", dependencies=[Depends(verified_user)])
-async def get_reconciliation_table(
-    project: Annotated[Project, Depends(get_project)], scheme: str
-) -> ReconciliationModel:
-    """
-    Get the reconciliation table
-    """
-    try:
-        df, users = project.schemes.get_reconciliation_table(scheme)
-        return ReconciliationModel(
-            table=cast(list[dict[str, str | dict[str, str]]], df.to_dict(orient="records")),
-            users=users,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-
-@router.post("/elements/reconciliate", dependencies=[Depends(verified_user)])
-async def post_reconciliation(
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    project: Annotated[Project, Depends(get_project)],
-    users: list = Query(),
-    element_id: str = Query(),
-    label: str = Query(),
-    scheme: str = Query(),
-) -> None:
-    """
-    Post a label for all user in a list
-    """
-
-    try:
-        # for each user
-        for u in users:
-            project.schemes.push_annotation(element_id, label, scheme, u, "train", "reconciliation")
-
-        # add a new tag for the reconciliator
-        project.schemes.push_annotation(
-            element_id,
-            label,
-            scheme,
-            current_user.username,
-            "reconciliation",
-            "reconciliation",
-        )
-
-        # log
-        orchestrator.log_action(
-            current_user.username,
-            f"RECONCILIATE ANNOTATION: in {scheme} element {element_id} as {label}",
-            project.name,
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e

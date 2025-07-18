@@ -178,6 +178,21 @@ class UserInDBModel(UserModel):
     hashed_password: str
 
 
+class CompareSchemesModel(BaseModel):
+    """
+    Compare two schemes
+    """
+
+    datetime: datetime.datetime
+    project_slug: str
+    schemeA: str
+    schemeB: str
+    labels_overlapping: float
+    n_annotated: int | None = None
+    cohen_kappa: float | None = None
+    percentage: float | None = None
+
+
 class TokenModel(BaseModel):
     """
     Auth token

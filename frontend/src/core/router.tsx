@@ -3,8 +3,8 @@ import { Outlet, createHashRouter } from 'react-router-dom';
 import { CurrentProjectState } from '../components/CurrentProjectState';
 import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../components/pages/AccountPage';
-import { CuratePage } from '../components/pages/CurationPage';
 import { DocPage } from '../components/pages/DocPage';
+import { CuratePage } from '../components/pages/ProjectCurationPage';
 /*import { ExperimentalPage } from '../components/pages/ExperimentalPage';*/
 import { FinetunePage } from '../components/pages/FinetunePage';
 import { HomePage } from '../components/pages/HomePage';

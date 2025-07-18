@@ -114,7 +114,9 @@ export const SelectionManagement: FC = () => {
                     }}
                     value={selectionConfig.user}
                   >
-                    <option key={null}></option>
+                    <option key={null} value={''}>
+                      All
+                    </option>
                     {availableUsers.map((e, i) => (
                       <option key={i}>{e}</option>
                     ))}

@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { GiChoice } from 'react-icons/gi';
 import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
@@ -94,7 +95,6 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Tag</span>
             </Link>
           </li>
-          {/* {developmentMode && (
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/curate`}
@@ -107,7 +107,6 @@ export const ProjectActionsSidebar: FC<{
               <span> Curate</span>
             </Link>
           </li>
-        )} */}
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/finetune`}

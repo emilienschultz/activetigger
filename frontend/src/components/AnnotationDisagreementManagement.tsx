@@ -16,7 +16,7 @@ export const AnnotationDisagreementManagement: FC<{
     appContext: { currentScheme, currentProject: project },
   } = useAppContext();
 
-  // type of scheme
+  // type of scheme from context
   const kindScheme = currentScheme
     ? project?.schemes?.available?.[currentScheme]?.kind
     : 'multiclass';
@@ -47,9 +47,16 @@ export const AnnotationDisagreementManagement: FC<{
     <div className="container-fluid">
       <div className="row">
         <div className="col-12">
-          <div className="explanations">List of disagreements between users</div>
-          <div>{tableDisagreement?.length} disagreements</div>
-          <button className="btn btn-warning m-3" onClick={validateChanges}>
+          <div className="explanations">
+            Disagreements between users on annotations. Abitrate for the correct label.
+          </div>
+          <div>
+            <div>{users?.length} users involved in annotation</div>
+            <div>
+              <b>{tableDisagreement?.length} disagreements</b>
+            </div>
+          </div>
+          <button className="btn btn-warning my-3" onClick={validateChanges}>
             Validate changes
           </button>
         </div>

@@ -554,6 +554,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/annotation/reconciliate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reconciliation Table
+         * @description Get the reconciliation table
+         */
+        get: operations["get_reconciliation_table_annotation_reconciliate_get"];
+        put?: never;
+        /**
+         * Post Reconciliation
+         * @description Post a label for all user in a list
+         */
+        post: operations["post_reconciliation_annotation_reconciliate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/annotation/{action}": {
         parameters: {
             query?: never;
@@ -571,30 +595,6 @@ export interface paths {
          *     - No information kept of selection process
          */
         post: operations["post_annotation_annotation__action__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/elements/reconciliate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Reconciliation Table
-         * @description Get the reconciliation table
-         */
-        get: operations["get_reconciliation_table_elements_reconciliate_get"];
-        put?: never;
-        /**
-         * Post Reconciliation
-         * @description Post a label for all user in a list
-         */
-        post: operations["post_reconciliation_elements_reconciliate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -699,6 +699,26 @@ export interface paths {
          * @description Duplicate a scheme
          */
         post: operations["duplicate_scheme_schemes_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schemes/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare Schemes
+         * @description Compare two schemes
+         */
+        get: operations["compare_schemes_schemes_compare_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1701,6 +1721,31 @@ export interface components {
             scheme: string;
             /** Time */
             time: string;
+        };
+        /**
+         * CompareSchemesModel
+         * @description Compare two schemes
+         */
+        CompareSchemesModel: {
+            /**
+             * Datetime
+             * Format: date-time
+             */
+            datetime: string;
+            /** Project Slug */
+            project_slug: string;
+            /** Schemea */
+            schemeA: string;
+            /** Schemeb */
+            schemeB: string;
+            /** Labels Overlapping */
+            labels_overlapping: number;
+            /** N Annotated */
+            n_annotated?: number | null;
+            /** Cohen Kappa */
+            cohen_kappa?: number | null;
+            /** Percentage */
+            percentage?: number | null;
         };
         /**
          * ElementOutModel
@@ -3567,44 +3612,7 @@ export interface operations {
             };
         };
     };
-    post_annotation_annotation__action__post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path: {
-                action: components["schemas"]["ActionModel"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnnotationModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_reconciliation_table_elements_reconciliate_get: {
+    get_reconciliation_table_annotation_reconciliate_get: {
         parameters: {
             query: {
                 scheme: string;
@@ -3636,7 +3644,7 @@ export interface operations {
             };
         };
     };
-    post_reconciliation_elements_reconciliate_post: {
+    post_reconciliation_annotation_reconciliate_post: {
         parameters: {
             query: {
                 users: unknown[];
@@ -3650,6 +3658,43 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_annotation_annotation__action__post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path: {
+                action: components["schemas"]["ActionModel"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -3859,6 +3904,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_schemes_schemes_compare_get: {
+        parameters: {
+            query: {
+                schemeA: string;
+                schemeB: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareSchemesModel"];
                 };
             };
             /** @description Validation Error */
