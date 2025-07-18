@@ -43,12 +43,15 @@ export const AnnotationDisagreementManagement: FC<{
     reFetchTable();
   };
 
+  console.log(tableDisagreement);
+
   return (
     <div className="container-fluid">
       <div className="row">
         <div className="col-12">
           <div className="explanations">
-            Disagreements between users on annotations. Abitrate for the correct label.
+            Disagreements between users on annotations (for trainset). Abitrate for the correct
+            label.
           </div>
           <div>
             <div>
@@ -69,9 +72,12 @@ export const AnnotationDisagreementManagement: FC<{
         <div className="alert alert-info" role="alert" key={index}>
           <div className="row">
             <div>
-              <span className="badge bg-light text-dark">{element.id as string}</span>
               <details>
-                <summary>Text</summary>
+                <summary>
+                  <span className="badge bg-light text-dark">
+                    {element.id as string} - {element.current_label as string}
+                  </span>
+                </summary>
                 <span>{element.text as string}</span>
               </details>
             </div>

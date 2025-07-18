@@ -20,7 +20,7 @@ export const CuratePage: FC = () => {
             <Tab eventKey="scheme" title="Current scheme">
               <AnnotationDisagreementManagement projectSlug={projectSlug} />
             </Tab>
-            <Tab eventKey="between" title="Within schemes">
+            <Tab eventKey="between" title="Between schemes">
               <SchemesComparisonManagement projectSlug={projectSlug} />
             </Tab>
           </Tabs>

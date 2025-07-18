@@ -106,7 +106,8 @@ class Schemes:
     def get_reconciliation_table(self, scheme: str) -> tuple[DataFrame, list[str]]:
         """
         Get reconciliation table
-        TODO : add the filter on action
+        TODO : manage different dataset
+        TODO : it is pretty ugly, should be refactored
         """
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
@@ -115,7 +116,8 @@ class Schemes:
         # Shape the data
         df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
 
-        print(df)
+        # keep the real labels
+        current_labels = df.loc[df.groupby("id")["time"].idxmax()].set_index("id")["labels"]
 
         def agg(x):
             return list(x)[0] if len(x) > 0 else None  # take the label else None
@@ -129,7 +131,10 @@ class Schemes:
         users = list(df.columns)
         df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
         df = df.join(self.content[["text"]], how="left")  # add the text
+
+        df["current_label"] = current_labels
         df = df[f_multi].reset_index()
+
         # return the result
         return df, users
 
