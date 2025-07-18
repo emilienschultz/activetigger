@@ -616,6 +616,7 @@ export function useGetNextElementId(
     filter?: string;
     frameSelection?: boolean;
     frame?: number[];
+    user?: string;
   },
   history: string[],
   phase: string,
@@ -635,6 +636,7 @@ export function useGetNextElementId(
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
           dataset: phase == 'test' ? 'test' : 'train',
           label_maxprob: selectionConfig.label_maxprob,
+          user: selectionConfig.user,
         },
       });
       if (res.data?.element_id)

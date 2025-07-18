@@ -1,12 +1,11 @@
 import datetime
-from collections.abc import Sequence
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from activetigger.datamodels import UserModel
 from activetigger.db import DBException
-from activetigger.db.models import Annotations, Logs, Projects, Users
+from activetigger.db.models import Annotations, Auths, Logs, Projects, Users
 
 
 class UsersService:
@@ -113,3 +112,14 @@ class UsersService:
                 ).where(Projects.user_name == user_name)
             ).all()
             return [row[0] for row in result]
+
+    def get_project_users(self, project_slug: str) -> list[str]:
+        with self.SessionMaker() as session:
+            result = session.execute(
+                select(
+                    Users.user_name,
+                )
+                .join_from(Auths, Users)
+                .where(Auths.project_slug == project_slug)
+            ).all()
+            return list(set([row[0] for row in result]))

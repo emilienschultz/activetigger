@@ -16,6 +16,7 @@ interface Row {
   timestamp: string;
   labels: string;
   text: string;
+  user: string;
 }
 
 interface DataTabularModel {
@@ -33,18 +34,8 @@ export const DataTabular: FC<DataTabularModel> = ({
   availableLabels,
   kindScheme,
 }) => {
-  //   const { projectName } = useParams();
-  //   const {
-  //     appContext: { currentScheme, currentProject: project, phase },
-  //   } = useAppContext();
-
   // data modification management
   const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
-
-  //   const kindScheme =
-  //     currentScheme && project
-  //       ? (project.schemes.available[currentScheme]?.kind as string) || 'multiclass'
-  //       : 'multiclass';
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
     if (
@@ -106,6 +97,15 @@ export const DataTabular: FC<DataTabularModel> = ({
         <div style={{ textAlign: 'center', width: '100%' }}>{props.row.labels}</div>
       ),
       renderEditCell: kindScheme === 'multiclass' ? renderDropdown : undefined,
+      width: 100,
+    },
+    {
+      key: 'user',
+      name: 'User',
+      resizable: true,
+      renderCell: (props) => (
+        <div style={{ textAlign: 'center', width: '100%' }}>{props.row.user}</div>
+      ),
       width: 100,
     },
     {

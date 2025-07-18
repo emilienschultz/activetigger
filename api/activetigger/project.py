@@ -503,7 +503,6 @@ class Project:
         frame is the use of projection coordinates to limit the selection
         filter is a regex to use on the corpus
         """
-
         if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 
@@ -513,14 +512,19 @@ class Project:
         else:
             df = self.schemes.get_scheme_data(next.scheme, complete=True)
 
-        # build first filter from the sample
+        # the filter for the sample
         if next.sample == "untagged":
             f = df["labels"].isna()
         elif next.sample == "tagged":
+            # on a specific label
             if next.label is not None and next.label in df["labels"].unique():
                 f = df["labels"] == next.label
             else:
                 f = df["labels"].notna()
+            # for a specific user if specified
+            if next.user is not None and next.user != "":
+                f_user = df["user"] == next.user
+                f = f & f_user
         else:
             f = df["labels"].apply(lambda x: True)
 
@@ -824,6 +828,7 @@ class Project:
         """
         Send state of the project
         """
+        users = self.users.db_manager.users_service.get_project_users(self.params.project_slug)
 
         return ProjectStateModel(
             params=self.params,
@@ -843,6 +848,7 @@ class Project:
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
             ),
+            users=users,
         )
 
     def export_features(self, features: list, format: str = "parquet") -> FileResponse:

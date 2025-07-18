@@ -2085,6 +2085,8 @@ export interface components {
              * @default train
              */
             dataset: string;
+            /** User */
+            user?: string | null;
         };
         /** NextProjectStateModel */
         NextProjectStateModel: {
@@ -2341,6 +2343,8 @@ export interface components {
             memory?: number | null;
             /** Last Activity */
             last_activity?: string | null;
+            /** Users */
+            users: string[];
         };
         /** ProjectStaticFiles */
         ProjectStaticFiles: {

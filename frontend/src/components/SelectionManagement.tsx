@@ -23,6 +23,8 @@ export const SelectionManagement: FC = () => {
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 
+  const availableUsers = project?.users ? project?.users : [];
+
   // API call to get the current model & refetch
   const { currentModel } = useGetSimpleModel(
     project ? project.params.project_slug : null,
@@ -80,24 +82,45 @@ export const SelectionManagement: FC = () => {
           {
             // label selection for tagged elemnts
             selectionConfig.sample == 'tagged' && (
-              <label>
-                Filter on label
-                <select
-                  onChange={(e) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      selectionConfig: { ...selectionConfig, label: e.target.value },
-                    }));
-                  }}
-                  className="form-select"
-                  value={selectionConfig.label}
-                >
-                  {selectionConfig.sample == 'tagged' && <option key="">All</option>}
-                  {availableLabels.map((e, i) => (
-                    <option key={i}>{e}</option>
-                  ))}{' '}
-                </select>
-              </label>
+              <>
+                <label>
+                  On label
+                  <select
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: { ...selectionConfig, label: e.target.value },
+                      }));
+                    }}
+                    className="form-select"
+                    value={selectionConfig.label}
+                  >
+                    {selectionConfig.sample == 'tagged' && <option key="">All</option>}
+                    {availableLabels.map((e, i) => (
+                      <option key={i}>{e}</option>
+                    ))}{' '}
+                  </select>
+                </label>
+                <label htmlFor="select_user">
+                  By user
+                  <select
+                    className="form-select mx-2"
+                    id="select_user"
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: { ...selectionConfig, user: e.target.value },
+                      }));
+                    }}
+                    value={selectionConfig.user}
+                  >
+                    <option key={null}></option>
+                    {availableUsers.map((e, i) => (
+                      <option key={i}>{e}</option>
+                    ))}
+                  </select>
+                </label>{' '}
+              </>
             )
           }
         </div>

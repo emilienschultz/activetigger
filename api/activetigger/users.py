@@ -74,6 +74,9 @@ class Users:
             auth = self.db_manager.projects_service.get_user_auth(username, project_slug)
         return auth
 
+    def get_all_users(self, active: bool = True) -> list[str]:
+        return self.db_manager.users_service.get_users_created_by("all", active)
+
     def existing_users(self, username: str = "root", active: bool = True) -> dict[str, UserModel]:
         """
         Get existing users which have been created by one user

@@ -111,6 +111,7 @@ export interface SelectionConfig {
   frame?: number[];
   frameSelection?: boolean; // true/false to use frame to select
   filter?: string;
+  user?: string;
 }
 
 export interface GenerateConfig {

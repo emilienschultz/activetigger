@@ -140,6 +140,7 @@ class NextInModel(BaseModel):
     history: list[str] = []
     filter: str | None = None
     dataset: str = "train"
+    user: str | None = None
 
 
 class ElementOutModel(BaseModel):
@@ -678,6 +679,7 @@ class ProjectStateModel(BaseModel):
     errors: list[list]
     memory: float | None = None
     last_activity: str | None = None
+    users: list[str]
 
 
 class ProjectDescriptionModel(BaseModel):

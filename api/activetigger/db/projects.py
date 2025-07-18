@@ -205,22 +205,36 @@ class ProjectsService:
         session.close()
         return [[row[0], row[1]] for row in result]
 
-    def get_scheme_elements(self, project_slug: str, scheme: str, dataset: list[str]):
+    def get_scheme_elements(
+        self, project_slug: str, scheme: str, dataset: list[str], user: str | None = None
+    ) -> list:
         """
         Get last annotation for each element id for a project/scheme
         """
         with self.Session() as session:
             # Subquery: get max time per element_id with filters
-            subq = (
-                select(Annotations.element_id, func.max(Annotations.time).label("time"))
-                .where(
-                    Annotations.scheme_name == scheme,
-                    Annotations.project_slug == project_slug,
-                    Annotations.dataset.in_(dataset),
+            if user is not None and user != "all":  # only filter by user if specified
+                subq = (
+                    select(Annotations.element_id, func.max(Annotations.time).label("time"))
+                    .where(
+                        Annotations.scheme_name == scheme,
+                        Annotations.project_slug == project_slug,
+                        Annotations.dataset.in_(dataset),
+                        Annotations.user_name == user,
+                    )
+                    .group_by(Annotations.element_id)
                 )
-                .group_by(Annotations.element_id)
-                .subquery()
-            )
+            else:  # if no user filter, get all annotations
+                subq = (
+                    select(Annotations.element_id, func.max(Annotations.time).label("time"))
+                    .where(
+                        Annotations.scheme_name == scheme,
+                        Annotations.project_slug == project_slug,
+                        Annotations.dataset.in_(dataset),
+                    )
+                    .group_by(Annotations.element_id)
+                    .subquery()
+                )
 
             # Main query: join back on element_id and time to get full rows
             stmt = (
@@ -246,7 +260,13 @@ class ProjectsService:
 
             # Execute the query and fetch all results
             return [
-                [row.element_id, row.annotation, row.user_name, row.time, row.comment]
+                [
+                    row.element_id,
+                    row.annotation,
+                    row.user_name,
+                    row.time,
+                    row.comment,
+                ]
                 for row in results
             ]
 

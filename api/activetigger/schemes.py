@@ -59,7 +59,11 @@ class Schemes:
             self.add_scheme(name="default", labels=[])
 
     def get_scheme_data(
-        self, scheme: str, complete: bool = False, kind: list[str] = ["train"]
+        self,
+        scheme: str,
+        user: str | None = None,
+        complete: bool = False,
+        kind: list[str] = ["train"],
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -80,8 +84,7 @@ class Schemes:
         # - last element for each id
         # - for a specific scheme
 
-        results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind)
-
+        results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind, user)
         df = pd.DataFrame(
             results, columns=["id", "labels", "user", "timestamp", "comment"]
         ).set_index("id")
@@ -239,7 +242,7 @@ class Schemes:
             kind=["test"] if batch.dataset == "test" else [batch.dataset],
         )
 
-        # manage NaT
+        # manage NaT to avoid problems with json
         df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
 
         # case of recent annotations (no filter possible)
@@ -251,7 +254,7 @@ class Schemes:
             table = (
                 df_r.sort_index()
                 .reset_index()
-                .fillna("")[["id", "timestamp", "labels", "text", "comment"]]
+                .fillna("")[["id", "timestamp", "labels", "text", "comment", "user"]]
             )
             return TableOutModel(
                 items=table.to_dict(orient="records"),
@@ -291,7 +294,7 @@ class Schemes:
             df.sort_index()
             .reset_index()
             .iloc[int(batch.min) : int(batch.max)]
-            .fillna("")[["id", "timestamp", "labels", "text", "comment"]]
+            .fillna("")[["id", "timestamp", "labels", "text", "comment", "user"]]
         )
 
         return TableOutModel(
