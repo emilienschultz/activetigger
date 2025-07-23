@@ -75,6 +75,7 @@ export const ModelPredict: FC = () => {
             projectSlug={projectSlug || null}
             processes={project?.languagemodels.training}
             processStatus="predicting"
+            displayStopButton={isComputing}
           />
           <div className="d-flex align-items-center">
             <label>Batch size</label>

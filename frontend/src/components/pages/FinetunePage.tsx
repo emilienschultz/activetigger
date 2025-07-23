@@ -131,12 +131,12 @@ export const FinetunePage: FC = () => {
                     </Tooltip>
                   </a>
                 </div>
-                {isComputing && (
-                  <DisplayTrainingProcesses
-                    projectSlug={projectSlug || null}
-                    processes={project?.languagemodels.training}
-                  />
-                )}
+                <DisplayTrainingProcesses
+                  projectSlug={projectSlug || null}
+                  processes={project?.languagemodels.training}
+                  displayStopButton={isComputing}
+                />
+
                 <ModelCreationForm
                   projectSlug={projectSlug || null}
                   currentScheme={currentScheme || null}
@@ -219,6 +219,7 @@ export const FinetunePage: FC = () => {
                           <DisplayTrainingProcesses
                             projectSlug={projectSlug || null}
                             processes={project?.languagemodels.training}
+                            displayStopButton={isComputing}
                           />
                         )}
                         <button
@@ -300,6 +301,7 @@ export const FinetunePage: FC = () => {
                     projectSlug={projectSlug || null}
                     processes={project?.languagemodels.training}
                     processStatus="testing"
+                    displayStopButton={isComputing}
                   />
 
                   {model && !project?.params.test && (

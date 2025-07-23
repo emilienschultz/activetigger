@@ -22,6 +22,7 @@ export interface DisplayTrainingProcessesProps {
       }
     | undefined;
   processStatus?: string;
+  displayStopButton?: boolean;
 }
 
 interface LossData {
@@ -34,6 +35,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
   projectSlug,
   processes,
   processStatus,
+  displayStopButton = false,
 }) => {
   const { stopTraining } = useStopTrainBertModel(projectSlug || null);
 
@@ -54,7 +56,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
 
   return (
     <div className="overflow-x-auto p-4">
-      {Object.keys(processes || {}).length > 0 && (
+      {Object.keys(processes || {}).length > 0 && displayStopButton && (
         <div>
           <button
             key="stop"
@@ -68,21 +70,29 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
       {Object.keys(processes || {}).length > 0 && (
         <div className="mt-3">
           Process running:
-          <ul>
+          <ul className="list-group">
             {Object.entries(
               processes as Record<string, Record<string, string | number | null>>,
-            ).map(([_, v]) => (
-              <li key={v.name}>
-                {v.name} - {v.status} :{' '}
-                <span style={{ fontWeight: 'bold' }}>
-                  {displayAdvancement(v.progress)}
-                  {v.status === 'training' && (
-                    <LossChart
-                      loss={v.loss as unknown as LossData}
-                      xmax={(v.epochs as number) || undefined}
-                    />
-                  )}
-                </span>
+            ).map(([user, v]) => (
+              <li className="list-group-item" key={v.name}>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>From:</strong> {user} <br />
+                    <strong>Name:</strong> {v.name} <br />
+                    <strong>Status:</strong> {v.status}
+                  </div>
+                  <div className="text-end">
+                    <span className="fw-bold">{displayAdvancement(v.progress)}</span>
+                    {v.status === 'training' && (
+                      <div className="mt-2">
+                        <LossChart
+                          loss={v.loss as unknown as LossData}
+                          xmax={(v.epochs as number) || undefined}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </li>
             ))}
           </ul>

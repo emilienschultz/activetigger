@@ -23,6 +23,7 @@ A user can have the following status :
 User have also a relational status for a specific project:
 
 - **manager**: can manage the project, add users, and access all data.
+- **contributor**: can create elements in a project but never delete things
 - **annotator**: can only annotate on the project without changing the project settings (schemes, labels, models, etc.).
 
 For the moment, there is no management at the scheme level.

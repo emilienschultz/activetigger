@@ -206,6 +206,7 @@ export const UsersPage: FC = () => {
                 defaultValue={'manager'}
               >
                 <option key={'manager'}>manager</option>
+                {/* <option key={'contributor'}>contributor</option> */}
                 <option key={'annotator'}>annotator</option>
               </select>
               <button

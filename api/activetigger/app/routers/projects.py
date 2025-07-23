@@ -174,7 +174,6 @@ async def get_project_status(
     - existing
     """
     try:
-        print("COUCOU")
         # if project is in creation
         if slugify(project_name) in orchestrator.project_creation_ongoing:
             return "creating"
