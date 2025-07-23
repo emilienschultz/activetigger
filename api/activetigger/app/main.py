@@ -154,7 +154,7 @@ async def get_logs(
     if project_slug == "all":
         test_rights(ServerAction.MANAGE_SERVER, current_user.username)
     else:
-        test_rights(ProjectAction.GET_PROJECT_INFO, current_user.username, project_slug)
+        test_rights(ProjectAction.GET, current_user.username, project_slug)
     df = orchestrator.get_logs(project_slug, limit)
     return TableOutModel(
         items=df.to_dict(orient="records"),

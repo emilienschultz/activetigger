@@ -265,8 +265,12 @@ async def post_annotation(
     - For the moment add == update
     - No information kept of selection process
     """
-    test_rights(ProjectAction.MODIFY_ANNOTATION, current_user.username, project.name)
+
     if action in ["add", "update"]:
+        if action == "add":
+            test_rights(ProjectAction.ADD_ANNOTATION, current_user.username, project.name)
+        else:
+            test_rights(ProjectAction.UPDATE_ANNOTATION, current_user.username, project.name)
         try:
             project.schemes.push_annotation(
                 annotation.element_id,
@@ -288,6 +292,7 @@ async def post_annotation(
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     if action == "delete":
+        test_rights(ProjectAction.UPDATE_ANNOTATION, current_user.username, project.name)
         try:
             project.schemes.delete_annotation(
                 annotation.element_id,

@@ -126,15 +126,16 @@ class ServerAction(str, Enum):
     KILL_PROCESS = "kill process"
     CREATE_PROJECT = "create project"
     DELETE_PROJECT = "delete project"
-    MANAGE_FILES = "manage files"
 
 
 class ProjectAction(str, Enum):
-    GET_PROJECT_INFO = "get project information"
-    MODIFY_ANNOTATION = "modify annotation"
+    ADD = "add to project"
+    DELETE = "delete from project"
+    UPDATE = "update project"
+    GET = "get project information"
+    ADD_ANNOTATION = "add annotation"
+    UPDATE_ANNOTATION = "modify annotation"
     EXPORT_DATA = "export data"
-    MODIFY_PROJECT = "modify project"
-    MODIFY_PROJECT_ELEMENT = "modify project element"
     MANAGE_FILES = "manage files"
 
 
@@ -168,27 +169,33 @@ def test_rights(
         return True
 
     match action:
-        case ServerAction.MANAGE_USERS | ServerAction.MANAGE_SERVER | ServerAction.KILL_PROCESS:
-            return False
-        case ServerAction.CREATE_PROJECT | ServerAction.DELETE_PROJECT | ServerAction.MANAGE_FILES:
+        case ServerAction.CREATE_PROJECT | ServerAction.DELETE_PROJECT:
             if status in ["manager"]:
                 return True
 
+    # Get auth for the project
     if not project_slug:
         raise HTTPException(500, "Project name missing")
     auth = orchestrator.users.auth(username, project_slug)
 
     match action:
+        # only manager can delete/modify elements
         case (
-            ProjectAction.GET_PROJECT_INFO
-            | ProjectAction.MODIFY_ANNOTATION
+            ProjectAction.DELETE
+            | ProjectAction.UPDATE
+            | ProjectAction.UPDATE_ANNOTATION
             | ProjectAction.EXPORT_DATA
+            | ProjectAction.MANAGE_FILES
         ):
-            if auth in ["manager", "annotator"]:
-                return True
-        case ProjectAction.MODIFY_PROJECT | ProjectAction.MODIFY_PROJECT_ELEMENT:
             if auth in ["manager"]:
                 return True
+        # only manager and contributor can create
+        case ProjectAction.ADD:
+            if auth in ["manager", "contributor"]:
+                return True
+        # everyone can get info or add annotation
+        case ProjectAction.ADD_ANNOTATION | ProjectAction.GET:
+            return True
 
     # by default, no rights
     raise HTTPException(

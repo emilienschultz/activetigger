@@ -140,7 +140,7 @@ async def set_auth(
     """
     Modify user auth on a specific project
     """
-    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project_slug)
+    test_rights(ProjectAction.UPDATE, current_user.username, project_slug)
     if action == "add":
         if not status:
             raise HTTPException(status_code=400, detail="Missing status")

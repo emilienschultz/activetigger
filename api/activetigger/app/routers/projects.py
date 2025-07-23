@@ -135,7 +135,7 @@ async def update_project(
     - change text cols
     - expand the number of elements in the trainset
     """
-    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.update_project(update)
         orchestrator.log_action(current_user.username, "INFO UPDATE PROJECT", project.name)
@@ -195,7 +195,7 @@ async def add_testdata(
     """
     Add a dataset for test when there is none available
     """
-    test_rights(ProjectAction.MODIFY_PROJECT, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         if action == "create":
             if testset is None:

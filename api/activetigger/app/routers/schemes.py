@@ -31,7 +31,7 @@ async def rename_label(
     """
     Rename a a label
     """
-    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
 
     try:
         project.schemes.rename_label(former_label, new_label, scheme, current_user.username)
@@ -56,9 +56,8 @@ async def add_label(
     """
     Add a label to a scheme
     """
-    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
-    print("action", action, "scheme", scheme, "label", label)
     if action == "add":
+        test_rights(ProjectAction.ADD, current_user.username, project.name)
         try:
             project.schemes.add_label(label, scheme, current_user.username)
 
@@ -72,6 +71,7 @@ async def add_label(
             raise HTTPException(status_code=500, detail=str(e))
 
     if action == "delete":
+        test_rights(ProjectAction.DELETE, current_user.username, project.name)
         try:
             project.schemes.delete_label(label, scheme, current_user.username)
             orchestrator.log_action(
@@ -95,7 +95,7 @@ async def post_codebook(
     """
     Add codebook
     """
-    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
 
     try:
         project.schemes.add_codebook(codebook.scheme, codebook.content, codebook.time)
@@ -133,7 +133,7 @@ async def rename_scheme(
     """
     Rename a scheme
     """
-    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.schemes.rename_scheme(old_name, new_name)
         orchestrator.log_action(
@@ -155,7 +155,7 @@ async def duplicate_scheme(
     """
     Duplicate a scheme
     """
-    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
+    test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
         project.schemes.duplicate_scheme(scheme_name, scheme_name + "_copy", current_user.username)
         orchestrator.log_action(
@@ -193,8 +193,8 @@ async def post_schemes(
     """
     Add, Update or Delete scheme
     """
-    test_rights(ProjectAction.MODIFY_PROJECT_ELEMENT, current_user.username, project.name)
     if action == "add":
+        test_rights(ProjectAction.ADD, current_user.username, project.name)
         try:
             project.schemes.add_scheme(
                 scheme.name, scheme.labels, scheme.kind, current_user.username
@@ -208,6 +208,7 @@ async def post_schemes(
         except Exception:
             raise HTTPException(status_code=500, detail=str)
     if action == "delete":
+        test_rights(ProjectAction.DELETE, current_user.username, project.name)
         try:
             project.schemes.delete_scheme(scheme.name)
             orchestrator.log_action(
@@ -220,6 +221,7 @@ async def post_schemes(
             raise HTTPException(status_code=500, detail=str(e))
 
     if action == "update":
+        test_rights(ProjectAction.UPDATE, current_user.username, project.name)
         try:
             project.schemes.update_scheme(scheme.name, scheme.labels)
             orchestrator.log_action(
