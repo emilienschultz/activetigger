@@ -24,6 +24,7 @@ from activetigger.datamodels import (
     TestSetDataModel,
     UserInDBModel,
 )
+from activetigger.functions import slugify
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
@@ -95,6 +96,28 @@ async def new_project(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# @router.get("/projects/status", dependencies=[Depends(verified_user)])
+# async def get_project_status(
+#     project_slug: str,
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+# ) -> str | None:
+#     """
+#     Get the status of a project under creation
+#     """
+#     try:
+#         # if project has been created
+#         if orchestrator.exists(project_slug):
+#             return "created"
+#         # if project is in creation
+#         elif project_slug not in orchestrator.project_creation_ongoing:
+#             return orchestrator.project_creation_ongoing[project_slug].status
+#         # if project does not exist
+#         else:
+#             return None
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post(
     "/projects/update",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
@@ -137,6 +160,29 @@ async def delete_project(
         orchestrator.delete_project(project_slug)
     except Exception as e:
         print(f"Error deleting project {project_slug}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/projects/status", dependencies=[Depends(verified_user)])
+async def get_project_status(
+    project_name: str,
+) -> str:
+    """
+    Get the status of a project
+    - not existing
+    - creating
+    - existing
+    """
+    try:
+        print("COUCOU")
+        # if project is in creation
+        if slugify(project_name) in orchestrator.project_creation_ongoing:
+            return "creating"
+        elif orchestrator.exists(project_name):
+            return "existing"
+        else:
+            return "not existing"
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -199,17 +245,17 @@ async def get_project_state(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post(
-    "/projects/available",
-    dependencies=[Depends(verified_user)],
-)
-async def check_project_exists(
-    project_name: str,
-) -> bool:
-    """
-    Check if a project exists
-    """
-    if orchestrator.exists(project_name):
-        return False
-    else:
-        return True
+# @router.post(
+#     "/projects/available",
+#     dependencies=[Depends(verified_user)],
+# )
+# async def check_project_exists(
+#     project_name: str,
+# ) -> bool:
+#     """
+#     Check if a project exists
+#     """
+#     if orchestrator.exists(project_name):
+#         return False
+#     else:
+#         return True

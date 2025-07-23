@@ -2313,14 +2313,30 @@ export function useDeleteFile(reFetchFiles: () => void) {
  */
 export function useProjectNameAvailable() {
   const testProjectName = useCallback(async (project_name: string) => {
-    const res = await api.POST('/projects/available', {
+    const res = await api.GET('/projects/status', {
       params: {
         query: { project_name: project_name },
       },
     });
-    return res.data;
+    if (res.data) return res.data === 'not existing' ? true : false;
+    else return false;
   }, []);
   return testProjectName;
+}
+
+/**
+ * Get project creation status as a function
+ */
+export async function getProjectStatus(projectSlug: string) {
+  const res = await api.GET('/projects/status', {
+    params: {
+      query: {
+        project_name: projectSlug,
+      },
+    },
+  });
+
+  return res.data;
 }
 
 /**

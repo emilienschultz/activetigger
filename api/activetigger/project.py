@@ -1214,8 +1214,19 @@ class Project:
 
             # get the future for process done
             future = process.future
+            exception = future.exception()
+            if exception:
+                print(f"Error in {e.kind} : {exception}")
+                self.errors.append(
+                    [datetime.now(config.timezone), f"Error for process {e.kind}", str(exception)]
+                )
+                self.computing.remove(e)
+                self.queue.delete(e.unique_id)
 
-            # manage different tasks
+                # specific case for project creation
+                if e.kind == "create_project":
+                    self.status = "error"
+                continue
 
             # case for project creation
             if e.kind == "create_project":

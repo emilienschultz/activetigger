@@ -11,7 +11,7 @@ import { CanceledError } from 'axios';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import {
-  fetchUserProjects,
+  getProjectStatus,
   useAddFeature,
   useAddProjectFile,
   useCreateProject,
@@ -145,22 +145,37 @@ export const ProjectCreationForm: FC = () => {
         // send the data
         await addProjectFile(files[0], formData.project_name);
         console.log('file uploaded');
-        // launch the project creation
+        // launch the project creation (which can take a while)
         const slug = await createProject({
           ...omit(formData, 'files'),
           filename: data.filename,
         });
-        console.log('project created', slug);
+        // create a limit for waiting the project creation
+        const maxDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
+        const startTime = Date.now();
         // wait until the project is really available
         const intervalId = setInterval(async () => {
           try {
-            const projects = await fetchUserProjects();
-            const exists = (projects || []).some((p) => p.parameters.project_slug === slug);
-            console.log('Waiting for project to be available');
-            if (exists) {
+            // watch the status of the project
+            const status = await getProjectStatus(slug);
+            console.log('STATUS', status);
+            if (status === 'existing') {
               clearInterval(intervalId);
               addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
               navigate(`/projects/${slug}?fromProjectPage=true`);
+              return;
+            }
+            // set a timeout just in case
+            const elapsedTime = Date.now() - startTime;
+            if (elapsedTime >= maxDuration) {
+              clearInterval(intervalId);
+              notify({
+                type: 'error',
+                message:
+                  'Timeout: Project did not become available within 5 minutes, a error must have happened',
+              });
+              navigate(`/projects`);
+              return;
             }
           } catch (error) {
             console.error('Error fetching projects:', error);
@@ -263,7 +278,7 @@ export const ProjectCreationForm: FC = () => {
                 <div>
                   <div>
                     <label className="form-label" htmlFor="col_id">
-                      Id column (they need to be unique)
+                      Id column (they need to be unique, otherwise the row number will be used)
                     </label>
                     <select
                       className="form-control"

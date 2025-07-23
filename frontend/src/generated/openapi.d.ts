@@ -331,6 +331,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Project Status
+         * @description Get the status of a project
+         *     - not existing
+         *     - creating
+         *     - existing
+         */
+        get: operations["get_project_status_projects_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/testset/{action}": {
         parameters: {
             query?: never;
@@ -386,26 +409,6 @@ export interface paths {
         get: operations["get_project_state_projects__project_slug__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/projects/available": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Check Project Exists
-         * @description Check if a project exists
-         */
-        post: operations["check_project_exists_projects_available_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3251,6 +3254,37 @@ export interface operations {
             };
         };
     };
+    get_project_status_projects_status_get: {
+        parameters: {
+            query: {
+                project_name: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_testdata_projects_testset__action__post: {
         parameters: {
             query: {
@@ -3326,37 +3360,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectStateModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    check_project_exists_projects_available_post: {
-        parameters: {
-            query: {
-                project_name: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": boolean;
                 };
             };
             /** @description Validation Error */

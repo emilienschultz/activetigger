@@ -78,21 +78,17 @@ class CreateProject(BaseTask):
         # create the index
         keep_id = []  # keep unchanged the index to avoid desindexing
 
-        # case of the index should be the row number
-        if self.params.col_id == "dataset_row_number":
-            print("Use the row number as index")
-            content["id"] = [str(i) for i in range(len(content))]
-            content.set_index("id", inplace=True)
-        # case of a column as index
-        else:
-            # check if index after slugify is unique otherwise throw an error
-            if not (
-                (content[self.params.col_id].astype(str).apply(slugify)).nunique() == len(content)
-            ):
-                shutil.rmtree(self.params.dir)
-                raise Exception("The id column is not unique after slugify, please change it")
+        # case there is a id column that is unique
+        if self.params.col_id != "dataset_row_number" and (
+            (content[self.params.col_id].astype(str).apply(slugify)).nunique() == len(content)
+        ):
             content["id"] = content[self.params.col_id].astype(str).apply(slugify)
             keep_id.append(self.params.col_id)
+            content.set_index("id", inplace=True)
+        # by default the row number
+        else:
+            print("Use the row number as index")
+            content["id"] = [str(i) for i in range(len(content))]
             content.set_index("id", inplace=True)
 
         # convert columns that can be numeric or force text, exception for the text/labels
