@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import time
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
@@ -978,14 +979,20 @@ class Project:
         Export raw data
         To be able to export, need to copy in the static folder
         """
-        name = f"{project_slug}_data_all.parquet"
         target_dir = self.params.dir if self.params.dir is not None else Path(".")
         path_origin = target_dir.joinpath("data_all.parquet")
         folder_target = f"{config.data_path}/projects/static/{project_slug}"
         if not Path(folder_target).exists():
             os.makedirs(folder_target)
-        path_target = f"{config.data_path}/projects/static/{project_slug}/{name}"
-        if not Path(path_target).exists():
+        files = [i for i in os.listdir(folder_target) if "_data_all_" in i]
+        # file already exists
+        if len(files) > 0:
+            name = files[0]
+            path_target = f"{config.data_path}/projects/static/{project_slug}/{name}"
+        # create the file with a unique id
+        else:
+            name = f"{project_slug}_data_all_{uuid.uuid4()}.parquet"
+            path_target = f"{config.data_path}/projects/static/{project_slug}/{name}"
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"{project_slug}/{name}")
 

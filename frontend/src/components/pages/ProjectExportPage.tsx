@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { Tooltip } from 'react-tooltip';
 import {
   useGetAnnotationsFile,
   useGetFeaturesFile,
@@ -270,14 +271,19 @@ export const ProjectExportPage: FC = () => {
             small fix for the direct link when no nging
             */}
             {staticUrls ? (
-              <Link
-                to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.dataset.path}
-                target="_blank"
-                download
-                className="btn btn-primary mt-3"
-              >
-                Export raw dataset in parquet (static)
-              </Link>
+              <>
+                <a
+                  href={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.dataset.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 downloadraw"
+                >
+                  Static link to the raw dataset
+                </a>
+                <Tooltip anchorSelect=".downloadraw" place="top">
+                  If the download does't start, click right and save the target of the link
+                </Tooltip>
+              </>
             ) : (
               <button
                 className="btn btn-primary mt-3"
