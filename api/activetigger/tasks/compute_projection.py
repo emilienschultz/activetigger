@@ -10,7 +10,6 @@ try:
 except ImportError:
     print("CuML not installed")
     CUMl_AVAILABLE = False
-
 import pandas as pd
 import umap  # type: ignore[import]
 from sklearn.manifold import TSNE  # type: ignore[import]

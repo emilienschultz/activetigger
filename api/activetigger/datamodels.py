@@ -893,3 +893,24 @@ class ProjectCreatingModel(BaseModel):
     time: datetime.datetime
     kind: str
     status: str
+
+
+class BertTopicEmbeddingsModel(BaseModel):
+    """
+    Parameters for BERTopic vectorizer
+    """
+
+    kind: str = "sentence_transformers"
+    model: str = "all-MiniLM-L6-v2"
+
+
+class BertTopicParamsModel(BaseModel):
+    """
+    Parameters for BERTopic model
+    """
+
+    language: str
+    min_topic_size: int | None = None
+    nr_topics: int | str = "auto"
+    embeddings: BertTopicEmbeddingsModel | None = None
+    outlier_reduction: bool = True

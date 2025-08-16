@@ -27,6 +27,7 @@ class ComputeSbert(BaseTask):
         model: str = "all-mpnet-base-v2",
         batch_size: int = 32,
         min_gpu: int = 6,
+        path_progress: Path | None = None,
         event: Optional[multiprocessing.synchronize.Event] = None,
     ):
         super().__init__()
@@ -36,6 +37,12 @@ class ComputeSbert(BaseTask):
         self.min_gpu = min_gpu
         self.path_process = path_process
         self.event = event
+        if path_progress:
+            self.progress_file_temporary = False
+            self.path_progress = path_progress
+        else:
+            self.path_progress = self.path_process.joinpath(self.unique_id)
+            self.progress_file_temporary = True
 
     def __call__(self) -> DataFrame:
         """
@@ -77,7 +84,7 @@ class ComputeSbert(BaseTask):
 
                 # manage progress
                 progress_percent = (i / total_batches) * 100
-                with open(self.path_process.joinpath(self.unique_id), "w") as f:
+                with open(self.path_progress, "w") as f:
                     f.write(str(round(progress_percent, 1)))
                 print(progress_percent)
 
@@ -88,7 +95,8 @@ class ComputeSbert(BaseTask):
                 columns=["sb%03d" % (x + 1) for x in range(len(embeddings[0][0]))],
             )
             logging.debug("computation end")
-            self.path_process.joinpath(self.unique_id).unlink()
+            if self.progress_file_temporary:
+                self.path_progress.unlink()
             return emb
         except Exception as e:
             logging.error(e)

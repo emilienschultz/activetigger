@@ -47,3 +47,5 @@ loky
 psycopg2
 python-dotenv
 aiofiles
+bertopic
+stopwordsiso
