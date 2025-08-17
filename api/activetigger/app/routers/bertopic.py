@@ -45,13 +45,13 @@ async def compute_bertopic(
 async def get_bertopic_topics(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    name: str = Query(...),
 ) -> list:
     """
     Get topics from the BERTopic model for the project.
     """
     try:
-        topics = project.bertopic.get_topics()
-        return topics
+        return project.bertopic.get_topics(name=name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

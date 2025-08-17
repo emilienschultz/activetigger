@@ -59,8 +59,6 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
           { id: 'account', label: 'Account', href: '/account' },
         ];
 
-  console.log(currentProject);
-
   return (
     <div className="bg-primary">
       <nav className="navbar navbar-dark navbar-expand-lg bg-primary">

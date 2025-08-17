@@ -159,16 +159,25 @@ class ComputeBertopic(BaseTask):
             # Dimensionality reduction with UMAP
             try:
                 umap_model = cuml.UMAP(
-                    n_neighbors=10, n_components=2, min_dist=0.0, metric="cosine"
+                    n_neighbors=self.parameters.umap_n_neighbors,
+                    n_components=self.parameters.umap_n_components,
+                    min_dist=self.parameters.umap_min_dist,
+                    metric="cosine",
                 )
-            except Exception:
+            except Exception as e:
+                print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
                 umap_model = umap.UMAP(
-                    n_neighbors=10, n_components=2, min_dist=0.0, metric="cosine"
+                    n_neighbors=self.parameters.umap_n_neighbors,
+                    n_components=self.parameters.umap_n_components,
+                    min_dist=self.parameters.umap_min_dist,
+                    metric="cosine",
                 )
 
             # Clustering with HDBSCAN
             hdbscan_model = hdbscan.HDBSCAN(
-                min_cluster_size=10, metric="euclidean", cluster_selection_method="eom"
+                min_cluster_size=self.parameters.hdbscan_min_cluster_size,
+                metric="euclidean",
+                prediction_data=True,
             )
 
             # Vectorizer to manage stopwords
@@ -182,6 +191,7 @@ class ComputeBertopic(BaseTask):
                 language=self.parameters.language,
                 vectorizer_model=vectorizer_model,
                 nr_topics=self.parameters.nr_topics,
+                min_topic_size=self.parameters.min_topic_size,
                 umap_model=umap_model,
                 hdbscan_model=hdbscan_model,
             )

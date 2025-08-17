@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
+import pandas as pd
+
 from activetigger.datamodels import (
     BertopicComputing,
     BertopicParamsModel,
@@ -131,7 +133,16 @@ class Bertopic:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
     def get_topics(self, name: str) -> list:
-        pass
+        """
+        Get topics from a BERTopic model.
+        """
+        path_model = self.path.joinpath("runs").joinpath(name)
+        if path_model.exists():
+            return pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0).to_dict(
+                orient="records"
+            )
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")
 
     def get_projection(self, name: str) -> list:
         pass

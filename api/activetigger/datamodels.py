@@ -440,13 +440,20 @@ class BertopicEmbeddingsModel(BaseModel):
 class BertopicParamsModel(BaseModel):
     """
     Parameters for BERTopic model
+    https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#n_gram_range
     """
 
     language: str | None = None
     min_topic_size: int | None = None
+    top_n_words: int = 15
+    n_gram_range: tuple[int, int] = (1, 2)
     nr_topics: int | str = "auto"
     embeddings: BertopicEmbeddingsModel | None = None
     outlier_reduction: bool = True
+    hdbscan_min_cluster_size: int = 10
+    umap_n_neighbors: int = 10
+    umap_n_components: int = 2
+    umap_min_dist: float = 0.0
 
 
 class ComputeBertopicModel(BertopicParamsModel):

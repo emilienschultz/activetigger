@@ -1867,6 +1867,22 @@ export interface components {
             /** Min Topic Size */
             min_topic_size?: number | null;
             /**
+             * Top N Words
+             * @default 15
+             */
+            top_n_words: number;
+            /**
+             * N Gram Range
+             * @default [
+             *       1,
+             *       2
+             *     ]
+             */
+            n_gram_range: [
+                number,
+                number
+            ];
+            /**
              * Nr Topics
              * @default auto
              */
@@ -1877,6 +1893,26 @@ export interface components {
              * @default true
              */
             outlier_reduction: boolean;
+            /**
+             * Hdbscan Min Cluster Size
+             * @default 10
+             */
+            hdbscan_min_cluster_size: number;
+            /**
+             * Umap N Neighbors
+             * @default 10
+             */
+            umap_n_neighbors: number;
+            /**
+             * Umap N Components
+             * @default 2
+             */
+            umap_n_components: number;
+            /**
+             * Umap Min Dist
+             * @default 0
+             */
+            umap_min_dist: number;
             /** Name */
             name: string;
         };

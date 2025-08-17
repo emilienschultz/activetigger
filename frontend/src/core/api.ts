@@ -2457,3 +2457,27 @@ export function useDeleteBertopic(projectSlug: string | null) {
   );
   return deleteBertopic;
 }
+
+/**
+ * Get topics from a bertopic
+ */
+
+export function useGetBertopicTopics(projectSlug: string | null, name: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getBertopicTopics = useAsyncMemo(async () => {
+    if (projectSlug && name) {
+      const res = await api.GET('/bertopic/topics', {
+        params: {
+          query: { project_slug: projectSlug, name: name },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { topics: getAsyncMemoData(getBertopicTopics), reFetchTopics: reFetch };
+}
