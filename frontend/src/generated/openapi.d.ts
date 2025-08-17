@@ -1501,6 +1501,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bertopic/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Bertopic Model
+         * @description Delete a BERTopic model for the project.
+         */
+        post: operations["delete_bertopic_model_bertopic_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -1739,10 +1759,10 @@ export interface components {
             exclude_labels: string[];
         };
         /**
-         * BertTopicEmbeddingsModel
+         * BertopicEmbeddingsModel
          * @description Parameters for BERTopic vectorizer
          */
-        BertTopicEmbeddingsModel: {
+        BertopicEmbeddingsModel: {
             /**
              * Kind
              * @default sentence_transformers
@@ -1754,15 +1774,15 @@ export interface components {
              */
             model: string;
         };
-        /** BertTopicProjectStateModel */
-        BertTopicProjectStateModel: {
+        /** BertopicProjectStateModel */
+        BertopicProjectStateModel: {
             /** Available */
             available: {
-                [key: string]: string | undefined;
+                [key: string]: (string | null) | undefined;
             };
             /** Training */
             training: {
-                [key: string]: string | undefined;
+                [key: string]: (string | null) | undefined;
             };
         };
         /** Body_login_for_access_token_token_post */
@@ -1838,10 +1858,10 @@ export interface components {
             percentage?: number | null;
         };
         /**
-         * ComputeBertTopicModel
+         * ComputeBertopicModel
          * @description Parameters for computing BERTopic model
          */
-        ComputeBertTopicModel: {
+        ComputeBertopicModel: {
             /** Language */
             language?: string | null;
             /** Min Topic Size */
@@ -1851,7 +1871,7 @@ export interface components {
              * @default auto
              */
             nr_topics: number | string;
-            embeddings?: components["schemas"]["BertTopicEmbeddingsModel"] | null;
+            embeddings?: components["schemas"]["BertopicEmbeddingsModel"] | null;
             /**
              * Outlier Reduction
              * @default true
@@ -2495,7 +2515,7 @@ export interface components {
             languagemodels: components["schemas"]["LanguageModelsProjectStateModel"];
             projections: components["schemas"]["ProjectionsProjectStateModel"];
             generations: components["schemas"]["GenerationsProjectStateModel"];
-            bertopic: components["schemas"]["BertTopicProjectStateModel"];
+            bertopic: components["schemas"]["BertopicProjectStateModel"];
             /** Errors */
             errors: unknown[][];
             /** Memory */
@@ -5277,7 +5297,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ComputeBertTopicModel"];
+                "application/json": components["schemas"]["ComputeBertopicModel"];
             };
         };
         responses: {
@@ -5350,6 +5370,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bertopic_model_bertopic_delete_post: {
+        parameters: {
+            query: {
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

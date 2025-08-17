@@ -1,22 +1,23 @@
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
 from activetigger.datamodels import (
-    BertTopicComputing,
-    BertTopicParamsModel,
-    BertTopicProjectStateModel,
+    BertopicComputing,
+    BertopicParamsModel,
+    BertopicProjectStateModel,
 )
 from activetigger.features import Features
 from activetigger.queue import Queue
-from activetigger.tasks.compute_bertopic import ComputeBertTopic
+from activetigger.tasks.compute_bertopic import ComputeBertopic
 
 # TODO : Implement the get_topics and get_projection methods
 # TODO : Richer state with defined typemodels
 
 
-class BertTopic:
+class Bertopic:
     """
     Class to handle BERTopic computations.
     """
@@ -36,7 +37,7 @@ class BertTopic:
         path_data: Path,
         col_id: str,
         col_text: str,
-        parameters: BertTopicParamsModel,
+        parameters: BertopicParamsModel,
         name: str,
         user: str,
     ) -> None:
@@ -56,10 +57,10 @@ class BertTopic:
             "name": name,
         }
         unique_id = self.queue.add_task(
-            "bertopic", self.project_slug, ComputeBertTopic(**args), queue="gpu"
+            "bertopic", self.project_slug, ComputeBertopic(**args), queue="gpu"
         )
         self.computing.append(
-            BertTopicComputing(
+            BertopicComputing(
                 user=user,
                 unique_id=unique_id,
                 name=name,
@@ -93,8 +94,8 @@ class BertTopic:
             if (self.path.joinpath("runs") / i).is_dir()
         }
 
-    def state(self) -> BertTopicProjectStateModel:
-        return BertTopicProjectStateModel(
+    def state(self) -> BertopicProjectStateModel:
+        return BertopicProjectStateModel(
             available=self.available(),
             training=self.training(),
         )
@@ -118,6 +119,16 @@ class BertTopic:
             return None
 
         return progress
+
+    def delete(self, name: str) -> None:
+        """
+        Delete a BERTopic model.
+        """
+        path_model = self.path.joinpath("runs").joinpath(name)
+        if path_model.exists():
+            shutil.rmtree(path_model)
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")
 
     def get_topics(self, name: str) -> list:
         pass

@@ -2,13 +2,14 @@ import json
 import shutil
 from pathlib import Path
 
+import hdbscan
 import pandas as pd
 import stopwordsiso as stopwords
 from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 from slugify import slugify
 
-from activetigger.datamodels import BertTopicEmbeddingsModel, BertTopicParamsModel
+from activetigger.datamodels import BertopicEmbeddingsModel, BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
 
@@ -36,7 +37,7 @@ Rational :
 # TODO : add the language specific stopwords removal
 
 
-class ComputeBertTopic(BaseTask):
+class ComputeBertopic(BaseTask):
     """
     Compute BERTopic model
 
@@ -52,7 +53,7 @@ class ComputeBertTopic(BaseTask):
         path_data: Path,
         col_id: str | None,
         col_text: str,
-        parameters: BertTopicParamsModel,
+        parameters: BertopicParamsModel,
         name: str | None = None,
         existing_embeddings: Path | None = None,
         cols_embeddings: list[str] | None = None,
@@ -79,7 +80,7 @@ class ComputeBertTopic(BaseTask):
 
         # Default values
         if self.parameters.embeddings is None:
-            self.parameters.embeddings = BertTopicEmbeddingsModel(
+            self.parameters.embeddings = BertopicEmbeddingsModel(
                 kind="sentence_transformers", model="all-mpnet-base-v2"
             )
 
@@ -155,7 +156,22 @@ class ComputeBertTopic(BaseTask):
             # Initialize BERTopic
             self.update_progress("Initializing BERTopic")
 
-            # Manage stopwords for cluster representation
+            # Dimensionality reduction with UMAP
+            try:
+                umap_model = cuml.UMAP(
+                    n_neighbors=10, n_components=2, min_dist=0.0, metric="cosine"
+                )
+            except Exception:
+                umap_model = umap.UMAP(
+                    n_neighbors=10, n_components=2, min_dist=0.0, metric="cosine"
+                )
+
+            # Clustering with HDBSCAN
+            hdbscan_model = hdbscan.HDBSCAN(
+                min_cluster_size=10, metric="euclidean", cluster_selection_method="eom"
+            )
+
+            # Vectorizer to manage stopwords
             try:
                 stopwords = self.get_stopwords()
                 vectorizer_model = CountVectorizer(stop_words=stopwords)
@@ -166,6 +182,8 @@ class ComputeBertTopic(BaseTask):
                 language=self.parameters.language,
                 vectorizer_model=vectorizer_model,
                 nr_topics=self.parameters.nr_topics,
+                umap_model=umap_model,
+                hdbscan_model=hdbscan_model,
             )
 
             # Fit the BERTopic model

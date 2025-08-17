@@ -1,13 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from activetigger.app.dependencies import (
     get_project,
     verified_user,
 )
 from activetigger.config import config
-from activetigger.datamodels import ComputeBertTopicModel, UserInDBModel
+from activetigger.datamodels import ComputeBertopicModel, UserInDBModel
+from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
 router = APIRouter()
@@ -17,14 +18,15 @@ router = APIRouter()
 async def compute_bertopic(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    bertopic: ComputeBertTopicModel,
+    bertopic: ComputeBertopicModel,
 ) -> None:
     """
     Compute BERTopic model for the project.
     """
-    # For the moment, only on the train file
+    # Force the train dataset
     path_data = project.params.dir.joinpath(config.train_file)
-    print(path_data)
+    # Force the language of the project
+    bertopic.language = project.params.language
     try:
         project.bertopic.compute(
             path_data=path_data,
@@ -34,6 +36,7 @@ async def compute_bertopic(
             name=bertopic.name,
             user=current_user.username,
         )
+        orchestrator.log_action(current_user.username, "COMPUTE BERTopic MODEL", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -64,5 +67,21 @@ async def get_bertopic_projection(
     try:
         projection = project.bertopic.get_projection()
         return projection
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bertopic/delete", dependencies=[Depends(verified_user)])
+async def delete_bertopic_model(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    name: str = Query(...),
+) -> None:
+    """
+    Delete a BERTopic model for the project.
+    """
+    try:
+        project.bertopic.delete(name=name)
+        orchestrator.log_action(current_user.username, "DELETE BERTopic MODEL", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -14,11 +14,11 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from pandas import DataFrame
 
-from activetigger.bertopic import BertTopic
+from activetigger.bertopic import Bertopic
 from activetigger.config import config
 from activetigger.datamodels import (
     BertModelModel,
-    BertTopicComputing,
+    BertopicComputing,
     ElementOutModel,
     ExportGenerationsParams,
     FeatureComputing,
@@ -298,7 +298,7 @@ class Project:
             self.db_manager, cast(list[GenerationComputing], self.computing)
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
-        self.bertopic = BertTopic(
+        self.bertopic = Bertopic(
             project_slug, self.params.dir, self.queue, self.computing, self.features
         )
 
@@ -1416,8 +1416,8 @@ class Project:
             # case for bertopic
             if e.kind == "bertopic":
                 try:
-                    print("BertTopic trained")
-                    logging.debug("BertTopic trained")
+                    print("Bertopic trained")
+                    logging.debug("Bertopic trained")
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(config.timezone), "Error in bertopic training", str(ex)]

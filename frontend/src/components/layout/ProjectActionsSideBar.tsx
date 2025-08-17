@@ -136,7 +136,7 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/explore`}
               className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
               aria-current="page"
-              title="Topic analysis with BertTopic"
+              title="Topic analysis with Bertopic"
             >
               <HiMiniRectangleGroup />
               <span className="ms-1">Explore</span>

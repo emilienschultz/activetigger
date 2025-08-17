@@ -428,7 +428,7 @@ class GenerationModel(GenerationCreationModel):
     id: int
 
 
-class BertTopicEmbeddingsModel(BaseModel):
+class BertopicEmbeddingsModel(BaseModel):
     """
     Parameters for BERTopic vectorizer
     """
@@ -437,7 +437,7 @@ class BertTopicEmbeddingsModel(BaseModel):
     model: str = "all-MiniLM-L6-v2"
 
 
-class BertTopicParamsModel(BaseModel):
+class BertopicParamsModel(BaseModel):
     """
     Parameters for BERTopic model
     """
@@ -445,11 +445,11 @@ class BertTopicParamsModel(BaseModel):
     language: str | None = None
     min_topic_size: int | None = None
     nr_topics: int | str = "auto"
-    embeddings: BertTopicEmbeddingsModel | None = None
+    embeddings: BertopicEmbeddingsModel | None = None
     outlier_reduction: bool = True
 
 
-class ComputeBertTopicModel(BertTopicParamsModel):
+class ComputeBertopicModel(BertopicParamsModel):
     """
     Parameters for computing BERTopic model
     """
@@ -554,13 +554,13 @@ class GenerationComputing(ProcessComputing):
     get_progress: Callable[[], float | None] | None = None
 
 
-class BertTopicComputing(ProcessComputing):
+class BertopicComputing(ProcessComputing):
     kind: Literal["bertopic"]
     name: str
     path_data: Path
     col_id: str | None
     col_text: str | None
-    parameters: BertTopicParamsModel
+    parameters: BertopicParamsModel
     get_progress: Callable[[], float | None] | None = None
 
 
@@ -709,7 +709,7 @@ class ProjectionsProjectStateModel(BaseModel):
     training: dict[str, str]
 
 
-class BertTopicProjectStateModel(BaseModel):
+class BertopicProjectStateModel(BaseModel):
     available: dict[str, str | None]
     training: dict[str, str | None]
 
@@ -735,7 +735,7 @@ class ProjectStateModel(BaseModel):
     languagemodels: LanguageModelsProjectStateModel
     projections: ProjectionsProjectStateModel
     generations: GenerationsProjectStateModel
-    bertopic: BertTopicProjectStateModel
+    bertopic: BertopicProjectStateModel
     errors: list[list]
     memory: float | None = None
     last_activity: str | None = None

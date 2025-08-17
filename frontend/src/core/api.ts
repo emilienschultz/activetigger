@@ -10,7 +10,7 @@ import {
   AnnotationModel,
   AnnotationsDataModel,
   AvailableProjectsModel,
-  ComputeBertTopicModel,
+  ComputeBertopicModel,
   GenModel,
   LoginParams,
   ProjectBaseModel,
@@ -2413,12 +2413,12 @@ export function useRestartQueue() {
 }
 
 /**
- * Launch a BertTopic
+ * Launch a Bertopic
  */
-export function useComputeBertTopic(projectSlug: string | null) {
+export function useComputeBertopic(projectSlug: string | null) {
   const { notify } = useNotifications();
-  const computeBertTopic = useCallback(
-    async (dataForm: ComputeBertTopicModel) => {
+  const computeBertopic = useCallback(
+    async (dataForm: ComputeBertopicModel) => {
       if (projectSlug && dataForm) {
         const res = await api.POST('/bertopic/compute', {
           params: {
@@ -2434,5 +2434,26 @@ export function useComputeBertTopic(projectSlug: string | null) {
     [projectSlug, notify],
   );
 
-  return { computeBertTopic };
+  return { computeBertopic };
+}
+
+/**
+ * Delete a bertopic result
+ */
+export function useDeleteBertopic(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const deleteBertopic = useCallback(
+    async (name: string | null) => {
+      if (projectSlug && name) {
+        const res = await api.POST('/bertopic/delete', {
+          params: {
+            query: { project_slug: projectSlug, name: name },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Bertopic deleted' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return deleteBertopic;
 }

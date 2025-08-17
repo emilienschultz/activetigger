@@ -49,3 +49,4 @@ python-dotenv
 aiofiles
 bertopic
 stopwordsiso
+hdbscan

@@ -6,7 +6,7 @@ import { AccountPage } from '../components/pages/AccountPage';
 import { DocPage } from '../components/pages/DocPage';
 import { CuratePage } from '../components/pages/ProjectCurationPage';
 /*import { ExperimentalPage } from '../components/pages/ExperimentalPage';*/
-import { BertTopicPage } from '../components/pages/BertTopicPage';
+import { BertopicPage } from '../components/pages/BertopicPage';
 import { FinetunePage } from '../components/pages/FinetunePage';
 import { HomePage } from '../components/pages/HomePage';
 import { LoginPage } from '../components/pages/LoginPage';
@@ -112,7 +112,7 @@ export function getRouter() {
           path: '/projects/:projectName/explore/',
           element: (
             <>
-              <BertTopicPage />
+              <BertopicPage />
             </>
           ),
         },
