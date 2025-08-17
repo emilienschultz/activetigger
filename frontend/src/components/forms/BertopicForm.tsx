@@ -4,9 +4,10 @@ import { useComputeBertopic } from '../../core/api';
 import { ComputeBertopicModel } from '../../types';
 interface BertopicCreationFormProps {
   projectSlug: string | null;
+  availableModels: string[];
 }
 
-export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug }) => {
+export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug, availableModels }) => {
   const { computeBertopic } = useComputeBertopic(projectSlug);
   const { handleSubmit: handleSubmitNewModel, register } = useForm<ComputeBertopicModel>({
     defaultValues: {
@@ -18,6 +19,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug }) => 
       umap_n_neighbors: 10,
       umap_n_components: 2,
       umap_min_dist: 0.0,
+      embedding_model: availableModels[0],
     },
   });
 
@@ -43,6 +45,15 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug }) => 
             {...register('outlier_reduction')}
             className="mx-2"
           />
+        </label>
+        <label className="form-label" htmlFor="embedding_model">
+          <select className="form-select" {...register('embedding_model')}>
+            {availableModels.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="form-label" htmlFor="min_topic_size">
           Min topic size

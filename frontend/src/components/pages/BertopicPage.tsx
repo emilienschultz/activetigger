@@ -18,7 +18,8 @@ export const BertopicPage: FC = () => {
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
   const [currentBertopic, setCurrentBertopic] = useState<string | null>(null);
   const { topics, reFetchTopics } = useGetBertopicTopics(projectName || null, currentBertopic);
-
+  const currentTraining = currentProject ? Object.entries(currentProject.bertopic.training) : null;
+  const availableModels = currentProject ? currentProject.bertopic.models : [];
   useEffect(() => {
     reFetchTopics();
   }, [currentBertopic, reFetchTopics]);
@@ -28,6 +29,9 @@ export const BertopicPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
+            {currentTraining && currentTraining?.length > 0 && (
+              <div>{JSON.stringify(currentTraining)}</div>
+            )}
             <Tabs id="panel" className="mt-3">
               <Tab eventKey="existing" title="Existing Bertopic">
                 <div className="explanations">
@@ -57,7 +61,7 @@ export const BertopicPage: FC = () => {
               </Tab>
               <Tab eventKey="new" title="New Bertopic">
                 <div className="explanations">UMAP and HDBSCAN are being used</div>
-                <BertopicForm projectSlug={projectName || null} />
+                <BertopicForm projectSlug={projectName || null} availableModels={availableModels} />
               </Tab>
             </Tabs>
           </div>

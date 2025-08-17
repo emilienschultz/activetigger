@@ -1758,22 +1758,6 @@ export interface components {
              */
             exclude_labels: string[];
         };
-        /**
-         * BertopicEmbeddingsModel
-         * @description Parameters for BERTopic vectorizer
-         */
-        BertopicEmbeddingsModel: {
-            /**
-             * Kind
-             * @default sentence_transformers
-             */
-            kind: string;
-            /**
-             * Model
-             * @default all-MiniLM-L6-v2
-             */
-            model: string;
-        };
         /** BertopicProjectStateModel */
         BertopicProjectStateModel: {
             /** Available */
@@ -1784,6 +1768,8 @@ export interface components {
             training: {
                 [key: string]: (string | null) | undefined;
             };
+            /** Models */
+            models: string[];
         };
         /** Body_login_for_access_token_token_post */
         Body_login_for_access_token_token_post: {
@@ -1887,7 +1873,6 @@ export interface components {
              * @default auto
              */
             nr_topics: number | string;
-            embeddings?: components["schemas"]["BertopicEmbeddingsModel"] | null;
             /**
              * Outlier Reduction
              * @default true
@@ -1913,6 +1898,16 @@ export interface components {
              * @default 0
              */
             umap_min_dist: number;
+            /**
+             * Embedding Kind
+             * @default sentence_transformers
+             */
+            embedding_kind: string;
+            /**
+             * Embedding Model
+             * @default all-MiniLM-L6-v2
+             */
+            embedding_model: string;
             /** Name */
             name: string;
         };
@@ -5360,6 +5355,7 @@ export interface operations {
     get_bertopic_topics_bertopic_topics_get: {
         parameters: {
             query: {
+                name: string;
                 project_slug: string;
             };
             header?: never;

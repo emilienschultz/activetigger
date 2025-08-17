@@ -9,7 +9,7 @@ from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 from slugify import slugify
 
-from activetigger.datamodels import BertopicEmbeddingsModel, BertopicParamsModel
+from activetigger.datamodels import BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
 
@@ -78,12 +78,6 @@ class ComputeBertopic(BaseTask):
         self.timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
         self.force_compute_embeddings = force_compute_embeddings
 
-        # Default values
-        if self.parameters.embeddings is None:
-            self.parameters.embeddings = BertopicEmbeddingsModel(
-                kind="sentence_transformers", model="all-mpnet-base-v2"
-            )
-
         # Create paths
         self.path_bertopic = path_bertopic
         self.path_bertopic.joinpath("embeddings").mkdir(parents=True, exist_ok=True)
@@ -98,6 +92,7 @@ class ComputeBertopic(BaseTask):
         Compute BERTopic model
         """
         try:
+            print(self.parameters)
             # Initialize the run directory
             self.path_run.mkdir(parents=True, exist_ok=True)
             self.update_progress("Initializing")
@@ -205,10 +200,10 @@ class ComputeBertopic(BaseTask):
             # Add outlier reduction
             try:
                 if self.parameters.outlier_reduction:
+                    print("Reducing outliers")
                     topics = topic_model.reduce_outliers(df[self.col_text], topics)
             except Exception as e:
                 print(f"Error during outlier reduction: {e}")
-                self.update_progress("Outlier reduction failed, continuing without it.")
 
             # Add the topics to the DataFrame
             df["cluster"] = topics
@@ -256,13 +251,13 @@ class ComputeBertopic(BaseTask):
         """
         Compute the embeddings using the SBERT model
         """
-        if self.parameters.embeddings.kind != "sentence_transformers":
+        if self.parameters.embedding_kind != "sentence_transformers":
             raise ValueError("Only sentence_transformers embeddings are supported for BERTopic.")
         self.update_progress("Computing embeddings")
         embeddings = ComputeSbert(
             texts=df[self.col_text],
             path_process=self.path_bertopic,
-            model=self.parameters.embeddings.model,
+            model=self.parameters.embedding_model,
             batch_size=32,
             min_gpu=1,
             path_progress=self.path_run.joinpath("progress"),

@@ -27,6 +27,11 @@ async def compute_bertopic(
     path_data = project.params.dir.joinpath(config.train_file)
     # Force the language of the project
     bertopic.language = project.params.language
+    if not project.bertopic.name_available(bertopic.name):
+        raise HTTPException(
+            status_code=400,
+            detail=f"BERTopic model with name '{bertopic.name}' already exists (after slugification).",
+        )
     try:
         project.bertopic.compute(
             path_data=path_data,

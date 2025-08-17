@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import pandas as pd
+from slugify import slugify
 
 from activetigger.datamodels import (
     BertopicComputing,
@@ -30,9 +31,14 @@ class Bertopic:
         self.project_slug = project_slug
         self.queue = queue
         self.computing = computing
-        self.path: Path = Path(path).joinpath("bertopic")
+        self.path: Path = path.joinpath("bertopic")
         self.path.mkdir(parents=True, exist_ok=True)
         self.features = features
+        self.available_models = [
+            "Alibaba-NLP/gte-multilingual-base",
+            "all-mpnet-base-v2",
+            "all-MiniLM-L6-v2",
+        ]
 
     def compute(
         self,
@@ -46,6 +52,8 @@ class Bertopic:
         """
         Compute BERTopic model.
         """
+
+        name = slugify(name)
 
         if len(self.current_user_processes(user)) > 0:
             raise ValueError("You already have computation in progress.")
@@ -90,16 +98,25 @@ class Bertopic:
         """
         Get available BERTopic models.
         """
-        return {
-            i: i
-            for i in os.listdir(self.path.joinpath("runs"))
-            if (self.path.joinpath("runs") / i).is_dir()
-        }
+        if self.path.exists() and self.path.joinpath("runs").exists():
+            return {
+                i: i
+                for i in os.listdir(self.path.joinpath("runs"))
+                if (self.path.joinpath("runs") / i).is_dir()
+            }
+        return {}
+
+    def name_available(self, name: str) -> bool:
+        """
+        Check if a BERTopic model name is available.
+        """
+        return slugify(name) not in self.available()
 
     def state(self) -> BertopicProjectStateModel:
         return BertopicProjectStateModel(
             available=self.available(),
             training=self.training(),
+            models=self.available_models,
         )
 
     def current_user_processes(self, user: str) -> list:
@@ -116,7 +133,6 @@ class Bertopic:
 
         def progress():
             if path_progress.exists():
-                print("AVANCEMENT", path_progress.read_text())
                 return path_progress.read_text()
             return None
 

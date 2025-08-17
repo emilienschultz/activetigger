@@ -428,15 +428,6 @@ class GenerationModel(GenerationCreationModel):
     id: int
 
 
-class BertopicEmbeddingsModel(BaseModel):
-    """
-    Parameters for BERTopic vectorizer
-    """
-
-    kind: str = "sentence_transformers"
-    model: str = "all-MiniLM-L6-v2"
-
-
 class BertopicParamsModel(BaseModel):
     """
     Parameters for BERTopic model
@@ -448,12 +439,13 @@ class BertopicParamsModel(BaseModel):
     top_n_words: int = 15
     n_gram_range: tuple[int, int] = (1, 2)
     nr_topics: int | str = "auto"
-    embeddings: BertopicEmbeddingsModel | None = None
     outlier_reduction: bool = True
     hdbscan_min_cluster_size: int = 10
     umap_n_neighbors: int = 10
     umap_n_components: int = 2
     umap_min_dist: float = 0.0
+    embedding_kind: str = "sentence_transformers"
+    embedding_model: str = "all-MiniLM-L6-v2"
 
 
 class ComputeBertopicModel(BertopicParamsModel):
@@ -719,6 +711,7 @@ class ProjectionsProjectStateModel(BaseModel):
 class BertopicProjectStateModel(BaseModel):
     available: dict[str, str | None]
     training: dict[str, str | None]
+    models: list[str]
 
 
 class GenerationsProjectStateModel(BaseModel):
