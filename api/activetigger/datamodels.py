@@ -428,6 +428,35 @@ class GenerationModel(GenerationCreationModel):
     id: int
 
 
+class BertTopicEmbeddingsModel(BaseModel):
+    """
+    Parameters for BERTopic vectorizer
+    """
+
+    kind: str = "sentence_transformers"
+    model: str = "all-MiniLM-L6-v2"
+
+
+class BertTopicParamsModel(BaseModel):
+    """
+    Parameters for BERTopic model
+    """
+
+    language: str | None = None
+    min_topic_size: int | None = None
+    nr_topics: int | str = "auto"
+    embeddings: BertTopicEmbeddingsModel | None = None
+    outlier_reduction: bool = True
+
+
+class ComputeBertTopicModel(BertTopicParamsModel):
+    """
+    Parameters for computing BERTopic model
+    """
+
+    name: str
+
+
 class GenerationAvailableModel(BaseModel):
     """
     GenAI models available for generation
@@ -522,6 +551,16 @@ class GenerationComputing(ProcessComputing):
     project: str
     number: int
     model_id: int
+    get_progress: Callable[[], float | None] | None = None
+
+
+class BertTopicComputing(ProcessComputing):
+    kind: Literal["bertopic"]
+    name: str
+    path_data: Path
+    col_id: str | None
+    col_text: str | None
+    parameters: BertTopicParamsModel
     get_progress: Callable[[], float | None] | None = None
 
 
@@ -670,6 +709,11 @@ class ProjectionsProjectStateModel(BaseModel):
     training: dict[str, str]
 
 
+class BertTopicProjectStateModel(BaseModel):
+    available: dict[str, str | None]
+    training: dict[str, str | None]
+
+
 class GenerationsProjectStateModel(BaseModel):
     training: dict[str, GenerationComputingOut]
 
@@ -691,6 +735,7 @@ class ProjectStateModel(BaseModel):
     languagemodels: LanguageModelsProjectStateModel
     projections: ProjectionsProjectStateModel
     generations: GenerationsProjectStateModel
+    bertopic: BertTopicProjectStateModel
     errors: list[list]
     memory: float | None = None
     last_activity: str | None = None
@@ -893,24 +938,3 @@ class ProjectCreatingModel(BaseModel):
     time: datetime.datetime
     kind: str
     status: str
-
-
-class BertTopicEmbeddingsModel(BaseModel):
-    """
-    Parameters for BERTopic vectorizer
-    """
-
-    kind: str = "sentence_transformers"
-    model: str = "all-MiniLM-L6-v2"
-
-
-class BertTopicParamsModel(BaseModel):
-    """
-    Parameters for BERTopic model
-    """
-
-    language: str
-    min_topic_size: int | None = None
-    nr_topics: int | str = "auto"
-    embeddings: BertTopicEmbeddingsModel | None = None
-    outlier_reduction: bool = True

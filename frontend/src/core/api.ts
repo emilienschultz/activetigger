@@ -10,6 +10,7 @@ import {
   AnnotationModel,
   AnnotationsDataModel,
   AvailableProjectsModel,
+  ComputeBertTopicModel,
   GenModel,
   LoginParams,
   ProjectBaseModel,
@@ -2409,4 +2410,29 @@ export function useRestartQueue() {
     return true;
   }, [notify]);
   return { restartQueue };
+}
+
+/**
+ * Launch a BertTopic
+ */
+export function useComputeBertTopic(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const computeBertTopic = useCallback(
+    async (dataForm: ComputeBertTopicModel) => {
+      if (projectSlug && dataForm) {
+        const res = await api.POST('/bertopic/compute', {
+          params: {
+            query: { project_slug: projectSlug },
+          },
+          body: dataForm,
+        });
+        if (!res.error) notify({ type: 'warning', message: 'Starting bertopic computing' });
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { computeBertTopic };
 }

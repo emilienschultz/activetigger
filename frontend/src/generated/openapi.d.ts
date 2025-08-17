@@ -1441,6 +1441,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bertopic/compute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compute Bertopic
+         * @description Compute BERTopic model for the project.
+         */
+        post: operations["compute_bertopic_bertopic_compute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bertopic/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bertopic Topics
+         * @description Get topics from the BERTopic model for the project.
+         */
+        get: operations["get_bertopic_topics_bertopic_topics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bertopic/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bertopic Projection
+         * @description Get projection from the BERTopic model for the project.
+         */
+        get: operations["get_bertopic_projection_bertopic_projection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -1678,6 +1738,33 @@ export interface components {
              */
             exclude_labels: string[];
         };
+        /**
+         * BertTopicEmbeddingsModel
+         * @description Parameters for BERTopic vectorizer
+         */
+        BertTopicEmbeddingsModel: {
+            /**
+             * Kind
+             * @default sentence_transformers
+             */
+            kind: string;
+            /**
+             * Model
+             * @default all-MiniLM-L6-v2
+             */
+            model: string;
+        };
+        /** BertTopicProjectStateModel */
+        BertTopicProjectStateModel: {
+            /** Available */
+            available: {
+                [key: string]: string | undefined;
+            };
+            /** Training */
+            training: {
+                [key: string]: string | undefined;
+            };
+        };
         /** Body_login_for_access_token_token_post */
         Body_login_for_access_token_token_post: {
             /** Grant Type */
@@ -1749,6 +1836,29 @@ export interface components {
             cohen_kappa?: number | null;
             /** Percentage */
             percentage?: number | null;
+        };
+        /**
+         * ComputeBertTopicModel
+         * @description Parameters for computing BERTopic model
+         */
+        ComputeBertTopicModel: {
+            /** Language */
+            language?: string | null;
+            /** Min Topic Size */
+            min_topic_size?: number | null;
+            /**
+             * Nr Topics
+             * @default auto
+             */
+            nr_topics: number | string;
+            embeddings?: components["schemas"]["BertTopicEmbeddingsModel"] | null;
+            /**
+             * Outlier Reduction
+             * @default true
+             */
+            outlier_reduction: boolean;
+            /** Name */
+            name: string;
         };
         /**
          * ElementOutModel
@@ -2385,6 +2495,7 @@ export interface components {
             languagemodels: components["schemas"]["LanguageModelsProjectStateModel"];
             projections: components["schemas"]["ProjectionsProjectStateModel"];
             generations: components["schemas"]["GenerationsProjectStateModel"];
+            bertopic: components["schemas"]["BertTopicProjectStateModel"];
             /** Errors */
             errors: unknown[][];
             /** Memory */
@@ -5142,6 +5253,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compute_bertopic_bertopic_compute_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComputeBertTopicModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bertopic_topics_bertopic_topics_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bertopic_projection_bertopic_projection_get: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
                 };
             };
             /** @description Validation Error */

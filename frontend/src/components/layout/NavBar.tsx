@@ -43,6 +43,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
       ? currentUser in currentProject.languagemodels.training ||
         currentUser in currentProject.simplemodel.training ||
         currentUser in currentProject.projections.training ||
+        currentUser in currentProject.bertopic.training ||
         Object.values(currentProject.features.training).length > 0
       : false;
 
@@ -57,6 +58,9 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
           { id: 'projects', label: 'Projects', href: '/projects' },
           { id: 'account', label: 'Account', href: '/account' },
         ];
+
+  console.log(currentProject);
+
   return (
     <div className="bg-primary">
       <nav className="navbar navbar-dark navbar-expand-lg bg-primary">

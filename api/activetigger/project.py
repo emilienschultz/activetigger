@@ -14,9 +14,11 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from pandas import DataFrame
 
+from activetigger.bertopic import BertTopic
 from activetigger.config import config
 from activetigger.datamodels import (
     BertModelModel,
+    BertTopicComputing,
     ElementOutModel,
     ExportGenerationsParams,
     FeatureComputing,
@@ -296,6 +298,9 @@ class Project:
             self.db_manager, cast(list[GenerationComputing], self.computing)
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
+        self.bertopic = BertTopic(
+            project_slug, self.params.dir, self.queue, self.computing, self.features
+        )
 
     def load_params(self, project_slug: str) -> ProjectModel:
         """
@@ -828,6 +833,7 @@ class Project:
     def state(self) -> ProjectStateModel:
         """
         Send state of the project
+        Collecting states for submodules
         """
         users = self.users.db_manager.users_service.get_project_users(self.params.project_slug)
 
@@ -844,6 +850,7 @@ class Project:
             languagemodels=self.languagemodels.state(),
             projections=self.projections.state(),
             generations=self.generations.state(),
+            bertopic=self.bertopic.state(),
             errors=self.errors,
             memory=get_dir_size(str(self.params.dir)),
             last_activity=self.db_manager.logs_service.get_last_activity_project(
@@ -1402,6 +1409,20 @@ class Project:
                     )
                     logging.warning("Error in generation queue", getattr(ex, "message", repr(ex)))
                     print("Error in generation queue", getattr(ex, "message", repr(ex)))
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
+
+            # case for bertopic
+            if e.kind == "bertopic":
+                try:
+                    print("BertTopic trained")
+                    logging.debug("BertTopic trained")
+                except Exception as ex:
+                    self.errors.append(
+                        [datetime.now(config.timezone), "Error in bertopic training", str(ex)]
+                    )
+                    logging.error("Error in bertopic training", ex)
                 finally:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)

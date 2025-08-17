@@ -18,6 +18,7 @@ from activetigger import __version__
 from activetigger.app.dependencies import ProjectAction, ServerAction, test_rights, verified_user
 from activetigger.app.routers import (
     annotations,
+    bertopic,
     export,
     features,
     files,
@@ -66,6 +67,7 @@ app.include_router(export.router)
 app.include_router(models.router)
 app.include_router(generation.router)
 app.include_router(files.router)
+app.include_router(bertopic.router)
 
 
 # allow multiple servers (avoir CORS error)

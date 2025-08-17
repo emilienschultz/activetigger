@@ -1,3 +1,5 @@
+import json
+import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -6,7 +8,7 @@ from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 from slugify import slugify
 
-from activetigger.datamodels import BertTopicParamsModel
+from activetigger.datamodels import BertTopicEmbeddingsModel, BertTopicParamsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
 
@@ -37,6 +39,9 @@ Rational :
 class ComputeBertTopic(BaseTask):
     """
     Compute BERTopic model
+
+    A computation is identitied by its name that should be unique
+    and is associated with parameters
     """
 
     kind = "compute_bertopic"
@@ -59,117 +64,157 @@ class ComputeBertTopic(BaseTask):
             raise ValueError("File must be a parquet file.")
         if existing_embeddings and not existing_embeddings.suffix == ".parquet":
             raise ValueError("Embeddings file must be a parquet file.")
-        self.path_bertopic = path_bertopic.joinpath("bertopic")
-        self.path_bertopic.mkdir(parents=True, exist_ok=True)
+
+        # Set parameters
         self.path_data = path_data
         self.col_id = col_id
         self.col_text = col_text
-        self.name = name or path_data.stem
+        self.name = slugify(name)
+        self.file_name = slugify(path_data.stem)
         self.parameters = parameters
         self.existing_embeddings = existing_embeddings
         self.cols_embeddings = cols_embeddings
         self.timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
         self.force_compute_embeddings = force_compute_embeddings
-        with open(self.path_bertopic.joinpath("progress"), "w") as f:
-            f.write("Initializing")
+
+        # Default values
+        if self.parameters.embeddings is None:
+            self.parameters.embeddings = BertTopicEmbeddingsModel(
+                kind="sentence_transformers", model="all-mpnet-base-v2"
+            )
+
+        # Create paths
+        self.path_bertopic = path_bertopic
+        self.path_bertopic.joinpath("embeddings").mkdir(parents=True, exist_ok=True)
+
+        # Check if the run already exists
+        self.path_run = self.path_bertopic.joinpath("runs").joinpath(self.name)
+        if self.path_run.exists():
+            raise ValueError(f"Run {self.name} already exists, please chose another name.")
 
     def __call__(self):
         """
         Compute BERTopic model
         """
-        # Load the data
-        df = pd.read_parquet(self.path_data).fillna("")
-        if self.col_text not in df.columns:
-            raise ValueError(f"Column {self.col_text} not found in the data.")
+        try:
+            # Initialize the run directory
+            self.path_run.mkdir(parents=True, exist_ok=True)
+            self.update_progress("Initializing")
 
-        # Set the index if col_id is provided
-        if self.col_id and self.col_id in df.columns:
-            df.set_index(self.col_id, inplace=True)
+            # Load the data from the file
+            df = pd.read_parquet(self.path_data).fillna("")
+            if self.col_text not in df.columns:
+                raise ValueError(f"Column {self.col_text} not found in the data.")
 
-        # Path for existing embeddings
-        path_embeddings = self.path_bertopic.joinpath(
-            slugify(f"bertopic_embeddings_{self.parameters.embeddings.model}.parquet")
-        )
-        # Path for 2D projection
-        path_projection = self.path_bertopic.joinpath(
-            slugify(f"bertopic_projection_{self.parameters.embeddings.model}.parquet")
-        )
+            # Set the index if col_id is provided
+            if self.col_id and self.col_id in df.columns:
+                df.set_index(self.col_id, inplace=True)
 
-        # Check if existing embeddings are in the folder
-        if not self.existing_embeddings and path_embeddings.exists():
-            self.existing_embeddings = path_embeddings
-
-        # Compute embeddings if not provided
-        if not self.existing_embeddings or self.force_compute_embeddings:
-            self.compute_embeddings(df, path_embeddings)
-            self.compute_projection(path_embeddings, path_projection)
-            self.existing_embeddings = path_embeddings
-
-        # Compute projection if does not exist
-        if not path_projection.exists():
-            self.compute_projection(self.existing_embeddings, path_projection)
-
-        # Load embeddings
-        with open(self.path_bertopic.joinpath("progress"), "w") as f:
-            f.write("Reading embeddings")
-        df_embeddings = pd.read_parquet(self.existing_embeddings)
-        if self.cols_embeddings and not all(
-            col in df_embeddings.columns for col in self.cols_embeddings
-        ):
-            raise ValueError("Some embeddings columns not found in the embeddings data.")
-        if self.cols_embeddings:
-            embeddings = df_embeddings[self.cols_embeddings].values
-        else:
-            embeddings = df_embeddings.values
-
-        # Test if the embeddings & the texts have the same index
-        if not df.index.equals(df_embeddings.index) or len(df) != len(df_embeddings):
-            raise ValueError(
-                "The index of the embeddings and the texts do not match. "
-                "Please force the computation of embeddings or check your data."
+            # Path for existing embeddings
+            path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
+                f"bertopic_embeddings_{self.file_name}.parquet"
+            )
+            # Path for 2D projection
+            path_projection = self.path_bertopic.joinpath("embeddings").joinpath(
+                f"bertopic_projection_{self.file_name}.parquet"
             )
 
-        # Initialize BERTopic
-        with open(self.path_bertopic.joinpath("progress"), "w") as f:
-            f.write("Fit BERTopic model")
+            # Check if existing embeddings are in the folder
+            if not self.existing_embeddings and path_embeddings.exists():
+                self.existing_embeddings = path_embeddings
 
-        # Manage stopwords for cluster representation
-        try:
-            stopwords = self.get_stopwords()
-            vectorizer_model = CountVectorizer(stop_words=stopwords)
-        except ValueError:
-            vectorizer_model = CountVectorizer()
+            # Compute embeddings if not provided or if forced
+            if not self.existing_embeddings or self.force_compute_embeddings:
+                self.compute_embeddings(df, path_embeddings)
+                self.compute_projection(path_embeddings, path_projection)
+                self.existing_embeddings = path_embeddings
 
-        topic_model = BERTopic(
-            language=self.parameters.language,
-            vectorizer_model=vectorizer_model,
-            nr_topics=self.parameters.nr_topics,
-        )
+            # Compute projection if does not exist
+            if not path_projection.exists():
+                self.compute_projection(self.existing_embeddings, path_projection)
 
-        # Fit the BERTopic model
-        topics, _ = topic_model.fit_transform(
-            documents=df[self.col_text],
-            embeddings=embeddings,
-        )
+            # Load embeddings
+            self.update_progress("Loading embeddings")
+            df_embeddings = pd.read_parquet(self.existing_embeddings)
+            if self.cols_embeddings and not all(
+                col in df_embeddings.columns for col in self.cols_embeddings
+            ):
+                raise ValueError("Some embeddings columns not found in the embeddings data.")
+            if self.cols_embeddings:
+                embeddings = df_embeddings[self.cols_embeddings].values
+            else:
+                embeddings = df_embeddings.values
 
-        # Add outlier reduction
-        if self.parameters.outlier_reduction:
-            topics = topic_model.reduce_outliers(df[self.col_text], topics)
+            # Test if the embeddings & the texts have the same index
+            if not df.index.equals(df_embeddings.index) or len(df) != len(df_embeddings):
+                raise ValueError(
+                    "The index of the embeddings and the texts do not match. "
+                    "Please force the computation of embeddings or check your data."
+                )
 
-        # Add the topics to the DataFrame
-        df["cluster"] = topics
+            # Initialize BERTopic
+            self.update_progress("Initializing BERTopic")
 
-        # Save the topics and documents informations
-        topic_model.get_topic_info().to_csv(
-            self.path_bertopic.joinpath(f"bertopic_topics_{self.name}.csv")
-        )
-        df["cluster"].to_csv(self.path_bertopic.joinpath(f"bertopic_clusters_{self.name}.csv"))
-        # topic_model.get_document_info(df[self.col_text].tolist()).to_csv(
-        #     self.path_bertopic.joinpath(f"bertopic_documents_{self.timestamp}.csv")
-        # )
+            # Manage stopwords for cluster representation
+            try:
+                stopwords = self.get_stopwords()
+                vectorizer_model = CountVectorizer(stop_words=stopwords)
+            except ValueError:
+                vectorizer_model = CountVectorizer()
 
-        self.path_bertopic.joinpath("progress").unlink(missing_ok=True)
-        return None
+            topic_model = BERTopic(
+                language=self.parameters.language,
+                vectorizer_model=vectorizer_model,
+                nr_topics=self.parameters.nr_topics,
+            )
+
+            # Fit the BERTopic model
+            topics, _ = topic_model.fit_transform(
+                documents=df[self.col_text],
+                embeddings=embeddings,
+            )
+
+            # Add outlier reduction
+            try:
+                if self.parameters.outlier_reduction:
+                    topics = topic_model.reduce_outliers(df[self.col_text], topics)
+            except Exception as e:
+                print(f"Error during outlier reduction: {e}")
+                self.update_progress("Outlier reduction failed, continuing without it.")
+
+            # Add the topics to the DataFrame
+            df["cluster"] = topics
+
+            # Save the topics and documents informations
+            topic_model.get_topic_info().to_csv(self.path_run.joinpath("bertopic_topics.csv"))
+            df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
+            parameters = {
+                "bertopic_params": self.parameters.model_dump(),
+                "col_text": self.col_text,
+                "col_id": self.col_id,
+                "name": self.name,
+                "timestamp": self.timestamp,
+                "path_data": str(self.path_data),
+                "path_embeddings": str(self.existing_embeddings),
+                "path_projection": str(path_projection),
+            }
+            with open(self.path_run.joinpath("params.json"), "w") as f:
+                json.dump(parameters, f)
+
+            self.path_run.joinpath("progress").unlink(missing_ok=True)
+            return None
+        except Exception as e:
+            # Case an error happens
+            if self.path_run.exists():
+                shutil.rmtree(self.path_run)
+            raise e
+
+    def update_progress(self, message: str) -> None:
+        """
+        Update the progress of the task
+        """
+        with open(self.path_run.joinpath("progress"), "w") as f:
+            f.write(message)
 
     def get_stopwords(self) -> list[str]:
         """
@@ -185,15 +230,14 @@ class ComputeBertTopic(BaseTask):
         """
         if self.parameters.embeddings.kind != "sentence_transformers":
             raise ValueError("Only sentence_transformers embeddings are supported for BERTopic.")
-        with open(self.path_bertopic.joinpath("progress"), "w") as f:
-            f.write("Computing embeddings")
+        self.update_progress("Computing embeddings")
         embeddings = ComputeSbert(
             texts=df[self.col_text],
             path_process=self.path_bertopic,
             model=self.parameters.embeddings.model,
             batch_size=32,
             min_gpu=1,
-            path_progress=self.path_bertopic.joinpath("progress"),
+            path_progress=self.path_run.joinpath("progress"),
         )()
         # save the embeddings to a file
         embeddings.to_parquet(path_embeddings)

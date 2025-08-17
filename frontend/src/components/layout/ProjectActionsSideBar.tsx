@@ -2,6 +2,7 @@ import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { GiChoice } from 'react-icons/gi';
+import { HiMiniRectangleGroup } from 'react-icons/hi2';
 import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
@@ -41,6 +42,7 @@ export const ProjectActionsSidebar: FC<{
       ? currentUser in projectState.languagemodels.training ||
         currentUser in projectState.simplemodel.training ||
         currentUser in projectState.projections.training ||
+        currentUser in projectState.bertopic.training ||
         Object.values(projectState.features.training).length > 0
       : false;
 
@@ -118,7 +120,6 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Fine-tune </span>
             </Link>
           </li>
-
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/export`}
@@ -128,6 +129,17 @@ export const ProjectActionsSidebar: FC<{
             >
               <FaCloudDownloadAlt />
               <span className="ms-1">Export</span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/explore`}
+              className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
+              aria-current="page"
+              title="Topic analysis with BertTopic"
+            >
+              <HiMiniRectangleGroup />
+              <span className="ms-1">Explore</span>
             </Link>
           </li>
           <li className="nav-item">
