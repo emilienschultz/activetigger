@@ -1,6 +1,5 @@
 import { ControlsContainer, SigmaContainer, ZoomControl } from '@react-sigma/core';
 import '@react-sigma/core/lib/style.css';
-import chroma from 'chroma-js';
 import classNames from 'classnames';
 import Graph from 'graphology';
 import { FC, useCallback, useMemo, useState } from 'react';
@@ -15,11 +14,11 @@ interface Props {
     x: unknown[];
     y: unknown[];
     cluster?: string[] | null;
-  } | null;
+  };
   className?: string;
   // selection
-  selectedId?: string;
   setSelectedId: (id?: string) => void;
+  labelColorMapping: { [key: string]: string };
 }
 
 const sigmaStyle = { height: '100%', width: '100%' };
@@ -49,17 +48,13 @@ const getPointSize = (n: number) => {
 };
 
 // Create the Component that listen to all events
-export const BertopicVizSigma: FC<Props> = ({ data, className, selectedId, setSelectedId }) => {
-  const uniqueLabels = data ? [...new Set(data.cluster)] : [];
-  const colormap = chroma.scale('Paired').colors(uniqueLabels.length);
-  const labelColorMapping = uniqueLabels.reduce<Record<string, string>>(
-    (acc, label, index: number) => {
-      acc[label as string] = colormap[index];
-      return acc;
-    },
-    {},
-  );
-
+export const BertopicVizSigma: FC<Props> = ({
+  data,
+  className,
+  labelColorMapping,
+  setSelectedId,
+}) => {
+  labelColorMapping['NA'] = '#ebebeb';
   // Special cursor to help interactivity affordances
   const [sigmaCursor, setSigmaCursor] = useState<SigmaCursorTypes>(undefined);
 
@@ -74,7 +69,7 @@ export const BertopicVizSigma: FC<Props> = ({ data, className, selectedId, setSe
         graph.addNode(data.id[index], {
           x: value as number,
           y: data.y[index] as number,
-          label: data.cluster?.[index] as string,
+          label: data['cluster']?.[index] as string,
           size,
         });
       });
@@ -93,14 +88,10 @@ export const BertopicVizSigma: FC<Props> = ({ data, className, selectedId, setSe
 
       // replace label by node id. Label is the default field in sigma to display the.. label
       res.label = node;
-      if (selectedId === node) {
-        // built-in appearance in Sigma which forces showing the label
-        res.highlighted = true;
-        res.color = 'black'; // highlight color
-      }
+
       return res;
     },
-    [selectedId, labelColorMapping],
+    [labelColorMapping],
   );
   const settings: Partial<Settings<NodeAttributesType>> = useMemo(
     () => ({

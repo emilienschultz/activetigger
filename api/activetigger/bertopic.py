@@ -36,9 +36,11 @@ class Bertopic:
         self.path.mkdir(parents=True, exist_ok=True)
         self.features = features
         self.available_models = [
+            "multi-qa-mpnet-base-dot-v1",
             "Alibaba-NLP/gte-multilingual-base",
             "all-mpnet-base-v2",
             "all-MiniLM-L6-v2",
+            "paraphrase-multilingual-mpnet-base-v2",
         ]
 
     def compute(
@@ -184,7 +186,7 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_projection(self, name: str) -> dict[str, list]:
+    def get_projection(self, name: str) -> dict[str, list | dict]:
         """
         Open the project and the cluster
         """
@@ -196,9 +198,15 @@ class Bertopic:
         clusters.index = clusters.index.astype(str)
         projection = pd.read_parquet(path_projection)
         projection["cluster"] = clusters["cluster"]
+        path_model = self.path.joinpath("runs").joinpath(name)
+        labels = {}
+        if path_model.exists():
+            df = pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0)
+            labels = dict(df[["Topic", "Name"]].set_index("Topic")["Name"])
         return {
             "x": projection["x"].tolist(),
             "y": projection["y"].tolist(),
             "cluster": projection["cluster"].tolist(),
             "id": projection.index.astype(str).tolist(),
+            "labels": labels,
         }

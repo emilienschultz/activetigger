@@ -108,6 +108,7 @@ export const ProjectionVizSigma: FC<Props> = ({
   const nodeReducer = useCallback(
     (node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
       const res: Partial<NodeDisplayData> = { ...data };
+      console.log('nodeReducer', node, data);
 
       // apply color for nodes
       res.color = labelColorMapping[data.label];

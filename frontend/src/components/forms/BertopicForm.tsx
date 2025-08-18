@@ -111,6 +111,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug, avail
             className="form-control"
             id="umap_min_dist"
             type="number"
+            step="any"
             {...register('umap_min_dist')}
           />
         </label>

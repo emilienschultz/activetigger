@@ -278,10 +278,10 @@ class ComputeBertopic(BaseTask):
         Reduce the dimensionality of the embeddings if needed.
         """
         try:
-            reducer = cuml.UMAP(n_neighbors=10, n_components=2, min_dist=0.0, metric="cosine")
+            reducer = cuml.UMAP(n_neighbors=10, n_components=2, min_dist=0.1, metric="cosine")
             print("Using cuML for UMAP computation")
         except Exception:
-            reducer = umap.UMAP(n_neighbors=10, n_components=2, min_dist=0.0, metric="cosine")
+            reducer = umap.UMAP(n_neighbors=10, n_components=2, min_dist=0.1, metric="cosine")
             print("Using standard UMAP for computation")
         embeddings = pd.read_parquet(path_embeddings)
         reduced_embeddings = reducer.fit_transform(embeddings)

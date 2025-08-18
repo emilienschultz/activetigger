@@ -1,3 +1,4 @@
+import chroma from 'chroma-js';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
@@ -8,7 +9,7 @@ import { DisplayTableTopics, Row } from '../../components/DisplayTableTopics';
 import { useDeleteBertopic, useGetBertopicProjection, useGetBertopicTopics } from '../../core/api';
 import { BertopicForm } from '../forms/BertopicForm';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
-import { BertopicVizSigma } from '../ProjectionVizSigma/bertopicVizSigma';
+import { BertopicVizSigma } from '../ProjectionVizSigma/BertopicVizSigma';
 
 export const BertopicPage: FC = () => {
   const { projectName } = useParams();
@@ -35,7 +36,17 @@ export const BertopicPage: FC = () => {
   const setSelectedId = useCallback((id?: string) => {
     console.log(id);
   }, []);
-  console.log(projection);
+
+  const uniqueLabels = projection ? [...new Set(projection.cluster)] : [];
+  const colormap = chroma.scale('Paired').colors(uniqueLabels.length);
+  const labelColorMapping = uniqueLabels.reduce<Record<string, string>>(
+    (acc, label, index: number) => {
+      acc[label as string] = colormap[index];
+      return acc;
+    },
+    {},
+  );
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="explore">
       <div className="container-fluid">
@@ -59,9 +70,9 @@ export const BertopicPage: FC = () => {
                   </div>
                 )}
                 <h4 className="subsection">Existing Bertopic</h4>
-                <div className="d-flex w-50">
+                <div className="d-flex w-50 m-2">
                   <Select
-                    className="flex-grow-1 "
+                    className="flex-grow-1"
                     options={Object.keys(availableBertopic).map((e) => ({ value: e, label: e }))}
                     onChange={(e) => {
                       if (e) setCurrentBertopic(e.value);
@@ -82,21 +93,25 @@ export const BertopicPage: FC = () => {
                   <summary>Parameters</summary>
                   {parameters && JSON.stringify(parameters, null, 2)}
                 </details>
-                {topics && <DisplayTableTopics data={(topics as Row[]) || []} />}
-                <div className="m-2">Test</div>
+                {topics && (
+                  <div style={{ height: '500px' }}>
+                    <DisplayTableTopics data={(topics as Row[]) || []} />
+                  </div>
+                )}
                 {projection && (
-                  <div className="row m-2" style={{ height: '500px' }}>
+                  <div style={{ height: '300px' }}>
                     <BertopicVizSigma
-                      className={`col-12 border p-0 h-100`}
+                      className={`col-12 border h-100`}
                       data={
-                        (projection as {
+                        projection as {
                           id: unknown[];
                           x: unknown[];
                           y: unknown[];
                           cluster: string[];
-                        }) || null
+                        }
                       }
                       setSelectedId={setSelectedId}
+                      labelColorMapping={labelColorMapping}
                     />
                   </div>
                 )}
