@@ -36,6 +36,7 @@ class Bertopic:
         self.path.mkdir(parents=True, exist_ok=True)
         self.features = features
         self.available_models = [
+            "jinaai/jina-embeddings-v3",
             "multi-qa-mpnet-base-dot-v1",
             "Alibaba-NLP/gte-multilingual-base",
             "all-mpnet-base-v2",

@@ -74,7 +74,11 @@ class Features:
         # load possible embeddings models
         fasttext_models = [f for f in os.listdir(self.path_models) if f.endswith(".bin")]
         # possibility to create a sbert.yaml file to add models
-        sbert_models = ["Alibaba-NLP/gte-multilingual-base", "all-mpnet-base-v2"]
+        sbert_models = [
+            "jinaai/jina-embeddings-v3",
+            "Alibaba-NLP/gte-multilingual-base",
+            "all-mpnet-base-v2",
+        ]
         if Path(config.data_path).joinpath("projects/sbert.yaml").exists():
             content = yaml.safe_load(
                 open(

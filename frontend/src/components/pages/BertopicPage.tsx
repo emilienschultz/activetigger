@@ -93,11 +93,7 @@ export const BertopicPage: FC = () => {
                   <summary>Parameters</summary>
                   {parameters && JSON.stringify(parameters, null, 2)}
                 </details>
-                {topics && (
-                  <div style={{ height: '500px' }}>
-                    <DisplayTableTopics data={(topics as Row[]) || []} />
-                  </div>
-                )}
+
                 {projection && (
                   <div style={{ height: '300px' }}>
                     <BertopicVizSigma
@@ -113,6 +109,11 @@ export const BertopicPage: FC = () => {
                       setSelectedId={setSelectedId}
                       labelColorMapping={labelColorMapping}
                     />
+                  </div>
+                )}
+                {topics && (
+                  <div style={{ height: '500px' }}>
+                    <DisplayTableTopics data={(topics as Row[]) || []} />
                   </div>
                 )}
               </Tab>

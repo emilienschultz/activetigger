@@ -260,7 +260,7 @@ class ComputeBertopic(BaseTask):
             raise ValueError("Only sentence_transformers embeddings are supported for BERTopic.")
         if path_embeddings.exists():
             path_embeddings.unlink()
-        self.update_progress("Computing embeddings")
+        self.update_progress(f"Computing embeddings with {self.parameters.embedding_model}")
         embeddings = ComputeSbert(
             texts=df[self.col_text],
             path_process=self.path_bertopic,
