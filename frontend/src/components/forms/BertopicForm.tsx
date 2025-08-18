@@ -20,6 +20,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug, avail
       umap_n_components: 2,
       umap_min_dist: 0.0,
       embedding_model: availableModels[0],
+      force_compute_embeddings: false,
     },
   });
 
@@ -40,9 +41,18 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug, avail
         <label className="form-label" htmlFor="outlier_reduction">
           Outlier reduction
           <input
-            id="outlierReduction"
+            id="outlier_reduction"
             type="checkbox"
             {...register('outlier_reduction')}
+            className="mx-2"
+          />
+        </label>
+        <label className="form-label" htmlFor="force_compute_embeddings">
+          Force compute embeddings
+          <input
+            id="force_compute_embeddings"
+            type="checkbox"
+            {...register('force_compute_embeddings')}
             className="mx-2"
           />
         </label>

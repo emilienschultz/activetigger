@@ -454,6 +454,7 @@ class ComputeBertopicModel(BertopicParamsModel):
     """
 
     name: str
+    force_compute_embeddings: bool = False
 
 
 class GenerationAvailableModel(BaseModel):
@@ -560,6 +561,7 @@ class BertopicComputing(ProcessComputing):
     col_id: str | None
     col_text: str | None
     parameters: BertopicParamsModel
+    force_compute_embeddings: bool
     get_progress: Callable[[], float | None] | None = None
 
 
@@ -710,7 +712,7 @@ class ProjectionsProjectStateModel(BaseModel):
 
 class BertopicProjectStateModel(BaseModel):
     available: dict[str, str | None]
-    training: dict[str, str | None]
+    training: dict[str, dict[str, str]]
     models: list[str]
 
 
@@ -938,3 +940,8 @@ class ProjectCreatingModel(BaseModel):
     time: datetime.datetime
     kind: str
     status: str
+
+
+class BertopicTopicsOutModel(BaseModel):
+    topics: list
+    parameters: dict[str, Any]

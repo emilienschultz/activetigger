@@ -1766,10 +1766,19 @@ export interface components {
             };
             /** Training */
             training: {
-                [key: string]: (string | null) | undefined;
+                [key: string]: {
+                    [key: string]: string | undefined;
+                } | undefined;
             };
             /** Models */
             models: string[];
+        };
+        /** BertopicTopicsOutModel */
+        BertopicTopicsOutModel: {
+            /** Topics */
+            topics: unknown[];
+            /** Parameters */
+            parameters: Record<string, never>;
         };
         /** Body_login_for_access_token_token_post */
         Body_login_for_access_token_token_post: {
@@ -1910,6 +1919,11 @@ export interface components {
             embedding_model: string;
             /** Name */
             name: string;
+            /**
+             * Force Compute Embeddings
+             * @default false
+             */
+            force_compute_embeddings: boolean;
         };
         /**
          * ElementOutModel
@@ -5370,7 +5384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json": components["schemas"]["BertopicTopicsOutModel"];
                 };
             };
             /** @description Validation Error */
@@ -5387,6 +5401,7 @@ export interface operations {
     get_bertopic_projection_bertopic_projection_get: {
         parameters: {
             query: {
+                name: string;
                 project_slug: string;
             };
             header?: never;
@@ -5401,7 +5416,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json": {
+                        [key: string]: unknown[] | undefined;
+                    };
                 };
             };
             /** @description Validation Error */

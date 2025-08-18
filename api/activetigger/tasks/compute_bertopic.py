@@ -43,6 +43,9 @@ class ComputeBertopic(BaseTask):
 
     A computation is identitied by its name that should be unique
     and is associated with parameters
+
+    Embeddings are computed if not provided or if force_compute_embeddings is True.
+    Embeddings are identified by run name + embedding model name.
     """
 
     kind = "compute_bertopic"
@@ -92,7 +95,6 @@ class ComputeBertopic(BaseTask):
         Compute BERTopic model
         """
         try:
-            print(self.parameters)
             # Initialize the run directory
             self.path_run.mkdir(parents=True, exist_ok=True)
             self.update_progress("Initializing")
@@ -108,11 +110,11 @@ class ComputeBertopic(BaseTask):
 
             # Path for existing embeddings
             path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
-                f"bertopic_embeddings_{self.file_name}.parquet"
+                f"bertopic_embeddings_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
             )
             # Path for 2D projection
-            path_projection = self.path_bertopic.joinpath("embeddings").joinpath(
-                f"bertopic_projection_{self.file_name}.parquet"
+            path_projection = self.path_run.joinpath(
+                f"bertopic_projection_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
             )
 
             # Check if existing embeddings are in the folder
@@ -120,7 +122,7 @@ class ComputeBertopic(BaseTask):
                 self.existing_embeddings = path_embeddings
 
             # Compute embeddings if not provided or if forced
-            if not self.existing_embeddings or self.force_compute_embeddings:
+            if (not self.existing_embeddings) or self.force_compute_embeddings:
                 self.compute_embeddings(df, path_embeddings)
                 self.compute_projection(path_embeddings, path_projection)
                 self.existing_embeddings = path_embeddings
@@ -128,6 +130,9 @@ class ComputeBertopic(BaseTask):
             # Compute projection if does not exist
             if not path_projection.exists():
                 self.compute_projection(self.existing_embeddings, path_projection)
+
+            # Copy the projection to the run directory
+            shutil.copy(path_projection, self.path_run.joinpath("projection2D.parquet"))
 
             # Load embeddings
             self.update_progress("Loading embeddings")
@@ -253,6 +258,8 @@ class ComputeBertopic(BaseTask):
         """
         if self.parameters.embedding_kind != "sentence_transformers":
             raise ValueError("Only sentence_transformers embeddings are supported for BERTopic.")
+        if path_embeddings.exists():
+            path_embeddings.unlink()
         self.update_progress("Computing embeddings")
         embeddings = ComputeSbert(
             texts=df[self.col_text],

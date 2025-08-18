@@ -2479,5 +2479,33 @@ export function useGetBertopicTopics(projectSlug: string | null, name: string | 
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { topics: getAsyncMemoData(getBertopicTopics), reFetchTopics: reFetch };
+  const data = getAsyncMemoData(getBertopicTopics);
+
+  return { topics: data?.topics, parameters: data?.parameters, reFetchTopics: reFetch };
+}
+
+/**
+ * Get projection
+ */
+
+export function useGetBertopicProjection(projectSlug: string | null, name: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getBertopicProjection = useAsyncMemo(async () => {
+    if (projectSlug && name) {
+      const res = await api.GET('/bertopic/projection', {
+        params: {
+          query: { project_slug: projectSlug, name: name },
+        },
+      });
+      return res.data;
+    }
+    return null;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  const data = getAsyncMemoData(getBertopicProjection);
+
+  return { projection: data, reFetchProjection: reFetch };
 }

@@ -7,7 +7,7 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.config import config
-from activetigger.datamodels import ComputeBertopicModel, UserInDBModel
+from activetigger.datamodels import BertopicTopicsOutModel, ComputeBertopicModel, UserInDBModel
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
@@ -40,6 +40,7 @@ async def compute_bertopic(
             parameters=bertopic,
             name=bertopic.name,
             user=current_user.username,
+            force_compute_embeddings=bertopic.force_compute_embeddings,
         )
         orchestrator.log_action(current_user.username, "COMPUTE BERTopic MODEL", project.name)
     except Exception as e:
@@ -51,12 +52,15 @@ async def get_bertopic_topics(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
-) -> list:
+) -> BertopicTopicsOutModel:
     """
     Get topics from the BERTopic model for the project.
     """
     try:
-        return project.bertopic.get_topics(name=name)
+        return BertopicTopicsOutModel(
+            topics=project.bertopic.get_topics(name=name),
+            parameters=project.bertopic.get_parameters(name=name),
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -65,13 +69,13 @@ async def get_bertopic_topics(
 async def get_bertopic_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> list:
+    name: str = Query(...),
+) -> dict[str, list]:
     """
     Get projection from the BERTopic model for the project.
     """
     try:
-        projection = project.bertopic.get_projection()
-        return projection
+        return project.bertopic.get_projection(name=name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

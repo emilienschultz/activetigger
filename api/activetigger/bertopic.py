@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 from datetime import datetime
@@ -48,6 +49,7 @@ class Bertopic:
         parameters: BertopicParamsModel,
         name: str,
         user: str,
+        force_compute_embeddings: bool = False,
     ) -> None:
         """
         Compute BERTopic model.
@@ -58,6 +60,8 @@ class Bertopic:
         if len(self.current_user_processes(user)) > 0:
             raise ValueError("You already have computation in progress.")
 
+        print("BERTopic compute called with parameters:", parameters)
+
         args = {
             "path_bertopic": self.path,
             "path_data": path_data,
@@ -65,6 +69,7 @@ class Bertopic:
             "col_text": col_text,
             "parameters": parameters,
             "name": name,
+            "force_compute_embeddings": force_compute_embeddings,
         }
         unique_id = self.queue.add_task(
             "bertopic", self.project_slug, ComputeBertopic(**args), queue="gpu"
@@ -80,16 +85,17 @@ class Bertopic:
                 parameters=parameters,
                 time=datetime.now(),
                 kind="bertopic",
+                force_compute_embeddings=force_compute_embeddings,
                 get_progress=self.get_progress(name),
             )
         )
 
-    def training(self) -> dict[str, str]:
+    def training(self) -> dict[str, dict[str]]:
         """
         Get available BERTopic models in the current process
         """
         return {
-            e.user: e.get_progress() if e.get_progress else "Computing"
+            e.user: {"progress": e.get_progress() or "Computing"}
             for e in self.computing
             if e.kind == "bertopic"
         }
@@ -160,5 +166,39 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_projection(self, name: str) -> list:
-        pass
+    def get_parameters(self, name: str) -> dict:
+        """
+        Get parameters file from a BERTopic model
+        TODO : cache ?
+        """
+        path_model = self.path.joinpath("runs").joinpath(name)
+        if path_model.exists():
+            params_path = path_model.joinpath("params.json")
+            if params_path.exists():
+                with open(params_path) as f:
+                    r = json.load(f)
+                    print(r)
+                    return r
+            else:
+                raise FileNotFoundError(f"Parameters for model {name} do not exist.")
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")
+
+    def get_projection(self, name: str) -> dict[str, list]:
+        """
+        Open the project and the cluster
+        """
+        path_clusters = self.path.joinpath("runs").joinpath(name).joinpath("bertopic_clusters.csv")
+        path_projection = self.path.joinpath("runs").joinpath(name).joinpath("projection2D.parquet")
+        if not path_clusters.exists() or not path_projection.exists():
+            raise FileNotFoundError(f"Projection for model {name} does not exist.")
+        clusters = pd.read_csv(path_clusters, index_col=0)
+        clusters.index = clusters.index.astype(str)
+        projection = pd.read_parquet(path_projection)
+        projection["cluster"] = clusters["cluster"]
+        return {
+            "x": projection["x"].tolist(),
+            "y": projection["y"].tolist(),
+            "cluster": projection["cluster"].tolist(),
+            "id": projection.index.astype(str).tolist(),
+        }
