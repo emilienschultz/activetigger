@@ -50,3 +50,4 @@ aiofiles
 bertopic
 stopwordsiso
 hdbscan
+einops

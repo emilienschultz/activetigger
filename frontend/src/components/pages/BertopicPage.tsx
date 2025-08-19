@@ -27,6 +27,7 @@ export const BertopicPage: FC = () => {
     projectName || null,
     currentBertopic,
   );
+  const labels = projection?.labels;
   const currentTraining = currentProject ? Object.entries(currentProject.bertopic.training) : null;
   const availableModels = currentProject ? currentProject.bertopic.models : [];
   useEffect(() => {
@@ -108,6 +109,7 @@ export const BertopicPage: FC = () => {
                       }
                       setSelectedId={setSelectedId}
                       labelColorMapping={labelColorMapping}
+                      labelDescription={labels as unknown as { [key: string]: string }}
                     />
                   </div>
                 )}

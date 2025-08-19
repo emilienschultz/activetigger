@@ -5,7 +5,7 @@ import Graph from 'graphology';
 import { FC, useCallback, useMemo, useState } from 'react';
 import { Settings } from 'sigma/settings';
 import { NodeDisplayData } from 'sigma/types';
-import { Caption } from './Caption';
+// import { Caption } from './Caption';
 import GraphEvents from './GraphEvents';
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
   // selection
   setSelectedId: (id?: string) => void;
   labelColorMapping: { [key: string]: string };
+  labelDescription?: { [key: string]: string };
 }
 
 const sigmaStyle = { height: '100%', width: '100%' };
@@ -53,6 +54,7 @@ export const BertopicVizSigma: FC<Props> = ({
   className,
   labelColorMapping,
   setSelectedId,
+  labelDescription,
 }) => {
   labelColorMapping['NA'] = '#ebebeb';
   // Special cursor to help interactivity affordances
@@ -87,7 +89,9 @@ export const BertopicVizSigma: FC<Props> = ({
       res.color = labelColorMapping[data.label];
 
       // replace label by node id. Label is the default field in sigma to display the.. label
-      res.label = node;
+      if (labelDescription) {
+        res.label = labelDescription[data.label];
+      } else res.label = data.label;
 
       return res;
     },
@@ -101,6 +105,8 @@ export const BertopicVizSigma: FC<Props> = ({
     [nodeReducer],
   );
 
+  console.log(labelDescription);
+
   return (
     <div className={className}>
       <SigmaContainer
@@ -110,9 +116,9 @@ export const BertopicVizSigma: FC<Props> = ({
         settings={settings}
       >
         <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
-        <ControlsContainer position="bottom-left">
+        {/* <ControlsContainer position="bottom-left">
           <Caption labelColorMapping={labelColorMapping} />
-        </ControlsContainer>
+        </ControlsContainer> */}
         <ControlsContainer position={'bottom-right'}>
           <ZoomControl />
         </ControlsContainer>
