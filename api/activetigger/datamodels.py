@@ -446,6 +446,7 @@ class BertopicParamsModel(BaseModel):
     umap_min_dist: float = 0.0
     embedding_kind: str = "sentence_transformers"
     embedding_model: str = "all-MiniLM-L6-v2"
+    filter_text_length: int = 2
 
 
 class ComputeBertopicModel(BertopicParamsModel):

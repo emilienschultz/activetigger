@@ -139,7 +139,7 @@ export const ProjectActionsSidebar: FC<{
               title="Topic analysis with Bertopic"
             >
               <HiMiniRectangleGroup />
-              <span className="ms-1">Explore</span>
+              <span className="ms-1">Bertopic</span>
             </Link>
           </li>
           <li className="nav-item">

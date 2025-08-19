@@ -6,7 +6,12 @@ import { useParams } from 'react-router-dom';
 import Select from 'react-select';
 import { useAppContext } from '../../../src/core/context';
 import { DisplayTableTopics, Row } from '../../components/DisplayTableTopics';
-import { useDeleteBertopic, useGetBertopicProjection, useGetBertopicTopics } from '../../core/api';
+import {
+  useDeleteBertopic,
+  useGetBertopicProjection,
+  useGetBertopicTopics,
+  useGetElementById,
+} from '../../core/api';
 import { BertopicForm } from '../forms/BertopicForm';
 import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { BertopicVizSigma } from '../ProjectionVizSigma/BertopicVizSigma';
@@ -19,6 +24,8 @@ export const BertopicPage: FC = () => {
   const deleteBertopic = useDeleteBertopic(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
   const [currentBertopic, setCurrentBertopic] = useState<string | null>(null);
+  const { getElementById } = useGetElementById(projectName || null, null);
+
   const { topics, parameters, reFetchTopics } = useGetBertopicTopics(
     projectName || null,
     currentBertopic,
@@ -34,11 +41,22 @@ export const BertopicPage: FC = () => {
     reFetchTopics();
     reFetchProjection();
   }, [currentBertopic, reFetchTopics, reFetchProjection]);
-  const setSelectedId = useCallback((id?: string) => {
-    console.log(id);
-  }, []);
 
-  const uniqueLabels = projection ? [...new Set(projection.cluster)] : [];
+  // Action if clicked
+  const [currentText, setCurrentText] = useState<string | null>(null);
+  const setSelectedId = useCallback(
+    // For the moment, only get something if it is the trainset
+    (id?: string) => {
+      if (id)
+        getElementById(id, 'train').then((res) =>
+          setCurrentText(String(id) + ': ' + res?.text || null),
+        );
+      else setCurrentText(null);
+    },
+    [getElementById],
+  );
+
+  const uniqueLabels = projection ? [...new Set(projection.cluster as string[])] : [];
   const colormap = chroma.scale('Paired').colors(uniqueLabels.length);
   const labelColorMapping = uniqueLabels.reduce<Record<string, string>>(
     (acc, label, index: number) => {
@@ -71,7 +89,7 @@ export const BertopicPage: FC = () => {
                   </div>
                 )}
                 <h4 className="subsection">Existing Bertopic</h4>
-                <div className="d-flex w-50 m-2">
+                <div className="d-flex w-50 my-2">
                   <Select
                     className="flex-grow-1"
                     options={Object.keys(availableBertopic).map((e) => ({ value: e, label: e }))}
@@ -96,22 +114,37 @@ export const BertopicPage: FC = () => {
                 </details>
 
                 {projection && (
-                  <div style={{ height: '300px' }}>
-                    <BertopicVizSigma
-                      className={`col-12 border h-100`}
-                      data={
-                        projection as {
-                          id: unknown[];
-                          x: unknown[];
-                          y: unknown[];
-                          cluster: string[];
+                  <>
+                    <div style={{ height: '300px' }}>
+                      <BertopicVizSigma
+                        className={`col-12 border h-100`}
+                        data={
+                          projection as {
+                            id: unknown[];
+                            x: unknown[];
+                            y: unknown[];
+                            cluster: string[];
+                          }
                         }
-                      }
-                      setSelectedId={setSelectedId}
-                      labelColorMapping={labelColorMapping}
-                      labelDescription={labels as unknown as { [key: string]: string }}
-                    />
-                  </div>
+                        setSelectedId={setSelectedId}
+                        labelColorMapping={labelColorMapping}
+                        labelDescription={labels as unknown as { [key: string]: string }}
+                      />
+                    </div>
+                    {currentText && (
+                      <div
+                        className="col-12"
+                        style={{
+                          height: '200px',
+                          overflow: 'hidden',
+                          overflowY: 'scroll',
+                          backgroundColor: '#f5f5f5',
+                        }}
+                      >
+                        {currentText}
+                      </div>
+                    )}
+                  </>
                 )}
                 {topics && (
                   <div style={{ height: '500px' }}>

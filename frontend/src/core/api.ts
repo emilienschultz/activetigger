@@ -658,7 +658,7 @@ export function useGetNextElementId(
 export function useGetElementById(projectSlug: string | null, currentScheme: string | null) {
   const getElementById = useCallback(
     async (elementId: string, dataset: string) => {
-      if (projectSlug && currentScheme) {
+      if (projectSlug) {
         const res = await api.GET('/elements/{element_id}', {
           params: {
             path: { element_id: elementId },

@@ -181,7 +181,7 @@ async def get_element(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     element_id: str,
-    scheme: str,
+    scheme: str | None = None,
     dataset: str = "train",
 ) -> ElementOutModel:
     """

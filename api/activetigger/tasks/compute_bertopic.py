@@ -100,9 +100,13 @@ class ComputeBertopic(BaseTask):
             self.update_progress("Initializing")
 
             # Load the data from the file
-            df = pd.read_parquet(self.path_data).fillna("")
+            df = pd.read_parquet(self.path_data)
             if self.col_text not in df.columns:
                 raise ValueError(f"Column {self.col_text} not found in the data.")
+
+            # Drop rows with a text length too small
+            df = df[df[self.col_text].apply(len) > self.parameters.filter_text_length]
+            print(f"Data loaded with {len(df)} rows.")
 
             # Set the index if col_id is provided
             if self.col_id and self.col_id in df.columns:

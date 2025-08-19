@@ -70,7 +70,6 @@ export const ProjectionVizSigma: FC<Props> = ({
   // color dictionary
   labelColorMapping,
 }) => {
-  console.log('ProjectionVizSigma render', selectedId);
   // internal bbox used by marquee. This state will be updated with setFrameBbox once drawing is done.
   // app state is used as default value
   const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);

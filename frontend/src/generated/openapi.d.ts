@@ -1917,6 +1917,11 @@ export interface components {
              * @default all-MiniLM-L6-v2
              */
             embedding_model: string;
+            /**
+             * Filter Text Length
+             * @default 2
+             */
+            filter_text_length: number;
             /** Name */
             name: string;
             /**
@@ -3759,7 +3764,7 @@ export interface operations {
     get_element_elements__element_id__get: {
         parameters: {
             query: {
-                scheme: string;
+                scheme?: string | null;
                 dataset?: string;
                 project_slug: string;
             };
@@ -5417,7 +5422,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: unknown[] | undefined;
+                        [key: string]: (unknown[] | Record<string, never>) | undefined;
                     };
                 };
             };

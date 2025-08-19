@@ -105,8 +105,6 @@ export const BertopicVizSigma: FC<Props> = ({
     [nodeReducer],
   );
 
-  console.log(labelDescription);
-
   return (
     <div className={className}>
       <SigmaContainer

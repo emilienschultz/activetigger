@@ -21,6 +21,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug, avail
       umap_min_dist: 0.0,
       embedding_model: availableModels[0],
       force_compute_embeddings: false,
+      filter_text_length: 2,
     },
   });
 
@@ -56,7 +57,17 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({ projectSlug, avail
             className="mx-2"
           />
         </label>
+        <label className="form-label" htmlFor="filter_text_length">
+          Filter text length lower than
+          <input
+            className="form-control"
+            id="filter_text_length"
+            type="number"
+            {...register('filter_text_length')}
+          />
+        </label>
         <label className="form-label" htmlFor="embedding_model">
+          Embedding model
           <select className="form-select" {...register('embedding_model')}>
             {availableModels.map((model) => (
               <option key={model} value={model}>
