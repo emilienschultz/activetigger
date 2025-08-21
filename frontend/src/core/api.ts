@@ -2509,3 +2509,67 @@ export function useGetBertopicProjection(projectSlug: string | null, name: strin
 
   return { projection: data, reFetchProjection: reFetch };
 }
+
+/**
+ * Get bertopic topics
+ */
+export function useDownloadBertopicTopics(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const downloadBertopicTopics = useCallback(
+    async (name: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/bertopic/topics', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: name,
+            },
+          },
+          parseAs: 'blob',
+        });
+
+        if (!res.error) {
+          notify({ type: 'success', message: 'Exporting bertopic topics' });
+          saveAs(res.data, `bertopic_topics_${projectSlug}_${name}`);
+        }
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { downloadBertopicTopics };
+}
+
+/**
+ * Get bertopic clusters
+ */
+export function useDownloadBertopicClusters(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const downloadBertopicClusters = useCallback(
+    async (name: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/bertopic/clusters', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: name,
+            },
+          },
+          parseAs: 'blob',
+        });
+
+        if (!res.error) {
+          notify({ type: 'success', message: 'Exporting bertopic clusters' });
+          saveAs(res.data, `bertopic_clusters_${projectSlug}_${name}`);
+        }
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { downloadBertopicClusters };
+}

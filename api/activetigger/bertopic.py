@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import pandas as pd
+from fastapi.responses import FileResponse
 from slugify import slugify
 
 from activetigger.datamodels import (
@@ -112,6 +113,7 @@ class Bertopic:
                 i: i
                 for i in os.listdir(self.path.joinpath("runs"))
                 if (self.path.joinpath("runs") / i).is_dir()
+                and (self.path.joinpath("runs") / i / "bertopic_topics.csv").exists()
             }
         return {}
 
@@ -211,3 +213,31 @@ class Bertopic:
             "id": projection.index.astype(str).tolist(),
             "labels": labels,
         }
+
+    def export_topics(self, name: str) -> FileResponse:
+        """
+        Export topics from a BERTopic model.
+        """
+        path_model = self.path.joinpath("runs").joinpath(name)
+        if path_model.exists():
+            topics_path = path_model.joinpath("bertopic_topics.csv")
+            if topics_path.exists():
+                return FileResponse(path=topics_path, filename=f"bertopic_topics_{name}.csv")
+            else:
+                raise FileNotFoundError(f"Topics for model {name} do not exist.")
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")
+
+    def export_clusters(self, name: str) -> FileResponse:
+        """
+        Export clusters from a BERTopic model.
+        """
+        path_model = self.path.joinpath("runs").joinpath(name)
+        if path_model.exists():
+            clusters_path = path_model.joinpath("bertopic_clusters.csv")
+            if clusters_path.exists():
+                return FileResponse(path=clusters_path, filename=f"bertopic_clusters_{name}.csv")
+            else:
+                raise FileNotFoundError(f"Clusters for model {name} do not exist.")
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")

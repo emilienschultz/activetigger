@@ -1,6 +1,7 @@
 import chroma from 'chroma-js';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
@@ -8,6 +9,8 @@ import { useAppContext } from '../../../src/core/context';
 import { DisplayTableTopics, Row } from '../../components/DisplayTableTopics';
 import {
   useDeleteBertopic,
+  useDownloadBertopicClusters,
+  useDownloadBertopicTopics,
   useGetBertopicProjection,
   useGetBertopicTopics,
   useGetElementById,
@@ -22,6 +25,8 @@ export const BertopicPage: FC = () => {
     appContext: { currentProject },
   } = useAppContext();
   const deleteBertopic = useDeleteBertopic(projectName || null);
+  const { downloadBertopicTopics } = useDownloadBertopicTopics(projectName || null);
+  const { downloadBertopicClusters } = useDownloadBertopicClusters(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
   const [currentBertopic, setCurrentBertopic] = useState<string | null>(null);
   const { getElementById } = useGetElementById(projectName || null, null);
@@ -89,7 +94,7 @@ export const BertopicPage: FC = () => {
                   </div>
                 )}
                 <h4 className="subsection">Existing Bertopic</h4>
-                <div className="d-flex w-50 my-2">
+                <div className="d-flex w-50 my-2" style={{ zIndex: 1000 }}>
                   <Select
                     className="flex-grow-1"
                     options={Object.keys(availableBertopic).map((e) => ({ value: e, label: e }))}
@@ -97,6 +102,12 @@ export const BertopicPage: FC = () => {
                       if (e) setCurrentBertopic(e.value);
                     }}
                     value={{ value: currentBertopic, label: currentBertopic }}
+                    styles={{
+                      menu: (provided) => ({
+                        ...provided,
+                        zIndex: 1000,
+                      }),
+                    }}
                   />
                   <button
                     className="btn btn p-0"
@@ -108,10 +119,30 @@ export const BertopicPage: FC = () => {
                     <MdOutlineDeleteOutline size={30} />
                   </button>
                 </div>
-                <details>
-                  <summary>Parameters</summary>
-                  {parameters && JSON.stringify(parameters, null, 2)}
-                </details>
+                {currentBertopic && (
+                  <div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicTopics(currentBertopic) : null
+                      }
+                    >
+                      Topics <FaCloudDownloadAlt />
+                    </button>
+                    <button
+                      className="btn btn-primary mx-2"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicClusters(currentBertopic) : null
+                      }
+                    >
+                      Clusters <FaCloudDownloadAlt />
+                    </button>
+                    <details>
+                      <summary>Parameters</summary>
+                      {parameters && JSON.stringify(parameters, null, 2)}
+                    </details>
+                  </div>
+                )}
 
                 {projection && (
                   <>

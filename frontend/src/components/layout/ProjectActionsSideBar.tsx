@@ -85,7 +85,17 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Project</span>
             </Link>
           </li>
-
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/explore`}
+              className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
+              aria-current="page"
+              title="Topic analysis with Bertopic"
+            >
+              <HiMiniRectangleGroup />
+              <span className="ms-1">Explore</span>
+            </Link>
+          </li>
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/tag`}
@@ -131,17 +141,7 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Export</span>
             </Link>
           </li>
-          <li className="nav-item">
-            <Link
-              to={`/projects/${projectName}/explore`}
-              className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
-              aria-current="page"
-              title="Topic analysis with Bertopic"
-            >
-              <HiMiniRectangleGroup />
-              <span className="ms-1">Bertopic</span>
-            </Link>
-          </li>
+
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/generate`}
