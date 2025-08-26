@@ -134,7 +134,10 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
               <ul className="d-flex navbar-nav me-auto mb-2 mb-lg-0 navbar-text navbar-text-margins align-items-center">
                 {currentComputation && (
                   <li className="d-flex nav-item">
-                    <button className="btn btn-primary  stopprocess" onClick={stopProcesses}>
+                    <button
+                      className="btn btn-primary  stopprocess"
+                      onClick={() => stopProcesses('all')}
+                    >
                       <FaStopCircle style={{ color: 'red' }} />
                     </button>
                     <Tooltip anchorSelect=".stopprocess" place="top">

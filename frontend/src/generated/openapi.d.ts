@@ -1692,7 +1692,7 @@ export interface paths {
         put?: never;
         /**
          * Stop Process
-         * @description Stop all the ongoing process for the connected user
+         * @description Stop processes either by unique_id or by kind for a user
          */
         post: operations["stop_process_stop_post"];
         delete?: never;
@@ -5461,7 +5461,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": string;
                 };
             };
             /** @description Validation Error */
@@ -5720,8 +5720,9 @@ export interface operations {
     };
     stop_process_stop_post: {
         parameters: {
-            query?: {
-                unique_id?: string;
+            query: {
+                unique_id: string | null;
+                kind?: string | null;
             };
             header?: never;
             path?: never;

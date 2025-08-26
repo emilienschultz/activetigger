@@ -167,12 +167,18 @@ async def get_logs(
 @app.post("/stop", dependencies=[Depends(verified_user)])
 async def stop_process(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    unique_id: str = "all",
+    unique_id: str | None = None,
+    kind: str | None = None,
 ) -> None:
     """
-    Stop all the ongoing process for the connected user
+    Stop processes either by unique_id or by kind for a user
     """
+    if unique_id is None and kind is None:
+        raise HTTPException(status_code=400, detail="You must provide a unique_id or a kind")
     try:
-        orchestrator.stop_process(current_user.username, unique_id)
+        if unique_id is not None:
+            orchestrator.stop_process(unique_id, current_user.username)
+        if kind is not None:
+            orchestrator.stop_user_processes(kind, current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

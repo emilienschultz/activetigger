@@ -22,7 +22,7 @@ import { BertopicVizSigma } from '../ProjectionVizSigma/BertopicVizSigma';
 export const BertopicPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { currentProject },
+    appContext: { currentProject, isComputing },
   } = useAppContext();
   const deleteBertopic = useDeleteBertopic(projectName || null);
   const { downloadBertopicTopics } = useDownloadBertopicTopics(projectName || null);
@@ -185,7 +185,11 @@ export const BertopicPage: FC = () => {
               </Tab>
               <Tab eventKey="new" title="New Bertopic">
                 <div className="explanations">UMAP and HDBSCAN are being used</div>
-                <BertopicForm projectSlug={projectName || null} availableModels={availableModels} />
+                <BertopicForm
+                  projectSlug={projectName || null}
+                  availableModels={availableModels}
+                  isComputing={isComputing}
+                />
               </Tab>
             </Tabs>
           </div>

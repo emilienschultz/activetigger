@@ -1110,20 +1110,6 @@ export function useStopTrainBertModel(projectSlug: string | null) {
 }
 
 /**
- * Stop process for the user
- */
-export function useStopProcesses() {
-  const { notify } = useNotifications();
-  const stopProcesses = useCallback(async () => {
-    const res = await api.POST('/stop', {});
-    if (!res.error) notify({ type: 'success', message: 'All processes stop' });
-    return true;
-  }, [notify]);
-
-  return { stopProcesses };
-}
-
-/**
  * Rename bert model
  */
 export function useRenameBertModel(projectSlug: string | null) {
@@ -2128,6 +2114,30 @@ export function useStopProcess() {
 }
 
 /**
+ * Stop all process for a user
+ */
+export function useStopProcesses() {
+  const { notify } = useNotifications();
+  const stopProcesses = useCallback(
+    async (kind: string = 'all') => {
+      const res = await api.POST('/stop', {
+        params: {
+          query: {
+            unique_id: null,
+            kind: kind,
+          },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'All processes stop' });
+      return true;
+    },
+    [notify],
+  );
+
+  return { stopProcesses };
+}
+
+/**
  * Post annotation file
  */
 export function usePostAnnotationsFile(projectSlug: string | null) {
@@ -2427,7 +2437,7 @@ export function useComputeBertopic(projectSlug: string | null) {
           body: dataForm,
         });
         if (!res.error) notify({ type: 'warning', message: 'Starting bertopic computing' });
-        return true;
+        return res.data;
       }
       return null;
     },

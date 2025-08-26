@@ -125,6 +125,11 @@ class ComputeBertopic(BaseTask):
             if not self.existing_embeddings and path_embeddings.exists():
                 self.existing_embeddings = path_embeddings
 
+            # interrupt if event is set
+            if self.event is not None:
+                if self.event.is_set():
+                    raise Exception("Process interrupted by user")
+
             # Compute embeddings if not provided or if forced
             if (not self.existing_embeddings) or self.force_compute_embeddings:
                 self.compute_embeddings(df, path_embeddings)
@@ -214,6 +219,11 @@ class ComputeBertopic(BaseTask):
             except Exception as e:
                 print(f"Error during outlier reduction: {e}")
 
+            # interrupt if event is set
+            if self.event is not None:
+                if self.event.is_set():
+                    raise Exception("Process interrupted by user")
+
             # Add the topics to the DataFrame
             df["cluster"] = topics
 
@@ -272,7 +282,9 @@ class ComputeBertopic(BaseTask):
             batch_size=32,
             min_gpu=1,
             path_progress=self.path_run.joinpath("progress"),
-        )()
+        )
+        embeddings.event = self.event
+        embeddings()
         # save the embeddings to a file
         embeddings.to_parquet(path_embeddings)
         embeddings = embeddings.values

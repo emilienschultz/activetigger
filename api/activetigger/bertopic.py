@@ -54,7 +54,7 @@ class Bertopic:
         name: str,
         user: str,
         force_compute_embeddings: bool = False,
-    ) -> None:
+    ) -> str:
         """
         Compute BERTopic model.
         """
@@ -93,6 +93,7 @@ class Bertopic:
                 get_progress=self.get_progress(name),
             )
         )
+        return unique_id
 
     def training(self) -> dict[str, dict[str]]:
         """

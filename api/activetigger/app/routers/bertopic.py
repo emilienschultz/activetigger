@@ -19,7 +19,7 @@ async def compute_bertopic(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     bertopic: ComputeBertopicModel,
-) -> None:
+) -> str:
     """
     Compute BERTopic model for the project.
     """
@@ -33,7 +33,7 @@ async def compute_bertopic(
             detail=f"BERTopic model with name '{bertopic.name}' already exists (after slugification).",
         )
     try:
-        project.bertopic.compute(
+        unique_id = project.bertopic.compute(
             path_data=path_data,
             col_id=None,
             col_text="text",
@@ -43,6 +43,7 @@ async def compute_bertopic(
             force_compute_embeddings=bertopic.force_compute_embeddings,
         )
         orchestrator.log_action(current_user.username, "COMPUTE BERTopic MODEL", project.name)
+        return unique_id
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
