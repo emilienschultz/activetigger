@@ -93,8 +93,19 @@ export const DataTabular: FC<DataTabularModel> = ({
       key: 'labels',
       name: kindScheme === 'multiclass' ? 'Label ✎' : 'Label',
       resizable: true,
+
       renderCell: (props) => (
-        <div style={{ textAlign: 'center', width: '100%' }}>{props.row.labels}</div>
+        <div
+          style={{
+            maxHeight: '100%',
+            width: '100%',
+            whiteSpace: 'wrap',
+            overflowY: 'auto',
+            userSelect: 'none',
+          }}
+        >
+          {props.row.labels}
+        </div>
       ),
       renderEditCell: kindScheme === 'multiclass' ? renderDropdown : undefined,
       width: 100,

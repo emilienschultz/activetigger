@@ -743,6 +743,24 @@ class Project:
         """
         return self.params
 
+    @staticmethod
+    def compute_annotations_distribution(df: DataFrame, kind: str) -> dict[str, int]:
+        if kind == "multiclass":
+            return json.loads(df["labels"].value_counts().to_json())
+        elif kind == "multilabel":
+            return json.loads(df["labels"].str.split("|").explode().value_counts().to_json())
+        elif kind == "span":
+            r = (
+                df["labels"]
+                .apply(lambda x: json.loads(x) if pd.notna(x) else [])
+                .explode()
+                .apply(lambda x: x["tag"] if isinstance(x, dict) and "tag" in x else None)
+            )
+            print(r.value_counts())
+            return json.loads(r.value_counts().to_json())
+        else:
+            raise Exception("Not implemented for this kind of scheme")
+
     def get_statistics(self, scheme: str | None, user: str | None) -> ProjectDescriptionModel:
         """
         Generate a description of a current project/scheme/user
@@ -759,28 +777,14 @@ class Project:
 
         # part train
         users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
-
         df_train = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
-
-        # different treatment if the scheme is multilabel or multiclass
-        if kind == "multiclass":
-            train_annotated_distribution = json.loads(df_train["labels"].value_counts().to_json())
-        else:
-            train_annotated_distribution = json.loads(
-                df_train["labels"].str.split("|").explode().value_counts().to_json()
-            )
+        train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part test
         if self.params.test and self.schemes.test is not None:
             df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
-            test_set_n = len(self.schemes.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
-            if kind == "multiclass":
-                test_annotated_distribution = json.loads(df_test["labels"].value_counts().to_json())
-            else:
-                test_annotated_distribution = json.loads(
-                    df_test["labels"].str.split("|").explode().value_counts().to_json()
-                )
+            test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
         else:
             test_set_n = None
             test_annotated_n = None
@@ -790,8 +794,6 @@ class Project:
             sm_10cv = self.simplemodels.get_model(user, scheme).statistics_cv10
         else:
             sm_10cv = None
-
-        # return ProjectDescriptionModel(**r)
 
         return ProjectDescriptionModel(
             users=users,

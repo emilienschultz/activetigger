@@ -1,22 +1,36 @@
 import chroma from 'chroma-js';
 import { motion } from 'framer-motion';
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import Select from 'react-select';
 import { AnnotateBlendTag, TextAnnotateBlend } from 'react-text-annotate-blend';
-import { SelectionManagement } from './SelectionManagement';
 
 interface SpanInputProps {
   elementId: string;
   text: string;
   labels: string[];
   postAnnotation: (label: string, elementId: string) => void;
+  lastTag?: string;
 }
 
-export const TextSpanPanel: FC<SpanInputProps> = ({ elementId, text, postAnnotation, labels }) => {
+export const TextSpanPanel: FC<SpanInputProps> = ({
+  elementId,
+  text,
+  postAnnotation,
+  labels,
+  lastTag,
+}) => {
   // get the context and set the labels
 
   const [value, setValue] = useState<AnnotateBlendTag[]>([]);
   const [tag, setTag] = useState<string | null>(labels[0] || null);
+
+  useEffect(() => {
+    if (lastTag) {
+      setValue(JSON.parse(lastTag));
+    } else {
+      setValue([]);
+    }
+  }, [lastTag]);
 
   const handleChange = (value: AnnotateBlendTag[]) => {
     setValue(value);
@@ -34,9 +48,6 @@ export const TextSpanPanel: FC<SpanInputProps> = ({ elementId, text, postAnnotat
 
   return (
     <div>
-      <div>
-        <SelectionManagement />
-      </div>
       <div className="my-3 w-50 mx-auto d-flex align-items-center">
         <label className="me-2">Annotate with </label>
         <Select
@@ -57,7 +68,10 @@ export const TextSpanPanel: FC<SpanInputProps> = ({ elementId, text, postAnnotat
         />
         <button
           className="btn btn-primary ms-2"
-          onClick={() => postAnnotation(JSON.stringify(tag) || JSON.stringify([]), elementId)}
+          onClick={() => {
+            postAnnotation(JSON.stringify(value) || JSON.stringify([]), elementId);
+            setValue([]);
+          }}
         >
           Validate annotations
         </button>

@@ -507,13 +507,17 @@ class Schemes:
         # test if the labels used exist in the scheme
         if label is None:
             print("Add null label for ", element_id)
-        elif "|" in label:
+
+        if a[scheme].kind == "multiclass":
+            if label not in a[scheme].labels:
+                raise Exception(f"Label {label} not in the scheme")
+
+        elif a[scheme].kind == "multilabel":
             er = [i for i in label.split("|") if i not in a[scheme].labels]
             if len(er) > 0:
                 raise Exception(f"Labels {er} not in the scheme")
-        else:
-            if label not in a[scheme].labels:
-                raise Exception(f"Label {label} not in the scheme")
+        elif a[scheme].kind == "span":
+            print("Span annotation, no label check for the moment")
 
         self.projects_service.add_annotation(
             dataset=mode,

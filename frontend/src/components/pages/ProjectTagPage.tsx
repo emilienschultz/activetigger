@@ -268,43 +268,42 @@ export const ProjectTagPage: FC = () => {
 
       <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
+          <div className="container-fluid">
+            <div className="row mb-3 mt-3">
+              {
+                // annotation mode
+                <div>
+                  <div className="d-flex align-items-center mb-3">
+                    {statistics ? (
+                      <span className="badge text-bg-light currentstatistics">
+                        Annotated :{' '}
+                        {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
+                      </span>
+                    ) : (
+                      ''
+                    )}
+                    <Tooltip anchorSelect=".currentstatistics" place="top">
+                      statistics for the current scheme
+                    </Tooltip>
+
+                    <div>
+                      <button className="btn getelement" onClick={refetchElement}>
+                        <LuRefreshCw size={20} /> Get element
+                        <Tooltip anchorSelect=".getelement" place="top">
+                          Get next element with the selection mode
+                        </Tooltip>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <SelectionManagement />
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
           {kindScheme !== 'span' ? (
             <>
-              <div className="container-fluid">
-                <div className="row mb-3 mt-3">
-                  {
-                    // annotation mode
-                    <div>
-                      <div className="d-flex align-items-center mb-3">
-                        {statistics ? (
-                          <span className="badge text-bg-light currentstatistics">
-                            Annotated :{' '}
-                            {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
-                          </span>
-                        ) : (
-                          ''
-                        )}
-                        <Tooltip anchorSelect=".currentstatistics" place="top">
-                          statistics for the current scheme
-                        </Tooltip>
-
-                        <div>
-                          <button className="btn getelement" onClick={refetchElement}>
-                            <LuRefreshCw size={20} /> Get element
-                            <Tooltip anchorSelect=".getelement" place="top">
-                              Get next element with the selection mode
-                            </Tooltip>
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <SelectionManagement />
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-
               {elementId === 'noelement' && (
                 <div className="alert alert-warning text-center">
                   <div className="m-2">No element available</div>
@@ -338,91 +337,6 @@ export const ProjectTagPage: FC = () => {
               {showDisplayConfig && (
                 <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
               )}
-              {elementId !== 'noelement' && (
-                <div className="row">
-                  <div className="d-flex flex-wrap gap-2 justify-content-center">
-                    <BackButton
-                      projectName={projectName || ''}
-                      history={history}
-                      setAppContext={setAppContext}
-                    />
-
-                    {kindScheme == 'multiclass' && (
-                      <MulticlassInput
-                        elementId={elementId || 'noelement'}
-                        postAnnotation={postAnnotation}
-                        labels={availableLabels}
-                      />
-                    )}
-                    {kindScheme == 'multilabel' && (
-                      <MultilabelInput
-                        elementId={elementId || 'noelement'}
-                        postAnnotation={postAnnotation}
-                        labels={availableLabels}
-                      />
-                    )}
-
-                    {
-                      // erase button to remove last annotation
-                      lastTag && (
-                        <button
-                          className="btn clearannotation"
-                          onClick={() => {
-                            postAnnotation(null, elementId);
-                          }}
-                        >
-                          <PiEraser />
-                          <Tooltip anchorSelect=".clearannotation" place="top">
-                            Erase current tag
-                          </Tooltip>
-                        </button>
-                      )
-                    }
-                    {elementId && (
-                      <ForwardButton
-                        setAppContext={setAppContext}
-                        elementId={elementId}
-                        refetchElement={refetchElement}
-                      />
-                    )}
-                  </div>
-                  <div className="d-flex flex-wrap gap-2 justify-content-center">
-                    <button
-                      className="btn addcomment"
-                      onClick={() => setDisplayComment(!displayComment)}
-                    >
-                      <FaPencilAlt />
-                      <Tooltip anchorSelect=".addcomment" place="top">
-                        Add a commentary
-                      </Tooltip>
-                    </button>
-
-                    <button
-                      className="btn displayconfig"
-                      onClick={() => {
-                        setShowDisplayConfig(!showDisplayConfig);
-                      }}
-                    >
-                      <MdDisplaySettings />
-                      <Tooltip anchorSelect=".displayconfig" place="top">
-                        Display config menu
-                      </Tooltip>
-                    </button>
-                  </div>
-
-                  {displayComment && (
-                    <div className="m-3">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Comment"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
             </>
           ) : (
             <>
@@ -431,54 +345,143 @@ export const ProjectTagPage: FC = () => {
                 postAnnotation={postAnnotation}
                 labels={availableLabels}
                 text={element?.text as string}
+                lastTag={lastTag as string}
               />
             </>
           )}
-        </Tab>
-        <Tab eventKey="prediction" title="Quick model">
-          <div className="container-fluid">
-            <div className="row mb-3 mt-3">
-              <div className="col-8">
-                {phase == 'test' && (
-                  <div className="alert alert-warning">
-                    Test mode activated - quick model are disabled
-                  </div>
+          {elementId !== 'noelement' && (
+            <div className="row">
+              <div className="d-flex flex-wrap gap-2 justify-content-center">
+                <BackButton
+                  projectName={projectName || ''}
+                  history={history}
+                  setAppContext={setAppContext}
+                />
+
+                {kindScheme == 'multiclass' && (
+                  <MulticlassInput
+                    elementId={elementId || 'noelement'}
+                    postAnnotation={postAnnotation}
+                    labels={availableLabels}
+                  />
+                )}
+                {kindScheme == 'multilabel' && (
+                  <MultilabelInput
+                    elementId={elementId || 'noelement'}
+                    postAnnotation={postAnnotation}
+                    labels={availableLabels}
+                  />
                 )}
 
-                {phase != 'test' && (
-                  <>
-                    <div className="explanations">
-                      The quick model is used during tagging, for the active and maxprob models.
-                      <a className="problems m-2">
-                        <FaTools />
-                        <Tooltip anchorSelect=".problems" place="top">
-                          Recommended features to train on are embeddings (eg. SBERT) before
-                          training a large fine-tuned model, and BERT predictions once you have
-                          fine-tuned one.
-                        </Tooltip>
-                      </a>
-                    </div>
-
-                    <SimpleModelDisplay
-                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
-                    />
-                    <SimpleModelManagement
-                      projectName={projectName || null}
-                      currentScheme={currentScheme || null}
-                      availableSimpleModels={
-                        availableSimpleModels as unknown as Record<string, Record<string, number>>
-                      }
-                      availableFeatures={availableFeatures}
-                      availableLabels={availableLabels}
-                      kindScheme={kindScheme}
-                      currentModel={(currentModel as unknown as Record<string, never>) || undefined}
-                    />
-                  </>
+                {
+                  // erase button to remove last annotation
+                  lastTag && (
+                    <button
+                      className="btn clearannotation"
+                      onClick={() => {
+                        postAnnotation(null, elementId);
+                      }}
+                    >
+                      <PiEraser />
+                      <Tooltip anchorSelect=".clearannotation" place="top">
+                        Erase current tag
+                      </Tooltip>
+                    </button>
+                  )
+                }
+                {elementId && (
+                  <ForwardButton
+                    setAppContext={setAppContext}
+                    elementId={elementId}
+                    refetchElement={refetchElement}
+                  />
                 )}
               </div>
             </div>
+          )}
+          <div className="d-flex flex-wrap gap-2 justify-content-center">
+            <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
+              <FaPencilAlt />
+              <Tooltip anchorSelect=".addcomment" place="top">
+                Add a commentary
+              </Tooltip>
+            </button>
+
+            <button
+              className="btn displayconfig"
+              onClick={() => {
+                setShowDisplayConfig(!showDisplayConfig);
+              }}
+            >
+              <MdDisplaySettings />
+              <Tooltip anchorSelect=".displayconfig" place="top">
+                Display config menu
+              </Tooltip>
+            </button>
           </div>
+
+          {displayComment && (
+            <div className="m-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </div>
+          )}
         </Tab>
+        {kindScheme !== 'span' && (
+          <Tab eventKey="prediction" title="Quick model">
+            <div className="container-fluid">
+              <div className="row mb-3 mt-3">
+                <div className="col-8">
+                  {phase == 'test' && (
+                    <div className="alert alert-warning">
+                      Test mode activated - quick model are disabled
+                    </div>
+                  )}
+
+                  {phase != 'test' && (
+                    <>
+                      <div className="explanations">
+                        The quick model is used during tagging, for the active and maxprob models.
+                        <a className="problems m-2">
+                          <FaTools />
+                          <Tooltip anchorSelect=".problems" place="top">
+                            Recommended features to train on are embeddings (eg. SBERT) before
+                            training a large fine-tuned model, and BERT predictions once you have
+                            fine-tuned one.
+                          </Tooltip>
+                        </a>
+                      </div>
+
+                      <SimpleModelDisplay
+                        currentModel={
+                          (currentModel as unknown as Record<string, never>) || undefined
+                        }
+                      />
+                      <SimpleModelManagement
+                        projectName={projectName || null}
+                        currentScheme={currentScheme || null}
+                        availableSimpleModels={
+                          availableSimpleModels as unknown as Record<string, Record<string, number>>
+                        }
+                        availableFeatures={availableFeatures}
+                        availableLabels={availableLabels}
+                        kindScheme={kindScheme}
+                        currentModel={
+                          (currentModel as unknown as Record<string, never>) || undefined
+                        }
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Tab>
+        )}
         <Tab eventKey="tabular" title="Tabular">
           <DataTabular
             projectSlug={projectName}
