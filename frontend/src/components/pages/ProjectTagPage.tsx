@@ -1,8 +1,6 @@
-import { motion } from 'framer-motion';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
-import Highlighter from 'react-highlight-words';
 import { FaPencilAlt, FaTools } from 'react-icons/fa';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
@@ -33,6 +31,8 @@ import { SelectionManagement } from '../SelectionManagement';
 import { SimpleModelDisplay } from '../SimpleModelDisplay';
 import { SimpleModelManagement } from '../SimpleModelManagement';
 import { TagDisplayParameters } from '../TagDisplayParameters';
+import { TextClassificationPanel } from '../TextClassificationPanel';
+import { TextSpanPanel } from '../TextSpanPanel';
 /**
  * Annotation page
  */
@@ -268,238 +268,171 @@ export const ProjectTagPage: FC = () => {
 
       <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
-          <div className="container-fluid">
-            <div className="row mb-3 mt-3">
-              {
-                // annotation mode
-                <div>
-                  <div className="d-flex align-items-center mb-3">
-                    {statistics ? (
-                      <span className="badge text-bg-light currentstatistics">
-                        Annotated :{' '}
-                        {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
-                      </span>
-                    ) : (
-                      ''
-                    )}
-                    <Tooltip anchorSelect=".currentstatistics" place="top">
-                      statistics for the current scheme
-                    </Tooltip>
-
+          {kindScheme !== 'span' ? (
+            <>
+              <div className="container-fluid">
+                <div className="row mb-3 mt-3">
+                  {
+                    // annotation mode
                     <div>
-                      <button className="btn getelement" onClick={refetchElement}>
-                        <LuRefreshCw size={20} /> Get element
-                        <Tooltip anchorSelect=".getelement" place="top">
-                          Get next element with the selection mode
+                      <div className="d-flex align-items-center mb-3">
+                        {statistics ? (
+                          <span className="badge text-bg-light currentstatistics">
+                            Annotated :{' '}
+                            {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
+                          </span>
+                        ) : (
+                          ''
+                        )}
+                        <Tooltip anchorSelect=".currentstatistics" place="top">
+                          statistics for the current scheme
                         </Tooltip>
-                      </button>
+
+                        <div>
+                          <button className="btn getelement" onClick={refetchElement}>
+                            <LuRefreshCw size={20} /> Get element
+                            <Tooltip anchorSelect=".getelement" place="top">
+                              Get next element with the selection mode
+                            </Tooltip>
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <SelectionManagement />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <SelectionManagement />
-                  </div>
+                  }
                 </div>
-              }
-            </div>
-          </div>
-
-          {elementId === 'noelement' && (
-            <div className="alert alert-warning text-center">
-              <div className="m-2">No element available</div>
-              <button className="btn btn-primary" onClick={refetchElement}>
-                Get element
-              </button>
-            </div>
-          )}
-
-          {
-            // display content
-          }
-
-          {!isValidRegex(selectionConfig.filter || '') && (
-            <div className="alert alert-danger">Regex not valid</div>
-          )}
-
-          <div className="row">
-            {element?.text && (
-              <div
-                className="col-11 annotation-frame"
-                style={{ height: `${displayConfig.frameSize}vh` }}
-                ref={frameRef}
-              >
-                <motion.div
-                  animate={elementId ? { backgroundColor: ['#e8e9ff', '#f9f9f9'] } : {}}
-                  transition={{ duration: 1 }}
-                >
-                  {lastTag && (
-                    <div>
-                      <span className="badge bg-info  ">
-                        {displayConfig.displayAnnotation
-                          ? `Last tag: ${lastTag}`
-                          : 'Already annotated'}
-                      </span>
-                    </div>
-                  )}
-
-                  <Highlighter
-                    highlightClassName="Search"
-                    searchWords={validHighlightText}
-                    autoEscape={false}
-                    textToHighlight={textInFrame}
-                    highlightStyle={{
-                      backgroundColor: 'yellow',
-                      margin: '0px',
-                      padding: '0px',
-                    }}
-                    caseSensitive={true}
-                  />
-                  {/* text out of frame */}
-                  <span className="text-out-context" title="Outside context window ">
-                    <Highlighter
-                      highlightClassName="Search"
-                      searchWords={validHighlightText}
-                      autoEscape={false}
-                      textToHighlight={textOutFrame}
-                      highlightStyle={{
-                        backgroundColor: 'yellow',
-                        margin: '0px',
-                        padding: '0px',
-                      }}
-                      caseSensitive={true}
-                    />
-                  </span>
-                </motion.div>
-              </div>
-            )}
-            {
-              //display proba
-              phase != 'test' &&
-                displayConfig.displayPrediction &&
-                (element?.predict.label as unknown as string) && (
-                  <div className="d-flex mb-2 justify-content-center display-prediction">
-                    <button
-                      type="button"
-                      key={element?.predict.label + '_predict'}
-                      value={element?.predict.label as unknown as string}
-                      className="btn btn-secondary"
-                      onClick={(e) => {
-                        postAnnotation(e.currentTarget.value, elementId);
-                      }}
-                    >
-                      Predicted : {element?.predict.label as unknown as string} (
-                      {element?.predict.proba as unknown as number})
-                    </button>
-                  </div>
-                )
-            }
-            {
-              //display context
-              phase != 'test' && displayConfig.displayContext && (
-                <div className="d-flex mb-2 justify-content-center display-prediction">
-                  Context{' '}
-                  {Object.entries(element?.context || { None: 'None' }).map(
-                    ([k, v]) => `[${k} - ${v}]`,
-                  )}
-                </div>
-              )
-            }
-            {
-              //display history
-              phase != 'test' && displayConfig.displayHistory && (
-                <div className="d-flex mb-2 justify-content-center display-prediction">
-                  {/* History : {JSON.stringify(element?.history)} */}
-                  History :{' '}
-                  {((element?.history as string[]) || []).map((h) => `[${h[0]} - ${h[2]}]`)}
-                </div>
-              )
-            }
-            {showDisplayConfig && (
-              <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
-            )}
-          </div>
-          {elementId !== 'noelement' && (
-            <div className="row">
-              <div className="d-flex flex-wrap gap-2 justify-content-center">
-                <BackButton
-                  projectName={projectName || ''}
-                  history={history}
-                  setAppContext={setAppContext}
-                />
-
-                {kindScheme == 'multiclass' && (
-                  <MulticlassInput
-                    elementId={elementId || 'noelement'}
-                    postAnnotation={postAnnotation}
-                    labels={availableLabels}
-                  />
-                )}
-                {kindScheme == 'multilabel' && (
-                  <MultilabelInput
-                    elementId={elementId || 'noelement'}
-                    postAnnotation={postAnnotation}
-                    labels={availableLabels}
-                  />
-                )}
-                {
-                  // erase button to remove last annotation
-                  lastTag && (
-                    <button
-                      className="btn clearannotation"
-                      onClick={() => {
-                        postAnnotation(null, elementId);
-                      }}
-                    >
-                      <PiEraser />
-                      <Tooltip anchorSelect=".clearannotation" place="top">
-                        Erase current tag
-                      </Tooltip>
-                    </button>
-                  )
-                }
-                {elementId && (
-                  <ForwardButton
-                    setAppContext={setAppContext}
-                    elementId={elementId}
-                    refetchElement={refetchElement}
-                  />
-                )}
-              </div>
-              <div className="d-flex flex-wrap gap-2 justify-content-center">
-                <button
-                  className="btn addcomment"
-                  onClick={() => setDisplayComment(!displayComment)}
-                >
-                  <FaPencilAlt />
-                  <Tooltip anchorSelect=".addcomment" place="top">
-                    Add a commentary
-                  </Tooltip>
-                </button>
-
-                <button
-                  className="btn displayconfig"
-                  onClick={() => {
-                    setShowDisplayConfig(!showDisplayConfig);
-                  }}
-                >
-                  <MdDisplaySettings />
-                  <Tooltip anchorSelect=".displayconfig" place="top">
-                    Display config menu
-                  </Tooltip>
-                </button>
               </div>
 
-              {displayComment && (
-                <div className="m-3">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Comment"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                  />
+              {elementId === 'noelement' && (
+                <div className="alert alert-warning text-center">
+                  <div className="m-2">No element available</div>
+                  <button className="btn btn-primary" onClick={refetchElement}>
+                    Get element
+                  </button>
                 </div>
               )}
-            </div>
+
+              {
+                // display content
+              }
+
+              {!isValidRegex(selectionConfig.filter || '') && (
+                <div className="alert alert-danger">Regex not valid</div>
+              )}
+
+              <TextClassificationPanel
+                element={element as ElementOutModel}
+                displayConfig={displayConfig}
+                textInFrame={textInFrame}
+                textOutFrame={textOutFrame}
+                validHighlightText={validHighlightText}
+                elementId={elementId as string}
+                lastTag={lastTag as string}
+                phase={phase}
+                frameRef={frameRef as unknown as HTMLDivElement}
+                postAnnotation={postAnnotation}
+              />
+
+              {showDisplayConfig && (
+                <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
+              )}
+              {elementId !== 'noelement' && (
+                <div className="row">
+                  <div className="d-flex flex-wrap gap-2 justify-content-center">
+                    <BackButton
+                      projectName={projectName || ''}
+                      history={history}
+                      setAppContext={setAppContext}
+                    />
+
+                    {kindScheme == 'multiclass' && (
+                      <MulticlassInput
+                        elementId={elementId || 'noelement'}
+                        postAnnotation={postAnnotation}
+                        labels={availableLabels}
+                      />
+                    )}
+                    {kindScheme == 'multilabel' && (
+                      <MultilabelInput
+                        elementId={elementId || 'noelement'}
+                        postAnnotation={postAnnotation}
+                        labels={availableLabels}
+                      />
+                    )}
+
+                    {
+                      // erase button to remove last annotation
+                      lastTag && (
+                        <button
+                          className="btn clearannotation"
+                          onClick={() => {
+                            postAnnotation(null, elementId);
+                          }}
+                        >
+                          <PiEraser />
+                          <Tooltip anchorSelect=".clearannotation" place="top">
+                            Erase current tag
+                          </Tooltip>
+                        </button>
+                      )
+                    }
+                    {elementId && (
+                      <ForwardButton
+                        setAppContext={setAppContext}
+                        elementId={elementId}
+                        refetchElement={refetchElement}
+                      />
+                    )}
+                  </div>
+                  <div className="d-flex flex-wrap gap-2 justify-content-center">
+                    <button
+                      className="btn addcomment"
+                      onClick={() => setDisplayComment(!displayComment)}
+                    >
+                      <FaPencilAlt />
+                      <Tooltip anchorSelect=".addcomment" place="top">
+                        Add a commentary
+                      </Tooltip>
+                    </button>
+
+                    <button
+                      className="btn displayconfig"
+                      onClick={() => {
+                        setShowDisplayConfig(!showDisplayConfig);
+                      }}
+                    >
+                      <MdDisplaySettings />
+                      <Tooltip anchorSelect=".displayconfig" place="top">
+                        Display config menu
+                      </Tooltip>
+                    </button>
+                  </div>
+
+                  {displayComment && (
+                    <div className="m-3">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <TextSpanPanel
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+                text={element?.text as string}
+              />
+            </>
           )}
         </Tab>
         <Tab eventKey="prediction" title="Quick model">

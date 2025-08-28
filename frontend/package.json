@@ -51,6 +51,7 @@
     "react-select": "^5.8.1",
     "react-sortablejs": "^6.1.4",
     "react-spinners": "^0.15.0",
+    "react-text-annotate-blend": "^1.2.0",
     "react-tooltip": "^5.28.0",
     "rehype-sanitize": "^6.0.0",
     "sass": "^1.77.6",
