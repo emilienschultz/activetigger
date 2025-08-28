@@ -66,60 +66,58 @@ export const ProjectPage: FC = () => {
 
   return (
     <ProjectPageLayout projectName={projectSlug}>
-      <div className="container-fluid">
-        <Tabs id="panel" className="mt-3" defaultActiveKey="schemes">
-          <Tab eventKey="schemes" title="Schemes">
-            {availableLabels.length === 0 && (
-              <div className="alert alert-info col-12 col-md-8 m-2">
-                No labels available for this scheme. Please add labels to use this scheme, or create
-                a new scheme.
-              </div>
-            )}
-            <SchemesManagement
-              projectSlug={projectSlug}
-              deactivateModifications={displayConfig.interfaceType === 'annotator'}
-            />
-            <LabelsManagement
-              projectSlug={projectSlug}
-              currentScheme={currentScheme || null}
-              availableLabels={availableLabelsSorted as string[]}
-              kindScheme={kindScheme as string}
-              setAppContext={setAppContext}
-              deactivateModifications={displayConfig.interfaceType === 'annotator'}
-            />
-          </Tab>
-          <Tab eventKey="codebook" title="Codebook">
-            <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
-          </Tab>
+      <Tabs id="panel" className="mt-3" defaultActiveKey="schemes">
+        <Tab eventKey="schemes" title="Schemes">
+          <SchemesManagement
+            projectSlug={projectSlug}
+            deactivateModifications={displayConfig.interfaceType === 'annotator'}
+          />
+          {availableLabels.length === 0 && (
+            <div className="alert alert-info col-12 mt-2">
+              No labels available for this scheme. Please add labels to use this scheme, or create a
+              new scheme.
+            </div>
+          )}
+          <LabelsManagement
+            projectSlug={projectSlug}
+            currentScheme={currentScheme || null}
+            availableLabels={availableLabelsSorted as string[]}
+            kindScheme={kindScheme as string}
+            setAppContext={setAppContext}
+            deactivateModifications={displayConfig.interfaceType === 'annotator'}
+          />
+        </Tab>
+        <Tab eventKey="codebook" title="Codebook">
+          <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
+        </Tab>
 
-          <Tab eventKey="features" title="Features">
-            <FeaturesManagement />
-          </Tab>
-          <Tab eventKey="import" title="Import">
-            <div className="explanations">Import data to this project</div>
-            <ImportAnnotations
-              projectName={project.params.project_slug}
-              currentScheme={currentScheme || null}
-            />
-            <TestSetManagement
-              projectSlug={projectSlug}
-              currentScheme={currentScheme || ''}
-              testSetExist={project?.params.test}
-            />
-          </Tab>
-          <Tab eventKey="parameters" title="Parameters">
-            <ProjectParameters project={project} projectSlug={projectSlug} />
-          </Tab>
+        <Tab eventKey="features" title="Features">
+          <FeaturesManagement />
+        </Tab>
+        <Tab eventKey="import" title="Import">
+          <div className="explanations">Import data to this project</div>
+          <ImportAnnotations
+            projectName={project.params.project_slug}
+            currentScheme={currentScheme || null}
+          />
+          <TestSetManagement
+            projectSlug={projectSlug}
+            currentScheme={currentScheme || ''}
+            testSetExist={project?.params.test}
+          />
+        </Tab>
+        <Tab eventKey="parameters" title="Parameters">
+          <ProjectParameters project={project} projectSlug={projectSlug} />
+        </Tab>
 
-          <Tab eventKey="session" title="Session history">
-            <ProjectHistory
-              projectSlug={projectSlug}
-              history={history}
-              setAppContext={setAppContext}
-            />
-          </Tab>
-        </Tabs>
-      </div>
+        <Tab eventKey="session" title="Session history">
+          <ProjectHistory
+            projectSlug={projectSlug}
+            history={history}
+            setAppContext={setAppContext}
+          />
+        </Tab>
+      </Tabs>
     </ProjectPageLayout>
   );
 };

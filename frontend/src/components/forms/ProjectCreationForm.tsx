@@ -196,19 +196,18 @@ export const ProjectCreationForm: FC = () => {
           Create a new project.
           <ul>
             <li>
-              Upload a file in tabular format (csv (; or tab), xlsx or parquet, size limit{' '}
-              {maxSizeMo} Mo)
+              Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo)
             </li>
-            <li>Indicate the columns for id, text</li>
-            <li>
-              Optional : annotation column & number of elements in testset (not annotated rows)
-            </li>
+            <a href="/dataset_test.csv" download>
+              Sample dataset from "Detecting Stance in Media On Global Warming"
+            </a>
+            <li>Indicate the columns for id, text and optionnal labels</li>
+
             <li>Validate to create</li>
           </ul>
           <div className="alert alert-warning" role="alert">
-            Both project name and index will be modified to be compatible with URLs (slugify). For
-            instance, '_' and ' ' will be replaced by '-'. Please be careful, especially if you need
-            to later join the data with other tables.
+            Both project name and index will be modified (slugify). For instance, '_' and ' ' will
+            be replaced by '-'. Please be careful for future data merging.
           </div>
         </div>
 

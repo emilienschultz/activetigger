@@ -168,11 +168,17 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 
   return (
     <div className="row">
-      <span className="explanations px-4">
-        The current scheme is a <b>{kindScheme}</b>
-      </span>
-
-      <div className="rounded-2xl bg-white">
+      <div className="col-12 rounded-2xl bg-white">
+        {kindScheme === 'multiclass' ? (
+          <div className="explanations">
+            The current scheme is a <b>{kindScheme}</b> scheme.
+          </div>
+        ) : (
+          <div className="alert alert-warning">
+            The current scheme is a <b>{kindScheme}</b> scheme. It is experimental and some features
+            does not work. Please read the documentation.
+          </div>
+        )}
         {!deactivateModifications && (
           <div className="d-flex align-items-center justify-content-between col-8 col-md-4">
             <input
