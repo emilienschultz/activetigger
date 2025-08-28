@@ -16,7 +16,6 @@ import {
   useGetElementById,
 } from '../../core/api';
 import { BertopicForm } from '../forms/BertopicForm';
-import { ProjectPageLayout } from '../layout/ProjectPageLayout';
 import { BertopicVizSigma } from '../ProjectionVizSigma/BertopicVizSigma';
 
 export const BertopicPage: FC = () => {
@@ -72,129 +71,129 @@ export const BertopicPage: FC = () => {
   );
 
   return (
-    <ProjectPageLayout projectName={projectName} currentAction="explore">
-      <div className="container-fluid">
-        <div className="row">
-          <div className="col-12">
-            <Tabs id="panel" className="mt-3">
-              <Tab eventKey="existing" title="Existing Bertopic">
-                <div className="explanations">
-                  Compute a Bertopic on the train dataset to identify the main topics.
+    // <ProjectPageLayout projectName={projectName} currentAction="explore">
+    <div className="container-fluid">
+      <div className="row">
+        <div className="col-12">
+          <Tabs id="panel" className="mt-3">
+            <Tab eventKey="existing" title="Existing Bertopic">
+              <div className="explanations">
+                Compute a Bertopic on the train dataset to identify the main topics.
+              </div>
+              {currentTraining && currentTraining?.length > 0 && (
+                <div className="alert alert-info m-2">
+                  Current computation
+                  <ul>
+                    {Object.values(currentTraining).map(([k, v]) => (
+                      <li key={k}>
+                        User {k} : {(v as unknown as { progress: string })?.progress}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                {currentTraining && currentTraining?.length > 0 && (
-                  <div className="alert alert-info m-2">
-                    Current computation
-                    <ul>
-                      {Object.values(currentTraining).map(([k, v]) => (
-                        <li key={k}>
-                          User {k} : {(v as unknown as { progress: string })?.progress}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <h4 className="subsection">Existing Bertopic</h4>
-                <div className="d-flex w-50 my-2" style={{ zIndex: 1000 }}>
-                  <Select
-                    className="flex-grow-1"
-                    options={Object.keys(availableBertopic).map((e) => ({ value: e, label: e }))}
-                    onChange={(e) => {
-                      if (e) setCurrentBertopic(e.value);
-                    }}
-                    value={{ value: currentBertopic, label: currentBertopic }}
-                    styles={{
-                      menu: (provided) => ({
-                        ...provided,
-                        zIndex: 1000,
-                      }),
-                    }}
-                  />
-                  <button
-                    className="btn btn p-0"
-                    onClick={() => {
-                      deleteBertopic(currentBertopic);
-                      setCurrentBertopic(null);
-                    }}
-                  >
-                    <MdOutlineDeleteOutline size={30} />
-                  </button>
-                </div>
-                {currentBertopic && (
-                  <div>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() =>
-                        currentBertopic ? downloadBertopicTopics(currentBertopic) : null
-                      }
-                    >
-                      Topics <FaCloudDownloadAlt />
-                    </button>
-                    <button
-                      className="btn btn-primary mx-2"
-                      onClick={() =>
-                        currentBertopic ? downloadBertopicClusters(currentBertopic) : null
-                      }
-                    >
-                      Clusters <FaCloudDownloadAlt />
-                    </button>
-                    <details>
-                      <summary>Parameters</summary>
-                      {parameters && JSON.stringify(parameters, null, 2)}
-                    </details>
-                  </div>
-                )}
-
-                {projection && (
-                  <>
-                    <div style={{ height: '300px' }}>
-                      <BertopicVizSigma
-                        className={`col-12 border h-100`}
-                        data={
-                          projection as {
-                            id: unknown[];
-                            x: unknown[];
-                            y: unknown[];
-                            cluster: string[];
-                          }
-                        }
-                        setSelectedId={setSelectedId}
-                        labelColorMapping={labelColorMapping}
-                        labelDescription={labels as unknown as { [key: string]: string }}
-                      />
-                    </div>
-                    {currentText && (
-                      <div
-                        className="col-12"
-                        style={{
-                          height: '200px',
-                          overflow: 'hidden',
-                          overflowY: 'scroll',
-                          backgroundColor: '#f5f5f5',
-                        }}
-                      >
-                        {currentText}
-                      </div>
-                    )}
-                  </>
-                )}
-                {topics && (
-                  <div style={{ height: '500px' }}>
-                    <DisplayTableTopics data={(topics as Row[]) || []} />
-                  </div>
-                )}
-              </Tab>
-              <Tab eventKey="new" title="New Bertopic">
-                <div className="explanations">UMAP and HDBSCAN are being used</div>
-                <BertopicForm
-                  projectSlug={projectName || null}
-                  availableModels={availableModels}
-                  isComputing={isComputing}
+              )}
+              <h4 className="subsection">Existing Bertopic</h4>
+              <div className="d-flex w-50 my-2" style={{ zIndex: 1000 }}>
+                <Select
+                  className="flex-grow-1"
+                  options={Object.keys(availableBertopic).map((e) => ({ value: e, label: e }))}
+                  onChange={(e) => {
+                    if (e) setCurrentBertopic(e.value);
+                  }}
+                  value={{ value: currentBertopic, label: currentBertopic }}
+                  styles={{
+                    menu: (provided) => ({
+                      ...provided,
+                      zIndex: 1000,
+                    }),
+                  }}
                 />
-              </Tab>
-            </Tabs>
-          </div>
+                <button
+                  className="btn btn p-0"
+                  onClick={() => {
+                    deleteBertopic(currentBertopic);
+                    setCurrentBertopic(null);
+                  }}
+                >
+                  <MdOutlineDeleteOutline size={30} />
+                </button>
+              </div>
+              {currentBertopic && (
+                <div>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() =>
+                      currentBertopic ? downloadBertopicTopics(currentBertopic) : null
+                    }
+                  >
+                    Topics <FaCloudDownloadAlt />
+                  </button>
+                  <button
+                    className="btn btn-primary mx-2"
+                    onClick={() =>
+                      currentBertopic ? downloadBertopicClusters(currentBertopic) : null
+                    }
+                  >
+                    Clusters <FaCloudDownloadAlt />
+                  </button>
+                  <details>
+                    <summary>Parameters</summary>
+                    {parameters && JSON.stringify(parameters, null, 2)}
+                  </details>
+                </div>
+              )}
+
+              {projection && (
+                <>
+                  <div style={{ height: '300px' }}>
+                    <BertopicVizSigma
+                      className={`col-12 border h-100`}
+                      data={
+                        projection as {
+                          id: unknown[];
+                          x: unknown[];
+                          y: unknown[];
+                          cluster: string[];
+                        }
+                      }
+                      setSelectedId={setSelectedId}
+                      labelColorMapping={labelColorMapping}
+                      labelDescription={labels as unknown as { [key: string]: string }}
+                    />
+                  </div>
+                  {currentText && (
+                    <div
+                      className="col-12"
+                      style={{
+                        height: '200px',
+                        overflow: 'hidden',
+                        overflowY: 'scroll',
+                        backgroundColor: '#f5f5f5',
+                      }}
+                    >
+                      {currentText}
+                    </div>
+                  )}
+                </>
+              )}
+              {topics && (
+                <div style={{ height: '500px' }}>
+                  <DisplayTableTopics data={(topics as Row[]) || []} />
+                </div>
+              )}
+            </Tab>
+            <Tab eventKey="new" title="New Bertopic">
+              <div className="explanations">UMAP and HDBSCAN are being used</div>
+              <BertopicForm
+                projectSlug={projectName || null}
+                availableModels={availableModels}
+                isComputing={isComputing}
+              />
+            </Tab>
+          </Tabs>
         </div>
       </div>
-    </ProjectPageLayout>
+    </div>
+    //  </ProjectPageLayout>
   );
 };

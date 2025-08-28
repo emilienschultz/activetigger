@@ -16,6 +16,7 @@ import { reorderLabels } from '../../core/utils';
 import { ProjectHistory } from '../ProjectHistory';
 import { ProjectParameters } from '../ProjectParameters';
 import { SchemesManagement } from '../SchemesManagement';
+import { BertopicPage } from './BertopicPage';
 
 /**
  * Component to display the project page
@@ -89,6 +90,9 @@ export const ProjectPage: FC = () => {
         </Tab>
         <Tab eventKey="codebook" title="Codebook">
           <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
+        </Tab>
+        <Tab eventKey="bertopic" title="Topic model">
+          <BertopicPage />
         </Tab>
 
         <Tab eventKey="features" title="Features">

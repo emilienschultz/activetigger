@@ -2,7 +2,6 @@ import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { GiChoice } from 'react-icons/gi';
-import { HiMiniRectangleGroup } from 'react-icons/hi2';
 import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
@@ -85,7 +84,7 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Project</span>
             </Link>
           </li>
-          <li className="nav-item">
+          {/* <li className="nav-item">
             <Link
               to={`/projects/${projectName}/explore`}
               className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
@@ -95,7 +94,7 @@ export const ProjectActionsSidebar: FC<{
               <HiMiniRectangleGroup />
               <span className="ms-1">Explore</span>
             </Link>
-          </li>
+          </li> */}
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/tag`}

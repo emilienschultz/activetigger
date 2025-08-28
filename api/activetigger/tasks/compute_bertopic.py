@@ -266,7 +266,7 @@ class ComputeBertopic(BaseTask):
             raise ValueError(f"Unsupported language {self.parameters.language}")
         return list(stopwords.stopwords(self.parameters.language))
 
-    def compute_embeddings(self, df: pd.DataFrame, path_embeddings: Path):
+    def compute_embeddings(self, df: pd.DataFrame, path_embeddings: Path) -> None:
         """
         Compute the embeddings using the SBERT model
         """
@@ -283,11 +283,12 @@ class ComputeBertopic(BaseTask):
             min_gpu=1,
             path_progress=self.path_run.joinpath("progress"),
         )
+        # transmit the event to allow interruption
         embeddings.event = self.event
-        embeddings()
+        # launch computation
+        computed = embeddings()
         # save the embeddings to a file
-        embeddings.to_parquet(path_embeddings)
-        embeddings = embeddings.values
+        computed.to_parquet(path_embeddings)
 
     def compute_projection(self, path_embeddings: Path, path_projection: Path) -> pd.DataFrame:
         """
