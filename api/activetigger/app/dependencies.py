@@ -173,6 +173,16 @@ def test_rights(
             if status in ["manager"]:
                 return True
 
+    # specific case demo
+    if status == "demo":
+        if action in [ProjectAction.GET, ProjectAction.ADD_ANNOTATION]:
+            return True
+        else:
+            raise HTTPException(
+                status_code=408,
+                detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
+            )
+
     # Get auth for the project
     if not project_slug:
         raise HTTPException(500, "Project name missing")

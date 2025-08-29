@@ -68,6 +68,12 @@ class DatabaseManager:
         except DBException:
             self.create_root_session()
 
+        # check if there is a demo user, add it
+        try:
+            _ = self.users_service.get_user("demo")
+        except DBException:
+            self.create_demo_session()
+
     def create_root_session(self) -> None:
         """
         Create root session
@@ -86,3 +92,13 @@ class DatabaseManager:
         pwd: str = str(uuid.uuid4())
         hash_pwd: bytes = get_hash(pwd)
         self.users_service.add_user("system", hash_pwd.decode("utf8"), "system", "system")
+
+    def create_demo_session(self) -> None:
+        """
+        Create demo session
+        :return: None
+        """
+        # use a random password
+        pwd: str = "demo"
+        hash_pwd: bytes = get_hash(pwd)
+        self.users_service.add_user("demo", hash_pwd.decode("utf8"), "demo", "system")

@@ -16,7 +16,6 @@ import pandas as pd  # type: ignore[import]
 import psutil  # type: ignore[import]
 from fastapi.encoders import jsonable_encoder
 from jose import jwt  # type: ignore[import]
-from sklearn.datasets import fetch_20newsgroups  # type: ignore[import]
 
 from activetigger import __version__
 from activetigger.config import config
@@ -103,6 +102,13 @@ class Orchestrator:
         # update the projects asynchronously
         self._running = True
         self._update_task = asyncio.create_task(self._update(timeout=config.update_timeout))
+
+        # create the demo project if not existing
+        try:
+            if "demo" not in self.existing_projects():
+                self.create_demo_project("demo", "demo")
+        except Exception as e:
+            print(f"Error while creating demo project: {e}")
 
         # logging
         logging.basicConfig(
@@ -507,36 +513,41 @@ class Orchestrator:
             if Path(f"{config.data_path}/projects/static/{project_slug_verif}").exists():
                 shutil.rmtree(f"{config.data_path}/projects/static/{project_slug_verif}")
 
-    # def create_dummy_project(self, username: str) -> None:
-    #     """
-    #     Create a dummy project for a user
-    #     """
+    def create_demo_project(self, project_name: str, username: str) -> None:
+        """
+        Create a demo project for a specific user
+        """
+        # TODO : put those elements in the config file
+        path_data = Path("../frontend/public/dataset_test.csv")
+        col_id = "id"
+        col_text = "sentence"
+        col_label = "label_agg"
 
-    #     # create name of the project and the directory
-    #     project_name = "dummy_" + username
-    #     project_slug = slugify(project_name)
-    #     project_path = self.path.joinpath(project_slug)
-    #     os.makedirs(project_path, exist_ok=True)
+        if not path_data.exists():
+            raise Exception("The demo dataset is not available")
 
-    #     # create and save a toy dataset
-    #     newsgroups = fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))
-    #     df = pd.DataFrame({"text": newsgroups.data, "target": newsgroups.target})
-    #     df["category"] = df["target"].apply(lambda x: newsgroups.target_names[x])
-    #     df.to_csv(project_path.joinpath("dummy.csv"), index=False)
+        # create name of the project and the directory
+        project_name = project_name
+        project_slug = slugify(project_name)
+        project_path = self.path.joinpath(project_slug)
+        os.makedirs(project_path, exist_ok=True)
 
-    #     # parameters of the project
-    #     params = ProjectBaseModel(
-    #         project_name=project_name,
-    #         language="en",
-    #         filename="dummy.csv",
-    #         col_id="row_number",
-    #         cols_text=["text"],
-    #         cols_label=["category"],
-    #         n_train=3000,
-    #         n_test=1000,
-    #     )
+        # create and save a toy dataset
+        df = pd.read_csv(path_data)
+        df.to_csv(project_path.joinpath("dataset.csv"), index=False)
 
-    #     self.create_project(params, username)
+        # parameters of the project and creation
+        project = ProjectBaseModel(
+            project_name=project_name,
+            language="en",
+            filename="dataset.csv",
+            col_id=col_id,
+            cols_text=[col_text],
+            cols_label=[col_label],
+            n_train=1000,
+            n_test=500,
+        )
+        self.starting_project_creation(project, username)
 
 
 # launch the instance

@@ -52,11 +52,6 @@ export const HomePage: FC = () => {
                 className="me-2"
                 style={{ width: '200px', height: '200px' }}
               />
-              <div className="justify-content-center">
-                <Link to="/projects" className="btn btn-primary btn-lg shadow-sm rounded-pill m-3">
-                  Go to your projects
-                </Link>
-              </div>
 
               {!authenticatedUser ? (
                 <LoginForm />
@@ -91,6 +86,14 @@ export const HomePage: FC = () => {
                       ) : (
                         <div className="text-danger">Problem connecting to the server</div>
                       )}
+                    </div>
+                    <div className="justify-content-center">
+                      <Link
+                        to="/projects"
+                        className="btn btn-primary btn-lg shadow-sm rounded-pill m-3"
+                      >
+                        Go to your projects
+                      </Link>
                     </div>
                   </div>
                 </div>

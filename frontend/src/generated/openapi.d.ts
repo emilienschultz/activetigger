@@ -2487,8 +2487,11 @@ export interface components {
             train_annotated_n: number;
             /** Train Annotated Distribution */
             train_annotated_distribution: Record<string, never>;
-            /** Test Set N */
-            test_set_n?: number | null;
+            /**
+             * Test Set N
+             * @default 0
+             */
+            test_set_n: number;
             /** Test Annotated N */
             test_annotated_n?: number | null;
             /** Test Annotated Distribution */
@@ -5720,8 +5723,8 @@ export interface operations {
     };
     stop_process_stop_post: {
         parameters: {
-            query: {
-                unique_id: string | null;
+            query?: {
+                unique_id?: string | null;
                 kind?: string | null;
             };
             header?: never;

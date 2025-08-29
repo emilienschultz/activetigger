@@ -18,7 +18,6 @@ from activetigger.bertopic import Bertopic
 from activetigger.config import config
 from activetigger.datamodels import (
     BertModelModel,
-    BertopicComputing,
     ElementOutModel,
     ExportGenerationsParams,
     FeatureComputing,
@@ -783,6 +782,7 @@ class Project:
         # part test
         if self.params.test and self.schemes.test is not None:
             df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
+            test_set_n = len(df_test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
         else:
