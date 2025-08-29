@@ -5,7 +5,7 @@ import { ProjectCard } from '../components/ProjectCard';
 import { PageLayout } from '../components/layout/PageLayout';
 import { useUserProjects } from '../core/api';
 
-import { IoIosAddCircle } from 'react-icons/io';
+import { FaPlusCircle } from 'react-icons/fa';
 import { useAppContext } from '../core/context';
 import { AvailableProjectsModel } from '../types';
 
@@ -50,9 +50,33 @@ export const ProjectsPage: FC = () => {
             <div className="col-12 col-lg-6">
               {displayConfig.interfaceType !== 'annotator' && (
                 <div className="w-100 d-flex align-items-center justify-content-center">
-                  <Link to="/projects/new" className="btn btn-warning w-75 mt-3">
-                    <IoIosAddCircle className="m-1" size={30} />
-                    Create new project
+                  <Link
+                    to="/projects/new"
+                    className="btn w-75 mt-3 d-flex align-items-center justify-content-center fw-bold"
+                    style={{
+                      backgroundColor: '#ff9a3c',
+                      border: 'none',
+                      fontSize: '1.1rem',
+                      letterSpacing: '0.5px',
+                      color: 'white',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.25)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <FaPlusCircle className="me-2" size={22} />
+                    <span
+                      style={{
+                        background: 'linear-gradient(90deg, #fff 0%, #ffe8cc 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                    >
+                      Create New Project
+                    </span>
                   </Link>
                 </div>
               )}

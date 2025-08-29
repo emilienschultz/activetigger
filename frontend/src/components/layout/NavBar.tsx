@@ -113,19 +113,21 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
             <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex">
               <li className="m-1">
                 <div
-                  className="nav-item badge text-bg-secondary"
+                  className="nav-item badge text-bg-secondary d-md-inline"
                   title="Number of processes running"
                 >
-                  <span className="d-none d-md-inline">Process: </span>
+                  <span className="d-none d-md-inline">run </span>
                   {Object.values(queueState || []).length}
                 </div>
               </li>
               <li className="m-1">
-                <div className="badge text-bg-secondary" title="Used/Total">
-                  <span className="d-none d-md-inline">GPU:</span>
-                  {gpu
-                    ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
-                    : 'No'}
+                <div className="badge text-bg-secondary d-md-inline" title="Used/Total">
+                  <span className="d-none d-md-inline">
+                    gpu
+                    {gpu
+                      ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
+                      : ' no'}
+                  </span>
                 </div>
               </li>
             </ul>

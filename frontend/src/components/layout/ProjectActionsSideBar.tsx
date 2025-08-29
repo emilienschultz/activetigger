@@ -31,6 +31,7 @@ export const ProjectActionsSidebar: FC<{
 }) => {
   const projectName = projectState ? projectState.params.project_slug : null;
   const { authenticatedUser } = useAuth();
+  const nbUsers = projectState ? projectState.users.length : 0;
 
   // 2 types of menu
   const onlyAnnotator = authenticatedUser?.status === 'annotator';
@@ -106,18 +107,20 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Tag</span>
             </Link>
           </li>
-          <li className="nav-item">
-            <Link
-              to={`/projects/${projectName}/curate`}
-              className={classNames('nav-link', currentProjectAction === 'curate' && 'active')}
-              aria-current="page"
-              title="Curate"
-            >
-              <GiChoice />
+          {nbUsers > 1 && (
+            <li className="nav-item">
+              <Link
+                to={`/projects/${projectName}/curate`}
+                className={classNames('nav-link', currentProjectAction === 'curate' && 'active')}
+                aria-current="page"
+                title="Curate"
+              >
+                <GiChoice />
 
-              <span> Curate</span>
-            </Link>
-          </li>
+                <span> Curate</span>
+              </Link>
+            </li>
+          )}
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/finetune`}
@@ -155,9 +158,8 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item ">
             <div className="nav-link">
-              <div className="badge text-bg-info" title="Memory">
+              <div className="badge text-bg-secondary" title="Memory">
                 <span className="d-none d-md-inline">
-                  HDD:
                   {projectState?.memory ? `${projectState.memory.toFixed(1)} Mo` : ''}
                 </span>
               </div>

@@ -43,8 +43,8 @@ export const ProjectCard: FC<ProjectCardProps> = ({ project, resetContext }) => 
           <span>Created at: {project.created_at}</span>
         </p>
 
-        <div className="badge text-bg-info" title="Memory">
-          <span className="d-none d-md-inline">HDD : {project.size} Mo</span>
+        <div className="badge text-bg-secondary" title="Memory">
+          <span className="d-none d-md-inline">memory {project.size} Mo</span>
         </div>
       </div>
       <div>

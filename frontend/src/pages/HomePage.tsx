@@ -53,7 +53,7 @@ export const HomePage: FC = () => {
             <center>
               <div className="text-center">
                 <h1
-                  className="mb-1 fs-2"
+                  className="mb-1 fs-2 activetigger"
                   style={{
                     color: '#ff9a3c',
                   }}

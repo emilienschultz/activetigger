@@ -88,9 +88,11 @@ export const ProjectPage: FC = () => {
             deactivateModifications={displayConfig.interfaceType === 'annotator'}
           />
         </Tab>
+
         <Tab eventKey="codebook" title="Codebook">
           <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
         </Tab>
+
         <Tab eventKey="bertopic" title="Topic model">
           <BertopicPage />
         </Tab>
@@ -98,6 +100,7 @@ export const ProjectPage: FC = () => {
         <Tab eventKey="features" title="Features">
           <FeaturesManagement />
         </Tab>
+
         <Tab eventKey="import" title="Import">
           <div className="explanations">Import data to this project</div>
           <ImportAnnotations
@@ -110,6 +113,7 @@ export const ProjectPage: FC = () => {
             testSetExist={project?.params.test}
           />
         </Tab>
+
         <Tab eventKey="parameters" title="Parameters">
           <ProjectParameters project={project} projectSlug={projectSlug} />
         </Tab>

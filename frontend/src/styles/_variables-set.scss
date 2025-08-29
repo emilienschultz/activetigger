@@ -1,6 +1,7 @@
-$primary: #444;
-$secondary: #000972;
+$primary: #878686;
+$secondary: #a5a4a4;
 $tertiary: #8f8d8d;
+$quaternary: #faf9f8;
 
 .project-link {
     display: block;
@@ -265,7 +266,7 @@ $tertiary: #8f8d8d;
 
 /* Project Card */
 .project-card {
-  background: white;
+  background: #e7e5e5;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 16px 20px;
@@ -275,7 +276,7 @@ $tertiary: #8f8d8d;
 
 .project-card:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background: #f9f9f9;
+  background: #ffa866;
 }
 
 /* Project Title */
@@ -304,3 +305,4 @@ $tertiary: #8f8d8d;
 .trash-wrapper:hover {
   color: red;
 }
+
