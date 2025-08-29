@@ -2,24 +2,24 @@ import { Outlet, createHashRouter } from 'react-router-dom';
 
 import { CurrentProjectState } from '../components/CurrentProjectState';
 import { APIMiddlewares } from '../components/auth/APIMiddlewares';
-import { AccountPage } from '../components/pages/AccountPage';
-import { DocPage } from '../components/pages/DocPage';
-import { CuratePage } from '../components/pages/ProjectCurationPage';
+import { AccountPage } from '../pages/AccountPage';
+import { DocPage } from '../pages/DocPage';
+import { CuratePage } from '../pages/ProjectCurationPage';
 /*import { ExperimentalPage } from '../components/pages/ExperimentalPage';*/
-import { BertopicPage } from '../components/pages/BertopicPage';
-import { FinetunePage } from '../components/pages/FinetunePage';
-import { HomePage } from '../components/pages/HomePage';
-import { LoginPage } from '../components/pages/LoginPage';
-import { MonitorPage } from '../components/pages/MonitorPage';
-import { NotFound } from '../components/pages/NotFoundPage';
-import { ProjectExportPage } from '../components/pages/ProjectExportPage';
-import { GenPage } from '../components/pages/ProjectGenPage';
-import { ProjectNewPage } from '../components/pages/ProjectNewPage';
-import { ProjectPage } from '../components/pages/ProjectPage';
-import { ProjectTagPage } from '../components/pages/ProjectTagPage';
-import { ProjectsPage } from '../components/pages/ProjectsPage';
-import { UsersPage } from '../components/pages/UsersPage';
 import { RoleSelector } from '../core/RoleSelector';
+import { BertopicPage } from '../pages/BertopicPage';
+import { FinetunePage } from '../pages/FinetunePage';
+import { HomePage } from '../pages/HomePage';
+import { LoginPage } from '../pages/LoginPage';
+import { MonitorPage } from '../pages/MonitorPage';
+import { NotFound } from '../pages/NotFoundPage';
+import { ProjectExportPage } from '../pages/ProjectExportPage';
+import { GenPage } from '../pages/ProjectGenPage';
+import { ProjectNewPage } from '../pages/ProjectNewPage';
+import { ProjectPage } from '../pages/ProjectPage';
+import { ProjectTagPage } from '../pages/ProjectTagPage';
+import { ProjectsPage } from '../pages/ProjectsPage';
+import { UsersPage } from '../pages/UsersPage';
 
 export function getRouter() {
   return createHashRouter([

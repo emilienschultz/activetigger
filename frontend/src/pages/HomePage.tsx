@@ -40,80 +40,77 @@ export const HomePage: FC = () => {
     <>
       <main className="container-fluid">
         <div className="row">
+          <center>
+            <div className="alert alert-warning mt-3">
+              ⚠️ This interface is in beta testing. Please save your data.
+              <a href="https://github.com/emilienschultz/activetigger/issues">
+                Please open a issue for any bug or problem
+              </a>
+            </div>
+          </center>
           <div className="col-0 col-lg-3" />
           <div className="col-12 col-lg-6">
             <center>
-              <h1>Active Tigger</h1>
-              <h3>Explore & Annotate Text</h3>
-
-              <img
-                src={logo}
-                alt="ActiveTigger"
-                className="me-2"
-                style={{ width: '200px', height: '200px' }}
-              />
+              <div className="text-center">
+                <h1
+                  className="mb-1 fs-2"
+                  style={{
+                    color: '#ff9a3c',
+                  }}
+                >
+                  Active Tigger
+                </h1>
+                <h3 className="m-0 fs-5 text-muted fw-normal">Explore & Annotate Text</h3>
+                <img
+                  src={logo}
+                  alt="ActiveTigger"
+                  className="me-2"
+                  style={{ width: '200px', height: '200px' }}
+                />
+              </div>
 
               {!authenticatedUser ? (
                 <LoginForm />
               ) : (
                 <div>
-                  <div className="user-info">
-                    You are logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
-                    {authenticatedUser.status}){' '}
-                    {/* <div className="form-check form-switch">
-                      <label className="form-check-label" htmlFor="devMode">
-                        <input
-                          className="form-check-input mx-2"
-                          type="checkbox"
-                          role="switch"
-                          id="devMode"
-                          checked={developmentMode}
-                          onChange={actionDevelopmentMode}
-                        />
-                        Dev mode
-                        <a className="batchsize mx-2">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".batchsize" place="top">
-                          Dev mode will display experimental features that have not been tested
-                          extensively.
-                        </Tooltip>
-                      </label>
-                    </div> */}
-                    <div>
-                      {users ? (
-                        <div className="explanations">Active users : {users?.length}</div>
-                      ) : (
-                        <div className="text-danger">Problem connecting to the server</div>
-                      )}
-                    </div>
+                  <div>
+                    Welcome <span className="fw-bold">{authenticatedUser.username}</span>
                     <div className="justify-content-center">
                       <Link
                         to="/projects"
-                        className="btn btn-primary btn-lg shadow-sm rounded-pill m-3"
+                        className="btn btn-lg text-white fw-bold shadow-sm px-4 py-2"
+                        style={{
+                          background: 'linear-gradient(90deg, #ff9a3c, #ff6f3c, #ffb347)',
+                          border: 'none',
+                          borderRadius: '2rem',
+                          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                        }}
                       >
-                        Go to your projects
+                        🐯 Go to your projects
                       </Link>
                     </div>
                   </div>
                 </div>
               )}
-              <div className="alert alert-warning fw-bold mt-3">
-                ⚠️ Warning: This interface is in beta testing.
-                <br></br>
-                Continuity of service is not guaranteed, please save your data. <br></br>
-                <a href="https://github.com/emilienschultz/activetigger/issues">
-                  Please report any bug or problem on the Github of the project
-                </a>
-                .
-              </div>
+
+              {!users && (
+                <div className="alert alert-alert mt-3">Problem connecting to the server</div>
+              )}
 
               <div className="general-info mt-3">
                 <div>
+                  Current users : {users?.length} <br />
                   Backend version <b>{version}</b> - Last update of the frontend
                   <b> {__BUILD_DATE__}</b>
                 </div>
-                <div>For any information, please contact emilien.schultz [at] ensae.fr</div>
               </div>
             </center>
             <div style={{ height: '50px' }}></div>
