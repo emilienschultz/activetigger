@@ -125,9 +125,9 @@ async def stop_generation(
     Stop current generation
     """
     try:
-        orchestrator.stop_process(
-            current_user.username,
+        orchestrator.stop_user_processes(
             kind=["generation"],
+            username=current_user.username,
         )
         orchestrator.log_action(current_user.username, "STOP GENERATE", project.params.project_slug)
         return None

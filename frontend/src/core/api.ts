@@ -1071,6 +1071,7 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
             params: dataForm.parameters,
             dichotomize: dataForm.dichotomize,
             class_balance: dataForm.class_balance || false,
+            loss: dataForm.loss || 'cross_entropy',
             class_min_freq: dataForm.class_min_freq || 1,
             exclude_labels: dataForm.exclude_labels || [],
           },

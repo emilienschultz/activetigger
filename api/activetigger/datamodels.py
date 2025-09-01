@@ -319,6 +319,7 @@ class BertModelModel(BaseModel):
     dichotomize: str | None = None
     class_min_freq: int = 1
     class_balance: bool = False
+    loss: str = "cross_entropy"
     exclude_labels: list[str] = []
 
 

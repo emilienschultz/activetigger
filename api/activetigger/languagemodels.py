@@ -174,6 +174,7 @@ class LanguageModels:
         test_size: float = 0.2,
         num_min_annotations: int = 10,
         num_min_annotations_per_label: int = 5,
+        loss: str = "cross_entropy",
     ) -> None:
         """
         Manage the training of a model from the API
@@ -221,6 +222,7 @@ class LanguageModels:
                 base_model=base_model,
                 params=params,
                 test_size=test_size,
+                loss=loss,
             ),
             queue="gpu",
         )

@@ -145,6 +145,7 @@ export interface newBertModel {
   parameters: LMParametersModel;
   dichotomize?: string;
   class_balance?: boolean;
+  loss?: string;
   class_min_freq?: number;
   test_size?: number;
   exclude_labels?: string[];

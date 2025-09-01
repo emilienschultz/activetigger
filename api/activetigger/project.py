@@ -1164,6 +1164,7 @@ class Project:
             base_model=bert.base_model,
             params=bert.params,
             test_size=bert.test_size,
+            loss=bert.loss,
         )
 
     def start_generation(self, request: GenerationRequest, username: str) -> None:

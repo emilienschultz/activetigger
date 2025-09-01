@@ -208,7 +208,7 @@ async def stop_bert(
         else:
             user = current_user.username
 
-        orchestrator.stop_process(user, kind=["train_bert", "predict_bert"])
+        orchestrator.stop_user_processes(kind=["train_bert", "predict_bert"], username=user)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

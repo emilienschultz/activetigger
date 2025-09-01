@@ -65,6 +65,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   } = useForm<newBertModel>({
     defaultValues: {
       class_balance: false,
+      loss: 'cross_entropy',
       class_min_freq: 1,
       test_size: 0.2,
       parameters: {
@@ -262,6 +263,21 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
             </Tooltip>
           </label>
           <input type="checkbox" {...registerNewModel('class_balance')} />
+        </div>
+        <div className="form-group d-flex align-items-center">
+          <label className="d-flex align-items-center">
+            Loss
+            <a className="loss">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".loss" place="top">
+              Use a specific loss function
+            </Tooltip>
+            <select {...registerNewModel('loss')} className="mx-2">
+              <option value="cross_entropy">Cross Entropy</option>
+              <option value="weighted_cross_entropy">Weighted Cross Entropy</option>
+            </select>{' '}
+          </label>
         </div>
         <div className="form-group d-flex align-items-center">
           <label>

@@ -152,6 +152,7 @@ class TrainBert(BaseTask):
         self.test_size = test_size
         self.event = event
         self.unique_id = unique_id
+        self.loss = loss
 
     def __call__(self) -> None:
         """
@@ -286,6 +287,7 @@ class TrainBert(BaseTask):
                     ],
                 )
             elif self.loss == "weighted_cross_entropy":
+                print("Using weighted cross entropy loss - EXPERIMENTAL")
                 trainer = CustomTrainer(
                     model=bert,
                     args=training_args,

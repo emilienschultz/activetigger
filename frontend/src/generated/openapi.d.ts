@@ -1793,6 +1793,11 @@ export interface components {
              */
             class_balance: boolean;
             /**
+             * Loss
+             * @default cross_entropy
+             */
+            loss: string;
+            /**
              * Exclude Labels
              * @default []
              */
@@ -2487,11 +2492,8 @@ export interface components {
             train_annotated_n: number;
             /** Train Annotated Distribution */
             train_annotated_distribution: Record<string, never>;
-            /**
-             * Test Set N
-             * @default 0
-             */
-            test_set_n: number;
+            /** Test Set N */
+            test_set_n?: number | null;
             /** Test Annotated N */
             test_annotated_n?: number | null;
             /** Test Annotated Distribution */
