@@ -1464,3 +1464,45 @@ class Project:
         self.errors = [error for error in self.errors if error[0] >= delta]
 
         return None
+
+    def dump(self, with_files=True) -> None:
+        """
+        Dump the project in a archive
+        - keep the files
+        - do not keep the models
+
+        Ideally, to be able to rerun everything
+        """
+        os.mkdir(self.params.dir.joinpath("dump"))
+
+        # save the project parameters
+        # - features computed
+
+        # save the annotations
+
+        # save the data (train + test + all)
+        if with_files:
+            shutil.copyfile(
+                self.params.dir.joinpath("data_all.parquet"),
+                self.params.dir.joinpath("dump").joinpath("data_all.parquet"),
+            )
+            shutil.copyfile(
+                self.params.dir.joinpath("train.parquet"),
+                self.params.dir.joinpath("dump").joinpath("data_train.parquet"),
+            )
+            if self.params.test:
+                shutil.copyfile(
+                    self.params.dir.joinpath("test.parquet"),
+                    self.params.dir.joinpath("dump").joinpath("data_test.parquet"),
+                )
+
+        # save the codebook
+
+        # create the archive
+        shutil.make_archive(
+            f"dump_{self.project_slug}", "zip", self.params.dir.joinpath("dump"), self.params.dir
+        )
+
+        # delete the dump folder
+        shutil.rmtree(self.params.dir.joinpath("dump"))
+        return None

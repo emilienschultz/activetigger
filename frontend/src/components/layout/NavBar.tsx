@@ -148,7 +148,10 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                   </li>
                 )}
                 <li className="d-flex nav-item">
-                  <button className="btn btn-primary clearhistory" onClick={actionClearHistory}>
+                  <button
+                    className="btn btn-primary clearhistory mx-1"
+                    onClick={actionClearHistory}
+                  >
                     <FiRefreshCcw />
                     <span className="badge badge-warning">{history.length}</span>
                   </button>

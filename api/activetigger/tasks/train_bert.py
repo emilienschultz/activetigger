@@ -4,16 +4,18 @@ import logging
 import multiprocessing
 import os
 import shutil
+from collections import Counter
 from logging import Logger
 from pathlib import Path
 from typing import Optional
 
-import datasets  # type: ignore[import]
+import datasets  # type: ignore[import]  # type: ignore[import]
 import numpy as np
 import pandas as pd
 import torch
 from pandas import DataFrame
-from transformers import (  # type: ignore[import]
+from torch import nn
+from transformers import (  # type: ignore[import]  # type: ignore[import]
     AutoModelForSequenceClassification,
     AutoTokenizer,
     Trainer,
@@ -65,6 +67,40 @@ class CustomLoggingCallback(TrainerCallback):
                 raise Exception("Process interrupted by user")
 
 
+# Function for the weighted loss computation
+
+
+# Rescaling the weights
+def compute_class_weights(dataset, label_key="labels"):
+    labels = [example[label_key] for example in dataset]
+    label_counts = Counter(labels)
+    total = sum(label_counts.values())
+    num_classes = len(label_counts)
+
+    # Inverse frequency weight
+    weights = [total / (num_classes * label_counts[i]) for i in range(num_classes)]
+    return torch.tensor(weights, dtype=torch.float)
+
+
+# CustomTrainer is a subclass of Trainer that allows for custom loss computation.
+# https://stackoverflow.com/questions/70979844/using-weights-with-transformers-huggingface
+class CustomTrainer(Trainer):
+    def __init__(self, *args, class_weights=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.class_weights = class_weights
+        print("CustomTrainer initialized with class weights:", self.class_weights)
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        labels = inputs.get("labels")
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+
+        # Use dynamic weights
+        loss_fct = nn.CrossEntropyLoss(weight=self.class_weights.to(logits.device))
+        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        return (loss, outputs) if return_outputs else loss
+
+
 class TrainBert(BaseTask):
     """
     Class to train a bert model
@@ -81,6 +117,9 @@ class TrainBert(BaseTask):
     test_size (dict): train/test distribution
     event : possibility to interrupt
     unique_id : unique id for the current task
+    loss : loss function to use (cross_entropy, weighted_cross_entropy)
+
+    TODO : test more weighted loss entropy
     """
 
     kind = "train_bert"
@@ -98,6 +137,7 @@ class TrainBert(BaseTask):
         test_size: float,
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,
+        loss: Optional[str] = "cross_entropy",
         **kwargs,
     ):
         self.path = path
@@ -235,16 +275,30 @@ class TrainBert(BaseTask):
                 use_cpu=not bool(self.params.gpu),  # deactivate gpu
             )
 
-            # train
-            trainer = Trainer(
-                model=bert,
-                args=training_args,
-                train_dataset=self.df["train"],
-                eval_dataset=self.df["test"],
-                callbacks=[
-                    CustomLoggingCallback(self.event, current_path=current_path, logger=logger)
-                ],
-            )
+            if self.loss == "cross_entropy":
+                trainer = Trainer(
+                    model=bert,
+                    args=training_args,
+                    train_dataset=self.df["train"],
+                    eval_dataset=self.df["test"],
+                    callbacks=[
+                        CustomLoggingCallback(self.event, current_path=current_path, logger=logger)
+                    ],
+                )
+            elif self.loss == "weighted_cross_entropy":
+                trainer = CustomTrainer(
+                    model=bert,
+                    args=training_args,
+                    train_dataset=self.df["train"],
+                    eval_dataset=self.df["test"],
+                    callbacks=[
+                        CustomLoggingCallback(self.event, current_path=current_path, logger=logger)
+                    ],
+                    class_weights=compute_class_weights(self.df["train"], label_key="labels"),
+                )
+            else:
+                raise ValueError(f"Loss function {self.loss} not recognized.")
+
             trainer.train()  # type: ignore[attr-defined]
 
             # predict on the data (separation validation set and training set)

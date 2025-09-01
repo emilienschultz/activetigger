@@ -42,7 +42,7 @@ export const HomePage: FC = () => {
         <div className="row">
           <center>
             <div className="alert alert-warning mt-3">
-              ⚠️ This interface is in beta testing. Please save your data.
+              ⚠️ This interface is in beta testing. Please save your data.{' '}
               <a href="https://github.com/emilienschultz/activetigger/issues">
                 Please open a issue for any bug or problem
               </a>
@@ -120,17 +120,14 @@ export const HomePage: FC = () => {
           <div className="container text-center">
             <i className="fas fa-info-circle"></i>
             <span className="ml-2">
-              CREST / CSS @ IPP © 2025 -{' '}
-              <i>
-                credits : Julien Boelaert & Étienne Ollion &{' '}
-                <a href="https://www.ouestware.com/" style={{ all: 'unset', cursor: 'pointer' }}>
-                  Ouestware
-                </a>{' '}
-                &{' '}
-                <a href="http://eschultz.fr" style={{ all: 'unset', cursor: 'pointer' }}>
-                  Émilien Schultz
-                </a>{' '}
-              </i>
+              CREST / CSS @ IPP © 2025 - Julien Boelaert & Étienne Ollion &{' '}
+              <a href="https://www.ouestware.com/" style={{ all: 'unset', cursor: 'pointer' }}>
+                Ouestware
+              </a>{' '}
+              &{' '}
+              <a href="http://eschultz.fr" style={{ all: 'unset', cursor: 'pointer' }}>
+                Émilien Schultz
+              </a>{' '}
             </span>
           </div>
         </footer>
