@@ -95,9 +95,13 @@ async def predict(
             col_id = None
         elif dataset == "all":
             df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
-            df[project.params.col_id] = project.features.get_column_raw(
-                project.params.col_id, index="all"
-            )  # add original id
+            # fix in the case where the id column is the row
+            if project.params.col_id != "dataset_row_number":
+                df[project.params.col_id] = project.features.get_column_raw(
+                    project.params.col_id, index="all"
+                )  # add original id
+            else:
+                df["dataset_row_number"] = df.index
             col_label = None
             col_id = project.params.col_id
         elif dataset == "external":
