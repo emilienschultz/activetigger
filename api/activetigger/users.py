@@ -170,6 +170,14 @@ class Users:
         self.db_manager.users_service.change_password(username, hash_pwd.decode("utf8"))
         return None
 
+    def force_change_password(self, username: str, password: str) -> None:
+        """
+        Force change password for a user (no old password needed)
+        """
+        hash_pwd = get_hash(password)
+        self.db_manager.users_service.change_password(username, hash_pwd.decode("utf8"))
+        return None
+
     def get_statistics(self, username: str) -> UserStatistics:
         """
         Get statistics for specific user

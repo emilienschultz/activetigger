@@ -5,6 +5,7 @@ Define the orchestrator and launch the instance
 import asyncio
 import logging
 import os
+import secrets
 import shutil
 import time
 import traceback
@@ -96,7 +97,7 @@ class Orchestrator:
             nb_workers_gpu=self.n_workers_gpu,
         )
         self.users = Users(self.db_manager)
-        # self.messages = Messages(self.db_manager)
+        self.messages = Messages(self.db_manager)
         self.projects = {}
 
         # timestamp of project creation
@@ -279,6 +280,7 @@ class Orchestrator:
                 "proportion": disk_info.percent,
                 "total": disk_info.total / (1024**3),
             },
+            mail_available=self.messages.mail_available,
         )
 
     def get_auth_projects(self, username: str) -> list[ProjectSummaryModel]:
@@ -551,6 +553,22 @@ class Orchestrator:
             n_test=500,
         )
         self.starting_project_creation(project, username)
+
+    def reset_password(self, mail: str) -> None:
+        """
+        Reset password for a user with the given email
+        """
+        # Check if mail is connected to a user
+        user_name = self.db_manager.users_service.get_user_by_mail(mail)
+
+        # Generate a random password
+        new_password = secrets.token_hex(16)
+
+        # Send the mail to the user with the new password
+        self.messages.send_mail_reset_password(user_name, mail, new_password)
+
+        # Update the user's password in the database
+        self.users.force_change_password(user_name, new_password)
 
 
 # launch the instance

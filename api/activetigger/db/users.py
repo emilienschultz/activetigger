@@ -123,3 +123,10 @@ class UsersService:
                 .where(Auths.project_slug == project_slug)
             ).all()
             return list(set([row[0] for row in result]))
+
+    def get_user_by_mail(self, mail: str) -> str:
+        with self.SessionMaker() as session:
+            user = session.scalars(select(Users).filter_by(contact=mail)).first()
+            if user is None:
+                raise DBException(f"User with mail {mail} not found")
+            return user.user_name

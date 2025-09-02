@@ -54,6 +54,7 @@ class Config(metaclass=_Singleton):
     n_workers_gpu: int
     n_workers_cpu: int
     update_timeout: int
+    mail_server_port: int
     timezone: pytz.BaseTzInfo
     mail_available: bool = False
     default_user: str = "root"
@@ -64,6 +65,7 @@ class Config(metaclass=_Singleton):
     file_models: str = "bert_models.csv"
     simplemodels_file: str = "simplemodels.pickle"
     mail_server: str | None = os.environ.get("MAIL_SERVER", None)
+
     mail_account: str | None = os.environ.get("MAIL_ACCOUNT", None)
     mail_password: str | None = os.environ.get("MAIL_PASSWORD", None)
 
@@ -87,6 +89,7 @@ class Config(metaclass=_Singleton):
         self.timezone = pytz.timezone("Europe/Paris")
         if self.mail_server and self.mail_account and self.mail_password:
             self.mail_available = True
+        self.mail_server_port = parse_environ("MAIL_SERVER_PORT", int, 465)
 
 
 # the configuration is safe to share as it's a singleton (initialized only once)

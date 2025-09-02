@@ -1691,6 +1691,7 @@ export function useGetServer(projectState: ProjectStateModel | null) {
     cpu: data?.cpu,
     memory: data?.memory,
     disk: data?.disk,
+    mail_available: data?.mail_available,
     reFetchQueueState: reFetch,
   };
 }
@@ -2583,4 +2584,27 @@ export function useDownloadBertopicClusters(projectSlug: string | null) {
   );
 
   return { downloadBertopicClusters };
+}
+
+/**
+ * Send reset mail
+ */
+
+export function useSendResetMail() {
+  const { notify } = useNotifications();
+  const sendResetMail = useCallback(
+    async (mail: string) => {
+      const res = await api.POST('/users/resetpwd', {
+        params: {
+          query: {
+            mail: mail,
+          },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'An email has been sent to you' });
+    },
+    [notify],
+  );
+
+  return { sendResetMail };
 }

@@ -843,6 +843,7 @@ class ServerStateModel(BaseModel):
     cpu: dict
     memory: dict
     disk: dict
+    mail_available: bool
 
 
 class StaticFileModel(BaseModel):

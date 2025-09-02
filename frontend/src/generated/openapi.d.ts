@@ -206,6 +206,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/resetpwd": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Password */
+        post: operations["reset_password_users_resetpwd_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/close/{project_slug}": {
         parameters: {
             query?: never;
@@ -2783,6 +2800,8 @@ export interface components {
             memory: Record<string, never>;
             /** Disk */
             disk: Record<string, never>;
+            /** Mail Available */
+            mail_available: boolean;
         };
         /**
          * SimpleModelModel
@@ -3273,6 +3292,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserStatistics"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_password_users_resetpwd_post: {
+        parameters: {
+            query: {
+                mail: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
