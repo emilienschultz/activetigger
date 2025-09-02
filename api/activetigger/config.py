@@ -55,6 +55,7 @@ class Config(metaclass=_Singleton):
     n_workers_cpu: int
     update_timeout: int
     timezone: pytz.BaseTzInfo
+    mail_available: bool = False
     default_user: str = "root"
     test_file: str = "test.parquet"
     train_file: str = "train.parquet"
@@ -62,6 +63,9 @@ class Config(metaclass=_Singleton):
     data_all: str = "data_all.parquet"
     file_models: str = "bert_models.csv"
     simplemodels_file: str = "simplemodels.pickle"
+    mail_server: str | None = os.environ.get("MAIL_SERVER", None)
+    mail_account: str | None = os.environ.get("MAIL_ACCOUNT", None)
+    mail_password: str | None = os.environ.get("MAIL_PASSWORD", None)
 
     def __init__(self):
         # for variables which needs cast or other treatment we do that work in the constructor
@@ -81,6 +85,8 @@ class Config(metaclass=_Singleton):
         )
         self.model_path = os.environ.get("MODEL_PATH", os.path.join(self.data_path, "models"))
         self.timezone = pytz.timezone("Europe/Paris")
+        if self.mail_server and self.mail_account and self.mail_password:
+            self.mail_available = True
 
 
 # the configuration is safe to share as it's a singleton (initialized only once)

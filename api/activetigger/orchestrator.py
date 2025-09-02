@@ -29,6 +29,7 @@ from activetigger.datamodels import (
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import get_dir_size, get_gpu_memory_info, slugify
+from activetigger.messages import Messages
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
@@ -59,6 +60,7 @@ class Orchestrator:
     db_manager: DatabaseManager
     queue: Queue
     users: Users
+    messages: Messages
     max_projects: int
     project_creation_ongoing: dict[str, Project]
 
@@ -94,6 +96,7 @@ class Orchestrator:
             nb_workers_gpu=self.n_workers_gpu,
         )
         self.users = Users(self.db_manager)
+        # self.messages = Messages(self.db_manager)
         self.projects = {}
 
         # timestamp of project creation
