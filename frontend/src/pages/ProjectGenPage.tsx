@@ -274,7 +274,7 @@ export const GenPage: FC = () => {
       }
     return undefined;
   };
-  
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
       <div className="container-fluid mt-3">
@@ -356,7 +356,7 @@ export const GenPage: FC = () => {
                   </div>
 
                   <div className="explanations mt-3">
-                    Select or craft your prompt with the element #INSERTTEXT to insert text
+                    Select or craft your prompt with the element [[TEXT]] to insert text
                   </div>
 
                   <div className="d-flex align-items-center " style={{ zIndex: 100 }}>
