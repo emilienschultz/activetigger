@@ -238,6 +238,50 @@ export const GenPage: FC = () => {
     },
   ];
 
+  const addContextTagToPrompt = (context: string) => {
+    setAppContext((prev) => ({
+      ...prev,
+      generateConfig: {
+        ...generateConfig,
+        prompt: (generateConfig.prompt =
+          (generateConfig.prompt ? generateConfig.prompt : '') + '[[' + context + ']]'),
+      },
+    }));
+  };
+  const addContextButtons = (contextColumns: string[] | undefined) => {
+    if (contextColumns)
+      if (contextColumns.length > 0) {
+        return (
+          <>
+            <div className="col-12" id="context-container">
+              <div id="context-message">
+                Add contextual information to your prompt by clicking on the buttons, or by typing
+                [[column name]]
+              </div>
+              <div id="button-context-wrapper">
+                {contextColumns.map((context) => (
+                  <button
+                    className="btn btn-primary mx-2"
+                    id="context-button"
+                    style={{ fontSize: 'small' }}
+                    key={'add-context-button-' + context}
+                    onClick={() => addContextTagToPrompt(context)}
+                  >
+                    {context}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      }
+    return (
+      <div className="col-12" id="context-container">
+        <p id="context-message">No contextual information found</p>;
+      </div>
+    );
+  };
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
       <div className="container-fluid mt-3">
@@ -319,7 +363,7 @@ export const GenPage: FC = () => {
                   </div>
 
                   <div className="explanations mt-3">
-                    Select or craft your prompt with the element #INSERTTEXT to insert text
+                    Select or craft your prompt with the element [[TEXT]] to insert text
                   </div>
 
                   <div className="d-flex align-items-center " style={{ zIndex: 100 }}>
@@ -384,6 +428,7 @@ export const GenPage: FC = () => {
                       </div>
                     </details>
                   </div>
+                  {addContextButtons(currentProject?.params.cols_context)}
                   <div className="form-floating mt-2">
                     <textarea
                       id="prompt"
