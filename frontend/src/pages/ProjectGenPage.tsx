@@ -253,26 +253,33 @@ export const GenPage: FC = () => {
       if (contextColumns.length > 0) {
         return (
           <>
-            <div className="explanations mt-3 text-center" style={{ fontSize: 'small' }}>
-              Add contextual information to your prompt by clicking on the buttons below, or by
-              typing [[column name]]
-            </div>
-            <div className="col-12 text-center">
-              {contextColumns.map((context) => (
-                <button
-                  className="btn btn-primary mx-2"
-                  style={{ fontSize: 'small' }}
-                  key={'add-context-button-' + context}
-                  onClick={() => addContextTagToPrompt(context)}
-                >
-                  {context}
-                </button>
-              ))}
+            <div className="col-12" id="context-container">
+              <div id="context-message">
+                Add contextual information to your prompt by clicking on the buttons, or by typing
+                [[column name]]
+              </div>
+              <div id="button-context-wrapper">
+                {contextColumns.map((context) => (
+                  <button
+                    className="btn btn-primary mx-2"
+                    id="context-button"
+                    style={{ fontSize: 'small' }}
+                    key={'add-context-button-' + context}
+                    onClick={() => addContextTagToPrompt(context)}
+                  >
+                    {context}
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         );
       }
-    return undefined;
+    return (
+      <div className="col-12" id="context-container">
+        <p id="context-message">No contextual information found</p>;
+      </div>
+    );
   };
 
   return (
