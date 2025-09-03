@@ -238,6 +238,43 @@ export const GenPage: FC = () => {
     },
   ];
 
+  const addContextTagToPrompt = (context: string) => {
+    setAppContext((prev) => ({
+      ...prev,
+      generateConfig: {
+        ...generateConfig,
+        prompt: (generateConfig.prompt =
+          (generateConfig.prompt ? generateConfig.prompt : '') + '[[' + context + ']]'),
+      },
+    }));
+  };
+  const addContextButtons = (contextColumns: string[] | undefined) => {
+    if (contextColumns)
+      if (contextColumns.length > 0) {
+        return (
+          <>
+            <div className="explanations mt-3 text-center" style={{ fontSize: 'small' }}>
+              Add contextual information to your prompt by clicking on the buttons below, or by
+              typing [[column name]]
+            </div>
+            <div className="col-12 text-center">
+              {contextColumns.map((context) => (
+                <button
+                  className="btn btn-primary mx-2"
+                  style={{ fontSize: 'small' }}
+                  key={'add-context-button-' + context}
+                  onClick={() => addContextTagToPrompt(context)}
+                >
+                  {context}
+                </button>
+              ))}
+            </div>
+          </>
+        );
+      }
+    return undefined;
+  };
+  
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
       <div className="container-fluid mt-3">
@@ -384,6 +421,7 @@ export const GenPage: FC = () => {
                       </div>
                     </details>
                   </div>
+                  {addContextButtons(currentProject?.params.cols_context)}
                   <div className="form-floating mt-2">
                     <textarea
                       id="prompt"
