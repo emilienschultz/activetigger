@@ -31,6 +31,7 @@ class GenerateCall(BaseTask):
         df: DataFrame,
         model: GenerationModel,
         prompt: str,
+        cols_context : list[str]
     ):
         super().__init__()
         if path_process is None:
@@ -41,6 +42,7 @@ class GenerateCall(BaseTask):
         self.df = df
         self.model = model
         self.prompt = prompt
+        self.cols_context = cols_context
 
     def _write_progress(self, progress: int):
         """
