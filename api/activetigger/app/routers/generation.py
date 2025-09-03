@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Annotated
 
 from fastapi import (
@@ -103,17 +104,17 @@ async def postgenerate(
     Launch a call to generate from a prompt
     """
 
-    # Check here if all the "[[ XXX ]]" in the prompt correspond to a column  
-    # in the context column or not 
-    for word in request.prompt.split(" "): 
-        if word.startswith("[[") & word.endswith("]]"): 
-            tag_name = word[2:-2] # tag minus "[[" and "]]"" 
-            if tag_name in ["TEXT", *project.params.cols_context]: 
-                continue 
-            else : 
-                raise Exception((f"The tag {tag_name} is not part of the " 
-                    f"registered context columns.\nRegistered context columns: " 
-                    f"{project.params.cols_context}")) 
+    # Check here if all the "[[XXX]]" in the prompt correspond to a column  
+    # in the context column or the [[TEXT]] tag. If not, raise an exception.
+    for tag_like in re.findall("[\[]{2}\w{1,}[\]]{2}", request.prompt): 
+        tag_name = tag_like[2:-2] # tag minus "[[" and "]]"" 
+        if tag_name in ["TEXT", *project.params.cols_context]: 
+            continue 
+        else : 
+            raise HTTPException(status_code=500, 
+                detail=(f"The tag {tag_like} is not part of the " 
+                f"registered context columns nor it is [[TEXT]].\nRegistered "
+                f"context columns: {project.params.cols_context}")) 
 
     try:
         project.start_generation(request, current_user.username)
