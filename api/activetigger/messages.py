@@ -5,6 +5,7 @@ from email.message import EmailMessage
 
 from activetigger.config import config
 from activetigger.db.manager import DatabaseManager
+from activetigger.db.models import Messages
 
 
 class Messages:
@@ -66,3 +67,21 @@ class Messages:
         The Active Tigger Team
         """
         self.send_mail(mail, subject, body)
+
+    def get_messages_system(self) -> list[Messages]:
+        """
+        Get all system messages ordered by time desc
+        """
+        return self.db_manager.messages_service.get_messages_system()
+
+    def get_messages_for_project(self, project_slug: str) -> list[Messages]:
+        """
+        Get all project messages for a specific project ordered by time desc
+        """
+        return self.db_manager.messages_service.get_messages_for_project(project_slug)
+
+    def get_messages_for_user(self, user_name: str) -> list[Messages]:
+        """
+        Get all user messages for a specific user ordered by time desc
+        """
+        return self.db_manager.messages_service.get_messages_for_user(user_name)

@@ -10,6 +10,7 @@ from activetigger.db import DBException
 from activetigger.db.generations import GenerationsService
 from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.logs import LogsService
+from activetigger.db.messages import MessagesService
 from activetigger.db.models import Base
 from activetigger.db.projects import ProjectsService
 from activetigger.db.users import UsersService
@@ -52,6 +53,7 @@ class DatabaseManager:
         self.generations_service = GenerationsService(self.SessionMaker)
         self.language_models_service = LanguageModelsService(self.SessionMaker)
         self.logs_service = LogsService(self.SessionMaker)
+        self.messages_service = MessagesService(self.SessionMaker)
 
         # Create tables if not already present
         Base.metadata.create_all(self.engine)
