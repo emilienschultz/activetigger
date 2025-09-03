@@ -1186,7 +1186,7 @@ class Project:
                 df=extract,
                 prompt=request.prompt,
                 model=GenerationModel(**model.__dict__),
-                context_columns = model.params.cols_context
+                cols_context = self.params.cols_context
             ),
         )
         self.computing.append(
