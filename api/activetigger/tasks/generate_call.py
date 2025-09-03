@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import cast
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from activetigger.datamodels import (
     GenerationModel,
@@ -91,13 +91,7 @@ class GenerateCall(BaseTask):
                 if self.event.is_set():
                     raise Exception("Process was interrupted")
 
-            # insert the content in the prompt (either at the end or where it is indicated)
-            if "#INSERTTEXT" in self.prompt:
-                prompt_with_text = self.prompt.replace(
-                    "#INSERTTEXT", cast(str, row["text"])
-                )
-            else:
-                prompt_with_text = self.prompt + "\n\n" + cast(str, row["text"])
+            prompt_with_text = replace_tags_with_text(row, self.prompt, self.cols_context)
 
             # Get configured model
 
@@ -139,3 +133,66 @@ class GenerateCall(BaseTask):
             c += 1
 
         return results
+
+def replace_tags_with_text(row : Series, prompt : str, 
+        context_columns: list[str]) -> str:
+    """
+    This function takes in the prompt with tags (eg: "Hello please insert here 
+    with the [[dataset_year]]) slice the prompt where the [[TAGS]] are and replace
+    the holes with the corresponding text. This function only takes into account
+    unique tags. If a tag is repeated, only the first tag will be replaced with 
+    the content, the others will be removed.
+    """
+    def format(tag_name : str)-> str : return f"[[{tag_name}]]"
+    def unformat(tag:str)->str: return tag[2:-2]
+
+    # Retrieve the locations of the tags in the prompt
+    # If there are multiple occurences of a same tag, only consider the first one
+    indexes = {format(tag) : -1 for tag in ["TEXT", *context_columns]}
+    for tag in indexes:
+        try: indexes[tag] = prompt.find(tag)
+        except: continue
+    # if the text tag was not found, add it in the end
+    if indexes["[[TEXT]]"] == -1:
+        prompt += "\n\n[[TEXT]]"
+        indexes["[[TEXT]]"] = len(prompt)
+    # Remove all tags that was not found from the indexes
+    indexes = {tag:index for tag,index in indexes.items() if index != -1}
+
+    # Sort the indexes so that the holes in the prompt will match the tags
+    # https://realpython.com/sort-python-dictionary/#sorting-dictionaries-in-python
+    indexes = dict(sorted(indexes.items(), key = lambda x : x[1])) 
+
+    sliced_prompt = slice_prompt(indexes, prompt)
+
+    # Insert the contents 
+    complete_prompt = sliced_prompt[0]
+    for i, tag in enumerate(indexes.keys()):
+        if tag == "[[TEXT]]":
+            complete_prompt += str(row["text"])
+        else:
+            complete_prompt += str(row[unformat(tag)])
+        complete_prompt += sliced_prompt[i+1]
+    return complete_prompt
+
+def slice_prompt(indexes : dict[str:int], prompt : str) -> list[str]:
+    """Takes in the prompt and the location of the tags and return the prompt
+    as a list of slices where each hole correspond to a tag. Any repeated tag 
+    is removed."""
+    # Create a list of splits
+    splits = [0]
+    for tag in indexes: splits += [indexes[tag], indexes[tag] + len(tag)]
+    splits += [len(prompt)]
+
+    # cut the prompt 
+    sliced_prompt, slice_start, slice_end = [], 0, 1
+    while slice_end < len(splits):
+        sliced_prompt += [prompt[splits[slice_start]:splits[slice_end]]]
+        slice_start += 2; slice_end += 2
+
+    # Clean the prompt of any additional tag
+    for i, prompt_slice in enumerate(sliced_prompt):
+        for tag in indexes.keys():
+            if tag in prompt_slice:
+                sliced_prompt[i] = prompt_slice.replace(tag, "")
+    return sliced_prompt
