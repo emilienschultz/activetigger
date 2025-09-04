@@ -206,6 +206,17 @@ async def get_projects(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/datasets", dependencies=[Depends(verified_user)])
+async def get_project_datasets() -> list:
+    """
+    Get all datasets already available for a specific user
+    """
+    try:
+        return ["test"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 @router.get(
     "/projects/{project_slug}",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],

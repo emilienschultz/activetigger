@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import ClipLoader from 'react-spinners/ClipLoader';
 
-//import { stringify } from 'csv-stringify/browser/esm/sync';
 import { CanceledError } from 'axios';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
@@ -56,8 +55,10 @@ export const ProjectCreationForm: FC = () => {
     },
   );
   const { notify } = useNotifications();
+  // const { datasets } = useGetAvailableDatasets();
 
   const [creatingProject, setCreatingProject] = useState<boolean>(false); // state for the data
+  const [dataset] = useState<string>('load'); // state for the data
   const [data, setData] = useState<DataType | null>(null); // state for the data
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
@@ -229,16 +230,33 @@ export const ProjectCreationForm: FC = () => {
             </div>
 
             <div>
-              <label className="form-label" htmlFor="csvFile">
-                Data
+              <label>
+                Dataset
+                {/* <select
+                  className="form-select"
+                  id="existingDataset"
+                  value={dataset}
+                  onChange={(e) => setDataset(e.target.value)}
+                >
+                  <option value="load">Load a file</option>
+                  {(datasets as string[]) ||
+                    [].map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                </select> */}
               </label>
-              <input
-                className="form-control"
-                disabled={creatingProject}
-                id="csvFile"
-                type="file"
-                {...register('files')}
-              />
+
+              {dataset === 'load' && (
+                <input
+                  className="form-control"
+                  disabled={creatingProject}
+                  id="csvFile"
+                  type="file"
+                  {...register('files')}
+                />
+              )}
               {
                 // display datable if data available
                 data !== null && (
@@ -348,17 +366,6 @@ export const ProjectCreationForm: FC = () => {
                         />
                       )}
                     />
-                    {/* <select
-                    className="event-control"
-                    id="col_label"
-                    disabled={data === null}
-                    {...register('col_label')}
-                  >
-                    <option key="none" value={''} style={{ color: 'grey' }}>
-                      Select...
-                    </option>
-                    {columns}
-                  </select> */}
 
                     <label className="form-label" htmlFor="cols_context">
                       Contextual information columns (optional)
