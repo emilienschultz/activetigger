@@ -170,12 +170,12 @@ class ProjectsService:
                 delete(Auths).filter_by(project_slug=project_slug, user_name=user_name)
             )
 
-    def get_user_auth_projects(self, user_name: str):
+    def get_user_auth_projects(self, user_name: str, auth: str | None = None) -> list[Any]:
         """
         Projects user can access (auth)
         """
         with self.Session() as session:
-            result = session.execute(
+            query = (
                 select(
                     Auths.project_slug,
                     Auths.status,
@@ -185,7 +185,11 @@ class ProjectsService:
                 )
                 .join(Auths.project)
                 .where(Auths.user_name == user_name)
-            ).all()
+            )
+            if auth is not None:
+                query = query.where(Auths.status == auth)
+
+            result = session.execute(query).all()
             return result
 
     def get_user_auth(self, user_name: str, project_slug: str | None = None):

@@ -14,6 +14,7 @@ import {
   useAddFeature,
   useAddProjectFile,
   useCreateProject,
+  useGetAvailableDatasets,
   useProjectNameAvailable,
 } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
@@ -26,6 +27,11 @@ export interface DataType {
   data: Record<string, string | number | bigint>[];
   filename: string;
 }
+
+type Option = {
+  value: string;
+  label: string;
+};
 
 // component
 export const ProjectCreationForm: FC = () => {
@@ -55,10 +61,10 @@ export const ProjectCreationForm: FC = () => {
     },
   );
   const { notify } = useNotifications();
-  // const { datasets } = useGetAvailableDatasets();
+  const { datasets } = useGetAvailableDatasets();
 
   const [creatingProject, setCreatingProject] = useState<boolean>(false); // state for the data
-  const [dataset] = useState<string>('load'); // state for the data
+  const [dataset, setDataset] = useState<string>('load'); // state for the data
   const [data, setData] = useState<DataType | null>(null); // state for the data
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
@@ -77,8 +83,18 @@ export const ProjectCreationForm: FC = () => {
         {h}
       </option>
     ));
-  const columnsSelect =
-    data?.headers.filter((h) => h !== '').map((e) => ({ value: e, label: e })) || [];
+
+  // available columns, depending of the source
+  const [columnsFromData, setColumnsFromData] = useState<Option[] | undefined>(undefined);
+  const [columnsFromProject, setColumnsFromProject] = useState<Option[] | undefined>(undefined);
+  useEffect(() => {
+    setColumnsFromData(data?.headers.filter((h) => h !== '').map((e) => ({ value: e, label: e })));
+    setColumnsFromProject(
+      datasets && dataset && datasets[dataset]
+        ? datasets[dataset].filter((h) => h !== '').map((e) => ({ value: e, label: e }))
+        : undefined,
+    );
+  }, [data, dataset, datasets]);
 
   // select the text on input on click
   const handleClickOnText = (event: React.MouseEvent<HTMLInputElement>) => {
@@ -190,6 +206,8 @@ export const ProjectCreationForm: FC = () => {
     }
   };
 
+  console.log(columnsFromProject);
+
   return (
     <div className="container-fluid">
       <div className="row">
@@ -232,20 +250,19 @@ export const ProjectCreationForm: FC = () => {
             <div>
               <label>
                 Dataset
-                {/* <select
+                <select
                   className="form-select"
                   id="existingDataset"
                   value={dataset}
                   onChange={(e) => setDataset(e.target.value)}
                 >
                   <option value="load">Load a file</option>
-                  {(datasets as string[]) ||
-                    [].map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                </select> */}
+                  {Object.keys(datasets || {}).map((d) => (
+                    <option key={d} value={d}>
+                      Dataset project {d}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               {dataset === 'load' && (
@@ -259,7 +276,7 @@ export const ProjectCreationForm: FC = () => {
               )}
               {
                 // display datable if data available
-                data !== null && (
+                dataset === 'load' && data !== null && (
                   <div>
                     <div className="m-3">
                       Size of the dataset : <b>{data.data.length - 1}</b>
@@ -291,7 +308,7 @@ export const ProjectCreationForm: FC = () => {
 
             {
               // only display if data
-              data != null && (
+              (columnsFromData || columnsFromProject) && (
                 <div>
                   <div>
                     <label className="form-label" htmlFor="col_id">
@@ -319,7 +336,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsSelect}
+                          options={columnsFromData || columnsFromProject}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {
@@ -355,7 +372,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsSelect}
+                          options={columnsFromData || columnsFromProject}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {
@@ -375,7 +392,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsSelect}
+                          options={columnsFromData || columnsFromProject}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {
@@ -496,7 +513,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsSelect}
+                          options={columnsFromData || columnsFromProject}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {

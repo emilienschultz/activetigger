@@ -207,12 +207,14 @@ async def get_projects(
 
 
 @router.get("/datasets", dependencies=[Depends(verified_user)])
-async def get_project_datasets() -> list:
+async def get_project_datasets(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> dict[str, list[str]]:
     """
     Get all datasets already available for a specific user
     """
     try:
-        return ["test"]
+        return orchestrator.get_auth_datasets(current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

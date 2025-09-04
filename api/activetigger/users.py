@@ -54,11 +54,11 @@ class Users:
         self.db_manager.projects_service.delete_auth(project_slug, username)
         logging.info("Auth of user %s deleted", username)
 
-    def get_auth_projects(self, username: str) -> list:
+    def get_auth_projects(self, username: str, auth: str | None = None) -> list:
         """
         Get user auth
         """
-        auth = self.db_manager.projects_service.get_user_auth_projects(username)
+        auth = self.db_manager.projects_service.get_user_auth_projects(username, auth)
         return auth
 
     def get_auth(self, username: str, project_slug: str = "all") -> list:

@@ -2673,14 +2673,14 @@ export function useDeleteMessage() {
 export function useGetAvailableDatasets() {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
-  const datasets = useAsyncMemo(async () => {
+  const getDatasets = useAsyncMemo(async () => {
     const res = await api.GET('/datasets');
     if (res.data && !res.error) return res.data;
     else {
-      return [];
+      return null;
     }
   }, [fetchTrigger]);
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { datasets: getAsyncMemoData(datasets), reFetchProjects: reFetch };
+  return { datasets: getAsyncMemoData(getDatasets) || null, reFetchProjects: reFetch };
 }

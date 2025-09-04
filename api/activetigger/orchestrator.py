@@ -284,6 +284,13 @@ class Orchestrator:
             messages=self.messages.get_messages_system(),
         )
 
+    def get_auth_datasets(self, username: str) -> dict[str, list[str]]:
+        """
+        Get datasets authorized for the user
+        """
+        projects = self.users.get_auth_projects(username, auth="manager")
+        return {p.project_slug: p.parameters["all_columns"] for p in projects}
+
     def get_auth_projects(self, username: str) -> list[ProjectSummaryModel]:
         """
         Get projects authorized for the user
