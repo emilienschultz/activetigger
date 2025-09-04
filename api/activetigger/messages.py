@@ -4,6 +4,7 @@ import ssl
 from email.message import EmailMessage
 
 from activetigger.config import config
+from activetigger.datamodels import MessagesOutModel
 from activetigger.db.manager import DatabaseManager
 from activetigger.db.models import Messages
 
@@ -68,20 +69,67 @@ class Messages:
         """
         self.send_mail(mail, subject, body)
 
-    def get_messages_system(self) -> list[Messages]:
+    def get_messages_system(self, from_user: str | None = None) -> list[MessagesOutModel]:
         """
         Get all system messages ordered by time desc
         """
-        return self.db_manager.messages_service.get_messages_system()
+        r = self.db_manager.messages_service.get_messages_system(from_user)
+        return [
+            MessagesOutModel(
+                content=m.content, time=str(m.time), id=m.id, created_by=m.created_by, kind=m.kind
+            )
+            for m in r
+        ]
 
-    def get_messages_for_project(self, project_slug: str) -> list[Messages]:
+    def get_messages_for_project(self, project_slug: str) -> list[MessagesOutModel]:
         """
         Get all project messages for a specific project ordered by time desc
         """
-        return self.db_manager.messages_service.get_messages_for_project(project_slug)
+        r = self.db_manager.messages_service.get_messages_for_project(project_slug)
+        return [
+            MessagesOutModel(
+                content=m.content, time=str(m.time), id=m.id, created_by=m.created_by, kind=m.kind
+            )
+            for m in r
+        ]
 
-    def get_messages_for_user(self, user_name: str) -> list[Messages]:
+    def get_messages_for_user(self, user_name: str) -> list[MessagesOutModel]:
         """
         Get all user messages for a specific user ordered by time desc
         """
-        return self.db_manager.messages_service.get_messages_for_user(user_name)
+        r = self.db_manager.messages_service.get_messages_for_user(user_name)
+        return [
+            MessagesOutModel(
+                content=m.content, time=str(m.time), id=m.id, created_by=m.created_by, kind=m.kind
+            )
+            for m in r
+        ]
+
+    def get_messages(
+        self,
+        kind: str,
+        from_user: str | None = None,
+        for_user: str | None = None,
+        for_project: str | None = None,
+    ) -> list[MessagesOutModel]:
+        """
+        Get messages
+        """
+        if kind == "system":
+            return self.get_messages_system()
+        else:
+            raise Exception(f"Unknown message kind: {kind}")
+
+    def add_message(self, user_name: str, kind: str, content: str, property: dict = {}) -> None:
+        """
+        Add a message
+        """
+        self.db_manager.messages_service.add_message(
+            user_name=user_name, kind=kind, property=property, content=content
+        )
+
+    def delete_message(self, id: int) -> None:
+        """
+        Delete a message by its ID.
+        """
+        self.db_manager.messages_service.delete_message(id)

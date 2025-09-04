@@ -1692,6 +1692,7 @@ export function useGetServer(projectState: ProjectStateModel | null) {
     memory: data?.memory,
     disk: data?.disk,
     mail_available: data?.mail_available,
+    messages: data?.messages,
     reFetchQueueState: reFetch,
   };
 }
@@ -2607,4 +2608,64 @@ export function useSendResetMail() {
   );
 
   return { sendResetMail };
+}
+
+/**
+ * Send message
+ */
+
+export function useSendMessage() {
+  const { notify } = useNotifications();
+  const sendMessage = useCallback(
+    async (content: string, kind: string) => {
+      const res = await api.POST('/messages', {
+        body: {
+          content: content,
+          kind: kind,
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Your message has been sent' });
+    },
+    [notify],
+  );
+
+  return { sendMessage };
+}
+
+/**
+ * Get messages
+ */
+
+export function useGetMessages(kind: string, from_user: string | null) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getMessages = useAsyncMemo(async () => {
+    const res = await api.GET('/messages', {
+      params: {
+        query: { kind: kind, from_user: from_user },
+      },
+    });
+    return res.data;
+  }, [fetchTrigger]);
+
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { messages: getAsyncMemoData(getMessages), reFetchMessages: reFetch };
+}
+
+export function useDeleteMessage() {
+  const { notify } = useNotifications();
+  const deleteMessage = useCallback(
+    async (message_id: number) => {
+      const res = await api.POST(`/messages/delete`, {
+        params: {
+          query: { message_id: message_id },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'Your message has been deleted' });
+    },
+    [notify],
+  );
+
+  return { deleteMessage };
 }

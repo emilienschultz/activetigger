@@ -835,6 +835,21 @@ class GpuInformationModel(BaseModel):
     available_memory: float
 
 
+class MessagesInModel(BaseModel):
+    kind: str
+    content: str
+    for_project: str | None = None
+    for_user: str | None = None
+
+
+class MessagesOutModel(BaseModel):
+    id: int
+    kind: str
+    created_by: str
+    time: str
+    content: str
+
+
 class ServerStateModel(BaseModel):
     version: str
     queue: dict[str, dict[str, str | None]]
@@ -844,6 +859,7 @@ class ServerStateModel(BaseModel):
     memory: dict
     disk: dict
     mail_available: bool
+    messages: list[MessagesOutModel]
 
 
 class StaticFileModel(BaseModel):

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/at.png';
 import { LoginForm } from '../components/forms/LoginForm';
 import Notifications from '../components/layout/Notifications';
-import { useGetActiveUsers, useGetVersion } from '../core/api';
+import { useGetActiveUsers, useGetServer } from '../core/api';
 import { useAuth } from '../core/auth';
 import { LoginParams } from '../types';
 export const HomePage: FC = () => {
@@ -25,7 +25,7 @@ export const HomePage: FC = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const { login } = useAuth();
-  const { version } = useGetVersion();
+  const { version, messages } = useGetServer(null);
   if (params.get('username') && params.get('password')) {
     login({
       username: params.get('username'),
@@ -96,6 +96,24 @@ export const HomePage: FC = () => {
                       >
                         🐯 Go to your projects
                       </Link>
+                    </div>
+                    <div style={{ maxWidth: '600px', margin: '1rem auto' }}>
+                      {(messages || []).map((msg) => (
+                        <div
+                          key={msg.id}
+                          style={{
+                            fontSize: '0.9rem',
+                            color: '#333',
+                          }}
+                        >
+                          <div style={{ color: '#777' }}>
+                            {msg.content} •{' '}
+                            <span style={{ fontSize: '0.5rem' }}>
+                              {new Date(msg.time || Date.now()).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

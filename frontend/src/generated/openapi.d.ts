@@ -1578,6 +1578,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Messages
+         * @description Get messages
+         */
+        get: operations["get_messages_messages_get"];
+        put?: never;
+        /**
+         * Post Message
+         * @description Post a new message
+         */
+        post: operations["post_message_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Message
+         * @description Delete a message
+         */
+        post: operations["delete_message_messages_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -2340,6 +2384,30 @@ export interface components {
             /** Table */
             table?: Record<string, never> | null;
         };
+        /** MessagesInModel */
+        MessagesInModel: {
+            /** Kind */
+            kind: string;
+            /** Content */
+            content: string;
+            /** For Project */
+            for_project?: string | null;
+            /** For User */
+            for_user?: string | null;
+        };
+        /** MessagesOutModel */
+        MessagesOutModel: {
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Created By */
+            created_by: string;
+            /** Time */
+            time: string;
+            /** Content */
+            content: string;
+        };
         /**
          * NextInModel
          * @description Requesting next element to annotate
@@ -2802,6 +2870,8 @@ export interface components {
             disk: Record<string, never>;
             /** Mail Available */
             mail_available: boolean;
+            /** Messages */
+            messages: components["schemas"]["MessagesOutModel"][];
         };
         /**
          * SimpleModelModel
@@ -5601,6 +5671,104 @@ export interface operations {
             query: {
                 name: string;
                 project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_messages_messages_get: {
+        parameters: {
+            query: {
+                kind: string;
+                from_user?: string | null;
+                for_user?: string | null;
+                for_project?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessagesOutModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_message_messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessagesInModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_message_messages_delete_post: {
+        parameters: {
+            query: {
+                message_id: number;
             };
             header?: never;
             path?: never;

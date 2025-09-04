@@ -1,12 +1,10 @@
 import { FC } from 'react';
-import { useLocation } from 'react-router-dom';
 import { ChangePassword } from '../components/forms/ChangePassword';
 import { PageLayout } from '../components/layout/PageLayout';
 import { useAuth } from '../core/auth';
 
 export const AccountPage: FC = () => {
   const { authenticatedUser } = useAuth();
-  const { state } = useLocation();
 
   return (
     <PageLayout currentPage="login">

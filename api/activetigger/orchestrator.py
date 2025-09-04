@@ -281,6 +281,7 @@ class Orchestrator:
                 "total": disk_info.total / (1024**3),
             },
             mail_available=self.messages.mail_available,
+            messages=self.messages.get_messages_system(),
         )
 
     def get_auth_projects(self, username: str) -> list[ProjectSummaryModel]:

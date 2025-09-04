@@ -3,7 +3,9 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import DataGrid, { Column } from 'react-data-grid';
 import Select from 'react-select';
+import { SendMessage } from '../components/forms/SendMessage';
 import { PageLayout } from '../components/layout/PageLayout';
+import { ManageMessages } from '../components/ManageMessages';
 import {
   useGetLogs,
   useGetServer,
@@ -76,50 +78,6 @@ export const MonitorPage: FC = () => {
         <div className="row">
           <div className="col-12">
             <Tabs id="panel2" className="mt-3" defaultActiveKey="active">
-              <Tab eventKey="logs" title="Logs">
-                <h2 className="subtitle">Recent activity on all projects</h2>
-                {logs ? (
-                  <DataGrid<Row>
-                    className="fill-grid mt-2"
-                    columns={columns}
-                    rows={(logs as unknown as Row[]) || []}
-                  />
-                ) : (
-                  <div>No rights</div>
-                )}
-              </Tab>
-              <Tab eventKey="ressources" title="Ressouces">
-                <h2 className="subtitle">Monitor ressources</h2>
-                <table className="table-statistics">
-                  <thead>
-                    <tr>
-                      <th colSpan={2} className="table-primary text-primary text-center">
-                        Type
-                      </th>
-                      <th className="table-primary text-primary text-center">Ressources</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td colSpan={2}>GPU</td>
-                      <td>{JSON.stringify(gpu)}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={2}>CPU</td>
-                      <td>{JSON.stringify(cpu)}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={2}>Memory</td>
-                      <td>{JSON.stringify(memory)}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={2}>Disk</td>
-                      <td>{JSON.stringify(disk)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <hr />
-              </Tab>
               <Tab eventKey="active" title="Active Projects">
                 <h2 className="subtitle">Monitor active projects</h2>
 
@@ -173,7 +131,63 @@ export const MonitorPage: FC = () => {
                   </div>
                 ))}
               </Tab>
+              <Tab eventKey="messages" title="Messages">
+                <div className="col-md-6">
+                  <h3 className="subtitle">Send message</h3>
+                  <SendMessage />
+                </div>
+                <div className="col-md-8 mt-3">
+                  <h3 className="subtitle">Manage messages</h3>
+                  <ManageMessages />
+                </div>
+              </Tab>
+              <Tab eventKey="logs" title="Logs">
+                <h2 className="subtitle">Recent activity on all projects</h2>
+                {logs ? (
+                  <DataGrid<Row>
+                    className="fill-grid mt-2"
+                    columns={columns}
+                    rows={(logs as unknown as Row[]) || []}
+                  />
+                ) : (
+                  <div>No rights</div>
+                )}
+              </Tab>
+              <Tab eventKey="ressources" title="Ressouces">
+                <h2 className="subtitle">Monitor ressources</h2>
+                <table className="table-statistics">
+                  <thead>
+                    <tr>
+                      <th colSpan={2} className="table-primary text-primary text-center">
+                        Type
+                      </th>
+                      <th className="table-primary text-primary text-center">Ressources</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colSpan={2}>GPU</td>
+                      <td>{JSON.stringify(gpu)}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan={2}>CPU</td>
+                      <td>{JSON.stringify(cpu)}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan={2}>Memory</td>
+                      <td>{JSON.stringify(memory)}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan={2}>Disk</td>
+                      <td>{JSON.stringify(disk)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <hr />
+              </Tab>
+
               <Tab eventKey="users" title="Users">
+                <h2 className="subtitle">Monitor users</h2>
                 <Select
                   id="select-user"
                   className="form-select"

@@ -23,6 +23,7 @@ from activetigger.app.routers import (
     features,
     files,
     generation,
+    messages,
     models,
     projects,
     schemes,
@@ -68,6 +69,7 @@ app.include_router(models.router)
 app.include_router(generation.router)
 app.include_router(files.router)
 app.include_router(bertopic.router)
+app.include_router(messages.router)
 
 
 # allow multiple servers (avoir CORS error)

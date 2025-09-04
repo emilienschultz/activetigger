@@ -15,6 +15,7 @@ class MessagesService:
     def add_message(
         self,
         user_name: str,
+        content: str,
         kind: str,
         property: dict = {},
         for_project: str | None = None,
@@ -29,6 +30,7 @@ class MessagesService:
         message = Messages(
             created_by=user_name,
             time=datetime.now(),
+            content=content,
             kind=kind,
             property=property,
             for_project=for_project,
@@ -49,21 +51,24 @@ class MessagesService:
             session.commit()
         session.close()
 
-    def get_messages_system(self) -> list[Messages]:
+    def get_messages_system(self, from_user: str | None = None) -> list[Messages]:
         """
-        Get all system messages ordered by time desc
+        Get all system messages ordered by time desc.
+        Optionally filter by creator.
         """
         session = self.Session()
-        messages = (
-            session.query(Messages)
-            .filter(Messages.kind == "system")
-            .order_by(Messages.time.desc())
-            .all()
-        )
+        query = session.query(Messages).filter(Messages.kind == "system")
+
+        if from_user:
+            query = query.filter(Messages.created_by == from_user)
+
+        messages = query.order_by(Messages.time.desc()).all()
         session.close()
         return messages
 
-    def get_messages_for_project(self, project_slug: str) -> list[Messages]:
+    def get_messages_for_project(
+        self, project_slug: str, from_user: str | None = None
+    ) -> list[Messages]:
         """
         Get all project messages for a specific project ordered by time desc
         """
@@ -77,7 +82,7 @@ class MessagesService:
         session.close()
         return messages
 
-    def get_messages_for_user(self, user_name: str) -> list[Messages]:
+    def get_messages_for_user(self, user_name: str, from_user: str | None = None) -> list[Messages]:
         """
         Get all user messages for a specific user ordered by time desc
         """

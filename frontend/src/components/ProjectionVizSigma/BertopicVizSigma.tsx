@@ -82,7 +82,7 @@ export const BertopicVizSigma: FC<Props> = ({
 
   // nodeReducer change node appearance from colorMapping and selection state
   const nodeReducer = useCallback(
-    (node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
+    (_node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
       const res: Partial<NodeDisplayData> = { ...data };
 
       // apply color for nodes
