@@ -58,8 +58,7 @@ class Users:
         """
         Get user auth
         """
-        auth = self.db_manager.projects_service.get_user_auth_projects(username, auth)
-        return auth
+        return self.db_manager.projects_service.get_user_auth_projects(username, auth)
 
     def get_auth(self, username: str, project_slug: str = "all") -> list:
         """

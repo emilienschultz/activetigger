@@ -1477,6 +1477,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/files/copy/project": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy Existing Data
+         * @description Copy an existing project to create a new one
+         */
+        post: operations["copy_existing_data_files_copy_project_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/files/add/project": {
         parameters: {
             query?: never;
@@ -2057,6 +2077,18 @@ export interface components {
             force_compute_embeddings: boolean;
         };
         /**
+         * DatasetModel
+         * @description Datasets authorized for a user
+         */
+        DatasetModel: {
+            /** Project Slug */
+            project_slug: string;
+            /** Columns */
+            columns: string[];
+            /** N Rows */
+            n_rows: number;
+        };
+        /**
          * ElementOutModel
          * @description Posting element to annotate
          */
@@ -2501,14 +2533,16 @@ export interface components {
             cols_text: string[];
             /** Project Name */
             project_name: string;
-            /** Filename */
-            filename: string;
             /** Col Id */
             col_id: string;
             /** N Train */
             n_train: number;
             /** N Test */
             n_test: number;
+            /** From Project */
+            from_project?: string | null;
+            /** Filename */
+            filename?: string | null;
             /** Dir */
             dir?: string | null;
             /**
@@ -2615,14 +2649,16 @@ export interface components {
             cols_text: string[];
             /** Project Name */
             project_name: string;
-            /** Filename */
-            filename: string;
             /** Col Id */
             col_id: string;
             /** N Train */
             n_train: number;
             /** N Test */
             n_test: number;
+            /** From Project */
+            from_project?: string | null;
+            /** Filename */
+            filename?: string | null;
             /** Dir */
             dir?: string | null;
             /**
@@ -3723,9 +3759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string[] | undefined;
-                    };
+                    "application/json": components["schemas"]["DatasetModel"][];
                 };
             };
         };
@@ -5537,6 +5571,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+        };
+    };
+    copy_existing_data_files_copy_project_post: {
+        parameters: {
+            query: {
+                project_name: string;
+                source_project: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

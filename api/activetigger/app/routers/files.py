@@ -59,6 +59,46 @@ async def save_uploaded_file(file: UploadFile, file_path: Path, project_path: Pa
         print(f"Failed to write file: {e}")
 
 
+@router.post("/files/copy/project")
+async def copy_existing_data(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    project_name: str,
+    source_project: str,
+) -> None:
+    """
+    Copy an existing project to create a new one
+    """
+    test_rights(ServerAction.CREATE_PROJECT, current_user.username)
+
+    # check if the project does not already exist
+    if orchestrator.exists(project_name):
+        raise HTTPException(
+            status_code=500, detail="Project already exists, please choose another name"
+        )
+    # check if the source project exists
+    if not orchestrator.exists(source_project):
+        raise HTTPException(status_code=500, detail="Source project does not exist")
+    # try to copy the project
+    try:
+        # create a folder for the project to be created
+        project_slug = orchestrator.check_project_name(project_name)
+        source_path = Path(f"{config.data_path}/projects/{source_project}")
+        project_path = Path(f"{config.data_path}/projects/{project_slug}")
+        os.makedirs(project_path)
+
+        # copy the full dataset
+        shutil.copyfile(
+            source_path.joinpath(orchestrator.data_all),
+            project_path.joinpath(orchestrator.data_all),
+        )
+
+    except Exception as e:
+        # if failed, remove the project folder
+        if project_path.exists():
+            shutil.rmtree(project_path)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/files/add/project")
 async def upload_file(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],

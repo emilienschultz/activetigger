@@ -43,83 +43,93 @@ class CreateProject(BaseTask):
         if self.params.dir is None or not self.params.dir.exists():
             print("The directory does not exist and should", self.params.dir)
             raise Exception("The directory does not exist and should")
+
         # Step 1 : load all data and index to str and rename columns
-        file_path = self.params.dir.joinpath(self.params.filename)
-        if self.params.filename.endswith(".csv"):
-            content = pd.read_csv(file_path, low_memory=False)
-        elif self.params.filename.endswith(".parquet"):
-            content = pd.read_parquet(file_path)
-        elif self.params.filename.endswith(".xlsx"):
-            content = pd.read_excel(file_path)
-        else:
-            raise Exception("File format not supported (only csv, xlsx and parquet)")
-        # rename columns both for data & params to avoid confusion
-        content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
-        if self.params.col_id:
-            self.params.col_id = "dataset_" + self.params.col_id
-        # change also the name in the parameters
-        self.params.cols_text = ["dataset_" + i for i in self.params.cols_text if i]
-        self.params.cols_context = ["dataset_" + i for i in self.params.cols_context if i]
-        self.params.cols_label = ["dataset_" + i for i in self.params.cols_label if i]
-        self.params.cols_stratify = ["dataset_" + i for i in self.params.cols_stratify if i]
+        # If file comes from a previous project, there is no need to reprocess it
+        if self.params.filename:
+            file_path = self.params.dir.joinpath(self.params.filename)
+            if self.params.filename.endswith(".csv"):
+                content = pd.read_csv(file_path, low_memory=False)
+            elif self.params.filename.endswith(".parquet"):
+                content = pd.read_parquet(file_path)
+            elif self.params.filename.endswith(".xlsx"):
+                content = pd.read_excel(file_path)
+            else:
+                raise Exception("File format not supported (only csv, xlsx and parquet)")
+            # rename columns both for data & params to avoid confusion
+            content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
+            if self.params.col_id:
+                self.params.col_id = "dataset_" + self.params.col_id
+            # change also the name in the parameters
+            self.params.cols_text = ["dataset_" + i for i in self.params.cols_text if i]
+            self.params.cols_context = ["dataset_" + i for i in self.params.cols_context if i]
+            self.params.cols_label = ["dataset_" + i for i in self.params.cols_label if i]
+            self.params.cols_stratify = ["dataset_" + i for i in self.params.cols_stratify if i]
 
-        # remove completely empty lines
-        content = content.dropna(how="all")
-        all_columns = list(content.columns)
-        n_total = len(content)
+            # remove completely empty lines
+            content = content.dropna(how="all")
+            all_columns = list(content.columns)
+            n_total = len(content)
 
-        # test if the size of the sample requested is possible
-        if len(content) < self.params.n_test + self.params.n_train:
-            shutil.rmtree(self.params.dir)
-            raise Exception(
-                f"Not enough data for creating the train/test dataset. Current : {len(content)} ; Selected : {self.params.n_test + self.params.n_train}"
+            # test if the size of the sample requested is possible
+            if len(content) < self.params.n_test + self.params.n_train:
+                shutil.rmtree(self.params.dir)
+                raise Exception(
+                    f"Not enough data for creating the train/test dataset. Current : {len(content)} ; Selected : {self.params.n_test + self.params.n_train}"
+                )
+
+            # create the index
+            keep_id = []  # keep unchanged the index to avoid desindexing
+
+            # case there is a id column that is unique
+            if self.params.col_id != "dataset_row_number" and (
+                (content[self.params.col_id].astype(str).apply(slugify)).nunique() == len(content)
+            ):
+                content["id"] = content[self.params.col_id].astype(str).apply(slugify)
+                keep_id.append(self.params.col_id)
+                content.set_index("id", inplace=True)
+            # by default the row number
+            else:
+                print("Use the row number as index")
+                content["id"] = [str(i) for i in range(len(content))]
+                content.set_index("id", inplace=True)
+
+            # convert columns that can be numeric or force text, exception for the text/labels
+            for col in [i for i in content.columns if i not in self.params.cols_label]:
+                try:
+                    content[col] = pd.to_numeric(content[col], errors="raise")
+                except Exception:
+                    content[col] = content[col].astype(str).replace("nan", None)
+            for col in self.params.cols_label:
+                try:
+                    content[col] = content[col].astype(str).replace("nan", None)
+                except Exception:
+                    # if the column is not convertible to string, keep it as is
+                    pass
+
+            # create the text column, merging the different columns
+            content["text"] = content[self.params.cols_text].apply(
+                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
             )
 
-        # create the index
-        keep_id = []  # keep unchanged the index to avoid desindexing
+            # convert NA texts in empty string
+            content["text"] = content["text"].fillna("")
 
-        # case there is a id column that is unique
-        if self.params.col_id != "dataset_row_number" and (
-            (content[self.params.col_id].astype(str).apply(slugify)).nunique() == len(content)
-        ):
-            content["id"] = content[self.params.col_id].astype(str).apply(slugify)
-            keep_id.append(self.params.col_id)
-            content.set_index("id", inplace=True)
-        # by default the row number
+            # limit of usable text (in the futur, will be defined by the number of token)
+            def limit(text):
+                return 1200
+
+            content["limit"] = content["text"].apply(limit)
+
+            # save a complete copy of the dataset
+            content.to_parquet(self.params.dir.joinpath(self.data_all), index=True)
         else:
-            print("Use the row number as index")
-            content["id"] = [str(i) for i in range(len(content))]
-            content.set_index("id", inplace=True)
-
-        # convert columns that can be numeric or force text, exception for the text/labels
-        for col in [i for i in content.columns if i not in self.params.cols_label]:
-            try:
-                content[col] = pd.to_numeric(content[col], errors="raise")
-            except Exception:
-                content[col] = content[col].astype(str).replace("nan", None)
-        for col in self.params.cols_label:
-            try:
-                content[col] = content[col].astype(str).replace("nan", None)
-            except Exception:
-                # if the column is not convertible to string, keep it as is
-                pass
-
-        # create the text column, merging the different columns
-        content["text"] = content[self.params.cols_text].apply(
-            lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
-        )
-
-        # convert NA texts in empty string
-        content["text"] = content["text"].fillna("")
-
-        # limit of usable text (in the futur, will be defined by the number of token)
-        def limit(text):
-            return 1200
-
-        content["limit"] = content["text"].apply(limit)
-
-        # save a complete copy of the dataset
-        content.to_parquet(self.params.dir.joinpath(self.data_all), index=True)
+            # case the file is already processed (coming from another project)
+            content = pd.read_parquet(self.params.dir.joinpath(self.data_all))
+            all_columns = list(content.columns)
+            n_total = len(content)
+            keep_id = []
+            # TODO ATTENTION A L'INDEX
 
         # ------------------------
         # End of the data cleaning
@@ -196,6 +206,7 @@ class CreateProject(BaseTask):
                 import_testset = testset[self.params.cols_label].dropna(how="all")
 
         # delete the initial file
-        self.params.dir.joinpath(self.params.filename).unlink()
+        if self.params.filename:
+            self.params.dir.joinpath(self.params.filename).unlink()
 
         return ProjectModel(**project), import_trainset, import_testset

@@ -2367,7 +2367,7 @@ export function useAddProjectFile() {
 
   // main callback to upload to API
   const addProjectFile = useCallback(
-    async (file: File, project_name: string) => {
+    async (project_name: string, file: File) => {
       try {
         // create a new controller
         const controller = new AbortController();
@@ -2410,6 +2410,20 @@ export function useAddProjectFile() {
     progression,
     cancel: controller,
   };
+}
+
+/**
+ * Copy existing data
+ */
+export function useCopyExistingData() {
+  const copyExistingData = useCallback(async (project_name: string, source_project: string) => {
+    await api.POST('/files/copy/project', {
+      params: {
+        query: { project_name: project_name, source_project: source_project },
+      },
+    });
+  }, []);
+  return copyExistingData;
 }
 
 /**

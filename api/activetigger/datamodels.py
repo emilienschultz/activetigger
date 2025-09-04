@@ -59,10 +59,11 @@ class ProjectBaseModel(BaseModel):
 
     cols_text: list[str]
     project_name: str
-    filename: str
     col_id: str
     n_train: int
     n_test: int
+    from_project: str | None = None
+    filename: str | None = None
     dir: Path | None = None
     embeddings: list[str] = []
     n_skip: int = 0
@@ -964,3 +965,13 @@ class ProjectCreatingModel(BaseModel):
 class BertopicTopicsOutModel(BaseModel):
     topics: list
     parameters: dict[str, Any]
+
+
+class DatasetModel(BaseModel):
+    """
+    Datasets authorized for a user
+    """
+
+    project_slug: str
+    columns: list[str]
+    n_rows: int

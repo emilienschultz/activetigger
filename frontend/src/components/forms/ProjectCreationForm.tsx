@@ -13,6 +13,7 @@ import {
   getProjectStatus,
   useAddFeature,
   useAddProjectFile,
+  useCopyExistingData,
   useCreateProject,
   useGetAvailableDatasets,
   useProjectNameAvailable,
@@ -72,28 +73,35 @@ export const ProjectCreationForm: FC = () => {
   const addFeature = useAddFeature();
 
   const { addProjectFile, progression, cancel } = useAddProjectFile(); // API call
+  const copyExistingData = useCopyExistingData();
   const files = useWatch({ control, name: 'files' }); // watch the files entry
   const force_label = useWatch({ control, name: 'force_label' }); // watch the force label entry
 
-  // available columns
-  const columns = data?.headers
-    .filter((h) => h !== '')
-    .map((h) => (
-      <option key={h} value={h}>
-        {h}
-      </option>
-    ));
-
-  // available columns, depending of the source
-  const [columnsFromData, setColumnsFromData] = useState<Option[] | undefined>(undefined);
-  const [columnsFromProject, setColumnsFromProject] = useState<Option[] | undefined>(undefined);
+  // available columns to select, depending of the source
+  const [availableFields, setAvailableFields] = useState<Option[] | undefined>(undefined);
+  const [columns, setColumns] = useState<string[]>([]);
+  const [lengthData, setLengthData] = useState<number>(0);
   useEffect(() => {
-    setColumnsFromData(data?.headers.filter((h) => h !== '').map((e) => ({ value: e, label: e })));
-    setColumnsFromProject(
-      datasets && dataset && datasets[dataset]
-        ? datasets[dataset].filter((h) => h !== '').map((e) => ({ value: e, label: e }))
-        : undefined,
-    );
+    // case of loading external file
+    if (dataset === 'load' && data) {
+      setAvailableFields(
+        data?.headers.filter((h) => h !== '').map((e) => ({ value: e, label: e })),
+      );
+      setColumns(data.headers);
+      setLengthData(data.data.length);
+      // case of existing project
+    } else if (dataset !== 'load' && datasets) {
+      const element = datasets.find((e) => e.project_slug === dataset);
+      setAvailableFields(
+        element?.columns.filter((h) => h !== '').map((e) => ({ value: e, label: e })),
+      );
+      setColumns(element?.columns || []);
+      setLengthData(element?.n_rows as number);
+    } else {
+      setAvailableFields(undefined);
+      setColumns([]);
+      setLengthData(0);
+    }
   }, [data, dataset, datasets]);
 
   // select the text on input on click
@@ -126,9 +134,13 @@ export const ProjectCreationForm: FC = () => {
   }, [files, maxSize, notify, setValue]);
 
   // action when form validated
-  const onSubmit: SubmitHandler<ProjectModel & { files: FileList }> = async (formData) => {
-    if (data) {
+  const onSubmit: SubmitHandler<ProjectModel & { files?: FileList }> = async (formData) => {
+    if (data || dataset !== 'load') {
       // check the form
+      if (formData.project_name === '') {
+        notify({ type: 'error', message: 'Please select a project name' });
+        return;
+      }
       if (formData.col_id == '') {
         notify({ type: 'error', message: 'Please select a id column' });
         return;
@@ -137,36 +149,43 @@ export const ProjectCreationForm: FC = () => {
         notify({ type: 'error', message: 'Please select a text column' });
         return;
       }
-      if (Number(formData.n_train) + Number(formData.n_test) > data.data.length) {
+      if (Number(formData.n_train) + Number(formData.n_test) > lengthData) {
         notify({
           type: 'warning',
           message: 'The sum of train and test set is too big, the train set is set to N - testset',
         });
-        setValue('n_train', Math.max(0, data.data.length - Number(formData.n_test) - 1));
+        setValue('n_train', Math.max(0, lengthData - Number(formData.n_test) - 1));
       }
-      setCreatingProject(true);
+      // test if the project name is available
+      const available = await availableProjectName(formData.project_name);
+      if (!available) {
+        notify({ type: 'error', message: 'Project name already taken' });
+        return;
+      }
 
       try {
-        // test if the project name is available
-        const available = await availableProjectName(formData.project_name);
-        if (formData.project_name === '') {
-          notify({ type: 'error', message: 'Please select a project name' });
-          setCreatingProject(false);
-          return;
+        setCreatingProject(true);
+
+        // manage the files
+        // case there is data to send
+        if (dataset === 'load' && files && files.length > 0) {
+          await addProjectFile(formData.project_name, files[0]);
         }
-        if (!available) {
-          notify({ type: 'error', message: 'Project name already taken' });
-          setCreatingProject(false);
-          return;
+        // case to use a project existing
+        else if (dataset !== 'load' && dataset) {
+          await copyExistingData(formData.project_name, dataset);
+        } else {
+          notify({ type: 'error', message: 'Unknown dataset' });
+          throw new Error('Unknown dataset');
         }
-        // send the data
-        await addProjectFile(files[0], formData.project_name);
-        console.log('file uploaded');
+
         // launch the project creation (which can take a while)
         const slug = await createProject({
           ...omit(formData, 'files'),
-          filename: data.filename,
+          filename: data ? data.filename : null,
+          from_project: dataset == 'load' ? null : dataset,
         });
+
         // create a limit for waiting the project creation
         const maxDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
         const startTime = Date.now();
@@ -175,7 +194,6 @@ export const ProjectCreationForm: FC = () => {
           try {
             // watch the status of the project
             const status = await getProjectStatus(slug);
-            console.log('STATUS', status);
             if (status === 'existing') {
               clearInterval(intervalId);
               addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
@@ -205,8 +223,6 @@ export const ProjectCreationForm: FC = () => {
       }
     }
   };
-
-  console.log(columnsFromProject);
 
   return (
     <div className="container-fluid">
@@ -257,9 +273,9 @@ export const ProjectCreationForm: FC = () => {
                   onChange={(e) => setDataset(e.target.value)}
                 >
                   <option value="load">Load a file</option>
-                  {Object.keys(datasets || {}).map((d) => (
-                    <option key={d} value={d}>
-                      Dataset project {d}
+                  {(datasets || []).map((d) => (
+                    <option key={d.project_slug} value={d.project_slug}>
+                      Dataset project {d.project_slug}
                     </option>
                   ))}
                 </select>
@@ -279,7 +295,7 @@ export const ProjectCreationForm: FC = () => {
                 dataset === 'load' && data !== null && (
                   <div>
                     <div className="m-3">
-                      Size of the dataset : <b>{data.data.length - 1}</b>
+                      Size of the dataset : <b>{lengthData - 1}</b>
                     </div>
                     <DataTable<Record<DataType['headers'][number], string | number>>
                       columns={data.headers.map((h) => ({
@@ -308,7 +324,7 @@ export const ProjectCreationForm: FC = () => {
 
             {
               // only display if data
-              (columnsFromData || columnsFromProject) && (
+              availableFields && (
                 <div>
                   <div>
                     <label className="form-label" htmlFor="col_id">
@@ -317,13 +333,17 @@ export const ProjectCreationForm: FC = () => {
                     <select
                       className="form-control"
                       id="col_id"
-                      disabled={data === null || creatingProject}
+                      disabled={creatingProject}
                       {...register('col_id')}
                     >
                       <option key="row_number" value="row_number">
                         Row number
                       </option>
-                      {columns}
+                      {columns.map((h) => (
+                        <option key={h} value={h}>
+                          {h}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -336,7 +356,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsFromData || columnsFromProject}
+                          options={availableFields}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {
@@ -354,7 +374,7 @@ export const ProjectCreationForm: FC = () => {
                     <select
                       className="form-control"
                       id="language"
-                      disabled={data === null || creatingProject}
+                      disabled={creatingProject}
                       {...register('language')}
                     >
                       {langages.map((lang) => (
@@ -372,7 +392,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsFromData || columnsFromProject}
+                          options={availableFields}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {
@@ -392,7 +412,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsFromData || columnsFromProject}
+                          options={availableFields}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {
@@ -513,7 +533,7 @@ export const ProjectCreationForm: FC = () => {
                       control={control}
                       render={({ field: { onChange } }) => (
                         <Select
-                          options={columnsFromData || columnsFromProject}
+                          options={availableFields}
                           isMulti
                           isDisabled={creatingProject}
                           onChange={(selectedOptions) => {
@@ -583,7 +603,7 @@ export const ProjectCreationForm: FC = () => {
               </div>
             )}
           </div>
-          {data !== null && (
+          {
             <>
               <button
                 type="submit"
@@ -593,7 +613,7 @@ export const ProjectCreationForm: FC = () => {
                 Create
               </button>
             </>
-          )}
+          }
         </form>
       </div>
     </div>

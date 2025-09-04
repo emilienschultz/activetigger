@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import (
     APIRouter,
@@ -16,6 +16,7 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     AvailableProjectsModel,
+    DatasetModel,
     ProjectAuthsModel,
     ProjectBaseModel,
     ProjectDescriptionModel,
@@ -209,7 +210,7 @@ async def get_projects(
 @router.get("/datasets", dependencies=[Depends(verified_user)])
 async def get_project_datasets(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> dict[str, list[str]]:
+) -> list[DatasetModel]:
     """
     Get all datasets already available for a specific user
     """
