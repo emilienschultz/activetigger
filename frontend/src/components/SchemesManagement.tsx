@@ -196,8 +196,10 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
                   </label>
                   <select id="scheme_kind" className="form-select" {...register('kind')}>
                     <option value="multiclass">Multiclass</option>
-                    <option value="multilabel">Multilabel (experimental)</option>
-                    <option value="span">Span (experimental)</option>
+                    <option value="multilabel">
+                      Multilabel (experimental - only some features implemented)
+                    </option>
+                    <option value="span">Span (experimental - only annotation)</option>
                   </select>
                   <button className="btn btn-primary btn-validation">Create</button>
                 </form>

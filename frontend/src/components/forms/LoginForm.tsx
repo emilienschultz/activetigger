@@ -53,23 +53,25 @@ export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <input
-          className="form-control form-appearance mt-2 w-50"
-          type="text"
-          {...register('username')}
-          placeholder="Username"
-        />
-        <input
-          className="form-control mt-2  w-50"
-          type="password"
-          {...register('password')}
-          placeholder="Password"
-        />
-        <div className="d-flex justify-content-between w-50">
-          <button className="btn btn-primary btn-validation">Login</button>
-        </div>
-      </form>
+      {!reset && (
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <input
+            className="form-control form-appearance mt-2 w-50"
+            type="text"
+            {...register('username')}
+            placeholder="Username"
+          />
+          <input
+            className="form-control mt-2  w-50"
+            type="password"
+            {...register('password')}
+            placeholder="Password"
+          />
+          <div className="d-flex justify-content-between w-50">
+            <button className="btn btn-primary btn-validation">Login</button>
+          </div>
+        </form>
+      )}
       {mail_available && (
         <a href="#" onClick={() => setReset(!reset)}>
           <span className="ms-1">Reset password</span>

@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { FaGithub } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/at.png';
 import { LoginForm } from '../components/forms/LoginForm';
@@ -6,6 +7,7 @@ import Notifications from '../components/layout/Notifications';
 import { useGetActiveUsers, useGetServer } from '../core/api';
 import { useAuth } from '../core/auth';
 import { LoginParams } from '../types';
+
 export const HomePage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { users } = useGetActiveUsers();
@@ -122,31 +124,31 @@ export const HomePage: FC = () => {
               {!users && (
                 <div className="alert alert-alert mt-3">Problem connecting to the server</div>
               )}
-
-              <div className="general-info mt-3">
-                <div>
-                  Current users : {users?.length} <br />
-                  Backend version <b>{version}</b> - Last update of the frontend
-                  <b> {__BUILD_DATE__}</b>
-                </div>
-              </div>
             </center>
             <div style={{ height: '50px' }}></div>
           </div>
         </div>
         <footer className="footer mt-auto py-1 bg-primary text-white fixed-bottom">
           <div className="container text-center">
-            <i className="fas fa-info-circle"></i>
-            <span className="ml-2">
-              CREST / CSS @ IPP © 2025 - Julien Boelaert & Étienne Ollion &{' '}
-              <a href="https://www.ouestware.com/" style={{ all: 'unset', cursor: 'pointer' }}>
-                Ouestware
-              </a>{' '}
-              &{' '}
-              <a href="http://eschultz.fr" style={{ all: 'unset', cursor: 'pointer' }}>
-                Émilien Schultz
-              </a>{' '}
-            </span>
+            <div
+              className="ml-2 d-flex justify-content-center align-items-center"
+              style={{ fontSize: '0.8rem' }}
+            >
+              {users?.length} current users • API {version} • Client {__BUILD_DATE__} •{' '}
+              <a
+                href="https://www.css.cnrs.fr/active-tigger/"
+                style={{ all: 'unset', cursor: 'pointer' }}
+              >
+                CREST / CSS @ IPP © 2025
+              </a>
+              <a
+                href="https://github.com/emilienschultz/activetigger"
+                className="d-flex align-items-center"
+                style={{ all: 'unset', cursor: 'pointer' }}
+              >
+                <FaGithub className="mx-2" />
+              </a>
+            </div>
           </div>
         </footer>
       </main>

@@ -227,23 +227,18 @@ export const ProjectCreationForm: FC = () => {
   return (
     <div className="container-fluid">
       <div className="row">
-        <div className="explanations">
-          Create a new project.
-          <ul>
-            <li>
-              Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo)
-            </li>
-            <a href="/dataset_test.csv" download>
-              Sample dataset from "Detecting Stance in Media On Global Warming"
-            </a>
-            <li>Indicate the columns for id, text and optionnal labels</li>
-
-            <li>Validate to create</li>
-          </ul>
-          <div className="alert alert-warning" role="alert">
-            Both project name and index will be modified (slugify). For instance, '_' and ' ' will
-            be replaced by '-'. Please be careful for future data merging.
-          </div>
+        <div className="explanations">Create a new project.</div>
+        <div className="alert alert-info" role="alert">
+          Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo) (
+          <a href="/dataset_test.csv" download>
+            Sample dataset from "Detecting Stance in Media On Global Warming"
+          </a>
+          ), then indicate the columns for index, text and optionaly existing labels
+        </div>
+        <div className="alert alert-warning" role="alert">
+          ⚠️ Both project name and index will be modified for URL compatibility (slugify). For
+          instance, '_' and ' ' will be replaced by '-'. Please be careful for future data merging.
+          A safe solution is to use numbers only for index.
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="form-frame ">
@@ -265,7 +260,13 @@ export const ProjectCreationForm: FC = () => {
 
             <div>
               <label>
-                Dataset
+                Dataset{' '}
+                <a className="dataset">
+                  <HiOutlineQuestionMarkCircle />
+                </a>
+                <Tooltip anchorSelect=".dataset" place="top">
+                  You can either load a file or use a dataset existing from one of your projects.
+                </Tooltip>
                 <select
                   className="form-select"
                   id="existingDataset"
@@ -437,7 +438,7 @@ export const ProjectCreationForm: FC = () => {
                     />
 
                     <label className="form-label" htmlFor="n_test">
-                      Number of elements in the test set (not already annotated)
+                      Number of elements in the test set (optional)
                     </label>
                     <input
                       className="form-control"
@@ -447,120 +448,125 @@ export const ProjectCreationForm: FC = () => {
                       {...register('n_test')}
                     />
 
-                    <label className="form-label" htmlFor="force_label">
-                      Prioritize existing labels{' '}
-                      <a className="force_label">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".force_label" place="top">
-                        Select in priority the elements with existing labels (if any) of the first
-                        column of labels
-                      </Tooltip>
-                      <input
-                        id="force_label"
-                        type="checkbox"
-                        disabled={creatingProject}
-                        {...register('force_label')}
-                        className="mx-3"
-                      />
-                    </label>
-
-                    <label className="form-label" htmlFor="random_selection">
-                      Random selection of elements{' '}
-                      <a className="randomselection">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".randomselection" place="top">
-                        If not, will keep the order (minus empty elements) only if testset = 0
-                      </Tooltip>
-                      <input
-                        id="random_selection"
-                        type="checkbox"
-                        disabled={creatingProject || force_label}
-                        {...register('random_selection')}
-                        className="mx-3"
-                      />
-                    </label>
-
-                    <label className="form-label" htmlFor="stratify_train">
-                      Stratify trainset{' '}
-                      <a className="stratify_train">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".stratify_train" place="top">
-                        If selected, use the stratify columns to stratify train set. Small variation
-                        in the number of elements can happen.
-                      </Tooltip>
-                      <input
-                        id="stratify_train"
-                        type="checkbox"
-                        disabled={creatingProject || force_label}
-                        {...register('stratify_train')}
-                        className="mx-3"
-                      />
-                    </label>
-
-                    <label className="form-label" htmlFor="stratify_test">
-                      Stratify testset{' '}
-                      <a className="stratify_train">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".stratify_train" place="top">
-                        If selected, use the stratify columns to stratify test set. Small variation
-                        in the number of elements can happen.
-                      </Tooltip>
-                      <input
-                        id="stratify_test"
-                        type="checkbox"
-                        disabled={creatingProject || force_label}
-                        {...register('stratify_test')}
-                        className="mx-3"
-                      />
-                    </label>
-
-                    <label className="form-label" htmlFor="cols_stratify">
-                      Columns to stratify
-                      <a className="stratify">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".stratify" place="top">
-                        If not empty, will stratify by the selected column (try to equilibrate the
-                        number of elements regarding each category)
-                      </Tooltip>
-                    </label>
-                    <Controller
-                      name="cols_stratify"
-                      control={control}
-                      render={({ field: { onChange } }) => (
-                        <Select
-                          options={availableFields}
-                          isMulti
-                          isDisabled={creatingProject}
-                          onChange={(selectedOptions) => {
-                            onChange(
-                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                            );
-                          }}
+                    <details className="custom-details">
+                      <summary>Advanced options</summary>
+                      <label className="form-label" htmlFor="force_label">
+                        Prioritize existing labels{' '}
+                        <a className="force_label">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".force_label" place="top">
+                          Select in priority the elements with existing labels (if any) of the first
+                          column of labels
+                        </Tooltip>
+                        <input
+                          id="force_label"
+                          type="checkbox"
+                          disabled={creatingProject}
+                          {...register('force_label')}
+                          className="mx-3"
                         />
-                      )}
-                    />
+                      </label>
 
-                    <label className="form-label" htmlFor="clear_test">
-                      Empty testset{' '}
-                      <a className="emptytestset">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".emptytestset" place="top">
-                        Drop labels for the testset
-                      </Tooltip>
-                      <input
-                        id="clear_test"
-                        type="checkbox"
-                        disabled={creatingProject}
-                        {...register('clear_test')}
-                        className="mx-3"
+                      <label className="form-label" htmlFor="random_selection">
+                        Random selection of elements{' '}
+                        <a className="randomselection">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".randomselection" place="top">
+                          If not, will keep the order (minus empty elements) only if testset = 0
+                        </Tooltip>
+                        <input
+                          id="random_selection"
+                          type="checkbox"
+                          disabled={creatingProject || force_label}
+                          {...register('random_selection')}
+                          className="mx-3"
+                        />
+                      </label>
+
+                      <label className="form-label" htmlFor="stratify_train">
+                        Stratify trainset{' '}
+                        <a className="stratify_train">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".stratify_train" place="top">
+                          If selected, use the stratify columns to stratify train set. Small
+                          variation in the number of elements can happen.
+                        </Tooltip>
+                        <input
+                          id="stratify_train"
+                          type="checkbox"
+                          disabled={creatingProject || force_label}
+                          {...register('stratify_train')}
+                          className="mx-3"
+                        />
+                      </label>
+
+                      <label className="form-label" htmlFor="stratify_test">
+                        Stratify testset{' '}
+                        <a className="stratify_train">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".stratify_train" place="top">
+                          If selected, use the stratify columns to stratify test set. Small
+                          variation in the number of elements can happen.
+                        </Tooltip>
+                        <input
+                          id="stratify_test"
+                          type="checkbox"
+                          disabled={creatingProject || force_label}
+                          {...register('stratify_test')}
+                          className="mx-3"
+                        />
+                      </label>
+
+                      <label className="form-label" htmlFor="cols_stratify">
+                        Columns to stratify
+                        <a className="stratify">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".stratify" place="top">
+                          If not empty, will stratify by the selected column (try to equilibrate the
+                          number of elements regarding each category)
+                        </Tooltip>
+                      </label>
+                      <Controller
+                        name="cols_stratify"
+                        control={control}
+                        render={({ field: { onChange } }) => (
+                          <Select
+                            options={availableFields}
+                            isMulti
+                            isDisabled={creatingProject}
+                            onChange={(selectedOptions) => {
+                              onChange(
+                                selectedOptions
+                                  ? selectedOptions.map((option) => option.value)
+                                  : [],
+                              );
+                            }}
+                          />
+                        )}
                       />
-                    </label>
+
+                      <label className="form-label" htmlFor="clear_test">
+                        Empty testset{' '}
+                        <a className="emptytestset">
+                          <HiOutlineQuestionMarkCircle />
+                        </a>
+                        <Tooltip anchorSelect=".emptytestset" place="top">
+                          Drop labels for the testset
+                        </Tooltip>
+                        <input
+                          id="clear_test"
+                          type="checkbox"
+                          disabled={creatingProject}
+                          {...register('clear_test')}
+                          className="mx-3"
+                        />
+                      </label>
+                    </details>
                   </div>
                 </div>
               )

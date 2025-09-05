@@ -239,11 +239,15 @@ export const ProjectTagPage: FC = () => {
   // Now filter by valid regex
   const validHighlightText = highlightText.filter(isValidRegex);
 
+  //display switch to test mode
+  const displayTest = statistics?.test_set_n ? statistics?.test_set_n > 0 : false;
+
   if (!projectName || !currentScheme) return;
+  console.log(statistics);
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
-      {statistics && statistics['test_set_n'] && statistics['test_set_n'] > 0 && (
+      {displayTest && (
         <div className={phase == 'test' ? 'alert alert-info m-2' : 'm-2'}>
           <div className="col-4 form-check form-switch">
             <input
@@ -265,7 +269,6 @@ export const ProjectTagPage: FC = () => {
           </div>
         </div>
       )}
-
       <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
           <div className="container-fluid">
@@ -436,13 +439,12 @@ export const ProjectTagPage: FC = () => {
           <Tab eventKey="prediction" title="Quick model">
             <div className="container-fluid">
               <div className="row mb-3 mt-3">
+                {phase == 'test' && (
+                  <div className="alert alert-warning">
+                    Test mode activated - quick model are disabled
+                  </div>
+                )}
                 <div className="col-8">
-                  {phase == 'test' && (
-                    <div className="alert alert-warning">
-                      Test mode activated - quick model are disabled
-                    </div>
-                  )}
-
                   {phase != 'test' && (
                     <>
                       <div className="explanations">
@@ -501,7 +503,9 @@ export const ProjectTagPage: FC = () => {
             />
           )}
           {phase == 'test' && (
-            <div className="alert alert-warning">Test mode activated - vizualisation disabled</div>
+            <div className="alert alert-warning mt-3">
+              Test mode activated - vizualisation disabled
+            </div>
           )}
         </Tab>
       </Tabs>

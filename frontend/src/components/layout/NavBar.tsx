@@ -164,7 +164,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </li>
                 <li className="nav-item">
                   <button
-                    className="btn btn-primary"
+                    className="btn btn-primary mx-2 logout"
                     onClick={async () => {
                       const success = await logout();
                       if (success) navigate('/');
@@ -173,6 +173,9 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                     {' '}
                     <IoMdLogOut title="Logout" />
                   </button>
+                  <Tooltip anchorSelect=".logout" place="top">
+                    Log out
+                  </Tooltip>
                 </li>
               </ul>
             ) : (
