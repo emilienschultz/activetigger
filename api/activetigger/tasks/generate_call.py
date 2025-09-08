@@ -159,7 +159,7 @@ class GenerateCall(BaseTask):
         # if the text tag was not found, add it in the end
         if ("[[TEXT]]", 1) not in indexes:
             prompt += "\n\n[[TEXT]]"
-            indexes["[[TEXT]]"] = len(prompt)
+            indexes[("[[TEXT]]", 1)] = len(prompt) - len("[[TEXT]]")
 
         # Sort the indexes so that the holes in the prompt will match the tags
         # https://realpython.com/sort-python-dictionary/#sorting-dictionaries-in-python
