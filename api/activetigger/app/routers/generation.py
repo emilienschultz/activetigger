@@ -113,7 +113,7 @@ async def postgenerate(
         else : 
             raise HTTPException(status_code=500, 
                 detail=(f"The tag {tag_like} is not part of the " 
-                f"registered context columns nor it is [[TEXT]].\nRegistered "
+                f"registered context columns nor it is [[TEXT]].Registered "
                 f"context columns: {project.params.cols_context}")) 
 
     try:
