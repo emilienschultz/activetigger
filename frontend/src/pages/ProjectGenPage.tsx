@@ -416,7 +416,7 @@ export const GenPage: FC = () => {
                         >
                           <BsSave2 />
                         </button>
-                        <Tooltip anchorSelect=".savebutton" place="top">
+                        <Tooltip anchorSelect=".savebutton" place="right">
                           Save the prompt
                         </Tooltip>
                       </div>
