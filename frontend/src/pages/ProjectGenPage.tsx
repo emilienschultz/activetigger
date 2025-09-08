@@ -249,36 +249,30 @@ export const GenPage: FC = () => {
     }));
   };
   const addContextButtons = (contextColumns: string[] | undefined) => {
-    if (contextColumns)
-      if (contextColumns.length > 0) {
-        return (
-          <>
-            <div className="col-12" id="context-container">
-              <div id="context-message">
-                Add contextual information to your prompt by clicking on the buttons, or by typing
-                [[column name]]
-              </div>
-              <div id="button-context-wrapper">
-                {contextColumns.map((context) => (
-                  <button
-                    className="btn btn-primary mx-2"
-                    id="context-button"
-                    style={{ fontSize: 'small' }}
-                    key={'add-context-button-' + context}
-                    onClick={() => addContextTagToPrompt(context)}
-                  >
-                    {context}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        );
-      }
+    let listOfTags: string[] = ['TEXT'];
+    if (contextColumns) listOfTags = listOfTags.concat(contextColumns);
+
     return (
-      <div className="col-12" id="context-container">
-        <p id="context-message">No contextual information found</p>;
-      </div>
+      <>
+        <div className="col-12" id="context-container">
+          <div id="context-message">
+            Add contextual information to your prompt by clicking on the tags, or by typing [[column
+            name]]
+          </div>
+          <div id="button-context-wrapper">
+            {listOfTags.map((context) => (
+              <button
+                className="context-link"
+                id="context-button"
+                key={'add-context-button-' + context}
+                onClick={() => addContextTagToPrompt(context)}
+              >
+                {context}
+              </button>
+            ))}
+          </div>
+        </div>
+      </>
     );
   };
 
