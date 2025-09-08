@@ -124,15 +124,6 @@ form button:hover {
   flex: 1 0 60%
 }
 
-#context-message{
-  min-width: 270px;
-  margin-bottom: 4px;
-  font-size: small;
-  font-style: italic;
-  color: $secondary;
-  flex: 1 0 40%
-}
-
 #context-button{
   background-color: rgba(0,0,0,0);
   border: 0px solid red;

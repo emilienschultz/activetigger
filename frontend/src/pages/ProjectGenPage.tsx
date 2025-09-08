@@ -6,6 +6,7 @@ import { HiOutlineSparkles } from 'react-icons/hi';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { GenModelSetupForm } from '../components/forms/GenModelSetupForm';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
@@ -255,11 +256,14 @@ export const GenPage: FC = () => {
     return (
       <>
         <div className="col-12" id="context-container">
-          <div id="context-message">
-            Add contextual information to your prompt by clicking on the tags, or by typing [[column
-            name]]
-          </div>
           <div id="button-context-wrapper">
+            <a className="context-tag-help">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".context-tag-help" place="top" style={{ zIndex: 99 }}>
+              Add contextual information to your prompt by clicking on the tags, or by typing
+              [[column name]]
+            </Tooltip>
             {listOfTags.map((context) => (
               <button
                 className="context-link"
@@ -360,7 +364,7 @@ export const GenPage: FC = () => {
                     Select or craft your prompt with the element [[TEXT]] to insert text
                   </div>
 
-                  <div className="d-flex align-items-center " style={{ zIndex: 100 }}>
+                  <div className="d-flex align-items-center " style={{ zIndex: 1 }}>
                     <Select
                       id="select-prompt"
                       className="w-75"
@@ -416,7 +420,7 @@ export const GenPage: FC = () => {
                         >
                           <BsSave2 />
                         </button>
-                        <Tooltip anchorSelect=".savebutton" place="right">
+                        <Tooltip anchorSelect=".savebutton" place="top" style={{ zIndex: 99 }}>
                           Save the prompt
                         </Tooltip>
                       </div>
