@@ -65,6 +65,8 @@ export const UsersPage: FC = () => {
     label: project.parameters.project_slug,
   }));
 
+  const accessToList = authenticatedUser?.username === 'roeot';
+
   return (
     <PageLayout currentPage="users">
       <div className="container-fluid">
@@ -73,17 +75,29 @@ export const UsersPage: FC = () => {
           <div className="col-8">
             <div className="explanations">Manage users and rights</div>
 
+            <span className="explanations">User</span>
             <div className="d-flex align-items-center">
-              <Select
-                id="select-user"
-                className="form-select"
-                options={userOptions}
-                onChange={(selectedOption) => {
-                  setCurrentUser(selectedOption ? selectedOption.value : null);
-                }}
-                isClearable
-                placeholder="Select a user"
-              />
+              {accessToList ? (
+                <Select
+                  id="select-user"
+                  className="form-select"
+                  options={userOptions}
+                  onChange={(selectedOption) => {
+                    setCurrentUser(selectedOption ? selectedOption.value : null);
+                  }}
+                  isClearable
+                  placeholder="Select a user"
+                />
+              ) : (
+                <input
+                  className="form-control"
+                  type="text"
+                  onChange={(c) => {
+                    setCurrentUser(c.target.value);
+                  }}
+                  placeholder="Write a user handle"
+                />
+              )}
               <button
                 className="btn btn p-0 m-2"
                 onClick={() => {
@@ -134,32 +148,25 @@ export const UsersPage: FC = () => {
               </div>
             )}
             <div className="mt-3">
-              <span className="explanations">Select a project</span>
-              {
-                // <select
-                //   className="form-select"
-                //   onChange={(e) => {
-                //     setCurrentProjectSlug(e.target.value);
-                //   }}
-                // >
-                //   <option></option>
-                //   {(projects || []).map((project) => (
-                //     <option key={project.parameters.project_slug}>
-                //       {project.parameters.project_slug}
-                //     </option>
-                //   ))}
-                // </select>
-                <Select
-                  id="select-project"
-                  className="form-select"
-                  options={projectOptions}
-                  onChange={(selectedOption) => {
-                    setCurrentProjectSlug(selectedOption ? selectedOption.value : null);
+              <span className="explanations">Project</span>
+              <Select
+                id="select-project"
+                className="form-select"
+                options={projectOptions}
+                onChange={(selectedOption) => {
+                  setCurrentProjectSlug(selectedOption ? selectedOption.value : null);
+                }}
+                isClearable
+                placeholder="Select a project"
+              />
+              {/* <input
+                  className="form-control"
+                  type="text"
+                  onChange={(c) => {
+                    setCurrentProjectSlug(c.target.value);
                   }}
-                  isClearable
-                  placeholder="Select a project"
-                />
-              }
+                  placeholder="Write a project handle"
+                /> */}
               <div>
                 {authUsers ? (
                   <table className="table-auth">

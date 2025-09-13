@@ -42,6 +42,7 @@ class Users:
         """
         Set user auth for a project
         """
+        self.get_user(username)
         self.db_manager.projects_service.add_auth(project_slug, username, status)
         logging.info("Auth successfully to %s", username)
 
@@ -51,6 +52,7 @@ class Users:
         """
         if username == "root":
             raise Exception("Can't delete root user auth")
+        self.get_user(username)
         self.db_manager.projects_service.delete_auth(project_slug, username)
         logging.info("Auth of user %s deleted", username)
 

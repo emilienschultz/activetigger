@@ -155,6 +155,7 @@ export const ProjectCreationForm: FC = () => {
           message: 'The sum of train and test set is too big, the train set is set to N - testset',
         });
         setValue('n_train', Math.max(0, lengthData - Number(formData.n_test) - 1));
+        return;
       }
       // test if the project name is available
       const available = await availableProjectName(formData.project_name);
