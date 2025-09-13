@@ -780,8 +780,9 @@ class Project:
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part test
-        if self.params.test and self.schemes.test is not None:
-            df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
+        if self.params.test and (self.schemes.test is not None):
+            df_test = self.schemes.get_scheme_data(scheme, kind=["test"], complete=True)
+            print(df_test)
             test_set_n = len(df_test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
@@ -795,7 +796,7 @@ class Project:
         else:
             sm_10cv = None
 
-        return ProjectDescriptionModel(
+        r = ProjectDescriptionModel(
             users=users,
             train_set_n=len(self.schemes.content),
             train_annotated_n=len(df_train.dropna(subset=["labels"])),
@@ -805,6 +806,8 @@ class Project:
             test_annotated_distribution=test_annotated_distribution,
             sm_10cv=sm_10cv,
         )
+        print(r)
+        return r
 
     def get_projection(self, username: str, scheme: str) -> ProjectionOutModel | None:
         """
@@ -1186,7 +1189,7 @@ class Project:
                 df=extract,
                 prompt=request.prompt,
                 model=GenerationModel(**model.__dict__),
-                cols_context = self.params.cols_context
+                cols_context=self.params.cols_context,
             ),
         )
         self.computing.append(
