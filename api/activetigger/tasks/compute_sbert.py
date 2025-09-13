@@ -48,6 +48,9 @@ class ComputeSbert(BaseTask):
         """
         Compute sbert embedding
         """
+        # update temporary file with the current ID
+        if self.progress_file_temporary:
+            self.path_progress = self.path_process.joinpath(self.unique_id)
 
         # test the data
         if self.texts.isnull().sum() > 0:
@@ -86,6 +89,7 @@ class ComputeSbert(BaseTask):
                 progress_percent = (i / total_batches) * 100
                 with open(self.path_progress, "w") as f:
                     f.write(str(round(progress_percent, 1)))
+                print("writing", self.path_progress)
                 print(progress_percent)
 
             # shape the data

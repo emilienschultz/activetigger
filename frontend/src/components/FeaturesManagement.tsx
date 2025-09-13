@@ -107,7 +107,7 @@ export const FeaturesManagement: FC = () => {
             <div className="d-flex m-2 align-items-center">
               <span className="w-25">
                 Currently computing {element ? element.name : ''}
-                {element ? ` (${element.progress}%)` : ''}
+                {element?.progress ? ` (${element.progress}%)` : ''}
               </span>
             </div>
           </div>

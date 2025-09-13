@@ -125,7 +125,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                   <span className="d-none d-md-inline">
                     gpu
                     {gpu
-                      ? `${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
+                      ? ` ${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
                       : ' no'}
                   </span>
                 </div>
