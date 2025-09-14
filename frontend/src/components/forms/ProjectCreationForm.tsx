@@ -231,7 +231,7 @@ export const ProjectCreationForm: FC = () => {
         <div className="explanations">Create a new project.</div>
         <div className="alert alert-info" role="alert">
           Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo) (
-          <a href="/dataset_test.csv" download>
+          <a href="./dataset_test.csv" download>
             Sample dataset from "Detecting Stance in Media On Global Warming"
           </a>
           ), then indicate the columns for index, text and optionaly existing labels
