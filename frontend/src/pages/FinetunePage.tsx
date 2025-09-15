@@ -151,9 +151,9 @@ export const FinetunePage: FC = () => {
                 onSelect={() => setActiveKey('models')}
               >
                 <label htmlFor="selected-model">Existing models</label>
-                <button onClick={() => notify({ type: 'error', message: 'New name is void' })}>
+                {/* <button onClick={() => notify({ type: 'error', message: 'New name is void' })}>
                   TEST
-                </button>
+                </button> */}
                 <div className="d-flex align-items-center">
                   <select
                     id="selected-model"

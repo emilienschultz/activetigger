@@ -115,6 +115,7 @@ export const ProjectTagPage: FC = () => {
   // react to URL param change
   useEffect(() => {
     resetScroll();
+    console.log('USEEFFECT');
     if (elementId === 'noelement') {
       return;
     }
@@ -259,6 +260,7 @@ export const ProjectTagPage: FC = () => {
                   ...prev,
                   phase: e.target.checked ? 'test' : 'train',
                 }));
+                navigate(`/projects/${projectName}/tag/`);
               }}
               checked={phase == 'test' ? true : false}
             />
