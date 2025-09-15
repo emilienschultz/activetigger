@@ -4,6 +4,8 @@ import { NotificationData } from '../types';
 import { useAppContext } from './context';
 
 let INCREMENTAL_ID = 1;
+const TIME_NOTIFICATION = 10;
+
 export function useNotifications() {
   const { setAppContext } = useAppContext();
 
@@ -22,7 +24,7 @@ export function useNotifications() {
               { id, createdAt: now, ...notif },
               ...state.notifications
                 .filter((e) => {
-                  return (Number(now) - Number(e.createdAt)) / 1000 <= 20;
+                  return (Number(now) - Number(e.createdAt)) / 1000 <= TIME_NOTIFICATION;
                 })
                 .slice(0, 4),
             ],

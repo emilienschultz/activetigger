@@ -40,11 +40,10 @@ interface LossData {
 
 export const FinetunePage: FC = () => {
   const { projectName: projectSlug } = useParams();
-
-  const { notify } = useNotifications();
   const {
-    appContext: { currentScheme, currentProject: project, isComputing },
+    appContext: { currentScheme, currentProject: project, isComputing, notifications },
   } = useAppContext();
+  const { notify } = useNotifications();
 
   const [activeKey, setActiveKey] = useState<string>('models');
 
@@ -108,6 +107,8 @@ export const FinetunePage: FC = () => {
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
 
+  console.log(notifications);
+
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="finetune">
       <div className="container-fluid">
@@ -150,6 +151,9 @@ export const FinetunePage: FC = () => {
                 onSelect={() => setActiveKey('models')}
               >
                 <label htmlFor="selected-model">Existing models</label>
+                <button onClick={() => notify({ type: 'error', message: 'New name is void' })}>
+                  TEST
+                </button>
                 <div className="d-flex align-items-center">
                   <select
                     id="selected-model"

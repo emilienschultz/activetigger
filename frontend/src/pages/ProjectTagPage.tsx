@@ -243,7 +243,6 @@ export const ProjectTagPage: FC = () => {
   const displayTest = statistics?.test_set_n ? statistics?.test_set_n > 0 : false;
 
   if (!projectName || !currentScheme) return;
-  console.log(statistics);
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">

@@ -1076,7 +1076,7 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
             exclude_labels: dataForm.exclude_labels || [],
           },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Starting bertmodel training' });
+        if (!res.error) notify({ type: 'warning', message: 'Bertmodel training' });
         return true;
       }
       return null;
@@ -2131,7 +2131,7 @@ export function useStopProcesses() {
           },
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'All processes stop' });
+      if (!res.error) notify({ type: 'success', message: 'Processes ended' });
       return true;
     },
     [notify],

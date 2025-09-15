@@ -156,7 +156,8 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                     <span className="badge badge-warning">{history.length}</span>
                   </button>
                   <Tooltip anchorSelect=".clearhistory" place="top">
-                    Clear the current session (you can only annotate once each element by session)
+                    Clear the current session (during one session, each element can be seen only
+                    once)
                   </Tooltip>
                 </li>
                 <li className="nav-item">

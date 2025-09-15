@@ -183,7 +183,7 @@ export const BertopicPage: FC = () => {
               )}
             </Tab>
             <Tab eventKey="new" title="New Bertopic">
-              <div className="explanations">UMAP and HDBSCAN are being used</div>
+              <div className="explanations">Using UMAP and HDBScan</div>
               <BertopicForm
                 projectSlug={projectName || null}
                 availableModels={availableModels}
