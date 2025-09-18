@@ -40,7 +40,7 @@ cd docker
 docker compose -f docker-compose.yml -f docker-compose.dev.yml -p activetigger up
 ```
 
-The configuration file is `./docker/.env` to set the environment variables.
+The configuration file is `./docker/.env` to set the environment variables. If you want to change the default `root` password you need to modify it.
 
 Docker will start:
 

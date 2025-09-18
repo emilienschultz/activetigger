@@ -11,14 +11,15 @@ The recommended method to deploy ActiveTigger on a linux based server is to use 
 
 ## Requirements
 
-To safely run activetigger we recommend this server configuration:
+To safely run activetigger for local use we recommend this configuration:
 
 - 16 Go RAM
 - 8 cores CPU
 - 200 Go disk space
 - 1 GPU with at least 8Go of VRAM (optional but recommended for large models)
 
-If you want to scale for multiple projects
+If you want to scale for multiple projects :
+
 - 4Go RAM by concurrent projects in memory
 - 20Go disk space by concurrent projects
 
@@ -92,7 +93,11 @@ git clone https://github.com/emilienschultz/activetigger.git .
 git checkout production
 ```
 
-### 5- prepare Data path
+### 5- Configure the environment, especially data path
+
+The environment variables are defined in `docker/.env` : passwords (root and database), server ports and load, secrets, etc.
+
+An important parameter is the data path.
 
 If you need the application data (projects data, models data and database data) to be mounted in a specific point in your filesystem you can use the `DATA_PATH` env variable.
 
