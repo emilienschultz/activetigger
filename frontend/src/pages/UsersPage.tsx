@@ -65,7 +65,7 @@ export const UsersPage: FC = () => {
     label: project.parameters.project_slug,
   }));
 
-  const accessToList = authenticatedUser?.username === 'roeot';
+  const accessToList = authenticatedUser?.username === 'root';
 
   return (
     <PageLayout currentPage="users">

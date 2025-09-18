@@ -93,7 +93,7 @@ git clone https://github.com/emilienschultz/activetigger.git .
 git checkout production
 ```
 
-### 5- Configure the environment, especially data path
+### 5- Configure your environment, especially data path
 
 The environment variables are defined in `docker/.env` : passwords (root and database), server ports and load, secrets, etc.
 
