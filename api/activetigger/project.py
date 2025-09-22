@@ -529,6 +529,8 @@ class Project:
         # select the current state of annotation
         if next.dataset == "test":
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["test"])
+        elif next.dataset == "valid":
+            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["valid"])
         else:
             df = self.schemes.get_scheme_data(next.scheme, complete=True)
 
@@ -654,7 +656,7 @@ class Project:
             self.params.project_slug, next.scheme, element_id
         )
 
-        if next.dataset == "test":
+        if next.dataset in ["test", "valid"]:
             limit = 1200
             context = {}
         else:
@@ -689,6 +691,26 @@ class Project:
         Separate train/test dataset
         """
         history = None
+
+        if dataset == "valid" and self.schemes.valid is not None:
+            if element_id not in self.schemes.valid.index:
+                raise Exception("Element does not exist.")
+            if scheme is not None:
+                history = self.schemes.projects_service.get_annotations_by_element(
+                    self.params.project_slug, scheme, element_id
+                )
+            return ElementOutModel(
+                element_id=element_id,
+                text=str(self.schemes.valid.loc[element_id, "text"]),
+                context={},
+                selection="valid",
+                info="",
+                predict=PredictedLabel(label=None, proba=None),
+                frame=None,
+                limit=1200,
+                history=history,
+            )
+
         if dataset == "test" and self.schemes.test is not None:
             if element_id not in self.schemes.test.index:
                 raise Exception("Element does not exist.")

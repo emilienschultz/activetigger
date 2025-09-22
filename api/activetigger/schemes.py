@@ -75,7 +75,7 @@ class Schemes:
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
-        Join with text data in separate file (train or test, in this case it is a XOR)
+        Join with text data in separate file (train, valid or test, in this case it is a XOR)
 
         Comments:
             For the moment tags can be add, test, predict, reconciliation
@@ -100,9 +100,15 @@ class Schemes:
         if complete:  # all the elements
             if "test" in kind and self.test is not None:
                 if len(kind) > 1:
-                    raise Exception("Cannot ask for both train and test")
+                    raise Exception("Cannot ask for train with another dataset")
                 # case if the test, join the text data
                 t = self.test[["text"]].join(df)
+                return t
+            elif "valid" in kind and self.valid is not None:
+                if len(kind) > 1:
+                    raise Exception("Cannot ask for valid with other dataset")
+                # case if the test, join the text data
+                t = self.valid[["text"]].join(df)
                 return t
             else:
                 return self.content.join(df, rsuffix="_content")

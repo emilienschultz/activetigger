@@ -33,6 +33,7 @@ import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
 import { SimpleModelModel } from '../types';
+
 /**
  * Annotation page
  */
@@ -115,7 +116,6 @@ export const ProjectTagPage: FC = () => {
   // react to URL param change
   useEffect(() => {
     resetScroll();
-    console.log('USEEFFECT');
     if (elementId === 'noelement') {
       return;
     }
@@ -241,35 +241,52 @@ export const ProjectTagPage: FC = () => {
   const validHighlightText = highlightText.filter(isValidRegex);
 
   //display switch to test mode
-  const displayTest = statistics?.test_set_n ? statistics?.test_set_n > 0 : false;
+  const isTest = statistics?.test_set_n ? statistics?.test_set_n > 0 : false;
+  const isValid = statistics?.valid_set_n ? statistics?.valid_set_n > 0 : false;
 
   if (!projectName || !currentScheme) return;
 
+  console.log(statistics);
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
-      {displayTest && (
-        <div className={phase == 'test' ? 'alert alert-info m-2' : 'm-2'}>
-          <div className="col-4 form-check form-switch">
-            <input
-              className="form-check-input bg-info"
-              type="checkbox"
-              role="switch"
-              id="flexSwitchCheckDefault"
-              onChange={(e) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  phase: e.target.checked ? 'test' : 'train',
-                }));
-                navigate(`/projects/${projectName}/tag/`);
-              }}
-              checked={phase == 'test' ? true : false}
-            />
-            <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
-              Test mode
-            </label>
-          </div>
+      <div className={phase == 'train' ? 'm-2' : 'alert alert-info m-2'}>
+        {/* <div className="col-4 form-check form-switch">
+          <input
+            className="form-check-input bg-info"
+            type="checkbox"
+            role="switch"
+            id="flexSwitchCheckDefault"
+            onChange={(e) => {
+              setAppContext((prev) => ({
+                ...prev,
+                phase: e.target.checked ? 'test' : 'train',
+              }));
+              navigate(`/projects/${projectName}/tag/`);
+            }}
+            checked={phase == 'test' ? true : false}
+          />
+          <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
+            Test mode
+          </label>
+        </div> */}
+        <div className="col-12 d-flex justify-content-center align-items-center">
+          Current dataset{' '}
+          <select
+            className="form-select w-25 mx-3"
+            onChange={(e) => {
+              setAppContext((prev) => ({
+                ...prev,
+                phase: e.target.value,
+              }));
+            }}
+          >
+            <option value="train">Train</option>
+            {isValid && <option value="valid">Validation</option>}
+            {isTest && <option value="test">Test</option>}
+          </select>
         </div>
-      )}
+      </div>
       <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
           <div className="container-fluid">

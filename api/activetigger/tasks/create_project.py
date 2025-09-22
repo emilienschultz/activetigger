@@ -148,13 +148,15 @@ class CreateProject(BaseTask):
             n_to_draw = self.params.n_test + self.params.n_valid
             # if no stratification
             if len(self.params.cols_stratify) == 0:
-                draw = content.sample(self.params.n_test)
+                draw = content.sample(n_to_draw, random_state=42)
             # if stratification, total cat, number of element per cat, sample with a lim
             else:
                 df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(n_to_draw / nb_cat)
-                draw = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
+                draw = df_grouped.apply(
+                    lambda x: x.sample(min(len(x), nb_elements_cat), random_state=42)
+                )
 
             # divide between test and valid
             if self.params.test > 0 and self.params.valid == 0:
@@ -168,8 +170,8 @@ class CreateProject(BaseTask):
                 self.params.valid = True
                 rows_valid = list(validset.index)
             else:
-                testset = draw.sample(self.params.n_test)
-                validset = draw.drop(testset.index)
+                testset = draw.sample(self.params.n_test, random_state=42)
+                validset = draw.drop(index=testset.index)
                 validset.to_parquet(self.params.dir.joinpath(self.valid_file), index=True)
                 testset.to_parquet(self.params.dir.joinpath(self.test_file), index=True)
                 self.params.test = True
@@ -196,20 +198,24 @@ class CreateProject(BaseTask):
             f_na = content[self.params.cols_label[0]].isna()
             # different case regarding the number of labels
             if f_notna.sum() > self.params.n_train:
-                trainset = content[f_notna].sample(self.params.n_train)
+                trainset = content[f_notna].sample(self.params.n_train, random_state=42)
             else:
                 n_train_random = self.params.n_train - f_notna.sum()
-                trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
+                trainset = pd.concat(
+                    [content[f_notna], content[f_na].sample(n_train_random, random_state=42)]
+                )
         # case there is stratification on the trainset
         elif len(self.params.cols_stratify) > 0 and self.params.stratify_train:
             df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
             nb_cat = len(df_grouped)
             nb_elements_cat = round(self.params.n_train / nb_cat)
-            trainset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
+            trainset = df_grouped.apply(
+                lambda x: x.sample(min(len(x), nb_elements_cat)), random_state=42
+            )
         # default with random selection in the remaining elements
         else:
             print("random selection of the trainset")
-            trainset = content.sample(self.params.n_train)
+            trainset = content.sample(self.params.n_train, random_state=42)
 
         # write the trainset
         trainset[list(set(["text", "limit"] + self.params.cols_context + keep_id))].to_parquet(

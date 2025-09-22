@@ -635,7 +635,7 @@ export function useGetNextElementId(
           filter: selectionConfig.filter,
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
-          dataset: phase == 'test' ? 'test' : 'train',
+          dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
           user: selectionConfig.user,
         },
