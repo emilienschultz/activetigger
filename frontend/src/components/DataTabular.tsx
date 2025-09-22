@@ -70,11 +70,11 @@ export const DataTabular: FC<DataTabularModel> = ({
     if (table) {
       setRows(table as Row[]);
     }
-  }, [table]);
+  }, [table, phase]);
 
   useEffect(() => {
     if (page !== null) getPage({ pageIndex: page, pageSize });
-  }, [page, pageSize, getPage]);
+  }, [page, pageSize, getPage, phase]);
 
   // define table
   const columns: readonly Column<Row>[] = [

@@ -320,7 +320,7 @@ class Schemes:
 
         return TableOutModel(
             items=table.to_dict(orient="records"),
-            total=len(table),
+            total=len(df),
         )
 
     def add_scheme(
