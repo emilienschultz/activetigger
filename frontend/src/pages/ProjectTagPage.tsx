@@ -246,7 +246,7 @@ export const ProjectTagPage: FC = () => {
 
   if (!projectName || !currentScheme) return;
 
-  console.log(statistics);
+  console.log(phase);
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
@@ -274,11 +274,13 @@ export const ProjectTagPage: FC = () => {
           Current dataset{' '}
           <select
             className="form-select w-25 mx-3"
+            value={phase}
             onChange={(e) => {
               setAppContext((prev) => ({
                 ...prev,
                 phase: e.target.value,
               }));
+              navigate(`/projects/${projectName}/tag/`);
             }}
           >
             <option value="train">Train</option>
