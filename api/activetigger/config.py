@@ -58,8 +58,9 @@ class Config(metaclass=_Singleton):
     timezone: pytz.BaseTzInfo
     mail_available: bool = False
     default_user: str = "root"
-    test_file: str = "test.parquet"
     train_file: str = "train.parquet"
+    test_file: str = "test.parquet"
+    valid_file: str = "valid.parquet"
     features_file: str = "features.parquet"
     data_all: str = "data_all.parquet"
     file_models: str = "bert_models.csv"

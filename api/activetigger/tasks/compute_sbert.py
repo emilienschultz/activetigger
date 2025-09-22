@@ -89,7 +89,6 @@ class ComputeSbert(BaseTask):
                 progress_percent = (i / total_batches) * 100
                 with open(self.path_progress, "w") as f:
                     f.write(str(round(progress_percent, 1)))
-                print("writing", self.path_progress)
                 print(progress_percent)
 
             # shape the data

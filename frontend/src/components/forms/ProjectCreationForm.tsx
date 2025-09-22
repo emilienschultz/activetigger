@@ -54,6 +54,7 @@ export const ProjectCreationForm: FC = () => {
       defaultValues: {
         n_train: 100,
         n_test: 0,
+        n_valid: 0,
         language: 'en',
         clear_test: false,
         random_selection: true,
@@ -438,8 +439,31 @@ export const ProjectCreationForm: FC = () => {
                       max={maxTrainSet}
                     />
 
+                    <label className="form-label" htmlFor="n_valid">
+                      Number of elements in the valid set (optional)
+                      <a className="n_valid">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".n_valid" place="top">
+                        The valid set will be used for hyperparameter tuning
+                      </Tooltip>
+                    </label>
+                    <input
+                      className="form-control"
+                      id="n_valid"
+                      type="number"
+                      disabled={creatingProject}
+                      {...register('n_valid')}
+                    />
+
                     <label className="form-label" htmlFor="n_test">
                       Number of elements in the test set (optional)
+                      <a className="n_test">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".n_test" place="top">
+                        The test set will be used at the end for the final evaluation
+                      </Tooltip>
                     </label>
                     <input
                       className="form-control"

@@ -140,6 +140,7 @@ class Project:
                 username,
                 data_all=config.data_all,
                 train_file=config.train_file,
+                valid_file=config.valid_file,
                 test_file=config.test_file,
                 features_file=config.features_file,
             ),
@@ -162,6 +163,7 @@ class Project:
         username: str,
         project: ProjectModel,
         import_trainset_labels: pd.DataFrame | None = None,
+        import_validset_labels: pd.DataFrame | None = None,
         import_testset_labels: pd.DataFrame | None = None,
     ) -> None:
         """
@@ -206,6 +208,18 @@ class Project:
                     scheme=scheme_name,
                     elements=elements,
                 )
+                if import_validset_labels is not None and col in import_validset_labels.columns:
+                    elements = [
+                        {"element_id": element_id, "annotation": label, "comment": ""}
+                        for element_id, label in import_validset_labels[col].dropna().items()
+                    ]
+                    self.db_manager.projects_service.add_annotations(
+                        dataset="valid",
+                        user_name=username,
+                        project_slug=self.project_slug,
+                        scheme=scheme_name,
+                        elements=elements,
+                    )
                 if import_testset_labels is not None and col in import_testset_labels.columns:
                     elements = [
                         {"element_id": element_id, "annotation": label, "comment": ""}
@@ -272,6 +286,7 @@ class Project:
             project_slug,
             self.params.dir.joinpath(config.train_file),
             self.params.dir.joinpath(config.test_file),
+            self.params.dir.joinpath(config.valid_file),
             self.db_manager,
         )
         self.features = Features(
@@ -755,7 +770,6 @@ class Project:
                 .explode()
                 .apply(lambda x: x["tag"] if isinstance(x, dict) and "tag" in x else None)
             )
-            print(r.value_counts())
             return json.loads(r.value_counts().to_json())
         else:
             raise Exception("Not implemented for this kind of scheme")
@@ -779,10 +793,20 @@ class Project:
         df_train = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
+        # part valid
+        if self.params.valid and (self.schemes.valid is not None):
+            df_valid = self.schemes.get_scheme_data(scheme, kind=["valid"], complete=True)
+            valid_set_n = len(df_valid)
+            valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
+            valid_annotated_distribution = self.compute_annotations_distribution(df_valid, kind)
+        else:
+            valid_set_n = None
+            valid_annotated_n = None
+            valid_annotated_distribution = None
+
         # part test
         if self.params.test and (self.schemes.test is not None):
             df_test = self.schemes.get_scheme_data(scheme, kind=["test"], complete=True)
-            print(df_test)
             test_set_n = len(df_test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
@@ -801,12 +825,14 @@ class Project:
             train_set_n=len(self.schemes.content),
             train_annotated_n=len(df_train.dropna(subset=["labels"])),
             train_annotated_distribution=train_annotated_distribution,
+            valid_set_n=valid_set_n,
+            valid_annotated_n=valid_annotated_n,
+            valid_annotated_distribution=valid_annotated_distribution,
             test_set_n=test_set_n,
             test_annotated_n=test_annotated_n,
             test_annotated_distribution=test_annotated_distribution,
             sm_10cv=sm_10cv,
         )
-        print(r)
         return r
 
     def get_projection(self, username: str, scheme: str) -> ProjectionOutModel | None:
@@ -1257,7 +1283,9 @@ class Project:
                     if results is None:
                         print("No result from project creation")
                         raise Exception("No result from project creation")
-                    self.finish_project_creation(e.username, results[0], results[1], results[2])
+                    self.finish_project_creation(
+                        e.username, results[0], results[1], results[2], results[3]
+                    )
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(config.timezone), "Error in project creation", str(ex)]

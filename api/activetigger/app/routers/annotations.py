@@ -203,7 +203,6 @@ async def get_reconciliation_table(
     Get the reconciliation table
     """
     try:
-        print(scheme)
         df, users = project.schemes.get_reconciliation_table(scheme)
         return ReconciliationModel(
             table=cast(list[dict[str, str | dict[str, str]]], df.to_dict(orient="records")),

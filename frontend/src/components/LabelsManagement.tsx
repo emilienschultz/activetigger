@@ -25,6 +25,7 @@ interface LabelsManagementProps {
 interface LabelCardProps {
   label: string;
   countTrain: number;
+  countValid?: number;
   countTest?: number;
   removeLabel: (label: string) => void;
   renameLabel: (formerLabel: string, newLabel: string) => void;
@@ -39,6 +40,7 @@ interface LabelType {
 export const LabelCard: FC<LabelCardProps> = ({
   label,
   countTrain,
+  countValid,
   countTest,
   removeLabel,
   renameLabel,
@@ -50,6 +52,7 @@ export const LabelCard: FC<LabelCardProps> = ({
     <tr key={label}>
       <td className="px-4 py-3">{label}</td>
       <td className="px-4 py-3 text-center">{countTrain ? countTrain : 0}</td>
+      <td className="px-4 py-3 text-center">{countValid ? countValid : 0}</td>
       <td className="px-4 py-3 text-center">{countTest ? countTest : 0}</td>
       {!deactivateModifications && (
         <>
@@ -204,6 +207,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                 Train
               </th>
               <th scope="col" className="px-4 py-3 text-center">
+                Valid
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
                 Test
               </th>
               <th scope="col" className="px-4 py-3 text-center"></th>
@@ -221,6 +227,11 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                 renameLabel={renameLabel}
                 countTrain={
                   statistics ? Number(statistics['train_annotated_distribution'][label.label]) : 0
+                }
+                countValid={
+                  statistics && statistics['valid_annotated_distribution']
+                    ? Number(statistics['valid_annotated_distribution'][label.label])
+                    : 0
                 }
                 countTest={
                   statistics && statistics['test_annotated_distribution']
@@ -240,6 +251,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                 {statistics ? statistics['train_annotated_n'] : ''}
               </td>
               <td className="px-4 py-3 text-center">
+                {statistics ? statistics['valid_annotated_n'] : ''}
+              </td>
+              <td className="px-4 py-3 text-center">
                 {statistics ? statistics['test_annotated_n'] : ''}
               </td>
             </tr>
@@ -249,6 +263,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               </td>
               <td className="px-4 py-3 text-center">
                 {statistics ? statistics['train_set_n'] : ''}
+              </td>
+              <td className="px-4 py-3 text-center">
+                {statistics ? statistics['valid_set_n'] : ''}
               </td>
               <td className="px-4 py-3 text-center">
                 {statistics ? statistics['test_set_n'] : ''}

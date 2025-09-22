@@ -41,6 +41,7 @@ class Schemes:
         project_slug: str,
         path_content: Path,  # training data
         path_test: Path,  # test data
+        path_valid: Path,  # valid data
         db_manager: DatabaseManager,
     ) -> None:
         """
@@ -54,6 +55,10 @@ class Schemes:
             self.test = pd.read_parquet(path_test)
         else:
             self.test = None
+        if path_valid.exists():
+            self.valid = pd.read_parquet(path_valid)
+        else:
+            self.valid = None
 
         available = self.available()
 
@@ -331,7 +336,6 @@ class Schemes:
         Add label in a scheme
         """
         available = self.available()
-        print(available)
         if (label is None) or (label == ""):
             raise Exception("Label cannot be empty")
         if scheme not in available:

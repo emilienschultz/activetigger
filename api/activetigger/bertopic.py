@@ -183,7 +183,6 @@ class Bertopic:
             if params_path.exists():
                 with open(params_path) as f:
                     r = json.load(f)
-                    print(r)
                     return r
             else:
                 raise FileNotFoundError(f"Parameters for model {name} do not exist.")

@@ -2539,6 +2539,11 @@ export interface components {
             n_train: number;
             /** N Test */
             n_test: number;
+            /**
+             * N Valid
+             * @default 0
+             */
+            n_valid: number;
             /** From Project */
             from_project?: string | null;
             /** Filename */
@@ -2580,6 +2585,11 @@ export interface components {
              * @default false
              */
             test: boolean;
+            /**
+             * Valid
+             * @default false
+             */
+            valid: boolean;
             /** N Total */
             n_total?: number | null;
             /**
@@ -2587,6 +2597,11 @@ export interface components {
              * @default false
              */
             clear_test: boolean;
+            /**
+             * Clear Valid
+             * @default false
+             */
+            clear_valid: boolean;
             /**
              * Random Selection
              * @default false
@@ -2633,10 +2648,16 @@ export interface components {
             train_annotated_distribution: Record<string, never>;
             /** Test Set N */
             test_set_n?: number | null;
+            /** Valid Set N */
+            valid_set_n?: number | null;
             /** Test Annotated N */
             test_annotated_n?: number | null;
+            /** Valid Annotated N */
+            valid_annotated_n?: number | null;
             /** Test Annotated Distribution */
             test_annotated_distribution?: Record<string, never> | null;
+            /** Valid Annotated Distribution */
+            valid_annotated_distribution?: Record<string, never> | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -2655,6 +2676,11 @@ export interface components {
             n_train: number;
             /** N Test */
             n_test: number;
+            /**
+             * N Valid
+             * @default 0
+             */
+            n_valid: number;
             /** From Project */
             from_project?: string | null;
             /** Filename */
@@ -2696,6 +2722,11 @@ export interface components {
              * @default false
              */
             test: boolean;
+            /**
+             * Valid
+             * @default false
+             */
+            valid: boolean;
             /** N Total */
             n_total?: number | null;
             /**
@@ -2703,6 +2734,11 @@ export interface components {
              * @default false
              */
             clear_test: boolean;
+            /**
+             * Clear Valid
+             * @default false
+             */
+            clear_valid: boolean;
             /**
              * Random Selection
              * @default false

@@ -62,6 +62,7 @@ class ProjectBaseModel(BaseModel):
     col_id: str
     n_train: int
     n_test: int
+    n_valid: int = 0
     from_project: str | None = None
     filename: str | None = None
     dir: Path | None = None
@@ -72,8 +73,10 @@ class ProjectBaseModel(BaseModel):
     cols_label: list[str] = []
     cols_context: list[str] = []
     test: bool = False
+    valid: bool = False
     n_total: int | None = None
     clear_test: bool = False
+    clear_valid: bool = False
     random_selection: bool = False
     cols_stratify: list[str] = []
     stratify_train: bool = False
@@ -757,8 +760,11 @@ class ProjectDescriptionModel(BaseModel):
     train_annotated_n: int
     train_annotated_distribution: dict[str, Any]
     test_set_n: int | None = None
+    valid_set_n: int | None = None
     test_annotated_n: int | None = None
+    valid_annotated_n: int | None = None
     test_annotated_distribution: dict[str, Any] | None = None
+    valid_annotated_distribution: dict[str, Any] | None = None
     sm_10cv: Any | None = None
 
 
