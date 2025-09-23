@@ -173,9 +173,14 @@ class Project:
         self.db_manager.projects_service.add_project(
             project.project_slug, jsonable_encoder(project), username
         )
-        # add the default scheme
+        # add the default scheme (basic name or with a random number if the name already exists)
+        default_scheme_name = (
+            config.default_scheme
+            if f"dataset_{config.default_scheme}" not in import_trainset_labels
+            else f"{config.default_scheme}_{str(uuid.uuid4())[:8]}"
+        )
         self.db_manager.projects_service.add_scheme(
-            self.project_slug, "default", [], "multiclass", "system"
+            self.project_slug, default_scheme_name, [], "multiclass", "system"
         )
         # if labels/schemes to import, add them to the database
         if import_trainset_labels is not None:
