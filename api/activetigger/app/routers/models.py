@@ -86,7 +86,7 @@ async def predict(
 ) -> None:
     """
     Start prediction with a model for a specific dataset
-    Manage specific metrics computation
+    Manage specific cases for prediction
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
@@ -178,40 +178,6 @@ async def predict(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# @router.post("/models/bert/test", dependencies=[Depends(verified_user)])
-# async def start_test(
-#     project: Annotated[Project, Depends(get_project)],
-#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-#     scheme: str,
-#     model: str,
-# ) -> None:
-#     """
-#     Start testing the model on the test set
-#     """
-#     test_rights(ProjectAction.ADD, current_user.username, project.name)
-#     if project.schemes.test is None:
-#         raise HTTPException(status_code=500, detail="No test dataset for this project")
-
-#     try:
-#         # get data labels + text
-#         df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
-
-#         # launch testing process : prediction
-#         project.languagemodels.start_testing_process(
-#             project_slug=project.name,
-#             name=model,
-#             user=current_user.username,
-#             df=df,
-#             col_text="text",
-#             col_labels="labels",
-#         )
-#         orchestrator.log_action(current_user.username, "PREDICT MODEL TEST", project.name)
-#         return None
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/bert/train", dependencies=[Depends(verified_user)])
