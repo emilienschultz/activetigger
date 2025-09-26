@@ -17,9 +17,9 @@ import { LossChart } from '../components/vizualisation/lossChart';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
+  useEvalModel,
   useModelInformations,
   useRenameBertModel,
-  useTestModel,
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -73,7 +73,7 @@ export const FinetunePage: FC = () => {
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
 
   // hook to api call to launch the test
-  const { testModel } = useTestModel(
+  const { evalModel } = useEvalModel(
     projectSlug || null,
     currentScheme || null,
     currentModel || null,
@@ -294,10 +294,17 @@ export const FinetunePage: FC = () => {
                     <div className="col-12">
                       <button
                         className="btn btn-primary m-3"
-                        onClick={() => testModel()}
+                        onClick={() => evalModel('valid')}
                         disabled={isComputing}
                       >
-                        Compute testset predictions
+                        Compute validation
+                      </button>
+                      <button
+                        className="btn btn-primary m-3"
+                        onClick={() => evalModel('test')}
+                        disabled={isComputing}
+                      >
+                        Compute test
                       </button>
                     </div>
                   )}
@@ -319,9 +326,17 @@ export const FinetunePage: FC = () => {
 
                   {model && (
                     <DisplayScores
+                      scores={model.valid_scores as unknown as Record<string, number>}
+                      modelName={currentModel || ''}
+                      title="Validation scores"
+                    />
+                  )}
+
+                  {model && (
+                    <DisplayScores
                       scores={model.test_scores as unknown as Record<string, number>}
                       modelName={currentModel || ''}
-                      title={null}
+                      title="Test scores"
                     />
                   )}
                 </div>

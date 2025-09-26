@@ -1,4 +1,5 @@
 import io
+import os
 from typing import Annotated
 
 import pandas as pd  # type: ignore[import]
@@ -84,16 +85,24 @@ async def predict(
     external_dataset: TextDatasetModel | None = None,
 ) -> None:
     """
-    Start prediction with a model
+    Start prediction with a model for a specific dataset
+    Manage specific metrics computation
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
         # get the data
         if dataset == "train":
+            status = "predicting"
+            statistics = "outofsample"
             df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
             col_label = "labels"
             col_id = None
+
         elif dataset == "all":
+            status = "predicting"
+            statistics = "outofsample"
+            col_label = None
+            col_id = project.params.col_id
             df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
             # fix in the case where the id column is the row
             if project.params.col_id != "dataset_row_number":
@@ -102,9 +111,12 @@ async def predict(
                 )  # add original id
             else:
                 df["dataset_row_number"] = df.index
-            col_label = None
-            col_id = project.params.col_id
+
         elif dataset == "external":
+            status = "predicting"
+            statistics = "outofsample"
+            col_label = None
+            col_id = None
             if external_dataset is None:
                 raise HTTPException(status_code=400, detail="External dataset is missing")
             csv_buffer = io.StringIO(external_dataset.csv)
@@ -115,9 +127,35 @@ async def predict(
             df["index"] = df[external_dataset.id].apply(str)
             df.set_index("index", inplace=True)
             df = df[["text"]].dropna()
-            col_label = None
+
+        elif dataset == "test":
+            status = "predicting"
+            statistics = "full"
+            col_label = "labels"
             col_id = None
-            # raise HTTPException(status_code=500, detail="Not implemented yet")
+            if project.schemes.test is None:
+                raise HTTPException(status_code=500, detail="No test dataset for this project")
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
+            if set(project.languagemodels.get_labels(model_name)) != set(
+                df["labels"].dropna().unique()
+            ):
+                raise Exception("The testset and the model have different labels")
+            project.languagemodels.clean_files_valid(model_name, dataset)
+
+        elif dataset == "valid":
+            status = "predicting"
+            statistics = "full"
+            col_label = "labels"
+            col_id = None
+            if project.schemes.valid is None:
+                raise HTTPException(status_code=500, detail="No valid dataset for this project")
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["valid"])
+            if set(project.languagemodels.get_labels(model_name)) != set(
+                df["labels"].dropna().unique()
+            ):
+                raise Exception("The valid set and the model have different labels")
+            project.languagemodels.clean_files_valid(model_name, dataset)
+
         else:
             raise Exception(f"dataset {dataset} not found")
 
@@ -132,44 +170,48 @@ async def predict(
             col_id=col_id,
             dataset=dataset,
             batch_size=batch_size,
+            status=status,
+            statistics=statistics,
         )
-        orchestrator.log_action(current_user.username, f"PREDICT MODEL: {model_name}", project.name)
+        orchestrator.log_action(
+            current_user.username, f"PREDICT MODEL: {model_name} DATASET: {dataset}", project.name
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/models/bert/test", dependencies=[Depends(verified_user)])
-async def start_test(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str,
-    model: str,
-) -> None:
-    """
-    Start testing the model on the test set
-    """
-    test_rights(ProjectAction.ADD, current_user.username, project.name)
-    if project.schemes.test is None:
-        raise HTTPException(status_code=500, detail="No test dataset for this project")
+# @router.post("/models/bert/test", dependencies=[Depends(verified_user)])
+# async def start_test(
+#     project: Annotated[Project, Depends(get_project)],
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+#     scheme: str,
+#     model: str,
+# ) -> None:
+#     """
+#     Start testing the model on the test set
+#     """
+#     test_rights(ProjectAction.ADD, current_user.username, project.name)
+#     if project.schemes.test is None:
+#         raise HTTPException(status_code=500, detail="No test dataset for this project")
 
-    try:
-        # get data labels + text
-        df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
+#     try:
+#         # get data labels + text
+#         df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
 
-        # launch testing process : prediction
-        project.languagemodels.start_testing_process(
-            project_slug=project.name,
-            name=model,
-            user=current_user.username,
-            df=df,
-            col_text="text",
-            col_labels="labels",
-        )
-        orchestrator.log_action(current_user.username, "PREDICT MODEL TEST", project.name)
-        return None
+#         # launch testing process : prediction
+#         project.languagemodels.start_testing_process(
+#             project_slug=project.name,
+#             name=model,
+#             user=current_user.username,
+#             df=df,
+#             col_text="text",
+#             col_labels="labels",
+#         )
+#         orchestrator.log_action(current_user.username, "PREDICT MODEL TEST", project.name)
+#         return None
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/bert/train", dependencies=[Depends(verified_user)])

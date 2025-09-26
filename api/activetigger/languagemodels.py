@@ -247,77 +247,89 @@ class LanguageModels:
             )
         )
 
-    def start_testing_process(
-        self,
-        project_slug: str,
-        name: str,
-        user: str,
-        df: DataFrame,
-        col_text: str,
-        col_labels: str,
-    ) -> None:
+    def clean_files_valid(self, model_name: str, dataset: str):
         """
-        Start testing process
-        - launch as an independant process functions.test_bert
-        - once computed, sync with the queue
+        Clean previous files for validation or test dataset
+        #TODO : CHECK STATISTICS
         """
-        if len(self.current_user_processes(user)) > 0:
-            raise Exception(
-                "User already has a process launched, please wait before launching another one"
-            )
+        if dataset not in ["valid", "test"]:
+            raise Exception("Dataset should be 'valid' or 'test'")
+        if (self.path.joinpath(model_name).joinpath(f"predict_{dataset}.parquet")).exists():
+            os.remove(self.path.joinpath(model_name).joinpath(f"predict_{dataset}.parquet"))
+        if (self.path.joinpath(model_name).joinpath(f"metrics_{dataset}.json")).exists():
+            os.remove(self.path.joinpath(model_name).joinpath(f"metrics_{dataset}.json"))
 
-        if not (self.path / name).exists():
-            raise Exception("The model does not exist")
+    # def start_testing_process(
+    #     self,
+    #     project_slug: str,
+    #     name: str,
+    #     user: str,
+    #     df: DataFrame,
+    #     col_text: str,
+    #     col_labels: str,
+    # ) -> None:
+    #     """
+    #     Start testing process
+    #     - launch as an independant process functions.test_bert
+    #     - once computed, sync with the queue
+    #     """
+    #     if len(self.current_user_processes(user)) > 0:
+    #         raise Exception(
+    #             "User already has a process launched, please wait before launching another one"
+    #         )
 
-        # test number of elements in the test set
-        if len(df["labels"].dropna()) < 10:
-            raise Exception("Less than 10 elements annotated")
+    #     if not (self.path / name).exists():
+    #         raise Exception("The model does not exist")
 
-        # load model
+    #     # test number of elements in the test set
+    #     if len(df["labels"].dropna()) < 10:
+    #         raise Exception("Less than 10 elements annotated")
 
-        # test if the testset and the model have the same labels
-        labels_model = self.get_labels(name)
-        labels_test = set(df["labels"].dropna().unique())
-        if set(labels_model) != set(df["labels"].dropna().unique()):
-            raise Exception(
-                f"The testset and the model have different labels {labels_model} vs {labels_test}"
-            )
+    #     # load model
 
-        # delete previous files
-        if (self.path.joinpath(name).joinpath("predict_test.parquet")).exists():
-            os.remove(self.path.joinpath(name).joinpath("predict_test.parquet"))
-        if (self.path.joinpath(name).joinpath("statistics.json")).exists():
-            os.remove(self.path.joinpath(name).joinpath("statistics.json"))
+    #     # test if the testset and the model have the same labels
+    #     labels_model = self.get_labels(name)
+    #     labels_test = set(df["labels"].dropna().unique())
+    #     if set(labels_model) != set(df["labels"].dropna().unique()):
+    #         raise Exception(
+    #             f"The testset and the model have different labels {labels_model} vs {labels_test}"
+    #         )
 
-        # start prediction on the test set
-        unique_id = self.queue.add_task(
-            "prediction",
-            project_slug,
-            PredictBert(
-                df=df,
-                col_text=col_text,
-                col_label=col_labels,
-                path=self.path.joinpath(name),
-                basemodel=self.get_base_model(name),
-                file_name="predict_test.parquet",
-                batch=32,
-                statistics="full",
-            ),
-            queue="gpu",
-        )
+    #     # delete previous files
+    #     if (self.path.joinpath(name).joinpath("predict_test.parquet")).exists():
+    #         os.remove(self.path.joinpath(name).joinpath("predict_test.parquet"))
+    #     if (self.path.joinpath(name).joinpath("statistics.json")).exists():
+    #         os.remove(self.path.joinpath(name).joinpath("statistics.json"))
 
-        self.computing.append(
-            LMComputing(
-                user=user,
-                model_name=name,
-                unique_id=unique_id,
-                time=datetime.now(),
-                kind="predict_bert",
-                status="testing",
-                get_progress=self.get_progress(name, status="predicting"),
-                dataset="test",
-            )
-        )
+    #     # start prediction on the test set
+    #     unique_id = self.queue.add_task(
+    #         "prediction",
+    #         project_slug,
+    #         PredictBert(
+    #             df=df,
+    #             col_text=col_text,
+    #             col_label=col_labels,
+    #             path=self.path.joinpath(name),
+    #             basemodel=self.get_base_model(name),
+    #             file_name="predict_test.parquet",
+    #             batch=32,
+    #             statistics="full",
+    #         ),
+    #         queue="gpu",
+    #     )
+
+    #     self.computing.append(
+    #         LMComputing(
+    #             user=user,
+    #             model_name=name,
+    #             unique_id=unique_id,
+    #             time=datetime.now(),
+    #             kind="predict_bert",
+    #             status="testing",
+    #             get_progress=self.get_progress(name, status="predicting"),
+    #             dataset="test",
+    #         )
+    #     )
 
     def start_predicting_process(
         self,
@@ -325,11 +337,13 @@ class LanguageModels:
         name: str,
         user: str,
         df: DataFrame,
-        col_text: str,
         dataset: str,
+        col_text: str,
         col_label: str | None = None,
         col_id: str | None = None,
         batch_size: int = 32,
+        status: str = "predicting",
+        statistics: str = "outofsample",
     ) -> None:
         """
         Start predicting process
@@ -342,6 +356,8 @@ class LanguageModels:
         if not (self.path.joinpath(name)).exists():
             raise Exception("The model does not exist")
 
+        file_name = f"predict_{dataset}.parquet"
+
         # load the model
         unique_id = self.queue.add_task(
             "prediction",
@@ -353,9 +369,9 @@ class LanguageModels:
                 col_id=col_id,
                 path=self.path.joinpath(name),
                 basemodel=self.get_base_model(name),
-                file_name=f"predict_{dataset}.parquet",
+                file_name=file_name,
                 batch=batch_size,
-                statistics="outofsample",
+                statistics=statistics,
             ),
             queue="gpu",
         )
@@ -367,8 +383,8 @@ class LanguageModels:
                 time=datetime.now(),
                 kind="predict_bert",
                 dataset=dataset,
-                status="predicting",
-                get_progress=self.get_progress(name, status="predicting"),
+                status=status,
+                get_progress=self.get_progress(name, status=status),
             )
         )
 
@@ -581,9 +597,20 @@ class LanguageModels:
         return test_scores
 
     def get_validscores(self, model_name) -> dict | None:
-        if (self.path.joinpath(model_name).joinpath("metrics_validation.json")).exists():
+        if (self.path.joinpath(model_name).joinpath("metrics_predict_valid.parquet.json")).exists():
             with open(
-                self.path.joinpath(model_name).joinpath("metrics_validation.json"),
+                self.path.joinpath(model_name).joinpath("metrics_predict_valid.parquet.json"),
+                "r",
+            ) as f:
+                valid_scores = json.load(f)
+        else:
+            valid_scores = None
+        return valid_scores
+
+    def get_internalvalidscores(self, model_name) -> dict | None:
+        if (self.path.joinpath(model_name).joinpath("metrics_internalvalid.json")).exists():
+            with open(
+                self.path.joinpath(model_name).joinpath("metrics_internalvalid.json"),
                 "r",
             ) as f:
                 valid_scores = json.load(f)
@@ -599,6 +626,7 @@ class LanguageModels:
 
         loss = self.get_loss(model_name)
         params = self.get_parameters(model_name)
+        internalvalid_scores = self.get_internalvalidscores(model_name)
         valid_scores = self.get_validscores(model_name)
         train_scores = self.get_trainscores(model_name)
         test_scores = self.get_testscores(model_name)
@@ -608,8 +636,9 @@ class LanguageModels:
             params=params,
             loss=loss,
             train_scores=train_scores,
-            test_scores=test_scores,
+            internalvalid_scores=internalvalid_scores,
             valid_scores=valid_scores,
+            test_scores=test_scores,
             outofsample_scores=outofsample_scores,
         )
 

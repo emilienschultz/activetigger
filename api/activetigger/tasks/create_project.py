@@ -1,10 +1,14 @@
+import csv
 import shutil
+import sys
 
 import pandas as pd
 
 from activetigger.datamodels import ProjectBaseModel, ProjectModel
 from activetigger.functions import slugify
 from activetigger.tasks.base_task import BaseTask
+
+csv.field_size_limit(sys.maxsize)
 
 
 class CreateProject(BaseTask):
@@ -51,7 +55,7 @@ class CreateProject(BaseTask):
         if self.params.filename:
             file_path = self.params.dir.joinpath(self.params.filename)
             if self.params.filename.endswith(".csv"):
-                content = pd.read_csv(file_path, low_memory=False)
+                content = pd.read_csv(file_path, low_memory=False, on_bad_lines="skip")
             elif self.params.filename.endswith(".parquet"):
                 content = pd.read_parquet(file_path)
             elif self.params.filename.endswith(".xlsx"):

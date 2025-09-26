@@ -176,7 +176,8 @@ class Project:
         # add the default scheme (basic name or with a random number if the name already exists)
         default_scheme_name = (
             config.default_scheme
-            if f"dataset_{config.default_scheme}" not in import_trainset_labels
+            if import_trainset_labels is None
+            or f"dataset_{config.default_scheme}" not in import_trainset_labels
             else f"{config.default_scheme}_{str(uuid.uuid4())[:8]}"
         )
         self.db_manager.projects_service.add_scheme(

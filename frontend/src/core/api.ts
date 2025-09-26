@@ -1763,32 +1763,36 @@ export function useReconciliate(projectSlug: string, scheme: string | null) {
 /**
  * Launch test
  */
-export function useTestModel(
+export function useEvalModel(
   projectSlug: string | null,
   scheme: string | null,
   model: string | null,
 ) {
   const { notify } = useNotifications();
 
-  const testModel = useCallback(async () => {
-    if (scheme && projectSlug && model) {
-      const res = await api.POST('/models/bert/test', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-            scheme: scheme,
-            model: model,
+  const evalModel = useCallback(
+    async (dataset: string) => {
+      if (scheme && projectSlug && model) {
+        const res = await api.POST('/models/bert/predict', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              scheme: scheme,
+              model_name: model,
+              dataset: dataset,
+            },
           },
-        },
-      });
-      if (!res.error) notify({ type: 'warning', message: 'Starting test computation' });
+        });
+        if (!res.error) notify({ type: 'warning', message: 'Starting evaluation' });
 
-      return true;
-    }
-    return null;
-  }, [projectSlug, scheme, notify, model]);
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, scheme, notify, model],
+  );
 
-  return { testModel };
+  return { evalModel };
 }
 
 export function useGetGenModels() {
