@@ -57,13 +57,16 @@ export const ProjectPage: FC = () => {
 
   // if conditions, navigate to the tag page
   useEffect(() => {
-    if (fromProjectPage && availableLabels.length > 1) {
+    if (currentScheme && fromProjectPage && availableLabels.length > 1) {
       navigate(`/projects/${projectSlug}/tag`);
       setFromProjectPage(false);
+      console.log('fromProjectPage', fromProjectPage, availableLabels, currentScheme);
     }
-  }, [fromProjectPage, availableLabels.length, navigate, projectSlug]);
+  }, [fromProjectPage, availableLabels.length, navigate, projectSlug, currentScheme]);
 
   if (!projectSlug || !project) return;
+
+  console.log(availableLabels.length);
 
   return (
     <ProjectPageLayout projectName={projectSlug}>
