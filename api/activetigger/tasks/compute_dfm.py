@@ -50,15 +50,15 @@ class ComputeDfm(BaseTask):
 
         # load stopwords
         if self.language == "fr":
-            stop_words = French.Defaults.stop_words
+            stop_words = list(French.Defaults.stop_words)
         elif self.language == "es":
-            stop_words = Spanish.Defaults.stop_words
+            stop_words = list(Spanish.Defaults.stop_words)
         elif self.language == "de":
-            stop_words = German.Defaults.stop_words
+            stop_words = list(German.Defaults.stop_words)
         elif self.language == "en":
-            stop_words = English.Defaults.stop_words
+            stop_words = list(English.Defaults.stop_words)
         else:
-            stop_words = English.Defaults.stop_words
+            stop_words = list(English.Defaults.stop_words)
             print(f"Language {self.language} not supported, using English stop words.")
 
         # compute matrix

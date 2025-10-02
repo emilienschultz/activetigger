@@ -293,6 +293,7 @@ class Features:
     def compute(self, df: pd.Series, name: str, kind: str, parameters: dict, username: str):
         """
         Compute new feature
+        TODO : manage better the queue launching
         """
         if len(self.current_user_processes(username)) > 0:
             raise ValueError("A process is already running")
@@ -307,6 +308,8 @@ class Features:
                 raise ValueError("No value for regex")
 
             regex_name = f"regex_[{parameters['value']}]_by_{username}"
+            if self.exists(regex_name):
+                raise ValueError("This regex already exists")
             pattern = re.compile(parameters["value"])
             f = df.apply(lambda x: bool(pattern.search(x)))
             parameters["count"] = int(f.sum())
@@ -332,6 +335,8 @@ class Features:
             dataset_name = (
                 f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
             )
+            if self.exists(dataset_name):
+                raise ValueError("This dataset feature already exists")
             self.add(dataset_name, kind, username, parameters, column)
             return {"success": "Feature added"}
 
@@ -348,7 +353,9 @@ class Features:
                 model = self.options["sbert"]["models"][0]
             else:
                 model = parameters["model"]
-            print("using model", model)
+            name = f"sbert_{model.replace('/', '_')}"
+            if self.exists(name):
+                raise ValueError("This sbert model already exists")
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
@@ -361,6 +368,9 @@ class Features:
             )
 
         if kind == "fasttext":
+            name = f"fasttext_{parameters['model']}"
+            if self.exists(name):
+                raise ValueError("This fasttext model already exists")
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
@@ -376,6 +386,9 @@ class Features:
                 name = f"{name}_{parameters['model']}"
 
         if kind == "dfm":
+            name = "dfm"
+            if self.exists(name):
+                raise ValueError("This dfm model already exists")
             args = parameters.copy()
             args["texts"] = df
             args["language"] = self.lang
