@@ -107,8 +107,6 @@ export const FinetunePage: FC = () => {
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
 
-  console.log(notifications);
-
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="finetune">
       <div className="container-fluid">

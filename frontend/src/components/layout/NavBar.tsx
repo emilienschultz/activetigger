@@ -41,7 +41,6 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
   const currentComputation =
     currentProject && currentUser && currentProject.languagemodels
       ? currentUser in currentProject.languagemodels.training ||
-        currentUser in currentProject.simplemodel.training ||
         currentUser in currentProject.projections.training ||
         currentUser in currentProject.bertopic.training ||
         Object.values(currentProject.features.training).length > 0
