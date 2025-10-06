@@ -315,14 +315,14 @@ class ProjectsService:
             ).all()
             return [[a.annotation, a.dataset, a.user_name, a.time] for a in annotations]
 
-    def delete_annotations_testset(self, project_slug: str):
+    def delete_annotations_evalset(self, project_slug: str, dataset: str):
         """
-        Delete all annotations for the test set in a project.
-        This is used when the test set is deleted or changed.
+        Delete all annotations for the eval set in a project.
+        This is used when the eval set is deleted or changed.
         """
         with self.Session.begin() as session:
             _ = session.execute(
-                delete(Annotations).filter_by(project_slug=project_slug, dataset="test")
+                delete(Annotations).filter_by(project_slug=project_slug, dataset=dataset)
             )
 
     def add_annotations(

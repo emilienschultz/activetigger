@@ -371,7 +371,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/testset/{action}": {
+    "/projects/evalset/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Evalset
+         * @description Delete an existing eval dataset
+         */
+        post: operations["delete_evalset_projects_evalset_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/evalset/add": {
         parameters: {
             query?: never;
             header?: never;
@@ -382,9 +402,10 @@ export interface paths {
         put?: never;
         /**
          * Add Testdata
-         * @description Add a dataset for test when there is none available
+         * @description Delete existing eval/test dataset or
+         *     Add a dataset for eval/test when there is none available
          */
-        post: operations["add_testdata_projects_testset__action__post"];
+        post: operations["add_testdata_projects_evalset_add_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1142,29 +1163,10 @@ export interface paths {
         put?: never;
         /**
          * Predict
-         * @description Start prediction with a model
+         * @description Start prediction with a model for a specific dataset
+         *     Manage specific cases for prediction
          */
         post: operations["predict_models_bert_predict_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/models/bert/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start Test
-         * @description Start testing the model on the test set
-         */
-        post: operations["start_test_models_bert_test_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2113,6 +2115,23 @@ export interface components {
             /** N Sample */
             n_sample?: number | null;
         };
+        /** EvalSetDataModel */
+        EvalSetDataModel: {
+            /** Cols Text */
+            cols_text: string[];
+            /** Col Id */
+            col_id: string;
+            /** N Eval */
+            n_eval: number;
+            /** Filename */
+            filename: string;
+            /** Csv */
+            csv: string;
+            /** Col Label */
+            col_label?: string | null;
+            /** Scheme */
+            scheme?: string | null;
+        };
         /** ExportGenerationsParams */
         ExportGenerationsParams: {
             /**
@@ -2309,10 +2328,12 @@ export interface components {
             loss?: Record<string, never> | null;
             /** Train Scores */
             train_scores?: Record<string, never> | null;
-            /** Test Scores */
-            test_scores?: Record<string, never> | null;
+            /** Internalvalid Scores */
+            internalvalid_scores?: Record<string, never> | null;
             /** Valid Scores */
             valid_scores?: Record<string, never> | null;
+            /** Test Scores */
+            test_scores?: Record<string, never> | null;
             /** Outofsample Scores */
             outofsample_scores?: Record<string, never> | null;
         };
@@ -3097,23 +3118,6 @@ export interface components {
             /** Total */
             total: number;
         };
-        /** TestSetDataModel */
-        TestSetDataModel: {
-            /** Cols Text */
-            cols_text: string[];
-            /** Col Id */
-            col_id: string;
-            /** N Test */
-            n_test: number;
-            /** Filename */
-            filename: string;
-            /** Csv */
-            csv: string;
-            /** Col Label */
-            col_label?: string | null;
-            /** Scheme */
-            scheme?: string | null;
-        };
         /** TextDatasetModel */
         TextDatasetModel: {
             /** Id */
@@ -3723,20 +3727,51 @@ export interface operations {
             };
         };
     };
-    add_testdata_projects_testset__action__post: {
+    delete_evalset_projects_evalset_delete_post: {
         parameters: {
             query: {
+                dataset: string;
                 project_slug: string;
             };
             header?: never;
-            path: {
-                action: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_testdata_projects_evalset_add_post: {
+        parameters: {
+            query: {
+                dataset: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["TestSetDataModel"] | null;
+                "application/json": components["schemas"]["EvalSetDataModel"];
             };
         };
         responses: {
@@ -5056,39 +5091,6 @@ export interface operations {
                 "application/json": components["schemas"]["TextDatasetModel"] | null;
             };
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_test_models_bert_test_post: {
-        parameters: {
-            query: {
-                scheme: string;
-                model: string;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

@@ -11,6 +11,7 @@ import {
   AnnotationsDataModel,
   AvailableProjectsModel,
   ComputeBertopicModel,
+  EvalSetDataModel,
   GenModel,
   LoginParams,
   ProjectBaseModel,
@@ -19,7 +20,6 @@ import {
   ProjectionParametersModel,
   SimpleModelModel,
   SupportedAPI,
-  TestSetDataModel,
   TextDatasetModel,
   newBertModel,
 } from '../types';
@@ -246,14 +246,13 @@ export function useCreateProject() {
 /**
  * Create test set
  */
-export function useCreateTestSet() {
+export function useCreateValidSet() {
   const { notify } = useNotifications();
   const createTestSet = useCallback(
-    async (projectSlug: string, testset: TestSetDataModel) => {
-      const res = await api.POST('/projects/testset/{action}', {
+    async (projectSlug: string, dataset: string, testset: EvalSetDataModel) => {
+      const res = await api.POST('/projects/evalset/add', {
         params: {
-          path: { action: 'create' },
-          query: { project_slug: projectSlug },
+          query: { project_slug: projectSlug, dataset: dataset },
         },
         body: testset,
       });
@@ -265,22 +264,24 @@ export function useCreateTestSet() {
 }
 
 /**
- * Drop test set
+ * Drop valid set
  */
-export function useDropTestSet(projectSlug: string | null) {
+export function useDropEvalSet(projectSlug: string | null) {
   const { notify } = useNotifications();
-  const dropTestSet = useCallback(async () => {
-    if (!projectSlug) return;
-    // do the new projects POST call
-    const res = await api.POST('/projects/testset/{action}', {
-      // POST has a body
-      params: {
-        path: { action: 'delete' },
-        query: { project_slug: projectSlug },
-      },
-    });
-    if (!res.error) notify({ type: 'success', message: 'Test data set dropped' });
-  }, [notify, projectSlug]);
+  const dropTestSet = useCallback(
+    async (dataset: string) => {
+      if (!projectSlug) return;
+      // do the new projects POST call
+      const res = await api.POST('/projects/evalset/delete', {
+        // POST has a body
+        params: {
+          query: { project_slug: projectSlug, dataset: dataset },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: `Data set ${dataset} dropped` });
+    },
+    [notify, projectSlug],
+  );
   return dropTestSet;
 }
 

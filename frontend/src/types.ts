@@ -48,7 +48,7 @@ export type SimpleModelModel = components['schemas']['SimpleModelModel'];
 
 export type LMParametersModel = components['schemas']['LMParametersModel'];
 
-export type TestSetDataModel = components['schemas']['TestSetDataModel'];
+export type EvalSetDataModel = components['schemas']['EvalSetDataModel'];
 
 export type AnnotationsDataModel = components['schemas']['AnnotationsDataModel'];
 
@@ -151,12 +151,12 @@ export interface newBertModel {
   exclude_labels?: string[];
 }
 
-export interface TestSetModel {
+export interface EvalSetModel {
   col_id: string;
   cols_text: string[];
   col_label?: string | null;
   scheme?: string | null;
-  n_test: number;
+  n_eval: number;
 }
 
 export type SupportedAPI = 'Ollama' | 'OpenAI' | 'HuggingFace';

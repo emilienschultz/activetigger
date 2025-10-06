@@ -110,10 +110,10 @@ class AnnotationsDataModel(BaseModel):
     filename: str | None = None
 
 
-class TestSetDataModel(BaseModel):
+class EvalSetDataModel(BaseModel):
     cols_text: list[str]
     col_id: str
-    n_test: int
+    n_eval: int
     filename: str
     csv: str
     col_label: str | None = None

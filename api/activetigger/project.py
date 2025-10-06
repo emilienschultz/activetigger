@@ -19,6 +19,7 @@ from activetigger.config import config
 from activetigger.datamodels import (
     BertModelModel,
     ElementOutModel,
+    EvalSetDataModel,
     ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
@@ -40,7 +41,6 @@ from activetigger.datamodels import (
     SimpleModelComputing,
     SimpleModelModel,
     StaticFileModel,
-    TestSetDataModel,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
@@ -332,7 +332,7 @@ class Project:
         else:
             raise NameError(f"{project_slug} does not exist.")
 
-    def drop_testset(self) -> None:
+    def drop_evalset(self, dataset: str) -> None:
         """
         Clean all the test data of the project
         - remove the file
@@ -341,63 +341,77 @@ class Project:
         """
         if not self.params.dir:
             raise Exception("No directory for project")
-        path_testset = self.params.dir.joinpath("test.parquet")
-        if not path_testset.exists():
-            raise Exception("No test data available")
-        os.remove(path_testset)
-        self.db_manager.projects_service.delete_annotations_testset(self.params.project_slug)
-        self.schemes.test = None
-        self.params.test = False
+        path = self.params.dir.joinpath(f"{dataset}.parquet")
+        if not path.exists():
+            raise Exception("No eval data available")
+        os.remove(path)
+        self.db_manager.projects_service.delete_annotations_evalset(
+            self.params.project_slug, dataset
+        )
+        if dataset == "test":
+            self.schemes.test = None
+            self.params.test = False
+        if dataset == "valid":
+            self.schemes.valid = None
+            self.params.valid = False
         self.db_manager.projects_service.update_project(
             self.params.project_slug, jsonable_encoder(self.params)
         )
 
-    def add_testset(self, testset: TestSetDataModel, username: str, project_slug: str) -> None:
+    def add_evalset(
+        self, dataset, evalset: EvalSetDataModel, username: str, project_slug: str
+    ) -> None:
         """
-        Add a test dataset
+        Add a eval dataset (test or valid)
 
-        The test dataset should :
+        The eval dataset should :
         - not contains NA
         - have a unique id different from the complete dataset
 
         The id will be modified to indicate imported
 
         """
-        if len(testset.cols_text) == 0:
-            raise Exception("No text column selected for the testset")
-
-        if self.schemes.test is not None:
-            raise Exception("There is already a test dataset")
+        if len(evalset.cols_text) == 0:
+            raise Exception("No text column selected for the evalset")
 
         if self.params.dir is None:
-            raise Exception("Cannot add test data without a valid dir")
+            raise Exception("Cannot add eval data without a valid dir")
 
-        if testset.col_label == "":
-            testset.col_label = None
+        if evalset.col_label == "":
+            evalset.col_label = None
 
-        csv_buffer = io.StringIO(testset.csv)
+        if dataset not in ["test", "valid"]:
+            raise Exception("Dataset should be test or valid")
+
+        if dataset == "test" and self.params.test:
+            raise Exception("There is already a test dataset")
+
+        if dataset == "valid" and self.params.valid:
+            raise Exception("There is already a valid dataset")
+
+        csv_buffer = io.StringIO(evalset.csv)
         df = pd.read_csv(
             csv_buffer,
-            dtype={testset.col_id: str, **{col: str for col in testset.cols_text}},
-            nrows=testset.n_test,
+            dtype={evalset.col_id: str, **{col: str for col in evalset.cols_text}},
+            nrows=evalset.n_eval,
         )
 
         if len(df) > 10000:
-            raise Exception("You testset is too large")
+            raise Exception("You valid set is too large")
 
         # create text column
-        df["text"] = df[testset.cols_text].apply(
+        df["text"] = df[evalset.cols_text].apply(
             lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
         )
 
         # change names
-        if not testset.col_label:
-            df = df.rename(columns={testset.col_id: "id"})
+        if not evalset.col_label:
+            df = df.rename(columns={evalset.col_id: "id"})
         else:
             df = df.rename(
                 columns={
-                    testset.col_id: "id",
-                    testset.col_label: "label",
+                    evalset.col_id: "id",
+                    evalset.col_label: "label",
                 }
             )
 
@@ -412,32 +426,36 @@ class Project:
         df = df.set_index("id")
 
         # import labels if specified + scheme // check if the labels are in the scheme
-        if testset.col_label and testset.scheme:
+        if evalset.col_label and evalset.scheme:
             # Check the label columns if they match the scheme or raise error
-            scheme = self.schemes.available()[testset.scheme].labels
+            scheme = self.schemes.available()[evalset.scheme].labels
             for label in df["label"].dropna().unique():
                 if label not in scheme:
-                    raise Exception(f"Label {label} not in the scheme {testset.scheme}")
+                    raise Exception(f"Label {label} not in the scheme {evalset.scheme}")
 
             elements = [
                 {"element_id": element_id, "annotation": label, "comment": ""}
                 for element_id, label in df["label"].dropna().items()
             ]
             self.db_manager.projects_service.add_annotations(
-                dataset="test",
+                dataset=dataset,
                 user_name=username,
                 project_slug=project_slug,
-                scheme=testset.scheme,
+                scheme=evalset.scheme,
                 elements=elements,
             )
-            print("Testset labels imported")
+            print("Valid labels imported")
 
         # write the dataset
-        df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
-        # load the data
-        self.schemes.test = df[["text"]]
-        # update parameters
-        self.params.test = True
+        if dataset == "test":
+            df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
+            self.schemes.test = df[["text"]]
+            self.params.test = True
+        else:
+            df[["text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
+            self.schemes.valid = df[["text"]]
+            self.params.valid = True
+
         # update the database
         self.db_manager.projects_service.update_project(
             self.params.project_slug, jsonable_encoder(self.params)

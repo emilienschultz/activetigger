@@ -6,7 +6,7 @@ import Tabs from 'react-bootstrap/Tabs';
 
 import { CodebookManagement } from '../components/CodeBookManagement';
 import { FeaturesManagement } from '../components/FeaturesManagement';
-import { TestSetManagement } from '../components/forms/TestSetManagement';
+import { EvalSetsManagement } from '../components/forms/EvalSetsManagement';
 import { ImportAnnotations } from '../components/ImportAnnotations';
 import { LabelsManagement } from '../components/LabelsManagement';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
@@ -62,7 +62,7 @@ export const ProjectPage: FC = () => {
       setFromProjectPage(false);
       console.log('fromProjectPage', fromProjectPage, availableLabels, currentScheme);
     }
-  }, [fromProjectPage, availableLabels.length, navigate, projectSlug, currentScheme]);
+  }, [fromProjectPage, availableLabels, navigate, projectSlug, currentScheme]);
 
   if (!projectSlug || !project) return;
 
@@ -110,10 +110,17 @@ export const ProjectPage: FC = () => {
             projectName={project.params.project_slug}
             currentScheme={currentScheme || null}
           />
-          <TestSetManagement
+          <EvalSetsManagement
             projectSlug={projectSlug}
             currentScheme={currentScheme || ''}
-            testSetExist={project?.params.test}
+            dataset={'valid'}
+            exist={project?.params.valid}
+          />
+          <EvalSetsManagement
+            projectSlug={projectSlug}
+            currentScheme={currentScheme || ''}
+            dataset={'test'}
+            exist={project?.params.test}
           />
         </Tab>
 
