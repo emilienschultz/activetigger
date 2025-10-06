@@ -7,17 +7,18 @@ import { DocPage } from '../pages/DocPage';
 import { CuratePage } from '../pages/ProjectCurationPage';
 /*import { ExperimentalPage } from '../components/pages/ExperimentalPage';*/
 import { RoleSelector } from '../core/RoleSelector';
-import { BertopicPage } from '../pages/BertopicPage';
-import { FinetunePage } from '../pages/FinetunePage';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
 import { MonitorPage } from '../pages/MonitorPage';
 import { NotFound } from '../pages/NotFoundPage';
+import { ProjectExplorePage } from '../pages/ProjectExplorePage';
 import { ProjectExportPage } from '../pages/ProjectExportPage';
 import { GenPage } from '../pages/ProjectGenPage';
+import { ProjectModelPage } from '../pages/ProjectModelPage';
 import { ProjectNewPage } from '../pages/ProjectNewPage';
 import { ProjectPage } from '../pages/ProjectPage';
 import { ProjectTagPage } from '../pages/ProjectTagPage';
+import { ProjectValidatePage } from '../pages/ProjectValidatePage';
 import { ProjectsPage } from '../pages/ProjectsPage';
 import { UsersPage } from '../pages/UsersPage';
 
@@ -112,7 +113,7 @@ export function getRouter() {
           path: '/projects/:projectName/explore/',
           element: (
             <>
-              <BertopicPage />
+              <ProjectExplorePage />
             </>
           ),
         },
@@ -135,11 +136,20 @@ export function getRouter() {
           ),
         },
         {
-          path: '/projects/:projectName/finetune/',
+          path: '/projects/:projectName/model/',
           element: (
             <>
               <RoleSelector allowedRoles={['manager', 'root']} />
-              <FinetunePage />
+              <ProjectModelPage />
+            </>
+          ),
+        },
+        {
+          path: '/projects/:projectName/validate/',
+          element: (
+            <>
+              <RoleSelector allowedRoles={['manager', 'root']} />
+              <ProjectValidatePage />
             </>
           ),
         },
@@ -152,6 +162,10 @@ export function getRouter() {
               <ProjectExportPage />
             </>
           ),
+        },
+        {
+          path: '/projects/:projectName/experimental/',
+          element: <></>,
         },
       ],
     },

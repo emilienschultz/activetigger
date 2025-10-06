@@ -1,7 +1,8 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
-import { GiChoice } from 'react-icons/gi';
+import { FaListCheck } from 'react-icons/fa6';
+import { HiMiniRectangleGroup } from 'react-icons/hi2';
 import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
@@ -31,7 +32,7 @@ export const ProjectActionsSidebar: FC<{
 }) => {
   const projectName = projectState ? projectState.params.project_slug : null;
   const { authenticatedUser } = useAuth();
-  const nbUsers = projectState ? projectState.users.length : 0;
+  // const nbUsers = projectState ? projectState.users.length : 0;
 
   // 2 types of menu
   const onlyAnnotator = authenticatedUser?.status === 'annotator';
@@ -85,7 +86,7 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Project</span>
             </Link>
           </li>
-          {/* <li className="nav-item">
+          <li className="nav-item">
             <Link
               to={`/projects/${projectName}/explore`}
               className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
@@ -95,7 +96,7 @@ export const ProjectActionsSidebar: FC<{
               <HiMiniRectangleGroup />
               <span className="ms-1">Explore</span>
             </Link>
-          </li> */}
+          </li>
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/tag`}
@@ -107,7 +108,7 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Tag</span>
             </Link>
           </li>
-          {nbUsers > 1 && (
+          {/*nbUsers > 1 && (
             <li className="nav-item">
               <Link
                 to={`/projects/${projectName}/curate`}
@@ -120,16 +121,28 @@ export const ProjectActionsSidebar: FC<{
                 <span> Curate</span>
               </Link>
             </li>
-          )}
+          )*/}
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/finetune`}
-              className={classNames('nav-link', currentProjectAction === 'finetune' && 'active')}
+              to={`/projects/${projectName}/model`}
+              className={classNames('nav-link', currentProjectAction === 'model' && 'active')}
               aria-current="page"
               title="Fine-tune a BERT model with your data"
             >
               <MdModelTraining />
-              <span className="ms-1">Fine-tune </span>
+              <span className="ms-1">Model</span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/validate`}
+              className={classNames('nav-link', currentProjectAction === 'validate' && 'active')}
+              aria-current="page"
+              title="Test your model"
+            >
+              <FaListCheck />
+
+              <span className="ms-1">Validate</span>
             </Link>
           </li>
           <li className="nav-item">

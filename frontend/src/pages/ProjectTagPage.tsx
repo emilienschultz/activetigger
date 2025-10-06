@@ -21,11 +21,11 @@ import { ElementOutModel } from '../types';
 
 import { MdDisplaySettings } from 'react-icons/md';
 import { useLocation } from 'react-router-dom';
-import { DataTabular } from '../components/DataTabular';
+import { AnnotationDisagreementManagement } from '../components/AnnotationDisagreementManagement';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { MulticlassInput } from '../components/MulticlassInput';
 import { MultilabelInput } from '../components/MultilabelInput';
-import { ProjectionManagement } from '../components/ProjectionManagement';
+import { SchemesComparisonManagement } from '../components/SchemesComparisonManagement';
 import { SelectionManagement } from '../components/SelectionManagement';
 import { SimpleModelDisplay } from '../components/SimpleModelDisplay';
 import { SimpleModelManagement } from '../components/SimpleModelManagement';
@@ -504,16 +504,7 @@ export const ProjectTagPage: FC = () => {
             </div>
           </Tab>
         )}
-        <Tab eventKey="tabular" title="Tabular">
-          <DataTabular
-            projectSlug={projectName}
-            currentScheme={currentScheme}
-            phase={phase}
-            availableLabels={availableLabels}
-            kindScheme={kindScheme}
-          />
-        </Tab>
-        <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
+        {/* <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
           {phase != 'test' && (
             <ProjectionManagement
               projectName={projectName || null}
@@ -527,6 +518,16 @@ export const ProjectTagPage: FC = () => {
               Test mode activated - vizualisation disabled
             </div>
           )}
+        </Tab> */}
+        <Tab eventKey="curate" title="Curate">
+          <Tabs id="panel" className="mt-3" defaultActiveKey="scheme">
+            <Tab eventKey="scheme" title="Current scheme">
+              <AnnotationDisagreementManagement projectSlug={projectName} />
+            </Tab>
+            <Tab eventKey="between" title="Between schemes">
+              <SchemesComparisonManagement projectSlug={projectName} />
+            </Tab>
+          </Tabs>
         </Tab>
       </Tabs>
     </ProjectPageLayout>

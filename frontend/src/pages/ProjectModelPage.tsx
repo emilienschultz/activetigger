@@ -38,10 +38,10 @@ interface LossData {
   val_eval_loss: { [key: string]: number };
 }
 
-export const FinetunePage: FC = () => {
+export const ProjectModelPage: FC = () => {
   const { projectName: projectSlug } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, isComputing, notifications },
+    appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
   const { notify } = useNotifications();
 
@@ -108,7 +108,7 @@ export const FinetunePage: FC = () => {
   );
 
   return (
-    <ProjectPageLayout projectName={projectSlug} currentAction="finetune">
+    <ProjectPageLayout projectName={projectSlug} currentAction="model">
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">

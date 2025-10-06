@@ -7,8 +7,8 @@ import { ProjectActionsSidebar } from './ProjectActionsSideBar';
 
 export type PossibleProjectActions =
   | 'tag'
-  | 'finetune'
-  | 'parameters'
+  | 'model'
+  | 'validate'
   | 'explore'
   | 'curate'
   | 'monitor'
