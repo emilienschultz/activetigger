@@ -45,9 +45,14 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
   };
 
+  function getRandomName() {
+    return `model-${Math.random().toString(36).substring(2, 8)}`;
+  }
+
   // create form
   const { register, handleSubmit, control, watch, setValue } = useForm<SimpleModelModel>({
     defaultValues: {
+      name: getRandomName(),
       model: 'liblinear',
       // features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
@@ -135,6 +140,16 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
       <div>
         <h5 className="subsection">Train a new quick model</h5>
         <form onSubmit={handleSubmit(onSubmit)}>
+          <div>
+            <label htmlFor="name">Model name</label>
+            <input
+              type="text"
+              id="name"
+              placeholder="Model name"
+              className="form-control"
+              {...register('name')}
+            />
+          </div>
           <div>
             <label htmlFor="features">Features used to predict</label>
             {/* Specific management of the component with the react-form controller */}

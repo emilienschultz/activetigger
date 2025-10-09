@@ -6,7 +6,6 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
-import { DisplayScores } from '../components/DisplayScores';
 import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
@@ -17,12 +16,14 @@ import { LossChart } from '../components/vizualisation/lossChart';
 import {
   useComputeModelPrediction,
   useDeleteBertModel,
-  useEvalModel,
   useModelInformations,
   useRenameBertModel,
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
+
+import { SimpleModelDisplay } from '../components/SimpleModelDisplay';
+import { SimpleModelManagement } from '../components/SimpleModelManagement';
 
 /**
  * Component to manage model training
@@ -41,43 +42,36 @@ interface LossData {
 export const ProjectModelPage: FC = () => {
   const { projectName: projectSlug } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, isComputing },
+    appContext: { currentScheme, currentProject: project, isComputing, phase },
   } = useAppContext();
   const { notify } = useNotifications();
 
-  const [activeKey, setActiveKey] = useState<string>('models');
+  const [activeKey, setActiveKey] = useState<string>('simple');
 
   // available models
-  const availableModels = useMemo(() => {
+  const availableBertModels = useMemo(() => {
     if (currentScheme && project?.languagemodels?.available?.[currentScheme]) {
       return Object.keys(project.languagemodels.available[currentScheme]);
     }
     return [];
   }, [project, currentScheme]);
-
-  // current model and automatic selection
-  const [currentModel, setCurrentModel] = useState<string | null>(null);
-  useEffect(() => {
-    if (availableModels.length > 0 && !currentModel) {
-      setCurrentModel(availableModels[availableModels.length - 1]);
-    }
-  }, [availableModels, currentModel]);
-
-  // get model information from api
-  const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
+  const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
+  const availableFeatures = project?.features.available ? project?.features.available : [];
+  const availableLabels =
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme].labels
+      : [];
+  const [kindScheme] = useState<string>(
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme].kind || 'multiclass'
+      : 'multiclass',
+  );
 
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // compute model prediction
   const [batchSize, setBatchSize] = useState<number>(32);
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
-
-  // hook to api call to launch the test
-  const { evalModel } = useEvalModel(
-    projectSlug || null,
-    currentScheme || null,
-    currentModel || null,
-  );
 
   // form to rename
   const { renameBertModel } = useRenameBertModel(projectSlug || null);
@@ -87,12 +81,22 @@ export const ProjectModelPage: FC = () => {
     reset: resetRename,
   } = useForm<renameModel>();
 
-  const onSubmitRename: SubmitHandler<renameModel> = async (data) => {
-    if (currentModel) {
-      await renameBertModel(currentModel, data.new_name);
-      resetRename();
-    } else notify({ type: 'error', message: 'New name is void' });
-  };
+  // current model and automatic selection
+  const [currentBertModel, setCurrentBertModel] = useState<string | null>(null);
+  const [currentSimpleModel, setCurrentSimpleModel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (availableSimpleModels.length > 0 && !currentSimpleModel) {
+      setCurrentSimpleModel(availableSimpleModels[availableSimpleModels.length - 1]);
+    }
+  }, [availableSimpleModels, currentSimpleModel]);
+
+  // get model information from api
+  const { model } = useModelInformations(
+    projectSlug || null,
+    currentBertModel || null,
+    isComputing,
+  );
 
   // loss chart shape data
   const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
@@ -107,6 +111,13 @@ export const ProjectModelPage: FC = () => {
     possibleStatistics.filter(([_, scores]) => scores != null),
   );
 
+  const onSubmitRename: SubmitHandler<renameModel> = async (data) => {
+    if (currentBertModel) {
+      await renameBertModel(currentBertModel, data.new_name);
+      resetRename();
+    } else notify({ type: 'error', message: 'New name is void' });
+  };
+
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="model">
       <div className="container-fluid">
@@ -116,231 +127,205 @@ export const ProjectModelPage: FC = () => {
               id="panel"
               className="mt-3"
               activeKey={activeKey}
-              onSelect={(k) => setActiveKey(k || 'new')}
+              onSelect={(k) => setActiveKey(k || 'simple')}
             >
-              <Tab eventKey="new" title="Create" onSelect={() => setActiveKey('new')}>
-                <div className="explanations">
-                  The model will be trained on annotated data. A good practice is to have at least
-                  50 annotated elements. You can exclude elements with specific labels.{' '}
-                  <a className="problems m-2">
-                    <FaTools />
-                    <Tooltip anchorSelect=".problems" place="top">
-                      If the model doesn't train, the reason can be the limit of available GPU.
-                      Please try latter. If the problem persists, contact us.
-                    </Tooltip>
-                  </a>
-                </div>
-                <DisplayTrainingProcesses
-                  projectSlug={projectSlug || null}
-                  processes={project?.languagemodels.training}
-                  displayStopButton={isComputing}
-                />
-
-                <ModelCreationForm
-                  projectSlug={projectSlug || null}
-                  currentScheme={currentScheme || null}
-                  project={project || null}
-                  isComputing={isComputing}
-                />
-              </Tab>
-              <Tab
-                eventKey="models"
-                title="Fine-tuned models"
-                onSelect={() => setActiveKey('models')}
-              >
-                <label htmlFor="selected-model">Existing models</label>
-                {/* <button onClick={() => notify({ type: 'error', message: 'New name is void' })}>
-                  TEST
-                </button> */}
-                <div className="d-flex align-items-center">
-                  <select
-                    id="selected-model"
-                    className="form-select"
-                    onChange={(e) => setCurrentModel(e.target.value)}
-                    value={currentModel || ''}
-                  >
-                    <option></option>
-                    {availableModels.map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}
-                  </select>
-                  <button
-                    className="btn btn p-0"
-                    onClick={() => {
-                      if (currentModel) {
-                        deleteBertModel(currentModel);
-                        setCurrentModel(null);
-                      }
-                    }}
-                  >
-                    <MdOutlineDeleteOutline size={30} />
-                  </button>
-                </div>
-
-                {currentModel && (
-                  <div>
-                    {model && (
-                      <div>
-                        <details style={{ color: 'gray' }}>
-                          <summary>
-                            <span>Parameters of the model</span>
-                          </summary>
-                          <div className="d-flex align-items-center">
-                            <label>Batch size</label>
-                            <a className="batch">
-                              <HiOutlineQuestionMarkCircle />
-                            </a>
-                            <Tooltip anchorSelect=".batch" place="top">
-                              Batch used for predict. Keep it small (16 or 32) for small GPU.
-                            </Tooltip>
-                            <input
-                              type="number"
-                              step="1"
-                              className="m-2"
-                              style={{ width: '50px' }}
-                              value={batchSize}
-                              onChange={(e) => setBatchSize(Number(e.target.value))}
-                            />
-                          </div>
-                          <ModelParametersTab params={model.params as Record<string, unknown>} />
-                          <details className="m-2">
-                            <summary>Rename</summary>
-                            <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                              <input
-                                id="new_name"
-                                className="form-control me-2 mt-2"
-                                type="text"
-                                placeholder="New name of the model"
-                                {...registerRename('new_name')}
-                              />
-                              <button className="btn btn-primary me-2 mt-2">Rename</button>
-                            </form>
-                          </details>
-                        </details>
-                        {isComputing && (
-                          <DisplayTrainingProcesses
-                            projectSlug={projectSlug || null}
-                            processes={project?.languagemodels.training}
-                            displayStopButton={isComputing}
-                          />
-                        )}
-                        <button
-                          className="btn btn-primary my-2"
-                          onClick={() =>
-                            computeModelPrediction(currentModel, 'train', currentScheme || '')
-                          }
-                          disabled={isComputing}
-                        >
-                          Transform to feature
-                          <a className="toFeature">
-                            <HiOutlineQuestionMarkCircle
-                              style={{ color: 'white' }}
-                              className="mx-2"
-                            />
-                            <Tooltip anchorSelect=".toFeature" place="top">
-                              And calculate statistics for the out of sample.<br></br>If the feature
-                              already exists, it will be overwritten.
-                            </Tooltip>
-                          </a>
-                        </button>
-
-                        <div className="mt-2">
-                          <DisplayScoresMenu scores={existingStatistics} modelName={currentModel} />
-                        </div>
-
-                        <div className="mt-2">
-                          <LossChart loss={loss} />
-                        </div>
+              <Tab eventKey="simple" title="Simple">
+                <div className="container-fluid">
+                  <div className="row mb-3 mt-3">
+                    {phase == 'test' && (
+                      <div className="alert alert-warning">
+                        Test mode activated - simple model are disabled
                       </div>
                     )}
+                    <div className="col-8">
+                      {phase != 'test' && (
+                        <>
+                          <div className="explanations">
+                            The simple model is used during tagging, for the active and maxprob
+                            models.
+                            <a className="problems m-2">
+                              <FaTools />
+                              <Tooltip anchorSelect=".problems" place="top">
+                                Recommended features to train on are embeddings (eg. SBERT) before
+                                training a large fine-tuned model, and BERT predictions once you
+                                have fine-tuned one.
+                              </Tooltip>
+                            </a>
+                          </div>
+
+                          <SimpleModelDisplay
+                            currentModel={
+                              (currentSimpleModel as unknown as Record<string, never>) || undefined
+                            }
+                          />
+                          <SimpleModelManagement
+                            projectName={projectSlug || null}
+                            currentScheme={currentScheme || null}
+                            availableSimpleModels={
+                              availableSimpleModels as unknown as Record<
+                                string,
+                                Record<string, number>
+                              >
+                            }
+                            availableFeatures={availableFeatures}
+                            availableLabels={availableLabels}
+                            kindScheme={kindScheme}
+                            currentModel={
+                              (currentSimpleModel as unknown as Record<string, never>) || undefined
+                            }
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </Tab>
-              <Tab eventKey="testing" title="Test">
-                <div className="explanations">
-                  Do not use testset statistics to select the best model, otherwise it’s only a
-                  validation set.
-                </div>
-                {/* Select a model to compute testset predictions */}
-                <label htmlFor="selected-model">Existing models</label>
-                <div className="d-flex align-items-center">
-                  <select
-                    id="selected-model"
-                    className="form-select"
-                    onChange={(e) => setCurrentModel(e.target.value)}
-                    value={currentModel || ''}
-                  >
-                    <option></option>
-                    {availableModels.map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}
-                  </select>
-                  <button
-                    className="btn btn p-0"
-                    onClick={() => {
-                      if (currentModel) {
-                        deleteBertModel(currentModel);
-                        setCurrentModel(null);
-                      }
-                    }}
-                  >
-                    <MdOutlineDeleteOutline size={30} />
-                  </button>
-                </div>
-                <div>
-                  {model && project?.params.test && !isComputing && (
-                    <div className="col-12">
-                      <button
-                        className="btn btn-primary m-3"
-                        onClick={() => evalModel('valid')}
-                        disabled={isComputing}
+              <Tab eventKey="models" title="BERT" onSelect={() => setActiveKey('models')}>
+                <Tabs id="bert" className="mt-1" defaultActiveKey="existing">
+                  <Tab eventKey="existing" title="Existing">
+                    <label htmlFor="selected-model">Existing models</label>
+                    <div className="d-flex align-items-center">
+                      <select
+                        id="selected-model"
+                        className="form-select"
+                        onChange={(e) => setCurrentBertModel(e.target.value)}
+                        value={currentBertModel || ''}
                       >
-                        Compute validation
-                      </button>
+                        <option></option>
+                        {availableBertModels.map((e) => (
+                          <option key={e}>{e}</option>
+                        ))}
+                      </select>
                       <button
-                        className="btn btn-primary m-3"
-                        onClick={() => evalModel('test')}
-                        disabled={isComputing}
+                        className="btn btn p-0"
+                        onClick={() => {
+                          if (currentBertModel) {
+                            deleteBertModel(currentBertModel);
+                            setCurrentBertModel(null);
+                          }
+                        }}
                       >
-                        Compute test
+                        <MdOutlineDeleteOutline size={30} />
                       </button>
                     </div>
-                  )}
-                  <DisplayTrainingProcesses
-                    projectSlug={projectSlug || null}
-                    processes={project?.languagemodels.training}
-                    processStatus="testing"
-                    displayStopButton={isComputing}
-                  />
 
-                  {model && !project?.params.test && (
-                    <div className="col-12">
-                      <div className="alert alert-warning m-4">
-                        No testset available for this project. Please create one to compute
-                        predictions on the project main page
+                    {currentBertModel && (
+                      <div>
+                        {model && (
+                          <div>
+                            <details style={{ color: 'gray' }}>
+                              <summary>
+                                <span>Parameters of the model</span>
+                              </summary>
+                              <div className="d-flex align-items-center">
+                                <label>Batch size</label>
+                                <a className="batch">
+                                  <HiOutlineQuestionMarkCircle />
+                                </a>
+                                <Tooltip anchorSelect=".batch" place="top">
+                                  Batch used for predict. Keep it small (16 or 32) for small GPU.
+                                </Tooltip>
+                                <input
+                                  type="number"
+                                  step="1"
+                                  className="m-2"
+                                  style={{ width: '50px' }}
+                                  value={batchSize}
+                                  onChange={(e) => setBatchSize(Number(e.target.value))}
+                                />
+                              </div>
+                              <ModelParametersTab
+                                params={model.params as Record<string, unknown>}
+                              />
+                              <details className="m-2">
+                                <summary>Rename</summary>
+                                <form onSubmit={handleSubmitRename(onSubmitRename)}>
+                                  <input
+                                    id="new_name"
+                                    className="form-control me-2 mt-2"
+                                    type="text"
+                                    placeholder="New name of the model"
+                                    {...registerRename('new_name')}
+                                  />
+                                  <button className="btn btn-primary me-2 mt-2">Rename</button>
+                                </form>
+                              </details>
+                            </details>
+                            {isComputing && (
+                              <DisplayTrainingProcesses
+                                projectSlug={projectSlug || null}
+                                processes={project?.languagemodels.training}
+                                displayStopButton={isComputing}
+                              />
+                            )}
+                            <button
+                              className="btn btn-primary my-2"
+                              onClick={() =>
+                                computeModelPrediction(
+                                  currentBertModel,
+                                  'train',
+                                  currentScheme || '',
+                                )
+                              }
+                              disabled={isComputing}
+                            >
+                              Transform to feature
+                              <a className="toFeature">
+                                <HiOutlineQuestionMarkCircle
+                                  style={{ color: 'white' }}
+                                  className="mx-2"
+                                />
+                                <Tooltip anchorSelect=".toFeature" place="top">
+                                  And calculate statistics for the out of sample.<br></br>If the
+                                  feature already exists, it will be overwritten.
+                                </Tooltip>
+                              </a>
+                            </button>
+
+                            <div className="mt-2">
+                              <DisplayScoresMenu
+                                scores={existingStatistics}
+                                modelName={currentBertModel}
+                              />
+                            </div>
+
+                            <div className="mt-2">
+                              <LossChart loss={loss} />
+                            </div>
+                          </div>
+                        )}
                       </div>
+                    )}
+                  </Tab>
+                  <Tab eventKey="new" title="New">
+                    <div className="explanations">
+                      The model will be trained on annotated data. A good practice is to have at
+                      least 50 annotated elements. You can exclude elements with specific labels.{' '}
+                      <a className="problems m-2">
+                        <FaTools />
+                        <Tooltip anchorSelect=".problems" place="top">
+                          If the model doesn't train, the reason can be the limit of available GPU.
+                          Please try latter. If the problem persists, contact us.
+                        </Tooltip>
+                      </a>
                     </div>
-                  )}
-
-                  {model && (
-                    <DisplayScores
-                      scores={model.valid_scores as unknown as Record<string, number>}
-                      modelName={currentModel || ''}
-                      title="Validation scores"
+                    <DisplayTrainingProcesses
+                      projectSlug={projectSlug || null}
+                      processes={project?.languagemodels.training}
+                      displayStopButton={isComputing}
                     />
-                  )}
 
-                  {model && (
-                    <DisplayScores
-                      scores={model.test_scores as unknown as Record<string, number>}
-                      modelName={currentModel || ''}
-                      title="Test scores"
+                    <ModelCreationForm
+                      projectSlug={projectSlug || null}
+                      currentScheme={currentScheme || null}
+                      project={project || null}
+                      isComputing={isComputing}
                     />
-                  )}
-                </div>
-              </Tab>
-              <Tab eventKey="predict" title="Predict">
-                <ModelPredict />
+                  </Tab>
+                  <Tab eventKey="predict" title="Predict">
+                    <ModelPredict />
+                  </Tab>
+                </Tabs>
               </Tab>
             </Tabs>
           </div>

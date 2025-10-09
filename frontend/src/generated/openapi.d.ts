@@ -2992,6 +2992,10 @@ export interface components {
          *     TODO : model for parameters
          */
         SimpleModelModel: {
+            /** Name */
+            name: string;
+            /** Scheme */
+            scheme: string;
             /** Model */
             model: string;
             /** Features */
@@ -3004,8 +3008,6 @@ export interface components {
                     [key: string]: (string | number | boolean | null) | undefined;
                 } | undefined;
             } | null;
-            /** Scheme */
-            scheme: string;
             /**
              * Standardize
              * @default true

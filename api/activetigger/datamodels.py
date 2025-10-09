@@ -258,6 +258,8 @@ class SimpleModelModel(BaseModel):
     TODO : model for parameters
     """
 
+    name: str
+    scheme: str
     model: str
     features: list
     params: (
@@ -265,7 +267,6 @@ class SimpleModelModel(BaseModel):
         | dict[str, dict[str, str | float | bool | int | None]]
         | None
     )
-    scheme: str
     standardize: bool | None = True
     dichotomize: str | None = None
     cv10: bool = False

@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
-import { FaPencilAlt, FaTools } from 'react-icons/fa';
+import { FaPencilAlt } from 'react-icons/fa';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -27,8 +27,6 @@ import { MulticlassInput } from '../components/MulticlassInput';
 import { MultilabelInput } from '../components/MultilabelInput';
 import { SchemesComparisonManagement } from '../components/SchemesComparisonManagement';
 import { SelectionManagement } from '../components/SelectionManagement';
-import { SimpleModelDisplay } from '../components/SimpleModelDisplay';
-import { SimpleModelManagement } from '../components/SimpleModelManagement';
 import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
@@ -91,8 +89,6 @@ export const ProjectTagPage: FC = () => {
   const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);
 
   // define parameters for configuration panels
-  const availableFeatures = project?.features.available ? project?.features.available : [];
-  const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
   const currentModel =
     authenticatedUser && currentScheme
       ? project?.simplemodel?.available?.[authenticatedUser.username]?.[currentScheme]
@@ -250,45 +246,6 @@ export const ProjectTagPage: FC = () => {
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
-      <div className={phase == 'train' ? 'm-2' : 'alert alert-info m-2'}>
-        {/* <div className="col-4 form-check form-switch">
-          <input
-            className="form-check-input bg-info"
-            type="checkbox"
-            role="switch"
-            id="flexSwitchCheckDefault"
-            onChange={(e) => {
-              setAppContext((prev) => ({
-                ...prev,
-                phase: e.target.checked ? 'test' : 'train',
-              }));
-              navigate(`/projects/${projectName}/tag/`);
-            }}
-            checked={phase == 'test' ? true : false}
-          />
-          <label className="form-check-label" htmlFor="flexSwitchCheckDefault">
-            Test mode
-          </label>
-        </div> */}
-        <div className="col-12 d-flex justify-content-center align-items-center">
-          Current dataset{' '}
-          <select
-            className="form-select w-25 mx-3"
-            value={phase}
-            onChange={(e) => {
-              setAppContext((prev) => ({
-                ...prev,
-                phase: e.target.value,
-              }));
-              navigate(`/projects/${projectName}/tag/`);
-            }}
-          >
-            <option value="train">Train</option>
-            {isValid && <option value="valid">Validation</option>}
-            {isTest && <option value="test">Test</option>}
-          </select>
-        </div>
-      </div>
       <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
         <Tab eventKey="tag" title="Tag">
           <div className="container-fluid">
@@ -296,7 +253,29 @@ export const ProjectTagPage: FC = () => {
               {
                 // annotation mode
                 <div>
-                  <div className="d-flex align-items-center mb-3">
+                  <div
+                    className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
+                  >
+                    <div className="m-2">
+                      <div className="col-12 d-flex justify-content-center align-items-center">
+                        Dataset{' '}
+                        <select
+                          className="form-select mx-3"
+                          value={phase}
+                          onChange={(e) => {
+                            setAppContext((prev) => ({
+                              ...prev,
+                              phase: e.target.value,
+                            }));
+                            navigate(`/projects/${projectName}/tag/`);
+                          }}
+                        >
+                          <option value="train">Train</option>
+                          {isValid && <option value="valid">Validation</option>}
+                          {isTest && <option value="test">Test</option>}
+                        </select>
+                      </div>
+                    </div>
                     {statistics ? (
                       <span className="badge text-bg-light currentstatistics">
                         Annotated :{' '}
@@ -455,70 +434,6 @@ export const ProjectTagPage: FC = () => {
             </div>
           )}
         </Tab>
-        {kindScheme !== 'span' && (
-          <Tab eventKey="prediction" title="Quick model">
-            <div className="container-fluid">
-              <div className="row mb-3 mt-3">
-                {phase == 'test' && (
-                  <div className="alert alert-warning">
-                    Test mode activated - quick model are disabled
-                  </div>
-                )}
-                <div className="col-8">
-                  {phase != 'test' && (
-                    <>
-                      <div className="explanations">
-                        The quick model is used during tagging, for the active and maxprob models.
-                        <a className="problems m-2">
-                          <FaTools />
-                          <Tooltip anchorSelect=".problems" place="top">
-                            Recommended features to train on are embeddings (eg. SBERT) before
-                            training a large fine-tuned model, and BERT predictions once you have
-                            fine-tuned one.
-                          </Tooltip>
-                        </a>
-                      </div>
-
-                      <SimpleModelDisplay
-                        currentModel={
-                          (currentModel as unknown as Record<string, never>) || undefined
-                        }
-                      />
-                      <SimpleModelManagement
-                        projectName={projectName || null}
-                        currentScheme={currentScheme || null}
-                        availableSimpleModels={
-                          availableSimpleModels as unknown as Record<string, Record<string, number>>
-                        }
-                        availableFeatures={availableFeatures}
-                        availableLabels={availableLabels}
-                        kindScheme={kindScheme}
-                        currentModel={
-                          (currentModel as unknown as Record<string, never>) || undefined
-                        }
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Tab>
-        )}
-        {/* <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
-          {phase != 'test' && (
-            <ProjectionManagement
-              projectName={projectName || null}
-              currentScheme={currentScheme || null}
-              availableFeatures={availableFeatures}
-              currentElementId={elementId}
-            />
-          )}
-          {phase == 'test' && (
-            <div className="alert alert-warning mt-3">
-              Test mode activated - vizualisation disabled
-            </div>
-          )}
-        </Tab> */}
         <Tab eventKey="curate" title="Curate">
           <Tabs id="panel" className="mt-3" defaultActiveKey="scheme">
             <Tab eventKey="scheme" title="Current scheme">
