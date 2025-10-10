@@ -480,6 +480,9 @@ class Project:
             raise Exception("Scheme not available")
         if len(availabe_schemes[simplemodel.scheme].labels) < 2:
             raise Exception("Not enough labels in the scheme")
+        simplemodel.name = slugify(simplemodel.name)
+        if self.simplemodels.exists(simplemodel.name):
+            raise Exception("A simplemodel with this name already exists")
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
         if simplemodel.model == "multi_naivebayes":
@@ -524,7 +527,8 @@ class Project:
             user=username,
             scheme=simplemodel.scheme,
             features=simplemodel.features,
-            name=simplemodel.model,
+            name=simplemodel.name,
+            model_type=simplemodel.model,
             df=data,
             col_labels="labels",
             col_features=col_features,
@@ -533,74 +537,74 @@ class Project:
             cv10=simplemodel.cv10 or False,
         )
 
-    def update_simplemodel(
-        self, simplemodel: SimpleModelModel, username: str, n_min_annotated: int = 3
-    ) -> None:
-        """
-        Compute or update simplemodel
-        """
-        availabe_schemes = self.schemes.available()
-        simplemodel.features = [i for i in simplemodel.features if i is not None]
-        if simplemodel.features is None or len(simplemodel.features) == 0:
-            raise Exception("No features selected")
-        if simplemodel.model not in list(self.simplemodels.available_models.keys()):
-            raise Exception("Model not available")
-        if simplemodel.scheme not in availabe_schemes:
-            raise Exception("Scheme not available")
-        if len(availabe_schemes[simplemodel.scheme].labels) < 2:
-            raise Exception("Not enough labels in the scheme")
+    # def update_simplemodel(
+    #     self, simplemodel: SimpleModelModel, username: str, n_min_annotated: int = 3
+    # ) -> None:
+    #     """
+    #     Compute or update simplemodel
+    #     """
+    #     availabe_schemes = self.schemes.available()
+    #     simplemodel.features = [i for i in simplemodel.features if i is not None]
+    #     if simplemodel.features is None or len(simplemodel.features) == 0:
+    #         raise Exception("No features selected")
+    #     if simplemodel.model not in list(self.simplemodels.available_models.keys()):
+    #         raise Exception("Model not available")
+    #     if simplemodel.scheme not in availabe_schemes:
+    #         raise Exception("Scheme not available")
+    #     if len(availabe_schemes[simplemodel.scheme].labels) < 2:
+    #         raise Exception("Not enough labels in the scheme")
 
-        # only dfm feature for multi_naivebayes (FORCE IT if available else error)
-        if simplemodel.model == "multi_naivebayes":
-            if "dfm" not in self.features.map:
-                raise Exception("No dfm feature available")
-            simplemodel.features = ["dfm"]
-            simplemodel.standardize = False
+    #     # only dfm feature for multi_naivebayes (FORCE IT if available else error)
+    #     if simplemodel.model == "multi_naivebayes":
+    #         if "dfm" not in self.features.map:
+    #             raise Exception("No dfm feature available")
+    #         simplemodel.features = ["dfm"]
+    #         simplemodel.standardize = False
 
-        if simplemodel.params is None:
-            params = None
-        else:
-            params = dict(simplemodel.params)
-        # add information on the target of the model
-        if simplemodel.dichotomize is not None and params is not None:
-            params["dichotomize"] = simplemodel.dichotomize
+    #     if simplemodel.params is None:
+    #         params = None
+    #     else:
+    #         params = dict(simplemodel.params)
+    #     # add information on the target of the model
+    #     if simplemodel.dichotomize is not None and params is not None:
+    #         params["dichotomize"] = simplemodel.dichotomize
 
-        # get data
-        df_features = self.features.get(simplemodel.features)
-        df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
+    #     # get data
+    #     df_features = self.features.get(simplemodel.features)
+    #     df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
 
-        # management for multilabels / dichotomize
-        if simplemodel.dichotomize is not None:
-            df_scheme["labels"] = df_scheme["labels"].apply(
-                lambda x: self.schemes.dichotomize(x, simplemodel.dichotomize)
-            )
+    #     # management for multilabels / dichotomize
+    #     if simplemodel.dichotomize is not None:
+    #         df_scheme["labels"] = df_scheme["labels"].apply(
+    #             lambda x: self.schemes.dichotomize(x, simplemodel.dichotomize)
+    #         )
 
-        # test for a minimum of annotated elements
-        counts = df_scheme["labels"].value_counts()
-        valid_categories = counts[counts >= n_min_annotated]
-        if len(valid_categories) < 2:
-            raise Exception(
-                f"Not enough annotated elements (should be more than {n_min_annotated})"
-            )
+    #     # test for a minimum of annotated elements
+    #     counts = df_scheme["labels"].value_counts()
+    #     valid_categories = counts[counts >= n_min_annotated]
+    #     if len(valid_categories) < 2:
+    #         raise Exception(
+    #             f"Not enough annotated elements (should be more than {n_min_annotated})"
+    #         )
 
-        col_features = list(df_features.columns)
-        data = pd.concat([df_scheme, df_features], axis=1)
+    #     col_features = list(df_features.columns)
+    #     data = pd.concat([df_scheme, df_features], axis=1)
 
-        logger_simplemodel = logging.getLogger("simplemodel")
-        logger_simplemodel.info("Building the simplemodel request")
-        self.simplemodels.compute_simplemodel(
-            project_slug=self.params.project_slug,
-            user=username,
-            scheme=simplemodel.scheme,
-            features=simplemodel.features,
-            name=simplemodel.model,
-            df=data,
-            col_labels="labels",
-            col_features=col_features,
-            model_params=params,
-            standardize=simplemodel.standardize or False,
-            cv10=simplemodel.cv10 or False,
-        )
+    #     logger_simplemodel = logging.getLogger("simplemodel")
+    #     logger_simplemodel.info("Building the simplemodel request")
+    #     self.simplemodels.compute_simplemodel(
+    #         project_slug=self.params.project_slug,
+    #         user=username,
+    #         scheme=simplemodel.scheme,
+    #         features=simplemodel.features,
+    #         name=simplemodel.model,
+    #         df=data,
+    #         col_labels="labels",
+    #         col_features=col_features,
+    #         model_params=params,
+    #         standardize=simplemodel.standardize or False,
+    #         cv10=simplemodel.cv10 or False,
+    #     )
 
     def get_next(
         self,
@@ -707,11 +711,11 @@ class Project:
 
         # higher prob for the label_maxprob, only possible if the model has been trained
         if next.selection == "maxprob":
-            if not self.simplemodels.exists(username, next.scheme):
-                raise Exception("Simplemodel doesn't exist")
+            if not self.simplemodels.exists(next.model_active):
+                raise Exception(f"Simplemodel {next.model_active} doesn't exist")
             if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
-            prediction = self.simplemodels.get_prediction(username, next.scheme)  # get model
+            prediction = self.simplemodels.get_prediction(next.model_active)  # get model
             proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_maxprob = (
@@ -725,9 +729,9 @@ class Project:
 
         # higher entropy, only possible if the model has been trained
         if next.selection == "active":
-            if not self.simplemodels.exists(username, next.scheme):
+            if not self.simplemodels.exists(next.model_active):
                 raise ValueError("Simplemodel doesn't exist")
-            prediction = self.simplemodels.get_prediction(username, next.scheme)  # get model
+            prediction = self.simplemodels.get_prediction(next.model_active)  # get model
             proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_active = (
@@ -741,8 +745,8 @@ class Project:
         # get prediction of the id if it exists
         predict = PredictedLabel(label=None, proba=None)
 
-        if self.simplemodels.exists(username, next.scheme) and next.dataset == "train":
-            prediction = self.simplemodels.get_prediction(username, next.scheme)
+        if self.simplemodels.exists(next.model_active) and next.dataset == "train":
+            prediction = self.simplemodels.get_prediction(next.model_active)
             predicted_label = prediction.loc[element_id, "prediction"]
             predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
             predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
@@ -781,6 +785,7 @@ class Project:
         scheme: str | None = None,
         user: str | None = None,
         dataset: str = "train",
+        model_active: str | None = None,
     ) -> ElementOutModel:
         """
         Get an element of the database
@@ -833,8 +838,8 @@ class Project:
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None)
             if (user is not None) and (scheme is not None):
-                if self.simplemodels.exists(user, scheme):
-                    prediction = self.simplemodels.get_prediction(user, scheme)
+                if self.simplemodels.exists(model_active):
+                    prediction = self.simplemodels.get_prediction(model_active)
                     predicted_label = cast(str, prediction.loc[element_id, "prediction"])
                     predicted_proba = round(
                         cast(float, prediction.loc[element_id, predicted_label]), 2
@@ -892,7 +897,7 @@ class Project:
         else:
             raise Exception("Not implemented for this kind of scheme")
 
-    def get_statistics(self, scheme: str | None, user: str | None) -> ProjectDescriptionModel:
+    def get_statistics(self, scheme: str | None) -> ProjectDescriptionModel:
         """
         Generate a description of a current project/scheme/user
         Return:
@@ -933,10 +938,10 @@ class Project:
             test_annotated_n = None
             test_annotated_distribution = None
 
-        if user and self.simplemodels.exists(user, scheme):
-            sm_10cv = self.simplemodels.get_model(user, scheme).statistics_cv10
-        else:
-            sm_10cv = None
+            # if self.simplemodels.exists(name):
+            #     sm_10cv = self.simplemodels.get_model(name).statistics_cv10
+            # else:
+            #     sm_10cv = None
 
         r = ProjectDescriptionModel(
             users=users,
@@ -949,7 +954,7 @@ class Project:
             test_set_n=test_set_n,
             test_annotated_n=test_annotated_n,
             test_annotated_distribution=test_annotated_distribution,
-            sm_10cv=sm_10cv,
+            sm_10cv=None,
         )
         return r
 

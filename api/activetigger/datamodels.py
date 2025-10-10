@@ -145,6 +145,7 @@ class NextInModel(BaseModel):
     filter: str | None = None
     dataset: str = "train"
     user: str | None = None
+    model_active: str | None = None
 
 
 class ElementOutModel(BaseModel):
@@ -583,6 +584,7 @@ class SimpleModelComputing(ProcessComputing):
     features: list
     scheme: str
     labels: list
+    model_type: str
     model_params: dict
     standardize: bool
     model: BaseEstimator
@@ -702,8 +704,8 @@ class SimpleModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
     # available: dict[str, dict[str, SimpleModelOutModel]]
     # training: dict[str, list[str]]
-    training: list[str]
-    available: list[str]
+    available: dict[str, list[str]]
+    training: dict[str, list[str]]
 
 
 class LanguageModelsProjectStateModel(BaseModel):

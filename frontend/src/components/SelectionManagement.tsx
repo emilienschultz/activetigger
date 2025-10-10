@@ -26,9 +26,11 @@ export const SelectionManagement: FC = () => {
   const availableUsers = project?.users ? project?.users : [];
 
   // API call to get the current model & refetch
+  // TODO : MODEL SELECTION TO CHANGE
+  const name = null;
   const { currentModel } = useGetSimpleModel(
     project ? project.params.project_slug : null,
-    currentScheme || null,
+    name,
     project,
   );
 

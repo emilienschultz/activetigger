@@ -1,4 +1,5 @@
 import { FC, useEffect } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
 import { useTrainSimpleModel } from '../core/api';
@@ -46,7 +47,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   };
 
   function getRandomName() {
-    return `model-${Math.random().toString(36).substring(2, 8)}`;
+    return `Simplemodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
   }
 
   // create form
@@ -124,167 +125,164 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const defaultFeatures = [predictions[predictions.length - 1]];
 
   return (
-    <>
-      {/* <button
-        className="btn btn-primary mb-2"
-        onClick={() => {
-          setShowForm(!showForm);
-        }}
-      >
-        {showForm ? 'Hide form' : 'Train a new quick model'}
-      </button> */}
-      <div>
-        <h5 className="subsection">Train a new quick model</h5>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div>
-            <label htmlFor="name">Model name</label>
-            <input
-              type="text"
-              id="name"
-              placeholder="Model name"
-              className="form-control"
-              {...register('name')}
-            />
-          </div>
-          <div>
-            <label htmlFor="features">Features used to predict</label>
-            {/* Specific management of the component with the react-form controller */}
-            <Controller
-              name="features"
-              control={control}
-              defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
-              render={({ field: { onChange, value } }) => (
-                <Select
-                  options={features}
-                  isMulti
-                  value={features.filter((option) => value.includes(option.value))}
-                  onChange={(selectedOptions) => {
-                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
-                  }}
-                />
-              )}
-            />
-          </div>
-          <div className="d-flex align-items-center">
-            <label htmlFor="frequencySlider">Refresh</label>
-            Every
-            <input
-              type="number"
-              id="frequencySlider"
-              min="0"
-              max="500"
-              value={freqRefreshSimpleModel}
-              onChange={(e) => {
-                refreshFreq(Number(e.currentTarget.value));
-              }}
-              step="1"
-              style={{ width: '80px', margin: '10px' }}
-            />
-            annotations (0 for no refreshing)
-          </div>
-          <details className="custom-details">
-            <summary>Advanced parameters</summary>
-
-            <label htmlFor="model">Select a model</label>
-            <select id="model" {...register('model')}>
-              {Object.keys(availableSimpleModels).map((e) => (
-                <option key={e}>{e}</option>
-              ))}{' '}
-            </select>
-            {kindScheme == 'multilabel' && (
-              <>
-                <label htmlFor="dichotomize">Dichotomize on the label</label>
-                <select id="dichotomize" {...register('dichotomize')}>
-                  {Object.values(availableLabels).map((e) => (
-                    <option key={e}>{e}</option>
-                  ))}{' '}
-                </select>
-              </>
-            )}
-            {
-              //generate_config(selectedSimpleModel)
-              (selectedModel == 'liblinear' && (
-                <div key="liblinear">
-                  <label htmlFor="cost">Cost</label>
-                  <input
-                    type="number"
-                    step="1"
-                    id="cost"
-                    {...register('params.cost', { valueAsNumber: true })}
-                  ></input>
-                </div>
-              )) ||
-                (selectedModel == 'knn' && (
-                  <div key="knn">
-                    <label htmlFor="n_neighbors">Number of neighbors</label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="n_neighbors"
-                      {...register('params.n_neighbors', { valueAsNumber: true })}
-                    ></input>
-                  </div>
-                )) ||
-                (selectedModel == 'lasso' && (
-                  <div key="lasso">
-                    <label htmlFor="c">C</label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="C"
-                      {...register('params.C', { valueAsNumber: true })}
-                    ></input>
-                  </div>
-                )) ||
-                (selectedModel == 'multi_naivebayes' && (
-                  <div key="multi_naivebayes">
-                    <label htmlFor="alpha">Alpha</label>
-                    <input
-                      type="number"
-                      id="alpha"
-                      {...register('params.alpha', { valueAsNumber: true })}
-                    ></input>
-                    <label htmlFor="fit_prior">
-                      Fit prior
-                      <input
-                        type="checkbox"
-                        id="fit_prior"
-                        {...register('params.fit_prior')}
-                        className="mx-3"
-                        checked
-                      />
-                    </label>
-                  </div>
-                )) ||
-                (selectedModel == 'randomforest' && (
-                  <div key="randomforest">
-                    <label htmlFor="n_estimators">Number of estimators</label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="n_estimators"
-                      {...register('params.n_estimators', { valueAsNumber: true })}
-                    ></input>
-                    <label htmlFor="max_features">Max features</label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="max_features"
-                      {...register('params.max_features', { valueAsNumber: true })}
-                    ></input>
-                  </div>
-                ))
-            }
-
-            <div className="d-flex align-items-center">
-              <label htmlFor="cv10">10-fold cross validation</label>
-              <input type="checkbox" id="cv10" {...register('cv10')} className="mx-3" />
+    <Tabs id="simplemodels" className="mt-1" defaultActiveKey="existing">
+      <Tab eventKey="existing" title="Existing"></Tab>
+      <Tab eventKey="new" title="New">
+        <div>
+          <h5 className="subsection">Train a new quick model</h5>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <label htmlFor="name">Model name</label>
+              <input
+                type="text"
+                id="name"
+                placeholder="Model name"
+                className="form-control"
+                {...register('name')}
+              />
             </div>
-          </details>
+            <div>
+              <label htmlFor="features">Features used to predict</label>
+              {/* Specific management of the component with the react-form controller */}
+              <Controller
+                name="features"
+                control={control}
+                defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
+                render={({ field: { onChange, value } }) => (
+                  <Select
+                    options={features}
+                    isMulti
+                    value={features.filter((option) => value.includes(option.value))}
+                    onChange={(selectedOptions) => {
+                      onChange(
+                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                      );
+                    }}
+                  />
+                )}
+              />
+            </div>
+            <div className="d-flex align-items-center">
+              <label htmlFor="frequencySlider">Refresh</label>
+              Every
+              <input
+                type="number"
+                id="frequencySlider"
+                min="0"
+                max="500"
+                value={freqRefreshSimpleModel}
+                onChange={(e) => {
+                  refreshFreq(Number(e.currentTarget.value));
+                }}
+                step="1"
+                style={{ width: '80px', margin: '10px' }}
+              />
+              annotations (0 for no refreshing)
+            </div>
+            <details className="custom-details">
+              <summary>Advanced parameters</summary>
 
-          <button className="btn btn-primary btn-validation">Train quick model</button>
-        </form>
-      </div>
-    </>
+              <label htmlFor="model">Select a model</label>
+              <select id="model" {...register('model')}>
+                {Object.keys(availableSimpleModels).map((e) => (
+                  <option key={e}>{e}</option>
+                ))}{' '}
+              </select>
+              {kindScheme == 'multilabel' && (
+                <>
+                  <label htmlFor="dichotomize">Dichotomize on the label</label>
+                  <select id="dichotomize" {...register('dichotomize')}>
+                    {Object.values(availableLabels).map((e) => (
+                      <option key={e}>{e}</option>
+                    ))}{' '}
+                  </select>
+                </>
+              )}
+              {
+                //generate_config(selectedSimpleModel)
+                (selectedModel == 'liblinear' && (
+                  <div key="liblinear">
+                    <label htmlFor="cost">Cost</label>
+                    <input
+                      type="number"
+                      step="1"
+                      id="cost"
+                      {...register('params.cost', { valueAsNumber: true })}
+                    ></input>
+                  </div>
+                )) ||
+                  (selectedModel == 'knn' && (
+                    <div key="knn">
+                      <label htmlFor="n_neighbors">Number of neighbors</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="n_neighbors"
+                        {...register('params.n_neighbors', { valueAsNumber: true })}
+                      ></input>
+                    </div>
+                  )) ||
+                  (selectedModel == 'lasso' && (
+                    <div key="lasso">
+                      <label htmlFor="c">C</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="C"
+                        {...register('params.C', { valueAsNumber: true })}
+                      ></input>
+                    </div>
+                  )) ||
+                  (selectedModel == 'multi_naivebayes' && (
+                    <div key="multi_naivebayes">
+                      <label htmlFor="alpha">Alpha</label>
+                      <input
+                        type="number"
+                        id="alpha"
+                        {...register('params.alpha', { valueAsNumber: true })}
+                      ></input>
+                      <label htmlFor="fit_prior">
+                        Fit prior
+                        <input
+                          type="checkbox"
+                          id="fit_prior"
+                          {...register('params.fit_prior')}
+                          className="mx-3"
+                          checked
+                        />
+                      </label>
+                    </div>
+                  )) ||
+                  (selectedModel == 'randomforest' && (
+                    <div key="randomforest">
+                      <label htmlFor="n_estimators">Number of estimators</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="n_estimators"
+                        {...register('params.n_estimators', { valueAsNumber: true })}
+                      ></input>
+                      <label htmlFor="max_features">Max features</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="max_features"
+                        {...register('params.max_features', { valueAsNumber: true })}
+                      ></input>
+                    </div>
+                  ))
+              }
+
+              <div className="d-flex align-items-center">
+                <label htmlFor="cv10">10-fold cross validation</label>
+                <input type="checkbox" id="cv10" {...register('cv10')} className="mx-3" />
+              </div>
+            </details>
+
+            <button className="btn btn-primary btn-validation">Train quick model</button>
+          </form>
+        </div>
+      </Tab>
+    </Tabs>
   );
 };

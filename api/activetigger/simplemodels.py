@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle
+import shutil
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -65,6 +66,7 @@ class SimpleModels:
     available_models: dict[str, Any]
     existing: list[ModelDescriptionModel]
     computing: list
+    loaded: dict
     language_models_service: LanguageModelsService
 
     def __init__(
@@ -95,123 +97,46 @@ class SimpleModels:
             "multi_naivebayes": Multi_naivebayesParams(alpha=1, fit_prior=True, class_prior=None),
         }
 
-        # load existing simplemodels
+        # Load existing simplemodels for the project from the database
         self.existing = self.language_models_service.available_models(project_slug, "simplemodel")
+        self.loaded = {}
 
-    # def available(self) -> dict[str, dict[str, SimpleModelOutModel]]:
-    #     """
-    #     Available simplemodels
-    #     """
-    #     r: dict[str, dict[str, SimpleModelOutModel]] = {}
-    #     for u in self.existing:
-    #         r[u] = {}
-    #         for s in self.existing[u]:
-    #             sm = self.existing[u][s]
-    #             r[u][s] = SimpleModelOutModel(
-    #                 scheme=s,
-    #                 username=u,
-    #                 model=sm.name,
-    #                 params=sm.model_params,
-    #                 features=sm.features,
-    #                 statistics=sm.statistics,
-    #                 statistics_cv10=sm.statistics_cv10,
-    #             )
-    #     return r
+    def add(self, element: SimpleModelComputing, results) -> None:
+        """
+        Add computed model
+        - content in filesystem
+        - add it to the database
+        """
 
-    def available(self) -> str:
-        return [m.name for m in self.existing]
+        print(element)
 
-    def get(self, scheme: str, username: str) -> SimpleModelOutModel | None:
-        """
-        Get a specific simplemodel
-        """
-        if username in self.existing:
-            if scheme in self.existing[username]:
-                sm = self.existing[username][scheme]
-                return SimpleModelOutModel(
-                    model=sm.name,
-                    params=sm.model_params,
-                    features=sm.features,
-                    statistics=sm.statistics,
-                    statistics_cv10=sm.statistics_cv10,
-                    scheme=scheme,
-                    username=username,
-                )
-        return None
+        # Create the filesystem
+        model_path = self.path.joinpath(element.name)
+        if model_path.exists():
+            raise Exception("The model already exists")
+        os.mkdir(model_path)
 
-    def get_model(self, username: str, scheme: str) -> SimpleModelComputing:
-        """
-        Select a specific model in the repo
-        """
-        if username not in self.existing:
-            raise Exception("The user does not exist")
-        if scheme not in self.existing[username]:
-            raise Exception("The scheme does not exist")
-        return self.existing[username][scheme]
+        # Add element from the computation
+        element.model = results.model
+        element.proba = results.proba
+        element.statistics = results.statistics
+        element.statistics_cv10 = results.statistics_cv10
 
-    def get_prediction(self, username: str, scheme: str) -> DataFrame:
-        """
-        Get a specific simplemodel
-        """
-        sm = self.get_model(username, scheme)
-        if sm.proba is None:
-            raise ValueError("No probability available for this model")
-        return sm.proba
+        # Dump it in the folder
+        with open(model_path / "model.pkl", "wb") as file:
+            pickle.dump(element, file)
 
-    # def training(self) -> dict[str, list[str]]:
-    #     """
-    #     Currently under training
-    #     """
-    #     return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
-
-    def training(self) -> list[str]:
-        """
-        Currently under training
-        """
-        return [e.name for e in self.computing if e.kind == "simplemodel"]
-
-    def exists(self, user: str, scheme: str) -> bool:
-        """
-        Test if a simplemodel exists for a user/scheme
-        """
-        if user in self.existing:
-            if scheme in self.existing[user]:
-                return True
-        return False
-
-    def load_data(
-        self, data, col_label, col_predictors, standardize
-    ) -> tuple[DataFrame, DataFrame, list]:
-        """
-        Load data
-        """
-        f_na = data[col_predictors].isna().sum(axis=1) > 0
-        if f_na.sum() > 0:
-            print(f"There is {f_na.sum()} predictor rows with missing values")
-
-        # normalize X data
-        if standardize:
-            df_pred = self.standardize(data[~f_na][col_predictors])
-        else:
-            df_pred = data[~f_na][col_predictors]
-
-        # create global dataframe with no missing predictor
-        df = pd.concat([data[~f_na][col_label], df_pred], axis=1)
-
-        # data for training
-        Y = df[col_label]
-        X = df[col_predictors]
-        labels = Y.unique()
-
-        return X, Y, labels
-
-    def standardize(self, df) -> DataFrame:
-        """
-        Apply standardization
-        """
-        scaler = StandardScaler()
-        df_stand = scaler.fit_transform(df)
-        return pd.DataFrame(df_stand, columns=df.columns, index=df.index)
+        # Add the entry in the database
+        self.language_models_service.add_model(
+            kind="simplemodel",
+            name=element.name,
+            user=element.user,
+            project=self.project_slug,
+            scheme=element.scheme or "default",
+            params=element.model_params or {},
+            path=str(model_path),
+            status="trained",
+        )
 
     def compute_simplemodel(
         self,
@@ -220,6 +145,7 @@ class SimpleModels:
         scheme: str,
         features: list,
         name: str,
+        model_type: str,
         df: DataFrame,
         col_labels: str,
         col_features: list,
@@ -232,32 +158,32 @@ class SimpleModels:
         """
         logger_simplemodel = logging.getLogger("simplemodel")
         logger_simplemodel.info("Intiating the computation process for the simplemodel")
-        X, Y, labels = self.load_data(df, col_labels, col_features, standardize)
+        X, Y, labels = self.transform_data(df, col_labels, col_features, standardize)
 
         # default parameters
         if model_params is None:
-            model_params = self.available_models[name].dict()
+            model_params = self.available_models[model_type].dict()
 
         # Select model
-        if name == "knn":
+        if model_type == "knn":
             params_knn = KnnParams(**model_params)
             model = KNeighborsClassifier(n_neighbors=int(params_knn.n_neighbors), n_jobs=-1)
             model_params = params_knn.model_dump()
 
-        if name == "lasso":
+        if model_type == "lasso":
             params_lasso = LassoParams(**model_params)
             model = LogisticRegression(
                 penalty="l1", solver="liblinear", C=params_lasso.C, n_jobs=-1
             )
             model_params = params_lasso.model_dump()
 
-        if name == "liblinear":
+        if model_type == "liblinear":
             # Liblinear : method = 1 : multimodal logistic regression l2
             params_lib = LiblinearParams(**model_params)
             model = LogisticRegression(penalty="l2", solver="lbfgs", C=params_lib.cost, n_jobs=-1)
             model_params = params_lib.model_dump()
 
-        if name == "randomforest":
+        if model_type == "randomforest":
             # params  Num. trees mtry  Sample fraction
             # Number of variables randomly sampled as candidates at each split:
             # it is “mtry” in R and it is “max_features” Python
@@ -273,7 +199,7 @@ class SimpleModels:
             )
             model_params = params_rf.model_dump()
 
-        if name == "multi_naivebayes":
+        if model_type == "multi_naivebayes":
             # small workaround for parameters
             params_nb = Multi_naivebayesParams(**model_params)
             if params_nb.class_prior is not None:
@@ -310,6 +236,7 @@ class SimpleModels:
                 time=datetime.now(),
                 kind="simplemodel",
                 scheme=scheme,
+                model_type=model_type,
                 name=name,
                 features=features,
                 labels=labels,
@@ -320,69 +247,106 @@ class SimpleModels:
             )
         )
 
-    # def loads(self) -> bool:
-    #     """
-    #     Load
-    #     """
-    #     if not (self.path / self.save_file).exists():
-    #         return False
-    #     with open(self.path / self.save_file, "rb") as file:
-    #         self.existing = pickle.load(file)
-    #     return True
-
-    # def add(self, element: SimpleModelComputing, results) -> None:
-    #     """
-    #     Add simplemodel after computation in the list of existing simplemodels
-    #     And save the element
-    #     """
-
-    #     element.model = results.model
-    #     element.proba = results.proba
-    #     element.statistics = results.statistics
-    #     element.statistics_cv10 = results.statistics_cv10
-    #     if element.user not in self.existing:
-    #         self.existing[element.user] = {}
-    #     self.existing[element.user][element.scheme] = element
-    #     self.dumps()
-
-    def add(self, element: SimpleModelComputing, results) -> None:
+    def available(self) -> dict[str, list[str]]:
         """
-        Manage computed process for model
-        - dump the model
-        - add it to the database
+        Return available models per scheme
         """
+        r = {}
+        for m in self.existing:
+            if m.scheme not in r:
+                r[m.scheme] = []
+            r[m.scheme].append(m.name)
+        return r
 
-        model_path = self.path.joinpath(element.name)
+    def get(self, name: str) -> SimpleModelOutModel | None:
+        """
+        Load the content of a specific model
+        (cache in memory)
+        """
+        if not self.exists(name):
+            raise Exception("The model does not exist")
+        if name in self.loaded:
+            return self.loaded[name]
+        else:
+            path = self.path.joinpath("simplemodel", name)
+            if not path.exists():
+                raise Exception("The model path does not exist")
+            with open(path / "model.pkl", "rb") as file:
+                sm: SimpleModel = pickle.load(file)
+            return SimpleModelOutModel(
+                model=sm.name,
+                params=sm.model_params,
+                features=sm.features,
+                statistics=sm.statistics,
+                statistics_cv10=sm.statistics_cv10,
+                scheme=sm.name,
+                username=sm.user,
+            )
 
-        element.model = results.model
-        element.proba = results.proba
-        element.statistics = results.statistics
-        element.statistics_cv10 = results.statistics_cv10
+    def get_model(self, name: str) -> SimpleModelComputing:
+        """
+        Select a specific model in the repo
+        """
+        if name not in self.existing:
+            raise Exception("The model does not exist")
+        return next(m for m in self.computing if m.name == name)
 
-        # Dump it in the folder
-        with open(model_path, "wb") as file:
-            pickle.dump(element, file)
+    def get_prediction(self, name: str) -> DataFrame:
+        """
+        Get a specific simplemodel
+        """
+        sm = self.get_model(name)
+        if sm.proba is None:
+            raise ValueError("No probability available for this model")
+        return sm.proba
 
-        # Add the entry in the database
-        self.language_models_service.add_model(
-            kind="simplemodel",
-            name=element.name,
-            user=element.user,
-            project=self.project_slug,
-            scheme=element.scheme or "default",
-            params=element.params or {},
-            path=str(model_path),
-            status="trained",
-        )
+    def training(self) -> dict[str, list[str]]:
+        """
+        Currently under training
+        """
+        return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
 
-    def export_prediction(
-        self, scheme: str, username: str, format: str = "csv"
-    ) -> tuple[BytesIO, dict[str, str]]:
+    def exists(self, name: str) -> bool:
+        """
+        Test if a simplemodel exists for a user/scheme
+        """
+        return name in [m.name for m in self.existing]
+
+    def transform_data(
+        self, data, col_label, col_predictors, standardize
+    ) -> tuple[DataFrame, DataFrame, list]:
+        """
+        Load data
+        """
+        f_na = data[col_predictors].isna().sum(axis=1) > 0
+        if f_na.sum() > 0:
+            print(f"There is {f_na.sum()} predictor rows with missing values")
+
+        # normalize X data
+        if standardize:
+            scaler = StandardScaler()
+            df = data[~f_na][col_predictors]
+            df_stand = scaler.fit_transform(df)
+            df_pred = pd.DataFrame(df_stand, columns=df.columns, index=df.index)
+        else:
+            df_pred = data[~f_na][col_predictors]
+
+        # create global dataframe with no missing predictor
+        df = pd.concat([data[~f_na][col_label], df_pred], axis=1)
+
+        # data for training
+        Y = df[col_label]
+        X = df[col_predictors]
+        labels = Y.unique()
+
+        return X, Y, labels
+
+    def export_prediction(self, name: str, format: str = "csv") -> tuple[BytesIO, dict[str, str]]:
         """
         Function to export the prediction of a simplemodel
         """
         # get data
-        table = self.get_prediction(username, scheme)
+        table = self.get_prediction(name)
         # convert to payload
         if format == "csv":
             output = BytesIO()
@@ -420,3 +384,113 @@ class SimpleModels:
             available=self.available(),
             training=self.training(),
         )
+
+    def delete(self, name: str) -> None:
+        """
+        Delete a specific simplemodel
+        """
+        if not self.exists(name):
+            raise Exception("The model does not exist")
+
+        # delete from the database
+        self.language_models_service.delete_model(self.project_slug, name)
+
+        # delete from the filesystem
+        model_path = self.path.joinpath(name)
+        if model_path.exists():
+            shutil.rmtree(model_path)
+
+        # delete from the existing list
+        self.existing = [m for m in self.existing if m.name != name]
+
+        # delete from the loaded cache
+        if name in self.loaded:
+            del self.loaded[name]
+
+    # def loads(self) -> bool:
+    #     """
+    #     Load
+    #     """
+    #     if not (self.path / self.save_file).exists():
+    #         return False
+    #     with open(self.path / self.save_file, "rb") as file:
+    #         self.existing = pickle.load(file)
+    #     return True
+
+    # def add(self, element: SimpleModelComputing, results) -> None:
+    #     """
+    #     Add simplemodel after computation in the list of existing simplemodels
+    #     And save the element
+    #     """
+
+    #     element.model = results.model
+    #     element.proba = results.proba
+    #     element.statistics = results.statistics
+    #     element.statistics_cv10 = results.statistics_cv10
+    #     if element.user not in self.existing:
+    #         self.existing[element.user] = {}
+    #     self.existing[element.user][element.scheme] = element
+    #     self.dumps()
+
+    # def exists(self, user: str, scheme: str) -> bool:
+    #     """
+    #     Test if a simplemodel exists for a user/scheme
+    #     """
+    #     if user in self.existing:
+    #         if scheme in self.existing[user]:
+    #             return True
+    #     return False
+
+    # def training(self) -> dict[str, list[str]]:
+    #     """
+    #     Currently under training
+    #     """
+    #     return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
+
+    # def available(self) -> dict[str, dict[str, SimpleModelOutModel]]:
+    #     """
+    #     Available simplemodels
+    #     """
+    #     r: dict[str, dict[str, SimpleModelOutModel]] = {}
+    #     for u in self.existing:
+    #         r[u] = {}
+    #         for s in self.existing[u]:
+    #             sm = self.existing[u][s]
+    #             r[u][s] = SimpleModelOutModel(
+    #                 scheme=s,
+    #                 username=u,
+    #                 model=sm.name,
+    #                 params=sm.model_params,
+    #                 features=sm.features,
+    #                 statistics=sm.statistics,
+    #                 statistics_cv10=sm.statistics_cv10,
+    #             )
+    #     return r
+
+    # def get(self, scheme: str, username: str) -> SimpleModelOutModel | None:
+    #     """
+    #     Get a specific simplemodel
+    #     """
+    #     if username in self.existing:
+    #         if scheme in self.existing[username]:
+    #             sm = self.existing[username][scheme]
+    #             return SimpleModelOutModel(
+    #                 model=sm.name,
+    #                 params=sm.model_params,
+    #                 features=sm.features,
+    #                 statistics=sm.statistics,
+    #                 statistics_cv10=sm.statistics_cv10,
+    #                 scheme=scheme,
+    #                 username=username,
+    #             )
+    #     return None
+
+    # def get_model(self, username: str, scheme: str) -> SimpleModelComputing:
+    #     """
+    #     Select a specific model in the repo
+    #     """
+    #     if username not in self.existing:
+    #         raise Exception("The user does not exist")
+    #     if scheme not in self.existing[username]:
+    #         raise Exception("The scheme does not exist")
+    #     return self.existing[username][scheme]

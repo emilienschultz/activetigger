@@ -841,7 +841,6 @@ export function useRenameLabel(projectSlug: string | null, scheme: string | null
 
 export function useTrainSimpleModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
-
   const trainSimpleModel = useCallback(
     async (formData: SimpleModelModel) => {
       if (projectSlug && formData.features && scheme && formData.model && formData.params) {
@@ -912,18 +911,18 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
  */
 export function useGetSimpleModel(
   project_slug: string | null,
-  scheme: string | null,
+  name: string | null,
   project: unknown,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getSimpleModel = useAsyncMemo(async () => {
-    if (scheme && project_slug) {
+    if (name && project_slug) {
       const res = await api.GET('/models/simplemodel', {
         params: {
           query: {
             project_slug: project_slug,
-            scheme: scheme,
+            name: name,
           },
         },
       });
@@ -932,7 +931,7 @@ export function useGetSimpleModel(
       }
     }
     return null;
-  }, [project_slug, scheme, fetchTrigger, project]);
+  }, [project_slug, name, fetchTrigger, project]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 

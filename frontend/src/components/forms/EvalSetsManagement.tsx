@@ -79,6 +79,7 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
         return;
       }
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+      formData.scheme = currentScheme;
       await createValidSet(projectSlug, dataset, {
         ...omit(formData, 'files'),
         csv,

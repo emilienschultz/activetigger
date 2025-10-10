@@ -22,7 +22,6 @@ import {
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 
-import { SimpleModelDisplay } from '../components/SimpleModelDisplay';
 import { SimpleModelManagement } from '../components/SimpleModelManagement';
 
 /**
@@ -131,16 +130,15 @@ export const ProjectModelPage: FC = () => {
             >
               <Tab eventKey="simple" title="Simple">
                 <div className="container-fluid">
-                  <div className="row mb-3 mt-3">
+                  <div className="row">
                     {phase == 'test' && (
                       <div className="alert alert-warning">
                         Test mode activated - simple model are disabled
                       </div>
                     )}
-                    <div className="col-8">
-                      {phase != 'test' && (
-                        <>
-                          <div className="explanations">
+                    {phase != 'test' && (
+                      <>
+                        {/* <div className="explanations">
                             The simple model is used during tagging, for the active and maxprob
                             models.
                             <a className="problems m-2">
@@ -151,32 +149,31 @@ export const ProjectModelPage: FC = () => {
                                 have fine-tuned one.
                               </Tooltip>
                             </a>
-                          </div>
+                          </div> */}
 
-                          <SimpleModelDisplay
+                        {/* <SimpleModelDisplay
                             currentModel={
                               (currentSimpleModel as unknown as Record<string, never>) || undefined
                             }
-                          />
-                          <SimpleModelManagement
-                            projectName={projectSlug || null}
-                            currentScheme={currentScheme || null}
-                            availableSimpleModels={
-                              availableSimpleModels as unknown as Record<
-                                string,
-                                Record<string, number>
-                              >
-                            }
-                            availableFeatures={availableFeatures}
-                            availableLabels={availableLabels}
-                            kindScheme={kindScheme}
-                            currentModel={
-                              (currentSimpleModel as unknown as Record<string, never>) || undefined
-                            }
-                          />
-                        </>
-                      )}
-                    </div>
+                          /> */}
+                        <SimpleModelManagement
+                          projectName={projectSlug || null}
+                          currentScheme={currentScheme || null}
+                          availableSimpleModels={
+                            availableSimpleModels as unknown as Record<
+                              string,
+                              Record<string, number>
+                            >
+                          }
+                          availableFeatures={availableFeatures}
+                          availableLabels={availableLabels}
+                          kindScheme={kindScheme}
+                          currentModel={
+                            (currentSimpleModel as unknown as Record<string, never>) || undefined
+                          }
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               </Tab>

@@ -40,24 +40,27 @@ async def train_quickmodel(
     Compute simplemodel
     """
     try:
-        project.update_simplemodel(simplemodel, current_user.username)
+        project.train_simplemodel(simplemodel, current_user.username)
         orchestrator.log_action(current_user.username, "TRAIN SIMPLE MODEL", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def post_simplemodel(
+@router.post("/models/simple/delete", dependencies=[Depends(verified_user)])
+async def delete_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    simplemodel: SimpleModelModel,
+    name: str,
 ) -> None:
     """
-    Compute simplemodel
+    Delete simplemodel
     """
     try:
-        project.update_simplemodel(simplemodel, current_user.username)
-        orchestrator.log_action(current_user.username, "TRAIN MODEL: simplemodel", project.name)
+        test_rights(ProjectAction.DELETE, current_user.username, project.name)
+        project.simplemodels.delete(name)
+        orchestrator.log_action(
+            current_user.username, f"DELETE SIMPLE MODEL + FEATURES: {name}", project.name
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -66,13 +69,13 @@ async def post_simplemodel(
 async def get_simplemodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str,
+    name: str,
 ) -> SimpleModelOutModel | None:
     """
-    Get available simplemodel for the project/user/scheme if any
+    Get available simplemodel by a name
     """
     try:
-        return project.simplemodels.get(scheme, current_user.username)
+        return project.simplemodels.get(name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

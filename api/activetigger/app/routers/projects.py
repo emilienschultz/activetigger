@@ -57,7 +57,7 @@ async def get_project_statistics(
     Statistics for a scheme and a user
     """
     try:
-        return project.get_statistics(scheme=scheme, user=current_user.username)
+        return project.get_statistics(scheme=scheme)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
