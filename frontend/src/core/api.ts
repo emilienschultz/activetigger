@@ -839,6 +839,40 @@ export function useRenameLabel(projectSlug: string | null, scheme: string | null
   return { renameLabel };
 }
 
+export function useTrainSimpleModel(projectSlug: string | null, scheme: string | null) {
+  const { notify } = useNotifications();
+
+  const trainSimpleModel = useCallback(
+    async (formData: SimpleModelModel) => {
+      if (projectSlug && formData.features && scheme && formData.model && formData.params) {
+        const res = await api.POST('/models/simple/train', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+            },
+          },
+          body: {
+            name: formData.name,
+            features: formData.features,
+            scheme: scheme,
+            model: formData.model,
+            params: formData.params,
+            standardize: false,
+            dichotomize: formData.dichotomize,
+            cv10: formData.cv10,
+          },
+        });
+
+        if (!res.error) notify({ type: 'warning', message: 'Training model' });
+      }
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { trainSimpleModel };
+}
+
 export function useUpdateSimpleModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
@@ -852,6 +886,7 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
             },
           },
           body: {
+            name: formData.name,
             features: formData.features,
             scheme: scheme,
             model: formData.model,

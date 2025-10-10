@@ -93,7 +93,7 @@ class LanguageModels:
         """
         Available models
         """
-        models = self.language_models_service.available_models(self.project_slug)
+        models = self.language_models_service.available_models(self.project_slug, "bert")
         r: dict = {}
         for m in models:
             if m.scheme not in r:

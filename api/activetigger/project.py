@@ -313,7 +313,9 @@ class Project:
             self.db_manager,
             config.file_models,
         )
-        self.simplemodels = SimpleModels(self.params.dir, self.queue, self.computing)
+        self.simplemodels = SimpleModels(
+            project_slug, self.params.dir, self.queue, self.computing, self.db_manager
+        )
         self.generations = Generations(
             self.db_manager, cast(list[GenerationComputing], self.computing)
         )
@@ -459,6 +461,76 @@ class Project:
         # update the database
         self.db_manager.projects_service.update_project(
             self.params.project_slug, jsonable_encoder(self.params)
+        )
+
+    def train_simplemodel(
+        self, simplemodel: SimpleModelModel, username: str, n_min_annotated: int = 3
+    ) -> None:
+        """
+        Build all the information before calling the simplemodel computation
+        """
+        # Tests
+        availabe_schemes = self.schemes.available()
+        simplemodel.features = [i for i in simplemodel.features if i is not None]
+        if simplemodel.features is None or len(simplemodel.features) == 0:
+            raise Exception("No features selected")
+        if simplemodel.model not in list(self.simplemodels.available_models.keys()):
+            raise Exception("Model not available")
+        if simplemodel.scheme not in availabe_schemes:
+            raise Exception("Scheme not available")
+        if len(availabe_schemes[simplemodel.scheme].labels) < 2:
+            raise Exception("Not enough labels in the scheme")
+
+        # only dfm feature for multi_naivebayes (FORCE IT if available else error)
+        if simplemodel.model == "multi_naivebayes":
+            if "dfm" not in self.features.map:
+                raise Exception("No dfm feature available")
+            simplemodel.features = ["dfm"]
+            simplemodel.standardize = False
+
+        if simplemodel.params is None:
+            params = None
+        else:
+            params = dict(simplemodel.params)
+        # add information on the target of the model
+        if simplemodel.dichotomize is not None and params is not None:
+            params["dichotomize"] = simplemodel.dichotomize
+
+        # get data
+        df_features = self.features.get(simplemodel.features)
+        df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
+
+        # management for multilabels / dichotomize
+        if simplemodel.dichotomize is not None:
+            df_scheme["labels"] = df_scheme["labels"].apply(
+                lambda x: self.schemes.dichotomize(x, simplemodel.dichotomize)
+            )
+
+        # test for a minimum of annotated elements
+        counts = df_scheme["labels"].value_counts()
+        valid_categories = counts[counts >= n_min_annotated]
+        if len(valid_categories) < 2:
+            raise Exception(
+                f"Not enough annotated elements (should be more than {n_min_annotated})"
+            )
+
+        col_features = list(df_features.columns)
+        data = pd.concat([df_scheme, df_features], axis=1)
+
+        logger_simplemodel = logging.getLogger("simplemodel")
+        logger_simplemodel.info("Building the simplemodel request")
+        self.simplemodels.compute_simplemodel(
+            project_slug=self.params.project_slug,
+            user=username,
+            scheme=simplemodel.scheme,
+            features=simplemodel.features,
+            name=simplemodel.model,
+            df=data,
+            col_labels="labels",
+            col_features=col_features,
+            model_params=params,
+            standardize=simplemodel.standardize or False,
+            cv10=simplemodel.cv10 or False,
         )
 
     def update_simplemodel(

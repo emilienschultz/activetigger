@@ -1,4 +1,5 @@
 import logging
+import os
 import pickle
 from datetime import datetime
 from io import BytesIO
@@ -15,18 +16,20 @@ from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
 
-from activetigger.config import config
 from activetigger.datamodels import (
     KnnParams,
     LassoParams,
     LiblinearParams,
     MLStatisticsModel,
+    ModelDescriptionModel,
     Multi_naivebayesParams,
     RandomforestParams,
     SimpleModelComputing,
     SimpleModelOutModel,
     SimpleModelsProjectStateModel,
 )
+from activetigger.db.languagemodels import LanguageModelsService
+from activetigger.db.manager import DatabaseManager
 from activetigger.queue import Queue
 from activetigger.tasks.fit_model import FitModel
 
@@ -60,14 +63,29 @@ class SimpleModels:
     path: Path
     queue: Queue
     available_models: dict[str, Any]
-    existing: dict[str, dict[str, SimpleModelComputing]]
+    existing: list[ModelDescriptionModel]
     computing: list
-    save_file: str
+    language_models_service: LanguageModelsService
 
-    def __init__(self, path: Path, queue: Queue, computing: list) -> None:
+    def __init__(
+        self,
+        project_slug: str,
+        path: Path,
+        queue: Queue,
+        computing: list,
+        db_manager: DatabaseManager,
+    ) -> None:
         """
         Init Simplemodels class
         """
+        self.path: Path = path.joinpath("simplemodels")
+        if not self.path.exists():
+            os.mkdir(self.path)
+        self.project_slug = project_slug
+        self.language_models_service = db_manager.language_models_service
+        self.computing = computing
+        self.queue = queue
+
         # Models and default parameters
         self.available_models = {
             "liblinear": LiblinearParams(cost=1),
@@ -77,35 +95,31 @@ class SimpleModels:
             "multi_naivebayes": Multi_naivebayesParams(alpha=1, fit_prior=True, class_prior=None),
         }
 
-        self.existing: dict = {}  # computed simplemodels for users / schemes DICT > USERS > SCHEME
-        self.computing: list = computing  # currently under computation
-        self.path: Path = path  # path to operate
-        self.queue = queue  # access to executor for multiprocessing
-        self.save_file: str = config.simplemodels_file  # file to save current state
-        self.loads()  # load existing simplemodels for the project
+        # load existing simplemodels
+        self.existing = self.language_models_service.available_models(project_slug, "simplemodel")
 
-    def __repr__(self) -> str:
-        return str(self.available())
+    # def available(self) -> dict[str, dict[str, SimpleModelOutModel]]:
+    #     """
+    #     Available simplemodels
+    #     """
+    #     r: dict[str, dict[str, SimpleModelOutModel]] = {}
+    #     for u in self.existing:
+    #         r[u] = {}
+    #         for s in self.existing[u]:
+    #             sm = self.existing[u][s]
+    #             r[u][s] = SimpleModelOutModel(
+    #                 scheme=s,
+    #                 username=u,
+    #                 model=sm.name,
+    #                 params=sm.model_params,
+    #                 features=sm.features,
+    #                 statistics=sm.statistics,
+    #                 statistics_cv10=sm.statistics_cv10,
+    #             )
+    #     return r
 
-    def available(self) -> dict[str, dict[str, SimpleModelOutModel]]:
-        """
-        Available simplemodels
-        """
-        r: dict[str, dict[str, SimpleModelOutModel]] = {}
-        for u in self.existing:
-            r[u] = {}
-            for s in self.existing[u]:
-                sm = self.existing[u][s]
-                r[u][s] = SimpleModelOutModel(
-                    scheme=s,
-                    username=u,
-                    model=sm.name,
-                    params=sm.model_params,
-                    features=sm.features,
-                    statistics=sm.statistics,
-                    statistics_cv10=sm.statistics_cv10,
-                )
-        return r
+    def available(self) -> str:
+        return [m.name for m in self.existing]
 
     def get(self, scheme: str, username: str) -> SimpleModelOutModel | None:
         """
@@ -144,11 +158,17 @@ class SimpleModels:
             raise ValueError("No probability available for this model")
         return sm.proba
 
-    def training(self) -> dict[str, list[str]]:
+    # def training(self) -> dict[str, list[str]]:
+    #     """
+    #     Currently under training
+    #     """
+    #     return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
+
+    def training(self) -> list[str]:
         """
         Currently under training
         """
-        return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
+        return [e.name for e in self.computing if e.kind == "simplemodel"]
 
     def exists(self, user: str, scheme: str) -> bool:
         """
@@ -300,37 +320,60 @@ class SimpleModels:
             )
         )
 
-    def dumps(self) -> None:
-        """
-        Dumps all simplemodels to a pickle
-        """
-        with open(self.path / self.save_file, "wb") as file:
-            pickle.dump(self.existing, file)
+    # def loads(self) -> bool:
+    #     """
+    #     Load
+    #     """
+    #     if not (self.path / self.save_file).exists():
+    #         return False
+    #     with open(self.path / self.save_file, "rb") as file:
+    #         self.existing = pickle.load(file)
+    #     return True
 
-    def loads(self) -> bool:
-        """
-        Load all simplemodels from a pickle
-        """
-        if not (self.path / self.save_file).exists():
-            return False
-        with open(self.path / self.save_file, "rb") as file:
-            self.existing = pickle.load(file)
-        return True
+    # def add(self, element: SimpleModelComputing, results) -> None:
+    #     """
+    #     Add simplemodel after computation in the list of existing simplemodels
+    #     And save the element
+    #     """
+
+    #     element.model = results.model
+    #     element.proba = results.proba
+    #     element.statistics = results.statistics
+    #     element.statistics_cv10 = results.statistics_cv10
+    #     if element.user not in self.existing:
+    #         self.existing[element.user] = {}
+    #     self.existing[element.user][element.scheme] = element
+    #     self.dumps()
 
     def add(self, element: SimpleModelComputing, results) -> None:
         """
-        Add simplemodel after computation in the list of existing simplemodels
-        And save the element
+        Manage computed process for model
+        - dump the model
+        - add it to the database
         """
+
+        model_path = self.path.joinpath(element.name)
 
         element.model = results.model
         element.proba = results.proba
         element.statistics = results.statistics
         element.statistics_cv10 = results.statistics_cv10
-        if element.user not in self.existing:
-            self.existing[element.user] = {}
-        self.existing[element.user][element.scheme] = element
-        self.dumps()
+
+        # Dump it in the folder
+        with open(model_path, "wb") as file:
+            pickle.dump(element, file)
+
+        # Add the entry in the database
+        self.language_models_service.add_model(
+            kind="simplemodel",
+            name=element.name,
+            user=element.user,
+            project=self.project_slug,
+            scheme=element.scheme or "default",
+            params=element.params or {},
+            path=str(model_path),
+            status="trained",
+        )
 
     def export_prediction(
         self, scheme: str, username: str, format: str = "csv"

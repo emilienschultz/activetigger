@@ -700,8 +700,10 @@ class SimpleModelOutModel(BaseModel):
 
 class SimpleModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
-    available: dict[str, dict[str, SimpleModelOutModel]]
-    training: dict[str, list[str]]
+    # available: dict[str, dict[str, SimpleModelOutModel]]
+    # training: dict[str, list[str]]
+    training: list[str]
+    available: list[str]
 
 
 class LanguageModelsProjectStateModel(BaseModel):
@@ -954,8 +956,9 @@ class ExportGenerationsParams(BaseModel):
     filters: list[str] = []
 
 
-class LanguageModelScheme(BaseModel):
+class ModelDescriptionModel(BaseModel):
     name: str
+    kind: str
     scheme: str
     parameters: dict[str, Any]
     path: str

@@ -1,7 +1,7 @@
 import { FC, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import Select from 'react-select';
-import { useUpdateSimpleModel } from '../core/api';
+import { useTrainSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { SimpleModelModel } from '../types';
@@ -27,15 +27,15 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   kindScheme,
   currentModel,
 }) => {
-  // display the form
-  //const [showForm, setShowForm] = useState(false);
-
   // element from the context
   const {
     appContext: { freqRefreshSimpleModel },
     setAppContext,
   } = useAppContext();
   const { notify } = useNotifications();
+
+  // hooks to update
+  const { trainSimpleModel } = useTrainSimpleModel(projectName, currentScheme);
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
@@ -54,7 +54,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     defaultValues: {
       name: getRandomName(),
       model: 'liblinear',
-      // features: Object.values(availableFeatures),
       scheme: currentScheme || undefined,
       params: {
         cost: 1,
@@ -94,9 +93,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   // state for the model selected to modify parameters
   const selectedModel = watch('model');
 
-  // hooks to update
-  const { updateSimpleModel } = useUpdateSimpleModel(projectName, currentScheme);
-
   // action when form validated
   const onSubmit: SubmitHandler<SimpleModelModel> = async (formData) => {
     const watchedFeatures = watch('features');
@@ -104,7 +100,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
     }
-    await updateSimpleModel(formData);
+    await trainSimpleModel(formData);
     //    setShowForm(false);
   };
 

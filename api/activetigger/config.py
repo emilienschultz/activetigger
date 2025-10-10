@@ -65,7 +65,6 @@ class Config(metaclass=_Singleton):
     data_all: str = "data_all.parquet"
     file_models: str = "bert_models.csv"
     default_scheme: str = "default"
-    simplemodels_file: str = "simplemodels.pickle"
     mail_server: str | None = os.environ.get("MAIL_SERVER", None)
 
     mail_account: str | None = os.environ.get("MAIL_ACCOUNT", None)
