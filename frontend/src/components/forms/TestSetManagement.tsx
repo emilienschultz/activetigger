@@ -72,6 +72,7 @@ export const TestSetManagement: FC<TestSetTestSetManagementModel> = ({
   // action when form validated
   const onSubmit: SubmitHandler<TestSetModel & { files: FileList }> = async (formData) => {
     if (data) {
+      formData.scheme = currentScheme;
       if (!formData.col_id || !formData.cols_text || !formData.n_test) {
         notify({ type: 'error', message: 'Please fill all the fields' });
         return;
