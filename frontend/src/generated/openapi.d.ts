@@ -1128,6 +1128,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/models/simple/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Quickmodel
+         * @description Delete simplemodel
+         */
+        post: operations["delete_quickmodel_models_simple_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/models/simplemodel": {
         parameters: {
             query?: never;
@@ -1137,15 +1157,11 @@ export interface paths {
         };
         /**
          * Get Simplemodel
-         * @description Get available simplemodel for the project/user/scheme if any
+         * @description Get available simplemodel by a name
          */
         get: operations["get_simplemodel_models_simplemodel_get"];
         put?: never;
-        /**
-         * Post Simplemodel
-         * @description Compute simplemodel
-         */
-        post: operations["post_simplemodel_models_simplemodel_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2501,6 +2517,19 @@ export interface components {
             /** Content */
             content: string;
         };
+        /** ModelDescriptionModel */
+        ModelDescriptionModel: {
+            /** Name */
+            name: string;
+            /** Kind */
+            kind: string;
+            /** Scheme */
+            scheme: string;
+            /** Parameters */
+            parameters: Record<string, never>;
+            /** Path */
+            path: string;
+        };
         /**
          * NextInModel
          * @description Requesting next element to annotate
@@ -2538,6 +2567,8 @@ export interface components {
             dataset: string;
             /** User */
             user?: string | null;
+            /** Model Active */
+            model_active?: string | null;
         };
         /** NextProjectStateModel */
         NextProjectStateModel: {
@@ -3071,9 +3102,7 @@ export interface components {
             options: Record<string, never>;
             /** Available */
             available: {
-                [key: string]: {
-                    [key: string]: components["schemas"]["SimpleModelOutModel"] | undefined;
-                } | undefined;
+                [key: string]: components["schemas"]["ModelDescriptionModel"][] | undefined;
             };
             /** Training */
             training: {
@@ -5031,10 +5060,42 @@ export interface operations {
             };
         };
     };
+    delete_quickmodel_models_simple_delete_post: {
+        parameters: {
+            query: {
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_simplemodel_models_simplemodel_get: {
         parameters: {
             query: {
-                scheme: string;
+                name: string;
                 project_slug: string;
             };
             header?: never;
@@ -5050,41 +5111,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimpleModelOutModel"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_simplemodel_models_simplemodel_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimpleModelModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

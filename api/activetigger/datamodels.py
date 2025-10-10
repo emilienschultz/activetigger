@@ -700,11 +700,19 @@ class SimpleModelOutModel(BaseModel):
     statistics_cv10: MLStatisticsModel | None = None
 
 
+class ModelDescriptionModel(BaseModel):
+    name: str
+    kind: str
+    scheme: str
+    parameters: dict[str, Any]
+    path: str
+
+
 class SimpleModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
     # available: dict[str, dict[str, SimpleModelOutModel]]
     # training: dict[str, list[str]]
-    available: dict[str, list[str]]
+    available: dict[str, list[ModelDescriptionModel]]
     training: dict[str, list[str]]
 
 
@@ -956,14 +964,6 @@ class GeneratedElementsIn(BaseModel):
 
 class ExportGenerationsParams(BaseModel):
     filters: list[str] = []
-
-
-class ModelDescriptionModel(BaseModel):
-    name: str
-    kind: str
-    scheme: str
-    parameters: dict[str, Any]
-    path: str
 
 
 class ProjectCreatingModel(BaseModel):

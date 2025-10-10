@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaTools } from 'react-icons/fa';
@@ -21,6 +21,7 @@ import {
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
+import { ModelDescriptionModel } from '../types';
 
 import { SimpleModelManagement } from '../components/SimpleModelManagement';
 
@@ -54,7 +55,15 @@ export const ProjectModelPage: FC = () => {
     }
     return [];
   }, [project, currentScheme]);
-  const availableSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
+  const baseSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
+
+  const availableSimpleModels = useMemo(
+    () =>
+      project?.simplemodel.available
+        ? (project?.simplemodel.available as { [key: string]: ModelDescriptionModel[] })
+        : {},
+    [project?.simplemodel.available],
+  );
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
@@ -83,12 +92,6 @@ export const ProjectModelPage: FC = () => {
   // current model and automatic selection
   const [currentBertModel, setCurrentBertModel] = useState<string | null>(null);
   const [currentSimpleModel, setCurrentSimpleModel] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (availableSimpleModels.length > 0 && !currentSimpleModel) {
-      setCurrentSimpleModel(availableSimpleModels[availableSimpleModels.length - 1]);
-    }
-  }, [availableSimpleModels, currentSimpleModel]);
 
   // get model information from api
   const { model } = useModelInformations(
@@ -159,12 +162,10 @@ export const ProjectModelPage: FC = () => {
                         <SimpleModelManagement
                           projectName={projectSlug || null}
                           currentScheme={currentScheme || null}
-                          availableSimpleModels={
-                            availableSimpleModels as unknown as Record<
-                              string,
-                              Record<string, number>
-                            >
+                          baseSimpleModels={
+                            baseSimpleModels as unknown as Record<string, Record<string, number>>
                           }
+                          availableSimpleModels={availableSimpleModels}
                           availableFeatures={availableFeatures}
                           availableLabels={availableLabels}
                           kindScheme={kindScheme}

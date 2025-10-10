@@ -64,7 +64,6 @@ class SimpleModels:
     path: Path
     queue: Queue
     available_models: dict[str, Any]
-    existing: list[ModelDescriptionModel]
     computing: list
     loaded: dict
     language_models_service: LanguageModelsService
@@ -97,8 +96,6 @@ class SimpleModels:
             "multi_naivebayes": Multi_naivebayesParams(alpha=1, fit_prior=True, class_prior=None),
         }
 
-        # Load existing simplemodels for the project from the database
-        self.existing = self.language_models_service.available_models(project_slug, "simplemodel")
         self.loaded = {}
 
     def add(self, element: SimpleModelComputing, results) -> None:
@@ -247,15 +244,16 @@ class SimpleModels:
             )
         )
 
-    def available(self) -> dict[str, list[str]]:
+    def available(self) -> dict[str, list[ModelDescriptionModel]]:
         """
         Return available models per scheme
         """
+        existing = self.language_models_service.available_models(self.project_slug, "simplemodel")
         r = {}
-        for m in self.existing:
+        for m in existing:
             if m.scheme not in r:
                 r[m.scheme] = []
-            r[m.scheme].append(m.name)
+            r[m.scheme].append(m)
         return r
 
     def get(self, name: str) -> SimpleModelOutModel | None:
@@ -287,7 +285,7 @@ class SimpleModels:
         """
         Select a specific model in the repo
         """
-        if name not in self.existing:
+        if not self.exists(name):
             raise Exception("The model does not exist")
         return next(m for m in self.computing if m.name == name)
 
@@ -310,7 +308,8 @@ class SimpleModels:
         """
         Test if a simplemodel exists for a user/scheme
         """
-        return name in [m.name for m in self.existing]
+        existing = self.language_models_service.available_models(self.project_slug, "simplemodel")
+        return name in [m.name for m in existing]
 
     def transform_data(
         self, data, col_label, col_predictors, standardize
@@ -399,9 +398,6 @@ class SimpleModels:
         model_path = self.path.joinpath(name)
         if model_path.exists():
             shutil.rmtree(model_path)
-
-        # delete from the existing list
-        self.existing = [m for m in self.existing if m.name != name]
 
         # delete from the loaded cache
         if name in self.loaded:

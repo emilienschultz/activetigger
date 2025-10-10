@@ -5,14 +5,15 @@ import Select from 'react-select';
 import { useTrainSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
-import { SimpleModelModel } from '../types';
+import { ModelDescriptionModel, SimpleModelModel } from '../types';
 
 // TODO: default values + avoid generic parameters
 
 interface SimpleModelManagementProps {
   projectName: string | null;
   currentScheme: string | null;
-  availableSimpleModels: Record<string, Record<string, number>>;
+  baseSimpleModels: Record<string, Record<string, number>>;
+  availableSimpleModels: { [key: string]: ModelDescriptionModel[] };
   availableFeatures: string[];
   availableLabels: string[];
   kindScheme: string;
@@ -22,6 +23,7 @@ interface SimpleModelManagementProps {
 export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   projectName,
   currentScheme,
+  baseSimpleModels,
   availableSimpleModels,
   availableFeatures,
   availableLabels,
@@ -126,7 +128,9 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   return (
     <Tabs id="simplemodels" className="mt-1" defaultActiveKey="existing">
-      <Tab eventKey="existing" title="Existing"></Tab>
+      <Tab eventKey="existing" title="Existing">
+        {JSON.stringify(availableSimpleModels)}
+      </Tab>
       <Tab eventKey="new" title="New">
         <div>
           <h5 className="subsection">Train a new quick model</h5>
@@ -184,7 +188,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
               <label htmlFor="model">Select a model</label>
               <select id="model" {...register('model')}>
-                {Object.keys(availableSimpleModels).map((e) => (
+                {Object.keys(baseSimpleModels).map((e) => (
                   <option key={e}>{e}</option>
                 ))}{' '}
               </select>
