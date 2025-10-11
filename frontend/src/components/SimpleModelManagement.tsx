@@ -1,8 +1,9 @@
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { MdOutlineDeleteOutline } from 'react-icons/md';
 import Select from 'react-select';
-import { useTrainSimpleModel } from '../core/api';
+import { useDeleteSimpleModel, useTrainSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ModelDescriptionModel, SimpleModelModel } from '../types';
@@ -13,7 +14,7 @@ interface SimpleModelManagementProps {
   projectName: string | null;
   currentScheme: string | null;
   baseSimpleModels: Record<string, Record<string, number>>;
-  availableSimpleModels: { [key: string]: ModelDescriptionModel[] };
+  availableSimpleModels: ModelDescriptionModel[];
   availableFeatures: string[];
   availableLabels: string[];
   kindScheme: string;
@@ -43,10 +44,16 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
+  // current simplemodel
+  const [currentSimpleModel, setCurrentSimpleModel] = useState<string | null>(null);
+
   // function to change refresh frequency
   const refreshFreq = (newValue: number) => {
     setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
   };
+
+  // delete simplemodel
+  const { deleteSimpleModel } = useDeleteSimpleModel(projectName);
 
   function getRandomName() {
     return `Simplemodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
@@ -129,7 +136,34 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   return (
     <Tabs id="simplemodels" className="mt-1" defaultActiveKey="existing">
       <Tab eventKey="existing" title="Existing">
-        {JSON.stringify(availableSimpleModels)}
+        <div className="d-flex align-items-center">
+          <Select
+            options={Object.values(availableSimpleModels || {}).map((e) => ({
+              value: e.name,
+              label: e.name,
+            }))}
+            value={
+              currentSimpleModel ? { value: currentSimpleModel, label: currentSimpleModel } : null
+            }
+            onChange={(selectedOption) => {
+              setCurrentSimpleModel(selectedOption ? selectedOption.value : null);
+            }}
+            isSearchable
+            className="w-50 mt-1"
+          />
+          <button
+            className="btn btn p-0"
+            onClick={() => {
+              if (currentSimpleModel) {
+                deleteSimpleModel(currentSimpleModel);
+                setCurrentSimpleModel(null);
+              }
+            }}
+          >
+            <MdOutlineDeleteOutline size={30} />
+          </button>
+        </div>
+        {JSON.stringify(availableSimpleModels.filter((e) => e.name == currentSimpleModel))}
       </Tab>
       <Tab eventKey="new" title="New">
         <div>

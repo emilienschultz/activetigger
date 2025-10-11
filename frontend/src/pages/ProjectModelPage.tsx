@@ -165,7 +165,7 @@ export const ProjectModelPage: FC = () => {
                           baseSimpleModels={
                             baseSimpleModels as unknown as Record<string, Record<string, number>>
                           }
-                          availableSimpleModels={availableSimpleModels}
+                          availableSimpleModels={availableSimpleModels[currentScheme || ''] || []}
                           availableFeatures={availableFeatures}
                           availableLabels={availableLabels}
                           kindScheme={kindScheme}

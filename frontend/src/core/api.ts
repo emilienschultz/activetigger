@@ -907,6 +907,33 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
 }
 
 /**
+ * Delete simple model
+ */
+export function useDeleteSimpleModel(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const deleteSimpleModel = useCallback(
+    async (model_name: string) => {
+      if (projectSlug) {
+        const res = await api.POST('/models/simple/delete', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: model_name,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Model deleted' });
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { deleteSimpleModel };
+}
+
+/**
  * Get trained simplemodel for a user/scheme
  */
 export function useGetSimpleModel(
