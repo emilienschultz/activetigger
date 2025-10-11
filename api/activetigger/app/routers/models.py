@@ -19,7 +19,7 @@ from activetigger.app.dependencies import (
 from activetigger.datamodels import (
     BertModelModel,
     LMInformationsModel,
-    SimpleModelModel,
+    SimpleModelInModel,
     SimpleModelOutModel,
     TextDatasetModel,
     UserInDBModel,
@@ -34,7 +34,7 @@ router = APIRouter(tags=["models"])
 async def train_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    simplemodel: SimpleModelModel,
+    simplemodel: SimpleModelInModel,
 ) -> None:
     """
     Compute simplemodel
@@ -75,7 +75,16 @@ async def get_simplemodel(
     Get available simplemodel by a name
     """
     try:
-        return project.simplemodels.get(name)
+        sm = project.simplemodels.get(name)
+        return SimpleModelOutModel(
+            model=sm.name,
+            params=sm.model_params,
+            features=sm.features,
+            statistics=sm.statistics,
+            statistics_cv10=sm.statistics_cv10,
+            scheme=sm.scheme,
+            username=sm.user,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

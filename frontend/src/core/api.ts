@@ -18,7 +18,7 @@ import {
   ProjectStateModel,
   ProjectUpdateModel,
   ProjectionParametersModel,
-  SimpleModelModel,
+  SimpleModelInModel,
   SupportedAPI,
   TextDatasetModel,
   newBertModel,
@@ -622,6 +622,7 @@ export function useGetNextElementId(
   },
   history: string[],
   phase: string,
+  activeSimpleModel: string | null,
 ) {
   const { notify } = useNotifications();
   const getNextElementId = useCallback(async () => {
@@ -639,6 +640,7 @@ export function useGetNextElementId(
           dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
           user: selectionConfig.user,
+          model_active: activeSimpleModel,
         },
       });
       if (res.data?.element_id)
@@ -648,7 +650,7 @@ export function useGetNextElementId(
       notify({ type: 'error', message: 'Select a project/scheme to get elements' });
       return null;
     }
-  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase]);
+  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase, activeSimpleModel]);
 
   return { getNextElementId };
 }
@@ -842,7 +844,7 @@ export function useRenameLabel(projectSlug: string | null, scheme: string | null
 export function useTrainSimpleModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
   const trainSimpleModel = useCallback(
-    async (formData: SimpleModelModel) => {
+    async (formData: SimpleModelInModel) => {
       if (projectSlug && formData.features && scheme && formData.model && formData.params) {
         const res = await api.POST('/models/simple/train', {
           params: {

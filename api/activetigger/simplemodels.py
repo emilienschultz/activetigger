@@ -9,8 +9,6 @@ from typing import Any
 
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
-from pydantic import BaseModel, ConfigDict
-from sklearn.base import BaseEstimator  # type: ignore[import]
 from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
 from sklearn.linear_model import LogisticRegression  # type: ignore[import]
 from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
@@ -21,11 +19,11 @@ from activetigger.datamodels import (
     KnnParams,
     LassoParams,
     LiblinearParams,
-    MLStatisticsModel,
     ModelDescriptionModel,
     Multi_naivebayesParams,
     RandomforestParams,
     SimpleModelComputing,
+    SimpleModelModel,
     SimpleModelOutModel,
     SimpleModelsProjectStateModel,
 )
@@ -33,24 +31,6 @@ from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.queue import Queue
 from activetigger.tasks.fit_model import FitModel
-
-
-class SimpleModel(BaseModel):
-    """
-    Simplemodel object
-    """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    name: str
-    user: str
-    features: list
-    labels: list
-    model_params: dict
-    standardize: bool
-    model: BaseEstimator
-    proba: DataFrame | None = None
-    statistics: MLStatisticsModel | None = None
-    statistics_cv10: MLStatisticsModel | None = None
 
 
 class SimpleModels:
@@ -105,8 +85,6 @@ class SimpleModels:
         - add it to the database
         """
 
-        print(element)
-
         # Create the filesystem
         model_path = self.path.joinpath(element.name)
         if model_path.exists():
@@ -118,6 +96,12 @@ class SimpleModels:
         element.proba = results.proba
         element.statistics = results.statistics
         element.statistics_cv10 = results.statistics_cv10
+
+        # write the proba
+        if element.proba is not None:
+            element.proba.to_csv(model_path / "proba.csv")
+
+        element.time = datetime.now()
 
         # Dump it in the folder
         with open(model_path / "model.pkl", "wb") as file:
@@ -256,7 +240,7 @@ class SimpleModels:
             r[m.scheme].append(m)
         return r
 
-    def get(self, name: str) -> SimpleModelOutModel | None:
+    def get(self, name: str) -> SimpleModelModel | None:
         """
         Load the content of a specific model
         (cache in memory)
@@ -266,34 +250,18 @@ class SimpleModels:
         if name in self.loaded:
             return self.loaded[name]
         else:
-            path = self.path.joinpath("simplemodel", name)
+            path = self.path.joinpath(name)
             if not path.exists():
                 raise Exception("The model path does not exist")
             with open(path / "model.pkl", "rb") as file:
-                sm: SimpleModel = pickle.load(file)
-            return SimpleModelOutModel(
-                model=sm.name,
-                params=sm.model_params,
-                features=sm.features,
-                statistics=sm.statistics,
-                statistics_cv10=sm.statistics_cv10,
-                scheme=sm.name,
-                username=sm.user,
-            )
-
-    def get_model(self, name: str) -> SimpleModelComputing:
-        """
-        Select a specific model in the repo
-        """
-        if not self.exists(name):
-            raise Exception("The model does not exist")
-        return next(m for m in self.computing if m.name == name)
+                sm: SimpleModelModel = pickle.load(file)
+            return sm
 
     def get_prediction(self, name: str) -> DataFrame:
         """
         Get a specific simplemodel
         """
-        sm = self.get_model(name)
+        sm = self.get(name)
         if sm.proba is None:
             raise ValueError("No probability available for this model")
         return sm.proba

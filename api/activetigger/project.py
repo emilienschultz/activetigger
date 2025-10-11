@@ -39,7 +39,7 @@ from activetigger.datamodels import (
     ProjectStateModel,
     ProjectUpdateModel,
     SimpleModelComputing,
-    SimpleModelModel,
+    SimpleModelInModel,
     StaticFileModel,
 )
 from activetigger.db.manager import DatabaseManager
@@ -464,7 +464,7 @@ class Project:
         )
 
     def train_simplemodel(
-        self, simplemodel: SimpleModelModel, username: str, n_min_annotated: int = 3
+        self, simplemodel: SimpleModelInModel, username: str, n_min_annotated: int = 3
     ) -> None:
         """
         Build all the information before calling the simplemodel computation
@@ -746,10 +746,13 @@ class Project:
         predict = PredictedLabel(label=None, proba=None)
 
         if self.simplemodels.exists(next.model_active) and next.dataset == "train":
+            print("START")
             prediction = self.simplemodels.get_prediction(next.model_active)
+            print("MIDDLE", prediction)
             predicted_label = prediction.loc[element_id, "prediction"]
             predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
             predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
+            print("END")
 
         # get all tags already existing for the element
         previous = self.schemes.projects_service.get_annotations_by_element(

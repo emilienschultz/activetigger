@@ -5,7 +5,7 @@ import { MdOutlineDeleteOutline } from 'react-icons/md';
 import Select from 'react-select';
 import { useDeleteSimpleModel, useTrainSimpleModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
-import { ModelDescriptionModel, SimpleModelModel } from '../types';
+import { ModelDescriptionModel, SimpleModelInModel } from '../types';
 
 // TODO: default values + avoid generic parameters
 
@@ -73,7 +73,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   }
 
   // create form
-  const { register, handleSubmit, control, watch, setValue } = useForm<SimpleModelModel>({
+  const { register, handleSubmit, control, watch, setValue } = useForm<SimpleModelInModel>({
     defaultValues: {
       name: getRandomName(),
       model: 'liblinear',
@@ -117,7 +117,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const selectedModel = watch('model');
 
   // action when form validated
-  const onSubmit: SubmitHandler<SimpleModelModel> = async (formData) => {
+  const onSubmit: SubmitHandler<SimpleModelInModel> = async (formData) => {
     const watchedFeatures = watch('features');
     if (watchedFeatures.length == 0) {
       notify({ type: 'error', message: 'Please select at least one feature' });

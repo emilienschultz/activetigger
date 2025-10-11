@@ -80,6 +80,7 @@ export const ProjectTagPage: FC = () => {
     selectionConfig,
     history,
     phase,
+    activeSimpleModel || null,
   );
   const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
 

@@ -253,26 +253,6 @@ class RegexModel(BaseModel):
     user: str
 
 
-class SimpleModelModel(BaseModel):
-    """
-    Request Simplemodel
-    TODO : model for parameters
-    """
-
-    name: str
-    scheme: str
-    model: str
-    features: list
-    params: (
-        dict[str, str | float | bool | int | None]
-        | dict[str, dict[str, str | float | bool | int | None]]
-        | None
-    )
-    standardize: bool | None = True
-    dichotomize: str | None = None
-    cv10: bool = False
-
-
 class LMParametersModel(BaseModel):
     """
     Parameters for bertmodel training
@@ -573,6 +553,26 @@ class BertopicComputing(ProcessComputing):
     get_progress: Callable[[], float | None] | None = None
 
 
+class SimpleModelInModel(BaseModel):
+    """
+    Request Simplemodel
+    TODO : model for parameters
+    """
+
+    name: str
+    scheme: str
+    model: str
+    features: list
+    params: (
+        dict[str, str | float | bool | int | None]
+        | dict[str, dict[str, str | float | bool | int | None]]
+        | None
+    )
+    standardize: bool | None = True
+    dichotomize: str | None = None
+    cv10: bool = False
+
+
 class SimpleModelComputing(ProcessComputing):
     """
     Simplemodel object
@@ -584,12 +584,59 @@ class SimpleModelComputing(ProcessComputing):
     features: list
     scheme: str
     labels: list
-    model_type: str
     model_params: dict
     standardize: bool
     model: BaseEstimator
     proba: DataFrame | None = None
+    statistics: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
     cv10: bool = False
+    model_type: str
+
+
+class SimpleModelModel(ProcessComputing):
+    """
+    Simplemodel object
+    """
+
+    time: datetime.datetime
+
+
+# class SimpleModelStorageModel(BaseModel):
+#     """
+#     Simplemodel object
+#     """
+
+#     model_config = ConfigDict(arbitrary_types_allowed=True)
+#     name: str
+#     user: str
+#     features: list
+#     scheme: str
+#     labels: list
+#     model_params: dict
+#     standardize: bool
+#     model: BaseEstimator
+#     proba: DataFrame | None = None
+#     statistics: MLStatisticsModel | None = None
+#     statistics_cv10: MLStatisticsModel | None = None
+#     cv10: bool = False
+#     model_type: str
+
+
+class SimpleModelOutModel(BaseModel):
+    """
+    Trained simplemodel
+    """
+
+    features: list
+    model: str
+    params: (
+        dict[str, str | float | bool | list | None]
+        | dict[str, dict[str, str | float | bool | None]]
+        | None
+    )
+    scheme: str
+    username: str
     statistics: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
 
@@ -680,24 +727,6 @@ class FeaturesProjectStateModel(BaseModel):
     options: dict[str, dict[str, Any]]
     available: list[str]
     training: dict[str, dict[str, str | None]]
-
-
-class SimpleModelOutModel(BaseModel):
-    """
-    Trained simplemodel
-    """
-
-    features: list
-    model: str
-    params: (
-        dict[str, str | float | bool | list | None]
-        | dict[str, dict[str, str | float | bool | None]]
-        | None
-    )
-    scheme: str
-    username: str
-    statistics: MLStatisticsModel | None = None
-    statistics_cv10: MLStatisticsModel | None = None
 
 
 class ModelDescriptionModel(BaseModel):

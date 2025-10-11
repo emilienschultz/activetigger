@@ -3038,11 +3038,11 @@ export interface components {
             messages: components["schemas"]["MessagesOutModel"][];
         };
         /**
-         * SimpleModelModel
+         * SimpleModelInModel
          * @description Request Simplemodel
          *     TODO : model for parameters
          */
-        SimpleModelModel: {
+        SimpleModelInModel: {
             /** Name */
             name: string;
             /** Scheme */
@@ -5036,7 +5036,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SimpleModelModel"];
+                "application/json": components["schemas"]["SimpleModelInModel"];
             };
         };
         responses: {
