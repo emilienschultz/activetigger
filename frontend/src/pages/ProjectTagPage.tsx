@@ -13,14 +13,13 @@ import {
   useGetElementById,
   useGetNextElementId,
   useStatistics,
-  useUpdateSimpleModel,
 } from '../core/api';
-import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
 
 import { MdDisplaySettings } from 'react-icons/md';
 import { useLocation } from 'react-router-dom';
+import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
 import { AnnotationDisagreementManagement } from '../components/AnnotationDisagreementManagement';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { MulticlassInput } from '../components/MulticlassInput';
@@ -30,7 +29,6 @@ import { SelectionManagement } from '../components/SelectionManagement';
 import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
-import { SimpleModelModel } from '../types';
 
 /**
  * Annotation page
@@ -38,7 +36,6 @@ import { SimpleModelModel } from '../types';
 export const ProjectTagPage: FC = () => {
   // parameters
   const { projectName, elementId } = useParams();
-  const { authenticatedUser } = useAuth();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const tab = queryParams.get('tab');
@@ -49,6 +46,7 @@ export const ProjectTagPage: FC = () => {
       selectionConfig,
       displayConfig,
       freqRefreshSimpleModel,
+      activeSimpleModel,
       history,
       selectionHistory,
       phase,
@@ -89,10 +87,6 @@ export const ProjectTagPage: FC = () => {
   const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);
 
   // define parameters for configuration panels
-  const currentModel =
-    authenticatedUser && currentScheme
-      ? project?.simplemodel?.available?.[authenticatedUser.username]?.[currentScheme]
-      : null;
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme].labels
@@ -155,32 +149,32 @@ export const ProjectTagPage: FC = () => {
   ]);
 
   // hooks to update simplemodel
-  const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false); // use a memory to only update once
-  const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
+  // const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false); // use a memory to only update once
+  // const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
 
-  useEffect(() => {
-    // conditions to update the model
-    if (
-      !updatedSimpleModel &&
-      currentModel &&
-      history.length > 0 &&
-      history.length % freqRefreshSimpleModel == 0
-    ) {
-      setUpdatedSimpleModel(true);
-      const modelToRefresh = currentModel as unknown as SimpleModelModel;
-      modelToRefresh.cv10 = false; // do not use cross validation
-      updateSimpleModel(modelToRefresh);
-    }
-    if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
-      setUpdatedSimpleModel(false);
-  }, [
-    history,
-    updateSimpleModel,
-    setUpdatedSimpleModel,
-    currentModel,
-    freqRefreshSimpleModel,
-    updatedSimpleModel,
-  ]);
+  // useEffect(() => {
+  //   // conditions to update the model
+  //   if (
+  //     !updatedSimpleModel &&
+  //     currentModel &&
+  //     history.length > 0 &&
+  //     history.length % freqRefreshSimpleModel == 0
+  //   ) {
+  //     setUpdatedSimpleModel(true);
+  //     const modelToRefresh = currentModel as unknown as SimpleModelModel;
+  //     modelToRefresh.cv10 = false; // do not use cross validation
+  //     updateSimpleModel(modelToRefresh);
+  //   }
+  //   if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
+  //     setUpdatedSimpleModel(false);
+  // }, [
+  //   history,
+  //   updateSimpleModel,
+  //   setUpdatedSimpleModel,
+  //   currentModel,
+  //   freqRefreshSimpleModel,
+  //   updatedSimpleModel,
+  // ]);
 
   // post an annotation
   const postAnnotation = useCallback(
@@ -240,9 +234,10 @@ export const ProjectTagPage: FC = () => {
   const isTest = statistics?.test_set_n ? statistics?.test_set_n > 0 : false;
   const isValid = statistics?.valid_set_n ? statistics?.valid_set_n > 0 : false;
 
-  if (!projectName || !currentScheme) return;
+  // existing simplemodels
+  const availableSimpleModels = project?.simplemodel.available[currentScheme || ''] || [];
 
-  console.log(phase);
+  if (!projectName || !currentScheme) return;
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
@@ -433,6 +428,14 @@ export const ProjectTagPage: FC = () => {
               />
             </div>
           )}
+        </Tab>
+        <Tab eventKey="active" title="Active">
+          <ActiveLearningManagement
+            availableSimpleModels={availableSimpleModels}
+            setAppContext={setAppContext}
+            freqRefreshSimpleModel={freqRefreshSimpleModel}
+            activeSimepleModel={activeSimpleModel}
+          />
         </Tab>
         <Tab eventKey="curate" title="Curate">
           <Tabs id="panel" className="mt-3" defaultActiveKey="scheme">

@@ -108,20 +108,6 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1">Tag</span>
             </Link>
           </li>
-          {/*nbUsers > 1 && (
-            <li className="nav-item">
-              <Link
-                to={`/projects/${projectName}/curate`}
-                className={classNames('nav-link', currentProjectAction === 'curate' && 'active')}
-                aria-current="page"
-                title="Curate"
-              >
-                <GiChoice />
-
-                <span> Curate</span>
-              </Link>
-            </li>
-          )*/}
           <li className="nav-item">
             <Link
               to={`/projects/${projectName}/model`}

@@ -4,7 +4,6 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import Select from 'react-select';
 import { useDeleteSimpleModel, useTrainSimpleModel } from '../core/api';
-import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ModelDescriptionModel, SimpleModelModel } from '../types';
 
@@ -21,6 +20,30 @@ interface SimpleModelManagementProps {
   currentModel?: Record<string, never>;
 }
 
+export default function ModelsTable(model: ModelDescriptionModel) {
+  if (!model) return null;
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Name</td>
+          <td>{model.name}</td>
+        </tr>
+        <tr>
+          <td>Params</td>
+          <td>{JSON.stringify(model.parameters)}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
 export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   projectName,
   currentScheme,
@@ -31,11 +54,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   kindScheme,
   currentModel,
 }) => {
-  // element from the context
-  const {
-    appContext: { freqRefreshSimpleModel },
-    setAppContext,
-  } = useAppContext();
   const { notify } = useNotifications();
 
   // hooks to update
@@ -46,11 +64,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   // current simplemodel
   const [currentSimpleModel, setCurrentSimpleModel] = useState<string | null>(null);
-
-  // function to change refresh frequency
-  const refreshFreq = (newValue: number) => {
-    setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
-  };
 
   // delete simplemodel
   const { deleteSimpleModel } = useDeleteSimpleModel(projectName);
@@ -163,11 +176,10 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             <MdOutlineDeleteOutline size={30} />
           </button>
         </div>
-        {JSON.stringify(availableSimpleModels.filter((e) => e.name == currentSimpleModel))}
+        {ModelsTable(availableSimpleModels.filter((e) => e.name == currentSimpleModel)[0])}
       </Tab>
       <Tab eventKey="new" title="New">
         <div>
-          <h5 className="subsection">Train a new quick model</h5>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="name">Model name</label>
@@ -199,23 +211,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
                   />
                 )}
               />
-            </div>
-            <div className="d-flex align-items-center">
-              <label htmlFor="frequencySlider">Refresh</label>
-              Every
-              <input
-                type="number"
-                id="frequencySlider"
-                min="0"
-                max="500"
-                value={freqRefreshSimpleModel}
-                onChange={(e) => {
-                  refreshFreq(Number(e.currentTarget.value));
-                }}
-                step="1"
-                style={{ width: '80px', margin: '10px' }}
-              />
-              annotations (0 for no refreshing)
             </div>
             <details className="custom-details">
               <summary>Advanced parameters</summary>

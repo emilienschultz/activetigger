@@ -25,6 +25,7 @@ export type AppContextValue = {
   currentProject?: ProjectStateModel | null; // current project selected
   currentScheme?: string; // scheme selected to annotate
   currentProjection?: string;
+  activeSimpleModel?: string | null;
   freqRefreshSimpleModel: number; // freq to refresh active learning model
   history: string[]; // element annotated
   selectionHistory: Record<string, string>; // history of the selection

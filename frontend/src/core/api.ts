@@ -872,39 +872,39 @@ export function useTrainSimpleModel(projectSlug: string | null, scheme: string |
   return { trainSimpleModel };
 }
 
-export function useUpdateSimpleModel(projectSlug: string | null, scheme: string | null) {
-  const { notify } = useNotifications();
+// export function useUpdateSimpleModel(projectSlug: string | null, scheme: string | null) {
+//   const { notify } = useNotifications();
 
-  const updateSimpleModel = useCallback(
-    async (formData: SimpleModelModel) => {
-      if (projectSlug && formData.features && scheme && formData.model && formData.params) {
-        const res = await api.POST('/models/simplemodel', {
-          params: {
-            query: {
-              project_slug: projectSlug,
-            },
-          },
-          body: {
-            name: formData.name,
-            features: formData.features,
-            scheme: scheme,
-            model: formData.model,
-            params: formData.params,
-            standardize: false,
-            dichotomize: formData.dichotomize,
-            cv10: formData.cv10,
-          },
-        });
+//   const updateSimpleModel = useCallback(
+//     async (formData: SimpleModelModel) => {
+//       if (projectSlug && formData.features && scheme && formData.model && formData.params) {
+//         const res = await api.POST('/models/simplemodel', {
+//           params: {
+//             query: {
+//               project_slug: projectSlug,
+//             },
+//           },
+//           body: {
+//             name: formData.name,
+//             features: formData.features,
+//             scheme: scheme,
+//             model: formData.model,
+//             params: formData.params,
+//             standardize: false,
+//             dichotomize: formData.dichotomize,
+//             cv10: formData.cv10,
+//           },
+//         });
 
-        if (!res.error) notify({ type: 'warning', message: 'Training model' });
-      }
-      return true;
-    },
-    [projectSlug, scheme, notify],
-  );
+//         if (!res.error) notify({ type: 'warning', message: 'Training model' });
+//       }
+//       return true;
+//     },
+//     [projectSlug, scheme, notify],
+//   );
 
-  return { updateSimpleModel };
-}
+//   return { updateSimpleModel };
+// }
 
 /**
  * Delete simple model

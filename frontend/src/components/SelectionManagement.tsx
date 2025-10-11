@@ -1,25 +1,17 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { useGetSimpleModel } from '../core/api';
-import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 
 // define the component to configure selection mode
 export const SelectionManagement: FC = () => {
-  const { authenticatedUser } = useAuth();
   const {
-    appContext: { currentScheme, selectionConfig, currentProject: project },
+    appContext: { currentScheme, selectionConfig, currentProject: project, activeSimpleModel },
     setAppContext,
   } = useAppContext();
 
   const availableModes =
-    authenticatedUser &&
-    currentScheme &&
-    project?.simplemodel.available[authenticatedUser.username]?.[currentScheme]
-      ? project.next.methods
-      : project?.next.methods_min
-        ? project?.next.methods_min
-        : [];
+    activeSimpleModel && project ? project.next.methods : project?.next.methods_min;
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 
@@ -141,7 +133,7 @@ export const SelectionManagement: FC = () => {
             }}
             value={selectionConfig.mode}
           >
-            {availableModes.map((e, i) => (
+            {(availableModes || []).map((e, i) => (
               <option key={i}>{e}</option>
             ))}
           </select>
