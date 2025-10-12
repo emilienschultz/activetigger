@@ -4129,6 +4129,7 @@ export interface operations {
             query: {
                 scheme?: string | null;
                 dataset?: string;
+                model_active?: string | null;
                 project_slug: string;
             };
             header?: never;

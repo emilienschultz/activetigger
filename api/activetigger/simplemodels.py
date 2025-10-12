@@ -24,7 +24,6 @@ from activetigger.datamodels import (
     RandomforestParams,
     SimpleModelComputing,
     SimpleModelModel,
-    SimpleModelOutModel,
     SimpleModelsProjectStateModel,
 )
 from activetigger.db.languagemodels import LanguageModelsService

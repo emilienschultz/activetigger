@@ -34,14 +34,18 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 }) => {
   // hook for all the parameters
   const {
-    appContext: { currentProject: project, currentProjection, selectionConfig },
+    appContext: { currentProject: project, currentProjection, selectionConfig, activeSimpleModel },
     setAppContext,
   } = useAppContext();
   const navigate = useNavigate();
   const { notify } = useNotifications();
 
   const { authenticatedUser } = useAuth();
-  const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
+  const { getElementById } = useGetElementById(
+    projectName || null,
+    currentScheme || null,
+    activeSimpleModel || null,
+  );
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -155,6 +159,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       if (id)
         getElementById(id, 'train').then((element) => {
           setSelectedElement(element || null);
+          console.log('SEND');
         });
       else setSelectedElement(null);
     },

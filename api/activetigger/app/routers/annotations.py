@@ -183,13 +183,18 @@ async def get_element(
     element_id: str,
     scheme: str | None = None,
     dataset: str = "train",
+    model_active: str | None = None,
 ) -> ElementOutModel:
     """
     Get specific element
     """
     try:
         return project.get_element(
-            element_id, scheme=scheme, user=current_user.username, dataset=dataset
+            element_id,
+            scheme=scheme,
+            user=current_user.username,
+            dataset=dataset,
+            model_active=model_active,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

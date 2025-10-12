@@ -729,6 +729,7 @@ class Project:
 
         # higher entropy, only possible if the model has been trained
         if next.selection == "active":
+            print("ACTIVE")
             if not self.simplemodels.exists(next.model_active):
                 raise ValueError("Simplemodel doesn't exist")
             prediction = self.simplemodels.get_prediction(next.model_active)  # get model
@@ -746,13 +747,10 @@ class Project:
         predict = PredictedLabel(label=None, proba=None)
 
         if self.simplemodels.exists(next.model_active) and next.dataset == "train":
-            print("START")
             prediction = self.simplemodels.get_prediction(next.model_active)
-            print("MIDDLE", prediction)
             predicted_label = prediction.loc[element_id, "prediction"]
             predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
             predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
-            print("END")
 
         # get all tags already existing for the element
         previous = self.schemes.projects_service.get_annotations_by_element(
@@ -840,14 +838,11 @@ class Project:
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None)
-            if (user is not None) and (scheme is not None):
-                if self.simplemodels.exists(model_active):
-                    prediction = self.simplemodels.get_prediction(model_active)
-                    predicted_label = cast(str, prediction.loc[element_id, "prediction"])
-                    predicted_proba = round(
-                        cast(float, prediction.loc[element_id, predicted_label]), 2
-                    )
-                    predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
+            if self.simplemodels.exists(model_active):
+                prediction = self.simplemodels.get_prediction(model_active)
+                predicted_label = cast(str, prediction.loc[element_id, "prediction"])
+                predicted_proba = round(cast(float, prediction.loc[element_id, predicted_label]), 2)
+                predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
             # get element tags
             if scheme is not None:

@@ -82,7 +82,11 @@ export const ProjectTagPage: FC = () => {
     phase,
     activeSimpleModel || null,
   );
-  const { getElementById } = useGetElementById(projectName || null, currentScheme || null);
+  const { getElementById } = useGetElementById(
+    projectName || null,
+    currentScheme || null,
+    activeSimpleModel || null,
+  );
 
   // hooks to manage annotation
   const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);

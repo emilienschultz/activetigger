@@ -29,6 +29,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   frameRef,
   postAnnotation,
 }) => {
+  console.log('PREDICT', element);
   return (
     <div className="row">
       <div

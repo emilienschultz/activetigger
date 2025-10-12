@@ -658,14 +658,23 @@ export function useGetNextElementId(
 /**
  * Get element content by specific id
  */
-export function useGetElementById(projectSlug: string | null, currentScheme: string | null) {
+export function useGetElementById(
+  projectSlug: string | null,
+  currentScheme: string | null,
+  model_active: string | null,
+) {
   const getElementById = useCallback(
     async (elementId: string, dataset: string) => {
       if (projectSlug) {
         const res = await api.GET('/elements/{element_id}', {
           params: {
             path: { element_id: elementId },
-            query: { project_slug: projectSlug, scheme: currentScheme, dataset: dataset },
+            query: {
+              project_slug: projectSlug,
+              scheme: currentScheme,
+              dataset: dataset,
+              model_active: model_active,
+            },
           },
         });
         if (res.response.status === 200) return res.data;
@@ -673,7 +682,7 @@ export function useGetElementById(projectSlug: string | null, currentScheme: str
       }
       return null;
     },
-    [projectSlug, currentScheme],
+    [projectSlug, currentScheme, model_active],
   );
 
   return { getElementById };
