@@ -563,11 +563,7 @@ class SimpleModelInModel(BaseModel):
     scheme: str
     model: str
     features: list
-    params: (
-        dict[str, str | float | bool | int | None]
-        | dict[str, dict[str, str | float | bool | int | None]]
-        | None
-    )
+    params: dict
     standardize: bool | None = True
     dichotomize: str | None = None
     cv10: bool = False
@@ -592,6 +588,7 @@ class SimpleModelComputing(ProcessComputing):
     statistics_cv10: MLStatisticsModel | None = None
     cv10: bool = False
     model_type: str
+    retrain: bool = False
 
 
 class SimpleModelModel(ProcessComputing):
@@ -600,27 +597,6 @@ class SimpleModelModel(ProcessComputing):
     """
 
     time: datetime.datetime
-
-
-# class SimpleModelStorageModel(BaseModel):
-#     """
-#     Simplemodel object
-#     """
-
-#     model_config = ConfigDict(arbitrary_types_allowed=True)
-#     name: str
-#     user: str
-#     features: list
-#     scheme: str
-#     labels: list
-#     model_params: dict
-#     standardize: bool
-#     model: BaseEstimator
-#     proba: DataFrame | None = None
-#     statistics: MLStatisticsModel | None = None
-#     statistics_cv10: MLStatisticsModel | None = None
-#     cv10: bool = False
-#     model_type: str
 
 
 class SimpleModelOutModel(BaseModel):

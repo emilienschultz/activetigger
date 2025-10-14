@@ -46,6 +46,23 @@ async def train_quickmodel(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/models/simple/retrain", dependencies=[Depends(verified_user)])
+async def retrain_quickmodel(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    scheme: str,
+    name: str,
+) -> None:
+    """
+    Retrain simplemodel
+    """
+    try:
+        project.retrain_simplemodel(name, scheme, current_user.username)
+        orchestrator.log_action(current_user.username, f"RETRAIN SIMPLE MODEL {name}", project.name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/models/simple/delete", dependencies=[Depends(verified_user)])
 async def delete_quickmodel(
     project: Annotated[Project, Depends(get_project)],

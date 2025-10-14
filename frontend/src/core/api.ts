@@ -850,6 +850,38 @@ export function useRenameLabel(projectSlug: string | null, scheme: string | null
   return { renameLabel };
 }
 
+/**
+ * Retrain a model which aleady exists with a name
+ * @param projectSlug
+ * @param scheme
+ * @returns
+ */
+
+export function useRetrainSimpleModel(projectSlug: string | null, scheme: string | null) {
+  const { notify } = useNotifications();
+
+  const retrainSimpleModel = useCallback(
+    async (name: string) => {
+      if (projectSlug && scheme) {
+        const res = await api.POST('/models/simple/retrain', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              scheme: scheme,
+              name: name,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'warning', message: 'Retraining model' });
+      }
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { retrainSimpleModel };
+}
+
 export function useTrainSimpleModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
   const trainSimpleModel = useCallback(

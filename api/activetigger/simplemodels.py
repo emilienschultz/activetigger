@@ -82,25 +82,32 @@ class SimpleModels:
         Add computed model
         - content in filesystem
         - add it to the database
+
+        Manage the specific case of retrain
         """
 
-        # Create the filesystem
-        model_path = self.path.joinpath(element.name)
-        if model_path.exists():
-            raise Exception("The model already exists")
-        os.mkdir(model_path)
-
         # Add element from the computation
+        element.time = datetime.now()
         element.model = results.model
         element.proba = results.proba
         element.statistics = results.statistics
         element.statistics_cv10 = results.statistics_cv10
 
-        # write the proba
+        # Create the filesystem
+        model_path = self.path.joinpath(element.name)
+
+        # if retrain, clear the folder
+        if element.retrain:
+            shutil.rmtree(model_path)
+            os.mkdir(model_path)
+        else:
+            if model_path.exists():
+                raise Exception("The model already exists")
+            os.mkdir(model_path)
+
+        # Write the proba
         if element.proba is not None:
             element.proba.to_csv(model_path / "proba.csv")
-
-        element.time = datetime.now()
 
         # Dump it in the folder
         with open(model_path / "model.pkl", "wb") as file:
@@ -132,6 +139,7 @@ class SimpleModels:
         standardize: bool = True,
         model_params: dict | None = None,
         cv10: bool = False,
+        retrain: bool = False,
     ) -> None:
         """
         Add a new simplemodel for a user and a scheme
@@ -224,6 +232,7 @@ class SimpleModels:
                 standardize=standardize,
                 model=model,
                 cv10=cv10,
+                retrain=retrain,
             )
         )
 
@@ -239,7 +248,7 @@ class SimpleModels:
             r[m.scheme].append(m)
         return r
 
-    def get(self, name: str) -> SimpleModelModel | None:
+    def get(self, name: str) -> SimpleModelModel:
         """
         Load the content of a specific model
         (cache in memory)

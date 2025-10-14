@@ -43,8 +43,6 @@ export const AnnotationDisagreementManagement: FC<{
     reFetchTable();
   };
 
-  console.log(tableDisagreement);
-
   return (
     <div className="container-fluid">
       <div className="row">

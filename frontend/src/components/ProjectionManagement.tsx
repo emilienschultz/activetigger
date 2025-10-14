@@ -159,7 +159,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       if (id)
         getElementById(id, 'train').then((element) => {
           setSelectedElement(element || null);
-          console.log('SEND');
         });
       else setSelectedElement(null);
     },

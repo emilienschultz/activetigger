@@ -39,7 +39,6 @@ export const ProjectsPage: FC = () => {
       }),
     );
   };
-  console.log(displayConfig.interfaceType);
 
   return (
     <PageLayout currentPage="projects">

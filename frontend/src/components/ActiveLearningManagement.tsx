@@ -1,6 +1,7 @@
-import { Dispatch, FC, SetStateAction, useState } from 'react';
+import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 
 import Select from 'react-select';
+import { useRetrainSimpleModel } from '../core/api';
 import { AppContextValue } from '../core/context';
 import { ModelDescriptionModel } from '../types';
 
@@ -9,6 +10,9 @@ import { ModelDescriptionModel } from '../types';
  */
 
 interface ActiveLearningManagementProps {
+  projectSlug: string | null;
+  currentScheme: string | null;
+  history: string[];
   availableSimpleModels: ModelDescriptionModel[];
   activeSimepleModel?: string | null;
   freqRefreshSimpleModel?: number;
@@ -16,9 +20,12 @@ interface ActiveLearningManagementProps {
 }
 
 export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
+  projectSlug,
+  currentScheme,
   availableSimpleModels,
   activeSimepleModel,
   freqRefreshSimpleModel,
+  history,
   setAppContext,
 }) => {
   const [currentSimpleModel, setCurrentSimpleModel] = useState<string | null>(null);
@@ -29,6 +36,38 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
   const setActiveSiumpleModel = (newValue: string | null) => {
     setAppContext((prev) => ({ ...prev, activeSimpleModel: newValue }));
   };
+  const { retrainSimpleModel } = useRetrainSimpleModel(projectSlug, currentScheme);
+
+  // manage retrain of the model
+  const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false);
+  useEffect(() => {
+    if (
+      !updatedSimpleModel &&
+      freqRefreshSimpleModel &&
+      activeSimepleModel &&
+      history.length > 0 &&
+      history.length % freqRefreshSimpleModel == 0
+    ) {
+      setUpdatedSimpleModel(true);
+      retrainSimpleModel(activeSimepleModel);
+      console.log('RETRAIN');
+    }
+    if (
+      updatedSimpleModel &&
+      freqRefreshSimpleModel &&
+      history.length % freqRefreshSimpleModel != 0
+    ) {
+      setUpdatedSimpleModel(false);
+    }
+  }, [
+    freqRefreshSimpleModel,
+    setUpdatedSimpleModel,
+    activeSimepleModel,
+    updatedSimpleModel,
+    retrainSimpleModel,
+    history,
+  ]);
+
   return (
     <>
       <div>
@@ -60,8 +99,7 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
         </div>
       </div>
       <div className="d-flex align-items-center">
-        <label htmlFor="frequencySlider">Refresh</label>
-        Every
+        <label htmlFor="frequencySlider">Retrain model every</label>
         <input
           type="number"
           id="frequencySlider"

@@ -153,34 +153,6 @@ export const ProjectTagPage: FC = () => {
     setAppContext,
   ]);
 
-  // hooks to update simplemodel
-  // const [updatedSimpleModel, setUpdatedSimpleModel] = useState(false); // use a memory to only update once
-  // const { updateSimpleModel } = useUpdateSimpleModel(projectName || null, currentScheme || null);
-
-  // useEffect(() => {
-  //   // conditions to update the model
-  //   if (
-  //     !updatedSimpleModel &&
-  //     currentModel &&
-  //     history.length > 0 &&
-  //     history.length % freqRefreshSimpleModel == 0
-  //   ) {
-  //     setUpdatedSimpleModel(true);
-  //     const modelToRefresh = currentModel as unknown as SimpleModelModel;
-  //     modelToRefresh.cv10 = false; // do not use cross validation
-  //     updateSimpleModel(modelToRefresh);
-  //   }
-  //   if (updatedSimpleModel && history.length % freqRefreshSimpleModel != 0)
-  //     setUpdatedSimpleModel(false);
-  // }, [
-  //   history,
-  //   updateSimpleModel,
-  //   setUpdatedSimpleModel,
-  //   currentModel,
-  //   freqRefreshSimpleModel,
-  //   updatedSimpleModel,
-  // ]);
-
   // post an annotation
   const postAnnotation = useCallback(
     (label: string | null, elementId?: string) => {
@@ -436,6 +408,9 @@ export const ProjectTagPage: FC = () => {
         </Tab>
         <Tab eventKey="active" title="Active">
           <ActiveLearningManagement
+            projectSlug={projectName}
+            history={history}
+            currentScheme={currentScheme}
             availableSimpleModels={availableSimpleModels}
             setAppContext={setAppContext}
             freqRefreshSimpleModel={freqRefreshSimpleModel}
