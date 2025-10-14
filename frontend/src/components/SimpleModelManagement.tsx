@@ -128,7 +128,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           {} as Record<string, string | number | boolean>,
         );
 
-      setValue('params', filteredParams);
+      setValue('params', filteredParams as SimpleModelInModel['params']);
     }
   }, [currentModel, setValue]);
 

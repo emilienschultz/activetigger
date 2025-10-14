@@ -14,7 +14,7 @@ import { ModelParametersTab } from '../components/ModelParametersTab';
 import { ModelPredict } from '../components/ModelPredict';
 import { LossChart } from '../components/vizualisation/lossChart';
 import {
-  useComputeModelPrediction,
+  useComputeBertModelPrediction,
   useDeleteBertModel,
   useModelInformations,
   useRenameBertModel,
@@ -79,7 +79,10 @@ export const ProjectModelPage: FC = () => {
 
   // compute model prediction
   const [batchSize, setBatchSize] = useState<number>(32);
-  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
+  const { computeBertModelPrediction } = useComputeBertModelPrediction(
+    projectSlug || null,
+    batchSize,
+  );
 
   // form to rename
   const { renameBertModel } = useRenameBertModel(projectSlug || null);
@@ -237,7 +240,7 @@ export const ProjectModelPage: FC = () => {
                             <button
                               className="btn btn-primary my-2"
                               onClick={() =>
-                                computeModelPrediction(
+                                computeBertModelPrediction(
                                   currentBertModel,
                                   'train',
                                   currentScheme || '',

@@ -163,12 +163,12 @@ class CreateProject(BaseTask):
                 )
 
             # divide between test and valid
-            if self.params.test > 0 and self.params.valid == 0:
+            if self.params.n_test > 0 and self.params.n_valid == 0:
                 testset = draw
                 testset.to_parquet(self.params.dir.joinpath(self.test_file), index=True)
                 self.params.test = True
                 rows_test = list(testset.index)
-            elif self.params.valid > 0 and self.params.test == 0:
+            elif self.params.n_valid > 0 and self.params.n_test == 0:
                 validset = draw
                 validset.to_parquet(self.params.dir.joinpath(self.valid_file), index=True)
                 self.params.valid = True

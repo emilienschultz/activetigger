@@ -1208,7 +1208,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/models/bert/predict": {
+    "/models/predict": {
         parameters: {
             query?: never;
             header?: never;
@@ -1222,7 +1222,29 @@ export interface paths {
          * @description Start prediction with a model for a specific dataset
          *     Manage specific cases for prediction
          */
-        post: operations["predict_models_bert_predict_post"];
+        post: operations["predict_models_predict_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/models/bert/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Bert
+         * @description Start prediction with a model for a specific dataset
+         *     Manage specific cases for prediction
+         *     TO DEPRECATE WHEN THE MODEL SIMPLE AND BERT WILL BE MERGED
+         */
+        post: operations["predict_bert_models_bert_predict_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2361,6 +2383,11 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** KnnParams */
+        KnnParams: {
+            /** N Neighbors */
+            n_neighbors: number;
+        };
         /** LMComputingOutModel */
         LMComputingOutModel: {
             /** Name */
@@ -2478,6 +2505,16 @@ export interface components {
             };
             base_parameters: components["schemas"]["LMParametersModel"];
         };
+        /** LassoParams */
+        LassoParams: {
+            /** C */
+            C: number;
+        };
+        /** LiblinearParams */
+        LiblinearParams: {
+            /** Cost */
+            cost: number;
+        };
         /** MLStatisticsModel */
         MLStatisticsModel: {
             /** F1 Label */
@@ -2549,6 +2586,18 @@ export interface components {
             parameters: Record<string, never>;
             /** Path */
             path: string;
+        };
+        /** Multi_naivebayesParams */
+        Multi_naivebayesParams: {
+            /** Alpha */
+            alpha: number;
+            /**
+             * Fit Prior
+             * @default true
+             */
+            fit_prior: boolean;
+            /** Class Prior */
+            class_prior?: string | null;
         };
         /**
          * NextInModel
@@ -2990,6 +3039,13 @@ export interface components {
             /** Parameters */
             parameters: Record<string, never>;
         };
+        /** RandomforestParams */
+        RandomforestParams: {
+            /** N Estimators */
+            n_estimators: number;
+            /** Max Features */
+            max_features: number | null;
+        };
         /**
          * ReconciliationModel
          * @description list of elements to reconciliate
@@ -3072,13 +3128,7 @@ export interface components {
             /** Features */
             features: unknown[];
             /** Params */
-            params: {
-                [key: string]: (string | number | boolean | null) | undefined;
-            } | {
-                [key: string]: {
-                    [key: string]: (string | number | boolean | null) | undefined;
-                } | undefined;
-            } | null;
+            params: components["schemas"]["LiblinearParams"] | components["schemas"]["KnnParams"] | components["schemas"]["RandomforestParams"] | components["schemas"]["LassoParams"] | components["schemas"]["Multi_naivebayesParams"];
             /**
              * Standardize
              * @default true
@@ -5210,7 +5260,47 @@ export interface operations {
             };
         };
     };
-    predict_models_bert_predict_post: {
+    predict_models_predict_post: {
+        parameters: {
+            query: {
+                model_name: string;
+                scheme: string;
+                kind: string;
+                dataset?: string;
+                batch_size?: number;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TextDatasetModel"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predict_bert_models_bert_predict_post: {
         parameters: {
             query: {
                 model_name: string;

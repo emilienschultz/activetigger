@@ -1,12 +1,61 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
+import Select from 'react-select';
 import { DisplayScores } from '../components/DisplayScores';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
-import { useDeleteBertModel, useEvalModel, useModelInformations } from '../core/api';
+import { useComputeModelPrediction, useEvalBertModel, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
+import { ModelDescriptionModel } from '../types';
+
+/**
+ * Buttons
+ */
+
+interface validateButtonsProps {
+  projectSlug: string | null;
+  modelName: string | null;
+  kind: string | null;
+  currentScheme: string | null;
+  valid: boolean;
+  test: boolean;
+  isComputing: boolean;
+}
+
+export const ValidateButtons: FC<validateButtonsProps> = ({
+  modelName,
+  kind,
+  valid,
+  isComputing,
+  test,
+  currentScheme,
+  projectSlug,
+}) => {
+  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, 16);
+  return (
+    <div>
+      {valid && (
+        <button
+          className="btn btn-primary m-3"
+          onClick={() => computeModelPrediction(modelName || '', 'valid', currentScheme, kind)}
+          disabled={isComputing}
+        >
+          Compute on validation set
+        </button>
+      )}
+      {test && (
+        <button
+          className="btn btn-primary m-3"
+          onClick={() => computeModelPrediction(modelName || '', 'test', currentScheme, kind)}
+          disabled={isComputing}
+        >
+          Compute on test set
+        </button>
+      )}
+    </div>
+  );
+};
 
 /**
  * Component to display the export page
@@ -14,30 +63,50 @@ import { useAppContext } from '../core/context';
 export const ProjectValidatePage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, isComputing, phase },
+    appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
-  const [currentModel, setCurrentModel] = useState<string | null>(null);
+
+  // model selected
+  const [currentSimpleModelName, setCurrentSimpleModelName] = useState<string | null>(null);
+  const [currentBertModelName, setCurrentBertModelName] = useState<string | null>(null);
+
   // available models
-  const availableModels = useMemo(() => {
-    if (currentScheme && project?.languagemodels?.available?.[currentScheme]) {
-      return Object.keys(project.languagemodels.available[currentScheme]);
-    }
-    return [];
-  }, [project, currentScheme]);
-  useEffect(() => {
-    if (availableModels.length > 0 && !currentModel) {
-      setCurrentModel(availableModels[availableModels.length - 1]);
-    }
-  }, [availableModels, currentModel]);
-  const { deleteBertModel } = useDeleteBertModel(projectName || null);
+  // const availableBertModels = useMemo(() => {
+  //   if (currentScheme && project?.languagemodels?.available?.[currentScheme]) {
+  //     return Object.keys(project.languagemodels.available[currentScheme]);
+  //   }
+  //   return [];
+  // }, [project, currentScheme]);
+
+  const availableBertModels = useMemo(
+    () =>
+      project?.languagemodels.available
+        ? project?.languagemodels.available[currentScheme || '']
+        : [],
+    [project?.languagemodels.available, currentScheme],
+  );
+
+  const availableSimpleModels = useMemo(
+    () =>
+      project?.simplemodel.available
+        ? (project?.simplemodel.available[currentScheme || ''] as ModelDescriptionModel[])
+        : [],
+    [project?.simplemodel.available, currentScheme],
+  );
+
   // hook to api call to launch the test
-  const { evalModel } = useEvalModel(
+  const { evalBertModel } = useEvalBertModel(
     projectName || null,
     currentScheme || null,
-    currentModel || null,
+    currentBertModelName || null,
   );
+
   // get model information from api
-  const { model } = useModelInformations(projectName || null, currentModel || null, isComputing);
+  const { model } = useModelInformations(
+    projectName || null,
+    currentBertModelName || null,
+    isComputing,
+  );
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="validate">
@@ -46,75 +115,98 @@ export const ProjectValidatePage: FC = () => {
           <div className="col-12">
             <Tabs id="panel" className="mt-3" defaultActiveKey="simple">
               <Tab eventKey="simple" title="Simple">
-                {/* <div className="explanations">
-                            The simple model is used during tagging, for the active and maxprob
-                            models.
-                            <a className="problems m-2">
-                              <FaTools />
-                              <Tooltip anchorSelect=".problems" place="top">
-                                Recommended features to train on are embeddings (eg. SBERT) before
-                                training a large fine-tuned model, and BERT predictions once you
-                                have fine-tuned one.
-                              </Tooltip>
-                            </a>
-                          </div> */}
-
-                {/* <SimpleModelDisplay
-                            currentModel={
-                              (currentSimpleModel as unknown as Record<string, never>) || undefined
-                            }
-                          /> */}
+                <div>
+                  <label htmlFor="selected-model">Existing models</label>
+                  <Select
+                    options={Object.values(availableSimpleModels || {}).map((e) => ({
+                      value: e.name,
+                      label: e.name,
+                    }))}
+                    value={
+                      currentSimpleModelName
+                        ? { value: currentSimpleModelName, label: currentSimpleModelName }
+                        : null
+                    }
+                    onChange={(selectedOption) => {
+                      setCurrentSimpleModelName(selectedOption ? selectedOption.value : null);
+                    }}
+                    isSearchable
+                    className="w-50 mt-1"
+                  />
+                </div>
+                <ValidateButtons
+                  modelName={currentSimpleModelName}
+                  kind="simple"
+                  currentScheme={currentScheme || null}
+                  projectSlug={projectName || null}
+                  isComputing={isComputing}
+                  valid={project?.params.valid || false}
+                  test={project?.params.test || false}
+                />
               </Tab>
               <Tab eventKey="bert" title="BERT">
-                <div className="explanations">
-                  Do not use testset statistics to select the best model, otherwise it’s only a
-                  validation set.
-                </div>
-                {/* Select a model to compute testset predictions */}
-                <label htmlFor="selected-model">Existing models</label>
-                <div className="d-flex align-items-center">
-                  <select
-                    id="selected-model"
-                    className="form-select"
-                    onChange={(e) => setCurrentModel(e.target.value)}
-                    value={currentModel || ''}
-                  >
-                    <option></option>
-                    {availableModels.map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}
-                  </select>
-                  <button
-                    className="btn btn p-0"
-                    onClick={() => {
-                      if (currentModel) {
-                        deleteBertModel(currentModel);
-                        setCurrentModel(null);
-                      }
-                    }}
-                  >
-                    <MdOutlineDeleteOutline size={30} />
-                  </button>
-                </div>
                 <div>
-                  {model && project?.params.test && !isComputing && (
-                    <div className="col-12">
-                      <button
-                        className="btn btn-primary m-3"
-                        onClick={() => evalModel('valid')}
-                        disabled={isComputing}
-                      >
-                        Compute validation
-                      </button>
-                      <button
-                        className="btn btn-primary m-3"
-                        onClick={() => evalModel('test')}
-                        disabled={isComputing}
-                      >
-                        Compute test
-                      </button>
-                    </div>
+                  <label htmlFor="selected-model">Existing models</label>
+                  <Select
+                    options={Object.keys(availableBertModels || {}).map((e) => ({
+                      value: e,
+                      label: e,
+                    }))}
+                    value={
+                      currentBertModelName
+                        ? { value: currentBertModelName, label: currentBertModelName }
+                        : null
+                    }
+                    onChange={(selectedOption) => {
+                      setCurrentBertModelName(selectedOption ? selectedOption.value : null);
+                    }}
+                    isSearchable
+                    className="w-50 mt-1"
+                  />
+                </div>
+                <ValidateButtons
+                  modelName={currentBertModelName}
+                  kind="bert"
+                  currentScheme={currentScheme || null}
+                  projectSlug={projectName || null}
+                  isComputing={isComputing}
+                  valid={project?.params.valid || false}
+                  test={project?.params.test || false}
+                />
+                <div>
+                  {/* {model && project?.params.valid && (
+                    <button
+                      className="btn btn-primary m-3"
+                      onClick={() =>
+                        computeModelPrediction(
+                          currentBertModelName || '',
+                          'valid',
+                          currentScheme || '',
+                          'bert',
+                        )
+                      }
+                      disabled={isComputing}
+                    >
+                      Compute on validation set
+                    </button>
                   )}
+                  {model && project?.params.test && (
+                    <button
+                      className="btn btn-primary m-3"
+                      onClick={() =>
+                        computeModelPrediction(
+                          currentBertModelName || '',
+                          'test',
+                          currentScheme || '',
+                          'bert',
+                        )
+                      }
+                      disabled={isComputing}
+                    >
+                      Compute on test set
+                    </button>
+                  )} */}
+
                   <DisplayTrainingProcesses
                     projectSlug={projectName || null}
                     processes={project?.languagemodels.training}
@@ -134,7 +226,7 @@ export const ProjectValidatePage: FC = () => {
                   {model && (
                     <DisplayScores
                       scores={model.valid_scores as unknown as Record<string, number>}
-                      modelName={currentModel || ''}
+                      modelName={currentBertModelName || ''}
                       title="Validation scores"
                     />
                   )}
@@ -142,7 +234,7 @@ export const ProjectValidatePage: FC = () => {
                   {model && (
                     <DisplayScores
                       scores={model.test_scores as unknown as Record<string, number>}
-                      modelName={currentModel || ''}
+                      modelName={currentBertModelName || ''}
                       title="Test scores"
                     />
                   )}

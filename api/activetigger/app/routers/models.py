@@ -119,8 +119,117 @@ async def get_bert(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/models/bert/predict", dependencies=[Depends(verified_user)])
+@router.post("/models/predict", dependencies=[Depends(verified_user)])
 async def predict(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    model_name: str,
+    scheme: str,
+    kind: str,
+    dataset: str = "all",
+    batch_size: int = 32,
+    external_dataset: TextDatasetModel | None = None,
+) -> None:
+    """
+    Start prediction with a model for a specific dataset
+    Manage specific cases for prediction
+    """
+    test_rights(ProjectAction.ADD, current_user.username, project.name)
+    try:
+        # get the data
+        if dataset == "train":
+            status = "predicting"
+            statistics = "outofsample"
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
+            col_label = "labels"
+            col_id = None
+
+        elif dataset == "all":
+            status = "predicting"
+            statistics = "outofsample"
+            col_label = None
+            col_id = project.params.col_id
+            df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
+            # fix in the case where the id column is the row
+            if project.params.col_id != "dataset_row_number":
+                df[project.params.col_id] = project.features.get_column_raw(
+                    project.params.col_id, index="all"
+                )  # add original id
+            else:
+                df["dataset_row_number"] = df.index
+
+        elif dataset == "external":
+            status = "predicting"
+            statistics = "outofsample"
+            col_label = None
+            col_id = None
+            if external_dataset is None:
+                raise HTTPException(status_code=400, detail="External dataset is missing")
+            csv_buffer = io.StringIO(external_dataset.csv)
+            df = pd.read_csv(
+                csv_buffer,
+            )
+            df["text"] = df[external_dataset.text]
+            df["index"] = df[external_dataset.id].apply(str)
+            df.set_index("index", inplace=True)
+            df = df[["text"]].dropna()
+
+        elif dataset == "test":
+            status = "predicting"
+            statistics = "full"
+            col_label = "labels"
+            col_id = None
+            if project.schemes.test is None:
+                raise HTTPException(status_code=500, detail="No test dataset for this project")
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
+
+        elif dataset == "valid":
+            status = "predicting"
+            statistics = "full"
+            col_label = "labels"
+            col_id = None
+            if project.schemes.valid is None:
+                raise HTTPException(status_code=500, detail="No valid dataset for this project")
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["valid"])
+
+        else:
+            raise Exception(f"dataset {dataset} not found")
+
+        # start process to predict
+        if kind == "bert":
+            if set(project.languagemodels.get_labels(model_name)) != set(
+                df["labels"].dropna().unique()
+            ):
+                raise Exception("The testset and the model have different labels")
+            project.languagemodels.clean_files_valid(model_name, dataset)
+            project.languagemodels.start_predicting_process(
+                project_slug=project.name,
+                name=model_name,
+                user=current_user.username,
+                df=df,
+                col_text="text",
+                col_label=col_label,
+                col_id=col_id,
+                dataset=dataset,
+                batch_size=batch_size,
+                status=status,
+                statistics=statistics,
+            )
+        elif kind == "simple":
+            raise NotImplementedError("Not implemented yet")
+        else:
+            raise Exception(f"Model kind {kind} not recognized")
+        orchestrator.log_action(
+            current_user.username,
+            f"PREDICT MODEL: {model_name} - {kind} DATASET: {dataset}",
+            project.name,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/models/bert/predict", dependencies=[Depends(verified_user)])
+async def predict_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_name: str,
@@ -132,6 +241,7 @@ async def predict(
     """
     Start prediction with a model for a specific dataset
     Manage specific cases for prediction
+    TO DEPRECATE WHEN THE MODEL SIMPLE AND BERT WILL BE MERGED
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:

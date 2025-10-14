@@ -5,7 +5,7 @@ import { Tooltip } from 'react-tooltip';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import {
-  useComputeModelPrediction,
+  useComputeBertModelPrediction,
   useGetPredictionsFile,
   useModelInformations,
 } from '../core/api';
@@ -42,7 +42,10 @@ export const ModelPredict: FC = () => {
       : [];
 
   // compute model preduction
-  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, batchSize);
+  const { computeBertModelPrediction } = useComputeBertModelPrediction(
+    projectSlug || null,
+    batchSize,
+  );
 
   // display external form
   const [displayExternalForm, setDisplayExternalForm] = useState<boolean>(false);
@@ -119,7 +122,9 @@ export const ModelPredict: FC = () => {
                     <>
                       <button
                         className="btn btn-info m-2"
-                        onClick={() => computeModelPrediction(currentModel, 'all', currentScheme)}
+                        onClick={() =>
+                          computeBertModelPrediction(currentModel, 'all', currentScheme)
+                        }
                       >
                         Prediction complete dataset
                       </button>

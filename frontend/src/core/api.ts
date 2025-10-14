@@ -1301,6 +1301,43 @@ export function useModelInformations(
 export function useComputeModelPrediction(projectSlug: string | null, batchSize: number) {
   const { notify } = useNotifications();
   const computeModelPrediction = useCallback(
+    async (
+      model_name: string | null,
+      dataset: string | null,
+      scheme: string | null,
+      kind: string | null,
+    ) => {
+      if (projectSlug && model_name && dataset && scheme && kind) {
+        const res = await api.POST('/models/predict', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              model_name: model_name,
+              dataset: dataset,
+              batch_size: batchSize,
+              scheme: scheme,
+              kind: kind,
+            },
+          },
+        });
+        if (!res.error)
+          notify({ type: 'warning', message: 'Computing prediction. It can take some time.' });
+        return true;
+      } else notify({ type: 'error', message: 'Missing parameters' });
+      return null;
+    },
+    [projectSlug, notify, batchSize],
+  );
+
+  return { computeModelPrediction };
+}
+
+/**
+ * Compute model prediction
+ */
+export function useComputeBertModelPrediction(projectSlug: string | null, batchSize: number) {
+  const { notify } = useNotifications();
+  const computeBertModelPrediction = useCallback(
     async (model_name: string, dataset: string, scheme: string) => {
       if (projectSlug) {
         const res = await api.POST('/models/bert/predict', {
@@ -1323,7 +1360,7 @@ export function useComputeModelPrediction(projectSlug: string | null, batchSize:
     [projectSlug, notify, batchSize],
   );
 
-  return { computeModelPrediction };
+  return { computeBertModelPrediction };
 }
 
 /**
@@ -1866,16 +1903,16 @@ export function useReconciliate(projectSlug: string, scheme: string | null) {
 }
 
 /**
- * Launch test
+ * Launch prediction for bert models
  */
-export function useEvalModel(
+export function useEvalBertModel(
   projectSlug: string | null,
   scheme: string | null,
   model: string | null,
 ) {
   const { notify } = useNotifications();
 
-  const evalModel = useCallback(
+  const evalBertModel = useCallback(
     async (dataset: string) => {
       if (scheme && projectSlug && model) {
         const res = await api.POST('/models/bert/predict', {
@@ -1897,7 +1934,7 @@ export function useEvalModel(
     [projectSlug, scheme, notify, model],
   );
 
-  return { evalModel };
+  return { evalBertModel };
 }
 
 export function useGetGenModels() {

@@ -14,7 +14,6 @@ export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }
       <h5 className="subsection">Current {currentModel.model} model</h5>
       <details className="m-2">
         <summary>Model parameters</summary>
-
         <table className="table table-striped table-hover">
           <tbody>
             {currentModel.params &&
