@@ -33,6 +33,8 @@ class FitModel(BaseTask):
         Fit simplemodel and calculate statistics
         """
 
+        print("STARTING FIT MODEL")
+
         # drop NA values
         f = self.Y.notnull()
         X_train, X_test, Y_train, Y_test = train_test_split(
@@ -62,6 +64,8 @@ class FitModel(BaseTask):
             statistics_cv10.false_predictions = None
         else:
             statistics_cv10 = None
+
+        print("FIT MODEL DONE")
 
         return FitModelResults(
             model=self.model,

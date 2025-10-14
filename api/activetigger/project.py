@@ -473,12 +473,12 @@ class Project:
         simplemodel = SimpleModelInModel(
             name=name,
             scheme=scheme,
-            features=model.features,
             model=model.model_type,
+            features=model.features,
             params=model.model_params,
             standardize=model.standardize,
-            cv10=model.cv10,
             dichotomize=model.model_params.get("dichotomize", None),
+            cv10=model.cv10,
         )
         self.train_simplemodel(simplemodel, username, retrain=True)
 

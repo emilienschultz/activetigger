@@ -217,24 +217,23 @@ class SimpleModels:
         # add features in the params
         model_params["features"] = features
 
-        self.computing.append(
-            SimpleModelComputing(
-                user=user,
-                unique_id=unique_id,
-                time=datetime.now(),
-                kind="simplemodel",
-                scheme=scheme,
-                model_type=model_type,
-                name=name,
-                features=features,
-                labels=labels,
-                model_params=model_params,
-                standardize=standardize,
-                model=model,
-                cv10=cv10,
-                retrain=retrain,
-            )
+        req = SimpleModelComputing(
+            user=user,
+            unique_id=unique_id,
+            time=datetime.now(),
+            kind="simplemodel",
+            scheme=scheme,
+            model_type=model_type,
+            name=name,
+            features=features,
+            labels=labels,
+            model_params=model_params,
+            standardize=standardize,
+            model=model,
+            cv10=cv10,
+            retrain=retrain,
         )
+        self.computing.append(req)
 
     def available(self) -> dict[str, list[ModelDescriptionModel]]:
         """
