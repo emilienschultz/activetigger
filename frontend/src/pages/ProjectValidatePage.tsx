@@ -44,8 +44,27 @@ export const ProjectValidatePage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
-            <Tabs id="panel" className="mt-3" defaultActiveKey="bert">
-              {/* <Tab eventKey="quick" title="Quick"></Tab> */}
+            <Tabs id="panel" className="mt-3" defaultActiveKey="simple">
+              <Tab eventKey="simple" title="Simple">
+                {/* <div className="explanations">
+                            The simple model is used during tagging, for the active and maxprob
+                            models.
+                            <a className="problems m-2">
+                              <FaTools />
+                              <Tooltip anchorSelect=".problems" place="top">
+                                Recommended features to train on are embeddings (eg. SBERT) before
+                                training a large fine-tuned model, and BERT predictions once you
+                                have fine-tuned one.
+                              </Tooltip>
+                            </a>
+                          </div> */}
+
+                {/* <SimpleModelDisplay
+                            currentModel={
+                              (currentSimpleModel as unknown as Record<string, never>) || undefined
+                            }
+                          /> */}
+              </Tab>
               <Tab eventKey="bert" title="BERT">
                 <div className="explanations">
                   Do not use testset statistics to select the best model, otherwise it’s only a

@@ -139,42 +139,20 @@ export const ProjectModelPage: FC = () => {
                         Test mode activated - simple model are disabled
                       </div>
                     )}
-                    {phase != 'test' && (
-                      <>
-                        {/* <div className="explanations">
-                            The simple model is used during tagging, for the active and maxprob
-                            models.
-                            <a className="problems m-2">
-                              <FaTools />
-                              <Tooltip anchorSelect=".problems" place="top">
-                                Recommended features to train on are embeddings (eg. SBERT) before
-                                training a large fine-tuned model, and BERT predictions once you
-                                have fine-tuned one.
-                              </Tooltip>
-                            </a>
-                          </div> */}
-
-                        {/* <SimpleModelDisplay
-                            currentModel={
-                              (currentSimpleModel as unknown as Record<string, never>) || undefined
-                            }
-                          /> */}
-                        <SimpleModelManagement
-                          projectName={projectSlug || null}
-                          currentScheme={currentScheme || null}
-                          baseSimpleModels={
-                            baseSimpleModels as unknown as Record<string, Record<string, number>>
-                          }
-                          availableSimpleModels={availableSimpleModels[currentScheme || ''] || []}
-                          availableFeatures={availableFeatures}
-                          availableLabels={availableLabels}
-                          kindScheme={kindScheme}
-                          currentModel={
-                            (currentSimpleModel as unknown as Record<string, never>) || undefined
-                          }
-                        />
-                      </>
-                    )}
+                    <SimpleModelManagement
+                      projectName={projectSlug || null}
+                      currentScheme={currentScheme || null}
+                      baseSimpleModels={
+                        baseSimpleModels as unknown as Record<string, Record<string, number>>
+                      }
+                      availableSimpleModels={availableSimpleModels[currentScheme || ''] || []}
+                      availableFeatures={availableFeatures}
+                      availableLabels={availableLabels}
+                      kindScheme={kindScheme}
+                      currentModel={
+                        (currentSimpleModel as unknown as Record<string, never>) || undefined
+                      }
+                    />
                   </div>
                 </div>
               </Tab>

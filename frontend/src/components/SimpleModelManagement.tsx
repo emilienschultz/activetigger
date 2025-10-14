@@ -3,9 +3,10 @@ import { Tab, Tabs } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import Select from 'react-select';
-import { useDeleteSimpleModel, useTrainSimpleModel } from '../core/api';
+import { useDeleteSimpleModel, useGetSimpleModel, useTrainSimpleModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
-import { ModelDescriptionModel, SimpleModelInModel } from '../types';
+import { MLStatisticsModel, ModelDescriptionModel, SimpleModelInModel } from '../types';
+import { DisplayScores } from './DisplayScores';
 
 // TODO: default values + avoid generic parameters
 
@@ -20,27 +21,38 @@ interface SimpleModelManagementProps {
   currentModel?: Record<string, never>;
 }
 
-export default function ModelsTable(model: ModelDescriptionModel) {
+export default function ModelsTable(
+  name: string | null,
+  availableSimpleModels: ModelDescriptionModel[],
+) {
+  const model = availableSimpleModels.filter((e) => e.name == name)[0];
   if (!model) return null;
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Name</td>
-          <td>{model.name}</td>
-        </tr>
-        <tr>
-          <td>Params</td>
-          <td>{JSON.stringify(model.parameters)}</td>
-        </tr>
-      </tbody>
-    </table>
+    <>
+      <table className="table table-striped table-hover w-50 mt-2">
+        <thead>
+          <tr>
+            <th scope="col">Key</th>
+            <th scope="col">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {model.parameters &&
+            Object.entries(model.parameters).map(([key, value], i) => (
+              <tr key={i}>
+                <td>{key}</td>
+                <td>
+                  {Array.isArray(value)
+                    ? (value as string[]).join(', ') // or use bullets if you prefer
+                    : typeof value === 'object' && value !== null
+                      ? JSON.stringify(value, null, 2)
+                      : String(value)}
+                </td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 
@@ -63,7 +75,14 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // current simplemodel
-  const [currentSimpleModel, setCurrentSimpleModel] = useState<string | null>(null);
+  const [currentSimpleModelName, setCurrentSimpleModelName] = useState<string | null>(null);
+
+  // get information on the simplemodel
+  const { currentModel: currentModelInformations } = useGetSimpleModel(
+    projectName,
+    currentSimpleModelName,
+    currentSimpleModelName,
+  );
 
   // delete simplemodel
   const { deleteSimpleModel } = useDeleteSimpleModel(projectName);
@@ -128,7 +147,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   };
 
   // build default features selected
-  // const default_features = features.filter((e) => e.label.includes(e.value));
   type Feature = {
     label: string;
     value: string;
@@ -156,10 +174,12 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
               label: e.name,
             }))}
             value={
-              currentSimpleModel ? { value: currentSimpleModel, label: currentSimpleModel } : null
+              currentSimpleModelName
+                ? { value: currentSimpleModelName, label: currentSimpleModelName }
+                : null
             }
             onChange={(selectedOption) => {
-              setCurrentSimpleModel(selectedOption ? selectedOption.value : null);
+              setCurrentSimpleModelName(selectedOption ? selectedOption.value : null);
             }}
             isSearchable
             className="w-50 mt-1"
@@ -167,16 +187,49 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           <button
             className="btn btn p-0"
             onClick={() => {
-              if (currentSimpleModel) {
-                deleteSimpleModel(currentSimpleModel);
-                setCurrentSimpleModel(null);
+              if (currentSimpleModelName) {
+                deleteSimpleModel(currentSimpleModelName);
+                setCurrentSimpleModelName(null);
               }
             }}
           >
             <MdOutlineDeleteOutline size={30} />
           </button>
         </div>
-        {ModelsTable(availableSimpleModels.filter((e) => e.name == currentSimpleModel)[0])}
+        <div>
+          <table className="table table-striped table-hover w-50 mt-2">
+            <tbody>
+              {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
+                <tr key={i}>
+                  <td>{key}</td>
+                  <td>
+                    {Array.isArray(value)
+                      ? (value as string[]).join(', ') // or use bullets if you prefer
+                      : typeof value === 'object' && value !== null
+                        ? JSON.stringify(value, null, 2)
+                        : String(value)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {currentModelInformations && (
+          <div>
+            <DisplayScores
+              title=""
+              scores={currentModelInformations.statistics as MLStatisticsModel}
+            />
+            {currentModelInformations.statistics_cv10 && (
+              <DisplayScores
+                title="Cross validation CV10"
+                scores={
+                  currentModelInformations.statistics_cv10 as unknown as Record<string, number>
+                }
+              />
+            )}
+          </div>
+        )}
       </Tab>
       <Tab eventKey="new" title="New">
         <div>
