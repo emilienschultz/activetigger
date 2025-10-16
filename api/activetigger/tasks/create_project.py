@@ -225,10 +225,8 @@ class CreateProject(BaseTask):
         trainset[list(set(["text", "limit"] + self.params.cols_context + keep_id))].to_parquet(
             self.params.dir.joinpath(self.train_file), index=True
         )
-        trainset[[]].to_parquet(self.params.dir.joinpath(self.features_file), index=True)
 
         # save parameters (without the data)
-        # params.cols_label = []  # reverse dummy
         project = self.params.model_dump()
 
         # add elements for the parameters

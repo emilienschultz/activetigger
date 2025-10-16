@@ -112,8 +112,9 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
           <h4 className="subsection">Import a {dataset} set</h4>
           <div className="alert alert-info">
             <form onSubmit={handleSubmit(onSubmit)}>
-              No {dataset} data set has been created. You can upload a {dataset} set. Careful : id
-              will be modified with "imported_".
+              No {dataset} data set has been created. You can upload a {dataset} set. Careful : all
+              features will be dropped and need to be computed again, and id will be modified with
+              "imported_".
               <label className="form-label" htmlFor="csvFile">
                 File to upload
               </label>

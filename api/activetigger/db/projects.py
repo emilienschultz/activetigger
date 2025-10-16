@@ -565,6 +565,13 @@ class ProjectsService:
         session.commit()
         session.close()
 
+    def delete_project_features(self, project_slug: str):
+        """
+        Delete all features for a project
+        """
+        with self.Session.begin() as session:
+            session.query(Features).filter(Features.project_slug == project_slug).delete()
+
     def delete_all_features(self, project_slug: str):
         with self.Session.begin() as session:
             session.query(Features).filter(Features.project_slug == project_slug).delete()

@@ -563,14 +563,7 @@ class SimpleModelInModel(BaseModel):
     scheme: str
     model: str
     features: list
-    params: (
-        LiblinearParams
-        | KnnParams
-        | RandomforestParams
-        | LassoParams
-        | Multi_naivebayesParams
-        | dict
-    )
+    params: dict
     standardize: bool | None = True
     dichotomize: str | None = None
     cv10: bool = False

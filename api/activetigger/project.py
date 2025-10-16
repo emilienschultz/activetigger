@@ -69,7 +69,9 @@ class Project:
     path_models: Path
     db_manager: DatabaseManager
     params: ProjectModel
-    content: DataFrame
+    train: DataFrame | None
+    valid: DataFrame | None
+    test: DataFrame | None
     schemes: Schemes
     features: Features
     languagemodels: LanguageModels
@@ -98,6 +100,9 @@ class Project:
         self.project_slug = project_slug
         self.errors = []  # TODO Move to specific class / db in the future
         self.users = Users(self.db_manager)
+        self.train = None
+        self.valid = None
+        self.test = None
 
         # load the project if exist
         if self.exists():
@@ -284,21 +289,32 @@ class Project:
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
 
-        # loading data
-        self.content = pd.read_parquet(self.params.dir.joinpath("train.parquet"))
+        # loading data train, test, valid
+        self.train = pd.read_parquet(self.params.dir.joinpath("train.parquet"))
+        if self.params.dir.joinpath(config.test_file).exists():
+            self.test = pd.read_parquet(self.params.dir.joinpath(config.test_file))
+        else:
+            self.test = None
+        if self.params.dir.joinpath(config.valid_file).exists():
+            self.valid = pd.read_parquet(self.params.dir.joinpath(config.valid_file))
+        else:
+            self.valid = None
 
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
-            self.params.dir.joinpath(config.train_file),
-            self.params.dir.joinpath(config.test_file),
-            self.params.dir.joinpath(config.valid_file),
             self.db_manager,
+            self.train,
+            self.valid,
+            self.test,
         )
         self.features = Features(
             project_slug,
             self.params.dir.joinpath(config.features_file),
             self.params.dir.joinpath(config.data_all),
+            self.params.dir.joinpath(config.train_file),
+            self.params.dir.joinpath(config.valid_file),
+            self.params.dir.joinpath(config.test_file),
             self.path_models,
             self.queue,
             cast(list[FeatureComputing], self.computing),
@@ -463,6 +479,9 @@ class Project:
             self.params.project_slug, jsonable_encoder(self.params)
         )
 
+        # reset the features file
+        self.features.reset_features_file()
+
     def retrain_simplemodel(self, name: str, scheme: str, username: str) -> None:
         """
         Retrain a simplemodel
@@ -527,7 +546,7 @@ class Project:
             params["dichotomize"] = simplemodel.dichotomize
 
         # get data
-        df_features = self.features.get(simplemodel.features)
+        df_features = self.features.get(simplemodel.features, dataset="train")
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
 
         # management for multilabels / dichotomize
@@ -720,10 +739,10 @@ class Project:
             limit = 1200
             context = {}
         else:
-            limit = int(self.content.loc[element_id, "limit"])
+            limit = int(self.train.loc[element_id, "limit"])
             # get context
             context = dict(
-                self.content.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                self.train.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
             )
 
         return ElementOutModel(
@@ -792,7 +811,7 @@ class Project:
             )
 
         if dataset == "train":
-            if element_id not in self.content.index:
+            if element_id not in self.train.index:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
@@ -811,7 +830,7 @@ class Project:
 
             context = cast(
                 dict[str, Any],
-                self.content.loc[element_id, self.params.cols_context]  # type: ignore[index]
+                self.train.loc[element_id, self.params.cols_context]  # type: ignore[index]
                 .fillna("NA")
                 .astype(str)
                 .to_dict(),
@@ -819,13 +838,13 @@ class Project:
 
             return ElementOutModel(
                 element_id=element_id,
-                text=str(self.content.loc[element_id, "text"]),
+                text=str(self.train.loc[element_id, "text"]),
                 context=context,
                 selection="request",
                 predict=predict,
                 info="get specific",
                 frame=None,
-                limit=cast(int, self.content.loc[element_id, "limit"]),
+                limit=cast(int, self.train.loc[element_id, "limit"]),
                 history=history,
             )
 
@@ -902,7 +921,7 @@ class Project:
 
         r = ProjectDescriptionModel(
             users=users,
-            train_set_n=len(self.schemes.content),
+            train_set_n=len(self.train),
             train_annotated_n=len(df_train.dropna(subset=["labels"])),
             train_annotated_distribution=train_annotated_distribution,
             valid_set_n=valid_set_n,
@@ -983,7 +1002,7 @@ class Project:
         if path is None:
             raise ValueError("Problem of filesystem for project")
 
-        data = self.features.get(features)
+        data = self.features.get(features, dataset="all")
 
         file_name = f"extract_schemes_{self.name}.{format}"
 
@@ -1080,7 +1099,7 @@ class Project:
         table["answer"] = self.generations.filter(table["answer"], params.filters)
 
         # join the text
-        table = table.join(self.content["text"], on="index")
+        table = table.join(self.train["text"], on="index")
 
         return table
 
@@ -1146,9 +1165,9 @@ class Project:
                     self.params.dir.joinpath("data_all.parquet"),
                     columns=update.cols_context,
                 )
-            self.content.drop(columns=self.params.cols_context, inplace=True)
-            self.content = pd.concat([self.content, df.loc[self.content.index]], axis=1)
-            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.train.drop(columns=self.params.cols_context, inplace=True)
+            self.train = pd.concat([self.train, df.loc[self.train.index]], axis=1)
+            self.train.to_parquet(self.params.dir.joinpath("train.parquet"))
             self.params.cols_context = update.cols_context
             print("Context updated")
 
@@ -1159,12 +1178,12 @@ class Project:
                     self.params.dir.joinpath("data_all.parquet"),
                     columns=update.cols_text,
                 )
-            df_sub = df.loc[self.content.index]
+            df_sub = df.loc[self.train.index]
             df_sub["text"] = df_sub[update.cols_text].apply(
                 lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
             )
-            self.content["text"] = df_sub["text"]
-            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.train["text"] = df_sub["text"]
+            self.train.to_parquet(self.params.dir.joinpath("train.parquet"))
             self.params.cols_text = update.cols_text
             drop_features = True
             del df_sub
@@ -1175,12 +1194,12 @@ class Project:
             if df is None:
                 df = pd.read_parquet(
                     self.params.dir.joinpath("data_all.parquet"),
-                    columns=list(self.content.columns),
+                    columns=list(self.train.columns),
                 )
             # index of elements used
-            elements_index = list(self.content.index)
-            if self.schemes.test is not None:
-                elements_index += list(self.schemes.test.index)
+            elements_index = list(self.train.index)
+            if self.train.test is not None:
+                elements_index += list(self.train.test.index)
 
             # take elements that are not in index
             df = df[~df.index.isin(elements_index)]
@@ -1191,11 +1210,11 @@ class Project:
             # drop na elements to avoid problems
             elements_to_add = elements_to_add[elements_to_add["text"].notna()]
 
-            self.content = pd.concat([self.content, elements_to_add])
-            self.content.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.train = pd.concat([self.train, elements_to_add])
+            self.train.to_parquet(self.params.dir.joinpath("train.parquet"))
 
             # update params
-            self.params.n_train = len(self.content)
+            self.params.n_train = len(self.train)
 
             # drop existing features
             drop_features = True
@@ -1208,22 +1227,13 @@ class Project:
             del df
 
         if drop_features:
-            self.drop_features()
+            self.features.reset_features_file()
 
         # update the database
         self.db_manager.projects_service.update_project(
             self.params.project_slug, jsonable_encoder(self.params)
         )
         return None
-
-    def drop_features(self) -> None:
-        """
-        Clean all the features of the project
-        """
-        if not self.params.dir:
-            raise ValueError("No directory for project")
-        self.content[[]].to_parquet(self.params.dir.joinpath("features.parquet"), index=True)
-        self.features.projects_service.delete_all_features(self.name)
 
     def start_languagemodel_training(self, bert: BertModelModel, username: str) -> None:
         """

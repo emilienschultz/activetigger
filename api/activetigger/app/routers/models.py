@@ -1,5 +1,4 @@
 import io
-import os
 from typing import Annotated
 
 import pandas as pd  # type: ignore[import]
@@ -40,7 +39,6 @@ async def train_quickmodel(
     Compute simplemodel
     """
     try:
-        print("WORK")
         project.train_simplemodel(simplemodel, current_user.username)
         orchestrator.log_action(current_user.username, "TRAIN SIMPLE MODEL", project.name)
     except Exception as e:
@@ -138,15 +136,14 @@ async def predict(
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
         # get the data
+        status = "predicting"
         if dataset == "train":
-            status = "predicting"
             statistics = "outofsample"
             df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
             col_label = "labels"
             col_id = None
 
         elif dataset == "all":
-            status = "predicting"
             statistics = "outofsample"
             col_label = None
             col_id = project.params.col_id
@@ -160,7 +157,6 @@ async def predict(
                 df["dataset_row_number"] = df.index
 
         elif dataset == "external":
-            status = "predicting"
             statistics = "outofsample"
             col_label = None
             col_id = None
@@ -176,7 +172,6 @@ async def predict(
             df = df[["text"]].dropna()
 
         elif dataset == "test":
-            status = "predicting"
             statistics = "full"
             col_label = "labels"
             col_id = None
@@ -185,7 +180,6 @@ async def predict(
             df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
 
         elif dataset == "valid":
-            status = "predicting"
             statistics = "full"
             col_label = "labels"
             col_id = None
@@ -217,6 +211,9 @@ async def predict(
                 statistics=statistics,
             )
         elif kind == "simple":
+            project.simplemodels.start_predicting_process(
+                name=model_name, username=current_user.username, dataset=dataset, df=df
+            )
             raise NotImplementedError("Not implemented yet")
         else:
             raise Exception(f"Model kind {kind} not recognized")

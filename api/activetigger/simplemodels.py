@@ -77,54 +77,6 @@ class SimpleModels:
 
         self.loaded = {}
 
-    def add(self, element: SimpleModelComputing, results) -> None:
-        """
-        Add computed model
-        - content in filesystem
-        - add it to the database
-
-        Manage the specific case of retrain
-        """
-
-        # Add element from the computation
-        element.time = datetime.now()
-        element.model = results.model
-        element.proba = results.proba
-        element.statistics = results.statistics
-        element.statistics_cv10 = results.statistics_cv10
-
-        # Create the filesystem
-        model_path = self.path.joinpath(element.name)
-
-        # if retrain, clear the folder
-        if element.retrain:
-            shutil.rmtree(model_path)
-            os.mkdir(model_path)
-        else:
-            if model_path.exists():
-                raise Exception("The model already exists")
-            os.mkdir(model_path)
-
-        # Write the proba
-        if element.proba is not None:
-            element.proba.to_csv(model_path / "proba.csv")
-
-        # Dump it in the folder
-        with open(model_path / "model.pkl", "wb") as file:
-            pickle.dump(element, file)
-
-        # Add the entry in the database
-        self.language_models_service.add_model(
-            kind="simplemodel",
-            name=element.name,
-            user=element.user,
-            project=self.project_slug,
-            scheme=element.scheme or "default",
-            params=element.model_params or {},
-            path=str(model_path),
-            status="trained",
-        )
-
     def compute_simplemodel(
         self,
         project_slug: str,
@@ -236,6 +188,54 @@ class SimpleModels:
             retrain=retrain,
         )
         self.computing.append(req)
+
+    def add(self, element: SimpleModelComputing, results) -> None:
+        """
+        Add computed model
+        - content in filesystem
+        - add it to the database
+
+        Manage the specific case of retrain
+        """
+
+        # Add element from the computation
+        element.time = datetime.now()
+        element.model = results.model
+        element.proba = results.proba
+        element.statistics = results.statistics
+        element.statistics_cv10 = results.statistics_cv10
+
+        # Create the filesystem
+        model_path = self.path.joinpath(element.name)
+
+        # if retrain, clear the folder
+        if element.retrain:
+            shutil.rmtree(model_path)
+            os.mkdir(model_path)
+        else:
+            if model_path.exists():
+                raise Exception("The model already exists")
+            os.mkdir(model_path)
+
+        # Write the proba
+        if element.proba is not None:
+            element.proba.to_csv(model_path / "proba.csv")
+
+        # Dump it in the folder
+        with open(model_path / "model.pkl", "wb") as file:
+            pickle.dump(element, file)
+
+        # Add the entry in the database
+        self.language_models_service.add_model(
+            kind="simplemodel",
+            name=element.name,
+            user=element.user,
+            project=self.project_slug,
+            scheme=element.scheme or "default",
+            params=element.model_params or {},
+            path=str(model_path),
+            status="trained",
+        )
 
     def available(self) -> dict[str, list[ModelDescriptionModel]]:
         """
@@ -380,90 +380,14 @@ class SimpleModels:
         if name in self.loaded:
             del self.loaded[name]
 
-    # def loads(self) -> bool:
-    #     """
-    #     Load
-    #     """
-    #     if not (self.path / self.save_file).exists():
-    #         return False
-    #     with open(self.path / self.save_file, "rb") as file:
-    #         self.existing = pickle.load(file)
-    #     return True
-
-    # def add(self, element: SimpleModelComputing, results) -> None:
-    #     """
-    #     Add simplemodel after computation in the list of existing simplemodels
-    #     And save the element
-    #     """
-
-    #     element.model = results.model
-    #     element.proba = results.proba
-    #     element.statistics = results.statistics
-    #     element.statistics_cv10 = results.statistics_cv10
-    #     if element.user not in self.existing:
-    #         self.existing[element.user] = {}
-    #     self.existing[element.user][element.scheme] = element
-    #     self.dumps()
-
-    # def exists(self, user: str, scheme: str) -> bool:
-    #     """
-    #     Test if a simplemodel exists for a user/scheme
-    #     """
-    #     if user in self.existing:
-    #         if scheme in self.existing[user]:
-    #             return True
-    #     return False
-
-    # def training(self) -> dict[str, list[str]]:
-    #     """
-    #     Currently under training
-    #     """
-    #     return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
-
-    # def available(self) -> dict[str, dict[str, SimpleModelOutModel]]:
-    #     """
-    #     Available simplemodels
-    #     """
-    #     r: dict[str, dict[str, SimpleModelOutModel]] = {}
-    #     for u in self.existing:
-    #         r[u] = {}
-    #         for s in self.existing[u]:
-    #             sm = self.existing[u][s]
-    #             r[u][s] = SimpleModelOutModel(
-    #                 scheme=s,
-    #                 username=u,
-    #                 model=sm.name,
-    #                 params=sm.model_params,
-    #                 features=sm.features,
-    #                 statistics=sm.statistics,
-    #                 statistics_cv10=sm.statistics_cv10,
-    #             )
-    #     return r
-
-    # def get(self, scheme: str, username: str) -> SimpleModelOutModel | None:
-    #     """
-    #     Get a specific simplemodel
-    #     """
-    #     if username in self.existing:
-    #         if scheme in self.existing[username]:
-    #             sm = self.existing[username][scheme]
-    #             return SimpleModelOutModel(
-    #                 model=sm.name,
-    #                 params=sm.model_params,
-    #                 features=sm.features,
-    #                 statistics=sm.statistics,
-    #                 statistics_cv10=sm.statistics_cv10,
-    #                 scheme=scheme,
-    #                 username=username,
-    #             )
-    #     return None
-
-    # def get_model(self, username: str, scheme: str) -> SimpleModelComputing:
-    #     """
-    #     Select a specific model in the repo
-    #     """
-    #     if username not in self.existing:
-    #         raise Exception("The user does not exist")
-    #     if scheme not in self.existing[username]:
-    #         raise Exception("The scheme does not exist")
-    #     return self.existing[username][scheme]
+    def start_predicting_process(
+        self, name: str, username: str, dataset: str, df: DataFrame
+    ) -> None:
+        """
+        Start the predicting process for a specific model
+        """
+        if not self.exists(name):
+            raise Exception("The model does not exist")
+        sm = self.get(name)
+        Y = sm.model.transform(df)
+        print(Y)
