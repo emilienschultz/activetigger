@@ -211,10 +211,11 @@ async def predict(
                 statistics=statistics,
             )
         elif kind == "simple":
+            sm = project.simplemodels.get(model_name)
+            df = project.features.get(sm.features)
             project.simplemodels.start_predicting_process(
                 name=model_name, username=current_user.username, dataset=dataset, df=df
             )
-            raise NotImplementedError("Not implemented yet")
         else:
             raise Exception(f"Model kind {kind} not recognized")
         orchestrator.log_action(

@@ -7,17 +7,17 @@ from sklearn.model_selection import (  # type: ignore[import]
     train_test_split,
 )
 
-from activetigger.datamodels import FitModelResults
+from activetigger.datamodels import TrainMLResults
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
 
-class FitModel(BaseTask):
+class TrainML(BaseTask):
     """
     Fit a sklearn model
     """
 
-    kind = "fit_model"
+    kind = "train_ml"
 
     def __init__(
         self, model: BaseEstimator, X: pd.DataFrame, Y: pd.Series, cv10: bool = False, **kwargs
@@ -28,7 +28,7 @@ class FitModel(BaseTask):
         self.Y = Y
         self.cv10 = cv10
 
-    def __call__(self) -> FitModelResults:
+    def __call__(self) -> TrainMLResults:
         """
         Fit simplemodel and calculate statistics
         """
@@ -63,7 +63,7 @@ class FitModel(BaseTask):
         else:
             statistics_cv10 = None
 
-        return FitModelResults(
+        return TrainMLResults(
             model=self.model,
             proba=proba,
             statistics=statistics,

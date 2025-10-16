@@ -29,7 +29,8 @@ from activetigger.datamodels import (
 from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.queue import Queue
-from activetigger.tasks.fit_model import FitModel
+from activetigger.tasks.predict_ml import PredictML
+from api.activetigger.tasks.train_ml import TrainML
 
 
 class SimpleModels:
@@ -165,13 +166,14 @@ class SimpleModels:
             "labels": labels,
             "cv10": cv10,
         }
-        unique_id = self.queue.add_task("simplemodel", project_slug, FitModel(**args))
+        unique_id = self.queue.add_task("simplemodel", project_slug, TrainML(**args))
         del args
 
         # add features in the params
         model_params["features"] = features
 
         req = SimpleModelComputing(
+            status="training",
             user=user,
             unique_id=unique_id,
             time=datetime.now(),
@@ -389,5 +391,27 @@ class SimpleModels:
         if not self.exists(name):
             raise Exception("The model does not exist")
         sm = self.get(name)
-        Y = sm.model.transform(df)
-        print(Y)
+        file_name = f"predict_{dataset}.parquet"
+        # load the model
+        unique_id = self.queue.add_task(
+            "prediction",
+            self.project_slug,
+            PredictML(
+                X=df,
+                model=sm.model,
+                path=self.path.joinpath(name),
+                file_name=file_name,
+            ),
+            queue="gpu",
+        )
+        self.computing.append(
+            SimpleModelComputing(
+                status="predicting",
+                user=username,
+                model_name=name,
+                unique_id=unique_id,
+                time=datetime.now(),
+                kind="predict_bert",
+                dataset=dataset,
+            )
+        )

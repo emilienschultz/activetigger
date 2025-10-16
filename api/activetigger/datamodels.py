@@ -575,6 +575,7 @@ class SimpleModelComputing(ProcessComputing):
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+    status: Literal["training", "predicting"]
     name: str
     user: str
     features: list
@@ -906,7 +907,7 @@ class FeatureDescriptionModel(BaseModel):
     cols: list[str]
 
 
-class FitModelResults(BaseModel):
+class TrainMLResults(BaseModel):
     model: Any
     proba: DataFrame
     statistics: MLStatisticsModel
