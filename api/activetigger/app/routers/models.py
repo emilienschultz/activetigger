@@ -40,6 +40,7 @@ async def train_quickmodel(
     Compute simplemodel
     """
     try:
+        print("WORK")
         project.train_simplemodel(simplemodel, current_user.username)
         orchestrator.log_action(current_user.username, "TRAIN SIMPLE MODEL", project.name)
     except Exception as e:

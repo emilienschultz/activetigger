@@ -56,6 +56,7 @@ async def get_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
+    model: str | None = None,
 ) -> ProjectionOutModel | None:
     """
     Get projection if computed
@@ -64,6 +65,7 @@ async def get_projection(
         return project.get_projection(
             username=current_user.username,
             scheme=scheme,
+            model=model,
         )
 
     except Exception as e:

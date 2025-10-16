@@ -216,6 +216,12 @@ export const ProjectTagPage: FC = () => {
 
   if (!projectName || !currentScheme) return;
 
+  const statisticsDataset = (dataset: string) => {
+    if (dataset === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
+    if (dataset === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
+    if (dataset === 'test') return `${statistics?.test_annotated_n}/${statistics?.test_set_n}`;
+  };
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
       <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>
@@ -250,8 +256,7 @@ export const ProjectTagPage: FC = () => {
                     </div>
                     {statistics ? (
                       <span className="badge text-bg-light currentstatistics">
-                        Annotated :{' '}
-                        {`${statistics[phase == 'test' ? 'test_annotated_n' : 'train_annotated_n']} / ${statistics[phase == 'test' ? 'test_set_n' : 'train_set_n']} ; Selected : ${nSample ? nSample : ''} `}
+                        {`Annotated : ${statisticsDataset(phase)} ; Selected : ${nSample ? nSample : ''} `}
                       </span>
                     ) : (
                       ''

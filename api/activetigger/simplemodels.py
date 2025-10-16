@@ -148,6 +148,8 @@ class SimpleModels:
         logger_simplemodel.info("Intiating the computation process for the simplemodel")
         X, Y, labels = self.transform_data(df, col_labels, col_features, standardize)
 
+        print("WE ARE HERE", model_type, model_params)
+
         # default parameters
         if model_params is None:
             model_params = self.available_models[model_type].dict()

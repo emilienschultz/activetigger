@@ -137,11 +137,6 @@ export const ProjectModelPage: FC = () => {
               <Tab eventKey="simple" title="Simple">
                 <div className="container-fluid">
                   <div className="row">
-                    {phase == 'test' && (
-                      <div className="alert alert-warning">
-                        Test mode activated - simple model are disabled
-                      </div>
-                    )}
                     <SimpleModelManagement
                       projectName={projectSlug || null}
                       currentScheme={currentScheme || null}

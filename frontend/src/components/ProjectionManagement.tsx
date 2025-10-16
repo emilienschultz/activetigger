@@ -51,6 +51,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
     projectName,
     currentScheme,
+    activeSimpleModel,
   );
 
   // unique labels

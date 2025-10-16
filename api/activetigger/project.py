@@ -915,7 +915,9 @@ class Project:
         )
         return r
 
-    def get_projection(self, username: str, scheme: str) -> ProjectionOutModel | None:
+    def get_projection(
+        self, username: str, scheme: str, model: str | None = None
+    ) -> ProjectionOutModel | None:
         """
         Get projection if computed
         """
@@ -928,8 +930,8 @@ class Project:
         data["labels"] = df["labels"].fillna("NA")
 
         # get & add predictions if available
-        if self.simplemodels.exists(username, scheme):
-            data["prediction"] = self.simplemodels.get_prediction(username, scheme)["prediction"]
+        if model and self.simplemodels.exists(model):
+            data["prediction"] = self.simplemodels.get_prediction(model)["prediction"]
 
         return ProjectionOutModel(
             index=list(data.index),
