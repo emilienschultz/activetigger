@@ -367,14 +367,17 @@ class Project:
             self.params.project_slug, dataset
         )
         if dataset == "test":
-            self.schemes.test = None
+            self.test = None
             self.params.test = False
         if dataset == "valid":
-            self.schemes.valid = None
+            self.valid = None
             self.params.valid = False
         self.db_manager.projects_service.update_project(
             self.params.project_slug, jsonable_encoder(self.params)
         )
+
+        # reset the features file
+        self.features.reset_features_file()
 
     def add_evalset(
         self, dataset, evalset: EvalSetDataModel, username: str, project_slug: str
@@ -467,11 +470,11 @@ class Project:
         # write the dataset
         if dataset == "test":
             df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
-            self.schemes.test = df[["text"]]
+            self.test = df[["text"]]
             self.params.test = True
         else:
             df[["text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
-            self.schemes.valid = df[["text"]]
+            self.valid = df[["text"]]
             self.params.valid = True
 
         # update the database
@@ -772,8 +775,8 @@ class Project:
         """
         history = None
 
-        if dataset == "valid" and self.schemes.valid is not None:
-            if element_id not in self.schemes.valid.index:
+        if dataset == "valid" and self.valid is not None:
+            if element_id not in self.valid.index:
                 raise Exception("Element does not exist.")
             if scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
@@ -781,7 +784,7 @@ class Project:
                 )
             return ElementOutModel(
                 element_id=element_id,
-                text=str(self.schemes.valid.loc[element_id, "text"]),
+                text=str(self.valid.loc[element_id, "text"]),
                 context={},
                 selection="valid",
                 info="",
@@ -791,8 +794,8 @@ class Project:
                 history=history,
             )
 
-        if dataset == "test" and self.schemes.test is not None:
-            if element_id not in self.schemes.test.index:
+        if dataset == "test" and self.test is not None:
+            if element_id not in self.test.index:
                 raise Exception("Element does not exist.")
             if scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
@@ -800,7 +803,7 @@ class Project:
                 )
             return ElementOutModel(
                 element_id=element_id,
-                text=str(self.schemes.test.loc[element_id, "text"]),
+                text=str(self.test.loc[element_id, "text"]),
                 context={},
                 selection="test",
                 info="",
@@ -893,7 +896,7 @@ class Project:
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part valid
-        if self.params.valid and (self.schemes.valid is not None):
+        if self.params.valid and (self.valid is not None):
             df_valid = self.schemes.get_scheme_data(scheme, kind=["valid"], complete=True)
             valid_set_n = len(df_valid)
             valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
@@ -904,7 +907,7 @@ class Project:
             valid_annotated_distribution = None
 
         # part test
-        if self.params.test and (self.schemes.test is not None):
+        if self.params.test and (self.test is not None):
             df_test = self.schemes.get_scheme_data(scheme, kind=["test"], complete=True)
             test_set_n = len(df_test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))

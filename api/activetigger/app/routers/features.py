@@ -55,6 +55,8 @@ async def post_embeddings(
             series_list.append(project.test["text"])
         df = pd.concat(series_list)
 
+        print("Data to compute features on", df.shape, project.valid, project.test)
+
         # compute features
         project.features.compute(
             df, feature.name, feature.type, feature.parameters, current_user.username
