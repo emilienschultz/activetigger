@@ -134,47 +134,45 @@ async def predict(
     - simple or bert model
     - types of dataset
     Manage specific cases for prediction
+
+    TODO : add external again
+
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
-        status = "predicting"
+        datasets = None
 
         if kind not in ["simple", "bert"]:
             raise Exception(f"Model kind {kind} not recognized")
 
+        # managing the perimeter of the prediction
+        if dataset == "all":
+            datasets = ["train"]
+            if project.valid is not None:
+                datasets.append("valid")
+            if project.test is not None:
+                datasets.append("test")
+        elif dataset == "external":
+            raise Exception("External dataset not yet implemented for bert models")
+        else:
+            raise Exception(f"Dataset {dataset} not recognized")
+
         # case for bert models
         if kind == "bert":
-            if dataset == "external":
-                col_label = None
-                col_id = None
-            else:
-                col_label = "labels"
-                col_id = project.params.col_id
-            if dataset == "all":
-                dataset = ["train"]
-                if project.valid is not None:
-                    dataset.append("valid")
-                if project.test is not None:
-                    dataset.append("test")
-
-            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
-            if set(project.languagemodels.get_labels(model_name)) != set(
-                df["labels"].dropna().unique()
-            ):
-                raise Exception("The testset and the model have different labels")
-            project.languagemodels.clean_files_valid(model_name, dataset)
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+            # project.languagemodels.clean_files_valid(model_name, dataset)
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
                 name=model_name,
                 user=current_user.username,
                 df=df,
                 col_text="text",
-                col_label=col_label,
-                col_id=col_id,
+                col_label="labels",
+                col_id="id",
+                col_datasets="dataset",
                 dataset=dataset,
                 batch_size=batch_size,
-                status=status,
-                statistics="full",
+                statistics=datasets,
             )
 
         # case for simple models

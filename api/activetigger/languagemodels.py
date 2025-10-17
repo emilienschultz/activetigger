@@ -277,11 +277,6 @@ class LanguageModels:
         """
         Start predicting process
         """
-        if len(self.current_user_processes(user)) > 0:
-            raise Exception(
-                "User already has a process launched, please wait before launching another one"
-            )
-
         if not (self.path.joinpath(name)).exists():
             raise Exception("The model does not exist")
 
@@ -493,54 +488,87 @@ class LanguageModels:
             params = json.load(jsonfile)
         return params
 
-    def get_trainscores(self, model_name) -> dict | None:
-        if (self.path.joinpath(model_name).joinpath("metrics_train.json")).exists():
+    def get_scores_prediction(self, model_name, dataset) -> dict | None:
+        """
+        Get the scores of the model for a dataset
+        - last metrics file
+        - return None if not
+        """
+        # case for internalvalid
+        if dataset == "internalvalid":
             with open(
-                self.path.joinpath(model_name).joinpath("metrics_train.json"),
-                "r",
-            ) as f:
-                train_scores = json.load(f)
-        else:
-            train_scores = None
-        return train_scores
-
-    def get_outofsamplescores(self, model_name) -> dict | None:
-        if (self.path.joinpath(model_name).joinpath("metrics_outofsample.json")).exists():
-            with open(
-                self.path.joinpath(model_name).joinpath("metrics_outofsample.json"),
-                "r",
-            ) as f:
-                outofsample_scores = json.load(f)
-        else:
-            outofsample_scores = None
-        return outofsample_scores
-
-    def get_testscores(self, model_name) -> dict | None:
-        if (self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json")).exists():
-            with open(
-                self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json"),
-                "r",
-            ) as f:
-                test_scores = json.load(f)
-        else:
-            test_scores = None
-        return test_scores
-
-    def get_validscores(self, model_name) -> dict | None:
-        if (self.path.joinpath(model_name).joinpath("metrics_predict_valid.parquet.json")).exists():
-            with open(
-                self.path.joinpath(model_name).joinpath("metrics_predict_valid.parquet.json"),
+                self.path.joinpath(model_name).joinpath("metrics_internalvalid.json"),
                 "r",
             ) as f:
                 valid_scores = json.load(f)
+            return valid_scores
+
+        folder = self.path.joinpath(model_name)
+        files = sorted(
+            [
+                f.name
+                for f in folder.iterdir()
+                if f.is_file() and f.name.startswith("metrics_predict_")
+            ],
+        )
+        if len(files) == 0:
+            return None
+        last_stat_file = files[-1]
+        with open(folder.joinpath(last_stat_file), "r") as f:
+            stats = json.load(f)
+        if dataset in stats:
+            return stats[dataset]
         else:
-            valid_scores = None
-        return valid_scores
+            return None
+
+    # def get_trainscores(self, model_name) -> dict | None:
+    #     if (self.path.joinpath(model_name).joinpath("metrics_train.json")).exists():
+    #         with open(
+    #             self.path.joinpath(model_name).joinpath("metrics_train.json"),
+    #             "r",
+    #         ) as f:
+    #             train_scores = json.load(f)
+    #     else:
+    #         train_scores = None
+    #     return train_scores
+
+    # def get_outofsamplescores(self, model_name) -> dict | None:
+    #     if (self.path.joinpath(model_name).joinpath("metrics_outofsample.json")).exists():
+    #         with open(
+    #             self.path.joinpath(model_name).joinpath("metrics_outofsample.json"),
+    #             "r",
+    #         ) as f:
+    #             outofsample_scores = json.load(f)
+    #     else:
+    #         outofsample_scores = None
+    #     return outofsample_scores
+
+    # def get_testscores(self, model_name) -> dict | None:
+    #     if (self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json")).exists():
+    #         with open(
+    #             self.path.joinpath(model_name).joinpath("metrics_predict_test.parquet.json"),
+    #             "r",
+    #         ) as f:
+    #             test_scores = json.load(f)
+    #     else:
+    #         test_scores = None
+    #     return test_scores
+
+    # def get_validscores(self, model_name) -> dict | None:
+    #     if (self.path.joinpath(model_name).joinpath("metrics_predict_valid.parquet.json")).exists():
+    #         with open(
+    #             self.path.joinpath(model_name).joinpath("metrics_predict_valid.parquet.json"),
+    #             "r",
+    #         ) as f:
+    #             valid_scores = json.load(f)
+    #     else:
+    #         valid_scores = None
+    #     return valid_scores
 
     def get_internalvalidscores(self, model_name) -> dict | None:
-        if (self.path.joinpath(model_name).joinpath("metrics_internalvalid.json")).exists():
+        if (self.path.joinpath(model_name).joinpath("metrics_train_internalvalid.json")).exists():
             with open(
-                self.path.joinpath(model_name).joinpath("metrics_internalvalid.json"),
+                self.path.joinpath(model_name).joinpath("metrics_train_internalvalid.json"),
                 "r",
             ) as f:
                 valid_scores = json.load(f)
@@ -556,11 +584,11 @@ class LanguageModels:
 
         loss = self.get_loss(model_name)
         params = self.get_parameters(model_name)
-        internalvalid_scores = self.get_internalvalidscores(model_name)
-        valid_scores = self.get_validscores(model_name)
-        train_scores = self.get_trainscores(model_name)
-        test_scores = self.get_testscores(model_name)
-        outofsample_scores = self.get_outofsamplescores(model_name)
+        internalvalid_scores = self.get_scores_prediction(model_name, "internalvalid")
+        train_scores = self.get_scores_prediction(model_name, "train")
+        valid_scores = self.get_scores_prediction(model_name, "valid")
+        test_scores = self.get_scores_prediction(model_name, "test")
+        outofsample_scores = self.get_scores_prediction(model_name, "outofsample")
 
         return LMInformationsModel(
             params=params,

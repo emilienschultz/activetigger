@@ -613,7 +613,7 @@ class Project:
         elif next.dataset == "valid":
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["valid"])
         else:
-            df = self.schemes.get_scheme_data(next.scheme, complete=True)
+            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["train"])
 
         # the filter for the sample
         if next.sample == "untagged":
@@ -892,7 +892,7 @@ class Project:
 
         # part train
         users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
-        df_train = self.schemes.get_scheme_data(scheme, kind=["train", "predict"])
+        df_train = self.schemes.get_scheme_data(scheme, kind=["train"])
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part valid
@@ -947,7 +947,7 @@ class Project:
         if projection is None:
             return None
         # get annotations
-        df = self.schemes.get_scheme_data(scheme, complete=True)
+        df = self.schemes.get_scheme_data(scheme, complete=True, kind=["train"])
         data = projection.data
         data["labels"] = df["labels"].fillna("NA")
 
@@ -1248,7 +1248,7 @@ class Project:
                 "User already has a process launched, please wait before launching another one"
             )
         # get data
-        df = self.schemes.get_scheme_data(bert.scheme, complete=True)
+        df = self.schemes.get_scheme_data(bert.scheme, kind=["train"], complete=True)
         df = df[["text", "labels"]].dropna()
 
         # management for multilabels / dichotomize

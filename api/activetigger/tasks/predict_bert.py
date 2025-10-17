@@ -169,6 +169,10 @@ class PredictBert(BaseTask):
                 index=self.df.index,
             )
 
+            entropy = -1 * (pred * np.log(pred)).sum(axis=1)
+            pred["entropy"] = entropy
+            pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
+
             # add columns if available
             if self.col_datasets:
                 pred[self.col_datasets] = self.df[self.col_datasets]
@@ -177,17 +181,12 @@ class PredictBert(BaseTask):
             if self.col_label:
                 pred["label"] = self.df[self.col_label]
 
-            # calculate entropy
-            entropy = -1 * (pred * np.log(pred)).sum(axis=1)
-            pred["entropy"] = entropy
-
-            # calculate label
-            pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
             print("Prediction ended")
 
             # save the file of predictions
             pred.to_parquet(self.path.joinpath(self.file_name))
 
+            # return if no statistics
             if self.statistics is None:
                 return ReturnTaskPredictModel(
                     path=str(self.path.joinpath(self.file_name)), metrics=None
@@ -195,6 +194,7 @@ class PredictBert(BaseTask):
 
             # case where statistics should be computed
 
+            print("Compute statistics")
             metrics = {}
 
             # add text in the dataframe to be able to get mismatch
@@ -204,14 +204,17 @@ class PredictBert(BaseTask):
             # compute the statistics per dataset
             for dataset in self.statistics:
                 filter_dataset = pred[self.col_datasets] == dataset
+                filter = filter_label & filter_dataset
+                if filter.sum() < 5:
+                    continue
                 metrics[dataset] = get_metrics(
-                    pred[filter_label & filter_dataset]["label"],
-                    pred[filter_label & filter_dataset]["prediction"],
+                    pred[filter]["label"],
+                    pred[filter]["prediction"],
                     pred["text"],
                 )
 
             # write the metrics in a json file
-            with open(str(self.path.joinpath(f"metrics_{time.time()}.json")), "w") as f:
+            with open(str(self.path.joinpath(f"metrics_predict_{time.time()}.json")), "w") as f:
                 json.dump({k: v.model_dump(mode="json") for k, v in metrics.items()}, f)
 
             # # case the statistics should be computed on all values
@@ -245,7 +248,6 @@ class PredictBert(BaseTask):
 
             # drop the temporary text col
             pred.drop(columns=["text"], inplace=True)
-            print("Add statistics")
 
             return ReturnTaskPredictModel(
                 path=str(self.path.joinpath(self.file_name)), metrics=metrics

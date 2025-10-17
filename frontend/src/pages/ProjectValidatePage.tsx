@@ -205,6 +205,10 @@ export const ProjectValidatePage: FC = () => {
                       title="Test scores"
                     />
                   )}
+
+                  {/* {model && (
+                    <DisplayScoresMenu scores={model} modelName={currentBertModelName || ''} />
+                  )} */}
                 </div>
               </Tab>
             </Tabs>

@@ -6,7 +6,6 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
-import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
@@ -23,7 +22,9 @@ import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ModelDescriptionModel } from '../types';
 
+import { DisplayScores } from '../components/DisplayScores';
 import { SimpleModelManagement } from '../components/SimpleModelManagement';
+import { MLStatisticsModel } from '../types';
 
 /**
  * Component to manage model training
@@ -232,7 +233,7 @@ export const ProjectModelPage: FC = () => {
                                 displayStopButton={isComputing}
                               />
                             )}
-                            <button
+                            {/* <button
                               className="btn btn-primary my-2"
                               onClick={() =>
                                 computeBertModelPrediction(
@@ -254,11 +255,12 @@ export const ProjectModelPage: FC = () => {
                                   feature already exists, it will be overwritten.
                                 </Tooltip>
                               </a>
-                            </button>
+                            </button> */}
 
                             <div className="mt-2">
-                              <DisplayScoresMenu
-                                scores={existingStatistics}
+                              <DisplayScores
+                                title={'Internal validation'}
+                                scores={model.internalvalid_scores as MLStatisticsModel}
                                 modelName={currentBertModel}
                               />
                             </div>
