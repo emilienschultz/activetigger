@@ -318,7 +318,7 @@ class TrainBert(BaseTask):
             )
             # compute metrics and write
             metrics_test = get_metrics(test["true_label"], test["predicted_label"], test["text"])
-            with open(str(current_path.joinpath("metrics_internalvalid.json")), "w") as f:
+            with open(str(current_path.joinpath("metrics_train_internalvalid.json")), "w") as f:
                 json.dump(metrics_test.model_dump(mode="json"), f)
 
             # shape and write the data of the train set

@@ -22,8 +22,8 @@ from activetigger.datamodels import (
     ModelDescriptionModel,
     Multi_naivebayesParams,
     RandomforestParams,
+    SimpleModelComputed,
     SimpleModelComputing,
-    SimpleModelModel,
     SimpleModelsProjectStateModel,
 )
 from activetigger.db.languagemodels import LanguageModelsService
@@ -100,8 +100,6 @@ class SimpleModels:
         logger_simplemodel = logging.getLogger("simplemodel")
         logger_simplemodel.info("Intiating the computation process for the simplemodel")
         X, Y, labels = self.transform_data(df, col_labels, col_features, standardize)
-
-        print("WE ARE HERE", model_type, model_params)
 
         # default parameters
         if model_params is None:
@@ -185,7 +183,6 @@ class SimpleModels:
             labels=labels,
             model_params=model_params,
             standardize=standardize,
-            model=model,
             cv10=cv10,
             retrain=retrain,
         )
@@ -199,6 +196,7 @@ class SimpleModels:
 
         Manage the specific case of retrain
         """
+        element = SimpleModelComputed(**element.model_dump())
 
         # Add element from the computation
         element.time = datetime.now()
@@ -229,7 +227,7 @@ class SimpleModels:
 
         # Add the entry in the database
         self.language_models_service.add_model(
-            kind="simplemodel",
+            kind="train_simplemodel",
             name=element.name,
             user=element.user,
             project=self.project_slug,
@@ -251,7 +249,7 @@ class SimpleModels:
             r[m.scheme].append(m)
         return r
 
-    def get(self, name: str) -> SimpleModelModel:
+    def get(self, name: str) -> SimpleModelComputed:
         """
         Load the content of a specific model
         (cache in memory)
@@ -265,7 +263,7 @@ class SimpleModels:
             if not path.exists():
                 raise Exception("The model path does not exist")
             with open(path / "model.pkl", "rb") as file:
-                sm: SimpleModelModel = pickle.load(file)
+                sm: SimpleModelComputed = pickle.load(file)
             return sm
 
     def get_prediction(self, name: str) -> DataFrame:
@@ -383,7 +381,14 @@ class SimpleModels:
             del self.loaded[name]
 
     def start_predicting_process(
-        self, name: str, username: str, dataset: str, df: DataFrame
+        self,
+        name: str,
+        username: str,
+        df: DataFrame,
+        dataset: str,
+        col_dataset: str,
+        cols_features: list,
+        col_label: str | None = None,
     ) -> None:
         """
         Start the predicting process for a specific model
@@ -392,7 +397,6 @@ class SimpleModels:
             raise Exception("The model does not exist")
         sm = self.get(name)
         file_name = f"predict_{dataset}.parquet"
-        # load the model
         unique_id = self.queue.add_task(
             "prediction",
             self.project_slug,
@@ -402,16 +406,23 @@ class SimpleModels:
                 path=self.path.joinpath(name),
                 file_name=file_name,
             ),
-            queue="gpu",
+            queue="cpu",
         )
         self.computing.append(
             SimpleModelComputing(
-                status="predicting",
                 user=username,
-                model_name=name,
                 unique_id=unique_id,
                 time=datetime.now(),
-                kind="predict_bert",
+                kind="predict_simplemodel",
+                status="predicting",
+                name=name,
+                model_name=name,
                 dataset=dataset,
+                features=sm.features,
+                scheme=sm.scheme,
+                model_type=sm.model_type,
+                model_params=sm.model_params,
+                labels=sm.labels,
             )
         )
+        print("Predicting process started")

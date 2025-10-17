@@ -160,7 +160,6 @@ async def predict(
         # case for bert models
         if kind == "bert":
             df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
-            # project.languagemodels.clean_files_valid(model_name, dataset)
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
                 name=model_name,
@@ -180,9 +179,20 @@ async def predict(
             sm = project.simplemodels.get(model_name)
             if sm is None:
                 raise Exception(f"Simple model {model_name} not found")
-            df = project.features.get(sm.features)
+            df = project.features.get(sm.features, dataset=dataset, keep_dataset_column=True)
+            labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+            df["labels"] = labels["labels"]
+            print(df.head())
+
+            # add the data for the labels
             project.simplemodels.start_predicting_process(
-                name=model_name, username=current_user.username, dataset=dataset, df=df
+                name=model_name,
+                username=current_user.username,
+                df=df,
+                col_dataset="dataset",
+                cols_features=sm.features,
+                col_label="labels",
+                dataset=dataset,
             )
 
         orchestrator.log_action(

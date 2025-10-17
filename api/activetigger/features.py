@@ -262,9 +262,11 @@ class Features:
         # refresh the map
         self.map = self.get_map()[0]
 
-    def get(self, features: list | str = "all", dataset: str = "train") -> DataFrame:
+    def get(
+        self, features: list | str, dataset: list | str = "all", keep_dataset_column: bool = False
+    ) -> DataFrame:
         """
-        Get content for specific features
+        Get content for specific features with a filter on dataset
         """
         features = [i for i in features if i is not None]
         if features == "all":
@@ -272,6 +274,7 @@ class Features:
         if type(features) is str:
             features = [features]
 
+        # get needed columns
         cols = ["dataset"]
         missing = []
         for i in features:
@@ -279,22 +282,21 @@ class Features:
                 cols += self.map[i]
             else:
                 missing.append(i)
-
-        if len(i) > 0:
+        if len(missing) > 0:
             print("Missing features:", missing)
 
         # load only needed data from file
         data = pd.read_parquet(self.path_features, columns=cols)
 
         # filter on dataset
-        if dataset in {"train", "valid", "test"}:
-            data = data.loc[data["dataset"] == dataset]
-        elif dataset != "all":
-            raise Exception("Dataset not recognized")
+        if dataset == "all":
+            if not keep_dataset_column:
+                return data.drop(columns=["dataset"])
+            return data
 
-        # drop the dataset column
-        data = data.drop(columns=["dataset"])
-
+        data = data.loc[data["dataset"].isin(dataset)]
+        if not keep_dataset_column:
+            return data.drop(columns=["dataset"])
         return data
 
     def info(self, name: str):

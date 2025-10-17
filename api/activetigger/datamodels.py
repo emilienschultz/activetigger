@@ -574,30 +574,28 @@ class SimpleModelComputing(ProcessComputing):
     Simplemodel object
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
     status: Literal["training", "predicting"]
     name: str
-    user: str
     features: list
     scheme: str
     labels: list
-    model_params: dict
-    standardize: bool
-    model: BaseEstimator
-    proba: DataFrame | None = None
-    statistics: MLStatisticsModel | None = None
-    statistics_cv10: MLStatisticsModel | None = None
-    cv10: bool = False
     model_type: str
+    model_params: dict
+    standardize: bool = False
+    cv10: bool = False
     retrain: bool = False
 
 
-class SimpleModelModel(ProcessComputing):
+class SimpleModelComputed(SimpleModelComputing):
     """
     Simplemodel object
     """
 
-    time: datetime.datetime
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model: BaseEstimator | None = None
+    proba: DataFrame | None = None
+    statistics: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
 
 
 class SimpleModelOutModel(BaseModel):
@@ -908,11 +906,11 @@ class FeatureDescriptionModel(BaseModel):
 
 
 class TrainMLResults(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     model: Any
     proba: DataFrame
     statistics: MLStatisticsModel
     statistics_cv10: MLStatisticsModel | None = None
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ReturnTaskPredictModel(BaseModel):

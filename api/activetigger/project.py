@@ -549,7 +549,7 @@ class Project:
             params["dichotomize"] = simplemodel.dichotomize
 
         # get data
-        df_features = self.features.get(simplemodel.features, dataset="train")
+        df_features = self.features.get(simplemodel.features, dataset=["train"])
         df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
 
         # management for multilabels / dichotomize
@@ -1446,8 +1446,8 @@ class Project:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)
 
-            # case for simplemodels
-            if e.kind == "simplemodel":
+            # case for simplemodels training
+            if e.kind == "train_simplemodel":
                 sm = cast(SimpleModelComputing, e)
                 try:
                     error = future.exception()
@@ -1457,6 +1457,22 @@ class Project:
                     self.simplemodels.add(sm, results)
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
+                except Exception as ex:
+                    self.errors.append(
+                        [datetime.now(config.timezone), "simplemodel failed", str(ex)]
+                    )
+                    logging.error("Simplemodel failed", ex)
+                finally:
+                    self.computing.remove(e)
+                    self.queue.delete(e.unique_id)
+
+            # case for simplemodel prediction
+            if e.kind == "predict_simplemodel":
+                sm = cast(SimpleModelComputing, e)
+                try:
+                    error = future.exception()
+                    if error:
+                        raise Exception(str(error))
                 except Exception as ex:
                     self.errors.append(
                         [datetime.now(config.timezone), "simplemodel failed", str(ex)]
