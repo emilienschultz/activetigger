@@ -70,42 +70,40 @@ class Schemes:
         """
         Get data from a scheme : id, text, context, labels
         Join with text data in separate file (train, valid or test, in this case it is a XOR)
-
-        Comments:
-            For the moment tags can be add, test, predict, reconciliation
         """
-        if kind is None:
-            kind = ["train"]
+        for k in kind:
+            if k not in ["train", "test", "valid", "predict", "reconciliation"]:
+                raise Exception(f"Kind {k} not recognized")
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
 
-        if isinstance(kind, str):
-            kind = [kind]
-
-        # get all elements from the db
-        # - last element for each id
-        # - for a specific scheme
-
+        # get the current scheme
         results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind, user)
         df = pd.DataFrame(
-            results, columns=["id", "labels", "user", "timestamp", "comment"]
+            results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
         ).set_index("id")
+
         df.index = pd.Index([str(i) for i in df.index])
-        if complete:  # all the elements
-            if "test" in kind and self.test is not None:
-                if len(kind) > 1:
-                    raise Exception("Cannot ask for train with another dataset")
-                # case if the test, join the text data
-                t = self.test[["text"]].join(df)
-                return t
-            elif "valid" in kind and self.valid is not None:
-                if len(kind) > 1:
-                    raise Exception("Cannot ask for valid with other dataset")
-                # case if the test, join the text data
-                t = self.valid[["text"]].join(df)
-                return t
-            else:
-                return self.train.join(df, rsuffix="_content")
+        df["id"] = df.index
+
+        # only the labels
+        if not complete:
+            return df
+
+        # add the content from the datasets
+        texts = []
+        for k in kind:
+            if k == "test":
+                if self.test is not None:
+                    texts.append(self.test[["text"]])
+            elif k == "valid":
+                if self.valid is not None:
+                    texts.append(self.valid[["text"]])
+            elif k == "train":
+                if self.train is not None:
+                    texts.append(self.train[["text"]])
+        texts = pd.concat(texts)
+        df = df.join(texts, rsuffix="_content")
         return df
 
     def get_reconciliation_table(self, scheme: str) -> tuple[DataFrame, list[str]]:

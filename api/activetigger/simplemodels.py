@@ -30,7 +30,7 @@ from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.queue import Queue
 from activetigger.tasks.predict_ml import PredictML
-from api.activetigger.tasks.train_ml import TrainML
+from activetigger.tasks.train_ml import TrainML
 
 
 class SimpleModels:

@@ -245,6 +245,7 @@ class ProjectsService:
                 select(
                     Annotations.scheme_name,
                     Annotations.element_id,
+                    Annotations.dataset,
                     Annotations.annotation,
                     Annotations.user_name,
                     Annotations.time,
@@ -266,6 +267,7 @@ class ProjectsService:
             return [
                 [
                     row.element_id,
+                    row.dataset,
                     row.annotation,
                     row.user_name,
                     row.time,

@@ -130,68 +130,34 @@ async def predict(
     external_dataset: TextDatasetModel | None = None,
 ) -> None:
     """
-    Start prediction with a model for a specific dataset
+    Start prediction with a model
+    - simple or bert model
+    - types of dataset
     Manage specific cases for prediction
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
-        # get the data
         status = "predicting"
-        if dataset == "train":
-            statistics = "outofsample"
-            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
-            col_label = "labels"
-            col_id = None
 
-        elif dataset == "all":
-            statistics = "outofsample"
-            col_label = None
-            col_id = project.params.col_id
-            df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
-            # fix in the case where the id column is the row
-            if project.params.col_id != "dataset_row_number":
-                df[project.params.col_id] = project.features.get_column_raw(
-                    project.params.col_id, index="all"
-                )  # add original id
-            else:
-                df["dataset_row_number"] = df.index
+        if kind not in ["simple", "bert"]:
+            raise Exception(f"Model kind {kind} not recognized")
 
-        elif dataset == "external":
-            statistics = "outofsample"
-            col_label = None
-            col_id = None
-            if external_dataset is None:
-                raise HTTPException(status_code=400, detail="External dataset is missing")
-            csv_buffer = io.StringIO(external_dataset.csv)
-            df = pd.read_csv(
-                csv_buffer,
-            )
-            df["text"] = df[external_dataset.text]
-            df["index"] = df[external_dataset.id].apply(str)
-            df.set_index("index", inplace=True)
-            df = df[["text"]].dropna()
-
-        elif dataset == "test":
-            statistics = "full"
-            col_label = "labels"
-            col_id = None
-            if project.schemes.test is None:
-                raise HTTPException(status_code=500, detail="No test dataset for this project")
-            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
-
-        elif dataset == "valid":
-            statistics = "full"
-            col_label = "labels"
-            col_id = None
-            if project.schemes.valid is None:
-                raise HTTPException(status_code=500, detail="No valid dataset for this project")
-            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["valid"])
-
-        else:
-            raise Exception(f"dataset {dataset} not found")
-
-        # start process to predict
+        # case for bert models
         if kind == "bert":
+            if dataset == "external":
+                col_label = None
+                col_id = None
+            else:
+                col_label = "labels"
+                col_id = project.params.col_id
+            if dataset == "all":
+                dataset = ["train"]
+                if project.valid is not None:
+                    dataset.append("valid")
+                if project.test is not None:
+                    dataset.append("test")
+
+            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
             if set(project.languagemodels.get_labels(model_name)) != set(
                 df["labels"].dropna().unique()
             ):
@@ -208,16 +174,19 @@ async def predict(
                 dataset=dataset,
                 batch_size=batch_size,
                 status=status,
-                statistics=statistics,
+                statistics="full",
             )
-        elif kind == "simple":
+
+        # case for simple models
+        if kind == "simple":
             sm = project.simplemodels.get(model_name)
+            if sm is None:
+                raise Exception(f"Simple model {model_name} not found")
             df = project.features.get(sm.features)
             project.simplemodels.start_predicting_process(
                 name=model_name, username=current_user.username, dataset=dataset, df=df
             )
-        else:
-            raise Exception(f"Model kind {kind} not recognized")
+
         orchestrator.log_action(
             current_user.username,
             f"PREDICT MODEL: {model_name} - {kind} DATASET: {dataset}",

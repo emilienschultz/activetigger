@@ -38,13 +38,13 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
       {valid && (
         <button
           className="btn btn-primary m-3"
-          onClick={() => computeModelPrediction(modelName || '', 'valid', currentScheme, kind)}
+          onClick={() => computeModelPrediction(modelName || '', 'all', currentScheme, kind)}
           disabled={isComputing}
         >
-          Compute on validation set
+          Compute statistics on annotations
         </button>
       )}
-      {test && (
+      {/* {test && (
         <button
           className="btn btn-primary m-3"
           onClick={() => computeModelPrediction(modelName || '', 'test', currentScheme, kind)}
@@ -52,7 +52,7 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
         >
           Compute on test set
         </button>
-      )}
+      )}*/}
     </div>
   );
 };
@@ -174,39 +174,6 @@ export const ProjectValidatePage: FC = () => {
                   test={project?.params.test || false}
                 />
                 <div>
-                  {/* {model && project?.params.valid && (
-                    <button
-                      className="btn btn-primary m-3"
-                      onClick={() =>
-                        computeModelPrediction(
-                          currentBertModelName || '',
-                          'valid',
-                          currentScheme || '',
-                          'bert',
-                        )
-                      }
-                      disabled={isComputing}
-                    >
-                      Compute on validation set
-                    </button>
-                  )}
-                  {model && project?.params.test && (
-                    <button
-                      className="btn btn-primary m-3"
-                      onClick={() =>
-                        computeModelPrediction(
-                          currentBertModelName || '',
-                          'test',
-                          currentScheme || '',
-                          'bert',
-                        )
-                      }
-                      disabled={isComputing}
-                    >
-                      Compute on test set
-                    </button>
-                  )} */}
-
                   <DisplayTrainingProcesses
                     projectSlug={projectName || null}
                     processes={project?.languagemodels.training}

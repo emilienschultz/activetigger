@@ -269,9 +269,10 @@ class LanguageModels:
         col_text: str,
         col_label: str | None = None,
         col_id: str | None = None,
+        col_datasets: str | None = None,
         batch_size: int = 32,
         status: str = "predicting",
-        statistics: str = "outofsample",
+        statistics: list | None = None,
     ) -> None:
         """
         Start predicting process
@@ -291,11 +292,12 @@ class LanguageModels:
             "prediction",
             project_slug,
             PredictBert(
+                path=self.path.joinpath(name),
                 df=df,
                 col_text=col_text,
                 col_label=col_label,
                 col_id=col_id,
-                path=self.path.joinpath(name),
+                col_datasets=col_datasets,
                 basemodel=self.get_base_model(name),
                 file_name=file_name,
                 batch=batch_size,
