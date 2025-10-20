@@ -1,9 +1,12 @@
+import json
+import time
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 from sklearn.base import BaseEstimator
 
+from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -22,9 +25,10 @@ class PredictML(BaseTask):
         col_features: list[str],
         file_name: str,
         path: Path,
-        col_labels: str | None = None,
+        col_label: str | None = None,
+        col_text: str | None = None,
         unique_id: Optional[str] = None,
-        statistics: list | None = None,
+        statistics: list[str] | None = None,
         **kwargs,
     ):
         super().__init__()
@@ -34,6 +38,8 @@ class PredictML(BaseTask):
         self.path = path
         self.unique_id = unique_id
         self.statistics = statistics
+        self.col_label = col_label
+        self.col_text = col_text
 
         if col_dataset not in self.df.columns:
             raise ValueError(f"Dataset column {col_dataset} not in dataframe")
@@ -41,7 +47,7 @@ class PredictML(BaseTask):
         if not all(col in self.df.columns for col in col_features):
             raise ValueError("Some feature columns are not in dataframe")
 
-        if self.statistics is not None and self.col_labels is None:
+        if self.statistics is not None and self.col_label is None:
             raise ValueError("Labels must be provided to compute statistics")
 
         expected_cols = self.model.feature_names_in_
@@ -50,7 +56,10 @@ class PredictML(BaseTask):
         if len(missing) > 0 or len(extra) > 0:
             raise ValueError(f"Feature mismatch. Missing: {missing}, Extra: {extra}")
         self.X = self.df.reindex(columns=list(expected_cols) + [col_dataset])
-        self.Y = self.df[col_labels] if col_labels is not None else None
+        self.Y = self.df[col_label] if col_label is not None else None
+
+        if self.statistics and self.col_text is None:
+            print("Thre is no full text")
 
     def __call__(self):
         """
@@ -61,28 +70,26 @@ class PredictML(BaseTask):
         Y_proba = self.model.predict_proba(self.X.drop(columns=["dataset"]))
         proba_cols = [cls for cls in self.model.classes_]
         Y_full = pd.DataFrame(Y_proba, columns=proba_cols, index=self.X.index)
-        Y_full["pred_label"] = Y_pred
+        Y_full["prediction"] = Y_pred
         Y_full["dataset"] = self.X["dataset"]
+        Y_full["label"] = self.df[self.col_label]
         Y_full.to_parquet(self.path.joinpath(self.file_name), index=True)
-        print(Y_full.head())
 
         # Compute statistics if labels are provided
-        print("Compute statistics")
         metrics = {}
 
-        # # compute the statistics per dataset
-        # filter_label = pred["label"].notna()  # only non null values
-        # for dataset in self.statistics:
-        #     filter_dataset = Y_full["dataset"] == dataset
-        #     filter = filter_label & filter_dataset
-        #     if filter.sum() < 5:
-        #         continue
-        #     metrics[dataset] = get_metrics(
-        #         pred[filter]["label"],
-        #         pred[filter]["prediction"],
-        #         pred["text"],
-        #     )
+        filter_label = self.df[self.col_label].notna()  # only non null values
+        for dataset in self.statistics:
+            filter_dataset = Y_full["dataset"] == dataset
+            filter = filter_label & filter_dataset
+            if filter.sum() < 5:
+                continue
+            metrics[dataset] = get_metrics(
+                Y_full[filter]["label"],
+                Y_full[filter]["prediction"],
+                Y_full["text"] if self.col_text else None,
+            )
 
-        # # write the metrics in a json file
-        # with open(str(self.path.joinpath(f"metrics_predict_{time.time()}.json")), "w") as f:
-        #     json.dump({k: v.model_dump(mode="json") for k, v in metrics.items()}, f)
+        # write the metrics in a json file
+        with open(str(self.path.joinpath(f"metrics_predict_{time.time()}.json")), "w") as f:
+            json.dump({k: v.model_dump(mode="json") for k, v in metrics.items()}, f)

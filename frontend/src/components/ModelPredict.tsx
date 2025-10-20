@@ -24,7 +24,12 @@ export const ModelPredict: FC = () => {
 
   // available labels from context
   const [currentModel, setCurrentModel] = useState<string | null>(null);
-  const { model } = useModelInformations(projectSlug || null, currentModel || null, isComputing);
+  const { model } = useModelInformations(
+    projectSlug || null,
+    currentModel || null,
+    'bert',
+    isComputing,
+  );
   const { getPredictionsFile } = useGetPredictionsFile(projectSlug || null);
 
   const availablePrediction =

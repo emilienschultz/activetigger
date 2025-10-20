@@ -96,7 +96,8 @@ async def get_simplemodel(
             model=sm.name,
             params=sm.model_params,
             features=sm.features,
-            statistics=sm.statistics,
+            statistics_train=sm.statistics_train,
+            statistics_test=sm.statistics_test,
             statistics_cv10=sm.statistics_cv10,
             scheme=sm.scheme,
             username=sm.user,
@@ -105,17 +106,33 @@ async def get_simplemodel(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/models/bert", dependencies=[Depends(verified_user)])
+@router.get("/models/information", dependencies=[Depends(verified_user)])
 async def get_bert(
-    project: Annotated[Project, Depends(get_project)], name: str
+    project: Annotated[Project, Depends(get_project)], name: str, kind: str
 ) -> LMInformationsModel:
     """
-    Get Bert parameters and statistics
+    Get model information
     """
     try:
-        return project.languagemodels.get_informations(name)
+        if kind == "bert":
+            return project.languagemodels.get_informations(name)
+        elif kind == "simple":
+            return project.simplemodels.get_informations(name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.get("/models/bert", dependencies=[Depends(verified_user)])
+# async def get_bert(
+#     project: Annotated[Project, Depends(get_project)], name: str
+# ) -> LMInformationsModel:
+#     """
+#     Get Bert parameters and statistics
+#     """
+#     try:
+#         return project.languagemodels.get_informations(name)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/predict", dependencies=[Depends(verified_user)])
@@ -180,19 +197,20 @@ async def predict(
             if sm is None:
                 raise Exception(f"Simple model {model_name} not found")
             df = project.features.get(sm.features, dataset=dataset, keep_dataset_column=True)
+            cols_features = [col for col in df.columns if col != "dataset"]
             labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
             df["labels"] = labels["labels"]
-            print(df.head())
 
             # add the data for the labels
             project.simplemodels.start_predicting_process(
                 name=model_name,
                 username=current_user.username,
                 df=df,
-                col_dataset="dataset",
-                cols_features=sm.features,
-                col_label="labels",
                 dataset=dataset,
+                col_dataset="dataset",
+                cols_features=cols_features,
+                col_label="labels",
+                statistics=datasets,
             )
 
         orchestrator.log_action(

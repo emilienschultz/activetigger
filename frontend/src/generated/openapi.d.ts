@@ -1188,7 +1188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/models/bert": {
+    "/models/information": {
         parameters: {
             query?: never;
             header?: never;
@@ -1197,9 +1197,9 @@ export interface paths {
         };
         /**
          * Get Bert
-         * @description Get Bert parameters and statistics
+         * @description Get model information
          */
-        get: operations["get_bert_models_bert_get"];
+        get: operations["get_bert_models_information_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1219,8 +1219,12 @@ export interface paths {
         put?: never;
         /**
          * Predict
-         * @description Start prediction with a model for a specific dataset
+         * @description Start prediction with a model
+         *     - simple or bert model
+         *     - types of dataset
          *     Manage specific cases for prediction
+         *
+         *     TODO : add external again
          */
         post: operations["predict_models_predict_post"];
         delete?: never;
@@ -2383,11 +2387,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** KnnParams */
-        KnnParams: {
-            /** N Neighbors */
-            n_neighbors: number;
-        };
         /** LMComputingOutModel */
         LMComputingOutModel: {
             /** Name */
@@ -2505,16 +2504,6 @@ export interface components {
             };
             base_parameters: components["schemas"]["LMParametersModel"];
         };
-        /** LassoParams */
-        LassoParams: {
-            /** C */
-            C: number;
-        };
-        /** LiblinearParams */
-        LiblinearParams: {
-            /** Cost */
-            cost: number;
-        };
         /** MLStatisticsModel */
         MLStatisticsModel: {
             /** F1 Label */
@@ -2586,18 +2575,6 @@ export interface components {
             parameters: Record<string, never>;
             /** Path */
             path: string;
-        };
-        /** Multi_naivebayesParams */
-        Multi_naivebayesParams: {
-            /** Alpha */
-            alpha: number;
-            /**
-             * Fit Prior
-             * @default true
-             */
-            fit_prior: boolean;
-            /** Class Prior */
-            class_prior?: string | null;
         };
         /**
          * NextInModel
@@ -3039,13 +3016,6 @@ export interface components {
             /** Parameters */
             parameters: Record<string, never>;
         };
-        /** RandomforestParams */
-        RandomforestParams: {
-            /** N Estimators */
-            n_estimators: number;
-            /** Max Features */
-            max_features: number | null;
-        };
         /**
          * ReconciliationModel
          * @description list of elements to reconciliate
@@ -3128,7 +3098,9 @@ export interface components {
             /** Features */
             features: unknown[];
             /** Params */
-            params: components["schemas"]["LiblinearParams"] | components["schemas"]["KnnParams"] | components["schemas"]["RandomforestParams"] | components["schemas"]["LassoParams"] | components["schemas"]["Multi_naivebayesParams"];
+            params: {
+                [key: string]: (string | number | boolean | unknown[] | null) | undefined;
+            };
             /**
              * Standardize
              * @default true
@@ -3163,7 +3135,8 @@ export interface components {
             scheme: string;
             /** Username */
             username: string;
-            statistics?: components["schemas"]["MLStatisticsModel"] | null;
+            statistics_train?: components["schemas"]["MLStatisticsModel"] | null;
+            statistics_test?: components["schemas"]["MLStatisticsModel"] | null;
             statistics_cv10?: components["schemas"]["MLStatisticsModel"] | null;
         };
         /** SimpleModelsProjectStateModel */
@@ -4026,6 +3999,7 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string;
+                model?: string | null;
                 project_slug: string;
             };
             header?: never;
@@ -4657,7 +4631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WaitingModel"] | null;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -5228,10 +5202,11 @@ export interface operations {
             };
         };
     };
-    get_bert_models_bert_get: {
+    get_bert_models_information_get: {
         parameters: {
             query: {
                 name: string;
+                kind: string;
                 project_slug: string;
             };
             header?: never;

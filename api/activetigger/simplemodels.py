@@ -20,6 +20,7 @@ from activetigger.datamodels import (
     LassoParams,
     LiblinearParams,
     ModelDescriptionModel,
+    ModelInformationsModel,
     Multi_naivebayesParams,
     RandomforestParams,
     SimpleModelComputed,
@@ -28,6 +29,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
+from activetigger.functions import get_scores_prediction
 from activetigger.queue import Queue
 from activetigger.tasks.predict_ml import PredictML
 from activetigger.tasks.train_ml import TrainML
@@ -163,19 +165,25 @@ class SimpleModels:
             "Y": Y,
             "labels": labels,
             "cv10": cv10,
+            "path": self.path,
+            "name": name,
+            "retrain": retrain,
+            "scheme": scheme,
+            "model_type": model_type,
+            "user": user,
+            "standardize": standardize,
+            "features": features,
+            "model_params": model_params,
         }
         unique_id = self.queue.add_task("simplemodel", project_slug, TrainML(**args))
         del args
-
-        # add features in the params
-        model_params["features"] = features
 
         req = SimpleModelComputing(
             status="training",
             user=user,
             unique_id=unique_id,
             time=datetime.now(),
-            kind="simplemodel",
+            kind="train_simplemodel",
             scheme=scheme,
             model_type=model_type,
             name=name,
@@ -188,51 +196,19 @@ class SimpleModels:
         )
         self.computing.append(req)
 
-    def add(self, element: SimpleModelComputing, results) -> None:
+    def add(self, element: SimpleModelComputing) -> None:
         """
-        Add computed model
-        - content in filesystem
-        - add it to the database
-
-        Manage the specific case of retrain
+        Add computed model in the database
         """
-        element = SimpleModelComputed(**element.model_dump())
 
-        # Add element from the computation
-        element.time = datetime.now()
-        element.model = results.model
-        element.proba = results.proba
-        element.statistics = results.statistics
-        element.statistics_cv10 = results.statistics_cv10
-
-        # Create the filesystem
         model_path = self.path.joinpath(element.name)
-
-        # if retrain, clear the folder
-        if element.retrain:
-            shutil.rmtree(model_path)
-            os.mkdir(model_path)
-        else:
-            if model_path.exists():
-                raise Exception("The model already exists")
-            os.mkdir(model_path)
-
-        # Write the proba
-        if element.proba is not None:
-            element.proba.to_csv(model_path / "proba.csv")
-
-        # Dump it in the folder
-        with open(model_path / "model.pkl", "wb") as file:
-            pickle.dump(element, file)
-
-        # Add the entry in the database
         self.language_models_service.add_model(
-            kind="train_simplemodel",
+            kind="simplemodel",
             name=element.name,
             user=element.user,
             project=self.project_slug,
-            scheme=element.scheme or "default",
-            params=element.model_params or {},
+            scheme=element.scheme,
+            params=element.model_params,
             path=str(model_path),
             status="trained",
         )
@@ -247,6 +223,7 @@ class SimpleModels:
             if m.scheme not in r:
                 r[m.scheme] = []
             r[m.scheme].append(m)
+        print("Available simplemodels loaded", r)
         return r
 
     def get(self, name: str) -> SimpleModelComputed:
@@ -389,6 +366,7 @@ class SimpleModels:
         col_dataset: str,
         cols_features: list,
         col_label: str | None = None,
+        statistics: list[str] | None = None,
     ) -> None:
         """
         Start the predicting process for a specific model
@@ -401,10 +379,14 @@ class SimpleModels:
             "prediction",
             self.project_slug,
             PredictML(
-                X=df,
                 model=sm.model,
+                df=df,
+                col_dataset=col_dataset,
+                col_features=cols_features,
+                col_label=col_label,
                 path=self.path.joinpath(name),
                 file_name=file_name,
+                statistics=statistics,
             ),
             queue="cpu",
         )
@@ -426,3 +408,26 @@ class SimpleModels:
             )
         )
         print("Predicting process started")
+
+    def get_informations(self, model_name) -> ModelInformationsModel:
+        """
+        Informations on the bert model from the files
+        TODO : avoid to read and create a cache
+        """
+
+        # params = self.get_parameters(model_name)
+        params = None
+        internalvalid_scores = None
+        train_scores = get_scores_prediction(self.path.joinpath(model_name), "train")
+        valid_scores = get_scores_prediction(self.path.joinpath(model_name), "valid")
+        test_scores = get_scores_prediction(self.path.joinpath(model_name), "test")
+        outofsample_scores = None
+
+        return ModelInformationsModel(
+            params=params,
+            train_scores=train_scores,
+            internalvalid_scores=internalvalid_scores,
+            valid_scores=valid_scores,
+            test_scores=test_scores,
+            outofsample_scores=outofsample_scores,
+        )

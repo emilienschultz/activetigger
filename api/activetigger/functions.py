@@ -1,8 +1,10 @@
 import io
+import json
 import os
 import string
 import unicodedata
 from getpass import getpass
+from pathlib import Path
 from typing import Any, cast
 from urllib.parse import quote
 
@@ -307,3 +309,32 @@ def process_payload_csv(csv_str: str, cols: list[str]) -> pd.DataFrame:
         csv_buffer,
     )
     return df[cols]
+
+
+def get_scores_prediction(folder: Path, key: str) -> dict | None:
+    """
+    Get the scores of the model for a dataset
+    - last metrics file
+    - return None if not
+    """
+    # case for internalvalid
+    if key == "internalvalid":
+        with open(
+            folder.joinpath("metrics_internalvalid.json"),
+            "r",
+        ) as f:
+            valid_scores = json.load(f)
+        return valid_scores
+
+    files = sorted(
+        [f.name for f in folder.iterdir() if f.is_file() and f.name.startswith("metrics_predict_")],
+    )
+    if len(files) == 0:
+        return None
+    last_stat_file = files[-1]
+    with open(folder.joinpath(last_stat_file), "r") as f:
+        stats = json.load(f)
+    if key in stats:
+        return stats[key]
+    else:
+        return None

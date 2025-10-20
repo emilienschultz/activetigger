@@ -915,40 +915,6 @@ export function useTrainSimpleModel(projectSlug: string | null, scheme: string |
   return { trainSimpleModel };
 }
 
-// export function useUpdateSimpleModel(projectSlug: string | null, scheme: string | null) {
-//   const { notify } = useNotifications();
-
-//   const updateSimpleModel = useCallback(
-//     async (formData: SimpleModelModel) => {
-//       if (projectSlug && formData.features && scheme && formData.model && formData.params) {
-//         const res = await api.POST('/models/simplemodel', {
-//           params: {
-//             query: {
-//               project_slug: projectSlug,
-//             },
-//           },
-//           body: {
-//             name: formData.name,
-//             features: formData.features,
-//             scheme: scheme,
-//             model: formData.model,
-//             params: formData.params,
-//             standardize: false,
-//             dichotomize: formData.dichotomize,
-//             cv10: formData.cv10,
-//           },
-//         });
-
-//         if (!res.error) notify({ type: 'warning', message: 'Training model' });
-//       }
-//       return true;
-//     },
-//     [projectSlug, scheme, notify],
-//   );
-
-//   return { updateSimpleModel };
-// }
-
 /**
  * Delete simple model
  */
@@ -1274,25 +1240,26 @@ export function useDeleteBertModel(projectSlug: string | null) {
  * Get model informations
  */
 export function useModelInformations(
-  project_slug: string | null,
-  model_name: string | null,
+  projectSlug: string | null,
+  modelName: string | null,
+  modelKind: string | null,
   isComputing: boolean,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const modelInformations = useAsyncMemo(async () => {
-    if (model_name && project_slug) {
-      const res = await api.GET('/models/bert', {
-        params: { query: { project_slug: project_slug, name: model_name } },
+    if (modelName && projectSlug && modelKind) {
+      const res = await api.GET('/models/information', {
+        params: { query: { project_slug: projectSlug, name: modelName, kind: modelKind } },
       });
       if (!res.error) return res.data;
     }
     return null;
-  }, [fetchTrigger, model_name, isComputing]);
+  }, [fetchTrigger, modelName, isComputing, modelKind]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { model: getAsyncMemoData(modelInformations), reFetchModelInformation: reFetch };
+  return { model: getAsyncMemoData(modelInformations), reFetch };
 }
 
 /**

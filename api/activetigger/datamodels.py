@@ -563,7 +563,7 @@ class SimpleModelInModel(BaseModel):
     scheme: str
     model: str
     features: list
-    params: dict
+    params: dict[str, str | float | bool | list | None]
     standardize: bool | None = True
     dichotomize: str | None = None
     cv10: bool = False
@@ -576,8 +576,8 @@ class SimpleModelComputing(ProcessComputing):
 
     status: Literal["training", "predicting"]
     name: str
-    features: list
     scheme: str
+    features: list
     labels: list
     model_type: str
     model_params: dict
@@ -586,15 +586,27 @@ class SimpleModelComputing(ProcessComputing):
     retrain: bool = False
 
 
-class SimpleModelComputed(SimpleModelComputing):
+class SimpleModelComputed(BaseModel):
     """
     Simplemodel object
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    model: BaseEstimator | None = None
+    status: str = "trained"
+    name: str
+    features: list
+    scheme: str
+    labels: list
+    user: str
+    model_type: str
+    model_params: dict
+    standardize: bool = False
+    cv10: bool = False
+    retrain: bool = False
     proba: DataFrame | None = None
-    statistics: MLStatisticsModel | None = None
+    model: BaseEstimator
+    statistics_train: MLStatisticsModel | None = None
+    statistics_test: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
 
 
@@ -612,7 +624,8 @@ class SimpleModelOutModel(BaseModel):
     )
     scheme: str
     username: str
-    statistics: MLStatisticsModel | None = None
+    statistics_train: MLStatisticsModel | None = None
+    statistics_test: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
 
 
@@ -921,6 +934,15 @@ class ReturnTaskPredictModel(BaseModel):
 class LMInformationsModel(BaseModel):
     params: dict | None = None
     loss: dict | None = None
+    train_scores: dict | None = None
+    internalvalid_scores: dict | None = None
+    valid_scores: dict | None = None
+    test_scores: dict | None = None
+    outofsample_scores: dict | None = None
+
+
+class ModelInformationsModel(BaseModel):
+    params: dict | None = None
     train_scores: dict | None = None
     internalvalid_scores: dict | None = None
     valid_scores: dict | None = None

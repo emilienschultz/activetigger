@@ -35,7 +35,7 @@ export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }
       <div>
         <DisplayScores
           title=""
-          scores={currentModel.statistics as unknown as Record<string, number>}
+          scores={currentModel.statistics_test as unknown as Record<string, number>}
         />
         {currentModel.statistics_cv10 && (
           <DisplayScores

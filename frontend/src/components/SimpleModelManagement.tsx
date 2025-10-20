@@ -218,7 +218,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           <div>
             <DisplayScores
               title={'Internal validation'}
-              scores={currentModelInformations.statistics as MLStatisticsModel}
+              scores={currentModelInformations.statistics_test as MLStatisticsModel}
             />
             {currentModelInformations.statistics_cv10 && (
               <DisplayScores

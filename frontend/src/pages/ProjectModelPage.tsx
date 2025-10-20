@@ -101,6 +101,7 @@ export const ProjectModelPage: FC = () => {
   const { model } = useModelInformations(
     projectSlug || null,
     currentBertModel || null,
+    'bert',
     isComputing,
   );
 

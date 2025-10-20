@@ -1453,8 +1453,7 @@ class Project:
                     error = future.exception()
                     if error:
                         raise Exception(str(error))
-                    results = future.result()
-                    self.simplemodels.add(sm, results)
+                    self.simplemodels.add(sm)
                     print("Simplemodel trained")
                     logging.debug("Simplemodel trained")
                 except Exception as ex:
