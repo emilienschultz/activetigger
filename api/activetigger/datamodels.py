@@ -931,23 +931,18 @@ class ReturnTaskPredictModel(BaseModel):
     metrics: MLStatisticsModel | None = None
 
 
-class LMInformationsModel(BaseModel):
-    params: dict | None = None
-    loss: dict | None = None
-    train_scores: dict | None = None
+class ModelScoresModel(BaseModel):
     internalvalid_scores: dict | None = None
     valid_scores: dict | None = None
     test_scores: dict | None = None
     outofsample_scores: dict | None = None
+    train_scores: dict | None = None
 
 
 class ModelInformationsModel(BaseModel):
     params: dict | None = None
-    train_scores: dict | None = None
-    internalvalid_scores: dict | None = None
-    valid_scores: dict | None = None
-    test_scores: dict | None = None
-    outofsample_scores: dict | None = None
+    loss: dict | None = None
+    scores: ModelScoresModel
 
 
 class ProjectUpdateModel(BaseModel):

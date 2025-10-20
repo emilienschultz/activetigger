@@ -17,7 +17,7 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     BertModelModel,
-    LMInformationsModel,
+    ModelInformationsModel,
     SimpleModelInModel,
     SimpleModelOutModel,
     TextDatasetModel,
@@ -109,7 +109,7 @@ async def get_simplemodel(
 @router.get("/models/information", dependencies=[Depends(verified_user)])
 async def get_bert(
     project: Annotated[Project, Depends(get_project)], name: str, kind: str
-) -> LMInformationsModel:
+) -> ModelInformationsModel:
     """
     Get model information
     """
@@ -120,19 +120,6 @@ async def get_bert(
             return project.simplemodels.get_informations(name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# @router.get("/models/bert", dependencies=[Depends(verified_user)])
-# async def get_bert(
-#     project: Annotated[Project, Depends(get_project)], name: str
-# ) -> LMInformationsModel:
-#     """
-#     Get Bert parameters and statistics
-#     """
-#     try:
-#         return project.languagemodels.get_informations(name)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/models/predict", dependencies=[Depends(verified_user)])

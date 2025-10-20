@@ -21,6 +21,7 @@ from activetigger.datamodels import (
     LiblinearParams,
     ModelDescriptionModel,
     ModelInformationsModel,
+    ModelScoresModel,
     Multi_naivebayesParams,
     RandomforestParams,
     SimpleModelComputed,
@@ -29,7 +30,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
-from activetigger.functions import get_scores_prediction
+from activetigger.functions import get_model_metrics
 from activetigger.queue import Queue
 from activetigger.tasks.predict_ml import PredictML
 from activetigger.tasks.train_ml import TrainML
@@ -223,7 +224,6 @@ class SimpleModels:
             if m.scheme not in r:
                 r[m.scheme] = []
             r[m.scheme].append(m)
-        print("Available simplemodels loaded", r)
         return r
 
     def get(self, name: str) -> SimpleModelComputed:
@@ -412,22 +412,19 @@ class SimpleModels:
     def get_informations(self, model_name) -> ModelInformationsModel:
         """
         Informations on the bert model from the files
-        TODO : avoid to read and create a cache
         """
 
         # params = self.get_parameters(model_name)
-        params = None
-        internalvalid_scores = None
-        train_scores = get_scores_prediction(self.path.joinpath(model_name), "train")
-        valid_scores = get_scores_prediction(self.path.joinpath(model_name), "valid")
-        test_scores = get_scores_prediction(self.path.joinpath(model_name), "test")
-        outofsample_scores = None
+        metrics = get_model_metrics(self.path.joinpath(model_name))
 
         return ModelInformationsModel(
-            params=params,
-            train_scores=train_scores,
-            internalvalid_scores=internalvalid_scores,
-            valid_scores=valid_scores,
-            test_scores=test_scores,
-            outofsample_scores=outofsample_scores,
+            params=None,
+            train_scores=metrics.get("train", None),
+            scores=ModelScoresModel(
+                internalvalid_scores=metrics.get("trainvalid", None),
+                valid_scores=metrics.get("valid", None),
+                test_scores=metrics.get("test", None),
+                outofsample_scores=metrics.get("outofsample", None),
+                train_scores=metrics.get("train", None),
+            ),
         )

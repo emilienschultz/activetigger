@@ -2,12 +2,12 @@ import { FC, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
-import { DisplayScores } from '../components/DisplayScores';
+import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { useComputeModelPrediction, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
-import { ModelDescriptionModel } from '../types';
+import { MLStatisticsModel, ModelDescriptionModel } from '../types';
 
 /**
  * Buttons
@@ -60,7 +60,7 @@ export const ProjectValidatePage: FC = () => {
   const [currentSimpleModelName, setCurrentSimpleModelName] = useState<string | null>(null);
   const [currentBertModelName, setCurrentBertModelName] = useState<string | null>(null);
 
-  const { model: bertModelInformation } = useModelInformations(
+  const { model: bertModelInformations } = useModelInformations(
     projectName || null,
     currentBertModelName || null,
     'bert',
@@ -68,7 +68,7 @@ export const ProjectValidatePage: FC = () => {
   );
 
   // get model information from api
-  const { model: simpleModelInformations, reFetch: reFetchSimpleModel } = useModelInformations(
+  const { model: simpleModelInformations } = useModelInformations(
     projectName || null,
     currentSimpleModelName || null,
     'simple',
@@ -127,9 +127,21 @@ export const ProjectValidatePage: FC = () => {
                 />
 
                 {simpleModelInformations && (
+                  <DisplayScoresMenu
+                    scores={
+                      simpleModelInformations.scores as unknown as Record<string, MLStatisticsModel>
+                    }
+                    modelName={currentSimpleModelName || ''}
+                  />
+                )}
+
+                {/* {simpleModelInformations && (
                   <DisplayScores
                     scores={
-                      simpleModelInformations.valid_scores as unknown as Record<string, number>
+                      simpleModelInformations.scores.valid_scores as unknown as Record<
+                        string,
+                        number
+                      >
                     }
                     modelName={currentBertModelName || ''}
                     title="Validation scores"
@@ -139,12 +151,15 @@ export const ProjectValidatePage: FC = () => {
                 {simpleModelInformations && (
                   <DisplayScores
                     scores={
-                      simpleModelInformations.test_scores as unknown as Record<string, number>
+                      simpleModelInformations.scores.test_scores as unknown as Record<
+                        string,
+                        number
+                      >
                     }
                     modelName={currentBertModelName || ''}
                     title="Test scores"
                   />
-                )}
+                )} */}
               </Tab>
               <Tab eventKey="bert" title="BERT">
                 <div>
@@ -182,7 +197,7 @@ export const ProjectValidatePage: FC = () => {
                     displayStopButton={isComputing}
                   />
 
-                  {bertModelInformation && !project?.params.test && (
+                  {bertModelInformations && !project?.params.test && (
                     <div className="col-12">
                       <div className="alert alert-warning m-4">
                         No testset available for this project. Please create one to compute
@@ -191,10 +206,22 @@ export const ProjectValidatePage: FC = () => {
                     </div>
                   )}
 
-                  {bertModelInformation && (
+                  {bertModelInformations && (
+                    <DisplayScoresMenu
+                      scores={
+                        bertModelInformations.scores as unknown as Record<string, MLStatisticsModel>
+                      }
+                      modelName={currentSimpleModelName || ''}
+                    />
+                  )}
+
+                  {/* {bertModelInformation && (
                     <DisplayScores
                       scores={
-                        bertModelInformation.valid_scores as unknown as Record<string, number>
+                        bertModelInformation.scores.valid_scores as unknown as Record<
+                          string,
+                          number
+                        >
                       }
                       modelName={currentBertModelName || ''}
                       title="Validation scores"
@@ -203,11 +230,13 @@ export const ProjectValidatePage: FC = () => {
 
                   {bertModelInformation && (
                     <DisplayScores
-                      scores={bertModelInformation.test_scores as unknown as Record<string, number>}
+                      scores={
+                        bertModelInformation.scores.test_scores as unknown as Record<string, number>
+                      }
                       modelName={currentBertModelName || ''}
                       title="Test scores"
                     />
-                  )}
+                  )} */}
                 </div>
               </Tab>
             </Tabs>

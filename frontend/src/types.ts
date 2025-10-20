@@ -62,7 +62,9 @@ export type TextDatasetModel = components['schemas']['TextDatasetModel'];
 
 export type MLStatisticsModel = components['schemas']['MLStatisticsModel'];
 
-export type LMInformationsModel = components['schemas']['LMInformationsModel'];
+export type ModelInformationsModel = components['schemas']['ModelInformationsModel'];
+
+export type ModelScoresModel = components['schemas']['ModelScoresModel'];
 
 export type ComputeBertopicModel = components['schemas']['ComputeBertopicModel'];
 

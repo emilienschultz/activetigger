@@ -2402,23 +2402,6 @@ export interface components {
             /** Epochs */
             epochs?: number | null;
         };
-        /** LMInformationsModel */
-        LMInformationsModel: {
-            /** Params */
-            params?: Record<string, never> | null;
-            /** Loss */
-            loss?: Record<string, never> | null;
-            /** Train Scores */
-            train_scores?: Record<string, never> | null;
-            /** Internalvalid Scores */
-            internalvalid_scores?: Record<string, never> | null;
-            /** Valid Scores */
-            valid_scores?: Record<string, never> | null;
-            /** Test Scores */
-            test_scores?: Record<string, never> | null;
-            /** Outofsample Scores */
-            outofsample_scores?: Record<string, never> | null;
-        };
         /**
          * LMParametersModel
          * @description Parameters for bertmodel training
@@ -2575,6 +2558,27 @@ export interface components {
             parameters: Record<string, never>;
             /** Path */
             path: string;
+        };
+        /** ModelInformationsModel */
+        ModelInformationsModel: {
+            /** Params */
+            params?: Record<string, never> | null;
+            /** Loss */
+            loss?: Record<string, never> | null;
+            scores: components["schemas"]["ModelScoresModel"];
+        };
+        /** ModelScoresModel */
+        ModelScoresModel: {
+            /** Internalvalid Scores */
+            internalvalid_scores?: Record<string, never> | null;
+            /** Valid Scores */
+            valid_scores?: Record<string, never> | null;
+            /** Test Scores */
+            test_scores?: Record<string, never> | null;
+            /** Outofsample Scores */
+            outofsample_scores?: Record<string, never> | null;
+            /** Train Scores */
+            train_scores?: Record<string, never> | null;
         };
         /**
          * NextInModel
@@ -5221,7 +5225,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LMInformationsModel"];
+                    "application/json": components["schemas"]["ModelInformationsModel"];
                 };
             };
             /** @description Validation Error */

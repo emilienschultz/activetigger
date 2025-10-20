@@ -15,15 +15,16 @@ from activetigger.datamodels import (
     LanguageModelsProjectStateModel,
     LMComputing,
     LMComputingOutModel,
-    LMInformationsModel,
     LMParametersDbModel,
     LMParametersModel,
     LMStatusModel,
+    ModelInformationsModel,
+    ModelScoresModel,
     StaticFileModel,
 )
 from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
-from activetigger.functions import get_scores_prediction
+from activetigger.functions import get_model_metrics
 from activetigger.queue import Queue
 from activetigger.tasks.predict_bert import PredictBert
 from activetigger.tasks.train_bert import TrainBert
@@ -489,65 +490,24 @@ class LanguageModels:
             params = json.load(jsonfile)
         return params
 
-    # def get_scores_prediction(self, model_name, dataset) -> dict | None:
-    #     """
-    #     Get the scores of the model for a dataset
-    #     - last metrics file
-    #     - return None if not
-    #     """
-    #     # case for internalvalid
-    #     if dataset == "internalvalid":
-    #         with open(
-    #             self.path.joinpath(model_name).joinpath("metrics_internalvalid.json"),
-    #             "r",
-    #         ) as f:
-    #             valid_scores = json.load(f)
-    #         return valid_scores
-
-    #     folder = self.path.joinpath(model_name)
-    #     files = sorted(
-    #         [
-    #             f.name
-    #             for f in folder.iterdir()
-    #             if f.is_file() and f.name.startswith("metrics_predict_")
-    #         ],
-    #     )
-    #     if len(files) == 0:
-    #         return None
-    #     last_stat_file = files[-1]
-    #     with open(folder.joinpath(last_stat_file), "r") as f:
-    #         stats = json.load(f)
-    #     if dataset in stats:
-    #         return stats[dataset]
-    #     else:
-    #        return None
-
-    def get_informations(self, model_name) -> LMInformationsModel:
+    def get_informations(self, model_name) -> ModelInformationsModel:
         """
         Informations on the bert model from the files
-        TODO : avoid to read and create a cache
         """
 
-        loss = self.get_loss(model_name)
-        params = self.get_parameters(model_name)
-        internalvalid_scores = get_scores_prediction(
-            self.path.joinpath(model_name),
-            "internalvalid",
-        )
-        train_scores = get_scores_prediction(self.path.joinpath(model_name), "train")
-        valid_scores = get_scores_prediction(self.path.joinpath(model_name), "valid")
-        test_scores = get_scores_prediction(self.path.joinpath(model_name), "test")
-        # outofsample_scores = get_scores_prediction(self.path.joinpath(model_name), "outofsample")
-        outofsample_scores = None
+        metrics = get_model_metrics(self.path.joinpath(model_name))
+        print("METRICS", metrics.keys())
 
-        return LMInformationsModel(
-            params=params,
-            loss=loss,
-            train_scores=train_scores,
-            internalvalid_scores=internalvalid_scores,
-            valid_scores=valid_scores,
-            test_scores=test_scores,
-            outofsample_scores=outofsample_scores,
+        return ModelInformationsModel(
+            params=self.get_parameters(model_name),
+            loss=self.get_loss(model_name),
+            scores=ModelScoresModel(
+                train_scores=metrics.get("train", None),
+                internalvalid_scores=metrics.get("trainvalid", None),
+                valid_scores=metrics.get("valid", None),
+                test_scores=metrics.get("test", None),
+                outofsample_scores=metrics.get("outofsample", None),
+            ),
         )
 
     def get_base_model(self, model_name) -> dict:

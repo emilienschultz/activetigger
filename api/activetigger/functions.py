@@ -311,36 +311,36 @@ def process_payload_csv(csv_str: str, cols: list[str]) -> pd.DataFrame:
     return df[cols]
 
 
-def get_scores_prediction(folder: Path, key: str) -> dict | None:
+def get_model_metrics(path_model: Path) -> dict | None:
     """
     Get the scores of the model for a dataset
     - training metrics
     - last computed metrics
     """
-    if not folder.exists():
-        raise Exception(f"The folder {folder} does not exist")
+    if not path_model.exists():
+        raise Exception(f"The folder {path_model} does not exist")
 
     # training metrics
-    if not folder.joinpath("metrics_training.json").exists():
-        raise Exception(f"The file metrics_training.json does not exist in {folder}")
+    if not path_model.joinpath("metrics_training.json").exists():
+        raise Exception(f"The file metrics_training.json does not exist in {path_model}")
     with open(
-        folder.joinpath("metrics_training.json"),
+        path_model.joinpath("metrics_training.json"),
         "r",
     ) as f:
         scores = json.load(f)
 
     # computed metrics and concatenate
     files = sorted(
-        [f.name for f in folder.iterdir() if f.is_file() and f.name.startswith("metrics_predict_")],
+        [
+            f.name
+            for f in path_model.iterdir()
+            if f.is_file() and f.name.startswith("metrics_predict_")
+        ],
     )
     if len(files) > 0:
         last_stat_file = files[-1]
-        with open(folder.joinpath(last_stat_file), "r") as f:
+        with open(path_model.joinpath(last_stat_file), "r") as f:
             stats = json.load(f)
         scores = {**scores, **stats}
 
-    # return the requested key
-    if key in scores:
-        return scores[key]
-    else:
-        return None
+    return scores

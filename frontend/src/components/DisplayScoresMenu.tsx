@@ -1,8 +1,13 @@
 import { FC, useEffect, useState } from 'react';
+import { MLStatisticsModel } from '../types';
 import { DisplayScores } from './DisplayScores';
 
+interface Scores {
+  [key: string]: MLStatisticsModel;
+}
+
 interface DisplayScoresMenuPropos {
-  scores: Record<string, Record<string, number>>;
+  scores: Scores;
   modelName?: string;
   displayTitle?: boolean;
 }
@@ -35,14 +40,16 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
           value={currentScore}
           onChange={(e) => setCurrentScore(e.target.value)}
         >
-          {Object.entries(scores).map(([key]) => (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          ))}
+          {Object.entries(scores)
+            .filter(([_, value]) => value != null)
+            .map(([key]) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
         </select>
       </label>
-      {scores[currentScore] && (
+      {scores && (
         <DisplayScores
           title={displayTitle ? currentScore : null}
           scores={scores[currentScore]}

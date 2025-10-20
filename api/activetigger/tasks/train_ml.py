@@ -138,7 +138,7 @@ class TrainML(BaseTask):
             json.dump(
                 {
                     "train": metrics_train.model_dump(mode="json"),
-                    "test": metrics_test.model_dump(mode="json"),
+                    "trainvalid": metrics_test.model_dump(mode="json"),
                     "cv10": statistics_cv10.model_dump(mode="json") if statistics_cv10 else None,
                 },
                 f,
