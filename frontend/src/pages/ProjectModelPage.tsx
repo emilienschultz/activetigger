@@ -10,7 +10,6 @@ import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { ModelParametersTab } from '../components/ModelParametersTab';
-import { ModelPredict } from '../components/ModelPredict';
 import { LossChart } from '../components/vizualisation/lossChart';
 import {
   useComputeBertModelPrediction,
@@ -298,9 +297,6 @@ export const ProjectModelPage: FC = () => {
                       project={project || null}
                       isComputing={isComputing}
                     />
-                  </Tab>
-                  <Tab eventKey="predict" title="Predict">
-                    <ModelPredict />
                   </Tab>
                 </Tabs>
               </Tab>

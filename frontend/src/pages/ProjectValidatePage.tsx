@@ -19,6 +19,7 @@ interface validateButtonsProps {
   kind: string | null;
   currentScheme: string | null;
   isComputing: boolean;
+  setCurrentModel: (val: null | string) => void;
 }
 
 export const ValidateButtons: FC<validateButtonsProps> = ({
@@ -27,13 +28,17 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
   isComputing,
   currentScheme,
   projectSlug,
+  setCurrentModel,
 }) => {
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, 16);
   return (
     <div>
       <button
         className="btn btn-primary m-3"
-        onClick={() => computeModelPrediction(modelName || '', 'all', currentScheme, kind)}
+        onClick={() => {
+          computeModelPrediction(modelName || '', 'all', currentScheme, kind);
+          setCurrentModel(null);
+        }}
         disabled={isComputing}
       >
         Compute statistics on annotations
@@ -118,6 +123,7 @@ export const ProjectValidatePage: FC = () => {
                   currentScheme={currentScheme || null}
                   projectSlug={projectName || null}
                   isComputing={isComputing}
+                  setCurrentModel={setCurrentSimpleModelName}
                 />
 
                 {simpleModelInformations && (
@@ -166,6 +172,7 @@ export const ProjectValidatePage: FC = () => {
                   currentScheme={currentScheme || null}
                   projectSlug={projectName || null}
                   isComputing={isComputing}
+                  setCurrentModel={setCurrentBertModelName}
                 />
                 <div>
                   <DisplayTrainingProcesses

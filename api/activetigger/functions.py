@@ -314,27 +314,33 @@ def process_payload_csv(csv_str: str, cols: list[str]) -> pd.DataFrame:
 def get_scores_prediction(folder: Path, key: str) -> dict | None:
     """
     Get the scores of the model for a dataset
-    - last metrics file
-    - return None if not
+    - training metrics
+    - last computed metrics
     """
-    # case for internalvalid
-    if key == "internalvalid":
-        with open(
-            folder.joinpath("metrics_internalvalid.json"),
-            "r",
-        ) as f:
-            valid_scores = json.load(f)
-        return valid_scores
+    if not folder.exists():
+        raise Exception(f"The folder {folder} does not exist")
 
+    # training metrics
+    if not folder.joinpath("metrics_training.json").exists():
+        raise Exception(f"The file metrics_training.json does not exist in {folder}")
+    with open(
+        folder.joinpath("metrics_training.json"),
+        "r",
+    ) as f:
+        scores = json.load(f)
+
+    # computed metrics and concatenate
     files = sorted(
         [f.name for f in folder.iterdir() if f.is_file() and f.name.startswith("metrics_predict_")],
     )
-    if len(files) == 0:
-        return None
-    last_stat_file = files[-1]
-    with open(folder.joinpath(last_stat_file), "r") as f:
-        stats = json.load(f)
-    if key in stats:
-        return stats[key]
+    if len(files) > 0:
+        last_stat_file = files[-1]
+        with open(folder.joinpath(last_stat_file), "r") as f:
+            stats = json.load(f)
+        scores = {**scores, **stats}
+
+    # return the requested key
+    if key in scores:
+        return scores[key]
     else:
         return None
