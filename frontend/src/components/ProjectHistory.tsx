@@ -54,7 +54,6 @@ export const ProjectHistory: FC<ProjectHistoryProps> = ({
   ];
   return (
     <div>
-      <span className="explanations">History of the current session</span>
       <div>
         Session counter{' '}
         <a className="history">

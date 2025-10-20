@@ -214,13 +214,20 @@ export const ProjectTagPage: FC = () => {
   // existing simplemodels
   const availableSimpleModels = project?.simplemodel.available[currentScheme || ''] || [];
 
-  if (!projectName || !currentScheme) return;
+  // nb users
+  const nbUsers = project?.users ? Object.keys(project.users).length : 0;
+
+  // display active menu
+  const [activeMenu, setActiveMenu] = useState<boolean>(false);
 
   const statisticsDataset = (dataset: string) => {
     if (dataset === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
     if (dataset === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
     if (dataset === 'test') return `${statistics?.test_annotated_n}/${statistics?.test_set_n}`;
+    return '';
   };
+
+  if (!projectName || !currentScheme) return;
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
@@ -236,7 +243,7 @@ export const ProjectTagPage: FC = () => {
                   >
                     <div className="m-2">
                       <div className="col-12 d-flex justify-content-center align-items-center">
-                        Dataset{' '}
+                        <span className="d-none d-md-inline">Dataset </span>
                         <select
                           className="form-select mx-3"
                           value={phase}
@@ -256,7 +263,10 @@ export const ProjectTagPage: FC = () => {
                     </div>
                     {statistics ? (
                       <span className="badge text-bg-light currentstatistics">
-                        {`Annotated : ${statisticsDataset(phase)} ; Selected : ${nSample ? nSample : ''} `}
+                        <span className="d-none d-md-inline">Annotated : </span>
+                        {statisticsDataset(phase)} ;{' '}
+                        <span className="d-none d-md-inline">Selected : </span>
+                        {nSample || ''}
                       </span>
                     ) : (
                       ''
@@ -267,13 +277,34 @@ export const ProjectTagPage: FC = () => {
 
                     <div>
                       <button className="btn getelement" onClick={refetchElement}>
-                        <LuRefreshCw size={20} /> Get element
+                        <LuRefreshCw size={20} />{' '}
+                        <span className="d-none d-md-inline">Get element</span>
                         <Tooltip anchorSelect=".getelement" place="top">
                           Get next element with the selection mode
                         </Tooltip>
                       </button>
                     </div>
+                    <div>
+                      <button
+                        type="button"
+                        className={`btn btn-sm btn${activeMenu ? '' : '-outline'}-success rounded-pill px-2 py-1`}
+                        onClick={() => setActiveMenu(!activeMenu)}
+                      >
+                        active
+                      </button>
+                    </div>
                   </div>
+                  {activeMenu && (
+                    <ActiveLearningManagement
+                      projectSlug={projectName}
+                      history={history}
+                      currentScheme={currentScheme}
+                      availableSimpleModels={availableSimpleModels}
+                      setAppContext={setAppContext}
+                      freqRefreshSimpleModel={freqRefreshSimpleModel}
+                      activeSimepleModel={activeSimpleModel}
+                    />
+                  )}
                   <div>
                     <SelectionManagement />
                   </div>
@@ -411,27 +442,19 @@ export const ProjectTagPage: FC = () => {
             </div>
           )}
         </Tab>
-        <Tab eventKey="active" title="Active">
-          <ActiveLearningManagement
-            projectSlug={projectName}
-            history={history}
-            currentScheme={currentScheme}
-            availableSimpleModels={availableSimpleModels}
-            setAppContext={setAppContext}
-            freqRefreshSimpleModel={freqRefreshSimpleModel}
-            activeSimepleModel={activeSimpleModel}
-          />
-        </Tab>
-        <Tab eventKey="curate" title="Curate">
-          <Tabs id="panel" className="mt-3" defaultActiveKey="scheme">
-            <Tab eventKey="scheme" title="Current scheme">
-              <AnnotationDisagreementManagement projectSlug={projectName} />
-            </Tab>
-            <Tab eventKey="between" title="Between schemes">
-              <SchemesComparisonManagement projectSlug={projectName} />
-            </Tab>
-          </Tabs>
-        </Tab>
+
+        {nbUsers > 1 && (
+          <Tab eventKey="curate" title="Curate">
+            <Tabs id="panel" className="mt-3" defaultActiveKey="scheme">
+              <Tab eventKey="scheme" title="Current scheme">
+                <AnnotationDisagreementManagement projectSlug={projectName} />
+              </Tab>
+              <Tab eventKey="between" title="Between schemes">
+                <SchemesComparisonManagement projectSlug={projectName} />
+              </Tab>
+            </Tabs>
+          </Tab>
+        )}
       </Tabs>
     </ProjectPageLayout>
   );

@@ -87,7 +87,7 @@ async def compute_projection(
         raise HTTPException(status_code=400, detail="No feature available")
     try:
         features = project.features.get(
-            projection.features, dataset="train"
+            projection.features, dataset=["train"]
         )  # get features from project
         project.projections.compute(project.name, current_user.username, projection, features)
         orchestrator.log_action(

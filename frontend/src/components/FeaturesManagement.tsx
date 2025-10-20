@@ -79,9 +79,8 @@ export const FeaturesManagement: FC = () => {
   }
 
   return (
-    <div className="container-fluid">
+    <div className="container">
       <div className="row">
-        <div className="explanations">Available features</div>
         {featuresInfo &&
           Object.entries(featuresInfo).map(([key, value]) => (
             <div className="card text-bg-light mt-3" key={key}>

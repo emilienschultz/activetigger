@@ -70,7 +70,6 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
 
   return (
     <div className="container">
-      <div className="explanations">Keep track of the tagging rules</div>
       <MDEditor
         value={modifiedCodebook || ''}
         onChange={setModifiedCodebook}

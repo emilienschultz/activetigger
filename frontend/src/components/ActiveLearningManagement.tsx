@@ -33,7 +33,7 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
   const refreshFreq = (newValue: number) => {
     setAppContext((prev) => ({ ...prev, freqRefreshSimpleModel: newValue }));
   };
-  const setActiveSiumpleModel = (newValue: string | null) => {
+  const setActiveSimpleModel = (newValue: string | null) => {
     setAppContext((prev) => ({ ...prev, activeSimpleModel: newValue }));
   };
   const { retrainSimpleModel } = useRetrainSimpleModel(projectSlug, currentScheme);
@@ -69,12 +69,11 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
   ]);
 
   return (
-    <>
+    <div className="alert alert-info">
       <div>
         Current active learning model : {activeSimepleModel ? activeSimepleModel : 'No model used'}
       </div>
       <div>
-        <label>Select a simple model to use it for active learning</label>
         <div className="d-flex align-items-center ">
           <Select
             options={Object.values(availableSimpleModels || {}).map((e) => ({
@@ -89,10 +88,11 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
             }}
             isSearchable
             className="w-50"
+            placeholder="Select a model for active learning"
           />
           <button
             className="btn btn-primary mx-2"
-            onClick={() => setActiveSiumpleModel(currentSimpleModel)}
+            onClick={() => setActiveSimpleModel(currentSimpleModel)}
           >
             Validate
           </button>
@@ -114,6 +114,6 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
         />
         annotations (0 for no refreshing)
       </div>
-    </>
+    </div>
   );
 };

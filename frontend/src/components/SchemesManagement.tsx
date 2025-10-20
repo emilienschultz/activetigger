@@ -69,11 +69,11 @@ export const SelectCurrentScheme: FC = () => {
     <div className="row">
       <div className="d-flex align-items-center mb-3">
         <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
-          Current
+          Active scheme
         </label>
         <select
           id="scheme-selected"
-          className="form-select"
+          className="form-select w-50"
           onChange={handleSelectScheme}
           value={currentScheme ? currentScheme : availableSchemes[0]}
         >
@@ -148,16 +148,16 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
   };
 
   return (
-    <div className="container-fluid m-3">
-      <div className="d-flex flex-wrap align-items-center">
-        <div className="mt-3 col-12 col-md-4">
+    <div>
+      <div className="flex-wrap align-items-center">
+        <div className="mt-3 col-12">
           <SelectCurrentScheme />
         </div>
         {!deactivateModifications && (
-          <>
+          <div>
             <button
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
-              className="btn btn-primary ms-2"
+              className="btn btn-primary"
             >
               <FaPlusCircle size={20} /> <span className="d-none d-sm-inline">Add</span>
             </button>
@@ -171,7 +171,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
             <button onClick={deleteSelectedScheme} className="btn btn-primary ms-2">
               <FaRegTrashAlt size={20} /> <span className="d-none d-sm-inline">Delete</span>
             </button>
-          </>
+          </div>
         )}
       </div>
       <div>

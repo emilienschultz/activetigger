@@ -206,30 +206,32 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             Compute new vizualization
           </button>
         )} */}
-        <label style={{ display: 'block' }} className="mx-4">
-          <span className="lock">
-            <FaLock /> Lock on selection
-          </span>
-          <input
-            type="checkbox"
-            checked={selectionConfig.frameSelection}
-            className="mx-2"
-            onChange={(_) => {
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: {
-                  ...selectionConfig,
-                  frameSelection: !selectionConfig.frameSelection,
-                },
-              }));
-            }}
-          />
-          <Tooltip anchorSelect=".lock" place="top">
-            Once a vizualisation computed, you can use the square tool to select an area (or remove
-            the square).<br></br> Then you can lock the selection, and only elements in the selected
-            area will be available for annoation.
-          </Tooltip>
-        </label>
+        {projectionData && (
+          <label style={{ display: 'block' }}>
+            <span className="lock">
+              <FaLock /> Lock on selection
+            </span>
+            <input
+              type="checkbox"
+              checked={selectionConfig.frameSelection}
+              className="mx-2"
+              onChange={(_) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: {
+                    ...selectionConfig,
+                    frameSelection: !selectionConfig.frameSelection,
+                  },
+                }));
+              }}
+            />
+            <Tooltip anchorSelect=".lock" place="top">
+              Once a vizualisation computed, you can use the square tool to select an area (or
+              remove the square).<br></br> Then you can lock the selection, and only elements in the
+              selected area will be available for annoation.
+            </Tooltip>
+          </label>
+        )}
       </div>
 
       {projectionTraining && (

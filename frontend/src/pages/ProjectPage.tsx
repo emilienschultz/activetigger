@@ -71,6 +71,7 @@ export const ProjectPage: FC = () => {
     <ProjectPageLayout projectName={projectSlug}>
       <Tabs id="panel" className="mt-3" defaultActiveKey="schemes">
         <Tab eventKey="schemes" title="Schemes">
+          <div className="explanations">Manage the schemes and labels</div>
           <SchemesManagement
             projectSlug={projectSlug}
             deactivateModifications={displayConfig.interfaceType === 'annotator'}
@@ -92,10 +93,12 @@ export const ProjectPage: FC = () => {
         </Tab>
 
         <Tab eventKey="codebook" title="Codebook">
+          <div className="explanations">Keep track of the tagging rules</div>
           <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
         </Tab>
 
         <Tab eventKey="features" title="Features">
+          <div className="explanations">Available features</div>
           <FeaturesManagement />
         </Tab>
 
@@ -124,6 +127,7 @@ export const ProjectPage: FC = () => {
         </Tab>
 
         <Tab eventKey="session" title="Session history">
+          <div className="explanations">History of the current session</div>
           <ProjectHistory
             projectSlug={projectSlug}
             history={history}

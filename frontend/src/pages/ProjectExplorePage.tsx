@@ -35,6 +35,7 @@ export const ProjectExplorePage: FC = () => {
           <div className="col-12">
             <Tabs className="mt-3" defaultActiveKey="tabular">
               <Tab eventKey="tabular" title="Tabular view">
+                <div className="explanations">Explore your data as table</div>
                 <DataTabular
                   projectSlug={projectName || ''}
                   currentScheme={currentScheme || ''}
@@ -44,6 +45,7 @@ export const ProjectExplorePage: FC = () => {
                 />
               </Tab>
               <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
+                <div className="explanations">Explore your data as projection</div>
                 {phase != 'test' && (
                   <ProjectionManagement
                     projectName={projectName || null}
@@ -59,6 +61,7 @@ export const ProjectExplorePage: FC = () => {
                 )}
               </Tab>
               <Tab eventKey="bertopic" title="Topic model">
+                <div className="explanations">Explore the topics in your data</div>
                 <BertopicPage />
               </Tab>
             </Tabs>
