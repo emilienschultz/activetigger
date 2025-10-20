@@ -14,6 +14,7 @@ import {
   useStopProcess,
   useUsers,
 } from '../core/api';
+import { useAuth } from '../core/auth';
 
 interface Computation {
   unique_id: string;
@@ -33,6 +34,7 @@ interface Row {
  */
 
 export const MonitorPage: FC = () => {
+  const { authenticatedUser } = useAuth();
   const { activeProjects, gpu, cpu, memory, disk, reFetchQueueState } = useGetServer(null);
   const { restartQueue } = useRestartQueue();
   const { stopProcess } = useStopProcess();
@@ -70,6 +72,21 @@ export const MonitorPage: FC = () => {
       key: 'action',
     },
   ];
+
+  if (authenticatedUser?.username !== 'root') {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center vh-100 bg-light text-center">
+        <div className="p-4 bg-white shadow rounded">
+          <h1 className="display-1 fw-bold text-danger mb-3">403</h1>
+          <h2 className="h4 mb-3">Access Forbidden</h2>
+          <p className="text-muted mb-4">You don’t have permission to access this page.</p>
+          <button className="btn btn-primary" onClick={() => window.history.back()}>
+            <i className="bi bi-arrow-left me-2"></i> Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PageLayout currentPage="monitor">
