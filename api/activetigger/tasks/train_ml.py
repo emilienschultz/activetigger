@@ -111,6 +111,10 @@ class TrainML(BaseTask):
         # Write the proba
         proba.to_csv(self.model_path / "proba.csv")
 
+        # Write the training data
+        X_train["label"] = Y_train
+        X_train.to_parquet(self.model_path / "training_data.parquet")
+
         # Dump it in the folder
         element = SimpleModelComputed(
             time=datetime.datetime.now(),

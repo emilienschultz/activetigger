@@ -34,7 +34,7 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
   return (
     <div>
       <button
-        className="btn btn-primary m-3"
+        className="btn btn-primary my-2"
         onClick={() => {
           computeModelPrediction(modelName || '', 'all', currentScheme, kind);
           setCurrentModel(null);

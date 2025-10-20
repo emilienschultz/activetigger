@@ -213,38 +213,21 @@ class PredictBert(BaseTask):
                     pred["text"],
                 )
 
+            # add out of sample (labelled data not in training data)
+            index_model = pd.read_parquet(
+                self.path.joinpath("training_data.parquet"), columns=[]
+            ).index
+            filter_oos = (
+                ~pred.index.isin(index_model) & filter_label & pred[self.col_datasets] == "train"
+            )
+            if filter_oos.sum() > 10:
+                metrics["outofsample"] = get_metrics(
+                    pred[filter_oos]["label"], pred[filter_oos]["prediction"], pred["text"]
+                )
+
             # write the metrics in a json file
             with open(str(self.path.joinpath(f"metrics_predict_{time.time()}.json")), "w") as f:
                 json.dump({k: v.model_dump(mode="json") for k, v in metrics.items()}, f)
-
-            # # case the statistics should be computed on all values
-            # if self.statistics == "full":
-            #     metrics = get_metrics(
-            #         pred[filter]["label"], pred[filter]["prediction"], pred["text"]
-            #     )
-            #     # save in a dedicated file
-            #     with open(str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w") as f:
-            #         json.dump(metrics.model_dump(mode="json"), f)
-
-            # # case the statistics should be computed only on element not in the training set
-            # # only if there is more than 10 elements
-            # if self.statistics == "outofsample":
-            #     index_model = pd.read_parquet(
-            #         self.path.joinpath("training_data.parquet"), columns=[]
-            #     ).index
-            #     filter_oos = ~pred.index.isin(index_model) & filter
-            #     if filter_oos.sum() > 10:
-            #         metrics = get_metrics(
-            #             pred[filter_oos]["label"], pred[filter_oos]["prediction"], pred["text"]
-            #         )
-            #         # save in a dedicated file
-            #         with open(str(self.path.joinpath("metrics_outofsample.json")), "w") as f:
-            #             json.dump(metrics.model_dump(mode="json"), f)
-            #     else:
-            #         print(
-            #             "Not enough out of sample data to compute statistics, only "
-            #             f"{filter_oos.sum()} elements"
-            #         )
 
             # drop the temporary text col
             pred.drop(columns=["text"], inplace=True)

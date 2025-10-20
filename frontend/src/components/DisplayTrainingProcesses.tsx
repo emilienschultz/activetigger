@@ -55,7 +55,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto p-4">
+    <div className="overflow-x-auto">
       {Object.keys(processes || {}).length > 0 && displayStopButton && (
         <div>
           <button

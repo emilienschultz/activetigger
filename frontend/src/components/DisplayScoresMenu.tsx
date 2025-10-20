@@ -17,8 +17,8 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   modelName,
   displayTitle,
 }) => {
-  const keys = Object.keys(scores || {});
-  const [currentScore, setCurrentScore] = useState<string>(keys[0] || '');
+  const keys = Object.keys(scores);
+  const [currentScore, setCurrentScore] = useState<string>(keys[0]);
 
   // Ensure currentScore is still valid when scores change
   useEffect(() => {
@@ -30,6 +30,8 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   if (!scores || Object.keys(scores).length === 0) {
     return <div>No scores available</div>;
   }
+
+  console.log(currentScore);
 
   return (
     <div>

@@ -90,6 +90,16 @@ class PredictML(BaseTask):
                 Y_full["text"] if self.col_text else None,
             )
 
+        # add out of sample (labelled data not in training data)
+        index_model = pd.read_parquet(self.path.joinpath("training_data.parquet"), columns=[]).index
+        filter_oos = ~Y_full.index.isin(index_model) & filter_label & Y_full["dataset"] == "train"
+        if filter_oos.sum() > 10:
+            metrics["outofsample"] = get_metrics(
+                Y_full[filter_oos]["label"],
+                Y_full[filter_oos]["prediction"],
+                Y_full["text"] if self.col_text else None,
+            )
+
         # write the metrics in a json file
         with open(str(self.path.joinpath(f"metrics_predict_{time.time()}.json")), "w") as f:
             json.dump({k: v.model_dump(mode="json") for k, v in metrics.items()}, f)

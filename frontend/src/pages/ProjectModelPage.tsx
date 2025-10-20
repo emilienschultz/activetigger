@@ -109,9 +109,9 @@ export const ProjectModelPage: FC = () => {
 
   // display statistics options
   const possibleStatistics = [
-    ['Validation (model)', model ? model.valid_scores : null],
-    ['Train (model)', model ? model.train_scores : null],
-    ['Out of sample', model ? model.outofsample_scores : null],
+    ['Validation (model)', model ? model.scores.valid_scores : null],
+    ['Train (model)', model ? model.scores.train_scores : null],
+    ['Out of sample', model ? model.scores.outofsample_scores : null],
   ];
   const existingStatistics = Object.fromEntries(
     possibleStatistics.filter(([_, scores]) => scores != null),
@@ -260,7 +260,7 @@ export const ProjectModelPage: FC = () => {
                             <div className="mt-2">
                               <DisplayScores
                                 title={'Internal validation'}
-                                scores={model.internalvalid_scores as MLStatisticsModel}
+                                scores={model.scores.internalvalid_scores as MLStatisticsModel}
                                 modelName={currentBertModel}
                               />
                             </div>
