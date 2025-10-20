@@ -98,6 +98,9 @@ export const ProjectValidatePage: FC = () => {
           <div className="col-12">
             <Tabs id="panel" className="mt-3" defaultActiveKey="simple">
               <Tab eventKey="simple" title="Simple">
+                <div className="explanations">
+                  Compute statistics on annotations for machine learning models
+                </div>
                 <div>
                   <label htmlFor="selected-model">Existing models</label>
                   <Select
@@ -134,34 +137,11 @@ export const ProjectValidatePage: FC = () => {
                     modelName={currentSimpleModelName || ''}
                   />
                 )}
-
-                {/* {simpleModelInformations && (
-                  <DisplayScores
-                    scores={
-                      simpleModelInformations.scores.valid_scores as unknown as Record<
-                        string,
-                        number
-                      >
-                    }
-                    modelName={currentBertModelName || ''}
-                    title="Validation scores"
-                  />
-                )}
-
-                {simpleModelInformations && (
-                  <DisplayScores
-                    scores={
-                      simpleModelInformations.scores.test_scores as unknown as Record<
-                        string,
-                        number
-                      >
-                    }
-                    modelName={currentBertModelName || ''}
-                    title="Test scores"
-                  />
-                )} */}
               </Tab>
               <Tab eventKey="bert" title="BERT">
+                <div className="explanations">
+                  Compute statistics on annotations for BERT models
+                </div>
                 <div>
                   <label htmlFor="selected-model">Existing models</label>
                   <Select

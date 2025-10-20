@@ -78,8 +78,9 @@ export const ProjectExportPage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
+            <div className="explanations">Predict and export annotations and models</div>
             <div className="d-flex align-items-center mt-2">
-              Select a format for the files
+              Select a file format
               <select
                 className="form-select w-25 mx-2"
                 onChange={(e) => {
