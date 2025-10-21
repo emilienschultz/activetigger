@@ -10,7 +10,6 @@ import {
   useGetFeaturesFile,
   useGetModelFile,
   useGetPredictionsFile,
-  useGetPredictionsSimplemodelFile,
   useGetProjectionFile,
   useGetRawDataFile,
   useGetStaticUrls,
@@ -65,7 +64,7 @@ export const ProjectExportPage: FC = () => {
   const { getPredictionsFile } = useGetPredictionsFile(projectName || null);
   const { getModelFile } = useGetModelFile(projectName || null);
   const { getRawDataFile } = useGetRawDataFile(projectName || null);
-  const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
+  // const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
   const { getProjectionFile } = useGetProjectionFile(projectName || null);
   const { staticUrls, reFetchUrl } = useGetStaticUrls(projectName || null, model);
 

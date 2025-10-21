@@ -129,7 +129,7 @@ async def predict(
     model_name: str,
     scheme: str,
     kind: str,
-    dataset: str = "all",
+    dataset: str = "annotable",
     batch_size: int = 32,
     external_dataset: TextDatasetModel | None = None,
 ) -> None:
@@ -139,7 +139,8 @@ async def predict(
     - types of dataset
     Manage specific cases for prediction
 
-    TODO : add external again
+    TODO : optimize prediction on whole dataset
+    TODO : manage prediction external/whole dataset for simple models
 
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
@@ -150,27 +151,58 @@ async def predict(
             raise Exception(f"Model kind {kind} not recognized")
 
         # managing the perimeter of the prediction
-        if dataset == "all":
+        if dataset == "annotable":
             datasets = ["train"]
             if project.valid is not None:
                 datasets.append("valid")
             if project.test is not None:
                 datasets.append("test")
-        elif dataset == "external":
-            raise Exception("External dataset not yet implemented for bert models")
+        if dataset == "external":
+            if kind != "bert":
+                raise Exception("External dataset prediction is only available for bert models")
+        if dataset == "all":
+            pass
         else:
             raise Exception(f"Dataset {dataset} not recognized")
 
         # case for bert models
         if kind == "bert":
-            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+            # case the prediction is done on an external dataset
+            if dataset == "external":
+                if external_dataset is None:
+                    raise HTTPException(status_code=400, detail="External dataset is missing")
+                csv_buffer = io.StringIO(external_dataset.csv)
+                df = pd.read_csv(
+                    csv_buffer,
+                )
+                df["text"] = df[external_dataset.text]
+                df["index"] = df[external_dataset.id].apply(str)
+                df["id"] = df["index"]
+                df["dataset"] = "external"
+                df.set_index("index", inplace=True)
+                df = df[["id", "dataset", "text"]].dropna()
+                col_label = None
+                datasets = None
+            # case the prediction is done on all the data
+            elif dataset == "all":
+                df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
+                if project.params.col_id != "dataset_row_number":
+                    df["id"] = project.features.get_column_raw(project.params.col_id, index="all")
+                else:
+                    df["id"] = df.index
+                df["dataset"] = "all"
+                col_label = None
+            # case the prediction is done on annotable data
+            else:
+                df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+                col_label = "labels"
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
                 name=model_name,
                 user=current_user.username,
                 df=df,
                 col_text="text",
-                col_label="labels",
+                col_label=col_label,
                 col_id="id",
                 col_datasets="dataset",
                 dataset=dataset,

@@ -1,11 +1,7 @@
 import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import {
-  useComputeBertModelPrediction,
-  useGetPredictionsFile,
-  useModelInformations,
-} from '../core/api';
+import { useComputeModelPrediction, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
 import { DisplayTrainingProcesses } from './DisplayTrainingProcesses';
 import { ImportPredictionDataset } from './forms/ImportPredictionDataset';
@@ -29,7 +25,6 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
     'bert',
     isComputing,
   );
-  const { getPredictionsFile } = useGetPredictionsFile(projectSlug || null);
 
   const availablePrediction =
     currentScheme &&
@@ -40,10 +35,7 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
       : false;
 
   // compute model preduction
-  const { computeBertModelPrediction } = useComputeBertModelPrediction(
-    projectSlug || null,
-    useBatchSize,
-  );
+  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, useBatchSize);
 
   // display external form
   const [displayExternalForm, setDisplayExternalForm] = useState<boolean>(false);
@@ -72,7 +64,9 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
                 <>
                   <button
                     className="btn btn-info m-2"
-                    onClick={() => computeBertModelPrediction(currentModel, 'all', currentScheme)}
+                    onClick={() =>
+                      computeModelPrediction(currentModel, 'all', currentScheme, 'bert')
+                    }
                   >
                     Prediction complete dataset
                   </button>
