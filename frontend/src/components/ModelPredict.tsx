@@ -48,49 +48,38 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
     false;
 
   return (
-    <div className="container-fluid">
-      <div className="row">
-        <div className="col-12">
-          <DisplayTrainingProcesses
-            projectSlug={projectSlug || null}
-            processes={project?.languagemodels.training}
-            processStatus="predicting"
-            displayStopButton={isComputing}
+    <div>
+      <DisplayTrainingProcesses
+        projectSlug={projectSlug || null}
+        processes={project?.languagemodels.training}
+        processStatus="predicting"
+        displayStopButton={isComputing}
+      />
+      <div>
+        {model && (
+          <button
+            className="btn btn-info mt-2"
+            onClick={() => setDisplayExternalForm(!displayExternalForm)}
+          >
+            Prediction external dataset
+          </button>
+        )}
+        {model && !availablePrediction && (
+          <button
+            className="btn btn-info mt-2"
+            onClick={() => computeModelPrediction(currentModel, 'all', currentScheme || '', 'bert')}
+          >
+            Prediction complete dataset
+          </button>
+        )}
+        {model && displayExternalForm && (
+          <ImportPredictionDataset
+            projectSlug={projectSlug || ''}
+            modelName={currentModel || ''}
+            scheme={currentScheme || ''}
+            availablePredictionExternal={availablePredictionExternal || false}
           />
-
-          {currentModel && currentScheme && (
-            <div>
-              {model && !availablePrediction && (
-                <>
-                  <button
-                    className="btn btn-info m-2"
-                    onClick={() =>
-                      computeModelPrediction(currentModel, 'all', currentScheme, 'bert')
-                    }
-                  >
-                    Prediction complete dataset
-                  </button>
-                  <button
-                    className="btn btn-info m-2"
-                    onClick={() => setDisplayExternalForm(!displayExternalForm)}
-                  >
-                    Prediction external dataset
-                  </button>
-                </>
-              )}
-              {model && displayExternalForm && (
-                <div>
-                  <ImportPredictionDataset
-                    projectSlug={projectSlug || ''}
-                    modelName={currentModel}
-                    scheme={currentScheme}
-                    availablePredictionExternal={availablePredictionExternal || false}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

@@ -615,6 +615,8 @@ class Project:
         else:
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["train"])
 
+        print("DATASET SIZE", len(df))
+
         # the filter for the sample
         if next.sample == "untagged":
             f = df["labels"].isna()
@@ -897,8 +899,8 @@ class Project:
 
         # part valid
         if self.params.valid and (self.valid is not None):
-            df_valid = self.schemes.get_scheme_data(scheme, kind=["valid"], complete=True)
-            valid_set_n = len(df_valid)
+            df_valid = self.schemes.get_scheme_data(scheme, kind=["valid"])
+            valid_set_n = len(self.valid)
             valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
             valid_annotated_distribution = self.compute_annotations_distribution(df_valid, kind)
         else:
@@ -908,8 +910,8 @@ class Project:
 
         # part test
         if self.params.test and (self.test is not None):
-            df_test = self.schemes.get_scheme_data(scheme, kind=["test"], complete=True)
-            test_set_n = len(df_test)
+            df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
+            test_set_n = len(self.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
         else:
@@ -917,12 +919,7 @@ class Project:
             test_annotated_n = None
             test_annotated_distribution = None
 
-            # if self.simplemodels.exists(name):
-            #     sm_10cv = self.simplemodels.get_model(name).statistics_cv10
-            # else:
-            #     sm_10cv = None
-
-        r = ProjectDescriptionModel(
+        return ProjectDescriptionModel(
             users=users,
             train_set_n=len(self.train),
             train_annotated_n=len(df_train.dropna(subset=["labels"])),
@@ -935,7 +932,6 @@ class Project:
             test_annotated_distribution=test_annotated_distribution,
             sm_10cv=None,
         )
-        return r
 
     def get_projection(
         self, username: str, scheme: str, model: str | None = None

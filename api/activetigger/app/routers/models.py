@@ -157,10 +157,10 @@ async def predict(
                 datasets.append("valid")
             if project.test is not None:
                 datasets.append("test")
-        if dataset == "external":
+        elif dataset == "external":
             if kind != "bert":
                 raise Exception("External dataset prediction is only available for bert models")
-        if dataset == "all":
+        elif dataset == "all":
             pass
         else:
             raise Exception(f"Dataset {dataset} not recognized")

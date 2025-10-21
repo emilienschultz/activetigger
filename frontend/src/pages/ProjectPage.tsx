@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import Tab from 'react-bootstrap/Tab';
@@ -33,10 +33,13 @@ export const ProjectPage: FC = () => {
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme].kind
       : '';
-  const availableLabels =
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].labels || []
-      : [];
+  const availableLabels = useMemo(
+    () =>
+      currentScheme && project && project.schemes.available[currentScheme]
+        ? project.schemes.available[currentScheme].labels || []
+        : [],
+    [currentScheme, project],
+  );
 
   // sort labels according to the displayConfig
   const availableLabelsSorted = reorderLabels(
@@ -65,7 +68,7 @@ export const ProjectPage: FC = () => {
 
   if (!projectSlug || !project) return;
 
-  console.log(availableLabels.length);
+  console.log();
 
   return (
     <ProjectPageLayout projectName={projectSlug}>
@@ -85,7 +88,7 @@ export const ProjectPage: FC = () => {
           <LabelsManagement
             projectSlug={projectSlug}
             currentScheme={currentScheme || null}
-            availableLabels={availableLabelsSorted as string[]}
+            availableLabels={availableLabelsSorted}
             kindScheme={kindScheme as string}
             setAppContext={setAppContext}
             deactivateModifications={displayConfig.interfaceType === 'annotator'}

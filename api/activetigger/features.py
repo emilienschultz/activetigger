@@ -289,10 +289,13 @@ class Features:
         data = pd.read_parquet(self.path_features, columns=cols)
 
         # filter on dataset
-        if dataset == "all":
+        if dataset == "annotable":
             if not keep_dataset_column:
                 return data.drop(columns=["dataset"])
             return data
+
+        if type(dataset) is str:
+            raise Exception("Dataset should be a list of strings")
 
         data = data.loc[data["dataset"].isin(dataset)]
         if not keep_dataset_column:

@@ -227,9 +227,9 @@ export const ProjectCreationForm: FC = () => {
   };
 
   return (
-    <div className="container-fluid">
+    <div className="container">
       <div className="row">
-        <div className="explanations">Create a new project.</div>
+        <div className="explanations">Create a new project</div>
         <div className="alert alert-info" role="alert">
           Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo) (
           <a href="./dataset_test.csv" download>

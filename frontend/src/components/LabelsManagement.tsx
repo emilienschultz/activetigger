@@ -169,6 +169,8 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
     }));
   };
 
+  console.log(statistics);
+
   return (
     <div className="row">
       <div className="col-12 rounded-2xl bg-white">
