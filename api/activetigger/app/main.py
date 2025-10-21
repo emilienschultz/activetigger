@@ -181,5 +181,10 @@ async def stop_process(
             orchestrator.stop_process(unique_id, current_user.username)
         if kind is not None:
             orchestrator.stop_user_processes(kind, current_user.username)
+        orchestrator.log_action(
+            current_user.username,
+            f"STOP PROCESS: {kind if kind is not None else unique_id}",
+            "general",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

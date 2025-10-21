@@ -42,7 +42,9 @@ async def compute_bertopic(
             user=current_user.username,
             force_compute_embeddings=bertopic.force_compute_embeddings,
         )
-        orchestrator.log_action(current_user.username, "COMPUTE BERTopic MODEL", project.name)
+        orchestrator.log_action(
+            current_user.username, f"COMPUTE BERTopic MODEL: {bertopic.name}", project.name
+        )
         return unique_id
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -92,6 +94,8 @@ async def delete_bertopic_model(
     """
     try:
         project.bertopic.delete(name=name)
-        orchestrator.log_action(current_user.username, "DELETE BERTopic MODEL", project.name)
+        orchestrator.log_action(
+            current_user.username, f"DELETE BERTopic MODEL: {name}", project.name
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

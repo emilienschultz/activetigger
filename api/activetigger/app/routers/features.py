@@ -89,7 +89,6 @@ async def delete_feature(
 @router.get("/features/available", dependencies=[Depends(verified_user)])
 async def get_feature_info(
     project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> dict[str, FeatureDescriptionModel]:
     """
     Get feature info

@@ -67,7 +67,6 @@ async def get_projection(
             scheme=scheme,
             model=model,
         )
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

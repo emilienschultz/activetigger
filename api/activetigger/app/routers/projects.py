@@ -90,7 +90,9 @@ async def new_project(
             project=project,
             username=current_user.username,
         )
-        orchestrator.log_action(current_user.username, "START CREATING PROJECT", project_slug)
+        orchestrator.log_action(
+            current_user.username, f"START CREATING PROJECT: {project_slug}", project_slug
+        )
         return project_slug
     except Exception as e:
         orchestrator.clean_unfinished_project(project_name=project.project_name)
@@ -117,7 +119,9 @@ async def update_project(
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.update_project(update)
-        orchestrator.log_action(current_user.username, "INFO UPDATE PROJECT", project.name)
+        orchestrator.log_action(
+            current_user.username, f"INFO UPDATE PROJECT: {project.name}", project.name
+        )
         del orchestrator.projects[project.name]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -137,8 +141,10 @@ async def delete_project(
     test_rights(ServerAction.DELETE_PROJECT, current_user.username, project_slug)
     try:
         orchestrator.delete_project(project_slug)
+        orchestrator.log_action(
+            current_user.username, f"DELETE PROJECT: {project_slug}", project_slug
+        )
     except Exception as e:
-        print(f"Error deleting project {project_slug}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
