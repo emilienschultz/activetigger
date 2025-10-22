@@ -17,8 +17,6 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
   const labels = scores?.table?.index || [];
   const colCount = table?.columns.length || 0;
 
-  console.log(scores.table);
-
   return (
     <div className="overflow-x-auto">
       {table && (

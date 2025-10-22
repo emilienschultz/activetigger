@@ -48,7 +48,7 @@ class Bertopic:
     def compute(
         self,
         path_data: Path,
-        col_id: str,
+        col_id: str | None,
         col_text: str,
         parameters: BertopicParamsModel,
         name: str,

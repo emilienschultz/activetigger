@@ -42,6 +42,7 @@ async def get_next(
     """
     Get next element
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_next(
             next=next,
@@ -61,6 +62,7 @@ async def get_projection(
     """
     Get projection if computed
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_projection(
             username=current_user.username,
@@ -82,6 +84,7 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
     try:
@@ -102,11 +105,13 @@ async def compute_projection(
 @router.post("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     batch: TableBatchInModel,
 ) -> TableOutModel:
     """
     Get a table of elements
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.schemes.get_table(batch)
     except Exception as e:
@@ -122,6 +127,7 @@ async def post_list_elements(
     """
     Update a table of annotations
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     errors = []
     # loop on annotations
     for annotation in table.annotations:
@@ -165,6 +171,7 @@ async def post_annotation_file(
     """
     Load annotations file
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.schemes.add_file_annotations(
             annotationsdata=annotationsdata, user=current_user.username, dataset="train"
@@ -191,6 +198,7 @@ async def get_element(
     """
     Get specific element
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_element(
             element_id,
@@ -205,11 +213,14 @@ async def get_element(
 
 @router.get("/annotation/reconciliate", dependencies=[Depends(verified_user)])
 async def get_reconciliation_table(
-    project: Annotated[Project, Depends(get_project)], scheme: str = Query()
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    scheme: str = Query(),
 ) -> ReconciliationModel:
     """
     Get the reconciliation table
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         df, users = project.schemes.get_reconciliation_table(scheme)
         return ReconciliationModel(
@@ -232,7 +243,7 @@ async def post_reconciliation(
     """
     Post a label for all user in a list
     """
-
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         # for each user
         for u in users:

@@ -24,7 +24,7 @@ async def compute_bertopic(
     Compute BERTopic model for the project.
     """
     # Force the train dataset
-    path_data = project.params.dir.joinpath(config.train_file)
+    path_data = project.params.dir.joinpath(config.train_file)  # type: ignore
     # Force the language of the project
     bertopic.language = project.params.language
     if not project.bertopic.name_available(bertopic.name):

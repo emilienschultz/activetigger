@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
@@ -84,7 +84,6 @@ async def new_project(
     Start the creation of a new project
     """
     test_rights(ServerAction.CREATE_PROJECT, current_user.username)
-    # check if the project already exists
     try:
         project_slug = orchestrator.starting_project_creation(
             project=project,

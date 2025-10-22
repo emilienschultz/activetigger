@@ -11,7 +11,7 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import pandas as pd  # type: ignore[import]
 import psutil  # type: ignore[import]

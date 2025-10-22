@@ -48,6 +48,10 @@ async def post_embeddings(
 
     try:
         # gather all text data to compute features on
+        if project.train is None:
+            raise HTTPException(
+                status_code=400, detail="No training data available to compute features."
+            )
         series_list = [project.train["text"]]
         if project.valid is not None:
             series_list.append(project.valid["text"])

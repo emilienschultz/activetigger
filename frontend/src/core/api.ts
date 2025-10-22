@@ -1436,35 +1436,35 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 /**
  * Get file predictions simplemodel
  */
-export function useGetPredictionsSimplemodelFile(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const getPredictionsSimpleModelFile = useCallback(
-    async (scheme: string, format: string) => {
-      if (projectSlug) {
-        const res = await api.GET('/export/prediction/simplemodel', {
-          params: {
-            query: {
-              project_slug: projectSlug,
-              scheme: scheme,
-              format: format,
-            },
-          },
-          parseAs: 'blob',
-        });
+// export function useGetPredictionsSimplemodelFile(projectSlug: string | null) {
+//   const { notify } = useNotifications();
+//   const getPredictionsSimpleModelFile = useCallback(
+//     async (name: string, format: string) => {
+//       if (projectSlug) {
+//         const res = await api.GET('/export/prediction/simplemodel', {
+//           params: {
+//             query: {
+//               project_slug: projectSlug,
+//               name: name,
+//               format: format,
+//             },
+//           },
+//           parseAs: 'blob',
+//         });
 
-        if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the predictions data' });
-          saveAs(res.data, `predictions_${projectSlug}_${scheme}.${format}`);
-        }
-        return true;
-      }
-      return null;
-    },
-    [projectSlug, notify],
-  );
+//         if (!res.error) {
+//           notify({ type: 'success', message: 'Exporting the predictions data' });
+//           saveAs(res.data, `predictions_${projectSlug}_${scheme}.${format}`);
+//         }
+//         return true;
+//       }
+//       return null;
+//     },
+//     [projectSlug, notify],
+//   );
 
-  return { getPredictionsSimpleModelFile };
-}
+//   return { getPredictionsSimpleModelFile };
+// }
 
 /**
  * Get file generations

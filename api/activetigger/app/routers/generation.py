@@ -9,7 +9,10 @@ from fastapi import (
 )
 
 from activetigger.app.dependencies import (
+    ProjectAction,
+    ServerAction,
     get_project,
+    test_rights,
     verified_user,
 )
 from activetigger.datamodels import (
@@ -66,6 +69,7 @@ async def add_project_generation_models(
     """
     Add a new GenAI model for the project
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         # test if the model exists with this name for the project
         if project.generations.model_exists(project.name, model.name):
@@ -83,11 +87,14 @@ async def add_project_generation_models(
     dependencies=[Depends(verified_user)],
 )
 async def delete_project_generation_models(
-    project: Annotated[Project, Depends(get_project)], model_id: int
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    model_id: int,
 ) -> None:
     """
     Delete a GenAI model from the project
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.generations.delete_model(project.name, model_id)
     except Exception as e:
@@ -104,17 +111,21 @@ async def postgenerate(
     Launch a call to generate from a prompt
     """
 
-    # Check here if all the "[[XXX]]" in the prompt correspond to a column  
+    # Check here if all the "[[XXX]]" in the prompt correspond to a column
     # in the context column or the [[TEXT]] tag. If not, raise an exception.
-    for tag_like in re.findall("[\[]{2}\w{1,}[\]]{2}", request.prompt): 
-        tag_name = tag_like[2:-2] # tag minus "[[" and "]]"" 
-        if tag_name in ["TEXT", *project.params.cols_context]: 
-            continue 
-        else : 
-            raise HTTPException(status_code=500, 
-                detail=(f"The tag {tag_like} is not part of the " 
-                f"registered context columns nor it is [[TEXT]].Registered "
-                f"context columns: {project.params.cols_context}")) 
+    for tag_like in re.findall("[\[]{2}\w{1,}[\]]{2}", request.prompt):
+        tag_name = tag_like[2:-2]  # tag minus "[[" and "]]""
+        if tag_name in ["TEXT", *project.params.cols_context]:
+            continue
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"The tag {tag_like} is not part of the "
+                    f"registered context columns nor it is [[TEXT]].Registered "
+                    f"context columns: {project.params.cols_context}"
+                ),
+            )
 
     try:
         project.start_generation(request, current_user.username)
@@ -157,6 +168,7 @@ async def getgenerate(
     """
     Get elements generated
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         # get data
         table = project.generations.get_generated(
@@ -182,6 +194,7 @@ async def dropgenerate(
     """
     Drop all elements from prediction for a user
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         project.generations.drop_generated(project.name, current_user.username)
     except Exception as e:
@@ -191,10 +204,12 @@ async def dropgenerate(
 @router.get("/generate/prompts", dependencies=[Depends(verified_user)])
 async def get_prompts(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> list[PromptModel]:
     """
     Get the list of prompts for the user
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.generations.get_prompts(project.name)
     except Exception as e:
@@ -210,6 +225,7 @@ async def add_prompt(
     """
     Add a prompt to the project
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.generations.save_prompt(prompt, current_user.username, project.name)
     except Exception as e:
@@ -219,11 +235,13 @@ async def add_prompt(
 @router.post("/generate/prompts/delete", dependencies=[Depends(verified_user)])
 async def delete_prompt(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     prompt_id: str,
 ) -> None:
     """
     Delete a prompt from the project
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.generations.delete_prompt(int(prompt_id))
     except Exception as e:
