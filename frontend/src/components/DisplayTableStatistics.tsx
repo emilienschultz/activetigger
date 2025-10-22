@@ -14,10 +14,10 @@ interface TableModel {
 
 export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores, title }) => {
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
-  const labels = Object.keys(scores['f1_label'] || []);
+  const labels = scores?.table?.index || [];
   const colCount = table?.columns.length || 0;
 
-  console.log(scores.recall_label);
+  console.log(scores.table);
 
   return (
     <div className="overflow-x-auto">
