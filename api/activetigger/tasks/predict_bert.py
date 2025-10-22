@@ -16,7 +16,7 @@ from transformers import (  # type: ignore[import]
     AutoTokenizer,
 )
 
-from activetigger.datamodels import ReturnTaskPredictModel
+from activetigger.datamodels import MLStatisticsModel, ReturnTaskPredictModel
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
@@ -42,7 +42,6 @@ class PredictBert(BaseTask):
     """
 
     kind = "predict_bert"
-    statistics: Optional[str] = None
 
     def __init__(
         self,
@@ -195,7 +194,7 @@ class PredictBert(BaseTask):
             # case where statistics should be computed
 
             print("Compute statistics")
-            metrics = {}
+            metrics: dict[str, MLStatisticsModel] = {}
 
             # add text in the dataframe to be able to get mismatch
             pred["text"] = self.df[self.col_text]

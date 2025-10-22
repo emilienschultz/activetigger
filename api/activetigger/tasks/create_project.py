@@ -39,7 +39,9 @@ class CreateProject(BaseTask):
         self.valid_file = valid_file
         self.features_file = features_file
 
-    def __call__(self) -> tuple[ProjectModel, pd.DataFrame | None, pd.DataFrame | None]:
+    def __call__(
+        self,
+    ) -> tuple[ProjectModel, pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
         """
         Create the project with the given name and file, return the project model
         and the train/test schemes to import in the database

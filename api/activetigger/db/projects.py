@@ -170,7 +170,7 @@ class ProjectsService:
                 delete(Auths).filter_by(project_slug=project_slug, user_name=user_name)
             )
 
-    def get_user_auth_projects(self, user_name: str, auth: str | None = None) -> list[Any]:
+    def get_user_auth_projects(self, user_name: str, auth: str | None = None) -> list:
         """
         Projects user can access (auth)
         """
@@ -190,7 +190,7 @@ class ProjectsService:
                 query = query.where(Auths.status == auth)
 
             result = session.execute(query).all()
-            return result
+            return list(result)
 
     def get_user_auth(self, user_name: str, project_slug: str | None = None):
         session = self.Session()
@@ -227,6 +227,7 @@ class ProjectsService:
                         Annotations.user_name == user,
                     )
                     .group_by(Annotations.element_id)
+                    .subquery()
                 )
             else:  # if no user filter, get all annotations
                 subq = (
@@ -545,7 +546,7 @@ class ProjectsService:
         name: str,
         parameters: dict[str, Any],
         user_name: str,
-        data: list[dict[str, Any]] | None = None,
+        data: list | None = None,
     ):
         with self.Session.begin() as session:
             feature = Features(

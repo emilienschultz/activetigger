@@ -1,12 +1,13 @@
+import datetime
 import json
 import shutil
 from pathlib import Path
 
-import hdbscan
+import hdbscan  # type: ignore[import]
 import pandas as pd
-import stopwordsiso as stopwords
-from bertopic import BERTopic
-from sklearn.feature_extraction.text import CountVectorizer
+import stopwordsiso as stopwords  # type: ignore[import]
+from bertopic import BERTopic  # type: ignore[import]
+from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
 from slugify import slugify
 
 from activetigger.datamodels import BertopicParamsModel
@@ -73,6 +74,8 @@ class ComputeBertopic(BaseTask):
         self.path_data = path_data
         self.col_id = col_id
         self.col_text = col_text
+        if name is None:
+            name = f"bertopic_{path_data.stem}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.name = slugify(name)
         self.file_name = slugify(path_data.stem)
         self.parameters = parameters
@@ -290,7 +293,7 @@ class ComputeBertopic(BaseTask):
         # save the embeddings to a file
         computed.to_parquet(path_embeddings)
 
-    def compute_projection(self, path_embeddings: Path, path_projection: Path) -> pd.DataFrame:
+    def compute_projection(self, path_embeddings: Path, path_projection: Path):
         """
         Reduce the dimensionality of the embeddings if needed.
         """

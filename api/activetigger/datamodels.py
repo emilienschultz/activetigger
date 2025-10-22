@@ -505,7 +505,7 @@ class ProcessComputing(BaseModel):
 
 class LMComputing(ProcessComputing):
     model_name: str
-    status: Literal["training", "testing", "predicting"]
+    status: str
     scheme: Optional[str] = None
     dataset: Optional[str] = None
     get_progress: Callable[[], float | None] | None = None
@@ -550,7 +550,7 @@ class BertopicComputing(ProcessComputing):
     col_text: str | None
     parameters: BertopicParamsModel
     force_compute_embeddings: bool
-    get_progress: Callable[[], float | None] | None = None
+    get_progress: Callable[[], str | float | None] | None = None
 
 
 class SimpleModelInModel(BaseModel):
@@ -581,6 +581,7 @@ class SimpleModelComputing(ProcessComputing):
     labels: list
     model_type: str
     model_params: dict
+    dataset: str
     standardize: bool = False
     cv10: bool = False
     retrain: bool = False
@@ -600,6 +601,7 @@ class SimpleModelComputed(BaseModel):
     user: str
     model_type: str
     model_params: dict
+    time: datetime.datetime
     standardize: bool = False
     cv10: bool = False
     retrain: bool = False
@@ -748,7 +750,7 @@ class ProjectionsProjectStateModel(BaseModel):
 
 class BertopicProjectStateModel(BaseModel):
     available: dict[str, str | None]
-    training: dict[str, dict[str, str]]
+    training: dict[str, dict[str, str | int | None]]
     models: list[str]
 
 
@@ -928,7 +930,7 @@ class TrainMLResults(BaseModel):
 
 class ReturnTaskPredictModel(BaseModel):
     path: str
-    metrics: MLStatisticsModel | None = None
+    metrics: dict[str, MLStatisticsModel] | None = None
 
 
 class ModelScoresModel(BaseModel):

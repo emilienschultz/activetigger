@@ -194,6 +194,7 @@ class SimpleModels:
             standardize=standardize,
             cv10=cv10,
             retrain=retrain,
+            dataset="train",
         )
         self.computing.append(req)
 
@@ -219,7 +220,7 @@ class SimpleModels:
         Return available models per scheme
         """
         existing = self.language_models_service.available_models(self.project_slug, "simplemodel")
-        r = {}
+        r: dict[str, list[ModelDescriptionModel]] = {}
         for m in existing:
             if m.scheme not in r:
                 r[m.scheme] = []
@@ -398,7 +399,6 @@ class SimpleModels:
                 kind="predict_simplemodel",
                 status="predicting",
                 name=name,
-                model_name=name,
                 dataset=dataset,
                 features=sm.features,
                 scheme=sm.scheme,
@@ -416,10 +416,11 @@ class SimpleModels:
 
         # params = self.get_parameters(model_name)
         metrics = get_model_metrics(self.path.joinpath(model_name))
+        if metrics is None:
+            metrics = {}
 
         return ModelInformationsModel(
             params=None,
-            train_scores=metrics.get("train", None),
             scores=ModelScoresModel(
                 internalvalid_scores=metrics.get("trainvalid", None),
                 valid_scores=metrics.get("valid", None),

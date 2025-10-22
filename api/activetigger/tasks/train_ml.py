@@ -14,7 +14,7 @@ from sklearn.model_selection import (  # type: ignore[import]
     train_test_split,
 )
 
-from activetigger.datamodels import SimpleModelComputed, TrainMLResults
+from activetigger.datamodels import SimpleModelComputed
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
@@ -138,14 +138,16 @@ class TrainML(BaseTask):
             pickle.dump(element, file)
 
         # Write the statistics
-        with open(str(self.path.joinpath(self.name).joinpath("metrics_training.json")), "w") as f:
+        with open(
+            str(self.path.joinpath(self.name).joinpath("metrics_training.json")), "w"
+        ) as file:
             json.dump(
                 {
                     "train": metrics_train.model_dump(mode="json"),
                     "trainvalid": metrics_test.model_dump(mode="json"),
                     "cv10": statistics_cv10.model_dump(mode="json") if statistics_cv10 else None,
                 },
-                f,
+                file,
             )
 
         return None

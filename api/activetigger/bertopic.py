@@ -66,18 +66,16 @@ class Bertopic:
 
         print("BERTopic compute called with parameters:", parameters)
 
-        args = {
-            "path_bertopic": self.path,
-            "path_data": path_data,
-            "col_id": col_id,
-            "col_text": col_text,
-            "parameters": parameters,
-            "name": name,
-            "force_compute_embeddings": force_compute_embeddings,
-        }
-        unique_id = self.queue.add_task(
-            "bertopic", self.project_slug, ComputeBertopic(**args), queue="gpu"
+        args = ComputeBertopic(
+            path_bertopic=self.path,
+            path_data=path_data,
+            col_id=col_id,
+            col_text=col_text,
+            parameters=parameters,
+            name=name,
+            force_compute_embeddings=force_compute_embeddings,
         )
+        unique_id = self.queue.add_task("bertopic", self.project_slug, args, queue="gpu")
         self.computing.append(
             BertopicComputing(
                 user=user,
@@ -95,7 +93,7 @@ class Bertopic:
         )
         return unique_id
 
-    def training(self) -> dict[str, dict[str]]:
+    def training(self) -> dict[str, dict[str, str | int | None]]:
         """
         Get available BERTopic models in the current process
         """
@@ -105,7 +103,7 @@ class Bertopic:
             if e.kind == "bertopic"
         }
 
-    def available(self) -> dict[str, str]:
+    def available(self) -> dict[str, str | None]:
         """
         Get available BERTopic models.
         """
@@ -127,7 +125,7 @@ class Bertopic:
     def state(self) -> BertopicProjectStateModel:
         return BertopicProjectStateModel(
             available=self.available(),
-            training=self.training(),
+            training=self.training(),  # type: ignore
             models=self.available_models,
         )
 

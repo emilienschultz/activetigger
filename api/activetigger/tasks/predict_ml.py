@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator  # type: ignore[import]
 
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask

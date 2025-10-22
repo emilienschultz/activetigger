@@ -694,6 +694,8 @@ class Project:
 
         # higher prob for the label_maxprob, only possible if the model has been trained
         if next.selection == "maxprob":
+            if next.model_active is None:
+                raise Exception("Model active is required")
             if not self.simplemodels.exists(next.model_active):
                 raise Exception(f"Simplemodel {next.model_active} doesn't exist")
             if next.label_maxprob is None:  # default label to first
@@ -712,7 +714,8 @@ class Project:
 
         # higher entropy, only possible if the model has been trained
         if next.selection == "active":
-            print("ACTIVE")
+            if next.model_active is None:
+                raise Exception("Model active is required")
             if not self.simplemodels.exists(next.model_active):
                 raise ValueError("Simplemodel doesn't exist")
             prediction = self.simplemodels.get_prediction(next.model_active)  # get model
@@ -729,7 +732,11 @@ class Project:
         # get prediction of the id if it exists
         predict = PredictedLabel(label=None, proba=None)
 
-        if self.simplemodels.exists(next.model_active) and next.dataset == "train":
+        if (
+            next.model_active is not None
+            and self.simplemodels.exists(next.model_active)
+            and next.dataset == "train"
+        ):
             prediction = self.simplemodels.get_prediction(next.model_active)
             predicted_label = prediction.loc[element_id, "prediction"]
             predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
@@ -744,6 +751,8 @@ class Project:
             limit = 1200
             context = {}
         else:
+            if self.train is None:
+                raise Exception("Train dataset is not defined")
             limit = int(self.train.loc[element_id, "limit"])
             # get context
             context = dict(
@@ -816,12 +825,14 @@ class Project:
             )
 
         if dataset == "train":
+            if self.train is None:
+                raise Exception("Train dataset is not defined")
             if element_id not in self.train.index:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None)
-            if self.simplemodels.exists(model_active):
+            if model_active is not None and self.simplemodels.exists(model_active):
                 prediction = self.simplemodels.get_prediction(model_active)
                 predicted_label = cast(str, prediction.loc[element_id, "prediction"])
                 predicted_proba = round(cast(float, prediction.loc[element_id, predicted_label]), 2)
@@ -921,7 +932,7 @@ class Project:
 
         return ProjectDescriptionModel(
             users=users,
-            train_set_n=len(self.train),
+            train_set_n=len(self.train) if self.train is not None else 0,
             train_annotated_n=len(df_train.dropna(subset=["labels"])),
             train_annotated_distribution=train_annotated_distribution,
             valid_set_n=valid_set_n,
@@ -1098,6 +1109,8 @@ class Project:
         table["answer"] = self.generations.filter(table["answer"], params.filters)
 
         # join the text
+        if self.train is None:
+            raise Exception("No train data available")
         table = table.join(self.train["text"], on="index")
 
         return table
@@ -1143,6 +1156,8 @@ class Project:
 
         if not self.params.dir:
             raise ValueError("No directory for project")
+        if self.train is None:
+            raise ValueError("No train data for project")
 
         # flag if needed to drop features
         drop_features = False
@@ -1612,6 +1627,8 @@ class Project:
 
         Ideally, to be able to rerun everything
         """
+        if self.params.dir is None:
+            raise Exception("No directory for project")
         os.mkdir(self.params.dir.joinpath("dump"))
 
         # save the project parameters

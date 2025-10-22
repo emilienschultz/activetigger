@@ -1,11 +1,10 @@
 import datetime
 from io import StringIO
-from pathlib import Path
 from typing import cast
 
 import pandas as pd
 from pandas import DataFrame
-from sklearn.metrics import cohen_kappa_score
+from sklearn.metrics import cohen_kappa_score  # type: ignore
 
 from activetigger.datamodels import (
     AnnotationsDataModel,
@@ -91,18 +90,18 @@ class Schemes:
             return df
 
         # add the content from the datasets
-        texts = []
+        list_texts = []
         for k in kind:
             if k == "test":
                 if self.test is not None:
-                    texts.append(self.test[["text"]])
+                    list_texts.append(self.test[["text"]])
             elif k == "valid":
                 if self.valid is not None:
-                    texts.append(self.valid[["text"]])
+                    list_texts.append(self.valid[["text"]])
             elif k == "train":
                 if self.train is not None:
-                    texts.append(self.train[["text"]])
-        texts = pd.concat(texts)
+                    list_texts.append(self.train[["text"]])
+        texts = pd.concat(list_texts)
         df = df.join(texts, rsuffix="_content", how="right")
         df["id"] = df.index
         return df
@@ -513,7 +512,7 @@ class Schemes:
             if label not in a[scheme].labels:
                 raise Exception(f"Label {label} not in the scheme")
 
-        elif a[scheme].kind == "multilabel":
+        elif a[scheme].kind == "multilabel" and label is not None:
             er = [i for i in label.split("|") if i not in a[scheme].labels]
             if len(er) > 0:
                 raise Exception(f"Labels {er} not in the scheme")
@@ -685,7 +684,7 @@ class Schemes:
         percentage = 0
         if n_overlapping_annotations > 0:
             score_ck = cohen_kappa_score(df["schemeA"], df["schemeB"])
-            percentage = len(df[df["schemeA"] == df["schemeB"]]) / n_overlapping_annotations
+            percentage = len(df[df["schemeA"] == df["schemeB"]]) / n_overlapping_annotations  # type: ignore
 
         return CompareSchemesModel(
             datetime=datetime.datetime.now(),

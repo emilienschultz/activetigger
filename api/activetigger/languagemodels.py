@@ -496,7 +496,8 @@ class LanguageModels:
         """
 
         metrics = get_model_metrics(self.path.joinpath(model_name))
-        print("METRICS", metrics.keys())
+        if metrics is None:
+            metrics = {}
 
         return ModelInformationsModel(
             params=self.get_parameters(model_name),
