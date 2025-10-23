@@ -15,7 +15,7 @@ import { SimpleModelManagement } from '../components/SimpleModelManagement';
 export const ProjectModelPage: FC = () => {
   const { projectName: projectSlug } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, isComputing, phase },
+    appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
   const [activeKey, setActiveKey] = useState<string>('simple');
