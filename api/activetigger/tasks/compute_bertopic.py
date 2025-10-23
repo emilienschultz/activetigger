@@ -2,6 +2,7 @@ import datetime
 import json
 import shutil
 from pathlib import Path
+from string import punctuation
 
 import hdbscan  # type: ignore[import]
 import pandas as pd
@@ -9,6 +10,7 @@ import stopwordsiso as stopwords  # type: ignore[import]
 from bertopic import BERTopic  # type: ignore[import]
 from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
 from slugify import slugify
+import spacy
 
 from activetigger.datamodels import BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
@@ -37,6 +39,55 @@ Rational :
 # TODO : manage special case of embeddings of trainset
 # TODO : add the language specific stopwords removal
 
+def force_log(text):print("\n" * 10,"=" * 100, text,"=" * 100,"\n" * 10, sep="\n")
+class Lemmatizer:
+    """
+    """
+    # TODO add new languages
+    __model_names = {
+        "en" : "en_core_web_md",
+        "fr" : "fr_core_news_md"
+    }
+    
+    def __init__(self, language, )->None:
+        self.__lemmatizer =  spacy.load(
+            self.__model_names[language], 
+            disable = ["parser", "ner"]
+        )
+        self.__authorised_pos_tokens = ["NOUN", "VERB", "ADJ"]
+        self.__vocabulary = {}
+        self.sample = None
+
+
+    def __append_vocabulary(self, word : str, lemma : str)-> str:
+        if lemma not in self.__vocabulary:
+            self.__vocabulary[lemma] = word
+        return lemma 
+    
+    def __call__(self, doc : str)->list[str]:
+        """
+        """
+        if isinstance(doc, str):
+            return [
+                self.__append_vocabulary(token.lower_, token.lemma_)
+                for token in self.__lemmatizer(doc) 
+                if (token.pos_ in self.__authorised_pos_tokens) &
+                   (token.lower_ not in punctuation)
+            ]
+    
+    def __retrieve_word(self, lemma : str)->str:
+        if lemma in self.__vocabulary:
+            return self.__vocabulary[lemma] 
+        else : 
+            return lemma
+        
+    def revert_representation(self, representation : str) -> str:
+        """
+        """
+        return " ".join([self.__retrieve_word(lemma) for lemma in representation])
+
+    def test(self):
+        return self.sample
 
 class ComputeBertopic(BaseTask):
     """
@@ -193,9 +244,13 @@ class ComputeBertopic(BaseTask):
             )
 
             # Vectorizer to manage stopwords
+            lemmatizer = Lemmatizer(self.parameters.language)
             try:
                 stopwords = self.get_stopwords()
-                vectorizer_model = CountVectorizer(stop_words=stopwords)
+                vectorizer_model = CountVectorizer(
+                    tokenizer = lemmatizer,
+                    stop_words=stopwords
+                )
             except ValueError:
                 vectorizer_model = CountVectorizer()
 
@@ -207,7 +262,8 @@ class ComputeBertopic(BaseTask):
                 umap_model=umap_model,
                 hdbscan_model=hdbscan_model,
             )
-
+            
+            self.update_progress("Fitting the model")
             # Fit the BERTopic model
             topics, _ = topic_model.fit_transform(
                 documents=df[self.col_text],
