@@ -37,7 +37,9 @@ dependencies = ["fastapi[all]",
 		"bcrypt",
 		"plotly",
 		"matplotlib",
-		"scikit-learn"]
+		"scikit-learn",
+		"einops",
+		"simplemma"]
 
 [tool.ruff]
 line-length = 100
