@@ -208,7 +208,7 @@ class ComputeBertopic(BaseTask):
                 umap_model = umap.UMAP(
                     n_neighbors=self.parameters.umap_n_neighbors,
                     n_components=self.parameters.umap_n_components,
-                    min_dist=self.parameters.umap_min_dist,
+                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
                     metric="cosine",
                 )
 
@@ -231,8 +231,8 @@ class ComputeBertopic(BaseTask):
             topic_model = BERTopic(
                 language=self.parameters.language,
                 vectorizer_model=vectorizer_model,
-                nr_topics=self.parameters.nr_topics,
-                min_topic_size=self.parameters.min_topic_size,
+                # nr_topics=self.parameters.nr_topics, # Removed because overridden by the hdbscan model - Axel
+                # min_topic_size=self.parameters.min_topic_size, # Removed to propose topic reduction later in the pipeline - Axel
                 umap_model=umap_model,
                 hdbscan_model=hdbscan_model,
             )
@@ -261,7 +261,10 @@ class ComputeBertopic(BaseTask):
             df["cluster"] = topics
 
             # Save the topics and documents informations
-            topic_model.get_topic_info().to_csv(self.path_run.joinpath("bertopic_topics.csv"))
+            topics_df : pd.DataFrame = topic_model.get_topic_info()
+            if self.parameters.outlier_reduction : 
+                topics_df = topics_df.loc[topics_df.Topic != -1, :]
+            topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"))
             df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
             parameters = {
                 "bertopic_params": self.parameters.model_dump(),
