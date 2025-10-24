@@ -200,7 +200,8 @@ class ComputeBertopic(BaseTask):
                 umap_model = cuml.UMAP(
                     n_neighbors=self.parameters.umap_n_neighbors,
                     n_components=self.parameters.umap_n_components,
-                    min_dist=self.parameters.umap_min_dist,
+                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                    min_dist=0.0,
                     metric="cosine",
                 )
             except Exception as e:
@@ -209,6 +210,7 @@ class ComputeBertopic(BaseTask):
                     n_neighbors=self.parameters.umap_n_neighbors,
                     n_components=self.parameters.umap_n_components,
                     # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                    min_dist=0.0,
                     metric="cosine",
                 )
 
