@@ -482,18 +482,21 @@ export const GenPage: FC = () => {
                   </div>
                 </div>
                 <hr />
-                <div className="col-12 d-flex align-items-center justify-content-center">
-                  <button className="btn btn-primary mx-2" onClick={() => getGenerationsFile()}>
-                    Download all
-                  </button>
-                  <button
-                    className="btn btn-primary mx-2"
-                    onClick={() => {
-                      dropGeneratedElements().then(() => reFetchGenerated());
-                    }}
-                  >
-                    Clear all
-                  </button>
+                <div className="col-12 d-flex align-items-center justify-content-between">
+                  <h4 className="subsection">Results</h4>
+                  <div>
+                    <button className="btn btn-primary mx-2" onClick={() => getGenerationsFile()}>
+                      Download all
+                    </button>
+                    <button
+                      className="btn btn-primary mx-2"
+                      onClick={() => {
+                        dropGeneratedElements().then(() => reFetchGenerated());
+                      }}
+                    >
+                      Clear all
+                    </button>
+                  </div>
                 </div>
                 <Select
                   placeholder="Add treatment for the generated columns"

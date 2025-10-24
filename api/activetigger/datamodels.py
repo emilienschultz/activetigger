@@ -422,15 +422,15 @@ class BertopicParamsModel(BaseModel):
     """
 
     language: str | None = None
-    min_topic_size: int | None = None
+    # min_topic_size: int | None = None # Removed because overridden by the hdbscan model - Axel
     top_n_words: int = 15
     n_gram_range: tuple[int, int] = (1, 2)
-    nr_topics: int | str = "auto"
+    # nr_topics: int | str = "auto" # Removed to propose topic reduction later in the pipeline - Axel
     outlier_reduction: bool = True
     hdbscan_min_cluster_size: int = 10
     umap_n_neighbors: int = 10
     umap_n_components: int = 2
-    umap_min_dist: float = 0.0
+    # umap_min_dist: float = 0.0 # Removed because 0.0 is the best value to use for clustering - Axel
     embedding_kind: str = "sentence_transformers"
     embedding_model: str = "all-MiniLM-L6-v2"
     filter_text_length: int = 2
