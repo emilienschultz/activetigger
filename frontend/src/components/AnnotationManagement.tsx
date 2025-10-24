@@ -267,7 +267,7 @@ export const AnnotationManagement: FC = () => {
                 <div>
                   <button
                     type="button"
-                    className={`btn btn-sm ${activeSimpleModel ? 'btn-success' : 'btn-outline-success'} rounded-pill px-2 py-1`}
+                    className={`btn btn-sm ${activeSimpleModel ? 'btn-success' : 'btn-outline-warning'} rounded-pill px-2 py-1`}
                     onClick={() => setActiveMenu(!activeMenu)}
                   >
                     active
