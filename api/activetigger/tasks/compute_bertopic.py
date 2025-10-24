@@ -55,7 +55,12 @@ class CustomLemmatizer:
         out = []
         for word in doc.split(" "):
             if (word not in self.__stop_words) and (len(word) > 0):
-                lemma = lemmatize(word, lang = self.__language)
+                try:
+                    lemma = lemmatize(word, lang = self.__language)
+                except Exception as e:
+                    # if lemmatization failed, skip it and use the word instead
+                    lemma = word
+                    print(f"BERTopic - Lemmatization failed (word: {word}) - Error : {e}")
                 if lemma not in self.__stop_words:
                     out += [lemma]
         return out
