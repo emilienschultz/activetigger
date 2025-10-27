@@ -77,9 +77,6 @@ export const BertopicPage: FC = () => {
         <div className="col-12">
           <Tabs id="panel" className="mt-3">
             <Tab eventKey="existing" title="Existing Bertopic">
-              <div className="explanations">
-                Compute a Bertopic on the train dataset to identify the main topics.
-              </div>
               {currentTraining && currentTraining?.length > 0 && (
                 <div className="alert alert-info m-2">
                   Current computation
@@ -92,7 +89,6 @@ export const BertopicPage: FC = () => {
                   </ul>
                 </div>
               )}
-              <h4 className="subsection">Existing Bertopic</h4>
               <div className="d-flex w-50 my-2" style={{ zIndex: 1000 }}>
                 <Select
                   className="flex-grow-1"
@@ -183,7 +179,11 @@ export const BertopicPage: FC = () => {
               )}
             </Tab>
             <Tab eventKey="new" title="New Bertopic">
-              <div className="explanations">Using UMAP and HDBScan</div>
+              <div className="explanations">
+                Compute a Bertopic on the train dataset to identify the main topics.
+                <br />
+                Using UMAP and HDBScan
+              </div>
               <BertopicForm
                 projectSlug={projectName || null}
                 availableModels={availableModels}
