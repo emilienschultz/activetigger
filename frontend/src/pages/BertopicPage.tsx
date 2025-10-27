@@ -1,7 +1,7 @@
 import chroma from 'chroma-js';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
-import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { FaCloudDownloadAlt, FaPen, FaRegStickyNote } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
@@ -15,14 +15,20 @@ import {
   useGetBertopicProjection,
   useGetBertopicTopics,
   useGetElementById,
+  useAddScheme,
+  useAddLabel,
 } from '../core/api';
 import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
 
 export const BertopicPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { currentProject, isComputing },
+    appContext: { currentProject, isComputing, reFetchCurrentProject },
   } = useAppContext();
+  const { notify } = useNotifications();
+  const addScheme = useAddScheme(projectName || 'demo');
+  const { addLabel, addLabelSetLocalScheme } = useAddLabel(projectName || 'demo', 'default');
   const deleteBertopic = useDeleteBertopic(projectName || null);
   const { downloadBertopicTopics } = useDownloadBertopicTopics(projectName || null);
   const { downloadBertopicClusters } = useDownloadBertopicClusters(projectName || null);
@@ -70,6 +76,39 @@ export const BertopicPage: FC = () => {
     {},
   );
 
+  const exportBertopicAsAnnotation = async (projectSlug: string, topicModelName: string | null) => {
+    if (topicModelName) {
+      console.log('EXPORT AS SCHEME from exportBertopicAsAnnotation');
+      console.log('projectName : ', projectSlug);
+      const newScheme: string = 'topic-model_' + topicModelName;
+      console.log('topicModelName : ', newScheme);
+      let schemeCreated: boolean = false;
+      // Create the scheme
+      try {
+        await addScheme(newScheme, 'multiclass');
+        if (reFetchCurrentProject) reFetchCurrentProject();
+        notify({ type: 'success', message: `Scheme ${newScheme} created` });
+        schemeCreated = true;
+      } catch (error) {
+        notify({ type: 'error', message: error + '' });
+      }
+      if (schemeCreated) {
+        addLabelSetLocalScheme(newScheme);
+        // Add the labels
+        topics?.map((row) => {
+          console.log(row.Name);
+          if (row.Name) {
+            addLabel(row.Name);
+          }
+        });
+      }
+    }
+  };
+
+  const test = () => {
+    console.log('TEST');
+  };
+
   return (
     // <ProjectPageLayout projectName={projectName} currentAction="explore">
     <div className="container-fluid">
@@ -115,28 +154,115 @@ export const BertopicPage: FC = () => {
                 </button>
               </div>
               {currentBertopic && (
-                <div>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() =>
-                      currentBertopic ? downloadBertopicTopics(currentBertopic) : null
-                    }
-                  >
-                    Topics <FaCloudDownloadAlt />
-                  </button>
-                  <button
-                    className="btn btn-primary mx-2"
-                    onClick={() =>
-                      currentBertopic ? downloadBertopicClusters(currentBertopic) : null
-                    }
-                  >
-                    Clusters <FaCloudDownloadAlt />
-                  </button>
-                  <details>
-                    <summary>Parameters</summary>
-                    {parameters && JSON.stringify(parameters, null, 2)}
-                  </details>
-                </div>
+                <>
+                  <div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => exportBertopicAsAnnotation(projectName, currentBertopic)}
+                    >
+                      Make scheme <FaPen />
+                    </button>
+                    <button
+                      className="btn btn-primary mx-2"
+                      onClick={() => console.log('EXPORT AS CONTEXT')}
+                    >
+                      Make context <FaRegStickyNote />
+                    </button>
+                    <button className="btn btn-primary mx-2" onClick={() => test()}>
+                      TEST
+                    </button>
+                  </div>
+                  <div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicTopics(currentBertopic) : null
+                      }
+                    >
+                      Topics <FaCloudDownloadAlt />
+                    </button>
+                    <button
+                      className="btn btn-primary mx-2"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicClusters(currentBertopic) : null
+                      }
+                    >
+                      Clusters <FaCloudDownloadAlt />
+                    </button>
+                    <details>
+                      <summary>Parameters</summary>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          justifyContent: 'space-evenly',
+                        }}
+                      >
+                        <div style={{ width: '400px' }}>
+                          <h6 className="subsection">General parameters</h6>
+                          <table className="table-statistics">
+                            <tbody>
+                              <tr>
+                                <td>Language</td>
+                                <td>{parameters?.bertopic_params.language}</td>
+                              </tr>
+                              <tr>
+                                <td>Embedding model</td>
+                                <td>{parameters?.bertopic_params.embedding_model}</td>
+                              </tr>
+                              <tr>
+                                <td>Number of keywords</td>
+                                <td>{parameters?.bertopic_params.top_n_words}</td>
+                              </tr>
+                              <tr>
+                                <td>Keywords n-grams</td>
+                                <td>{parameters?.bertopic_params.n_gram_range}</td>
+                              </tr>
+                              <tr>
+                                <td>Outlier reduction</td>
+                                <td>
+                                  {parameters?.bertopic_params.outlier_reduction ? 'True' : 'False'}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Minimum number of characters of texts</td>
+                                <td>{parameters?.bertopic_params.filter_text_length}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div>
+                          <div style={{ width: '400px' }}>
+                            <h6 className="subsection">Dimension reduction parameters (UMAP)</h6>
+                            <table className="table-statistics">
+                              <tbody>
+                                <tr>
+                                  <td>Number of neighbors</td>
+                                  <td>{parameters?.bertopic_params.umap_n_neighbors}</td>
+                                </tr>
+                                <tr>
+                                  <td>Number of components</td>
+                                  <td>{parameters?.bertopic_params.umap_n_components}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <div style={{ width: '400px' }}>
+                            <h6 className="subsection">Clustering parameters (HDBSCAN)</h6>
+                            <table className="table-statistics">
+                              <tbody>
+                                <tr>
+                                  <td>Clusters' mininum size</td>
+                                  <td>{parameters?.bertopic_params.hdbscan_min_cluster_size}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </>
               )}
 
               {projection && (
