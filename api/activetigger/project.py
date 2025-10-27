@@ -660,7 +660,7 @@ class Project:
         # manage frame selection (if projection, only in the box)
         if next.frame and len(next.frame) == 4:
             if username in self.projections.available:
-                if self.projections.available[username].data:
+                if self.projections.available[username].data is not None:
                     projection = self.projections.available[username].data
                     f_frame = (
                         (projection[0] > next.frame[0])
