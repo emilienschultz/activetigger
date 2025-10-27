@@ -195,58 +195,54 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
         {
           // only display if click on the add button
           showCreateNewScheme && (
-            <div className="row">
-              <div className="col-12 col-md-6 m-2 alert alert-primary">
-                <form onSubmit={handleSubmit(createNewScheme)}>
-                  <input
-                    className="form-control"
-                    id="scheme_name"
-                    type="text"
-                    {...register('name')}
-                    placeholder="Enter new scheme name"
-                  />
-                  <label
-                    htmlFor="scheme-selected"
-                    style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
-                  >
-                    Type
-                  </label>
-                  <select id="scheme_kind" className="form-select" {...register('kind')}>
-                    <option value="multiclass">Multiclass</option>
-                    <option value="multilabel">
-                      Multilabel (experimental - only some features implemented)
-                    </option>
-                    <option value="span">Span (experimental - only annotation)</option>
-                  </select>
-                  <button className="btn btn-primary btn-validation">Create</button>
-                </form>
-              </div>
+            <div className="alert alert-primary">
+              <form onSubmit={handleSubmit(createNewScheme)}>
+                <input
+                  className="form-control"
+                  id="scheme_name"
+                  type="text"
+                  {...register('name')}
+                  placeholder="Enter new scheme name"
+                />
+                <label
+                  htmlFor="scheme-selected"
+                  style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
+                >
+                  Type
+                </label>
+                <select id="scheme_kind" className="form-select" {...register('kind')}>
+                  <option value="multiclass">Multiclass</option>
+                  <option value="multilabel">
+                    Multilabel (experimental - only some features implemented)
+                  </option>
+                  <option value="span">Span (experimental - only annotation)</option>
+                </select>
+                <button className="btn btn-primary btn-validation">Create</button>
+              </form>
             </div>
           )
         }
         {
           // only display if click on the rename button
           showRename && (
-            <div className="row">
-              <div className="col-8 col-md-4 d-flex m-2 alert alert-primary">
-                <input
-                  className="form-control me-2"
-                  id="scheme_rename"
-                  type="text"
-                  placeholder="Enter new scheme name"
-                  value={newSchemeName}
-                  onChange={(e) => setNewSchemeName(e.target.value)}
-                />
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    renameScheme(newSchemeName);
-                    setShowRename(false);
-                  }}
-                >
-                  Rename
-                </button>
-              </div>
+            <div className="d-flex alert alert-primary">
+              <input
+                className="form-control me-2"
+                id="scheme_rename"
+                type="text"
+                placeholder="Enter new scheme name"
+                value={newSchemeName}
+                onChange={(e) => setNewSchemeName(e.target.value)}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  renameScheme(newSchemeName);
+                  setShowRename(false);
+                }}
+              >
+                Rename
+              </button>
             </div>
           )
         }

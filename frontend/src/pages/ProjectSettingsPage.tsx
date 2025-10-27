@@ -56,7 +56,7 @@ export const ProjectSettingsPage: FC = () => {
   if (!projectSlug || !project) return;
 
   return (
-    <ProjectPageLayout projectName={projectSlug}>
+    <ProjectPageLayout projectName={projectSlug} currentAction="settings">
       <Tabs id="panel" className="mt-3" defaultActiveKey="features">
         <Tab eventKey="features" title="Features">
           <div className="explanations">Available features</div>
