@@ -69,7 +69,7 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
   };
 
   return (
-    <div className="container">
+    <div>
       <MDEditor
         value={modifiedCodebook || ''}
         onChange={setModifiedCodebook}
@@ -77,13 +77,13 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
           rehypePlugins: [[rehypeSanitize]],
         }}
       />
-      <button className="btn btn-secondary mt-3" onClick={saveCodebook}>
+      <button className="btn btn-secondary btn-sm mt-3" onClick={saveCodebook}>
         Save
       </button>
-      <button className="btn btn-primary mt-3 ms-2" onClick={openAsHTML}>
-        Open
+      <button className="btn btn-primary btn-sm mt-3 ms-2" onClick={openAsHTML}>
+        Open in another window
       </button>
-      <button className="btn btn-primary mt-3 ms-2" onClick={downloadMarkdown}>
+      <button className="btn btn-primary btn-sm mt-3 ms-2" onClick={downloadMarkdown}>
         Download
       </button>
     </div>

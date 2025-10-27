@@ -15,6 +15,7 @@ export type PossibleProjectActions =
   | 'test'
   | 'generate'
   | 'export'
+  | 'settings'
   | 'predict';
 
 type ProjectPageLayoutProps = PropsWithChildren<{

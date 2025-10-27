@@ -69,7 +69,7 @@ export const SelectCurrentScheme: FC = () => {
     <div className="row">
       <div className="d-flex align-items-center mb-3">
         <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
-          Active scheme
+          Active Scheme
         </label>
         <select
           id="scheme-selected"
@@ -159,7 +159,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
               className="btn btn-primary"
             >
-              <FaPlusCircle size={20} /> <span className="d-none d-sm-inline">Add</span>
+              <FaPlusCircle size={20} /> <span className="d-none d-sm-inline">Add scheme</span>
             </button>
             <button onClick={() => setShowRename(!showRename)} className="btn btn-primary ms-2">
               <MdDriveFileRenameOutline size={20} />{' '}

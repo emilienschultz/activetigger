@@ -3,6 +3,7 @@ import { FC } from 'react';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { FaListCheck } from 'react-icons/fa6';
 import { HiMiniRectangleGroup } from 'react-icons/hi2';
+import { IoBookSharp, IoSettingsSharp } from 'react-icons/io5';
 import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
@@ -60,19 +61,21 @@ export const ProjectActionsSidebar: FC<{
   }
 
   const errors = projectState?.errors.map((arr) => arr.join(' - ')) || [];
+  const color = '#000000ff';
 
   return (
     <div className={`project-sidebar d-flex flex-column flex-shrink-0 bg-light`}>
       {!onlyAnnotator && (
         <ul className="nav nav-pills flex-column mb-auto">
-          <li className="nav-item">
-            <div className="nav-link">
-              <span>
-                <b>{projectName}</b>
-              </span>
-              <span style={{ fontSize: '0.875rem', color: 'grey' }} className="mx-1">
+          <li className="nav-item  d-none d-md-inline">
+            <div
+              className="nav-link d-inline-block rounded-pill px-3 py-1 bg-light"
+              style={{ lineHeight: '1.1' }}
+            >
+              <div className="fw-semibold text-dark text-truncate">{projectName}</div>
+              <div className="small text-secondary text-truncate" style={{ marginTop: '-2px' }}>
                 {currentScheme}
-              </span>
+              </div>
             </div>
           </li>
           <li className="nav-item">
@@ -81,9 +84,11 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', !currentProjectAction && 'active')}
               aria-current="page"
               title="Access and modify your project parameters"
+              style={{ color: color }}
             >
-              <MdOutlineHomeMax />
-              <span className="ms-1">Project</span>
+              <IoBookSharp />
+
+              <span className="ms-1">Codebook</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -91,7 +96,8 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/explore`}
               className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
               aria-current="page"
-              title="Topic analysis with Bertopic"
+              title="Explore your data"
+              style={{ color: color }}
             >
               <HiMiniRectangleGroup />
               <span className="ms-1">Explore</span>
@@ -102,10 +108,11 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/tag`}
               className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
-              title="Tag your trainset/testset with your labels"
+              title="Tag your data"
+              style={{ color: color }}
             >
               <PiTagDuotone />
-              <span className="ms-1">Tag</span>
+              <span className="ms-1">Annotate</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -113,7 +120,8 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/model`}
               className={classNames('nav-link', currentProjectAction === 'model' && 'active')}
               aria-current="page"
-              title="Fine-tune a BERT model with your data"
+              title="Manage your models"
+              style={{ color: color }}
             >
               <MdModelTraining />
               <span className="ms-1">Model</span>
@@ -125,10 +133,11 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'validate' && 'active')}
               aria-current="page"
               title="Test your model"
+              style={{ color: color }}
             >
               <FaListCheck />
 
-              <span className="ms-1">Validate</span>
+              <span className="ms-1">Evaluate</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -136,7 +145,8 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/export`}
               className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
               aria-current="page"
-              title="Export your data and models"
+              title="Export everything"
+              style={{ color: color }}
             >
               <FaCloudDownloadAlt />
               <span className="ms-1">Export</span>
@@ -149,10 +159,21 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
               aria-current="page"
               title="Use generative tools to annotate your data"
-              style={{ color: '#df31e8' }}
+              style={{ color: '#820888ff' }}
             >
               <RiAiGenerate />
               <span className="ms-1">Generative</span>
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to={`/projects/${projectName}/settings`}
+              className={classNames('nav-link', currentProjectAction === 'settings' && 'active')}
+              aria-current="page"
+              title="Project settings"
+            >
+              <IoSettingsSharp />
+              <span className="ms-1">Settings</span>
             </Link>
           </li>
           <li className="nav-item ">
@@ -196,7 +217,10 @@ export const ProjectActionsSidebar: FC<{
               <span>
                 <b>{projectName}</b>
               </span>
-              <span className="mx-2" style={{ fontSize: '0.875rem', color: 'grey' }}>
+              <span
+                className="mx-2 d-none d-md-inline"
+                style={{ fontSize: '0.875rem', color: 'grey' }}
+              >
                 {currentScheme}
               </span>
             </Link>
