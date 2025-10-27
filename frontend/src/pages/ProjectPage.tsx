@@ -64,20 +64,23 @@ export const ProjectPage: FC = () => {
 
   return (
     <ProjectPageLayout projectName={projectSlug}>
-      <SchemesManagement
-        projectSlug={projectSlug}
-        deactivateModifications={displayConfig.interfaceType === 'annotator'}
-      />
-      <details className="custom-details">
-        <summary>Guidelines</summary>
-        <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
-      </details>
+      <div className="container-fluid d-flex justify-content-center">
+        <SchemesManagement
+          projectSlug={projectSlug}
+          deactivateModifications={displayConfig.interfaceType === 'annotator'}
+        />
+      </div>
+
       {availableLabels.length === 0 && (
         <div className="alert alert-info col-12 mt-2">
           No labels available for this scheme. Please add labels to use this scheme, or create a new
           scheme.
         </div>
       )}
+      <details className="custom-details p-1">
+        <summary>Guidelines</summary>
+        <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
+      </details>
       <LabelsManagement
         projectSlug={projectSlug}
         currentScheme={currentScheme || null}
