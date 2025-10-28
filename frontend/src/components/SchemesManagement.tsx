@@ -4,6 +4,7 @@ import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
 import { IoDuplicate } from 'react-icons/io5';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
+import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 import { useAddScheme, useDeleteScheme, useDuplicateScheme, useRenameScheme } from '../core/api';
 import { useAppContext } from '../core/context';
@@ -56,38 +57,41 @@ export const SelectCurrentScheme: FC = () => {
   }, [currentScheme, availableSchemes, setAppContext, notify]);
 
   // put the current scheme in the context on change
-  const handleSelectScheme = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSelectScheme = (selectedOption: { value: string; label: string } | null) => {
     setAppContext((state) => ({
       ...state,
-      currentScheme: event.target.value,
+      currentScheme: selectedOption ? selectedOption.value : availableSchemes[0],
     }));
-    notify({ type: 'success', message: 'Scheme selected' });
+    notify({
+      type: 'success',
+      message: `Scheme ${selectedOption ? selectedOption.value : availableSchemes[0]} selected`,
+    });
   };
 
   console.log('currentScheme', currentScheme);
 
   return (
     <div className="row">
-      <div className="d-flex align-items-center mb-3">
-        <label
-          htmlFor="scheme-selected"
-          className="d-none d-md-inline"
-          style={{ whiteSpace: 'nowrap', marginRight: '10px', color: 'orange' }}
+      <div className="input-group mb-3" style={{ maxWidth: '400px' }}>
+        <span
+          className="input-group-text d-none d-md-inline"
+          style={{ backgroundColor: 'orange', color: 'white', border: 'none' }}
         >
           Active Scheme
-        </label>
-        <select
+        </span>
+        <Select
           id="scheme-selected"
-          className="form-select"
+          className="flex-grow-1"
+          options={availableSchemes.map((element) => ({
+            value: element,
+            label: element,
+          }))}
+          value={{
+            value: currentScheme || availableSchemes[0],
+            label: currentScheme || availableSchemes[0],
+          }}
           onChange={handleSelectScheme}
-          value={currentScheme ? currentScheme : availableSchemes[0]}
-        >
-          {availableSchemes.map((element) => (
-            <option key={element} value={element}>
-              {element}
-            </option>
-          ))}{' '}
-        </select>
+        />
       </div>
     </div>
   );
@@ -157,7 +161,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
       <div className="mt-3 col-12 d-flex">
         <SelectCurrentScheme />
         {!deactivateModifications && (
-          <div>
+          <div className="mx-2">
             <button
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
               className="btn btn-sm p-1 addscheme"

@@ -61,7 +61,6 @@ export const ProjectActionsSidebar: FC<{
   }
 
   const errors = projectState?.errors.map((arr) => arr.join(' - ')) || [];
-  const color = '#000000ff';
 
   return (
     <div className={`project-sidebar d-flex flex-column flex-shrink-0 bg-light`}>
@@ -73,7 +72,7 @@ export const ProjectActionsSidebar: FC<{
               style={{ lineHeight: '1.1' }}
             >
               <div className="fw-semibold text-dark text-truncate">{projectName}</div>
-              <div className="small text-secondary text-truncate" style={{ marginTop: '-2px' }}>
+              <div className="small text-primary text-truncate" style={{ marginTop: '-2px' }}>
                 {currentScheme}
               </div>
             </div>
@@ -84,11 +83,9 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', !currentProjectAction && 'active')}
               aria-current="page"
               title="Access and modify your project parameters"
-              style={{ color: color }}
             >
               <IoBookSharp />
-
-              <span className="ms-1">Codebook</span>
+              <span className="ms-1 sidemenulabel">Codebook</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -97,10 +94,9 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
               aria-current="page"
               title="Explore your data"
-              style={{ color: color }}
             >
               <HiMiniRectangleGroup />
-              <span className="ms-1">Explore</span>
+              <span className="ms-1 sidemenulabel">Explore</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -109,10 +105,9 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
               title="Tag your data"
-              style={{ color: color }}
             >
               <PiTagDuotone />
-              <span className="ms-1">Annotate</span>
+              <span className="ms-1 sidemenulabel">Annotate</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -121,10 +116,9 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'model' && 'active')}
               aria-current="page"
               title="Manage your models"
-              style={{ color: color }}
             >
               <MdModelTraining />
-              <span className="ms-1">Model</span>
+              <span className="ms-1 sidemenulabel">Model</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -133,11 +127,10 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'validate' && 'active')}
               aria-current="page"
               title="Test your model"
-              style={{ color: color }}
             >
               <FaListCheck />
 
-              <span className="ms-1">Evaluate</span>
+              <span className="ms-1 sidemenulabel">Evaluate</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -146,10 +139,9 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
               aria-current="page"
               title="Export everything"
-              style={{ color: color }}
             >
               <FaCloudDownloadAlt />
-              <span className="ms-1">Export</span>
+              <span className="ms-1 sidemenulabel">Export</span>
             </Link>
           </li>
 
@@ -159,7 +151,7 @@ export const ProjectActionsSidebar: FC<{
               className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
               aria-current="page"
               title="Use generative tools to annotate your data"
-              style={{ color: '#820888ff' }}
+              style={{ color: '#e00eebff' }}
             >
               <RiAiGenerate />
               <span className="ms-1">Generative</span>
@@ -173,7 +165,7 @@ export const ProjectActionsSidebar: FC<{
               title="Project settings"
             >
               <IoSettingsSharp />
-              <span className="ms-1">Settings</span>
+              <span className="ms-1 sidemenulabel">Settings</span>
             </Link>
           </li>
           <li className="nav-item ">

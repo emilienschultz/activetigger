@@ -1,6 +1,6 @@
-$primary: #878686;
-$secondary: #a5a4a4;
-$tertiary: #8f8d8d;
+$primary: #ffba59;
+$secondary: #ffd95a;
+$tertiary: #919191;
 $quaternary: #faf9f8;
 
 .project-link {
@@ -304,5 +304,9 @@ $quaternary: #faf9f8;
 
 .trash-wrapper:hover {
   color: red;
+}
+
+.sidemenulabel{
+  color: rgb(0, 0, 0);
 }
 

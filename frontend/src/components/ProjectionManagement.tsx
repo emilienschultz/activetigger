@@ -5,17 +5,23 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 
-import { useGetElementById, useGetProjectionData, useUpdateProjection } from '../core/api';
+import chroma from 'chroma-js';
+import { FaLock } from 'react-icons/fa';
+import { Tooltip } from 'react-tooltip';
+import {
+  useAddAnnotation,
+  useGetElementById,
+  useGetProjectionData,
+  useUpdateProjection,
+} from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionParametersModel } from '../types';
+import { MulticlassInput } from './MulticlassInput';
+import { MultilabelInput } from './MultilabelInput';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
-
-import chroma from 'chroma-js';
-import { FaLock } from 'react-icons/fa';
-import { Tooltip } from 'react-tooltip';
 
 interface ProjectionManagementProps {
   projectName: string | null;
@@ -195,6 +201,31 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   };
   const defaultFeatures = filterFeatures(features);
 
+  // define parameters for configuration panels
+  const availableLabels =
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme].labels
+      : [];
+  const [kindScheme] = useState<string>(
+    currentScheme && project && project.schemes.available[currentScheme]
+      ? project.schemes.available[currentScheme].kind || 'multiclass'
+      : 'multiclass',
+  );
+  // post an annotation
+  // hooks to manage annotation
+  const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, 'train');
+
+  const postAnnotation = useCallback(
+    (label: string | null, elementId?: string) => {
+      if (elementId) {
+        addAnnotation(elementId, label, '', '');
+        setSelectedId(undefined);
+        notify({ type: 'success', message: `Annotation added for ${elementId}` });
+      }
+    },
+    [addAnnotation, setSelectedId, notify],
+  );
+
   return (
     <div>
       <div className="d-flex align-items-center">
@@ -270,23 +301,40 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <div className="col-4 overflow-y-auto h-100">
               {selectedElement ? (
                 <div>
-                  Element:{' '}
-                  <div className="badge bg-light text-dark">{selectedElement.element_id}</div>
+                  <a
+                    className="badge bg-light text-dark"
+                    onClick={() =>
+                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
+                    }
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Element {selectedElement.element_id}
+                  </a>
                   <div className="mt-2">{selectedElement.text}</div>
                   <div className="mt-2">
                     Previous annotations : {JSON.stringify(selectedElement.history)}
                   </div>
-                  <button
-                    className="btn btn-primary mt-3"
-                    onClick={() =>
-                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
-                    }
-                  >
-                    Annotate
-                  </button>
+                  <div>
+                    <h5 className="mt-2 subsection">Annotate this element</h5>
+                    {kindScheme == 'multiclass' && (
+                      <MulticlassInput
+                        elementId={selectedElement.element_id}
+                        postAnnotation={postAnnotation}
+                        labels={availableLabels}
+                        small={true}
+                      />
+                    )}
+                    {kindScheme == 'multilabel' && (
+                      <MultilabelInput
+                        elementId={selectedElement.element_id}
+                        postAnnotation={postAnnotation}
+                        labels={availableLabels}
+                      />
+                    )}
+                  </div>
                 </div>
               ) : (
-                <div>Click on an element to display its content</div>
+                <div className="explanations">Click on an element to display its content</div>
               )}
             </div>
           </div>
@@ -374,13 +422,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 </select>
               </div>
             )}
-            {/* <label htmlFor="n_components">n_components</label>
-          <input
-            type="number"
-            id="n_components"
-            step="1"
-            {...register('parameters.n_components', { valueAsNumber: true, required: true })}
-          ></input> */}
           </details>
           <button className="btn btn-primary btn-validation">Compute</button>
         </form>

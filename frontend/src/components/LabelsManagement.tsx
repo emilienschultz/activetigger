@@ -172,19 +172,8 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   return (
     <div className="row">
       <div className="col-12 rounded-2xl bg-white">
-        {/* {kindScheme === 'multiclass' ? (
-          <div className="explanations">
-            The current scheme is a <b>{kindScheme}</b> scheme.
-          </div>
-        ) : (
-          <div className="alert alert-warning">
-            The current scheme is a <b>{kindScheme}</b> scheme. It is experimental and some features
-            does not work. Please read the documentation.
-          </div>
-        )} */}
-
-        <table className="table table-hover">
-          <thead className="text-xs text-gray-600 uppercase bg-gray-100">
+        <table className="table">
+          <thead>
             <tr>
               <th scope="col" className="px-4 py-3">
                 Label <span className="badge rounded-pill bg-light text-dark">{kindScheme}</span>
@@ -229,30 +218,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               />
             ))}
           </ReactSortable>
-          <tr>
-            <th>
-              <div className="d-flex align-items-center">
-                <input
-                  type="text"
-                  id="new-label"
-                  value={createLabelValue}
-                  onChange={handleCreateLabelChange}
-                  placeholder="Enter new label"
-                  className="form-control"
-                />
-                {!deactivateModifications && (
-                  <button onClick={createLabel} className="btn btn">
-                    <FaPlusCircle size={20} />
-                  </button>
-                )}
-              </div>
-            </th>
-            <th> </th>
-            <th> </th>
-            <th> </th>
-            <th> </th>
-            <th> </th>
-          </tr>
+
           <tbody>
             <tr>
               <td className="px-4 py-3">
@@ -283,6 +249,30 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               </td>
             </tr>
           </tbody>
+          <tr>
+            <th>
+              <div className="d-flex align-items-center">
+                <input
+                  type="text"
+                  id="new-label"
+                  value={createLabelValue}
+                  onChange={handleCreateLabelChange}
+                  placeholder="Enter new label"
+                  className="form-control"
+                />{' '}
+                {!deactivateModifications && (
+                  <button onClick={createLabel} className="btn btn">
+                    <FaPlusCircle size={20} />
+                  </button>
+                )}
+              </div>
+            </th>
+            <th className="px-4 py-3 text-center"></th>
+            <th> </th>
+            <th> </th>
+            <th> </th>
+            <th> </th>
+          </tr>
         </table>
       </div>
     </div>

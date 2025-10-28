@@ -74,7 +74,7 @@ export const ProjectsPage: FC = () => {
                         WebkitTextFillColor: 'transparent',
                       }}
                     >
-                      Create New Project
+                      New Project
                     </span>
                   </Link>
                 </div>
