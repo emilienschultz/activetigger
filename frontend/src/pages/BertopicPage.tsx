@@ -171,24 +171,6 @@ export const BertopicPage: FC = () => {
                     <button className="btn btn-primary mx-2" onClick={() => test()}>
                       TEST
                     </button>
-                  </div>
-                  <div>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() =>
-                        currentBertopic ? downloadBertopicTopics(currentBertopic) : null
-                      }
-                    >
-                      Topics <FaCloudDownloadAlt />
-                    </button>
-                    <button
-                      className="btn btn-primary mx-2"
-                      onClick={() =>
-                        currentBertopic ? downloadBertopicClusters(currentBertopic) : null
-                      }
-                    >
-                      Clusters <FaCloudDownloadAlt />
-                    </button>
                     <details>
                       <summary>Parameters</summary>
                       <div
@@ -303,6 +285,37 @@ export const BertopicPage: FC = () => {
                   <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
                     <DisplayTableTopics data={(topics as Row[]) || []} />
                   </div>
+                  <div style={{ margin: '10px 0px' }}>
+                    <button
+                      className="btn btn-primary"
+                      id="download-topics"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicTopics(currentBertopic) : null
+                      }
+                    >
+                      Topics <FaCloudDownloadAlt />
+                    </button>
+                    <Tooltip anchorSelect="#download-topics" place="top">
+                      Download the table above with the following columns : Topic, Count, Name,
+                      <br />
+                      Representation and Representative Docs
+                    </Tooltip>
+                    <button
+                      className="btn btn-primary mx-2"
+                      id="download-clusters"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicClusters(currentBertopic) : null
+                      }
+                    >
+                      Clusters <FaCloudDownloadAlt />
+                    </button>
+                    <Tooltip anchorSelect="#download-clusters" place="top">
+                      Download a table linking each element to a cluster. The table contains 2
+                      <br />
+                      columns: id and cluster
+                    </Tooltip>
+                  </div>
+                </>
               )}
             </Tab>
             <Tab eventKey="new" title="New Bertopic">
