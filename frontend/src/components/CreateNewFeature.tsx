@@ -67,7 +67,8 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
   return (
     <div>
       <form onSubmit={handleSubmit(createNewFeature)} className="mt-3">
-        <select className="w-50" id="newFeature" {...register('type')}>
+        <label htmlFor="newFeature">Feature type</label>
+        <select id="newFeature" {...register('type')}>
           <option key="empty"></option>
           {Object.keys(featuresOption).map((element) => (
             <option key={element} value={element}>
@@ -77,10 +78,10 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
         </select>
 
         {selectedFeatureToCreate === 'sbert' && (
-          <details>
+          <details className="custom-details">
             <summary>Advanced settings</summary>
             <label htmlFor="model">Model to use</label>
-            <select id="model" {...register('parameters.model')} className="w-50">
+            <select id="model" {...register('parameters.model')}>
               <option key={null} value="generic">
                 Default model
               </option>
@@ -96,7 +97,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
         )}
 
         {selectedFeatureToCreate === 'fasttext' && (
-          <details className="m-2">
+          <details className="custom-details">
             <summary>Advanced settings</summary>
             <label htmlFor="model">Model to use</label>
             <select id="dataset_col" {...register('parameters.model')}>
@@ -123,7 +124,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
         )}
 
         {selectedFeatureToCreate === 'dfm' && (
-          <details className="m-2">
+          <details className="custom-details">
             <summary>Advanced settings</summary>
             <div>
               <label htmlFor="dfm_tfidf">TF-IDF</label>

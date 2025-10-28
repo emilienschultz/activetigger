@@ -182,8 +182,6 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   // state for new feature
   const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
 
-  console.log(displayNewFeature);
-
   return (
     <Tabs id="simplemodels" className="mt-1" defaultActiveKey="existing">
       <Tab eventKey="existing" title="Existing">

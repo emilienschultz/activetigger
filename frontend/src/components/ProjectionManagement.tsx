@@ -6,7 +6,8 @@ import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 
 import chroma from 'chroma-js';
-import { FaLock } from 'react-icons/fa';
+import { Modal } from 'react-bootstrap';
+import { FaLock, FaPlusCircle } from 'react-icons/fa';
 import { Tooltip } from 'react-tooltip';
 import {
   useAddAnnotation,
@@ -18,6 +19,7 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionParametersModel } from '../types';
+import { CreateNewFeature } from './CreateNewFeature';
 import { MulticlassInput } from './MulticlassInput';
 import { MultilabelInput } from './MultilabelInput';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
@@ -226,6 +228,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     [addAnnotation, setSelectedId, notify],
   );
 
+  const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
+
   return (
     <div>
       <div className="d-flex align-items-center">
@@ -337,6 +341,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           <h5 className="subsection">Compute new vizualisation</h5>
           <div>
             <label htmlFor="features">Select features</label>
+            <button
+              type="button"
+              className="btn btn-outline-secondary d-flex align-items-center my-1"
+              onClick={() => setDisplayNewFeature(true)}
+            >
+              <FaPlusCircle size={18} className="me-1" /> Add a new feature
+            </button>
             <Controller
               name="features"
               control={control}
@@ -418,7 +429,22 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           <button className="btn btn-primary btn-validation">Compute</button>
         </form>
       </div>
-      <div className="m-3"></div>
+      <Modal
+        show={displayNewFeature}
+        id="features-modal"
+        onHide={() => setDisplayNewFeature(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add a new feature</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <CreateNewFeature
+            projectName={projectName || ''}
+            featuresOption={project?.features.options || {}}
+            columns={project?.params.all_columns || []}
+          />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
