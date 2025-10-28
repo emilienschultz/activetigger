@@ -71,6 +71,8 @@ export const ProjectModelPage: FC = () => {
                   availableFeatures={availableFeatures}
                   availableLabels={availableLabels}
                   kindScheme={kindScheme}
+                  featuresOption={project?.features.options || {}}
+                  columns={project?.params.all_columns || []}
                 />
               </Tab>
               <Tab eventKey="models" title="BERT" onSelect={() => setActiveKey('models')}>

@@ -17,6 +17,7 @@ import { ElementOutModel } from '../types';
 
 import { Modal } from 'react-bootstrap';
 import { FaMapMarkedAlt } from 'react-icons/fa';
+import { GiTigerHead } from 'react-icons/gi';
 import { MdDisplaySettings } from 'react-icons/md';
 import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
 import { MulticlassInput } from '../components/MulticlassInput';
@@ -241,34 +242,23 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 ''
               )}
-              <button className="btn btn-secondary getelement" onClick={refetchElement}>
+
+              <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
                 <LuRefreshCw size={20} /> <span className="d-none d-md-inline">Get element</span>
                 <Tooltip anchorSelect=".getelement" place="top">
                   Get next element with the selection mode
                 </Tooltip>
               </button>
-            </div>
-
-            {/* <div>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${activeSimpleModel ? 'btn-success' : 'btn-outline-warning'} rounded-pill px-2 py-1`}
-                  onClick={() => setActiveMenu(!activeMenu)}
-                >
-                  active
-                </button>
-              </div> */}
-            {activeMenu && (
-              <ActiveLearningManagement
-                projectSlug={projectName}
-                history={history}
-                currentScheme={currentScheme}
-                availableSimpleModels={availableSimpleModels}
-                setAppContext={setAppContext}
-                freqRefreshSimpleModel={freqRefreshSimpleModel}
-                activeSimepleModel={activeSimpleModel}
+              <GiTigerHead
+                size={30}
+                onClick={() => setActiveMenu(!activeMenu)}
+                className="cursor-pointer mx-2 activelearning"
+                style={{ color: activeSimpleModel ? 'green' : 'orange' }}
               />
-            )}
+              <Tooltip anchorSelect=".activelearning" place="top">
+                Configure active learning
+              </Tooltip>
+            </div>
           </div>
         }
       </div>
@@ -277,8 +267,8 @@ export const AnnotationManagement: FC = () => {
           {elementId === 'noelement' && (
             <div className="alert alert-warning text-center">
               <div className="m-2">No element available</div>
-              <button className="btn btn-primary" onClick={refetchElement}>
-                Get element
+              <button className="btn btn-primary btn-sm" onClick={refetchElement}>
+                <LuRefreshCw size={20} /> Get element
               </button>
             </div>
           )}
@@ -428,6 +418,22 @@ export const AnnotationManagement: FC = () => {
         </Modal.Header>
         <Modal.Body>
           <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
+        </Modal.Body>
+      </Modal>
+      <Modal show={activeMenu} onHide={() => setActiveMenu(false)} id="active-modal" size="xl">
+        <Modal.Header closeButton>
+          <Modal.Title>Configure active learning</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ActiveLearningManagement
+            projectSlug={projectName}
+            history={history}
+            currentScheme={currentScheme}
+            availableSimpleModels={availableSimpleModels}
+            setAppContext={setAppContext}
+            freqRefreshSimpleModel={freqRefreshSimpleModel}
+            activeSimepleModel={activeSimpleModel}
+          />
         </Modal.Body>
       </Modal>
     </div>

@@ -69,7 +69,7 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
   ]);
 
   return (
-    <div className="alert alert-info">
+    <div className="container-fluid">
       <div>
         Current active learning model : {activeSimepleModel ? activeSimepleModel : 'No model used'}
       </div>
@@ -94,7 +94,7 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
             className="btn btn-primary mx-2"
             onClick={() => setActiveSimpleModel(currentSimpleModel)}
           >
-            Validate
+            Select
           </button>
         </div>
       </div>

@@ -159,10 +159,10 @@ export const SelectionManagement: FC = () => {
                     ))}{' '}
                   </select>
                 </label>
-                <label htmlFor="select_user">
+                <label htmlFor="select_user" className="form-label label-small-gray">
                   By user
                   <select
-                    className="form-select mx-2"
+                    className="form-select"
                     id="select_user"
                     onChange={(e: ChangeEvent<HTMLSelectElement>) => {
                       setAppContext((prev) => ({

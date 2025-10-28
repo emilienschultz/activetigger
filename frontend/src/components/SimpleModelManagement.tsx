@@ -1,14 +1,25 @@
 import { FC, useEffect, useState } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
+import { Modal, Tab, Tabs } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { FaPlusCircle } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import Select from 'react-select';
 import { useDeleteSimpleModel, useGetSimpleModel, useTrainSimpleModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel, ModelDescriptionModel, SimpleModelInModel } from '../types';
+import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 
 // TODO: default values + avoid generic parameters
+
+interface Options {
+  models?: string[];
+}
+
+interface FeaturesOptions {
+  fasttext?: Options;
+  sbert?: Options;
+}
 
 interface SimpleModelManagementProps {
   projectName: string | null;
@@ -19,6 +30,8 @@ interface SimpleModelManagementProps {
   availableLabels: string[];
   kindScheme: string;
   currentModel?: Record<string, never>;
+  featuresOption: FeaturesOptions;
+  columns: string[];
 }
 
 export default function ModelsTable(
@@ -65,6 +78,8 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   availableLabels,
   kindScheme,
   currentModel,
+  featuresOption,
+  columns,
 }) => {
   const { notify } = useNotifications();
 
@@ -164,6 +179,11 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const predictions = filterFeatures(features);
   const defaultFeatures = [predictions[predictions.length - 1]];
 
+  // state for new feature
+  const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
+
+  console.log(displayNewFeature);
+
   return (
     <Tabs id="simplemodels" className="mt-1" defaultActiveKey="existing">
       <Tab eventKey="existing" title="Existing">
@@ -245,25 +265,36 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
               />
             </div>
             <div>
-              <label htmlFor="features">Features used to predict</label>
-              {/* Specific management of the component with the react-form controller */}
-              <Controller
-                name="features"
-                control={control}
-                defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={features}
-                    isMulti
-                    value={features.filter((option) => value.includes(option.value))}
-                    onChange={(selectedOptions) => {
-                      onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                      );
-                    }}
-                  />
-                )}
-              />
+              <div>
+                <label htmlFor="features">Features used to predict (X)</label>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary d-flex align-items-center my-1"
+                  onClick={() => setDisplayNewFeature(true)}
+                >
+                  <FaPlusCircle size={18} className="me-1" /> Add a new feature
+                </button>
+                <Controller
+                  name="features"
+                  control={control}
+                  defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
+                  render={({ field: { onChange, value } }) => (
+                    <>
+                      {' '}
+                      <Select
+                        options={features}
+                        isMulti
+                        value={features.filter((option) => value.includes(option.value))}
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    </>
+                  )}
+                />
+              </div>
             </div>
             <details className="custom-details">
               <summary>Advanced parameters</summary>
@@ -368,6 +399,23 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
             <button className="btn btn-primary btn-validation">Train quick model</button>
           </form>
         </div>
+        <Modal
+          show={displayNewFeature}
+          id="features-modal"
+          size="xl"
+          onHide={() => setDisplayNewFeature(false)}
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>Configure active learning</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <CreateNewFeature
+              projectName={projectName || ''}
+              featuresOption={featuresOption}
+              columns={columns}
+            />
+          </Modal.Body>
+        </Modal>
       </Tab>
     </Tabs>
   );

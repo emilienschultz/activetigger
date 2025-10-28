@@ -70,6 +70,8 @@ export type ComputeBertopicModel = components['schemas']['ComputeBertopicModel']
 
 export type ModelDescriptionModel = components['schemas']['ModelDescriptionModel'];
 
+export type FeaturesProjectStateModel = components['schemas']['FeaturesProjectStateModel'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;
