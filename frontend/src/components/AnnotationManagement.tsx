@@ -15,6 +15,8 @@ import {
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
 
+import { Modal } from 'react-bootstrap';
+import { FaMapMarkedAlt } from 'react-icons/fa';
 import { MdDisplaySettings } from 'react-icons/md';
 import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
 import { MulticlassInput } from '../components/MulticlassInput';
@@ -49,6 +51,10 @@ export const AnnotationManagement: FC = () => {
   const [displayComment, setDisplayComment] = useState(false);
   const [comment, setComment] = useState('');
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
+  const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
+  const handleCloseViz = () => setShowDisplayViz(false);
+  const handleCloseConfig = () => setShowDisplayConfig(false);
+  const handleCloseComment = () => setDisplayComment(false);
 
   // Reinitialize scroll in frame
   const frameRef = useRef<HTMLDivElement>(null);
@@ -213,84 +219,58 @@ export const AnnotationManagement: FC = () => {
 
   return (
     <div className="container-fluid">
-      <div className="container-fluid">
-        <div className="row mb-3 mt-3">
-          {
-            // annotation mode
-            <div>
-              <div
-                className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
-              >
-                <div className="m-2">
-                  <div className="col-12 d-flex justify-content-center align-items-center">
-                    <span className="d-none d-md-inline">Dataset </span>
-                    <select
-                      className="form-select mx-3"
-                      value={phase}
-                      onChange={(e) => {
-                        setAppContext((prev) => ({
-                          ...prev,
-                          phase: e.target.value,
-                        }));
-                        navigate(`/projects/${projectName}/tag/`);
-                      }}
-                    >
-                      <option value="train">Train</option>
-                      {isValid && <option value="valid">Validation</option>}
-                      {isTest && <option value="test">Test</option>}
-                    </select>
-                  </div>
-                </div>
-                {statistics ? (
-                  <span className="badge text-bg-light currentstatistics">
-                    <span className="d-none d-md-inline">Annotated : </span>
-                    {statisticsDataset(phase)} ;{' '}
-                    <span className="d-none d-md-inline">Selected : </span>
-                    {nSample || ''}
-                  </span>
-                ) : (
-                  ''
-                )}
-                <Tooltip anchorSelect=".currentstatistics" place="top">
-                  statistics for the current scheme
-                </Tooltip>
-
-                <div>
-                  <button className="btn getelement" onClick={refetchElement}>
-                    <LuRefreshCw size={20} />{' '}
-                    <span className="d-none d-md-inline">Get element</span>
-                    <Tooltip anchorSelect=".getelement" place="top">
-                      Get next element with the selection mode
-                    </Tooltip>
-                  </button>
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${activeSimpleModel ? 'btn-success' : 'btn-outline-warning'} rounded-pill px-2 py-1`}
-                    onClick={() => setActiveMenu(!activeMenu)}
-                  >
-                    active
-                  </button>
-                </div>
-              </div>
-              {activeMenu && (
-                <ActiveLearningManagement
-                  projectSlug={projectName}
-                  history={history}
-                  currentScheme={currentScheme}
-                  availableSimpleModels={availableSimpleModels}
-                  setAppContext={setAppContext}
-                  freqRefreshSimpleModel={freqRefreshSimpleModel}
-                  activeSimepleModel={activeSimpleModel}
-                />
+      <div className="row mt-2">
+        {
+          // annotation mode
+          <div>
+            <SelectionManagement />
+            {/* <div
+              className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
+            > */}
+            <div className="text-center my-2">
+              {statistics ? (
+                <span className="badge text-bg-light currentstatistics">
+                  <span className="d-none d-md-inline">Annotated : </span>
+                  {statisticsDataset(phase)} ;{' '}
+                  <span className="d-none d-md-inline">Selected : </span>
+                  {nSample || ''}
+                  <Tooltip anchorSelect=".currentstatistics" place="top">
+                    statistics for the current scheme
+                  </Tooltip>
+                </span>
+              ) : (
+                ''
               )}
-              <div>
-                <SelectionManagement />
-              </div>
+              <button className="btn btn-secondary getelement" onClick={refetchElement}>
+                <LuRefreshCw size={20} /> <span className="d-none d-md-inline">Get element</span>
+                <Tooltip anchorSelect=".getelement" place="top">
+                  Get next element with the selection mode
+                </Tooltip>
+              </button>
             </div>
-          }
-        </div>
+
+            {/* <div>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${activeSimpleModel ? 'btn-success' : 'btn-outline-warning'} rounded-pill px-2 py-1`}
+                  onClick={() => setActiveMenu(!activeMenu)}
+                >
+                  active
+                </button>
+              </div> */}
+            {activeMenu && (
+              <ActiveLearningManagement
+                projectSlug={projectName}
+                history={history}
+                currentScheme={currentScheme}
+                availableSimpleModels={availableSimpleModels}
+                setAppContext={setAppContext}
+                freqRefreshSimpleModel={freqRefreshSimpleModel}
+                activeSimepleModel={activeSimpleModel}
+              />
+            )}
+          </div>
+        }
       </div>
       {kindScheme !== 'span' ? (
         <>
@@ -323,10 +303,6 @@ export const AnnotationManagement: FC = () => {
             frameRef={frameRef as unknown as HTMLDivElement}
             postAnnotation={postAnnotation}
           />
-
-          {showDisplayConfig && (
-            <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
-          )}
         </>
       ) : (
         <>
@@ -408,10 +384,24 @@ export const AnnotationManagement: FC = () => {
             Display config menu
           </Tooltip>
         </button>
+        <button
+          className="btn displayviz"
+          onClick={() => {
+            setShowDisplayViz(!showDisplayConfig);
+          }}
+        >
+          <FaMapMarkedAlt />
+          <Tooltip anchorSelect=".displayviz" place="top">
+            Display the projection
+          </Tooltip>
+        </button>
       </div>
 
-      {displayComment && (
-        <div className="m-3">
+      <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
+        <Modal.Header closeButton>
+          <Modal.Title>Add a commentary to the label</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
           <input
             type="text"
             className="form-control"
@@ -419,8 +409,27 @@ export const AnnotationManagement: FC = () => {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
-        </div>
-      )}
+        </Modal.Body>
+        <Modal.Footer>
+          <button className="btn btn-primary" onClick={handleCloseComment}>
+            Save
+          </button>
+        </Modal.Footer>
+      </Modal>
+      <Modal show={showDisplayViz} onHide={handleCloseViz} size="xl" id="viz-modal">
+        <Modal.Header closeButton>
+          <Modal.Title>Projection</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>TO IMPLEMENT</Modal.Body>
+      </Modal>
+      <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="xl" id="config-modal">
+        <Modal.Header closeButton>
+          <Modal.Title>Configuration</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

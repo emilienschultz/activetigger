@@ -229,14 +229,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   return (
     <div>
       <div className="d-flex align-items-center">
-        {/* {!projectionTraining && (
-          <button
-            className="btn btn-primary btn-validation mb-3"
-            onClick={() => setFormNewProjection(!formNewProjection)}
-          >
-            Compute new vizualization
-          </button>
-        )} */}
         {projectionData && (
           <label style={{ display: 'block' }}>
             <span className="lock">

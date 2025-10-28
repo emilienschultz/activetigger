@@ -609,8 +609,12 @@ class Project:
 
         # select the current state of annotation
         if next.dataset == "test":
+            if self.test is None:
+                raise ValueError("No test dataset available")
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["test"])
         elif next.dataset == "valid":
+            if self.valid is None:
+                raise ValueError("No valid dataset available")
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["valid"])
         else:
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["train"])

@@ -137,3 +137,9 @@ form button:hover {
 table{
   margin: 10px 0px;
 }
+
+.label-small-gray {
+  font-size: 0.8rem;
+  color: #9ca3af; // Tailwind's neutral gray tone (lighter)
+  margin-bottom: -5px;
+}

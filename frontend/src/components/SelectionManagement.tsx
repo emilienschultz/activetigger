@@ -1,12 +1,19 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
+import { Tooltip } from 'react-tooltip';
 import { useGetSimpleModel } from '../core/api';
 import { useAppContext } from '../core/context';
 
 // define the component to configure selection mode
 export const SelectionManagement: FC = () => {
   const {
-    appContext: { currentScheme, selectionConfig, currentProject: project, activeSimpleModel },
+    appContext: {
+      currentScheme,
+      selectionConfig,
+      currentProject: project,
+      activeSimpleModel,
+      phase,
+    },
     setAppContext,
   } = useAppContext();
 
@@ -53,22 +60,79 @@ export const SelectionManagement: FC = () => {
     }
   }, [availableLabels, selectionConfig, setAppContext]);
 
+  const changeDataSet = (e: ChangeEvent<HTMLSelectElement>) => {
+    setAppContext((prev) => ({
+      ...prev,
+      phase: e.target.value,
+    }));
+  };
+
+  const changeSample = (e: ChangeEvent<HTMLSelectElement>) => {
+    setAppContext((prev) => ({
+      ...prev,
+      selectionConfig: { ...selectionConfig, sample: e.target.value },
+    }));
+  };
+
+  const isValid = project?.params.valid;
+  const isTest = project?.params.test;
+
+  console.log(project);
+
   return (
     <div className="w-100">
       <div className="d-flex align-items-center">
         {selectionConfig.frameSelection && <FaLock className="m-2" size={20} />}
-        <div className="mx-2 w-25">
-          <label>Sample</label>
+        <div className="mx-2">
+          <label className="form-label label-small-gray">Selection</label>
           <select
             className="form-select"
-            onChange={(e) => {
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
               setAppContext((prev) => ({
                 ...prev,
-                selectionConfig: { ...selectionConfig, sample: e.target.value },
+                selectionConfig: { ...selectionConfig, mode: e.target.value },
               }));
             }}
-            value={selectionConfig.sample}
+            value={selectionConfig.mode}
           >
+            {(availableModes || []).map((e, i) => (
+              <option key={i}>{e}</option>
+            ))}
+          </select>
+          {
+            // label selection for maxprob
+            selectionConfig.mode == 'maxprob' && (
+              <label className="form-label label-small-gray">
+                Maxprob on
+                <select
+                  onChange={(e) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
+                    }));
+                  }}
+                  className="form-select"
+                  value={selectionConfig.label_maxprob}
+                >
+                  {availableLabels.map((e, i) => (
+                    <option key={i}>{e}</option>
+                  ))}{' '}
+                </select>
+              </label>
+            )
+          }
+        </div>
+        <div className="mx-2">
+          <label className="form-label label-small-gray">Dataset</label>
+          <select className="form-select" value={phase} onChange={changeDataSet}>
+            <option value="train">train</option>
+            {isValid && <option value="valid">validation</option>}
+            {isTest && <option value="test">test</option>}
+          </select>
+        </div>
+        <div className="mx-2 w-25">
+          <label className="form-label label-small-gray">Tagged</label>
+          <select className="form-select" onChange={changeSample} value={selectionConfig.sample}>
             {availableSamples.map((e, i) => (
               <option key={i}>{e}</option>
             ))}{' '}
@@ -77,7 +141,7 @@ export const SelectionManagement: FC = () => {
             // label selection for tagged elemnts
             selectionConfig.sample == 'tagged' && (
               <>
-                <label>
+                <label className="form-label label-small-gray">
                   On label
                   <select
                     onChange={(e) => {
@@ -121,56 +185,18 @@ export const SelectionManagement: FC = () => {
           }
         </div>
 
-        <div className="mx-2 w-25">
-          <label>Selection</label>
-          <select
-            className="form-select"
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: { ...selectionConfig, mode: e.target.value },
-              }));
-            }}
-            value={selectionConfig.mode}
-          >
-            {(availableModes || []).map((e, i) => (
-              <option key={i}>{e}</option>
-            ))}
-          </select>
-          {
-            // label selection for maxprob
-            selectionConfig.mode == 'maxprob' && (
-              <label>
-                Maxprob on
-                <select
-                  onChange={(e) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
-                    }));
-                  }}
-                  className="form-select"
-                  value={selectionConfig.label_maxprob}
-                >
-                  {availableLabels.map((e, i) => (
-                    <option key={i}>{e}</option>
-                  ))}{' '}
-                </select>
-              </label>
-            )
-          }
-        </div>
-
         {
           // input validated on deselect
         }
         <div className="w-50">
-          <label htmlFor="select_regex">Filter</label>
+          <label htmlFor="select_regex" className="form-label label-small-gray">
+            Filter
+          </label>
           <input
-            className="form-control"
+            className="form-control searchhelp"
             type="text"
             id="select_regex"
-            placeholder="Search / Regex / CONTEXT= / QUERY="
+            placeholder="Enter a regex"
             value={selectionConfig.filter}
             onChange={(e) => {
               setAppContext((prev) => ({
@@ -179,6 +205,9 @@ export const SelectionManagement: FC = () => {
               }));
             }}
           />
+          <Tooltip anchorSelect=".searchhelp" place="top">
+            Use CONTEXT= or QUERY= for specific requests
+          </Tooltip>
         </div>
       </div>
     </div>
