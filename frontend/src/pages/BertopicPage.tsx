@@ -299,9 +299,10 @@ export const BertopicPage: FC = () => {
                 </>
               )}
               {topics && (
-                <div style={{ height: '500px' }}>
-                  <DisplayTableTopics data={(topics as Row[]) || []} />
-                </div>
+                <>
+                  <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
+                    <DisplayTableTopics data={(topics as Row[]) || []} />
+                  </div>
               )}
             </Tab>
             <Tab eventKey="new" title="New Bertopic">
