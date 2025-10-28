@@ -56,18 +56,18 @@ export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
       {!reset && (
         <form onSubmit={handleSubmit(onSubmit)}>
           <input
-            className="form-control form-appearance mt-2 w-50"
+            className="form-control form-appearance mt-2"
             type="text"
             {...register('username')}
             placeholder="Username"
           />
           <input
-            className="form-control mt-2  w-50"
+            className="form-control mt-2"
             type="password"
             {...register('password')}
             placeholder="Password"
           />
-          <div className="d-flex justify-content-between w-50">
+          <div className="d-flex justify-content-between">
             <button className="btn btn-primary btn-validation">Login</button>
           </div>
         </form>
