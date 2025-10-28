@@ -997,11 +997,26 @@ class ProjectCreatingModel(BaseModel):
     kind: str
     status: str
 
+class TopicsOutModel(BaseModel):
+    Topic: int
+    Name: str
+    Count: int
+    Representation: str
+    Representative_Docs: str
+
+class BertopicOutModelParameters(BaseModel):
+    bertopic_params: ComputeBertopicModel
+    col_text: str
+    col_id: str|None
+    name: str
+    timestamp: str # Not sure about this one, example: 20251027_104836 # Axel
+    path_data: str
+    path_embeddings: str
+    path_projection: str
 
 class BertopicTopicsOutModel(BaseModel):
-    topics: list
-    parameters: dict[str, Any]
-
+    topics: list[TopicsOutModel]
+    parameters: BertopicOutModelParameters
 
 class DatasetModel(BaseModel):
     """

@@ -1,10 +1,11 @@
 import chroma from 'chroma-js';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
-import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { FaCloudDownloadAlt, FaPen, FaRegStickyNote } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
+import { Tooltip } from 'react-tooltip';
 import { DisplayTableTopics, Row } from '../components/DisplayTableTopics';
 import { BertopicForm } from '../components/forms/BertopicForm';
 import { BertopicVizSigma } from '../components/ProjectionVizSigma/BertopicVizSigma';
@@ -15,15 +16,18 @@ import {
   useGetBertopicProjection,
   useGetBertopicTopics,
   useGetElementById,
+  useExportTopicsToScheme,
 } from '../core/api';
 import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
 
 export const BertopicPage: FC = () => {
   const { projectName } = useParams();
   const {
-    appContext: { currentProject, isComputing },
+    appContext: { currentProject, isComputing, reFetchCurrentProject },
   } = useAppContext();
   const deleteBertopic = useDeleteBertopic(projectName || null);
+  const exportTopicsToScheme = useExportTopicsToScheme(projectName || null);
   const { downloadBertopicTopics } = useDownloadBertopicTopics(projectName || null);
   const { downloadBertopicClusters } = useDownloadBertopicClusters(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
@@ -70,6 +74,16 @@ export const BertopicPage: FC = () => {
     {},
   );
 
+  const exportBertopicAsAnnotation = async (topicModelName: string | null) => {
+    if (topicModelName) {
+      exportTopicsToScheme(topicModelName);
+    }
+  };
+
+  const test = () => {
+    console.log('TEST');
+  };
+
   return (
     // <ProjectPageLayout projectName={projectName} currentAction="explore">
     <div className="container-fluid">
@@ -77,9 +91,6 @@ export const BertopicPage: FC = () => {
         <div className="col-12">
           <Tabs id="panel" className="mt-3">
             <Tab eventKey="existing" title="Existing Bertopic">
-              <div className="explanations">
-                Compute a Bertopic on the train dataset to identify the main topics.
-              </div>
               {currentTraining && currentTraining?.length > 0 && (
                 <div className="alert alert-info m-2">
                   Current computation
@@ -92,7 +103,6 @@ export const BertopicPage: FC = () => {
                   </ul>
                 </div>
               )}
-              <h4 className="subsection">Existing Bertopic</h4>
               <div className="d-flex w-50 my-2" style={{ zIndex: 1000 }}>
                 <Select
                   className="flex-grow-1"
@@ -119,28 +129,88 @@ export const BertopicPage: FC = () => {
                 </button>
               </div>
               {currentBertopic && (
-                <div>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() =>
-                      currentBertopic ? downloadBertopicTopics(currentBertopic) : null
-                    }
-                  >
-                    Topics <FaCloudDownloadAlt />
-                  </button>
-                  <button
-                    className="btn btn-primary mx-2"
-                    onClick={() =>
-                      currentBertopic ? downloadBertopicClusters(currentBertopic) : null
-                    }
-                  >
-                    Clusters <FaCloudDownloadAlt />
-                  </button>
-                  <details>
-                    <summary>Parameters</summary>
-                    {parameters && JSON.stringify(parameters, null, 2)}
-                  </details>
-                </div>
+                <>
+                  <div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => exportBertopicAsAnnotation(currentBertopic)}
+                    >
+                      Make scheme <FaPen />
+                    </button>
+                    <details>
+                      <summary>Parameters</summary>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          justifyContent: 'space-evenly',
+                        }}
+                      >
+                        <div style={{ width: '400px' }}>
+                          <h6 className="subsection">General parameters</h6>
+                          <table className="table-statistics">
+                            <tbody>
+                              <tr>
+                                <td>Language</td>
+                                <td>{parameters?.bertopic_params.language}</td>
+                              </tr>
+                              <tr>
+                                <td>Embedding model</td>
+                                <td>{parameters?.bertopic_params.embedding_model}</td>
+                              </tr>
+                              <tr>
+                                <td>Number of keywords</td>
+                                <td>{parameters?.bertopic_params.top_n_words}</td>
+                              </tr>
+                              <tr>
+                                <td>Keywords n-grams</td>
+                                <td>{parameters?.bertopic_params.n_gram_range}</td>
+                              </tr>
+                              <tr>
+                                <td>Outlier reduction</td>
+                                <td>
+                                  {parameters?.bertopic_params.outlier_reduction ? 'True' : 'False'}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Minimum number of characters of texts</td>
+                                <td>{parameters?.bertopic_params.filter_text_length}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div>
+                          <div style={{ width: '400px' }}>
+                            <h6 className="subsection">Dimension reduction parameters (UMAP)</h6>
+                            <table className="table-statistics">
+                              <tbody>
+                                <tr>
+                                  <td>Number of neighbors</td>
+                                  <td>{parameters?.bertopic_params.umap_n_neighbors}</td>
+                                </tr>
+                                <tr>
+                                  <td>Number of components</td>
+                                  <td>{parameters?.bertopic_params.umap_n_components}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <div style={{ width: '400px' }}>
+                            <h6 className="subsection">Clustering parameters (HDBSCAN)</h6>
+                            <table className="table-statistics">
+                              <tbody>
+                                <tr>
+                                  <td>Clusters' mininum size</td>
+                                  <td>{parameters?.bertopic_params.hdbscan_min_cluster_size}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </>
               )}
 
               {projection && (
@@ -177,13 +247,49 @@ export const BertopicPage: FC = () => {
                 </>
               )}
               {topics && (
-                <div style={{ height: '500px' }}>
-                  <DisplayTableTopics data={(topics as Row[]) || []} />
-                </div>
+                <>
+                  <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
+                    <DisplayTableTopics data={(topics as Row[]) || []} />
+                  </div>
+                  <div style={{ margin: '10px 0px' }}>
+                    <button
+                      className="btn btn-primary"
+                      id="download-topics"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicTopics(currentBertopic) : null
+                      }
+                    >
+                      Topics <FaCloudDownloadAlt />
+                    </button>
+                    <Tooltip anchorSelect="#download-topics" place="top">
+                      Download the table above with the following columns : Topic, Count, Name,
+                      <br />
+                      Representation and Representative Docs
+                    </Tooltip>
+                    <button
+                      className="btn btn-primary mx-2"
+                      id="download-clusters"
+                      onClick={() =>
+                        currentBertopic ? downloadBertopicClusters(currentBertopic) : null
+                      }
+                    >
+                      Clusters <FaCloudDownloadAlt />
+                    </button>
+                    <Tooltip anchorSelect="#download-clusters" place="top">
+                      Download a table linking each element to a cluster. The table contains 2
+                      <br />
+                      columns: id and cluster
+                    </Tooltip>
+                  </div>
+                </>
               )}
             </Tab>
             <Tab eventKey="new" title="New Bertopic">
-              <div className="explanations">Using UMAP and HDBScan</div>
+              <div className="explanations">
+                Compute a Bertopic on the train dataset to identify the main topics.
+                <br />
+                Using UMAP and HDBScan
+              </div>
               <BertopicForm
                 projectSlug={projectName || null}
                 availableModels={availableModels}
