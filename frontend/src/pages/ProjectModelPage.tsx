@@ -18,16 +18,26 @@ export const ProjectModelPage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
-  const [activeKey, setActiveKey] = useState<string>('simple');
+  const [activeKey, setActiveKey] = useState<string>('quick');
 
   // available models
-  const availableBertModels = useMemo(() => {
-    if (currentScheme && project?.languagemodels?.available?.[currentScheme]) {
-      return Object.keys(project.languagemodels.available[currentScheme]);
-    }
-    return [];
-  }, [project, currentScheme]);
+  // const availableBertModels = useMemo(() => {
+  //   if (currentScheme && project?.languagemodels?.available?.[currentScheme]) {
+  //     return Object.keys(project.languagemodels.available[currentScheme]);
+  //   }
+  //   return [];
+  // }, [project, currentScheme]);
   const baseSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
+
+  const availableBertModels = useMemo(
+    () =>
+      project?.languagemodels.available
+        ? (project?.languagemodels.available as unknown as {
+            [key: string]: ModelDescriptionModel[];
+          })
+        : {},
+    [project?.languagemodels.available],
+  );
 
   const availableSimpleModels = useMemo(
     () =>
@@ -56,9 +66,9 @@ export const ProjectModelPage: FC = () => {
               id="panel"
               className="mt-3"
               activeKey={activeKey}
-              onSelect={(k) => setActiveKey(k || 'simple')}
+              onSelect={(k) => setActiveKey(k || 'quick')}
             >
-              <Tab eventKey="simple" title="Simple">
+              <Tab eventKey="quick" title="Quick">
                 <div className="explanations">Train machine learning models based on features</div>
 
                 <SimpleModelManagement
@@ -80,7 +90,7 @@ export const ProjectModelPage: FC = () => {
                 <BertModelManagement
                   projectSlug={projectSlug || null}
                   currentScheme={currentScheme || null}
-                  availableBertModels={availableBertModels}
+                  availableBertModels={availableBertModels[currentScheme || ''] || []}
                   isComputing={isComputing}
                   project={project || null}
                 />

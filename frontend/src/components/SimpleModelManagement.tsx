@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import { Modal, Tab, Tabs } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
@@ -181,240 +181,253 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
   // state for new feature
   const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
+  const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
   return (
-    <Tabs id="simplemodels" className="mt-1" defaultActiveKey="existing">
-      <Tab eventKey="existing" title="Existing">
-        <div className="d-flex align-items-center">
-          <Select
-            options={Object.values(availableSimpleModels || {}).map((e) => ({
-              value: e.name,
-              label: e.name,
-            }))}
-            value={
-              currentSimpleModelName
-                ? { value: currentSimpleModelName, label: currentSimpleModelName }
-                : null
+    <div>
+      <div className="d-flex align-items-center">
+        <Select
+          options={Object.values(availableSimpleModels || {}).map((e) => ({
+            value: e.name,
+            label: e.name,
+          }))}
+          value={
+            currentSimpleModelName
+              ? { value: currentSimpleModelName, label: currentSimpleModelName }
+              : null
+          }
+          onChange={(selectedOption) => {
+            setCurrentSimpleModelName(selectedOption ? selectedOption.value : null);
+          }}
+          isSearchable
+          className="w-50 mt-1"
+          placeholder="Select an existing quickmodel"
+        />
+        <button
+          className="btn btn p-0"
+          onClick={() => {
+            if (currentSimpleModelName) {
+              deleteSimpleModel(currentSimpleModelName);
+              setCurrentSimpleModelName(null);
             }
-            onChange={(selectedOption) => {
-              setCurrentSimpleModelName(selectedOption ? selectedOption.value : null);
-            }}
-            isSearchable
-            className="w-50 mt-1"
+          }}
+        >
+          <MdOutlineDeleteOutline size={30} />
+        </button>
+      </div>
+      <button onClick={() => setDisplayNewModel(true)} className="btn btn-primary my-2">
+        Create new model
+      </button>
+      <div>
+        <table className="table table-striped table-hover w-50 mt-2">
+          <tbody>
+            {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
+              <tr key={i}>
+                <td>{key}</td>
+                <td>
+                  {Array.isArray(value)
+                    ? (value as string[]).join(', ') // or use bullets if you prefer
+                    : typeof value === 'object' && value !== null
+                      ? JSON.stringify(value, null, 2)
+                      : String(value)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {currentModelInformations && (
+        <div>
+          <DisplayScores
+            title={'Internal validation'}
+            scores={currentModelInformations.statistics_test as MLStatisticsModel}
           />
-          <button
-            className="btn btn p-0"
-            onClick={() => {
-              if (currentSimpleModelName) {
-                deleteSimpleModel(currentSimpleModelName);
-                setCurrentSimpleModelName(null);
-              }
-            }}
-          >
-            <MdOutlineDeleteOutline size={30} />
-          </button>
-        </div>
-        <div>
-          <table className="table table-striped table-hover w-50 mt-2">
-            <tbody>
-              {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
-                <tr key={i}>
-                  <td>{key}</td>
-                  <td>
-                    {Array.isArray(value)
-                      ? (value as string[]).join(', ') // or use bullets if you prefer
-                      : typeof value === 'object' && value !== null
-                        ? JSON.stringify(value, null, 2)
-                        : String(value)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {currentModelInformations && (
-          <div>
+          {currentModelInformations.statistics_cv10 && (
             <DisplayScores
-              title={'Internal validation'}
-              scores={currentModelInformations.statistics_test as MLStatisticsModel}
+              title="Cross validation CV10"
+              scores={currentModelInformations.statistics_cv10 as unknown as Record<string, number>}
             />
-            {currentModelInformations.statistics_cv10 && (
-              <DisplayScores
-                title="Cross validation CV10"
-                scores={
-                  currentModelInformations.statistics_cv10 as unknown as Record<string, number>
-                }
-              />
-            )}
-          </div>
-        )}
-      </Tab>
-      <Tab eventKey="new" title="New">
-        <div>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <label htmlFor="name">Model name</label>
-              <input
-                type="text"
-                id="name"
-                placeholder="Model name"
-                className="form-control"
-                {...register('name')}
-              />
-            </div>
-            <div>
+          )}
+        </div>
+      )}
+
+      <Modal
+        show={displayNewModel}
+        id="quickmodel-modal"
+        onHide={() => setDisplayNewModel(false)}
+        centered
+        size="xl"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Train a new quick model</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div>
-                <label htmlFor="features">Features used to predict (X)</label>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary d-flex align-items-center my-1"
-                  onClick={() => setDisplayNewFeature(true)}
-                >
-                  <FaPlusCircle size={18} className="me-1" /> Add a new feature
-                </button>
-                <Controller
-                  name="features"
-                  control={control}
-                  defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
-                  render={({ field: { onChange, value } }) => (
-                    <>
-                      {' '}
-                      <Select
-                        options={features}
-                        isMulti
-                        value={features.filter((option) => value.includes(option.value))}
-                        onChange={(selectedOptions) => {
-                          onChange(
-                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                          );
-                        }}
-                      />
-                    </>
-                  )}
+                <label htmlFor="name">Model name</label>
+                <input
+                  type="text"
+                  id="name"
+                  placeholder="Model name"
+                  className="form-control"
+                  {...register('name')}
                 />
               </div>
-            </div>
-            <details className="custom-details">
-              <summary>Advanced parameters</summary>
-
-              <label htmlFor="model">Select a model</label>
-              <select id="model" {...register('model')}>
-                {Object.keys(baseSimpleModels).map((e) => (
-                  <option key={e}>{e}</option>
-                ))}{' '}
-              </select>
-              {kindScheme == 'multilabel' && (
-                <>
-                  <label htmlFor="dichotomize">Dichotomize on the label</label>
-                  <select id="dichotomize" {...register('dichotomize')}>
-                    {Object.values(availableLabels).map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}{' '}
-                  </select>
-                </>
-              )}
-              {
-                //generate_config(selectedSimpleModel)
-                (selectedModel == 'liblinear' && (
-                  <div key="liblinear">
-                    <label htmlFor="cost">Cost</label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="cost"
-                      {...register('params.cost', { valueAsNumber: true })}
-                    ></input>
-                  </div>
-                )) ||
-                  (selectedModel == 'knn' && (
-                    <div key="knn">
-                      <label htmlFor="n_neighbors">Number of neighbors</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="n_neighbors"
-                        {...register('params.n_neighbors', { valueAsNumber: true })}
-                      ></input>
-                    </div>
-                  )) ||
-                  (selectedModel == 'lasso' && (
-                    <div key="lasso">
-                      <label htmlFor="c">C</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="C"
-                        {...register('params.C', { valueAsNumber: true })}
-                      ></input>
-                    </div>
-                  )) ||
-                  (selectedModel == 'multi_naivebayes' && (
-                    <div key="multi_naivebayes">
-                      <label htmlFor="alpha">Alpha</label>
-                      <input
-                        type="number"
-                        id="alpha"
-                        {...register('params.alpha', { valueAsNumber: true })}
-                      ></input>
-                      <label htmlFor="fit_prior">
-                        Fit prior
-                        <input
-                          type="checkbox"
-                          id="fit_prior"
-                          {...register('params.fit_prior')}
-                          className="mx-3"
-                          checked
+              <div>
+                <div>
+                  <label htmlFor="features">Features used to predict (X)</label>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary d-flex align-items-center my-1"
+                    onClick={() => setDisplayNewFeature(true)}
+                  >
+                    <FaPlusCircle size={18} className="me-1" /> Add a new feature
+                  </button>
+                  <Controller
+                    name="features"
+                    control={control}
+                    defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
+                    render={({ field: { onChange, value } }) => (
+                      <>
+                        {' '}
+                        <Select
+                          options={features}
+                          isMulti
+                          value={features.filter((option) => value.includes(option.value))}
+                          onChange={(selectedOptions) => {
+                            onChange(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
+                          }}
                         />
-                      </label>
+                      </>
+                    )}
+                  />
+                </div>
+              </div>
+              <details className="custom-details">
+                <summary>Advanced parameters</summary>
+
+                <label htmlFor="model">Select a model</label>
+                <select id="model" {...register('model')}>
+                  {Object.keys(baseSimpleModels).map((e) => (
+                    <option key={e}>{e}</option>
+                  ))}{' '}
+                </select>
+                {kindScheme == 'multilabel' && (
+                  <>
+                    <label htmlFor="dichotomize">Dichotomize on the label</label>
+                    <select id="dichotomize" {...register('dichotomize')}>
+                      {Object.values(availableLabels).map((e) => (
+                        <option key={e}>{e}</option>
+                      ))}{' '}
+                    </select>
+                  </>
+                )}
+                {
+                  //generate_config(selectedSimpleModel)
+                  (selectedModel == 'liblinear' && (
+                    <div key="liblinear">
+                      <label htmlFor="cost">Cost</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="cost"
+                        {...register('params.cost', { valueAsNumber: true })}
+                      ></input>
                     </div>
                   )) ||
-                  (selectedModel == 'randomforest' && (
-                    <div key="randomforest">
-                      <label htmlFor="n_estimators">Number of estimators</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="n_estimators"
-                        {...register('params.n_estimators', { valueAsNumber: true })}
-                      ></input>
-                      <label htmlFor="max_features">Max features</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="max_features"
-                        {...register('params.max_features', { valueAsNumber: true })}
-                      ></input>
-                    </div>
-                  ))
-              }
+                    (selectedModel == 'knn' && (
+                      <div key="knn">
+                        <label htmlFor="n_neighbors">Number of neighbors</label>
+                        <input
+                          type="number"
+                          step="1"
+                          id="n_neighbors"
+                          {...register('params.n_neighbors', { valueAsNumber: true })}
+                        ></input>
+                      </div>
+                    )) ||
+                    (selectedModel == 'lasso' && (
+                      <div key="lasso">
+                        <label htmlFor="c">C</label>
+                        <input
+                          type="number"
+                          step="1"
+                          id="C"
+                          {...register('params.C', { valueAsNumber: true })}
+                        ></input>
+                      </div>
+                    )) ||
+                    (selectedModel == 'multi_naivebayes' && (
+                      <div key="multi_naivebayes">
+                        <label htmlFor="alpha">Alpha</label>
+                        <input
+                          type="number"
+                          id="alpha"
+                          {...register('params.alpha', { valueAsNumber: true })}
+                        ></input>
+                        <label htmlFor="fit_prior">
+                          Fit prior
+                          <input
+                            type="checkbox"
+                            id="fit_prior"
+                            {...register('params.fit_prior')}
+                            className="mx-3"
+                            checked
+                          />
+                        </label>
+                      </div>
+                    )) ||
+                    (selectedModel == 'randomforest' && (
+                      <div key="randomforest">
+                        <label htmlFor="n_estimators">Number of estimators</label>
+                        <input
+                          type="number"
+                          step="1"
+                          id="n_estimators"
+                          {...register('params.n_estimators', { valueAsNumber: true })}
+                        ></input>
+                        <label htmlFor="max_features">Max features</label>
+                        <input
+                          type="number"
+                          step="1"
+                          id="max_features"
+                          {...register('params.max_features', { valueAsNumber: true })}
+                        ></input>
+                      </div>
+                    ))
+                }
 
-              <div className="d-flex align-items-center">
-                <label htmlFor="cv10">10-fold cross validation</label>
-                <input type="checkbox" id="cv10" {...register('cv10')} className="mx-3" />
-              </div>
-            </details>
+                <div className="d-flex align-items-center">
+                  <label htmlFor="cv10">10-fold cross validation</label>
+                  <input type="checkbox" id="cv10" {...register('cv10')} className="mx-3" />
+                </div>
+              </details>
 
-            <button className="btn btn-primary btn-validation">Train quick model</button>
-          </form>
-        </div>
-        <Modal
-          show={displayNewFeature}
-          id="features-modal"
-          size="xl"
-          onHide={() => setDisplayNewFeature(false)}
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Configure active learning</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <CreateNewFeature
-              projectName={projectName || ''}
-              featuresOption={featuresOption}
-              columns={columns}
-            />
-          </Modal.Body>
-        </Modal>
-      </Tab>
-    </Tabs>
+              <button className="btn btn-primary btn-validation">Train quick model</button>
+            </form>
+          </div>
+        </Modal.Body>
+      </Modal>
+      <Modal
+        show={displayNewFeature}
+        id="features-modal"
+        size="xl"
+        onHide={() => setDisplayNewFeature(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Configure active learning</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <CreateNewFeature
+            projectName={projectName || ''}
+            featuresOption={featuresOption}
+            columns={columns}
+          />
+        </Modal.Body>
+      </Modal>
+    </div>
   );
 };
