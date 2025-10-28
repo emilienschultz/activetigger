@@ -107,7 +107,6 @@ export const ProjectionVizSigma: FC<Props> = ({
   const nodeReducer = useCallback(
     (node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
       const res: Partial<NodeDisplayData> = { ...data };
-      console.log('nodeReducer', node, data);
 
       // apply color for nodes
       res.color = labelColorMapping[data.label];
@@ -154,9 +153,11 @@ export const ProjectionVizSigma: FC<Props> = ({
         settings={settings}
       >
         <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
-        <ControlsContainer position="bottom-left">
-          <Caption labelColorMapping={labelColorMapping} />
-        </ControlsContainer>
+        {Object.keys(labelColorMapping).length < 15 && (
+          <ControlsContainer position="bottom-left">
+            <Caption labelColorMapping={labelColorMapping} />
+          </ControlsContainer>
+        )}
         <ControlsContainer position={'bottom-right'}>
           <div className="border-bottom">
             {/* Active tools (zoom-pan or marquee)) buttons are managed by the marquee controller */}

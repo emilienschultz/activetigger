@@ -509,7 +509,7 @@ class Schemes:
             print("Add null label for ", element_id)
 
         if a[scheme].kind == "multiclass":
-            if label not in a[scheme].labels:
+            if label not in a[scheme].labels and label is not None:
                 raise Exception(f"Label {label} not in the scheme")
 
         elif a[scheme].kind == "multilabel" and label is not None:
