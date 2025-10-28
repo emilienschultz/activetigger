@@ -57,7 +57,10 @@ export const ProjectSettingsPage: FC = () => {
 
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="settings">
-      <Tabs id="panel" className="mt-3" defaultActiveKey="features">
+      <Tabs id="panel" className="mt-3" defaultActiveKey="parameters">
+        <Tab eventKey="parameters" title="Parameters">
+          <ProjectParameters project={project} projectSlug={projectSlug} />
+        </Tab>
         <Tab eventKey="features" title="Features">
           <div className="explanations">Available features</div>
           <FeaturesManagement />
@@ -81,10 +84,6 @@ export const ProjectSettingsPage: FC = () => {
             dataset={'test'}
             exist={project?.params.test}
           />
-        </Tab>
-
-        <Tab eventKey="parameters" title="Parameters">
-          <ProjectParameters project={project} projectSlug={projectSlug} />
         </Tab>
 
         <Tab eventKey="session" title="Session history">

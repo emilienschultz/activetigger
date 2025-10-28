@@ -16,7 +16,7 @@ export const ProjectPage: FC = () => {
   // get data
   const { projectName: projectSlug } = useParams();
   const {
-    appContext: { currentScheme, currentProject: project, history, displayConfig },
+    appContext: { currentScheme, currentProject: project, displayConfig },
     setAppContext,
   } = useAppContext();
 
