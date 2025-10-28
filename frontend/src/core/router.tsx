@@ -17,6 +17,7 @@ import { GenPage } from '../pages/ProjectGenPage';
 import { ProjectModelPage } from '../pages/ProjectModelPage';
 import { ProjectNewPage } from '../pages/ProjectNewPage';
 import { ProjectPage } from '../pages/ProjectPage';
+import { ProjectSettingsPage } from '../pages/ProjectSettingsPage';
 import { ProjectTagPage } from '../pages/ProjectTagPage';
 import { ProjectValidatePage } from '../pages/ProjectValidatePage';
 import { ProjectsPage } from '../pages/ProjectsPage';
@@ -166,6 +167,14 @@ export function getRouter() {
         {
           path: '/projects/:projectName/experimental/',
           element: <></>,
+        },
+        {
+          path: '/projects/:projectName/settings/',
+          element: (
+            <>
+              <ProjectSettingsPage />
+            </>
+          ),
         },
       ],
     },

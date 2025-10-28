@@ -440,7 +440,7 @@ export const ProjectCreationForm: FC = () => {
                     />
 
                     <label className="form-label" htmlFor="n_valid">
-                      Number of elements in the valid set (optional)
+                      Number of elements in the validation set (optional)
                       <a className="n_valid">
                         <HiOutlineQuestionMarkCircle />
                       </a>

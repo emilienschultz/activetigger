@@ -4,6 +4,7 @@ import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
 import { IoDuplicate } from 'react-icons/io5';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
+import { Tooltip } from 'react-tooltip';
 import { useAddScheme, useDeleteScheme, useDuplicateScheme, useRenameScheme } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -68,12 +69,16 @@ export const SelectCurrentScheme: FC = () => {
   return (
     <div className="row">
       <div className="d-flex align-items-center mb-3">
-        <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
-          Active scheme
+        <label
+          htmlFor="scheme-selected"
+          className="d-none d-md-inline"
+          style={{ whiteSpace: 'nowrap', marginRight: '10px', color: 'orange' }}
+        >
+          Active Scheme
         </label>
         <select
           id="scheme-selected"
-          className="form-select w-50"
+          className="form-select"
           onChange={handleSelectScheme}
           value={currentScheme ? currentScheme : availableSchemes[0]}
         >
@@ -149,27 +154,39 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
 
   return (
     <div>
-      <div className="flex-wrap align-items-center">
-        <div className="mt-3 col-12">
-          <SelectCurrentScheme />
-        </div>
+      <div className="mt-3 col-12 d-flex">
+        <SelectCurrentScheme />
         {!deactivateModifications && (
           <div>
             <button
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
-              className="btn btn-primary"
+              className="btn btn-sm p-1 addscheme"
             >
-              <FaPlusCircle size={20} /> <span className="d-none d-sm-inline">Add</span>
+              <FaPlusCircle size={20} />
+              <Tooltip anchorSelect=".addscheme" place="top">
+                Add empty scheme
+              </Tooltip>
             </button>
-            <button onClick={() => setShowRename(!showRename)} className="btn btn-primary ms-2">
-              <MdDriveFileRenameOutline size={20} />{' '}
-              <span className="d-none d-sm-inline">Rename</span>
+            <button
+              onClick={() => setShowRename(!showRename)}
+              className="btn btn-sm p-1 renamescheme"
+            >
+              <MdDriveFileRenameOutline size={20} />
+              <Tooltip anchorSelect=".renamescheme" place="top">
+                Rename current scheme
+              </Tooltip>
             </button>
-            <button onClick={() => duplicateScheme()} className="btn btn-primary ms-2">
-              <IoDuplicate size={20} /> <span className="d-none d-sm-inline">Duplicate</span>
+            <button onClick={() => duplicateScheme()} className="btn btn-sm p-1 duplicatescheme">
+              <IoDuplicate size={20} />
+              <Tooltip anchorSelect=".duplicatescheme" place="top">
+                Duplicate current scheme
+              </Tooltip>
             </button>
-            <button onClick={deleteSelectedScheme} className="btn btn-primary ms-2">
-              <FaRegTrashAlt size={20} /> <span className="d-none d-sm-inline">Delete</span>
+            <button onClick={deleteSelectedScheme} className="btn btn-sm p-1 deletescheme">
+              <FaRegTrashAlt size={20} />
+              <Tooltip anchorSelect=".deletescheme" place="top">
+                Delete current scheme
+              </Tooltip>
             </button>
           </div>
         )}
@@ -178,58 +195,54 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
         {
           // only display if click on the add button
           showCreateNewScheme && (
-            <div className="row">
-              <div className="col-12 col-md-6 m-2 alert alert-primary">
-                <form onSubmit={handleSubmit(createNewScheme)}>
-                  <input
-                    className="form-control"
-                    id="scheme_name"
-                    type="text"
-                    {...register('name')}
-                    placeholder="Enter new scheme name"
-                  />
-                  <label
-                    htmlFor="scheme-selected"
-                    style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
-                  >
-                    Type
-                  </label>
-                  <select id="scheme_kind" className="form-select" {...register('kind')}>
-                    <option value="multiclass">Multiclass</option>
-                    <option value="multilabel">
-                      Multilabel (experimental - only some features implemented)
-                    </option>
-                    <option value="span">Span (experimental - only annotation)</option>
-                  </select>
-                  <button className="btn btn-primary btn-validation">Create</button>
-                </form>
-              </div>
+            <div className="alert alert-primary">
+              <form onSubmit={handleSubmit(createNewScheme)}>
+                <input
+                  className="form-control"
+                  id="scheme_name"
+                  type="text"
+                  {...register('name')}
+                  placeholder="Enter new scheme name"
+                />
+                <label
+                  htmlFor="scheme-selected"
+                  style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
+                >
+                  Type
+                </label>
+                <select id="scheme_kind" className="form-select" {...register('kind')}>
+                  <option value="multiclass">Multiclass</option>
+                  <option value="multilabel">
+                    Multilabel (experimental - only some features implemented)
+                  </option>
+                  <option value="span">Span (experimental - only annotation)</option>
+                </select>
+                <button className="btn btn-primary btn-validation">Create</button>
+              </form>
             </div>
           )
         }
         {
           // only display if click on the rename button
           showRename && (
-            <div className="row">
-              <div className="col-8 col-md-4 d-flex m-2 alert alert-primary">
-                <input
-                  className="form-control me-2"
-                  id="scheme_rename"
-                  type="text"
-                  placeholder="Enter new scheme name"
-                  value={newSchemeName}
-                  onChange={(e) => setNewSchemeName(e.target.value)}
-                />
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    renameScheme(newSchemeName);
-                    setShowRename(false);
-                  }}
-                >
-                  Rename
-                </button>
-              </div>
+            <div className="d-flex alert alert-primary">
+              <input
+                className="form-control me-2"
+                id="scheme_rename"
+                type="text"
+                placeholder="Enter new scheme name"
+                value={newSchemeName}
+                onChange={(e) => setNewSchemeName(e.target.value)}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  renameScheme(newSchemeName);
+                  setShowRename(false);
+                }}
+              >
+                Rename
+              </button>
             </div>
           )
         }

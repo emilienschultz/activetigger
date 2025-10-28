@@ -169,12 +169,10 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
     }));
   };
 
-  console.log(statistics);
-
   return (
     <div className="row">
       <div className="col-12 rounded-2xl bg-white">
-        {kindScheme === 'multiclass' ? (
+        {/* {kindScheme === 'multiclass' ? (
           <div className="explanations">
             The current scheme is a <b>{kindScheme}</b> scheme.
           </div>
@@ -183,27 +181,13 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
             The current scheme is a <b>{kindScheme}</b> scheme. It is experimental and some features
             does not work. Please read the documentation.
           </div>
-        )}
-        {!deactivateModifications && (
-          <div className="d-flex align-items-center justify-content-between col-8 col-md-4">
-            <input
-              type="text"
-              id="new-label"
-              value={createLabelValue}
-              onChange={handleCreateLabelChange}
-              placeholder="Enter new label"
-              className="form-control m-4"
-            />
-            <button onClick={createLabel} className="btn btn p-0">
-              <FaPlusCircle size={20} />
-            </button>
-          </div>
-        )}
+        )} */}
+
         <table className="table table-hover">
           <thead className="text-xs text-gray-600 uppercase bg-gray-100">
             <tr>
               <th scope="col" className="px-4 py-3">
-                Label
+                Label <span className="badge rounded-pill bg-light text-dark">{kindScheme}</span>
               </th>
               <th scope="col" className="px-4 py-3 text-center">
                 Train
@@ -218,6 +202,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               <th scope="col" className="px-4 py-3 text-center"></th>
             </tr>
           </thead>
+
           <ReactSortable list={labels} setList={updateLabels} tag="tbody">
             {labels.map((label) => (
               <LabelCard
@@ -244,6 +229,30 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               />
             ))}
           </ReactSortable>
+          <tr>
+            <th>
+              <div className="d-flex align-items-center">
+                <input
+                  type="text"
+                  id="new-label"
+                  value={createLabelValue}
+                  onChange={handleCreateLabelChange}
+                  placeholder="Enter new label"
+                  className="form-control"
+                />
+                {!deactivateModifications && (
+                  <button onClick={createLabel} className="btn btn">
+                    <FaPlusCircle size={20} />
+                  </button>
+                )}
+              </div>
+            </th>
+            <th> </th>
+            <th> </th>
+            <th> </th>
+            <th> </th>
+            <th> </th>
+          </tr>
           <tbody>
             <tr>
               <td className="px-4 py-3">
