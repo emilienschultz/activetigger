@@ -2747,3 +2747,24 @@ export function useGetAvailableDatasets() {
 
   return { datasets: getAsyncMemoData(getDatasets) || null, reFetchProjects: reFetch };
 }
+
+/**
+ * Hook to export the topics to a dedicated scheme
+ */
+export function useExportTopicsToScheme(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const exportTopicsToScheme = useCallback(
+    async (topicmodelname: string | null) => {
+      if (projectSlug && topicmodelname) {
+        const res = await api.POST('/bertopic/export-to-scheme', {
+          params: {
+            query: { project_slug: projectSlug, topic_model_name: topicmodelname },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Topics exported to a new scheme.' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return exportTopicsToScheme;
+}

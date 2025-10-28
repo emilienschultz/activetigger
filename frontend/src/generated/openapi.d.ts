@@ -1661,6 +1661,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bertopic/export-to-scheme": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Bertopoc To Scheme
+         * @description XXX
+         */
+        post: operations["export_bertopoc_to_scheme_bertopic_export_to_scheme_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/messages": {
         parameters: {
             query?: never;
@@ -5985,6 +6005,38 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_bertopoc_to_scheme_bertopic_export_to_scheme_post: {
+        parameters: {
+            query: {
+                topic_model_name: string;
                 project_slug: string;
             };
             header?: never;

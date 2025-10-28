@@ -5,6 +5,7 @@ import { FaCloudDownloadAlt, FaPen, FaRegStickyNote } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
+import { Tooltip } from 'react-tooltip';
 import { DisplayTableTopics, Row } from '../components/DisplayTableTopics';
 import { BertopicForm } from '../components/forms/BertopicForm';
 import { BertopicVizSigma } from '../components/ProjectionVizSigma/BertopicVizSigma';
@@ -15,8 +16,7 @@ import {
   useGetBertopicProjection,
   useGetBertopicTopics,
   useGetElementById,
-  useAddScheme,
-  useAddLabel,
+  useExportTopicsToScheme,
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
@@ -26,10 +26,8 @@ export const BertopicPage: FC = () => {
   const {
     appContext: { currentProject, isComputing, reFetchCurrentProject },
   } = useAppContext();
-  const { notify } = useNotifications();
-  const addScheme = useAddScheme(projectName || 'demo');
-  const { addLabel, addLabelSetLocalScheme } = useAddLabel(projectName || 'demo', 'default');
   const deleteBertopic = useDeleteBertopic(projectName || null);
+  const exportTopicsToScheme = useExportTopicsToScheme(projectName || null);
   const { downloadBertopicTopics } = useDownloadBertopicTopics(projectName || null);
   const { downloadBertopicClusters } = useDownloadBertopicClusters(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
@@ -76,32 +74,9 @@ export const BertopicPage: FC = () => {
     {},
   );
 
-  const exportBertopicAsAnnotation = async (projectSlug: string, topicModelName: string | null) => {
+  const exportBertopicAsAnnotation = async (topicModelName: string | null) => {
     if (topicModelName) {
-      console.log('EXPORT AS SCHEME from exportBertopicAsAnnotation');
-      console.log('projectName : ', projectSlug);
-      const newScheme: string = 'topic-model_' + topicModelName;
-      console.log('topicModelName : ', newScheme);
-      let schemeCreated: boolean = false;
-      // Create the scheme
-      try {
-        await addScheme(newScheme, 'multiclass');
-        if (reFetchCurrentProject) reFetchCurrentProject();
-        notify({ type: 'success', message: `Scheme ${newScheme} created` });
-        schemeCreated = true;
-      } catch (error) {
-        notify({ type: 'error', message: error + '' });
-      }
-      if (schemeCreated) {
-        addLabelSetLocalScheme(newScheme);
-        // Add the labels
-        topics?.map((row) => {
-          console.log(row.Name);
-          if (row.Name) {
-            addLabel(row.Name);
-          }
-        });
-      }
+      exportTopicsToScheme(topicModelName);
     }
   };
 
@@ -158,18 +133,9 @@ export const BertopicPage: FC = () => {
                   <div>
                     <button
                       className="btn btn-primary"
-                      onClick={() => exportBertopicAsAnnotation(projectName, currentBertopic)}
+                      onClick={() => exportBertopicAsAnnotation(currentBertopic)}
                     >
                       Make scheme <FaPen />
-                    </button>
-                    <button
-                      className="btn btn-primary mx-2"
-                      onClick={() => console.log('EXPORT AS CONTEXT')}
-                    >
-                      Make context <FaRegStickyNote />
-                    </button>
-                    <button className="btn btn-primary mx-2" onClick={() => test()}>
-                      TEST
                     </button>
                     <details>
                       <summary>Parameters</summary>
