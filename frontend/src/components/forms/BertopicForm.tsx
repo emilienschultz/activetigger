@@ -1,8 +1,8 @@
 import { FC } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { useComputeBertopic, useStopProcesses } from '../../core/api';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
+import { useComputeBertopic, useStopProcesses } from '../../core/api';
 import { ComputeBertopicModel } from '../../types';
 interface BertopicCreationFormProps {
   projectSlug: string | null;
@@ -108,6 +108,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
         </label>
         <details className="custom-details">
           <summary>Advanced parameters</summary>
+          <div className="explanations">Using UMAP (reduction) and HDBSCAN (clustering)</div>
           <label className="form-label" htmlFor="outlier_reduction">
             Outlier reduction
             <input

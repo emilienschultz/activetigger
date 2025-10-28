@@ -72,8 +72,19 @@ export const ProjectActionsSidebar: FC<{
               style={{ lineHeight: '1.1' }}
             >
               <div className="fw-semibold text-dark text-truncate">{projectName}</div>
-              <div className="small text-primary text-truncate" style={{ marginTop: '-2px' }}>
-                {currentScheme}
+              <div
+                className="small text-primary"
+                style={{
+                  marginTop: '-2px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                title={currentScheme}
+              >
+                {currentScheme && currentScheme.length > 15
+                  ? `${currentScheme.substring(0, 15)}…`
+                  : currentScheme}
               </div>
             </div>
           </li>
