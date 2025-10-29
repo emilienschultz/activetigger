@@ -96,8 +96,8 @@ export const ProjectValidatePage: FC = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
-            <Tabs id="panel" className="mt-3" defaultActiveKey="simple">
-              <Tab eventKey="simple" title="Simple">
+            <Tabs id="panel" className="mt-3" defaultActiveKey="quick">
+              <Tab eventKey="quick" title="Quick">
                 <div className="explanations">
                   Compute statistics on annotations for machine learning models
                 </div>
