@@ -69,12 +69,13 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
   ]);
 
   return (
-    <div className="container-fluid">
+    <div>
       <div>
-        Current active learning model : {activeSimepleModel ? activeSimepleModel : 'No model used'}
+        Current active learning model :{' '}
+        <b>{activeSimepleModel ? activeSimepleModel : 'no model selected'}</b>
       </div>
       <div>
-        <div className="d-flex align-items-center ">
+        <div className="d-flex align-items-center my-2">
           <Select
             options={Object.values(availableSimpleModels || {}).map((e) => ({
               value: e.name,
@@ -87,7 +88,6 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
               setCurrentSimpleModel(selectedOption ? selectedOption.value : null);
             }}
             isSearchable
-            className="w-50"
             placeholder="Select a model for active learning"
           />
           <button
@@ -110,7 +110,7 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
             refreshFreq(Number(e.currentTarget.value));
           }}
           step="1"
-          style={{ width: '80px', margin: '10px' }}
+          className="mx-2"
         />
         annotations (0 for no refreshing)
       </div>

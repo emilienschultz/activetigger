@@ -167,7 +167,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
 
               <div className="mt-2">
                 <DisplayScores
-                  title={'Internal validation'}
+                  title={'Validation scores from the training (internalvalid)'}
                   scores={model.scores.internalvalid_scores as MLStatisticsModel}
                   modelName={currentBertModel}
                 />

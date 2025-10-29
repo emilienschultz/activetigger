@@ -11,6 +11,7 @@ import {
   useGetElementById,
   useGetNextElementId,
   useStatistics,
+  useTrainSimpleModel,
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
@@ -26,13 +27,13 @@ import { SelectionManagement } from '../components/SelectionManagement';
 import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
+import { useNotifications } from '../core/notifications';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
 export const AnnotationManagement: FC = () => {
-  // parameters
+  const { notify } = useNotifications();
   const { projectName, elementId } = useParams();
-
   const {
     appContext: {
       currentScheme,
@@ -203,10 +204,6 @@ export const AnnotationManagement: FC = () => {
   // Now filter by valid regex
   const validHighlightText = highlightText.filter(isValidRegex);
 
-  //display switch to test mode
-  const isTest = statistics?.test_set_n ? statistics?.test_set_n > 0 : false;
-  const isValid = statistics?.valid_set_n ? statistics?.valid_set_n > 0 : false;
-
   // existing simplemodels
   const availableSimpleModels = project?.simplemodel.available[currentScheme || ''] || [];
 
@@ -218,6 +215,39 @@ export const AnnotationManagement: FC = () => {
     if (dataset === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
     if (dataset === 'test') return `${statistics?.test_annotated_n}/${statistics?.test_set_n}`;
     return '';
+  };
+
+  // train a quick model
+  const { trainSimpleModel } = useTrainSimpleModel(projectName || null, currentScheme || null);
+  const trainQuickModel = () => {
+    // default quickmodel
+    const availableFeatures = project?.features.available ? project?.features.available : [];
+    if (availableFeatures.length === 0) {
+      setActiveMenu(false);
+      notify({
+        type: 'warning',
+        message: 'No features available for quickmodel',
+      });
+    }
+    const formData = {
+      name: 'default-quickmodel',
+      model: 'liblinear',
+      scheme: currentScheme || '',
+      params: {
+        cost: 1,
+        C: 32,
+        n_neighbors: 3,
+        alpha: 1,
+        n_estimators: 500,
+        max_features: null,
+      },
+      dichotomize: null,
+      features: availableFeatures,
+      cv10: false,
+      standardize: false,
+    };
+    trainSimpleModel(formData);
+    setActiveMenu(false);
   };
 
   if (!projectName || !currentScheme) return;
@@ -234,12 +264,9 @@ export const AnnotationManagement: FC = () => {
             > */}
             <div className="text-center my-2">
               <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
-                <LuRefreshCw size={20} />{' '}
-                <span className="d-none d-md-inline">
-                  {' '}
-                  Refetch
+                <span>
                   {statistics ? (
-                    <span className="badge  currentstatistics ms-2">
+                    <span className="badge currentstatistics ms-2">
                       <span className="d-none d-md-inline">Annotated : </span>
                       {statisticsDataset(phase)} ;{' '}
                       <span className="d-none d-md-inline">Selected : </span>
@@ -250,7 +277,8 @@ export const AnnotationManagement: FC = () => {
                     </span>
                   ) : (
                     ''
-                  )}
+                  )}{' '}
+                  <LuRefreshCw size={20} /> Refetch
                 </span>
                 <Tooltip anchorSelect=".getelement" place="top">
                   Get next element with the selection mode
@@ -263,7 +291,7 @@ export const AnnotationManagement: FC = () => {
                 style={{ color: activeSimpleModel ? 'green' : 'orange' }}
               />
               <Tooltip anchorSelect=".activelearning" place="top">
-                Configure active learning
+                Active learning
               </Tooltip>
               <span className="badge rounded-pill bg-light text-dark opacity-50 small">
                 {activeSimpleModel}
@@ -484,20 +512,29 @@ export const AnnotationManagement: FC = () => {
           <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
         </Modal.Body>
       </Modal>
-      <Modal show={activeMenu} onHide={() => setActiveMenu(false)} id="active-modal" size="xl">
+      <Modal show={activeMenu} onHide={() => setActiveMenu(false)} id="active-modal" size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Configure active learning</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <ActiveLearningManagement
-            projectSlug={projectName}
-            history={history}
-            currentScheme={currentScheme}
-            availableSimpleModels={availableSimpleModels}
-            setAppContext={setAppContext}
-            freqRefreshSimpleModel={freqRefreshSimpleModel}
-            activeSimepleModel={activeSimpleModel}
-          />
+          {availableSimpleModels.length > 0 ? (
+            <ActiveLearningManagement
+              projectSlug={projectName}
+              history={history}
+              currentScheme={currentScheme}
+              availableSimpleModels={availableSimpleModels}
+              setAppContext={setAppContext}
+              freqRefreshSimpleModel={freqRefreshSimpleModel}
+              activeSimepleModel={activeSimpleModel}
+            />
+          ) : (
+            <div className="text-center">
+              No quick model currently available. Go to model tab or
+              <button className="btn btn-primary m-2" onClick={trainQuickModel}>
+                Train a default quick model
+              </button>
+            </div>
+          )}
         </Modal.Body>
       </Modal>
     </div>
