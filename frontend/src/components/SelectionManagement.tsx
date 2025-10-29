@@ -82,7 +82,6 @@ export const SelectionManagement: FC = () => {
   return (
     <div className="w-100">
       <div className="d-flex align-items-center">
-        {selectionConfig.frameSelection && <FaLock className="m-2" size={20} />}
         <div className="mx-2">
           <label className="form-label label-small-gray">Selection</label>
           <select
@@ -207,6 +206,12 @@ export const SelectionManagement: FC = () => {
           />
           <Tooltip anchorSelect=".searchhelp" place="top">
             Use CONTEXT= or QUERY= for specific requests
+          </Tooltip>
+        </div>
+        <div>
+          {selectionConfig.frameSelection && <FaLock className="mx-2 lock" size={20} />}
+          <Tooltip anchorSelect=".lock" place="top">
+            A frame is locked, go to projection to change
           </Tooltip>
         </div>
       </div>

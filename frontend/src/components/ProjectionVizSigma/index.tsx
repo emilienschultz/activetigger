@@ -22,7 +22,8 @@ interface Props {
   };
   className?: string;
   // bbox
-  frameBbox?: MarqueBoundingBox;
+  // frameBbox?: MarqueBoundingBox;
+  frame?: number[];
   setFrameBbox: (bbox?: MarqueBoundingBox) => void;
   // selection
   selectedId?: string;
@@ -62,7 +63,7 @@ export const ProjectionVizSigma: FC<Props> = ({
   data,
   className,
   // get/set frame from/to app state
-  frameBbox,
+  frame,
   setFrameBbox,
   // manage node selection
   selectedId,
@@ -72,6 +73,19 @@ export const ProjectionVizSigma: FC<Props> = ({
 }) => {
   // internal bbox used by marquee. This state will be updated with setFrameBbox once drawing is done.
   // app state is used as default value
+
+  // transform frame type to bbox type
+  const frameBbox = useMemo(
+    () =>
+      frame
+        ? {
+            x: { min: frame[0], max: frame[1] },
+            y: { min: frame[2], max: frame[3] },
+          }
+        : undefined,
+    [frame],
+  );
+
   const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);
 
   labelColorMapping['NA'] = '#ebebeb';
@@ -154,11 +168,11 @@ export const ProjectionVizSigma: FC<Props> = ({
       >
         <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
         {Object.keys(labelColorMapping).length < 15 && (
-          <ControlsContainer position="bottom-left">
+          <ControlsContainer position="top-left">
             <Caption labelColorMapping={labelColorMapping} />
           </ControlsContainer>
         )}
-        <ControlsContainer position={'bottom-right'}>
+        <ControlsContainer position={'top-right'}>
           <div className="border-bottom">
             {/* Active tools (zoom-pan or marquee)) buttons are managed by the marquee controller */}
             <MarqueeController

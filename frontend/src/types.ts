@@ -72,6 +72,8 @@ export type ModelDescriptionModel = components['schemas']['ModelDescriptionModel
 
 export type FeaturesProjectStateModel = components['schemas']['FeaturesProjectStateModel'];
 
+export type ProjectionOutModel = components['schemas']['ProjectionOutModel'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

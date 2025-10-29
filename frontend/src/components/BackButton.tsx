@@ -1,7 +1,6 @@
 import { FC, useCallback, useEffect } from 'react';
 import { IoMdSkipBackward } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
-import { Tooltip } from 'react-tooltip';
 import { AppContextValue } from '../core/context';
 
 interface BackButtonProps {
@@ -47,10 +46,10 @@ export const BackButton: FC<BackButtonProps> = ({ projectName, history, setAppCo
         setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
       }}
     >
-      <IoMdSkipBackward />
-      <Tooltip anchorSelect=".previouselement" place="top">
-        Go back to previous element
-      </Tooltip>
+      <IoMdSkipBackward title="Back" />
+      {/* <Tooltip anchorSelect=".previouselement" place="top">
+        Previous
+      </Tooltip> */}
     </Link>
   );
 };

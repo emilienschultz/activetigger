@@ -1,6 +1,5 @@
 import { FC, useCallback, useEffect, useState } from 'react';
 import { IoMdSkipForward } from 'react-icons/io';
-import { Tooltip } from 'react-tooltip';
 import { AppContextValue } from '../core/context';
 
 // This component is used to skip the current element in the annotation session
@@ -60,10 +59,10 @@ export const ForwardButton: FC<ForwardButtonProps> = ({
         setShouldRefetch(true);
       }}
     >
-      <IoMdSkipForward />
-      <Tooltip anchorSelect=".nextelement" place="top">
-        Skip the current element in the session (no annotation will be saved)
-      </Tooltip>
+      <IoMdSkipForward title="Skip" />
+      {/* <Tooltip anchorSelect=".nextelement" place="top">
+        Skip
+      </Tooltip> */}
     </button>
   );
 };

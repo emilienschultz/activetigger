@@ -13,6 +13,7 @@ import {
   GenerateConfig,
   NotificationType,
   ProjectStateModel,
+  ProjectionOutModel,
   SelectionConfig,
 } from '../types';
 
@@ -24,7 +25,8 @@ export type AppContextValue = {
   displayConfig: DisplayConfig; // config for the visual
   currentProject?: ProjectStateModel | null; // current project selected
   currentScheme?: string; // scheme selected to annotate
-  currentProjection?: string;
+  currentProjection?: ProjectionOutModel;
+  labelColorMapping?: { [key: string]: string };
   activeSimpleModel?: string | null;
   freqRefreshSimpleModel: number; // freq to refresh active learning model
   history: string[]; // element annotated

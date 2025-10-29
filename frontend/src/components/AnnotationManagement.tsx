@@ -1,5 +1,5 @@
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { FaPencilAlt } from 'react-icons/fa';
+import { FaLock, FaPencilAlt } from 'react-icons/fa';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -26,6 +26,8 @@ import { SelectionManagement } from '../components/SelectionManagement';
 import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
+import { ProjectionVizSigma } from './ProjectionVizSigma';
+import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 
 export const AnnotationManagement: FC = () => {
   // parameters
@@ -42,6 +44,8 @@ export const AnnotationManagement: FC = () => {
       history,
       selectionHistory,
       phase,
+      currentProjection,
+      labelColorMapping,
     },
     setAppContext,
   } = useAppContext();
@@ -229,22 +233,25 @@ export const AnnotationManagement: FC = () => {
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
             <div className="text-center my-2">
-              {statistics ? (
-                <span className="badge text-bg-light currentstatistics">
-                  <span className="d-none d-md-inline">Annotated : </span>
-                  {statisticsDataset(phase)} ;{' '}
-                  <span className="d-none d-md-inline">Selected : </span>
-                  {nSample || ''}
-                  <Tooltip anchorSelect=".currentstatistics" place="top">
-                    statistics for the current scheme
-                  </Tooltip>
-                </span>
-              ) : (
-                ''
-              )}
-
               <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
-                <LuRefreshCw size={20} /> <span className="d-none d-md-inline">Get element</span>
+                <LuRefreshCw size={20} />{' '}
+                <span className="d-none d-md-inline">
+                  {' '}
+                  Refetch
+                  {statistics ? (
+                    <span className="badge  currentstatistics ms-2">
+                      <span className="d-none d-md-inline">Annotated : </span>
+                      {statisticsDataset(phase)} ;{' '}
+                      <span className="d-none d-md-inline">Selected : </span>
+                      {nSample || ''}
+                      {/* <Tooltip anchorSelect=".currentstatistics" place="top">
+                        statistics for the current scheme
+                      </Tooltip> */}
+                    </span>
+                  ) : (
+                    ''
+                  )}
+                </span>
                 <Tooltip anchorSelect=".getelement" place="top">
                   Get next element with the selection mode
                 </Tooltip>
@@ -258,6 +265,9 @@ export const AnnotationManagement: FC = () => {
               <Tooltip anchorSelect=".activelearning" place="top">
                 Configure active learning
               </Tooltip>
+              <span className="badge rounded-pill bg-light text-dark opacity-50 small">
+                {activeSimpleModel}
+              </span>
             </div>
           </div>
         }
@@ -305,6 +315,7 @@ export const AnnotationManagement: FC = () => {
           />
         </>
       )}
+
       {elementId !== 'noelement' && (
         <div className="row">
           <div className="d-flex flex-wrap gap-2 justify-content-center">
@@ -408,9 +419,62 @@ export const AnnotationManagement: FC = () => {
       </Modal>
       <Modal show={showDisplayViz} onHide={handleCloseViz} size="xl" id="viz-modal">
         <Modal.Header closeButton>
-          <Modal.Title>Projection</Modal.Title>
+          <Modal.Title>Current projection</Modal.Title>
         </Modal.Header>
-        <Modal.Body>TO IMPLEMENT</Modal.Body>
+        <Modal.Body>
+          {currentProjection ? (
+            <div
+              className="row align-items-start"
+              style={{ height: '400px', marginBottom: '50px' }}
+            >
+              <div className="my-2">
+                <label style={{ display: 'block' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectionConfig.frameSelection}
+                    className="mx-2"
+                    onChange={(_) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        selectionConfig: {
+                          ...selectionConfig,
+                          frameSelection: !selectionConfig.frameSelection,
+                        },
+                      }));
+                    }}
+                  />
+                  <span className="lock">
+                    <FaLock /> Lock on selection
+                  </span>
+                  <Tooltip anchorSelect=".lock" place="top">
+                    Once a vizualisation computed, you can use the square tool to select an area (or
+                    remove the square).<br></br> Then you can lock the selection, and only elements
+                    in the selected area will be available for annoation.
+                  </Tooltip>
+                </label>
+              </div>
+              <ProjectionVizSigma
+                className={`col-12 border h-100`}
+                data={currentProjection}
+                selectedId={elementId}
+                setSelectedId={(id?: string | undefined) => id}
+                frame={selectionConfig.frame}
+                setFrameBbox={(bbox?: MarqueBoundingBox) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: {
+                      ...selectionConfig,
+                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                    },
+                  }));
+                }}
+                labelColorMapping={labelColorMapping || {}}
+              />
+            </div>
+          ) : (
+            <>No projection computed</>
+          )}
+        </Modal.Body>
       </Modal>
       <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="xl" id="config-modal">
         <Modal.Header closeButton>

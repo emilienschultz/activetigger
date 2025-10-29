@@ -48,6 +48,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       selectionConfig,
       activeSimpleModel,
       isComputing,
+      labelColorMapping,
     },
     setAppContext,
   } = useAppContext();
@@ -121,11 +122,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     setShowComputeNewProjection(false);
   };
 
-  // scatterplot management for colors
-  const [labelColorMapping, setLabelColorMapping] = useState<{ [key: string]: string } | null>(
-    null,
-  );
-
   useEffect(() => {
     if (projectionData) {
       const labeledColors = uniqueLabels.reduce<Record<string, string>>(
@@ -135,7 +131,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         },
         {},
       );
-      setLabelColorMapping(labeledColors);
+      setAppContext((prev) => ({ ...prev, labelColorMapping: labeledColors }));
     }
   }, [projectionData]);
 
@@ -148,16 +144,16 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       availableProjections?.available[authenticatedUser?.username]
     ) {
       reFetchProjectionData();
-      setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
+      setAppContext((prev) => ({ ...prev, currentProjection: projectionData || undefined }));
     }
     // case if the projection changed
     if (
       authenticatedUser &&
       currentProjection &&
-      currentProjection != availableProjections?.available[authenticatedUser?.username]
+      currentProjection.status != availableProjections?.available[authenticatedUser?.username]
     ) {
       reFetchProjectionData();
-      setAppContext((prev) => ({ ...prev, currentProjection: projectionData?.status }));
+      setAppContext((prev) => ({ ...prev, currentProjection: projectionData || undefined }));
     }
   }, [
     availableProjections?.available,
@@ -179,18 +175,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       else setSelectedElement(null);
     },
     [getElementById, setSelectedElement],
-  );
-
-  // transform frame type to bbox type
-  const frameAsBbox: MarqueBoundingBox | undefined = useMemo(
-    () =>
-      selectionConfig.frame
-        ? {
-            x: { min: selectionConfig.frame[0], max: selectionConfig.frame[1] },
-            y: { min: selectionConfig.frame[2], max: selectionConfig.frame[3] },
-          }
-        : undefined,
-    [selectionConfig.frame],
   );
 
   const projectionTraining =
@@ -251,10 +235,9 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <ProjectionVizSigma
               className={`col-8 border h-100`}
               data={projectionData}
-              //selection
               selectedId={currentElementId}
               setSelectedId={setSelectedId}
-              frameBbox={frameAsBbox}
+              frame={selectionConfig.frame}
               setFrameBbox={(bbox?: MarqueBoundingBox) => {
                 setAppContext((prev) => ({
                   ...prev,
