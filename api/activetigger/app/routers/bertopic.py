@@ -2,18 +2,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from activetigger.app.dependencies import (
-    get_project,
-    verified_user,
-    ProjectAction,
-    test_rights
-)
+from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
 from activetigger.config import config
 from activetigger.datamodels import (
-    BertopicTopicsOutModel, 
-    ComputeBertopicModel, 
-    UserInDBModel, 
-    TopicsOutModel
+    BertopicTopicsOutModel,
+    ComputeBertopicModel,
+    TopicsOutModel,
+    UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
@@ -107,6 +102,7 @@ async def delete_bertopic_model(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/bertopic/export-to-scheme", dependencies=[Depends(verified_user)])
 async def export_bertopoc_to_scheme(
     project: Annotated[Project, Depends(get_project)],
@@ -118,35 +114,27 @@ async def export_bertopoc_to_scheme(
     """
     try:
         test_rights(ProjectAction.ADD_ANNOTATION, current_user.username, project.name)
-        
-        # Retrieve topics and clusters
-        topics : list[TopicsOutModel]= project.bertopic.get_topics(topic_model_name)
 
-        get_topic_id = lambda topic : int(topic.split("_")[0])
+        # Retrieve topics and clusters
+        topics: list[TopicsOutModel] = project.bertopic.get_topics(topic_model_name)
+
+        get_topic_id = lambda topic: int(topic.split("_")[0])
         topic_id_to_topic_name = {
-            get_topic_id(topic['Name']) : topic['Name']
+            get_topic_id(topic["Name"]): topic["Name"]
             for topic in topics
-            if get_topic_id(topic['Name']) != -1
+            if get_topic_id(topic["Name"]) != -1
         }
-        clusters : dict[str:int] = project.bertopic.get_clusters(topic_model_name)
-        
+        clusters: dict[str:int] = project.bertopic.get_clusters(topic_model_name)
+
         new_scheme_name = f"topic-model-{topic_model_name}"
         project.schemes.add_scheme(
             name=new_scheme_name,
-            labels=[
-                topic['Name'] 
-                for topic in topics 
-                if get_topic_id(topic['Name']) != -1
-            ],
-            user=current_user.username
+            labels=[topic["Name"] for topic in topics if get_topic_id(topic["Name"]) != -1],
+            user=current_user.username,
         )
         # Transform the annotation into the right format
         elements = [
-            {
-                "element_id" : el_id,
-                "annotation" : topic_id_to_topic_name[cluster],
-                "comment" : ""
-            } 
+            {"element_id": el_id, "annotation": topic_id_to_topic_name[cluster], "comment": ""}
             for (el_id, cluster) in clusters.items()
             if cluster != -1
         ]
@@ -159,13 +147,9 @@ async def export_bertopoc_to_scheme(
         )
 
         orchestrator.log_action(
-            current_user.username, 
-            f"Export BERTopic to scheme : {new_scheme_name}", 
-            project.name
+            current_user.username, f"Export BERTopic to scheme : {new_scheme_name}", project.name
         )
-        
+
     except Exception as e:
-        orchestrator.log_action(
-            current_user.username, f"DEBUG-EXPORT-TO-SCHEME: {e}", project.name
-        )
+        orchestrator.log_action(current_user.username, f"DEBUG-EXPORT-TO-SCHEME: {e}", project.name)
         raise HTTPException(status_code=500, detail=str(e))

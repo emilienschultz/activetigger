@@ -23,10 +23,10 @@ from activetigger.datamodels import (
     ModelInformationsModel,
     ModelScoresModel,
     Multi_naivebayesParams,
+    QuickModelComputed,
+    QuickModelComputing,
+    QuickModelsProjectStateModel,
     RandomforestParams,
-    SimpleModelComputed,
-    SimpleModelComputing,
-    SimpleModelsProjectStateModel,
 )
 from activetigger.db.languagemodels import LanguageModelsService
 from activetigger.db.manager import DatabaseManager
@@ -36,12 +36,12 @@ from activetigger.tasks.predict_ml import PredictML
 from activetigger.tasks.train_ml import TrainML
 
 
-class SimpleModels:
+class QuickModels:
     """
-    Module to manage simplemodels
+    Module to manage quickmodels
     - define available models
-    - save a simplemodel/user
-    - train simplemodels
+    - save a quickmodel/user
+    - train quickmodels
     """
 
     path: Path
@@ -60,9 +60,9 @@ class SimpleModels:
         db_manager: DatabaseManager,
     ) -> None:
         """
-        Init Simplemodels class
+        Init Quickmodels class
         """
-        self.path: Path = path.joinpath("simplemodels")
+        self.path: Path = path.joinpath("quickmodels")
         if not self.path.exists():
             os.mkdir(self.path)
         self.project_slug = project_slug
@@ -81,7 +81,7 @@ class SimpleModels:
 
         self.loaded = {}
 
-    def compute_simplemodel(
+    def compute_quickmodel(
         self,
         project_slug: str,
         user: str,
@@ -98,10 +98,10 @@ class SimpleModels:
         retrain: bool = False,
     ) -> None:
         """
-        Add a new simplemodel for a user and a scheme
+        Add a new quickmodel for a user and a scheme
         """
-        logger_simplemodel = logging.getLogger("simplemodel")
-        logger_simplemodel.info("Intiating the computation process for the simplemodel")
+        logger_quickmodel = logging.getLogger("quickmodel")
+        logger_quickmodel.info("Intiating the computation process for the quickmodel")
         X, Y, labels = self.transform_data(df, col_labels, col_features, standardize)
 
         # default parameters
@@ -176,15 +176,15 @@ class SimpleModels:
             "features": features,
             "model_params": model_params,
         }
-        unique_id = self.queue.add_task("simplemodel", project_slug, TrainML(**args))
+        unique_id = self.queue.add_task("quickmodel", project_slug, TrainML(**args))
         del args
 
-        req = SimpleModelComputing(
+        req = QuickModelComputing(
             status="training",
             user=user,
             unique_id=unique_id,
             time=datetime.now(),
-            kind="train_simplemodel",
+            kind="train_quickmodel",
             scheme=scheme,
             model_type=model_type,
             name=name,
@@ -198,14 +198,14 @@ class SimpleModels:
         )
         self.computing.append(req)
 
-    def add(self, element: SimpleModelComputing) -> None:
+    def add(self, element: QuickModelComputing) -> None:
         """
         Add computed model in the database
         """
 
         model_path = self.path.joinpath(element.name)
         self.language_models_service.add_model(
-            kind="simplemodel",
+            kind="quickmodel",
             name=element.name,
             user=element.user,
             project=self.project_slug,
@@ -219,7 +219,7 @@ class SimpleModels:
         """
         Return available models per scheme
         """
-        existing = self.language_models_service.available_models(self.project_slug, "simplemodel")
+        existing = self.language_models_service.available_models(self.project_slug, "quickmodel")
         r: dict[str, list[ModelDescriptionModel]] = {}
         for m in existing:
             if m.scheme not in r:
@@ -227,7 +227,7 @@ class SimpleModels:
             r[m.scheme].append(m)
         return r
 
-    def get(self, name: str) -> SimpleModelComputed:
+    def get(self, name: str) -> QuickModelComputed:
         """
         Load the content of a specific model
         (cache in memory)
@@ -241,12 +241,12 @@ class SimpleModels:
             if not path.exists():
                 raise Exception("The model path does not exist")
             with open(path / "model.pkl", "rb") as file:
-                sm: SimpleModelComputed = pickle.load(file)
+                sm: QuickModelComputed = pickle.load(file)
             return sm
 
     def get_prediction(self, name: str) -> DataFrame:
         """
-        Get a specific simplemodel
+        Get a specific quickmodel
         """
         sm = self.get(name)
         if sm.proba is None:
@@ -257,13 +257,13 @@ class SimpleModels:
         """
         Currently under training
         """
-        return {e.user: list(e.scheme) for e in self.computing if e.kind == "simplemodel"}
+        return {e.user: list(e.scheme) for e in self.computing if e.kind == "quickmodel"}
 
     def exists(self, name: str) -> bool:
         """
-        Test if a simplemodel exists for a user/scheme
+        Test if a quickmodel exists for a user/scheme
         """
-        existing = self.language_models_service.available_models(self.project_slug, "simplemodel")
+        existing = self.language_models_service.available_models(self.project_slug, "quickmodel")
         return name in [m.name for m in existing]
 
     def transform_data(
@@ -297,7 +297,7 @@ class SimpleModels:
 
     def export_prediction(self, name: str, format: str = "csv") -> tuple[BytesIO, dict[str, str]]:
         """
-        Function to export the prediction of a simplemodel
+        Function to export the prediction of a quickmodel
         """
         # get data
         table = self.get_prediction(name)
@@ -332,8 +332,8 @@ class SimpleModels:
         else:
             raise ValueError("Format not supported")
 
-    def state(self) -> SimpleModelsProjectStateModel:
-        return SimpleModelsProjectStateModel(
+    def state(self) -> QuickModelsProjectStateModel:
+        return QuickModelsProjectStateModel(
             options=self.available_models,
             available=self.available(),
             training=self.training(),
@@ -341,7 +341,7 @@ class SimpleModels:
 
     def delete(self, name: str) -> None:
         """
-        Delete a specific simplemodel
+        Delete a specific quickmodel
         """
         if not self.exists(name):
             raise Exception("The model does not exist")
@@ -392,11 +392,11 @@ class SimpleModels:
             queue="cpu",
         )
         self.computing.append(
-            SimpleModelComputing(
+            QuickModelComputing(
                 user=username,
                 unique_id=unique_id,
                 time=datetime.now(),
-                kind="predict_simplemodel",
+                kind="predict_quickmodel",
                 status="predicting",
                 name=name,
                 dataset=dataset,

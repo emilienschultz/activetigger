@@ -51,4 +51,4 @@ bertopic
 stopwordsiso
 hdbscan
 einops
-simplemma
+quickmma

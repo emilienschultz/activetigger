@@ -158,7 +158,7 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_topics(self, name: str) -> list[dict[str:int|str]]:
+    def get_topics(self, name: str) -> list[dict[str : int | str]]:
         """
         Get topics from a BERTopic model.
         Return a list of dictionaries where a dictionary is a row in the dataframe
@@ -166,11 +166,8 @@ class Bertopic:
         """
         path_model = self.path.joinpath("runs").joinpath(name)
         if path_model.exists():
-            return (
-                pd.read_csv(
-                    path_model.joinpath("bertopic_topics.csv"), index_col=0
-                )
-                .to_dict(orient="records")
+            return pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0).to_dict(
+                orient="records"
             )
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
@@ -183,14 +180,9 @@ class Bertopic:
         """
         path_model = self.path.joinpath("runs").joinpath(name)
         if path_model.exists():
-            return (
-                pd.read_csv(
-                    path_model.joinpath("bertopic_clusters.csv"), 
-                    index_col=0
-                )
-                .to_dict()
-                ["cluster"]
-            )
+            return pd.read_csv(path_model.joinpath("bertopic_clusters.csv"), index_col=0).to_dict()[
+                "cluster"
+            ]
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 

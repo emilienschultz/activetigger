@@ -1,7 +1,7 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { Tooltip } from 'react-tooltip';
-import { useGetSimpleModel } from '../core/api';
+import { useGetQuickModel } from '../core/api';
 import { useAppContext } from '../core/context';
 
 // define the component to configure selection mode
@@ -11,14 +11,14 @@ export const SelectionManagement: FC = () => {
       currentScheme,
       selectionConfig,
       currentProject: project,
-      activeSimpleModel,
+      activeQuickModel,
       phase,
     },
     setAppContext,
   } = useAppContext();
 
   const availableModes =
-    activeSimpleModel && project ? project.next.methods : project?.next.methods_min;
+    activeQuickModel && project ? project.next.methods : project?.next.methods_min;
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 
@@ -27,7 +27,7 @@ export const SelectionManagement: FC = () => {
   // API call to get the current model & refetch
   // TODO : MODEL SELECTION TO CHANGE
   const name = null;
-  const { currentModel } = useGetSimpleModel(
+  const { currentModel } = useGetQuickModel(
     project ? project.params.project_slug : null,
     name,
     project,
@@ -41,7 +41,7 @@ export const SelectionManagement: FC = () => {
 
   // update if new model
   useEffect(() => {
-    // case where the simple model is dichotomize on a specific label
+    // case where the quick model is dichotomize on a specific label
     if (currentModel && currentModel.params && currentModel.params['dichotomize']) {
       setAvailableLabels([
         currentModel.params['dichotomize'] as string,

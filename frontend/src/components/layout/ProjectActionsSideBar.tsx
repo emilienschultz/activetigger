@@ -42,7 +42,7 @@ export const ProjectActionsSidebar: FC<{
   const currentComputation =
     projectState && projectState.languagemodels
       ? currentUser in projectState.languagemodels.training ||
-        currentUser in projectState.simplemodel.training ||
+        currentUser in projectState.quickmodel.training ||
         currentUser in projectState.projections.training ||
         currentUser in projectState.bertopic.training ||
         Object.values(projectState.features.training).length > 0

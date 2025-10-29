@@ -553,9 +553,9 @@ class BertopicComputing(ProcessComputing):
     get_progress: Callable[[], str | float | None] | None = None
 
 
-class SimpleModelInModel(BaseModel):
+class QuickModelInModel(BaseModel):
     """
-    Request Simplemodel
+    Request Quickmodel
     TODO : model for parameters
     """
 
@@ -569,9 +569,9 @@ class SimpleModelInModel(BaseModel):
     cv10: bool = False
 
 
-class SimpleModelComputing(ProcessComputing):
+class QuickModelComputing(ProcessComputing):
     """
-    Simplemodel object
+    Quickmodel object
     """
 
     status: Literal["training", "predicting"]
@@ -587,9 +587,9 @@ class SimpleModelComputing(ProcessComputing):
     retrain: bool = False
 
 
-class SimpleModelComputed(BaseModel):
+class QuickModelComputed(BaseModel):
     """
-    Simplemodel object
+    Quickmodel object
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -612,9 +612,9 @@ class SimpleModelComputed(BaseModel):
     statistics_cv10: MLStatisticsModel | None = None
 
 
-class SimpleModelOutModel(BaseModel):
+class QuickModelOutModel(BaseModel):
     """
-    Trained simplemodel
+    Trained quickmodel
     """
 
     features: list
@@ -727,9 +727,9 @@ class ModelDescriptionModel(BaseModel):
     path: str
 
 
-class SimpleModelsProjectStateModel(BaseModel):
+class QuickModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
-    # available: dict[str, dict[str, SimpleModelOutModel]]
+    # available: dict[str, dict[str, QuickModelOutModel]]
     # training: dict[str, list[str]]
     available: dict[str, list[ModelDescriptionModel]]
     training: dict[str, list[str]]
@@ -771,7 +771,7 @@ class ProjectStateModel(BaseModel):
     next: NextProjectStateModel
     schemes: SchemesProjectStateModel
     features: FeaturesProjectStateModel
-    simplemodel: SimpleModelsProjectStateModel
+    quickmodel: QuickModelsProjectStateModel
     languagemodels: LanguageModelsProjectStateModel
     projections: ProjectionsProjectStateModel
     generations: GenerationsProjectStateModel
@@ -997,6 +997,7 @@ class ProjectCreatingModel(BaseModel):
     kind: str
     status: str
 
+
 class TopicsOutModel(BaseModel):
     Topic: int
     Name: str
@@ -1004,19 +1005,22 @@ class TopicsOutModel(BaseModel):
     Representation: str
     Representative_Docs: str
 
+
 class BertopicOutModelParameters(BaseModel):
     bertopic_params: ComputeBertopicModel
     col_text: str
-    col_id: str|None
+    col_id: str | None
     name: str
-    timestamp: str # Not sure about this one, example: 20251027_104836 # Axel
+    timestamp: str  # Not sure about this one, example: 20251027_104836 # Axel
     path_data: str
     path_embeddings: str
     path_projection: str
 
+
 class BertopicTopicsOutModel(BaseModel):
     topics: list[TopicsOutModel]
     parameters: BertopicOutModelParameters
+
 
 class DatasetModel(BaseModel):
     """

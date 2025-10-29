@@ -18,8 +18,8 @@ from activetigger.app.dependencies import (
 from activetigger.datamodels import (
     BertModelModel,
     ModelInformationsModel,
-    SimpleModelInModel,
-    SimpleModelOutModel,
+    QuickModelInModel,
+    QuickModelOutModel,
     TextDatasetModel,
     UserInDBModel,
 )
@@ -29,23 +29,23 @@ from activetigger.project import Project
 router = APIRouter(tags=["models"])
 
 
-@router.post("/models/simple/train", dependencies=[Depends(verified_user)])
+@router.post("/models/quick/train", dependencies=[Depends(verified_user)])
 async def train_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    simplemodel: SimpleModelInModel,
+    quickmodel: QuickModelInModel,
 ) -> None:
     """
-    Compute simplemodel
+    Compute quickmodel
     """
     try:
-        project.train_simplemodel(simplemodel, current_user.username)
+        project.train_quickmodel(quickmodel, current_user.username)
         orchestrator.log_action(current_user.username, "TRAIN SIMPLE MODEL", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/models/simple/retrain", dependencies=[Depends(verified_user)])
+@router.post("/models/quick/retrain", dependencies=[Depends(verified_user)])
 async def retrain_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -53,27 +53,27 @@ async def retrain_quickmodel(
     name: str,
 ) -> None:
     """
-    Retrain simplemodel
+    Retrain quickmodel
     """
     try:
-        project.retrain_simplemodel(name, scheme, current_user.username)
+        project.retrain_quickmodel(name, scheme, current_user.username)
         orchestrator.log_action(current_user.username, f"RETRAIN SIMPLE MODEL {name}", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/models/simple/delete", dependencies=[Depends(verified_user)])
+@router.post("/models/quick/delete", dependencies=[Depends(verified_user)])
 async def delete_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str,
 ) -> None:
     """
-    Delete simplemodel
+    Delete quickmodel
     """
     try:
         test_rights(ProjectAction.DELETE, current_user.username, project.name)
-        project.simplemodels.delete(name)
+        project.quickmodels.delete(name)
         orchestrator.log_action(
             current_user.username, f"DELETE SIMPLE MODEL + FEATURES: {name}", project.name
         )
@@ -81,18 +81,18 @@ async def delete_quickmodel(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def get_simplemodel(
+@router.get("/models/quickmodel", dependencies=[Depends(verified_user)])
+async def get_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str,
-) -> SimpleModelOutModel | None:
+) -> QuickModelOutModel | None:
     """
-    Get available simplemodel by a name
+    Get available quickmodel by a name
     """
     try:
-        sm = project.simplemodels.get(name)
-        return SimpleModelOutModel(
+        sm = project.quickmodels.get(name)
+        return QuickModelOutModel(
             model=sm.name,
             params=sm.model_params,
             features=sm.features,
@@ -116,8 +116,8 @@ async def get_bert(
     try:
         if kind == "bert":
             return project.languagemodels.get_informations(name)
-        elif kind == "simple":
-            return project.simplemodels.get_informations(name)
+        elif kind == "quick":
+            return project.quickmodels.get_informations(name)
         else:
             raise Exception(f"Model kind {kind} not recognized")
     except Exception as e:
@@ -137,19 +137,19 @@ async def predict(
 ) -> None:
     """
     Start prediction with a model
-    - simple or bert model
+    - quick or bert model
     - types of dataset
     Manage specific cases for prediction
 
     TODO : optimize prediction on whole dataset
-    TODO : manage prediction external/whole dataset for simple models
+    TODO : manage prediction external/whole dataset for quick models
 
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
         datasets = None
 
-        if kind not in ["simple", "bert"]:
+        if kind not in ["quick", "bert"]:
             raise Exception(f"Model kind {kind} not recognized")
 
         # managing the perimeter of the prediction
@@ -214,20 +214,20 @@ async def predict(
                 statistics=datasets,
             )
 
-        # case for simple models
-        if kind == "simple":
+        # case for quick models
+        if kind == "quick":
             if datasets is None:
-                raise Exception("Dataset parameter must be specified for simple model prediction")
-            sm = project.simplemodels.get(model_name)
+                raise Exception("Dataset parameter must be specified for quick model prediction")
+            sm = project.quickmodels.get(model_name)
             if sm is None:
-                raise Exception(f"Simple model {model_name} not found")
+                raise Exception(f"Quick model {model_name} not found")
             df = project.features.get(sm.features, dataset=dataset, keep_dataset_column=True)
             cols_features = [col for col in df.columns if col != "dataset"]
             labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
             df["labels"] = labels["labels"]
 
             # add the data for the labels
-            project.simplemodels.start_predicting_process(
+            project.quickmodels.start_predicting_process(
                 name=model_name,
                 username=current_user.username,
                 df=df,

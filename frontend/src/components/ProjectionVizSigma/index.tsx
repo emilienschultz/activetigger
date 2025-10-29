@@ -102,7 +102,7 @@ export const ProjectionVizSigma: FC<Props> = ({
     console.log('compute graph');
     const graph = new Graph<NodeAttributesType>();
     if (data) {
-      //TODO: refine those simple heuristics
+      //TODO: refine those quick heuristics
       const size = getPointSize(data.x.length);
       data.x.forEach((value, index) => {
         graph.addNode(data.index[index], {

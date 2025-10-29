@@ -1,11 +1,11 @@
 import { FC } from 'react';
 import { DisplayScores } from './DisplayScores';
 
-interface SimpleModelDisplayProps {
+interface QuickModelDisplayProps {
   currentModel?: Record<string, never>;
 }
 
-export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }) => {
+export const QuickModelDisplay: FC<QuickModelDisplayProps> = ({ currentModel }) => {
   // if no model, return nothing
   if (!currentModel) return null;
 

@@ -11,7 +11,7 @@ import {
   useGetElementById,
   useGetNextElementId,
   useStatistics,
-  useTrainSimpleModel,
+  useTrainQuickModel,
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { ElementOutModel } from '../types';
@@ -40,8 +40,8 @@ export const AnnotationManagement: FC = () => {
       currentProject: project,
       selectionConfig,
       displayConfig,
-      freqRefreshSimpleModel,
-      activeSimpleModel,
+      freqRefreshQuickModel,
+      activeQuickModel,
       history,
       selectionHistory,
       phase,
@@ -77,12 +77,12 @@ export const AnnotationManagement: FC = () => {
     selectionConfig,
     history,
     phase,
-    activeSimpleModel || null,
+    activeQuickModel || null,
   );
   const { getElementById } = useGetElementById(
     projectName || null,
     currentScheme || null,
-    activeSimpleModel || null,
+    activeQuickModel || null,
   );
 
   // hooks to manage annotation
@@ -204,8 +204,8 @@ export const AnnotationManagement: FC = () => {
   // Now filter by valid regex
   const validHighlightText = highlightText.filter(isValidRegex);
 
-  // existing simplemodels
-  const availableSimpleModels = project?.simplemodel.available[currentScheme || ''] || [];
+  // existing quickmodels
+  const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
 
   // display active menu
   const [activeMenu, setActiveMenu] = useState<boolean>(false);
@@ -218,8 +218,8 @@ export const AnnotationManagement: FC = () => {
   };
 
   // train a quick model
-  const { trainSimpleModel } = useTrainSimpleModel(projectName || null, currentScheme || null);
-  const trainQuickModel = () => {
+  const { trainQuickModel } = useTrainQuickModel(projectName || null, currentScheme || null);
+  const startTrainQuickModel = () => {
     // default quickmodel
     const availableFeatures = project?.features.available ? project?.features.available : [];
     if (availableFeatures.length === 0) {
@@ -246,7 +246,7 @@ export const AnnotationManagement: FC = () => {
       cv10: false,
       standardize: false,
     };
-    trainSimpleModel(formData);
+    trainQuickModel(formData);
     setActiveMenu(false);
   };
 
@@ -288,13 +288,13 @@ export const AnnotationManagement: FC = () => {
                 size={30}
                 onClick={() => setActiveMenu(!activeMenu)}
                 className="cursor-pointer mx-2 activelearning"
-                style={{ color: activeSimpleModel ? 'green' : 'orange' }}
+                style={{ color: activeQuickModel ? 'green' : 'orange' }}
               />
               <Tooltip anchorSelect=".activelearning" place="top">
                 Active learning
               </Tooltip>
               <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                {activeSimpleModel}
+                {activeQuickModel}
               </span>
             </div>
           </div>
@@ -517,20 +517,20 @@ export const AnnotationManagement: FC = () => {
           <Modal.Title>Configure active learning</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {availableSimpleModels.length > 0 ? (
+          {availableQuickModels.length > 0 ? (
             <ActiveLearningManagement
               projectSlug={projectName}
               history={history}
               currentScheme={currentScheme}
-              availableSimpleModels={availableSimpleModels}
+              availableQuickModels={availableQuickModels}
               setAppContext={setAppContext}
-              freqRefreshSimpleModel={freqRefreshSimpleModel}
-              activeSimepleModel={activeSimpleModel}
+              freqRefreshQuickModel={freqRefreshQuickModel}
+              activeSimepleModel={activeQuickModel}
             />
           ) : (
             <div className="text-center">
               No quick model currently available. Go to model tab or
-              <button className="btn btn-primary m-2" onClick={trainQuickModel}>
+              <button className="btn btn-primary m-2" onClick={startTrainQuickModel}>
                 Train a default quick model
               </button>
             </div>

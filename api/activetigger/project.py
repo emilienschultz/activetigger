@@ -38,8 +38,8 @@ from activetigger.datamodels import (
     ProjectModel,
     ProjectStateModel,
     ProjectUpdateModel,
-    SimpleModelComputing,
-    SimpleModelInModel,
+    QuickModelComputing,
+    QuickModelInModel,
     StaticFileModel,
 )
 from activetigger.db.manager import DatabaseManager
@@ -49,8 +49,8 @@ from activetigger.generation.generations import Generations
 from activetigger.languagemodels import LanguageModels
 from activetigger.projections import Projections
 from activetigger.queue import Queue
+from activetigger.quickmodels import QuickModels
 from activetigger.schemes import Schemes
-from activetigger.simplemodels import SimpleModels
 from activetigger.tasks.create_project import CreateProject
 from activetigger.tasks.generate_call import GenerateCall
 from activetigger.users import Users
@@ -75,7 +75,7 @@ class Project:
     schemes: Schemes
     features: Features
     languagemodels: LanguageModels
-    simplemodels: SimpleModels
+    quickmodels: QuickModels
     generations: Generations
     projections: Projections
     errors: list[list]
@@ -329,7 +329,7 @@ class Project:
             self.db_manager,
             config.file_models,
         )
-        self.simplemodels = SimpleModels(
+        self.quickmodels = QuickModels(
             project_slug, self.params.dir, self.queue, self.computing, self.db_manager
         )
         self.generations = Generations(
@@ -485,14 +485,14 @@ class Project:
         # reset the features file
         self.features.reset_features_file()
 
-    def retrain_simplemodel(self, name: str, scheme: str, username: str) -> None:
+    def retrain_quickmodel(self, name: str, scheme: str, username: str) -> None:
         """
-        Retrain a simplemodel
+        Retrain a quickmodel
         """
 
-        # Get old model parameters in a SimpleModelInModel
-        model = self.simplemodels.get(name)
-        simplemodel = SimpleModelInModel(
+        # Get old model parameters in a QuickModelInModel
+        model = self.quickmodels.get(name)
+        quickmodel = QuickModelInModel(
             name=name,
             scheme=scheme,
             model=model.model_type,
@@ -502,60 +502,60 @@ class Project:
             dichotomize=model.model_params.get("dichotomize", None),
             cv10=model.cv10,
         )
-        self.train_simplemodel(simplemodel, username, retrain=True)
+        self.train_quickmodel(quickmodel, username, retrain=True)
 
-    def train_simplemodel(
+    def train_quickmodel(
         self,
-        simplemodel: SimpleModelInModel,
+        quickmodel: QuickModelInModel,
         username: str,
         n_min_annotated: int = 3,
         retrain: bool = False,
     ) -> None:
         """
-        Build all the information before calling the simplemodel computation
+        Build all the information before calling the quickmodel computation
         retrain : if True, will delete the previous model with the same name
         """
         # Tests
         availabe_schemes = self.schemes.available()
-        simplemodel.features = [i for i in simplemodel.features if i is not None]
-        if simplemodel.features is None or len(simplemodel.features) == 0:
+        quickmodel.features = [i for i in quickmodel.features if i is not None]
+        if quickmodel.features is None or len(quickmodel.features) == 0:
             raise Exception("No features selected")
-        if simplemodel.model not in list(self.simplemodels.available_models.keys()):
+        if quickmodel.model not in list(self.quickmodels.available_models.keys()):
             raise Exception("Model not available")
-        if simplemodel.scheme not in availabe_schemes:
+        if quickmodel.scheme not in availabe_schemes:
             raise Exception("Scheme not available")
-        if len(availabe_schemes[simplemodel.scheme].labels) < 2:
+        if len(availabe_schemes[quickmodel.scheme].labels) < 2:
             raise Exception("Not enough labels in the scheme")
-        simplemodel.name = slugify(simplemodel.name)
-        exist = self.simplemodels.exists(simplemodel.name)
+        quickmodel.name = slugify(quickmodel.name)
+        exist = self.quickmodels.exists(quickmodel.name)
         if exist and not retrain:
-            raise Exception("A simplemodel with this name already exists")
+            raise Exception("A quickmodel with this name already exists")
         if not exist and retrain:
-            raise Exception("No simplemodel with this name to retrain")
+            raise Exception("No quickmodel with this name to retrain")
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
-        if simplemodel.model == "multi_naivebayes":
+        if quickmodel.model == "multi_naivebayes":
             if "dfm" not in self.features.map:
                 raise Exception("No dfm feature available")
-            simplemodel.features = ["dfm"]
-            simplemodel.standardize = False
+            quickmodel.features = ["dfm"]
+            quickmodel.standardize = False
 
-        if simplemodel.params is None:
+        if quickmodel.params is None:
             params = None
         else:
-            params = dict(simplemodel.params)
+            params = dict(quickmodel.params)
         # add information on the target of the model
-        if simplemodel.dichotomize is not None and params is not None:
-            params["dichotomize"] = simplemodel.dichotomize
+        if quickmodel.dichotomize is not None and params is not None:
+            params["dichotomize"] = quickmodel.dichotomize
 
         # get data
-        df_features = self.features.get(simplemodel.features, dataset=["train"])
-        df_scheme = self.schemes.get_scheme_data(scheme=simplemodel.scheme)
+        df_features = self.features.get(quickmodel.features, dataset=["train"])
+        df_scheme = self.schemes.get_scheme_data(scheme=quickmodel.scheme)
 
         # management for multilabels / dichotomize
-        if simplemodel.dichotomize is not None:
+        if quickmodel.dichotomize is not None:
             df_scheme["labels"] = df_scheme["labels"].apply(
-                lambda x: self.schemes.dichotomize(x, simplemodel.dichotomize)
+                lambda x: self.schemes.dichotomize(x, quickmodel.dichotomize)
             )
 
         # test for a minimum of annotated elements
@@ -569,21 +569,21 @@ class Project:
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
 
-        logger_simplemodel = logging.getLogger("simplemodel")
-        logger_simplemodel.info("Building the simplemodel request")
-        self.simplemodels.compute_simplemodel(
+        logger_quickmodel = logging.getLogger("quickmodel")
+        logger_quickmodel.info("Building the quickmodel request")
+        self.quickmodels.compute_quickmodel(
             project_slug=self.params.project_slug,
             user=username,
-            scheme=simplemodel.scheme,
-            features=simplemodel.features,
-            name=simplemodel.name,
-            model_type=simplemodel.model,
+            scheme=quickmodel.scheme,
+            features=quickmodel.features,
+            name=quickmodel.name,
+            model_type=quickmodel.model,
             df=data,
             col_labels="labels",
             col_features=col_features,
             model_params=params,
-            standardize=simplemodel.standardize or False,
-            cv10=simplemodel.cv10 or False,
+            standardize=quickmodel.standardize or False,
+            cv10=quickmodel.cv10 or False,
             retrain=retrain,
         )
 
@@ -700,11 +700,11 @@ class Project:
         if next.selection == "maxprob":
             if next.model_active is None:
                 raise Exception("Model active is required")
-            if not self.simplemodels.exists(next.model_active):
-                raise Exception(f"Simplemodel {next.model_active} doesn't exist")
+            if not self.quickmodels.exists(next.model_active):
+                raise Exception(f"Quickmodel {next.model_active} doesn't exist")
             if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
-            prediction = self.simplemodels.get_prediction(next.model_active)  # get model
+            prediction = self.quickmodels.get_prediction(next.model_active)  # get model
             proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_maxprob = (
@@ -720,9 +720,9 @@ class Project:
         if next.selection == "active":
             if next.model_active is None:
                 raise Exception("Model active is required")
-            if not self.simplemodels.exists(next.model_active):
-                raise ValueError("Simplemodel doesn't exist")
-            prediction = self.simplemodels.get_prediction(next.model_active)  # get model
+            if not self.quickmodels.exists(next.model_active):
+                raise ValueError("Quickmodel doesn't exist")
+            prediction = self.quickmodels.get_prediction(next.model_active)  # get model
             proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_active = (
@@ -738,10 +738,10 @@ class Project:
 
         if (
             next.model_active is not None
-            and self.simplemodels.exists(next.model_active)
+            and self.quickmodels.exists(next.model_active)
             and next.dataset == "train"
         ):
-            prediction = self.simplemodels.get_prediction(next.model_active)
+            prediction = self.quickmodels.get_prediction(next.model_active)
             predicted_label = prediction.loc[element_id, "prediction"]
             predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
             predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
@@ -836,8 +836,8 @@ class Project:
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None)
-            if model_active is not None and self.simplemodels.exists(model_active):
-                prediction = self.simplemodels.get_prediction(model_active)
+            if model_active is not None and self.quickmodels.exists(model_active):
+                prediction = self.quickmodels.get_prediction(model_active)
                 predicted_label = cast(str, prediction.loc[element_id, "prediction"])
                 predicted_proba = round(cast(float, prediction.loc[element_id, predicted_label]), 2)
                 predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
@@ -963,8 +963,8 @@ class Project:
         data["labels"] = df["labels"].fillna("NA")
 
         # get & add predictions if available
-        if model and self.simplemodels.exists(model):
-            data["prediction"] = self.simplemodels.get_prediction(model)["prediction"]
+        if model and self.quickmodels.exists(model):
+            data["prediction"] = self.quickmodels.get_prediction(model)["prediction"]
 
         return ProjectionOutModel(
             index=list(data.index),
@@ -992,7 +992,7 @@ class Project:
             ),
             schemes=self.schemes.state(),
             features=self.features.state(),
-            simplemodel=self.simplemodels.state(),
+            quickmodel=self.quickmodels.state(),
             languagemodels=self.languagemodels.state(),
             projections=self.projections.state(),
             generations=self.generations.state(),
@@ -1121,7 +1121,7 @@ class Project:
 
     def get_process(
         self, kind: str | list, user: str
-    ) -> list[FeatureComputing | LMComputing | SimpleModelComputing]:
+    ) -> list[FeatureComputing | LMComputing | QuickModelComputing]:
         """
         Get current processes
         """
@@ -1461,37 +1461,37 @@ class Project:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)
 
-            # case for simplemodels training
-            if e.kind == "train_simplemodel":
-                sm = cast(SimpleModelComputing, e)
+            # case for quickmodels training
+            if e.kind == "train_quickmodel":
+                sm = cast(QuickModelComputing, e)
                 try:
                     error = future.exception()
                     if error:
                         raise Exception(str(error))
-                    self.simplemodels.add(sm)
-                    print("Simplemodel trained")
-                    logging.debug("Simplemodel trained")
+                    self.quickmodels.add(sm)
+                    print("Quickmodel trained")
+                    logging.debug("Quickmodel trained")
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(config.timezone), "simplemodel failed", str(ex)]
+                        [datetime.now(config.timezone), "quickmodel failed", str(ex)]
                     )
-                    logging.error("Simplemodel failed", ex)
+                    logging.error("Quickmodel failed", ex)
                 finally:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)
 
-            # case for simplemodel prediction
-            if e.kind == "predict_simplemodel":
-                sm = cast(SimpleModelComputing, e)
+            # case for quickmodel prediction
+            if e.kind == "predict_quickmodel":
+                sm = cast(QuickModelComputing, e)
                 try:
                     error = future.exception()
                     if error:
                         raise Exception(str(error))
                 except Exception as ex:
                     self.errors.append(
-                        [datetime.now(config.timezone), "simplemodel failed", str(ex)]
+                        [datetime.now(config.timezone), "quickmodel failed", str(ex)]
                     )
-                    logging.error("Simplemodel failed", ex)
+                    logging.error("Quickmodel failed", ex)
                 finally:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)

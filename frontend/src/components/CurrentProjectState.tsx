@@ -44,7 +44,7 @@ export const CurrentProjectState: FC = () => {
     const isComputing =
       project && authenticatedUser && authenticatedUser.username && project.languagemodels
         ? authenticatedUser.username in project.languagemodels.training ||
-          authenticatedUser.username in project.simplemodel.training ||
+          authenticatedUser.username in project.quickmodel.training ||
           authenticatedUser.username in project.projections.training ||
           authenticatedUser.username in project.bertopic.training ||
           Object.values(project.features.training).length > 0

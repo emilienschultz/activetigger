@@ -39,7 +39,7 @@ from activetigger.orchestrator import orchestrator
 
 # to log specific events from api
 logger = logging.getLogger("api")
-logger_simplemodel = logging.getLogger("simplemodel")
+logger_quickmodel = logging.getLogger("quickmodel")
 
 
 @asynccontextmanager

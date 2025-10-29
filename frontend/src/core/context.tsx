@@ -27,8 +27,8 @@ export type AppContextValue = {
   currentScheme?: string; // scheme selected to annotate
   currentProjection?: ProjectionOutModel;
   labelColorMapping?: { [key: string]: string };
-  activeSimpleModel?: string | null;
-  freqRefreshSimpleModel: number; // freq to refresh active learning model
+  activeQuickModel?: string | null;
+  freqRefreshQuickModel: number; // freq to refresh active learning model
   history: string[]; // element annotated
   selectionHistory: Record<string, string>; // history of the selection
   reFetchCurrentProject?: () => void; // update the state of the project
@@ -61,7 +61,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   generateConfig: { n_batch: 1, selectionMode: 'all' },
   history: [],
   selectionHistory: {},
-  freqRefreshSimpleModel: 0,
+  freqRefreshQuickModel: 0,
   phase: 'train',
   isComputing: false,
   developmentMode: false,

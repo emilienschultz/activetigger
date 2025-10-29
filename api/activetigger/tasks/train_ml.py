@@ -14,7 +14,7 @@ from sklearn.model_selection import (  # type: ignore[import]
     train_test_split,
 )
 
-from activetigger.datamodels import SimpleModelComputed
+from activetigger.datamodels import QuickModelComputed
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
@@ -63,7 +63,7 @@ class TrainML(BaseTask):
 
     def __call__(self) -> None:
         """
-        Fit simplemodel and calculate statistics
+        Fit quickmodel and calculate statistics
         """
 
         # drop NA values
@@ -116,7 +116,7 @@ class TrainML(BaseTask):
         X_train.to_parquet(self.model_path / "training_data.parquet")
 
         # Dump it in the folder
-        element = SimpleModelComputed(
+        element = QuickModelComputed(
             time=datetime.datetime.now(),
             model=self.model,
             user=self.user,

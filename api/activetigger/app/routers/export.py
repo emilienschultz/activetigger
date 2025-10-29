@@ -74,19 +74,19 @@ async def export_projection(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# @router.get("/export/prediction/simplemodel", dependencies=[Depends(verified_user)])
-# async def export_simplemodel_predictions(
+# @router.get("/export/prediction/quickmodel", dependencies=[Depends(verified_user)])
+# async def export_quickmodel_predictions(
 #     project: Annotated[Project, Depends(get_project)],
 #     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 #     name: str,
 #     format: str = "csv",
 # ) -> StreamingResponse:
 #     """
-#     Export prediction simplemodel for the project/user/scheme if any
+#     Export prediction quickmodel for the project/user/scheme if any
 #     """
 #     test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
 #     try:
-#         output, headers = project.simplemodels.export_prediction(name, format)
+#         output, headers = project.quickmodels.export_prediction(name, format)
 #         return StreamingResponse(output, headers=headers)
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))

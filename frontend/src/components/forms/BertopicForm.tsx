@@ -156,7 +156,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
             <Tooltip anchorSelect=".umap_n_components" place="top">
               The number of dimensions to reduce the embedding space to.
               <br />
-              There is not a simple way of tuning it. The lower the value the "flatter", ie the
+              There is not a quick way of tuning it. The lower the value the "flatter", ie the
               <br />
               embedding will lose information, however increasing this value does not guarantee
               <br />

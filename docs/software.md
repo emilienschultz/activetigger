@@ -47,7 +47,7 @@ Overall architecture :
 - The unit is the project, composes of different classes
     - Features
     - Schemes
-    - Simplemodels
+    - Quickmodels
     - Bertmodels
     - Users
 - CPU/GPU bound computation is managed in separated processes with a queue

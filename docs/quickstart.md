@@ -117,7 +117,7 @@ Once you entered the annotation phase, you will have an history of already annot
 
 Before annotating, you need to define your labels. You do this by creating labels in a coding scheme.
 
-We recommend keeping your labels simple. If you are aiming to train a model, binary categorizations tend to be easier to handle. For example, if you are annotating newspaper headlines, it is easier to classify it as "politics/not politics", rather than to include all possible subjects as multiple categories. You can layer different binary categorizations as different coding scheme, or add labels at a later stage.
+We recommend keeping your labels quick. If you are aiming to train a model, binary categorizations tend to be easier to handle. For example, if you are annotating newspaper headlines, it is easier to classify it as "politics/not politics", rather than to include all possible subjects as multiple categories. You can layer different binary categorizations as different coding scheme, or add labels at a later stage.
 
 Enter the name of each label under "New label" and click the plus sign.
 

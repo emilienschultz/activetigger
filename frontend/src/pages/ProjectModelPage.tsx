@@ -6,7 +6,7 @@ import { useAppContext } from '../core/context';
 import { ModelDescriptionModel } from '../types';
 
 import { BertModelManagement } from '../components/BertModelManagement';
-import { SimpleModelManagement } from '../components/SimpleModelManagement';
+import { QuickModelManagement } from '../components/QuickModelManagement';
 
 /**
  * Component to manage model training
@@ -27,7 +27,7 @@ export const ProjectModelPage: FC = () => {
   //   }
   //   return [];
   // }, [project, currentScheme]);
-  const baseSimpleModels = project?.simplemodel.options ? project?.simplemodel.options : {};
+  const baseQuickModels = project?.quickmodel.options ? project?.quickmodel.options : {};
 
   const availableBertModels = useMemo(
     () =>
@@ -39,12 +39,12 @@ export const ProjectModelPage: FC = () => {
     [project?.languagemodels.available],
   );
 
-  const availableSimpleModels = useMemo(
+  const availableQuickModels = useMemo(
     () =>
-      project?.simplemodel.available
-        ? (project?.simplemodel.available as { [key: string]: ModelDescriptionModel[] })
+      project?.quickmodel.available
+        ? (project?.quickmodel.available as { [key: string]: ModelDescriptionModel[] })
         : {},
-    [project?.simplemodel.available],
+    [project?.quickmodel.available],
   );
   const availableFeatures = project?.features.available ? project?.features.available : [];
   const availableLabels =
@@ -71,13 +71,13 @@ export const ProjectModelPage: FC = () => {
               <Tab eventKey="quick" title="Quick">
                 <div className="explanations">Train machine learning models based on features</div>
 
-                <SimpleModelManagement
+                <QuickModelManagement
                   projectName={projectSlug || null}
                   currentScheme={currentScheme || null}
-                  baseSimpleModels={
-                    baseSimpleModels as unknown as Record<string, Record<string, number>>
+                  baseQuickModels={
+                    baseQuickModels as unknown as Record<string, Record<string, number>>
                   }
-                  availableSimpleModels={availableSimpleModels[currentScheme || ''] || []}
+                  availableQuickModels={availableQuickModels[currentScheme || ''] || []}
                   availableFeatures={availableFeatures}
                   availableLabels={availableLabels}
                   kindScheme={kindScheme}

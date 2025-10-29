@@ -57,7 +57,7 @@ export const ProjectValidatePage: FC = () => {
   } = useAppContext();
 
   // model selected
-  const [currentSimpleModelName, setCurrentSimpleModelName] = useState<string | null>(null);
+  const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(null);
   const [currentBertModelName, setCurrentBertModelName] = useState<string | null>(null);
 
   const { model: bertModelInformations } = useModelInformations(
@@ -68,10 +68,10 @@ export const ProjectValidatePage: FC = () => {
   );
 
   // get model information from api
-  const { model: simpleModelInformations } = useModelInformations(
+  const { model: quickModelInformations } = useModelInformations(
     projectName || null,
-    currentSimpleModelName || null,
-    'simple',
+    currentQuickModelName || null,
+    'quick',
     isComputing,
   );
 
@@ -83,12 +83,12 @@ export const ProjectValidatePage: FC = () => {
     [project?.languagemodels.available, currentScheme],
   );
 
-  const availableSimpleModels = useMemo(
+  const availableQuickModels = useMemo(
     () =>
-      project?.simplemodel.available
-        ? (project?.simplemodel.available[currentScheme || ''] as ModelDescriptionModel[])
+      project?.quickmodel.available
+        ? (project?.quickmodel.available[currentScheme || ''] as ModelDescriptionModel[])
         : [],
-    [project?.simplemodel.available, currentScheme],
+    [project?.quickmodel.available, currentScheme],
   );
 
   return (
@@ -104,37 +104,37 @@ export const ProjectValidatePage: FC = () => {
                 <div>
                   <label htmlFor="selected-model">Existing models</label>
                   <Select
-                    options={Object.values(availableSimpleModels || {}).map((e) => ({
+                    options={Object.values(availableQuickModels || {}).map((e) => ({
                       value: e.name,
                       label: e.name,
                     }))}
                     value={
-                      currentSimpleModelName
-                        ? { value: currentSimpleModelName, label: currentSimpleModelName }
+                      currentQuickModelName
+                        ? { value: currentQuickModelName, label: currentQuickModelName }
                         : null
                     }
                     onChange={(selectedOption) => {
-                      setCurrentSimpleModelName(selectedOption ? selectedOption.value : null);
+                      setCurrentQuickModelName(selectedOption ? selectedOption.value : null);
                     }}
                     isSearchable
                     className="w-50 mt-1"
                   />
                 </div>
                 <ValidateButtons
-                  modelName={currentSimpleModelName}
-                  kind="simple"
+                  modelName={currentQuickModelName}
+                  kind="quick"
                   currentScheme={currentScheme || null}
                   projectSlug={projectName || null}
                   isComputing={isComputing}
-                  setCurrentModel={setCurrentSimpleModelName}
+                  setCurrentModel={setCurrentQuickModelName}
                 />
 
-                {simpleModelInformations && (
+                {quickModelInformations && (
                   <DisplayScoresMenu
                     scores={
-                      simpleModelInformations.scores as unknown as Record<string, MLStatisticsModel>
+                      quickModelInformations.scores as unknown as Record<string, MLStatisticsModel>
                     }
-                    modelName={currentSimpleModelName || ''}
+                    modelName={currentQuickModelName || ''}
                   />
                 )}
               </Tab>
@@ -191,7 +191,7 @@ export const ProjectValidatePage: FC = () => {
                       scores={
                         bertModelInformations.scores as unknown as Record<string, MLStatisticsModel>
                       }
-                      modelName={currentSimpleModelName || ''}
+                      modelName={currentQuickModelName || ''}
                     />
                   )}
 

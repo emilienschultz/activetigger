@@ -4,9 +4,9 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import Select from 'react-select';
-import { useDeleteSimpleModel, useGetSimpleModel, useTrainSimpleModel } from '../core/api';
+import { useDeleteQuickModel, useGetQuickModel, useTrainQuickModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
-import { MLStatisticsModel, ModelDescriptionModel, SimpleModelInModel } from '../types';
+import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 
@@ -21,11 +21,11 @@ interface FeaturesOptions {
   sbert?: Options;
 }
 
-interface SimpleModelManagementProps {
+interface QuickModelManagementProps {
   projectName: string | null;
   currentScheme: string | null;
-  baseSimpleModels: Record<string, Record<string, number>>;
-  availableSimpleModels: ModelDescriptionModel[];
+  baseQuickModels: Record<string, Record<string, number>>;
+  availableQuickModels: ModelDescriptionModel[];
   availableFeatures: string[];
   availableLabels: string[];
   kindScheme: string;
@@ -36,9 +36,9 @@ interface SimpleModelManagementProps {
 
 export default function ModelsTable(
   name: string | null,
-  availableSimpleModels: ModelDescriptionModel[],
+  availableQuickModels: ModelDescriptionModel[],
 ) {
-  const model = availableSimpleModels.filter((e) => e.name == name)[0];
+  const model = availableQuickModels.filter((e) => e.name == name)[0];
   if (!model) return null;
   return (
     <>
@@ -69,11 +69,11 @@ export default function ModelsTable(
   );
 }
 
-export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
+export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   projectName,
   currentScheme,
-  baseSimpleModels,
-  availableSimpleModels,
+  baseQuickModels,
+  availableQuickModels,
   availableFeatures,
   availableLabels,
   kindScheme,
@@ -84,30 +84,30 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const { notify } = useNotifications();
 
   // hooks to update
-  const { trainSimpleModel } = useTrainSimpleModel(projectName, currentScheme);
+  const { trainQuickModel } = useTrainQuickModel(projectName, currentScheme);
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
-  // current simplemodel
-  const [currentSimpleModelName, setCurrentSimpleModelName] = useState<string | null>(null);
+  // current quickmodel
+  const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(null);
 
-  // get information on the simplemodel
-  const { currentModel: currentModelInformations } = useGetSimpleModel(
+  // get information on the quickmodel
+  const { currentModel: currentModelInformations } = useGetQuickModel(
     projectName,
-    currentSimpleModelName,
-    currentSimpleModelName,
+    currentQuickModelName,
+    currentQuickModelName,
   );
 
-  // delete simplemodel
-  const { deleteSimpleModel } = useDeleteSimpleModel(projectName);
+  // delete quickmodel
+  const { deleteQuickModel } = useDeleteQuickModel(projectName);
 
   function getRandomName() {
-    return `Simplemodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
+    return `Quickmodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
   }
 
   // create form
-  const { register, handleSubmit, control, watch, setValue } = useForm<SimpleModelInModel>({
+  const { register, handleSubmit, control, watch, setValue } = useForm<QuickModelInModel>({
     defaultValues: {
       name: getRandomName(),
       model: 'liblinear',
@@ -143,7 +143,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
           {} as Record<string, string | number | boolean>,
         );
 
-      setValue('params', filteredParams as SimpleModelInModel['params']);
+      setValue('params', filteredParams as QuickModelInModel['params']);
     }
   }, [currentModel, setValue]);
 
@@ -151,13 +151,13 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
   const selectedModel = watch('model');
 
   // action when form validated
-  const onSubmit: SubmitHandler<SimpleModelInModel> = async (formData) => {
+  const onSubmit: SubmitHandler<QuickModelInModel> = async (formData) => {
     const watchedFeatures = watch('features');
     if (watchedFeatures.length == 0) {
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
     }
-    await trainSimpleModel(formData);
+    await trainQuickModel(formData);
     //    setShowForm(false);
   };
 
@@ -187,17 +187,17 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
     <div>
       <div className="d-flex align-items-center">
         <Select
-          options={Object.values(availableSimpleModels || {}).map((e) => ({
+          options={Object.values(availableQuickModels || {}).map((e) => ({
             value: e.name,
             label: e.name,
           }))}
           value={
-            currentSimpleModelName
-              ? { value: currentSimpleModelName, label: currentSimpleModelName }
+            currentQuickModelName
+              ? { value: currentQuickModelName, label: currentQuickModelName }
               : null
           }
           onChange={(selectedOption) => {
-            setCurrentSimpleModelName(selectedOption ? selectedOption.value : null);
+            setCurrentQuickModelName(selectedOption ? selectedOption.value : null);
           }}
           isSearchable
           className="w-50 mt-1"
@@ -206,9 +206,9 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
         <button
           className="btn btn p-0"
           onClick={() => {
-            if (currentSimpleModelName) {
-              deleteSimpleModel(currentSimpleModelName);
-              setCurrentSimpleModelName(null);
+            if (currentQuickModelName) {
+              deleteQuickModel(currentQuickModelName);
+              setCurrentQuickModelName(null);
             }
           }}
         >
@@ -311,7 +311,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
 
                 <label htmlFor="model">Select a model</label>
                 <select id="model" {...register('model')}>
-                  {Object.keys(baseSimpleModels).map((e) => (
+                  {Object.keys(baseQuickModels).map((e) => (
                     <option key={e}>{e}</option>
                   ))}{' '}
                 </select>
@@ -326,7 +326,7 @@ export const SimpleModelManagement: FC<SimpleModelManagementProps> = ({
                   </>
                 )}
                 {
-                  //generate_config(selectedSimpleModel)
+                  //generate_config(selectedQuickModel)
                   (selectedModel == 'liblinear' && (
                     <div key="liblinear">
                       <label htmlFor="cost">Cost</label>

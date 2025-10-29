@@ -18,7 +18,7 @@ import {
   ProjectStateModel,
   ProjectUpdateModel,
   ProjectionParametersModel,
-  SimpleModelInModel,
+  QuickModelInModel,
   SupportedAPI,
   TextDatasetModel,
   newBertModel,
@@ -384,7 +384,7 @@ export function useProject(projectSlug?: string) {
 
   // 1. auth is automatically managed by an API middleware see core/auth.tsx
 
-  // 2. create a fetchTrigger, a simple boolean which we will use to trigger an API call
+  // 2. create a fetchTrigger, a quick boolean which we will use to trigger an API call
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
   const { notify } = useNotifications();
 
@@ -623,7 +623,7 @@ export function useGetNextElementId(
   },
   history: string[],
   phase: string,
-  activeSimpleModel: string | null,
+  activeQuickModel: string | null,
 ) {
   const { notify } = useNotifications();
   const getNextElementId = useCallback(async () => {
@@ -641,7 +641,7 @@ export function useGetNextElementId(
           dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
           user: selectionConfig.user,
-          model_active: activeSimpleModel,
+          model_active: activeQuickModel,
         },
       });
       if (res.data?.element_id)
@@ -651,7 +651,7 @@ export function useGetNextElementId(
       notify({ type: 'error', message: 'Select a project/scheme to get elements' });
       return null;
     }
-  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase, activeSimpleModel]);
+  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase, activeQuickModel]);
 
   return { getNextElementId };
 }
@@ -858,13 +858,13 @@ export function useRenameLabel(projectSlug: string | null, scheme: string | null
  * @returns
  */
 
-export function useRetrainSimpleModel(projectSlug: string | null, scheme: string | null) {
+export function useRetrainQuickModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
-  const retrainSimpleModel = useCallback(
+  const retrainQuickModel = useCallback(
     async (name: string) => {
       if (projectSlug && scheme) {
-        const res = await api.POST('/models/simple/retrain', {
+        const res = await api.POST('/models/quick/retrain', {
           params: {
             query: {
               project_slug: projectSlug,
@@ -880,15 +880,15 @@ export function useRetrainSimpleModel(projectSlug: string | null, scheme: string
     [projectSlug, scheme, notify],
   );
 
-  return { retrainSimpleModel };
+  return { retrainQuickModel };
 }
 
-export function useTrainSimpleModel(projectSlug: string | null, scheme: string | null) {
+export function useTrainQuickModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
-  const trainSimpleModel = useCallback(
-    async (formData: SimpleModelInModel) => {
+  const trainQuickModel = useCallback(
+    async (formData: QuickModelInModel) => {
       if (projectSlug && formData.features && scheme && formData.model && formData.params) {
-        const res = await api.POST('/models/simple/train', {
+        const res = await api.POST('/models/quick/train', {
           params: {
             query: {
               project_slug: projectSlug,
@@ -913,18 +913,18 @@ export function useTrainSimpleModel(projectSlug: string | null, scheme: string |
     [projectSlug, scheme, notify],
   );
 
-  return { trainSimpleModel };
+  return { trainQuickModel };
 }
 
 /**
- * Delete simple model
+ * Delete quick model
  */
-export function useDeleteSimpleModel(projectSlug: string | null) {
+export function useDeleteQuickModel(projectSlug: string | null) {
   const { notify } = useNotifications();
-  const deleteSimpleModel = useCallback(
+  const deleteQuickModel = useCallback(
     async (model_name: string) => {
       if (projectSlug) {
-        const res = await api.POST('/models/simple/delete', {
+        const res = await api.POST('/models/quick/delete', {
           params: {
             query: {
               project_slug: projectSlug,
@@ -940,22 +940,22 @@ export function useDeleteSimpleModel(projectSlug: string | null) {
     [projectSlug, notify],
   );
 
-  return { deleteSimpleModel };
+  return { deleteQuickModel };
 }
 
 /**
- * Get trained simplemodel for a user/scheme
+ * Get trained quickmodel for a user/scheme
  */
-export function useGetSimpleModel(
+export function useGetQuickModel(
   project_slug: string | null,
   name: string | null,
   project: unknown,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
-  const getSimpleModel = useAsyncMemo(async () => {
+  const getQuickModel = useAsyncMemo(async () => {
     if (name && project_slug) {
-      const res = await api.GET('/models/simplemodel', {
+      const res = await api.GET('/models/quickmodel', {
         params: {
           query: {
             project_slug: project_slug,
@@ -972,7 +972,7 @@ export function useGetSimpleModel(
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { currentModel: getAsyncMemoData(getSimpleModel), reFetchSimpleModel: reFetch };
+  return { currentModel: getAsyncMemoData(getQuickModel), reFetchQuickModel: reFetch };
 }
 
 /**
@@ -1434,14 +1434,14 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 }
 
 /**
- * Get file predictions simplemodel
+ * Get file predictions quickmodel
  */
-// export function useGetPredictionsSimplemodelFile(projectSlug: string | null) {
+// export function useGetPredictionsQuickmodelFile(projectSlug: string | null) {
 //   const { notify } = useNotifications();
-//   const getPredictionsSimpleModelFile = useCallback(
+//   const getPredictionsQuickModelFile = useCallback(
 //     async (name: string, format: string) => {
 //       if (projectSlug) {
-//         const res = await api.GET('/export/prediction/simplemodel', {
+//         const res = await api.GET('/export/prediction/quickmodel', {
 //           params: {
 //             query: {
 //               project_slug: projectSlug,
@@ -1463,7 +1463,7 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 //     [projectSlug, notify],
 //   );
 
-//   return { getPredictionsSimpleModelFile };
+//   return { getPredictionsQuickModelFile };
 // }
 
 /**
