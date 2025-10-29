@@ -42,7 +42,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 }) => {
   // hook for all the parameters
   const {
-    appContext: { currentProject: project, currentProjection, selectionConfig, activeSimpleModel },
+    appContext: {
+      currentProject: project,
+      currentProjection,
+      selectionConfig,
+      activeSimpleModel,
+      isComputing,
+    },
     setAppContext,
   } = useAppContext();
   const navigate = useNavigate();
@@ -112,6 +118,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     }
     await updateProjection(data);
     reset();
+    setShowComputeNewProjection(false);
   };
 
   // scatterplot management for colors
@@ -230,54 +237,19 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
 
+  const [showComputeNewProjection, setShowComputeNewProjection] = useState<boolean>(false);
+
   return (
     <div>
-      <div className="d-flex align-items-center">
-        {projectionData && (
-          <label style={{ display: 'block' }}>
-            <span className="lock">
-              <FaLock /> Lock on selection
-            </span>
-            <input
-              type="checkbox"
-              checked={selectionConfig.frameSelection}
-              className="mx-2"
-              onChange={(_) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frameSelection: !selectionConfig.frameSelection,
-                  },
-                }));
-              }}
-            />
-            <Tooltip anchorSelect=".lock" place="top">
-              Once a vizualisation computed, you can use the square tool to select an area (or
-              remove the square).<br></br> Then you can lock the selection, and only elements in the
-              selected area will be available for annoation.
-            </Tooltip>
-          </label>
-        )}
-      </div>
-
-      {projectionTraining && (
-        <div className="col-8 d-flex justify-content-center">
-          <div className="d-flex align-items-center gap-2">
-            <PulseLoader /> Computing a projection, please wait
-          </div>
-        </div>
-      )}
-
       {projectionData && labelColorMapping && (
         <div>
           <details className="m-2">
             <summary>Parameters of the current vizualisation</summary>
             {JSON.stringify(projectionData?.parameters, null, 2)}
           </details>
-          <div className="row align-items-start m-0" style={{ height: '400px' }}>
+          <div className="row align-items-start" style={{ height: '400px', marginBottom: '50px' }}>
             <ProjectionVizSigma
-              className={`col-8 border p-0 h-100`}
+              className={`col-8 border h-100`}
               data={projectionData}
               //selection
               selectedId={currentElementId}
@@ -336,99 +308,157 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           </div>
         </div>
       )}
-      <div className="row mt-5">
-        <form onSubmit={handleSubmit(onSubmit)} className="col-8">
-          <h5 className="subsection">Compute new vizualisation</h5>
-          <div>
-            <label htmlFor="features">Select features</label>
-            <button
-              type="button"
-              className="btn btn-outline-secondary d-flex align-items-center my-1"
-              onClick={() => setDisplayNewFeature(true)}
-            >
-              <FaPlusCircle size={18} className="me-1" /> Add a new feature
-            </button>
-            <Controller
-              name="features"
-              control={control}
-              defaultValue={defaultFeatures.map((e) => e.value)}
-              render={({ field: { onChange, value } }) => (
-                <Select
-                  options={features}
-                  isMulti
-                  value={features.filter((option) => value.includes(option.value))}
-                  onChange={(selectedOptions) => {
-                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
-                  }}
-                />
-              )}
+
+      <div>
+        {projectionData && (
+          <label style={{ display: 'block' }}>
+            <input
+              type="checkbox"
+              checked={selectionConfig.frameSelection}
+              className="mx-2"
+              onChange={(_) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: {
+                    ...selectionConfig,
+                    frameSelection: !selectionConfig.frameSelection,
+                  },
+                }));
+              }}
             />
-          </div>
-          <details className="custom-details">
-            <summary>Advanced parameters</summary>
-            <label htmlFor="model">Select a model</label>
-            <select id="model" {...register('method')}>
-              <option value=""></option>
-              {Object.keys(availableProjections?.options || {}).map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}{' '}
-            </select>
-            {availableProjections?.options && selectedMethod == 'tsne' && (
-              <div>
-                <label htmlFor="perplexity">perplexity</label>
-                <input
-                  type="number"
-                  step="1"
-                  id="perplexity"
-                  {...register('parameters.perplexity', { valueAsNumber: true })}
-                ></input>
-                <label>Learning rate</label>
-                <select {...register('parameters.learning_rate')}>
-                  <option key="auto" value="auto">
-                    auto
-                  </option>
-                </select>
-                <label>Init</label>
-                <select {...register('parameters.init')}>
-                  <option key="random" value="random">
-                    random
-                  </option>
-                </select>
-              </div>
-            )}
-            {availableProjections?.options && selectedMethod == 'umap' && (
-              <div>
-                <label htmlFor="n_neighbors">n_neighbors</label>
-                <input
-                  type="number"
-                  step="1"
-                  id="n_neighbors"
-                  {...register('parameters.n_neighbors', { valueAsNumber: true })}
-                ></input>
-                <label htmlFor="min_dist">min_dist</label>
-                <input
-                  type="number"
-                  id="min_dist"
-                  step="0.01"
-                  {...register('parameters.min_dist', { valueAsNumber: true })}
-                ></input>
-                <label htmlFor="metric">Metric</label>
-                <select {...register('parameters.metric')}>
-                  <option key="cosine" value="cosine">
-                    cosine
-                  </option>
-                  <option key="euclidean" value="euclidean">
-                    euclidean
-                  </option>
-                </select>
-              </div>
-            )}
-          </details>
-          <button className="btn btn-primary btn-validation">Compute</button>
-        </form>
+            <span className="lock">
+              <FaLock /> Lock on selection
+            </span>
+            <Tooltip anchorSelect=".lock" place="top">
+              Once a vizualisation computed, you can use the square tool to select an area (or
+              remove the square).<br></br> Then you can lock the selection, and only elements in the
+              selected area will be available for annoation.
+            </Tooltip>
+          </label>
+        )}
       </div>
+
+      {!projectionTraining ? (
+        <button
+          onClick={() => setShowComputeNewProjection(true)}
+          className="btn btn-primary my-2"
+          disabled={isComputing}
+        >
+          Compute new projection
+        </button>
+      ) : (
+        <div className="col-8 d-flex justify-content-center">
+          <div className="d-flex align-items-center gap-2">
+            <PulseLoader /> Computing a projection, please wait
+          </div>
+        </div>
+      )}
+      <Modal
+        show={showComputeNewProjection}
+        onHide={() => setShowComputeNewProjection(false)}
+        size="xl"
+        id="viz-projection"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Compute a new projection</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            {' '}
+            <div>
+              <label htmlFor="features">Select features</label>
+              <button
+                type="button"
+                className="btn btn-outline-secondary d-flex align-items-center my-1"
+                onClick={() => setDisplayNewFeature(true)}
+              >
+                <FaPlusCircle size={18} className="me-1" /> Add a new feature
+              </button>
+              <Controller
+                name="features"
+                control={control}
+                defaultValue={defaultFeatures.map((e) => e.value)}
+                render={({ field: { onChange, value } }) => (
+                  <Select
+                    options={features}
+                    isMulti
+                    value={features.filter((option) => value.includes(option.value))}
+                    onChange={(selectedOptions) => {
+                      onChange(
+                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                      );
+                    }}
+                  />
+                )}
+              />
+            </div>
+            <details className="custom-details">
+              <summary>Advanced parameters</summary>
+              <label htmlFor="model">Select a model</label>
+              <select id="model" {...register('method')}>
+                <option value=""></option>
+                {Object.keys(availableProjections?.options || {}).map((e) => (
+                  <option key={e} value={e}>
+                    {e}
+                  </option>
+                ))}{' '}
+              </select>
+              {availableProjections?.options && selectedMethod == 'tsne' && (
+                <div>
+                  <label htmlFor="perplexity">perplexity</label>
+                  <input
+                    type="number"
+                    step="1"
+                    id="perplexity"
+                    {...register('parameters.perplexity', { valueAsNumber: true })}
+                  ></input>
+                  <label>Learning rate</label>
+                  <select {...register('parameters.learning_rate')}>
+                    <option key="auto" value="auto">
+                      auto
+                    </option>
+                  </select>
+                  <label>Init</label>
+                  <select {...register('parameters.init')}>
+                    <option key="random" value="random">
+                      random
+                    </option>
+                  </select>
+                </div>
+              )}
+              {availableProjections?.options && selectedMethod == 'umap' && (
+                <div>
+                  <label htmlFor="n_neighbors">n_neighbors</label>
+                  <input
+                    type="number"
+                    step="1"
+                    id="n_neighbors"
+                    {...register('parameters.n_neighbors', { valueAsNumber: true })}
+                  ></input>
+                  <label htmlFor="min_dist">min_dist</label>
+                  <input
+                    type="number"
+                    id="min_dist"
+                    step="0.01"
+                    {...register('parameters.min_dist', { valueAsNumber: true })}
+                  ></input>
+                  <label htmlFor="metric">Metric</label>
+                  <select {...register('parameters.metric')}>
+                    <option key="cosine" value="cosine">
+                      cosine
+                    </option>
+                    <option key="euclidean" value="euclidean">
+                      euclidean
+                    </option>
+                  </select>
+                </div>
+              )}
+            </details>
+            <button className="btn btn-primary btn-validation">Compute</button>
+          </form>
+        </Modal.Body>
+      </Modal>
+
       <Modal
         show={displayNewFeature}
         id="features-modal"

@@ -132,7 +132,7 @@ export const ProjectionVizSigma: FC<Props> = ({
 
   return (
     <div className={className}>
-      <div className="m-3">
+      <div>
         <label className="mx-2">Color by: </label>
         <select
           value={selectedColumn}
