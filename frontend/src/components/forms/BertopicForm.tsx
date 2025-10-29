@@ -1,19 +1,22 @@
-import { FC } from 'react';
+import { Dispatch, FC, SetStateAction } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useComputeBertopic, useStopProcesses } from '../../core/api';
 import { ComputeBertopicModel } from '../../types';
+
 interface BertopicCreationFormProps {
   projectSlug: string | null;
   availableModels: string[];
   isComputing?: boolean;
+  setStatusDisplay?: Dispatch<SetStateAction<boolean>>;
 }
 
 export const BertopicForm: FC<BertopicCreationFormProps> = ({
   projectSlug,
   availableModels,
   isComputing = false,
+  setStatusDisplay,
 }) => {
   const { computeBertopic } = useComputeBertopic(projectSlug);
   const { stopProcesses } = useStopProcesses();
@@ -34,8 +37,8 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
   });
 
   const onSubmitNewModel: SubmitHandler<ComputeBertopicModel> = async (data) => {
-    const processId = await computeBertopic(data);
-    console.log(processId);
+    await computeBertopic(data);
+    if (setStatusDisplay) setStatusDisplay(false);
   };
   return (
     <div>
@@ -179,12 +182,10 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
           </label> */}
         </details>
 
-        {!isComputing && (
-          <button className="btn btn-primary w-50">Compute Bertopic on trainset</button>
-        )}
+        {!isComputing && <button className="btn btn-primary">Compute Bertopic</button>}
       </form>
       {isComputing && (
-        <button className="btn btn-primary w-50" onClick={() => stopProcesses('all')}>
+        <button className="btn btn-primary w-100" onClick={() => stopProcesses('all')}>
           Stop computation
         </button>
       )}
