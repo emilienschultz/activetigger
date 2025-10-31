@@ -16,6 +16,7 @@ from pandas import DataFrame
 
 from activetigger.bertopic import Bertopic
 from activetigger.config import config
+from activetigger.data import Data
 from activetigger.datamodels import (
     BertModelModel,
     ElementOutModel,
@@ -67,6 +68,7 @@ class Project:
     queue: Queue
     computing: list
     path_models: Path
+    data: Data
     db_manager: DatabaseManager
     params: ProjectModel
     train: DataFrame | None
@@ -100,9 +102,6 @@ class Project:
         self.project_slug = project_slug
         self.errors = []  # TODO Move to specific class / db in the future
         self.users = Users(self.db_manager)
-        self.train = None
-        self.valid = None
-        self.test = None
 
         # load the project if exist
         if self.exists():
@@ -289,24 +288,18 @@ class Project:
         if self.params.dir is None:
             raise ValueError("No directory exists for this project")
 
-        # loading data train, test, valid
-        self.train = pd.read_parquet(self.params.dir.joinpath("train.parquet"))
-        if self.params.dir.joinpath(config.test_file).exists():
-            self.test = pd.read_parquet(self.params.dir.joinpath(config.test_file))
-        else:
-            self.test = None
-        if self.params.dir.joinpath(config.valid_file).exists():
-            self.valid = pd.read_parquet(self.params.dir.joinpath(config.valid_file))
-        else:
-            self.valid = None
+        # Tabular data management
+        self.data = Data(
+            self.params.dir.joinpath(config.train_file),
+            self.params.dir.joinpath(config.valid_file) if self.params.valid else None,
+            self.params.dir.joinpath(config.test_file) if self.params.test else None,
+        )
 
         # create specific management objets
         self.schemes = Schemes(
             project_slug,
             self.db_manager,
-            self.train,
-            self.valid,
-            self.test,
+            self.data,
         )
         self.features = Features(
             project_slug,
@@ -367,10 +360,10 @@ class Project:
             self.params.project_slug, dataset
         )
         if dataset == "test":
-            self.test = None
+            self.data.test = None
             self.params.test = False
         if dataset == "valid":
-            self.valid = None
+            self.data.valid = None
             self.params.valid = False
         self.db_manager.projects_service.update_project(
             self.params.project_slug, jsonable_encoder(self.params)
@@ -470,11 +463,11 @@ class Project:
         # write the dataset
         if dataset == "test":
             df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
-            self.test = df[["text"]]
+            self.data.test = df[["text"]]
             self.params.test = True
         else:
             df[["text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
-            self.valid = df[["text"]]
+            self.data.valid = df[["text"]]
             self.params.valid = True
 
         # update the database
@@ -609,11 +602,11 @@ class Project:
 
         # select the current state of annotation
         if next.dataset == "test":
-            if self.test is None:
+            if self.data.test is None:
                 raise ValueError("No test dataset available")
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["test"])
         elif next.dataset == "valid":
-            if self.valid is None:
+            if self.data.valid is None:
                 raise ValueError("No valid dataset available")
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["valid"])
         else:
@@ -755,12 +748,12 @@ class Project:
             limit = 1200
             context = {}
         else:
-            if self.train is None:
+            if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            limit = int(self.train.loc[element_id, "limit"])
+            limit = int(self.data.train.loc[element_id, "limit"])
             # get context
             context = dict(
-                self.train.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                self.data.train.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
             )
 
         return ElementOutModel(
@@ -790,8 +783,8 @@ class Project:
         """
         history = None
 
-        if dataset == "valid" and self.valid is not None:
-            if element_id not in self.valid.index:
+        if dataset == "valid" and self.data.valid is not None:
+            if element_id not in self.data.valid.index:
                 raise Exception("Element does not exist.")
             if scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
@@ -799,7 +792,7 @@ class Project:
                 )
             return ElementOutModel(
                 element_id=element_id,
-                text=str(self.valid.loc[element_id, "text"]),
+                text=str(self.data.valid.loc[element_id, "text"]),
                 context={},
                 selection="valid",
                 info="",
@@ -809,8 +802,8 @@ class Project:
                 history=history,
             )
 
-        if dataset == "test" and self.test is not None:
-            if element_id not in self.test.index:
+        if dataset == "test" and self.data.test is not None:
+            if element_id not in self.data.test.index:
                 raise Exception("Element does not exist.")
             if scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
@@ -818,7 +811,7 @@ class Project:
                 )
             return ElementOutModel(
                 element_id=element_id,
-                text=str(self.test.loc[element_id, "text"]),
+                text=str(self.data.test.loc[element_id, "text"]),
                 context={},
                 selection="test",
                 info="",
@@ -829,9 +822,9 @@ class Project:
             )
 
         if dataset == "train":
-            if self.train is None:
+            if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            if element_id not in self.train.index:
+            if element_id not in self.data.train.index:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
@@ -850,7 +843,7 @@ class Project:
 
             context = cast(
                 dict[str, Any],
-                self.train.loc[element_id, self.params.cols_context]  # type: ignore[index]
+                self.data.train.loc[element_id, self.params.cols_context]  # type: ignore[index]
                 .fillna("NA")
                 .astype(str)
                 .to_dict(),
@@ -858,13 +851,13 @@ class Project:
 
             return ElementOutModel(
                 element_id=element_id,
-                text=str(self.train.loc[element_id, "text"]),
+                text=str(self.data.train.loc[element_id, "text"]),
                 context=context,
                 selection="request",
                 predict=predict,
                 info="get specific",
                 frame=None,
-                limit=cast(int, self.train.loc[element_id, "limit"]),
+                limit=cast(int, self.data.train.loc[element_id, "limit"]),
                 history=history,
             )
 
@@ -913,9 +906,9 @@ class Project:
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part valid
-        if self.params.valid and (self.valid is not None):
+        if self.params.valid and (self.data.valid is not None):
             df_valid = self.schemes.get_scheme_data(scheme, kind=["valid"])
-            valid_set_n = len(self.valid)
+            valid_set_n = len(self.data.valid)
             valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
             valid_annotated_distribution = self.compute_annotations_distribution(df_valid, kind)
         else:
@@ -924,9 +917,9 @@ class Project:
             valid_annotated_distribution = None
 
         # part test
-        if self.params.test and (self.test is not None):
+        if self.params.test and (self.data.test is not None):
             df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
-            test_set_n = len(self.test)
+            test_set_n = len(self.data.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
         else:
@@ -936,7 +929,7 @@ class Project:
 
         return ProjectDescriptionModel(
             users=users,
-            train_set_n=len(self.train) if self.train is not None else 0,
+            train_set_n=len(self.data.train) if self.data.train is not None else 0,
             train_annotated_n=len(df_train.dropna(subset=["labels"])),
             train_annotated_distribution=train_annotated_distribution,
             valid_set_n=valid_set_n,
@@ -1113,9 +1106,9 @@ class Project:
         table["answer"] = self.generations.filter(table["answer"], params.filters)
 
         # join the text
-        if self.train is None:
+        if self.data.train is None:
             raise Exception("No train data available")
-        table = table.join(self.train["text"], on="index")
+        table = table.join(self.data.train["text"], on="index")
 
         return table
 
@@ -1160,7 +1153,7 @@ class Project:
 
         if not self.params.dir:
             raise ValueError("No directory for project")
-        if self.train is None:
+        if self.data.train is None:
             raise ValueError("No train data for project")
 
         # flag if needed to drop features
@@ -1183,9 +1176,9 @@ class Project:
                     self.params.dir.joinpath("data_all.parquet"),
                     columns=update.cols_context,
                 )
-            self.train.drop(columns=self.params.cols_context, inplace=True)
-            self.train = pd.concat([self.train, df.loc[self.train.index]], axis=1)
-            self.train.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.data.train.drop(columns=self.params.cols_context, inplace=True)
+            self.data.train = pd.concat([self.data.train, df.loc[self.data.train.index]], axis=1)
+            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
             self.params.cols_context = update.cols_context
             print("Context updated")
 
@@ -1196,12 +1189,12 @@ class Project:
                     self.params.dir.joinpath("data_all.parquet"),
                     columns=update.cols_text,
                 )
-            df_sub = df.loc[self.train.index]
+            df_sub = df.loc[self.data.train.index]
             df_sub["text"] = df_sub[update.cols_text].apply(
                 lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
             )
-            self.train["text"] = df_sub["text"]
-            self.train.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.data.train["text"] = df_sub["text"]
+            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
             self.params.cols_text = update.cols_text
             drop_features = True
             del df_sub
@@ -1212,12 +1205,14 @@ class Project:
             if df is None:
                 df = pd.read_parquet(
                     self.params.dir.joinpath("data_all.parquet"),
-                    columns=list(self.train.columns),
+                    columns=list(self.data.train.columns),
                 )
             # index of elements used
-            elements_index = list(self.train.index)
-            if self.train.test is not None:
-                elements_index += list(self.train.test.index)
+            elements_index = list(self.data.train.index)
+            if self.data.test is not None:
+                elements_index += list(self.data.test.index)
+            if self.data.valid is not None:
+                elements_index += list(self.data.valid.index)
 
             # take elements that are not in index
             df = df[~df.index.isin(elements_index)]
@@ -1228,11 +1223,11 @@ class Project:
             # drop na elements to avoid problems
             elements_to_add = elements_to_add[elements_to_add["text"].notna()]
 
-            self.train = pd.concat([self.train, elements_to_add])
-            self.train.to_parquet(self.params.dir.joinpath("train.parquet"))
+            self.data.train = pd.concat([self.data.train, elements_to_add])
+            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
 
             # update params
-            self.params.n_train = len(self.train)
+            self.params.n_train = len(self.data.train)
 
             # drop existing features
             drop_features = True
