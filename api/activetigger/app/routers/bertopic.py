@@ -116,20 +116,22 @@ async def export_bertopoc_to_scheme(
         test_rights(ProjectAction.ADD_ANNOTATION, current_user.username, project.name)
 
         # Retrieve topics and clusters
-        topics: list[TopicsOutModel] = project.bertopic.get_topics(topic_model_name)
+        topics = project.bertopic.get_topics(topic_model_name)
 
-        get_topic_id = lambda topic: int(topic.split("_")[0])
+        def get_topic_id(t: str) -> int:
+            return int(t.split("_")[0])
+
         topic_id_to_topic_name = {
-            get_topic_id(topic["Name"]): topic["Name"]
+            get_topic_id(topic.Name): topic.Name
             for topic in topics
-            if get_topic_id(topic["Name"]) != -1
+            if get_topic_id(topic.Name) != -1
         }
-        clusters: dict[str:int] = project.bertopic.get_clusters(topic_model_name)
+        clusters: dict[str, int] = project.bertopic.get_clusters(topic_model_name)
 
         new_scheme_name = f"topic-model-{topic_model_name}"
         project.schemes.add_scheme(
             name=new_scheme_name,
-            labels=[topic["Name"] for topic in topics if get_topic_id(topic["Name"]) != -1],
+            labels=[topic.Name for topic in topics if get_topic_id(topic.Name) != -1],
             user=current_user.username,
         )
         # Transform the annotation into the right format

@@ -11,8 +11,10 @@ from slugify import slugify
 
 from activetigger.datamodels import (
     BertopicComputing,
+    BertopicOutModelParameters,
     BertopicParamsModel,
     BertopicProjectStateModel,
+    TopicsOutModel,
 )
 from activetigger.features import Features
 from activetigger.queue import Queue
@@ -158,7 +160,7 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_topics(self, name: str) -> list[dict[str : int | str]]:
+    def get_topics(self, name: str) -> list[TopicsOutModel]:
         """
         Get topics from a BERTopic model.
         Return a list of dictionaries where a dictionary is a row in the dataframe
@@ -166,13 +168,14 @@ class Bertopic:
         """
         path_model = self.path.joinpath("runs").joinpath(name)
         if path_model.exists():
-            return pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0).to_dict(
-                orient="records"
-            )
+            df = pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0)
+            df.columns = df.columns.astype(str)
+            df_list = df.to_dict(orient="records")
+            return [TopicsOutModel(**item) for item in df_list]  # type: ignore
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_clusters(self, name: str) -> dict[str:int]:
+    def get_clusters(self, name: str) -> dict[str, int]:
         """
         Get clusters from a BERTopic model.
         Return a list of dictionaries where a dictionary is a row in the dataframe
@@ -186,22 +189,20 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_parameters(self, name: str) -> dict:
+    def get_parameters(self, name: str) -> BertopicOutModelParameters:
         """
         Get parameters file from a BERTopic model
         TODO : cache ?
         """
         path_model = self.path.joinpath("runs").joinpath(name)
-        if path_model.exists():
-            params_path = path_model.joinpath("params.json")
-            if params_path.exists():
-                with open(params_path) as f:
-                    r = json.load(f)
-                    return r
-            else:
-                raise FileNotFoundError(f"Parameters for model {name} do not exist.")
-        else:
+        if not path_model.exists():
             raise FileNotFoundError(f"Model {name} does not exist.")
+        params_path = path_model.joinpath("params.json")
+        if not params_path.exists():
+            raise FileNotFoundError(f"Parameters for model {name} do not exist.")
+        with open(params_path) as f:
+            r = json.load(f)
+            return BertopicOutModelParameters(**r)
 
     def get_projection(self, name: str) -> dict[str, list | dict]:
         """
