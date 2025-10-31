@@ -85,15 +85,23 @@ export const StatusNotch: FC<{
               ? ` ${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
               : ' no GPU available'}
           </span>
+
           {/* Display GPU memory 1 version (computer) */}
           {currentComputation ||
             (true && (
               <>
                 <span id="computing-span" style={{ display: 'flex', alignItems: 'center' }}>
-                  <a id="stop-button" onClick={() => stopProcesses('all')}>
+                  <div className="spinner-border spinner-border-sm text-warning" role="status">
+                    <span className="visually-hidden">Computing</span>
+                  </div>
+                  <div>Computing</div>
+                  <a
+                    id="stop-button"
+                    onClick={() => stopProcesses('all')}
+                    style={{ paddingBottom: '1.5px' }}
+                  >
                     <FaStopCircle style={{ color: 'red' }} />
                   </a>
-                  <div>Computing</div>
                 </span>
                 <Tooltip anchorSelect="#stop-button" place="top">
                   Stop the current process
