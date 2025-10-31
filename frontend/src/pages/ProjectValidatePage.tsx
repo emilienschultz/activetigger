@@ -135,6 +135,7 @@ export const ProjectValidatePage: FC = () => {
                       quickModelInformations.scores as unknown as Record<string, MLStatisticsModel>
                     }
                     modelName={currentQuickModelName || ''}
+                    skip={['internalvalid_scores']}
                   />
                 )}
               </Tab>
@@ -192,6 +193,7 @@ export const ProjectValidatePage: FC = () => {
                         bertModelInformations.scores as unknown as Record<string, MLStatisticsModel>
                       }
                       modelName={currentQuickModelName || ''}
+                      skip={['internalvalid_scores']}
                     />
                   )}
 
