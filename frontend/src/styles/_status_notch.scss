@@ -21,16 +21,8 @@
 }
 
 #computing-span{
-    a{
-        padding-right: 3px;
-    }
     div{
-        font-weight: bold;
-        background: linear-gradient(90deg, $secondary, $primary, $secondary) -100%/ 200%;
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        animation: shimmer 1s linear infinite
+        padding: 0px 3px;
     }
 }
 @keyframes shimmer { to { background-position: 100% } }
