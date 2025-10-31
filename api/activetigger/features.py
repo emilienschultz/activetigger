@@ -243,16 +243,13 @@ class Features:
         """
         Delete feature
         """
-        if name not in self.map:
+        if not self.exists(name):
             raise Exception("Feature doesn't exist")
 
-        if self.projects_service.get_feature(self.project_slug, name) is None:
-            raise Exception("Feature doesn't exist in database")
-
-        col = self.get([name])
-
+        col = self.map[name]
         # read data, delete columns and save
         content = pd.read_parquet(self.path_features)
+
         content[[i for i in content.columns if i not in col]].to_parquet(self.path_features)
         del content
 

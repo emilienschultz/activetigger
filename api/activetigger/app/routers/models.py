@@ -155,9 +155,9 @@ async def predict(
         # managing the perimeter of the prediction
         if dataset == "annotable":
             datasets = ["train"]
-            if project.valid is not None:
+            if project.data.valid is not None:
                 datasets.append("valid")
-            if project.test is not None:
+            if project.data.test is not None:
                 datasets.append("test")
         elif dataset == "external":
             if kind != "bert":

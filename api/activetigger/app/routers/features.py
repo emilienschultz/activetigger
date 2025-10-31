@@ -48,18 +48,18 @@ async def post_embeddings(
 
     try:
         # gather all text data to compute features on
-        if project.train is None:
+        if project.data.train is None:
             raise HTTPException(
                 status_code=400, detail="No training data available to compute features."
             )
-        series_list = [project.train["text"]]
-        if project.valid is not None:
-            series_list.append(project.valid["text"])
-        if project.test is not None:
-            series_list.append(project.test["text"])
+        series_list = [project.data.train["text"]]
+        if project.data.valid is not None:
+            series_list.append(project.data.valid["text"])
+        if project.data.test is not None:
+            series_list.append(project.data.test["text"])
         df = pd.concat(series_list)
 
-        print("Data to compute features on", df.shape, project.valid, project.test)
+        print("Data to compute features on", df.shape, project.data.valid, project.data.test)
 
         # compute features
         project.features.compute(

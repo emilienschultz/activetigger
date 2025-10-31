@@ -6,6 +6,7 @@ import pandas as pd
 from pandas import DataFrame
 from sklearn.metrics import cohen_kappa_score  # type: ignore
 
+from activetigger.data import Data
 from activetigger.datamodels import (
     AnnotationsDataModel,
     CodebookModel,
@@ -39,9 +40,7 @@ class Schemes:
         self,
         project_slug: str,
         db_manager: DatabaseManager,
-        train: DataFrame,
-        valid: DataFrame | None = None,
-        test: DataFrame | None = None,
+        data: Data,
     ) -> None:
         """
         Init empty
@@ -49,9 +48,7 @@ class Schemes:
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
         self.db_manager = db_manager
-        self.train = train
-        self.valid = valid
-        self.test = test
+        self.data = data
 
         available = self.available()
 
@@ -93,14 +90,14 @@ class Schemes:
         list_texts = []
         for k in kind:
             if k == "test":
-                if self.test is not None:
-                    list_texts.append(self.test[["text"]])
+                if self.data.test is not None:
+                    list_texts.append(self.data.test[["text"]])
             elif k == "valid":
-                if self.valid is not None:
-                    list_texts.append(self.valid[["text"]])
+                if self.data.valid is not None:
+                    list_texts.append(self.data.valid[["text"]])
             elif k == "train":
-                if self.train is not None:
-                    list_texts.append(self.train[["text"]])
+                if self.data.train is not None:
+                    list_texts.append(self.data.train[["text"]])
         texts = pd.concat(list_texts)
         df = df.join(texts, rsuffix="_content", how="right")
         df["id"] = df.index
@@ -133,7 +130,7 @@ class Schemes:
         )  # filter for disagreement
         users = list(df.columns)
         df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
-        df = df.join(self.train[["text"]], how="left")  # add the text
+        df = df.join(self.data.train[["text"]], how="left")  # add the text
 
         df["current_label"] = current_labels
         df = df[f_multi].reset_index()
@@ -191,10 +188,10 @@ class Schemes:
         """
         if dataset == "test":
             # TODO: I think it should be tested way before now
-            if self.test is None:
+            if self.data.test is None:
                 raise Exception("Test dataset is not defined")
-            return len(self.test)
-        return len(self.train)
+            return len(self.data.test)
+        return len(self.data.train)
 
     def get_sample(
         self,
@@ -615,7 +612,7 @@ class Schemes:
         col = df[annotationsdata.col_label]
 
         # only elements existing in the dataset
-        common_id = [i for i in col.index if i in self.train.index]
+        common_id = [i for i in col.index if i in self.data.train.index]
 
         # if needed, create the labels in the scheme
         for i in col.unique():
