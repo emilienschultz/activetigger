@@ -612,8 +612,6 @@ class Project:
         else:
             df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["train"])
 
-        print("DATASET SIZE", len(df))
-
         # the filter for the sample
         if next.sample == "untagged":
             f = df["labels"].isna()
@@ -1434,11 +1432,11 @@ class Project:
                         raise Exception(str(error))
                     results = future.result()
 
-                    # case of predict_train : transform to feature
+                    # case of predict on annotable : transform to feature
                     if (
                         results is not None
                         and results.path
-                        and "predict_train.parquet" in results.path
+                        and "predict_annotable.parquet" in results.path
                     ):
                         add_predictions["predict_" + prediction.model_name] = results.path
                     self.languagemodels.add(prediction)
@@ -1587,7 +1585,7 @@ class Project:
             try:
                 # load the prediction probabilities minus one
                 df = pd.read_parquet(add_predictions[f])
-                df = df.drop(columns=["entropy", "prediction"])
+                df = df.drop(columns=["entropy", "prediction", "dataset", "id", "label"])
                 df = df[df.columns[0:-1]]
                 name = f.replace("__", "_")  # avoid __ in the name for features
                 # if the feature already exists, delete it first
