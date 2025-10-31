@@ -39,60 +39,62 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
 
   return (
     <div className="bg-primary" id="header">
-      <div id="logo-container">
-        <Link className="navbar-brand" to="/">
-          <img
-            src={logo}
-            alt="ActiveTigger"
-            className="me-2"
-            style={{ width: '50px', height: '50px' }}
-          />
-          Active Tigger
-        </Link>
-      </div>
-      <nav className="navbar navbar-dark navbar-expand-lg bg-primary">
-        <div className="container">
-          <button
-            className="navbar-toggler"
-            type="button"
-            aria-controls="navbarSupportedContent"
-            aria-expanded={expanded}
-            aria-label="Toggle navigation"
-            onClick={() => setExpanded((e) => !e)}
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-          <div
-            className={cx('navbar-collapse ', expanded ? 'expanded' : 'collapse')}
-            id="navbarSupportedContent"
-          >
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex">
-              {PAGES.map(({ id, label, href }) => (
-                <li key={id} className="nav-item">
-                  <Link
-                    className={cx('nav-link', currentPage === id && 'active')}
-                    aria-current={currentPage === id ? 'page' : undefined}
-                    to={href}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
-              <li className="nav-item" key="docs">
-                <a
-                  className={cx('nav-link', currentPage === 'docs' && 'active')}
-                  href={DOCUMENTATION_LINK}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-current={currentPage === 'docs' ? 'page' : undefined}
-                >
-                  Documentation
-                </a>
-              </li>
-            </ul>
-          </div>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div id="logo-container">
+          <Link className="navbar-brand" to="/">
+            <img
+              src={logo}
+              alt="ActiveTigger"
+              className="me-2"
+              style={{ width: '50px', height: '50px' }}
+            />
+            Active Tigger
+          </Link>
         </div>
-      </nav>
+        <nav className="navbar navbar-dark navbar-expand-lg bg-primary">
+          <div className="container">
+            <button
+              className="navbar-toggler"
+              type="button"
+              aria-controls="navbarSupportedContent"
+              aria-expanded={expanded}
+              aria-label="Toggle navigation"
+              onClick={() => setExpanded((e) => !e)}
+            >
+              <span className="navbar-toggler-icon"></span>
+            </button>
+            <div
+              className={cx('navbar-collapse ', expanded ? 'expanded' : 'collapse')}
+              id="navbarSupportedContent"
+            >
+              <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex">
+                {PAGES.map(({ id, label, href }) => (
+                  <li key={id} className="nav-item">
+                    <Link
+                      className={cx('nav-link', currentPage === id && 'active')}
+                      aria-current={currentPage === id ? 'page' : undefined}
+                      to={href}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+                <li className="nav-item" key="docs">
+                  <a
+                    className={cx('nav-link', currentPage === 'docs' && 'active')}
+                    href={DOCUMENTATION_LINK}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-current={currentPage === 'docs' ? 'page' : undefined}
+                  >
+                    Documentation
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+      </div>
 
       {authenticatedUser ? (
         <div id="log-container">
