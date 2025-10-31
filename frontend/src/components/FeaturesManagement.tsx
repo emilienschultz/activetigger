@@ -11,7 +11,7 @@ export const FeaturesManagement: FC = () => {
 
   // get element from the state
   const {
-    appContext: { currentProject: project },
+    appContext: { currentProject: project, isComputing },
   } = useAppContext();
 
   // API calls
@@ -63,7 +63,11 @@ export const FeaturesManagement: FC = () => {
           </div>
         ))}
         {/* // create new feature */}
-        <button onClick={() => setShowMenu(!showMenu)} className="btn btn-primary w-25 mt-3">
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="btn btn-primary w-25 mt-3"
+          disabled={isComputing}
+        >
           Create a new feature
         </button>
         {showMenu && (

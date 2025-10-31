@@ -31,7 +31,7 @@ interface BertModelManagementProps {
   isComputing: boolean;
   project: ProjectStateModel | null;
   currentScheme: string | null;
-  availableBertModels: ModelDescriptionModel[];
+  availableBertModels: { [key: string]: ModelDescriptionModel };
 }
 
 export const BertModelManagement: FC<BertModelManagementProps> = ({
@@ -78,13 +78,15 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
 
   const [displayNewBertModel, setDisplayNewBertModel] = useState(false);
 
+  console.log('TEST', availableBertModels);
+
   return (
     <div>
       <div className="d-flex align-items-center">
         <Select
-          options={Object.values(availableBertModels || {}).map((e) => ({
-            value: e.name,
-            label: e.name,
+          options={Object.keys(availableBertModels || {}).map((e) => ({
+            value: e,
+            label: e,
           }))}
           value={currentBertModel ? { value: currentBertModel, label: currentBertModel } : null}
           onChange={(selectedOption) => {
@@ -207,6 +209,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
             currentScheme={currentScheme || null}
             project={project || null}
             isComputing={isComputing}
+            setStatusDisplay={setDisplayNewBertModel}
           />
         </Modal.Body>
       </Modal>

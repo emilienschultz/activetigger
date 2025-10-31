@@ -158,7 +158,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
       return;
     }
     await trainQuickModel(formData);
-    //    setShowForm(false);
+    setDisplayNewModel(false);
   };
 
   // build default features selected

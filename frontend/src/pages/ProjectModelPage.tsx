@@ -20,25 +20,9 @@ export const ProjectModelPage: FC = () => {
 
   const [activeKey, setActiveKey] = useState<string>('quick');
 
-  // available models
-  // const availableBertModels = useMemo(() => {
-  //   if (currentScheme && project?.languagemodels?.available?.[currentScheme]) {
-  //     return Object.keys(project.languagemodels.available[currentScheme]);
-  //   }
-  //   return [];
-  // }, [project, currentScheme]);
   const baseQuickModels = project?.quickmodel.options ? project?.quickmodel.options : {};
 
-  const availableBertModels = useMemo(
-    () =>
-      project?.languagemodels.available
-        ? (project?.languagemodels.available as unknown as {
-            [key: string]: ModelDescriptionModel[];
-          })
-        : {},
-    [project?.languagemodels.available],
-  );
-
+  const availableBertModels = currentScheme && project?.languagemodels.available[currentScheme];
   const availableQuickModels = useMemo(
     () =>
       project?.quickmodel.available
@@ -56,6 +40,8 @@ export const ProjectModelPage: FC = () => {
       ? project.schemes.available[currentScheme].kind || 'multiclass'
       : 'multiclass',
   );
+
+  console.log(availableBertModels);
 
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="model">
@@ -90,7 +76,10 @@ export const ProjectModelPage: FC = () => {
                 <BertModelManagement
                   projectSlug={projectSlug || null}
                   currentScheme={currentScheme || null}
-                  availableBertModels={availableBertModels[currentScheme || ''] || []}
+                  availableBertModels={
+                    (availableBertModels as unknown as { [key: string]: ModelDescriptionModel }) ||
+                    {}
+                  }
                   isComputing={isComputing}
                   project={project || null}
                 />

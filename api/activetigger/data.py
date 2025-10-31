@@ -7,6 +7,10 @@ from pandas import DataFrame
 class Data:
     """
     Class to manage data
+
+    TODO :
+    - move update methods here
+    - add methodes for data operations rather than using directly the DataFrame
     """
 
     train: DataFrame
