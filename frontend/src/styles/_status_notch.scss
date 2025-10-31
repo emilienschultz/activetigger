@@ -1,0 +1,36 @@
+#status-notch{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-top:0.5px black solid;
+    background-color: $quaternary;
+    display: flex;
+    flex-wrap: nowrap;
+    // height: 150px;
+    span{
+        font-size: smaller;
+        border-right: 0.5px black solid;
+        padding-right: 10px;
+        margin-right: 5px;
+        margin-left:10px;
+        margin-bottom: 3px;
+        margin-top: 3px;
+        // height: 100px;
+    }
+}
+
+#computing-span{
+    a{
+        padding-right: 3px;
+    }
+    div{
+        font-weight: bold;
+        background: linear-gradient(90deg, $secondary, $primary, $secondary) -100%/ 200%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: shimmer 1s linear infinite
+    }
+}
+@keyframes shimmer { to { background-position: 100% } }

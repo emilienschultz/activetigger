@@ -1,0 +1,16 @@
+#header{
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    #logo-container{
+        background-color: red;
+    }
+    #log-container{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items:center
+    }
+}
