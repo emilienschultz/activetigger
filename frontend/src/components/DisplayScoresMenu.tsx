@@ -10,12 +10,14 @@ interface DisplayScoresMenuPropos {
   scores: Scores;
   modelName?: string;
   displayTitle?: boolean;
+  skip?: string[];
 }
 
 export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   scores,
   modelName,
   displayTitle,
+  skip,
 }) => {
   const keys = Object.keys(scores);
   const [currentScore, setCurrentScore] = useState<string>(keys[0]);
@@ -44,6 +46,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
         >
           {Object.entries(scores)
             .filter(([_, value]) => value != null)
+            .filter(([key]) => !skip?.includes(key))
             .map(([key]) => (
               <option key={key} value={key}>
                 {key}
