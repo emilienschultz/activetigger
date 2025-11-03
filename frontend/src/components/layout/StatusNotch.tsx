@@ -76,7 +76,7 @@ export const StatusNotch: FC<{
           </span>
           {/* Display number of process running 1 version (computer) */}
           <span className="d-none d-md-inline">
-            Number of processes running: {Object.values(queueState || []).length}
+            Processes running: {Object.values(queueState || []).length}
           </span>
           {/* Display GPU memory 1 version (computer) */}
           <span className="d-none d-md-inline">
@@ -87,27 +87,26 @@ export const StatusNotch: FC<{
           </span>
 
           {/* Display GPU memory 1 version (computer) */}
-          {currentComputation ||
-            (true && (
-              <>
-                <span id="computing-span" style={{ display: 'flex', alignItems: 'center' }}>
-                  <div className="spinner-border spinner-border-sm text-warning" role="status">
-                    <span className="visually-hidden">Computing</span>
-                  </div>
-                  <div>Computing</div>
-                  <a
-                    id="stop-button"
-                    onClick={() => stopProcesses('all')}
-                    style={{ paddingBottom: '1.5px' }}
-                  >
-                    <FaStopCircle style={{ color: 'red' }} />
-                  </a>
-                </span>
-                <Tooltip anchorSelect="#stop-button" place="top">
-                  Stop the current process
-                </Tooltip>
-              </>
-            ))}
+          {currentComputation && (
+            <>
+              <span id="computing-span" style={{ display: 'flex', alignItems: 'center' }}>
+                <div className="spinner-border spinner-border-sm text-warning" role="status">
+                  <span className="visually-hidden">Computing</span>
+                </div>
+                <div>Computing</div>
+                <a
+                  id="stop-button"
+                  onClick={() => stopProcesses('all')}
+                  style={{ paddingBottom: '1.5px' }}
+                >
+                  <FaStopCircle style={{ color: 'red' }} />
+                </a>
+              </span>
+              <Tooltip anchorSelect="#stop-button" place="top">
+                Stop the current process
+              </Tooltip>
+            </>
+          )}
           {/* Error pop up */}
           {projectState?.errors && projectState?.errors.length > 0 && (
             <ModalErrors errors={errors} />
