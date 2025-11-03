@@ -4,6 +4,7 @@ import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 import { PageLayout } from './PageLayout';
 import { ProjectActionsSidebar } from './ProjectActionsSideBar';
+import { StatusNotch } from './StatusNotch';
 
 export type PossibleProjectActions =
   | 'tag'
@@ -40,7 +41,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
 
   return (
     <PageLayout currentPage="projects" projectName={projectName || null}>
-      <div className="container-fluid">
+      <div className="container-fluid" style={{ paddingBottom: '30px' }}>
         <div className="row">
           <div className="col-1 col-md-3 col-lg-2">
             <ProjectActionsSidebar
@@ -55,6 +56,12 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
           <div className="col-11 col-md-9 col-lg-10">{children}</div>
         </div>
       </div>
+      <StatusNotch
+        projectState={project || null}
+        currentUser={authenticatedUser.username}
+        currentMode={phase}
+        developmentMode={developmentMode}
+      />
     </PageLayout>
   );
 };

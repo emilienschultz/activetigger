@@ -1,7 +1,5 @@
 import cx from 'classnames';
 import { FC, useState } from 'react';
-import { FaStopCircle } from 'react-icons/fa';
-import { FiRefreshCcw } from 'react-icons/fi';
 import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
@@ -21,7 +19,6 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
   const { authenticatedUser, logout } = useAuth();
   const currentUser = authenticatedUser?.username;
   const navigate = useNavigate();
-  const { stopProcesses } = useStopProcesses();
 
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -33,18 +30,6 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
   const actionClearHistory = () => {
     setAppContext((prev) => ({ ...prev, history: [] }));
   };
-
-  // display the number of current processes on the server
-  const { queueState, gpu } = useGetServer(currentProject || null);
-
-  // test if computation is currently undergoing
-  const currentComputation =
-    currentProject && currentUser && currentProject.languagemodels
-      ? currentUser in currentProject.languagemodels.training ||
-        currentUser in currentProject.projections.training ||
-        currentUser in currentProject.bertopic.training ||
-        Object.values(currentProject.features.training).length > 0
-      : false;
 
   const PAGES: { id: string; label: string; href: string }[] =
     displayConfig.interfaceType === 'default'
@@ -109,44 +94,9 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </a>
               </li>
             </ul>
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0 d-flex">
-              <li className="m-1">
-                <div
-                  className="nav-item badge text-bg-secondary d-md-inline"
-                  title="Number of processes running"
-                >
-                  <span className="d-none d-md-inline">run </span>
-                  {Object.values(queueState || []).length}
-                </div>
-              </li>
-              <li className="m-1">
-                <div className="badge text-bg-secondary d-md-inline" title="Used/Total">
-                  <span className="d-none d-md-inline">
-                    gpu
-                    {gpu
-                      ? ` ${(gpu['total_memory'] - gpu['available_memory']).toFixed(1)} / ${gpu['total_memory']} Go`
-                      : ' no'}
-                  </span>
-                </div>
-              </li>
-            </ul>
-
             {authenticatedUser ? (
               <ul className="d-flex navbar-nav me-auto mb-2 mb-lg-0 navbar-text navbar-text-margins align-items-center">
-                {currentComputation && (
-                  <li className="d-flex nav-item">
-                    <button
-                      className="btn btn-primary  stopprocess"
-                      onClick={() => stopProcesses('all')}
-                    >
-                      <FaStopCircle style={{ color: 'red' }} />
-                    </button>
-                    <Tooltip anchorSelect=".stopprocess" place="top">
-                      Stop the current process
-                    </Tooltip>
-                  </li>
-                )}
-                <li className="d-flex nav-item">
+                {/* <li className="d-flex nav-item">
                   <button
                     className="btn btn-primary clearhistory mx-1"
                     onClick={actionClearHistory}
@@ -157,7 +107,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                   <Tooltip anchorSelect=".clearhistory" place="top">
                     Clear the history
                   </Tooltip>
-                </li>
+                </li> */}
                 <li className="nav-item">
                   <span>Logged as {authenticatedUser.username}</span>
                 </li>

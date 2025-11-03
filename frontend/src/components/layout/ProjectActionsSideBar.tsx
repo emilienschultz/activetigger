@@ -12,8 +12,9 @@ import { useGetServer } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useNotifications } from '../../core/notifications';
 import { ProjectStateModel } from '../../types';
-import { ModalErrors } from '../ModalError';
 import { PossibleProjectActions } from './ProjectPageLayout';
+
+import { useAppContext } from '../../core/context';
 
 /* define a component for project action bar 
 with the project & the current action*/
@@ -38,16 +39,6 @@ export const ProjectActionsSidebar: FC<{
   // 2 types of menu
   const onlyAnnotator = authenticatedUser?.status === 'annotator';
 
-  // test if computation is currently undergoing
-  const currentComputation =
-    projectState && projectState.languagemodels
-      ? currentUser in projectState.languagemodels.training ||
-        currentUser in projectState.quickmodel.training ||
-        currentUser in projectState.projections.training ||
-        currentUser in projectState.bertopic.training ||
-        Object.values(projectState.features.training).length > 0
-      : false;
-
   // display the number of current processes on the server
   const { disk } = useGetServer(projectState || null);
 
@@ -59,8 +50,6 @@ export const ProjectActionsSidebar: FC<{
       type: 'warning',
     });
   }
-
-  const errors = projectState?.errors.map((arr) => arr.join(' - ')) || [];
 
   return (
     <div className={`project-sidebar d-flex flex-column flex-shrink-0 bg-light`}>
@@ -179,32 +168,6 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1 sidemenulabel">Settings</span>
             </Link>
           </li>
-          <li className="nav-item ">
-            <div className="nav-link">
-              <div className="badge text-bg-secondary" title="Memory">
-                <span className="d-none d-md-inline">
-                  {projectState?.memory ? `${projectState.memory.toFixed(1)} Mo` : ''}
-                </span>
-              </div>
-
-              <br></br>
-              {projectState?.errors && projectState?.errors.length > 0 && (
-                <ModalErrors errors={errors} />
-              )}
-            </div>
-          </li>
-          {currentComputation && (
-            <li className="nav-item ">
-              <div className="nav-link">
-                <div className="d-flex justify-content-left align-items-center">
-                  <div className="spinner-border spinner-border-sm text-warning" role="status">
-                    <span className="visually-hidden">Computing</span>
-                  </div>
-                  <span className="computing d-none d-md-inline">Computing</span>
-                </div>
-              </div>
-            </li>
-          )}
         </ul>
       )}
       {onlyAnnotator && (
