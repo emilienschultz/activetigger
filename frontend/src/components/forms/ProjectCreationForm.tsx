@@ -235,7 +235,7 @@ export const ProjectCreationForm: FC = () => {
           <a href="./dataset_test.csv" download>
             Sample dataset from "Detecting Stance in Media On Global Warming"
           </a>
-          ), then indicate the columns for index, text and optionaly existing labels
+          ), then indicate the columns for index, text and optionally existing labels
         </div>
         <div className="alert alert-warning" role="alert">
           ⚠️ Both project name and index will be modified for URL compatibility (slugify). For
