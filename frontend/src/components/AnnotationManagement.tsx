@@ -428,7 +428,7 @@ export const AnnotationManagement: FC = () => {
 
       <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
         <Modal.Header closeButton>
-          <Modal.Title>Add a commentary to the label</Modal.Title>
+          <Modal.Title>Add a comment with your annotation</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <input
