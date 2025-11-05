@@ -317,7 +317,6 @@ class UmapModel(BaseModel):
     n_neighbors: int
     n_components: int
     min_dist: float
-    metric: str
 
 
 class TsneModel(BaseModel):
