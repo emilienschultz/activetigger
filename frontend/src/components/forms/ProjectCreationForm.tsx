@@ -199,7 +199,7 @@ export const ProjectCreationForm: FC = () => {
             if (status === 'existing') {
               clearInterval(intervalId);
               addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
-              navigate(`/projects/${slug}?fromProjectPage=true`);
+              navigate(`/projects/${slug}`);
               return;
             }
             // set a timeout just in case
@@ -547,7 +547,7 @@ export const ProjectCreationForm: FC = () => {
                       </label>
 
                       <label className="form-label" htmlFor="cols_stratify">
-                        Columns to stratify
+                        Column(s) used for stratification
                         <a className="stratify">
                           <HiOutlineQuestionMarkCircle />
                         </a>
@@ -576,13 +576,7 @@ export const ProjectCreationForm: FC = () => {
                       />
 
                       <label className="form-label" htmlFor="clear_test">
-                        Empty testset{' '}
-                        <a className="emptytestset">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".emptytestset" place="top">
-                          Drop labels for the testset
-                        </Tooltip>
+                        Drop labels for the testset{' '}
                         <input
                           id="clear_test"
                           type="checkbox"
