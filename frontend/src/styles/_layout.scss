@@ -143,3 +143,17 @@ table{
   color: #9ca3af; // Tailwind's neutral gray tone (lighter)
   margin-bottom: -5px;
 }
+
+#tag-parameters-div{
+  width: 100%;
+  display: flex;
+  align-items: start;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+
+  .parameter-div{
+    min-width: 150px;
+    margin: 3px 7px;
+    flex: 1 1 200px
+  }
+}

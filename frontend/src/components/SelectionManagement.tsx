@@ -1,6 +1,7 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { Tooltip } from 'react-tooltip';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { useGetQuickModel } from '../core/api';
 import { useAppContext } from '../core/context';
 
@@ -81,8 +82,8 @@ export const SelectionManagement: FC = () => {
 
   return (
     <div className="w-100">
-      <div className="d-flex align-items-center">
-        <div className="mx-2">
+      <div id="tag-parameters-div">
+        <div className="parameter-div">
           <label className="form-label label-small-gray">Selection</label>
           <select
             className="form-select"
@@ -121,7 +122,7 @@ export const SelectionManagement: FC = () => {
             )
           }
         </div>
-        <div className="mx-2">
+        <div className="parameter-div">
           <label className="form-label label-small-gray">Dataset</label>
           <select className="form-select" value={phase} onChange={changeDataSet}>
             <option value="train">train</option>
@@ -129,17 +130,19 @@ export const SelectionManagement: FC = () => {
             {isTest && <option value="test">test</option>}
           </select>
         </div>
-        <div className="mx-2 w-25">
+        <div className="parameter-div">
           <label className="form-label label-small-gray">Tagged</label>
           <select className="form-select" onChange={changeSample} value={selectionConfig.sample}>
             {availableSamples.map((e, i) => (
               <option key={i}>{e}</option>
             ))}{' '}
           </select>
-          {
-            // label selection for tagged elemnts
-            selectionConfig.sample == 'tagged' && (
-              <>
+        </div>
+        {
+          // label selection for tagged elemnts
+          selectionConfig.sample == 'tagged' && (
+            <>
+              <div className="parameter-div">
                 <label className="form-label label-small-gray">
                   On label
                   <select
@@ -158,6 +161,8 @@ export const SelectionManagement: FC = () => {
                     ))}{' '}
                   </select>
                 </label>
+              </div>
+              <div className="parameter-div">
                 <label htmlFor="select_user" className="form-label label-small-gray">
                   By user
                   <select
@@ -179,17 +184,18 @@ export const SelectionManagement: FC = () => {
                     ))}
                   </select>
                 </label>{' '}
-              </>
-            )
-          }
-        </div>
+              </div>
+            </>
+          )
+        }
 
         {
           // input validated on deselect
         }
-        <div className="w-50">
+        <div id="regex" className="parameter-div">
           <label htmlFor="select_regex" className="form-label label-small-gray">
             Filter
+            <HiOutlineQuestionMarkCircle id="regex-tooltip" />
           </label>
           <input
             className="form-control searchhelp"
@@ -204,7 +210,7 @@ export const SelectionManagement: FC = () => {
               }));
             }}
           />
-          <Tooltip anchorSelect=".searchhelp" place="top">
+          <Tooltip anchorSelect="#regex-tooltip">
             Use CONTEXT= or QUERY= for specific requests
           </Tooltip>
         </div>
