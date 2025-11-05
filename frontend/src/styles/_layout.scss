@@ -157,3 +157,38 @@ table{
     flex: 1 1 200px
   }
 }
+#header{
+  $header-height: 50px;
+  #navbarSupportedContent{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: $header-height;
+  }
+
+  button.navbar-toggler{
+    width: 100px;
+    margin-right: 20px;
+    align-self: center;
+  }
+  
+  @media (max-width: 992px){
+    #navbarSupportedContent{
+      // when switching from large to medium 
+      height: 200px;
+      justify-content: space-around;
+    }
+  }
+  
+  #logo-container{
+    height: $header-height;
+    margin-right: 0px;
+  }
+
+  #log-container{
+    height: $header-height;
+    button{
+      color: rgba(256, 256, 256, 0.9);
+    }
+  }
+}
