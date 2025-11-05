@@ -398,7 +398,7 @@ export const AnnotationManagement: FC = () => {
         <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
           <FaPencilAlt />
           <Tooltip anchorSelect=".addcomment" place="top">
-            Add a commentary
+            Add a comment
           </Tooltip>
         </button>
 
