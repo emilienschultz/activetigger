@@ -576,7 +576,7 @@ export const ProjectCreationForm: FC = () => {
                       />
 
                       <label className="form-label" htmlFor="clear_test">
-                        Drop labels for the testset{' '}
+                        Drop annotations for the testset{' '}
                         <input
                           id="clear_test"
                           type="checkbox"
