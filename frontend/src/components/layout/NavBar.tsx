@@ -4,7 +4,6 @@ import { IoMdLogIn, IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import logo from '../../assets/at.png';
-import { useGetServer, useStopProcesses } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 
@@ -24,12 +23,8 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
 
   // function to clear history
   const {
-    appContext: { history, currentProject, displayConfig },
-    setAppContext,
+    appContext: { displayConfig },
   } = useAppContext();
-  const actionClearHistory = () => {
-    setAppContext((prev) => ({ ...prev, history: [] }));
-  };
 
   const PAGES: { id: string; label: string; href: string }[] =
     displayConfig.interfaceType === 'default'
