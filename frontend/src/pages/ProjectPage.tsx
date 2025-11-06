@@ -77,7 +77,10 @@ export const ProjectPage: FC = () => {
           scheme.
         </div>
       )}
-
+      <details className="custom-details p-1">
+        <summary>Guidelines</summary>
+        <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
+      </details>
       <LabelsManagement
         projectSlug={projectSlug}
         currentScheme={currentScheme || null}
@@ -86,10 +89,6 @@ export const ProjectPage: FC = () => {
         setAppContext={setAppContext}
         deactivateModifications={displayConfig.interfaceType === 'annotator'}
       />
-      <details className="custom-details p-1">
-        <summary>Guidelines</summary>
-        <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
-      </details>
     </ProjectPageLayout>
   );
 };

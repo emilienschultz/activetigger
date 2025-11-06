@@ -45,7 +45,7 @@ export const ProjectExplorePage: FC = () => {
                 />
               </Tab>
               <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
-                <div className="explanations">Explore your data as projection</div>
+                <div className="explanations">Explore your data as a projection</div>
                 {phase != 'test' && (
                   <ProjectionManagement
                     projectName={projectName || null}
