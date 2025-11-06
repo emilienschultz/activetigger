@@ -54,11 +54,6 @@ export const ProjectExplorePage: FC = () => {
                     currentElementId={undefined}
                   />
                 )}
-                {phase == 'test' && (
-                  <div className="alert alert-warning mt-3">
-                    Test mode activated - vizualisation disabled
-                  </div>
-                )}
               </Tab>
               <Tab eventKey="bertopic" title="Topic model">
                 <div className="explanations">

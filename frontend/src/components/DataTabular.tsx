@@ -245,9 +245,11 @@ export const DataTabular: FC<DataTabularModel> = ({
                   }}
                   value={page || '1'}
                 >
-                  {range(1, totalElement > 0 ? Math.ceil(totalElement / pageSize) : 1).map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
+                  {range(1, totalElement > 0 ? Math.ceil(totalElement / pageSize) + 1 : 1).map(
+                    (v) => (
+                      <option key={v}>{v}</option>
+                    ),
+                  )}
                 </select>
               </div>
               <div className="d-flex align-items-center justify-content-between mb-3">
