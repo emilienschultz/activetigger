@@ -190,7 +190,9 @@ $quaternary: #faf9f8;
 }
 
 .text-out-context{
-  color:#909090;
+  color:$secondary;
+  opacity: 0.7;
+  font-style: italic;
 }
 
 .table-auth {
