@@ -100,7 +100,7 @@ export const ProjectExportPage: FC = () => {
                       if (currentScheme) getAnnotationsFile(currentScheme, format, 'train');
                     }}
                   >
-                    Train tags
+                    Tags: train
                   </button>
                   {project?.params.valid && (
                     <button
@@ -109,7 +109,7 @@ export const ProjectExportPage: FC = () => {
                         if (currentScheme) getAnnotationsFile(currentScheme, format, 'valid');
                       }}
                     >
-                      Validation tags
+                      Tags: validation
                     </button>
                   )}
                   {project?.params.test && (
@@ -119,7 +119,7 @@ export const ProjectExportPage: FC = () => {
                         if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
                       }}
                     >
-                      Test tags
+                      Tags: test
                     </button>
                   )}
                 </div>
@@ -130,7 +130,7 @@ export const ProjectExportPage: FC = () => {
                       if (currentScheme) getAnnotationsFile('all', format, 'train');
                     }}
                   >
-                    All schemes tags
+                    Tags: all schemes
                   </button>
                 </div>
               </Tab>

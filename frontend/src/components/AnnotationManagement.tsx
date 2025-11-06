@@ -263,22 +263,22 @@ export const AnnotationManagement: FC = () => {
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
             <div className="text-center my-2">
-              <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
-                <span>
-                  {statistics ? (
-                    <span className="badge currentstatistics ms-2">
-                      <span className="d-none d-md-inline">Annotated : </span>
-                      {statisticsDataset(phase)} ;{' '}
-                      <span className="d-none d-md-inline">Selected : </span>
-                      {nSample || ''}
-                      {/* <Tooltip anchorSelect=".currentstatistics" place="top">
+              {statistics ? (
+                <span className=" ms-2">
+                  <span className="d-none d-md-inline">Annotated : </span>
+                  {statisticsDataset(phase)} ;{' '}
+                  <span className="d-none d-md-inline">Selected : </span>
+                  {nSample || ''}
+                  {/* <Tooltip anchorSelect=".currentstatistics" place="top">
                         statistics for the current scheme
                       </Tooltip> */}
-                    </span>
-                  ) : (
-                    ''
-                  )}{' '}
-                  <LuRefreshCw size={20} /> Refetch
+                </span>
+              ) : (
+                ''
+              )}{' '}
+              <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
+                <span>
+                  <LuRefreshCw size={20} /> Fetch
                 </span>
                 <Tooltip anchorSelect=".getelement" place="top">
                   Get next element with the selection mode

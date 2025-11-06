@@ -45,7 +45,7 @@ export const ProjectExplorePage: FC = () => {
                 />
               </Tab>
               <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
-                <div className="explanations">Explore your data as projection</div>
+                <div className="explanations">Explore your data as a projection</div>
                 {phase != 'test' && (
                   <ProjectionManagement
                     projectName={projectName || null}
@@ -53,11 +53,6 @@ export const ProjectExplorePage: FC = () => {
                     availableFeatures={availableFeatures}
                     currentElementId={undefined}
                   />
-                )}
-                {phase == 'test' && (
-                  <div className="alert alert-warning mt-3">
-                    Test mode activated - vizualisation disabled
-                  </div>
                 )}
               </Tab>
               <Tab eventKey="bertopic" title="Topic model">

@@ -227,420 +227,421 @@ export const ProjectCreationForm: FC = () => {
   };
 
   return (
-    <div className="container">
-      <div className="row">
-        <div className="explanations">Create a new project</div>
-        <div className="alert alert-info" role="alert">
-          Upload a file in tabular format (csv, xlsx or parquet, size limit {maxSizeMo} Mo) (
-          <a href="./dataset_test.csv" download>
-            Sample dataset from "Detecting Stance in Media On Global Warming"
-          </a>
-          ), then indicate the columns for index, text and optionally existing labels
-        </div>
-        <div className="alert alert-warning" role="alert">
-          ⚠️ Both project name and index will be modified for URL compatibility (slugify). For
-          instance, '_' and ' ' will be replaced by '-'. Please be careful for future data merging.
-          A safe solution is to use numbers only for index.
-        </div>
+    <div>
+      <div className="explanations">Create a new project</div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="form-frame ">
-          <div className=" position-relative">
-            <div>
-              <label className="form-label" htmlFor="project_name">
-                Project name
-              </label>
+      <form onSubmit={handleSubmit(onSubmit)} className="form-frame ">
+        <div className=" position-relative">
+          <div>
+            <label className="form-label" htmlFor="project_name">
+              Project name
+            </label>
+            <input
+              className="form-control"
+              id="project_name"
+              placeholder="Name of the project (need to be unique in the system)"
+              type="text"
+              disabled={creatingProject}
+              {...register('project_name')}
+              onClick={handleClickOnText}
+            />
+          </div>
+
+          <div>
+            <label>
+              Dataset{' '}
+              <a className="dataset">
+                <HiOutlineQuestionMarkCircle />
+              </a>
+              <Tooltip anchorSelect=".dataset" place="top">
+                You can either load a file or use a dataset existing from one of your projects.
+              </Tooltip>
+              <select
+                className="form-select"
+                id="existingDataset"
+                value={dataset}
+                onChange={(e) => setDataset(e.target.value)}
+              >
+                <option value="load">Load a file</option>
+                {(datasets || []).map((d) => (
+                  <option key={d.project_slug} value={d.project_slug}>
+                    Dataset project {d.project_slug}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {dataset === 'load' && (
               <input
                 className="form-control"
-                id="project_name"
-                placeholder="Name of the project (need to be unique in the system)"
-                type="text"
                 disabled={creatingProject}
-                {...register('project_name')}
-                onClick={handleClickOnText}
+                id="csvFile"
+                type="file"
+                {...register('files')}
               />
-            </div>
-
+            )}
             <div>
-              <label>
-                Dataset{' '}
-                <a className="dataset">
-                  <HiOutlineQuestionMarkCircle />
-                </a>
-                <Tooltip anchorSelect=".dataset" place="top">
-                  You can either load a file or use a dataset existing from one of your projects.
-                </Tooltip>
-                <select
-                  className="form-select"
-                  id="existingDataset"
-                  value={dataset}
-                  onChange={(e) => setDataset(e.target.value)}
-                >
-                  <option value="load">Load a file</option>
-                  {(datasets || []).map((d) => (
-                    <option key={d.project_slug} value={d.project_slug}>
-                      Dataset project {d.project_slug}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {dataset === 'load' && (
-                <input
-                  className="form-control"
-                  disabled={creatingProject}
-                  id="csvFile"
-                  type="file"
-                  {...register('files')}
-                />
-              )}
-              {
-                // display datable if data available
-                dataset === 'load' && data !== null && (
-                  <div>
-                    <div className="m-3">
-                      Size of the dataset : <b>{lengthData - 1}</b>
-                    </div>
-                    <DataTable<Record<DataType['headers'][number], string | number>>
-                      columns={data.headers.map((h) => ({
-                        name: h,
-                        selector: (row) => row[h],
-                        format: (row) => {
-                          const v = row[h];
-                          return typeof v === 'bigint' ? Number(v) : v;
-                        },
-                        width: '200px',
-                      }))}
-                      data={
-                        data.data
-                          .slice(0, 5)
-                          .map((row) =>
-                            Object.fromEntries(
-                              Object.entries(row).map(([key, value]) => [key, String(value)]),
-                            ),
-                          ) as Record<keyof DataType['headers'], string>[]
-                      }
-                    />
-                  </div>
-                )
-              }
+              <a href="./dataset_test.csv" download>
+                Example of valid dataset from "Detecting Stance in Media On Global Warming" (csv,
+                xlsx or parquet, size limit {maxSizeMo} MB)
+              </a>
             </div>
-
             {
-              // only display if data
-              availableFields && (
+              // display datable if data available
+              dataset === 'load' && data !== null && (
                 <div>
-                  <div>
-                    <label className="form-label" htmlFor="col_id">
-                      Id column (they need to be unique, otherwise the row number will be used)
-                    </label>
-                    <select
-                      className="form-control"
-                      id="col_id"
-                      disabled={creatingProject}
-                      {...register('col_id')}
-                    >
-                      <option key="row_number" value="row_number">
-                        Row number
-                      </option>
-                      {columns.map((h) => (
-                        <option key={h} value={h}>
-                          {h}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="m-3">
+                    Size of the dataset : <b>{lengthData - 1}</b>
                   </div>
-                  <div>
-                    <label className="form-label" htmlFor="cols_text">
-                      Text columns (all the selected fields will be concatenated)
-                    </label>
-
-                    <Controller
-                      name="cols_text"
-                      control={control}
-                      render={({ field: { onChange } }) => (
-                        <Select
-                          options={availableFields}
-                          isMulti
-                          isDisabled={creatingProject}
-                          onChange={(selectedOptions) => {
-                            onChange(
-                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                            );
-                          }}
-                        />
-                      )}
-                    />
-
-                    <label className="form-label" htmlFor="language">
-                      Language of the corpus (for tokenization and word segmentation)
-                    </label>
-                    <select
-                      className="form-control"
-                      id="language"
-                      disabled={creatingProject}
-                      {...register('language')}
-                    >
-                      {langages.map((lang) => (
-                        <option key={lang.value} value={lang.value}>
-                          {lang.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="form-label" htmlFor="col_label">
-                      Columns for existing annotations (optional)
-                    </label>
-                    <Controller
-                      name="cols_label"
-                      control={control}
-                      render={({ field: { onChange } }) => (
-                        <Select
-                          options={availableFields}
-                          isMulti
-                          isDisabled={creatingProject}
-                          onChange={(selectedOptions) => {
-                            onChange(
-                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                            );
-                          }}
-                        />
-                      )}
-                    />
-
-                    <label className="form-label" htmlFor="cols_context">
-                      Contextual information columns (optional)
-                    </label>
-                    <Controller
-                      name="cols_context"
-                      control={control}
-                      render={({ field: { onChange } }) => (
-                        <Select
-                          options={availableFields}
-                          isMulti
-                          isDisabled={creatingProject}
-                          onChange={(selectedOptions) => {
-                            onChange(
-                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                            );
-                          }}
-                        />
-                      )}
-                    />
-
-                    <label className="form-label" htmlFor="n_train">
-                      Number of elements in the train set (limit : 100.000)
-                    </label>
-                    <input
-                      className="form-control"
-                      id="n_train"
-                      type="number"
-                      disabled={creatingProject}
-                      {...register('n_train')}
-                      max={maxTrainSet}
-                    />
-
-                    <label className="form-label" htmlFor="n_valid">
-                      Number of elements in the validation set (optional)
-                      <a className="n_valid">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".n_valid" place="top">
-                        The valid set will be used for hyperparameter tuning
-                      </Tooltip>
-                    </label>
-                    <input
-                      className="form-control"
-                      id="n_valid"
-                      type="number"
-                      disabled={creatingProject}
-                      {...register('n_valid')}
-                    />
-
-                    <label className="form-label" htmlFor="n_test">
-                      Number of elements in the test set (optional)
-                      <a className="n_test">
-                        <HiOutlineQuestionMarkCircle />
-                      </a>
-                      <Tooltip anchorSelect=".n_test" place="top">
-                        The test set will be used at the end for the final evaluation
-                      </Tooltip>
-                    </label>
-                    <input
-                      className="form-control"
-                      id="n_test"
-                      type="number"
-                      disabled={creatingProject}
-                      {...register('n_test')}
-                    />
-
-                    <details className="custom-details">
-                      <summary>Advanced options</summary>
-                      <label className="form-label" htmlFor="force_label">
-                        Prioritize existing labels{' '}
-                        <a className="force_label">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".force_label" place="top">
-                          Select in priority the elements with existing labels (if any) of the first
-                          column of labels
-                        </Tooltip>
-                        <input
-                          id="force_label"
-                          type="checkbox"
-                          disabled={creatingProject}
-                          {...register('force_label')}
-                          className="mx-3"
-                        />
-                      </label>
-
-                      <label className="form-label" htmlFor="random_selection">
-                        Random selection of elements{' '}
-                        <a className="randomselection">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".randomselection" place="top">
-                          If not, will keep the order (minus empty elements) only if testset = 0
-                        </Tooltip>
-                        <input
-                          id="random_selection"
-                          type="checkbox"
-                          disabled={creatingProject || force_label}
-                          {...register('random_selection')}
-                          className="mx-3"
-                        />
-                      </label>
-
-                      <label className="form-label" htmlFor="stratify_train">
-                        Stratify trainset{' '}
-                        <a className="stratify_train">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".stratify_train" place="top">
-                          If selected, use the stratify columns to stratify train set. Small
-                          variation in the number of elements can happen.
-                        </Tooltip>
-                        <input
-                          id="stratify_train"
-                          type="checkbox"
-                          disabled={creatingProject || force_label}
-                          {...register('stratify_train')}
-                          className="mx-3"
-                        />
-                      </label>
-
-                      <label className="form-label" htmlFor="stratify_test">
-                        Stratify testset{' '}
-                        <a className="stratify_train">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".stratify_train" place="top">
-                          If selected, use the stratify columns to stratify test set. Small
-                          variation in the number of elements can happen.
-                        </Tooltip>
-                        <input
-                          id="stratify_test"
-                          type="checkbox"
-                          disabled={creatingProject || force_label}
-                          {...register('stratify_test')}
-                          className="mx-3"
-                        />
-                      </label>
-
-                      <label className="form-label" htmlFor="cols_stratify">
-                        Column(s) used for stratification
-                        <a className="stratify">
-                          <HiOutlineQuestionMarkCircle />
-                        </a>
-                        <Tooltip anchorSelect=".stratify" place="top">
-                          If not empty, will stratify by the selected column (try to equilibrate the
-                          number of elements regarding each category)
-                        </Tooltip>
-                      </label>
-                      <Controller
-                        name="cols_stratify"
-                        control={control}
-                        render={({ field: { onChange } }) => (
-                          <Select
-                            options={availableFields}
-                            isMulti
-                            isDisabled={creatingProject}
-                            onChange={(selectedOptions) => {
-                              onChange(
-                                selectedOptions
-                                  ? selectedOptions.map((option) => option.value)
-                                  : [],
-                              );
-                            }}
-                          />
-                        )}
-                      />
-
-                      <label className="form-label" htmlFor="clear_test">
-                        Drop annotations for the testset{' '}
-                        <input
-                          id="clear_test"
-                          type="checkbox"
-                          disabled={creatingProject}
-                          {...register('clear_test')}
-                          className="mx-3"
-                        />
-                      </label>
-                    </details>
+                  <DataTable<Record<DataType['headers'][number], string | number>>
+                    columns={data.headers.map((h) => ({
+                      name: h,
+                      selector: (row) => row[h],
+                      format: (row) => {
+                        const v = row[h];
+                        return typeof v === 'bigint' ? Number(v) : v;
+                      },
+                      width: '200px',
+                    }))}
+                    data={
+                      data.data
+                        .slice(0, 5)
+                        .map((row) =>
+                          Object.fromEntries(
+                            Object.entries(row).map(([key, value]) => [key, String(value)]),
+                          ),
+                        ) as Record<keyof DataType['headers'], string>[]
+                    }
+                  />
+                  <div className="alert alert-warning" role="alert">
+                    ⚠️ Index will be modified for URL compatibility (slugify). For instance, '_' and
+                    ' ' will be replaced by '-'. Please be careful for future data merging. A safe
+                    solution is to use numbers only for index.
                   </div>
                 </div>
               )
             }
-            {/* 
+          </div>
+
+          {
+            // only display if data
+            availableFields && (
+              <div>
+                <div>
+                  <label className="form-label" htmlFor="col_id">
+                    Id column (they need to be unique, otherwise the row number will be used)
+                  </label>
+                  <select
+                    className="form-control"
+                    id="col_id"
+                    disabled={creatingProject}
+                    {...register('col_id')}
+                  >
+                    <option key="row_number" value="row_number">
+                      Row number
+                    </option>
+                    {columns.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label" htmlFor="cols_text">
+                    Text columns (all the selected fields will be concatenated)
+                  </label>
+
+                  <Controller
+                    name="cols_text"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={availableFields}
+                        isMulti
+                        isDisabled={creatingProject}
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                  />
+
+                  <label className="form-label" htmlFor="language">
+                    Language of the corpus (for tokenization and word segmentation)
+                  </label>
+                  <select
+                    className="form-control"
+                    id="language"
+                    disabled={creatingProject}
+                    {...register('language')}
+                  >
+                    {langages.map((lang) => (
+                      <option key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <label className="form-label" htmlFor="col_label">
+                    Columns for existing annotations (optional)
+                  </label>
+                  <Controller
+                    name="cols_label"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={availableFields}
+                        isMulti
+                        isDisabled={creatingProject}
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                  />
+
+                  <label className="form-label" htmlFor="cols_context">
+                    Contextual information columns (optional)
+                  </label>
+                  <Controller
+                    name="cols_context"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={availableFields}
+                        isMulti
+                        isDisabled={creatingProject}
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                  />
+
+                  <label className="form-label" htmlFor="n_train">
+                    Number of elements in the train set (limit : 100.000)
+                  </label>
+                  <input
+                    className="form-control"
+                    id="n_train"
+                    type="number"
+                    disabled={creatingProject}
+                    {...register('n_train')}
+                    max={maxTrainSet}
+                  />
+
+                  <div className="explanations mt-4">
+                    Best practices for machine learning process
+                  </div>
+
+                  <label className="form-label" htmlFor="n_valid">
+                    Number of elements in the validation set (optional)
+                    <a className="n_valid">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".n_valid" place="top">
+                      The valid set will be used for hyperparameter tuning
+                    </Tooltip>
+                  </label>
+                  <input
+                    className="form-control"
+                    id="n_valid"
+                    type="number"
+                    disabled={creatingProject}
+                    {...register('n_valid')}
+                  />
+
+                  <label className="form-label" htmlFor="n_test">
+                    Number of elements in the test set (optional)
+                    <a className="n_test">
+                      <HiOutlineQuestionMarkCircle />
+                    </a>
+                    <Tooltip anchorSelect=".n_test" place="top">
+                      The test set will be used at the end for the final evaluation
+                    </Tooltip>
+                  </label>
+                  <input
+                    className="form-control"
+                    id="n_test"
+                    type="number"
+                    disabled={creatingProject}
+                    {...register('n_test')}
+                  />
+
+                  <details className="custom-details">
+                    <summary>Advanced options</summary>
+                    <div className="explanations">Check the documentation for explanations</div>
+                    <label className="form-label" htmlFor="force_label">
+                      Prioritize existing labels{' '}
+                      <a className="force_label">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".force_label" place="top">
+                        Select in priority the elements with existing labels (if any) of the first
+                        column of labels
+                      </Tooltip>
+                      <input
+                        id="force_label"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('force_label')}
+                        className="mx-3"
+                      />
+                    </label>
+
+                    <label className="form-label" htmlFor="random_selection">
+                      Random selection of elements{' '}
+                      <a className="rselect">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".rselect" place="top">
+                        If not, will keep the order (minus empty elements) only if no evaluation
+                        datasets (eval/test)
+                      </Tooltip>
+                      <input
+                        id="random_selection"
+                        type="checkbox"
+                        disabled={creatingProject || force_label}
+                        {...register('random_selection')}
+                        className="mx-3"
+                      />
+                    </label>
+
+                    <label className="form-label" htmlFor="stratify_train">
+                      Stratify trainset{' '}
+                      <a className="stratify_train">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".stratify_train" place="top">
+                        If selected, use the stratify columns to stratify train set. Small variation
+                        in the number of elements can happen.
+                      </Tooltip>
+                      <input
+                        id="stratify_train"
+                        type="checkbox"
+                        disabled={creatingProject || force_label}
+                        {...register('stratify_train')}
+                        className="mx-3"
+                      />
+                    </label>
+
+                    <label className="form-label" htmlFor="stratify_test">
+                      Stratify testset{' '}
+                      <a className="stratify_train">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".stratify_train" place="top">
+                        If selected, use the stratify columns to stratify test set. Small variation
+                        in the number of elements can happen.
+                      </Tooltip>
+                      <input
+                        id="stratify_test"
+                        type="checkbox"
+                        disabled={creatingProject || force_label}
+                        {...register('stratify_test')}
+                        className="mx-3"
+                      />
+                    </label>
+
+                    <label className="form-label" htmlFor="cols_stratify">
+                      Column(s) used for stratification
+                      <a className="stratify">
+                        <HiOutlineQuestionMarkCircle />
+                      </a>
+                      <Tooltip anchorSelect=".stratify" place="top">
+                        If not empty, will stratify by the selected column (try to equilibrate the
+                        number of elements regarding each category)
+                      </Tooltip>
+                    </label>
+                    <Controller
+                      name="cols_stratify"
+                      control={control}
+                      render={({ field: { onChange } }) => (
+                        <Select
+                          options={availableFields}
+                          isMulti
+                          isDisabled={creatingProject}
+                          onChange={(selectedOptions) => {
+                            onChange(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
+                          }}
+                        />
+                      )}
+                    />
+
+                    <label className="form-label" htmlFor="clear_test">
+                      Drop annotations for the testset{' '}
+                      <input
+                        id="clear_test"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('clear_test')}
+                        className="mx-3"
+                      />
+                    </label>
+                  </details>
+                </div>
+              </div>
+            )
+          }
+          {/* 
               Quasi Modal
               overlay progression bar with cancel button 
             */}
-            {data && creatingProject && (
-              <div>
-                <div className="position-absolute bg-white w-100 h-100 top-0 left-0 d-flex flex-column justify-content-center bg-opacity-50">
-                  <div className="d-flex flex-column bg-white p-4 border border-dark gap-2">
-                    <div className="d-flex align-items-center gap-2 ">
-                      <ClipLoader /> <span>Uploading and creating the project</span>{' '}
-                      <span>
-                        {progression.loaded && progression.total
-                          ? `${((progression.loaded / progression.total) * 100).toFixed(2)}%`
-                          : null}
-                      </span>
-                    </div>
-                    <progress
-                      id="upload-progress"
-                      value={progression.loaded}
-                      max={progression.total}
-                    />
-                    {cancel !== undefined && (
-                      <div>
-                        <button
-                          className="btn btn-warning mt-1"
-                          onClick={() => {
-                            cancel.abort();
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
+          {data && creatingProject && (
+            <div>
+              <div className="position-absolute bg-white w-100 h-100 top-0 left-0 d-flex flex-column justify-content-center bg-opacity-50">
+                <div className="d-flex flex-column bg-white p-4 border border-dark gap-2">
+                  <div className="d-flex align-items-center gap-2 ">
+                    <ClipLoader /> <span>Uploading and creating the project</span>{' '}
+                    <span>
+                      {progression.loaded && progression.total
+                        ? `${((progression.loaded / progression.total) * 100).toFixed(2)}%`
+                        : null}
+                    </span>
                   </div>
+                  <progress
+                    id="upload-progress"
+                    value={progression.loaded}
+                    max={progression.total}
+                  />
+                  {cancel !== undefined && (
+                    <div>
+                      <button
+                        className="btn btn-warning mt-1"
+                        onClick={() => {
+                          cancel.abort();
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-          {
-            <>
-              <button
-                type="submit"
-                className="btn btn-primary form-button"
-                disabled={creatingProject}
-              >
-                Create
-              </button>
-            </>
-          }
-        </form>
-      </div>
+            </div>
+          )}
+        </div>
+        {
+          <>
+            <button
+              type="submit"
+              className="btn btn-primary form-button"
+              disabled={creatingProject}
+            >
+              Create
+            </button>
+          </>
+        }
+      </form>
     </div>
   );
 };

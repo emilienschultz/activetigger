@@ -239,7 +239,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
       {currentModelInformations && (
         <div>
           <DisplayScores
-            title={'Validation scores from the training (internalvalid)'}
+            title={'Validation scores from the training data (internal validation)'}
             scores={currentModelInformations.statistics_test as MLStatisticsModel}
           />
           {currentModelInformations.statistics_cv10 && (

@@ -101,7 +101,7 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
                 });
               }}
             >
-              Drop existing {dataset}
+              Drop existing {dataset} set
             </button>
           )}
         </div>
