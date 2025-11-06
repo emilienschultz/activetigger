@@ -45,8 +45,11 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
 
   return (
     <div className="bg-primary" id="header">
-      <nav className="navbar navbar-dark navbar-expand-lg bg-primary row align-items-start">
-        <div className="col-1 col-md-3 col-lg-2" id="logo-container">
+      <nav
+        className="navbar navbar-dark navbar-expand-lg bg-primary row align-items-start"
+        style={{ width: '100%' }}
+      >
+        <div id="logo-container">
           <Link className="navbar-brand" to="/">
             <img
               src={logo}
