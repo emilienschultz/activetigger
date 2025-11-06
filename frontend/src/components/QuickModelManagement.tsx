@@ -9,6 +9,7 @@ import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
+import { ModelsPillDisplay } from './ModelsPillDisplay';
 
 // TODO: default values + avoid generic parameters
 
@@ -184,42 +185,19 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
   return (
-    <div>
-      <div className="d-flex align-items-center">
-        <Select
-          options={Object.values(availableQuickModels || {}).map((e) => ({
-            value: e.name,
-            label: e.name,
-          }))}
-          value={
-            currentQuickModelName
-              ? { value: currentQuickModelName, label: currentQuickModelName }
-              : null
-          }
-          onChange={(selectedOption) => {
-            setCurrentQuickModelName(selectedOption ? selectedOption.value : null);
-          }}
-          isSearchable
-          className="w-50 mt-1"
-          placeholder="Select an existing quickmodel"
-        />
-        <button
-          className="btn btn p-0"
-          onClick={() => {
-            if (currentQuickModelName) {
-              deleteQuickModel(currentQuickModelName);
-              setCurrentQuickModelName(null);
-            }
-          }}
-        >
-          <MdOutlineDeleteOutline size={30} />
+    <div className="w-100">
+      <ModelsPillDisplay
+        modelNames={availableQuickModels?.map((quickModel) => quickModel.name)}
+        currentModelName={currentQuickModelName}
+        setCurrentModelName={setCurrentQuickModelName}
+        deleteModelFunction={deleteQuickModel}
+      >
+        <button onClick={() => setDisplayNewModel(true)} className="model-pill" id="create-new">
+          Create new model
         </button>
-      </div>
-      <button onClick={() => setDisplayNewModel(true)} className="btn btn-primary my-2">
-        Create new model
-      </button>
+      </ModelsPillDisplay>
       <div>
-        <table className="table table-striped table-hover w-50 mt-2">
+        <table className="table table-striped table-hover w-100 mt-2">
           <tbody>
             {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
               <tr key={i}>

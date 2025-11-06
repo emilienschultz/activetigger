@@ -194,3 +194,37 @@ table{
     }
   }
 }
+
+.model-pill-selection{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  .model-pill{
+    background-color: $tertiary;
+    color: black;
+    border: none;
+    border-radius: 20px;
+    padding: 0px 15px;
+    margin: 2px 10px;
+    height: 35px;
+    #bin{
+      background-color: rgba(0,0,0,0);
+      border:none
+    }
+    font-size: smaller;
+  }
+  
+  .model-pill.selected{
+    background-color: $secondary;
+    color: white;
+  }
+  
+  .model-pill#create-new{
+    font-size: normal;
+    background-color: $primary;
+    color: white;
+    font-weight: bold;
+  }
+}
