@@ -318,19 +318,20 @@ export const AnnotationManagement: FC = () => {
           {!isValidRegex(selectionConfig.filter || '') && (
             <div className="alert alert-danger">Regex not valid</div>
           )}
-
-          <TextClassificationPanel
-            element={element as ElementOutModel}
-            displayConfig={displayConfig}
-            textInFrame={textInFrame}
-            textOutFrame={textOutFrame}
-            validHighlightText={validHighlightText}
-            elementId={elementId as string}
-            lastTag={lastTag as string}
-            phase={phase}
-            frameRef={frameRef as unknown as HTMLDivElement}
-            postAnnotation={postAnnotation}
-          />
+          {elementId !== 'noelement' && (
+            <TextClassificationPanel
+              element={element as ElementOutModel}
+              displayConfig={displayConfig}
+              textInFrame={textInFrame}
+              textOutFrame={textOutFrame}
+              validHighlightText={validHighlightText}
+              elementId={elementId as string}
+              lastTag={lastTag as string}
+              phase={phase}
+              frameRef={frameRef as unknown as HTMLDivElement}
+              postAnnotation={postAnnotation}
+            />
+          )}
         </>
       ) : (
         <>
