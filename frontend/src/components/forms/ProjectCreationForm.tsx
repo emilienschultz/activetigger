@@ -199,7 +199,7 @@ export const ProjectCreationForm: FC = () => {
             if (status === 'existing') {
               clearInterval(intervalId);
               addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
-              navigate(`/projects/${slug}`);
+              navigate(`/projects/${slug}?fromProjectPage=true`);
               return;
             }
             // set a timeout just in case
