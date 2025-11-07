@@ -73,10 +73,7 @@ export const SelectCurrentScheme: FC = () => {
   return (
     <div className="row">
       <div className="input-group mb-3" style={{ maxWidth: '400px' }}>
-        <span
-          className="input-group-text d-none d-md-inline"
-          style={{ backgroundColor: 'orange', color: 'white', border: 'none' }}
-        >
+        <span className="input-group-text d-none d-md-inline bg-primary" style={{ color: 'white' }}>
           Active Scheme
         </span>
         <Select

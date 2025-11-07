@@ -143,3 +143,88 @@ table{
   color: #9ca3af; // Tailwind's neutral gray tone (lighter)
   margin-bottom: -5px;
 }
+
+#tag-parameters-div{
+  width: 100%;
+  display: flex;
+  align-items: start;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+
+  .parameter-div{
+    min-width: 150px;
+    margin: 3px 7px;
+    flex: 1 1 200px
+  }
+}
+#header{
+  $header-height: 50px;
+  #navbarSupportedContent{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: $header-height;
+    width: 83%;
+  }
+
+  button.navbar-toggler{
+    width: 100px;
+    margin-right: 20px;
+    align-self: center;
+  }
+  
+  @media (max-width: 992px){
+    #navbarSupportedContent{
+      // when switching from large to medium 
+      height: 200px;
+      justify-content: space-around;
+    }
+  }
+  
+  #logo-container{
+    height: $header-height;
+    margin-right: 0px;
+    width: 16.3%;
+  }
+
+  #log-container{
+    height: $header-height;
+    button{
+      color: rgba(256, 256, 256, 0.9);
+    }
+  }
+}
+
+.model-pill-selection{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  .model-pill{
+    background-color: $tertiary;
+    color: black;
+    border: none;
+    border-radius: 20px;
+    padding: 0px 15px;
+    margin: 2px 10px;
+    height: 35px;
+    #bin{
+      background-color: rgba(0,0,0,0);
+      border:none
+    }
+    font-size: smaller;
+  }
+  
+  .model-pill.selected{
+    background-color: $secondary;
+    color: white;
+  }
+  
+  .model-pill#create-new{
+    font-size: normal;
+    background-color: $primary;
+    color: white;
+    font-weight: bold;
+  }
+}

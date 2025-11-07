@@ -318,19 +318,20 @@ export const AnnotationManagement: FC = () => {
           {!isValidRegex(selectionConfig.filter || '') && (
             <div className="alert alert-danger">Regex not valid</div>
           )}
-
-          <TextClassificationPanel
-            element={element as ElementOutModel}
-            displayConfig={displayConfig}
-            textInFrame={textInFrame}
-            textOutFrame={textOutFrame}
-            validHighlightText={validHighlightText}
-            elementId={elementId as string}
-            lastTag={lastTag as string}
-            phase={phase}
-            frameRef={frameRef as unknown as HTMLDivElement}
-            postAnnotation={postAnnotation}
-          />
+          {elementId !== 'noelement' && (
+            <TextClassificationPanel
+              element={element as ElementOutModel}
+              displayConfig={displayConfig}
+              textInFrame={textInFrame}
+              textOutFrame={textOutFrame}
+              validHighlightText={validHighlightText}
+              elementId={elementId as string}
+              lastTag={lastTag as string}
+              phase={phase}
+              frameRef={frameRef as unknown as HTMLDivElement}
+              postAnnotation={postAnnotation}
+            />
+          )}
         </>
       ) : (
         <>
@@ -398,7 +399,7 @@ export const AnnotationManagement: FC = () => {
         <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
           <FaPencilAlt />
           <Tooltip anchorSelect=".addcomment" place="top">
-            Add a commentary
+            Add a comment
           </Tooltip>
         </button>
 
@@ -428,7 +429,7 @@ export const AnnotationManagement: FC = () => {
 
       <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
         <Modal.Header closeButton>
-          <Modal.Title>Add a commentary to the label</Modal.Title>
+          <Modal.Title>Add a comment with your annotation</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <input

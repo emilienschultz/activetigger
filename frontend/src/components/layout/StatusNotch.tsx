@@ -48,6 +48,21 @@ export const StatusNotch: FC<{
         Object.values(projectState.features.training).length > 0
       : false;
 
+  const whatComutation = (projectState: ProjectStateModel) => {
+    if (currentUser in projectState.languagemodels.training) {
+      return 'Bert model training';
+    } else if (currentUser in projectState.quickmodel.training) {
+      return 'Quick model training';
+    } else if (currentUser in projectState.projections.training) {
+      return 'Projection generation';
+    } else if (Object.values(projectState.features.training).length > 0) {
+      return 'Feature generation';
+    } else if (projectState.bertopic.training) {
+      return 'BERTopic fitting';
+    }
+    return '';
+  };
+
   // display the number of current processes on the server
   const { disk } = useGetServer(projectState || null);
 
@@ -93,7 +108,9 @@ export const StatusNotch: FC<{
                 <div className="spinner-border spinner-border-sm text-warning" role="status">
                   <span className="visually-hidden">Computing</span>
                 </div>
-                <div>Computing</div>
+                <div>
+                  Computing <i>{whatComutation(projectState as ProjectStateModel)}</i>
+                </div>
                 <a
                   id="stop-button"
                   onClick={() => stopProcesses('all')}

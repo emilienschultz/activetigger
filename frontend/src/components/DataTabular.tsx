@@ -223,7 +223,7 @@ export const DataTabular: FC<DataTabularModel> = ({
                 {Object.keys(modifiedRows).length > 0 && (
                   <button onClick={validateChanges}>Validate changes</button>
                 )}
-                <span>Total elements : {totalElement}</span>
+                <span>Total number of elements : {totalElement}</span>
                 <span>Page size</span>
                 <select
                   onChange={(e) => {

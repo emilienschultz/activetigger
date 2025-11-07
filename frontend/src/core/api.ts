@@ -538,7 +538,7 @@ export function useAddFeature() {
           },
           body: { name: featureName, type: featureType, parameters: featureParameters },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Features are computing' });
+        if (!res.error) notify({ type: 'info', message: 'Features are computing' });
         return true;
       }
       return false;

@@ -108,7 +108,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       selectedMethod === 'tsne'
         ? ['perplexity', 'n_components', 'learning_rate', 'init']
         : selectedMethod === 'umap'
-          ? ['n_neighbors', 'min_dist', 'metric', 'n_components']
+          ? ['n_neighbors', 'min_dist', 'n_components']
           : [];
     const params = pick(formData.parameters, relevantParams);
     const data = { ...formData, params };
@@ -425,15 +425,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     step="0.01"
                     {...register('parameters.min_dist', { valueAsNumber: true })}
                   ></input>
-                  <label htmlFor="metric">Metric</label>
-                  <select {...register('parameters.metric')}>
-                    <option key="cosine" value="cosine">
-                      cosine
-                    </option>
-                    <option key="euclidean" value="euclidean">
-                      euclidean
-                    </option>
-                  </select>
                 </div>
               )}
             </details>
