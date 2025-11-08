@@ -128,19 +128,19 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                   <span>Parameters of the model</span>
                 </summary>
                 <ModelParametersTab params={model.params as Record<string, unknown>} />
-                <details className="m-2">
-                  <summary>Rename</summary>
-                  <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                    <input
-                      id="new_name"
-                      className="form-control me-2 mt-2"
-                      type="text"
-                      placeholder="New name of the model"
-                      {...registerRename('new_name')}
-                    />
-                    <button className="btn btn-primary me-2 mt-2">Rename</button>
-                  </form>
-                </details>
+              </details>
+              <details style={{ color: 'gray' }}>
+                <summary>Rename</summary>
+                <form onSubmit={handleSubmitRename(onSubmitRename)}>
+                  <input
+                    id="new_name"
+                    className="form-control me-2 mt-2"
+                    type="text"
+                    placeholder="New name of the model"
+                    {...registerRename('new_name')}
+                  />
+                  <button className="btn btn-primary me-2 mt-2">Rename</button>
+                </form>
               </details>
               {isComputing && (
                 <DisplayTrainingProcesses
