@@ -37,8 +37,8 @@ type Option = {
 // component
 export const ProjectCreationForm: FC = () => {
   // form management
-  const maxSizeMo = 400;
-  const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
+  const maxSizeMB = 400;
+  const maxSize = maxSizeMB * 1024 * 1024; // 100 MB in bytes
 
   const maxTrainSet = 100000;
   const langages = [
@@ -66,7 +66,7 @@ export const ProjectCreationForm: FC = () => {
   const { datasets } = useGetAvailableDatasets();
 
   const [creatingProject, setCreatingProject] = useState<boolean>(false); // state for the data
-  const [dataset, setDataset] = useState<string>('load'); // state for the data
+  const [dataset, setDataset] = useState<string | null>(null); // state for the data
   const [data, setData] = useState<DataType | null>(null); // state for the data
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
@@ -247,46 +247,62 @@ export const ProjectCreationForm: FC = () => {
               onClick={handleClickOnText}
             />
           </div>
-
           <div>
             <label>
-              Dataset{' '}
-              <a className="dataset">
-                <HiOutlineQuestionMarkCircle />
-              </a>
-              <Tooltip anchorSelect=".dataset" place="top">
-                You can either load a file or use a dataset existing from one of your projects.
-              </Tooltip>
-              <select
-                className="form-select"
-                id="existingDataset"
-                value={dataset}
-                onChange={(e) => setDataset(e.target.value)}
-              >
-                <option value="load">Load a file</option>
-                {(datasets || []).map((d) => (
-                  <option key={d.project_slug} value={d.project_slug}>
-                    Dataset project {d.project_slug}
-                  </option>
-                ))}
-              </select>
+              <input type="radio" name="dataset-origin" onClick={() => setDataset('load')} />
+              Load Dataset from disk
             </label>
-
-            {dataset === 'load' && (
+            <label>
               <input
-                className="form-control"
-                disabled={creatingProject}
-                id="csvFile"
-                type="file"
-                {...register('files')}
+                type="radio"
+                name="dataset-origin"
+                onClick={() => setDataset('from-project')}
               />
+              Load Dataset from another project
+            </label>
+          </div>
+          <div>
+            {dataset && (
+              <label>
+                Dataset{' '}
+                {dataset !== 'load' && (
+                  <select
+                    className="form-select"
+                    id="existingDataset"
+                    value={dataset}
+                    onChange={(e) => setDataset(e.target.value)}
+                  >
+                    <option>Select project</option>
+                    {(datasets || []).map((d) => (
+                      <option key={d.project_slug} value={d.project_slug}>
+                        Dataset project {d.project_slug}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {dataset === 'load' && (
+                  <>
+                    <input
+                      className="form-control"
+                      disabled={creatingProject}
+                      id="csvFile"
+                      type="file"
+                      {...register('files')}
+                    />
+
+                    <div style={{ fontSize: 'smaller', fontStyle: 'italic', fontWeight: 'normal' }}>
+                      File format : csv, xlsx or parquet &lt; {maxSizeMB} MB
+                      <br />
+                      Example of valid dataset from{' '}
+                      <a href="./dataset_test.csv" download>
+                        "Detecting Stance in Media On Global Warming" (download)
+                      </a>
+                    </div>
+                  </>
+                )}
+              </label>
             )}
-            <div>
-              <a href="./dataset_test.csv" download>
-                Example of valid dataset from "Detecting Stance in Media On Global Warming" (csv,
-                xlsx or parquet, size limit {maxSizeMo} MB)
-              </a>
-            </div>
+
             {
               // display datable if data available
               dataset === 'load' && data !== null && (
