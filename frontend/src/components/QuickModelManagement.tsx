@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -33,6 +34,7 @@ interface QuickModelManagementProps {
   currentModel?: Record<string, never>;
   featuresOption: FeaturesOptions;
   columns: string[];
+  isComputing: boolean;
 }
 
 export default function ModelsTable(
@@ -81,6 +83,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   currentModel,
   featuresOption,
   columns,
+  isComputing,
 }) => {
   const { notify } = useNotifications();
 
@@ -192,7 +195,11 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         setCurrentModelName={setCurrentQuickModelName}
         deleteModelFunction={deleteQuickModel}
       >
-        <button onClick={() => setDisplayNewModel(true)} className="model-pill" id="create-new">
+        <button
+          onClick={() => setDisplayNewModel(true)}
+          className={cx('model-pill ', isComputing ? 'disabled' : '')}
+          id="create-new"
+        >
           Create new model
         </button>
       </ModelsPillDisplay>
