@@ -41,8 +41,6 @@ export const ProjectModelPage: FC = () => {
       : 'multiclass',
   );
 
-  console.log(availableBertModels);
-
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="model">
       <div className="container-fluid">
