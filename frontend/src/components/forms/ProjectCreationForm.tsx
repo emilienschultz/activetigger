@@ -153,7 +153,8 @@ export const ProjectCreationForm: FC = () => {
       if (Number(formData.n_train) + Number(formData.n_test) > lengthData) {
         notify({
           type: 'warning',
-          message: 'The sum of train and test set is too big, the train set is set to N - testset',
+          message:
+            'The sum of train and test set is too large, the train set is set to N - testset',
         });
         setValue('n_train', Math.max(0, lengthData - Number(formData.n_test) - 1));
         return;
