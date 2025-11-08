@@ -315,9 +315,16 @@ export const ProjectCreationForm: FC = () => {
                     }
                   />
                   <div className="alert alert-warning" role="alert">
-                    ⚠️ Index will be modified for URL compatibility (slugify). For instance, '_' and
-                    ' ' will be replaced by '-'. Please be careful for future data merging. A safe
-                    solution is to use numbers only for index.
+                    ⚠️ <b>Keep in mind</b>
+                    <br />
+                    Indexes like this: "index
+                    <a style={{ background: '#ff000050', paddingBottom: '2px' }}>_</a>
+                    01<a style={{ background: '#ff000050', paddingBottom: '2px' }}> </a>02" will
+                    transform to "index
+                    <a style={{ background: '#ff000050', paddingBottom: '2px' }}>-</a>01
+                    <a style={{ background: '#ff000050', paddingBottom: '2px' }}>-</a>02".
+                    <br />
+                    Safest solution is the indexes to only contain numbers.
                   </div>
                 </div>
               )
