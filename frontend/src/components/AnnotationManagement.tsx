@@ -1,5 +1,6 @@
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { FaLock, FaPencilAlt } from 'react-icons/fa';
+import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -99,6 +100,10 @@ export const AnnotationManagement: FC = () => {
       : 'multiclass',
   );
 
+  // hook to clear history
+  const actionClearHistory = () => {
+    setAppContext((prev) => ({ ...prev, history: [] }));
+  };
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
     projectName || null,
@@ -402,7 +407,6 @@ export const AnnotationManagement: FC = () => {
             Add a comment
           </Tooltip>
         </button>
-
         <button
           className="btn displayconfig"
           onClick={() => {
@@ -425,6 +429,12 @@ export const AnnotationManagement: FC = () => {
             Display the projection
           </Tooltip>
         </button>
+        <button className="btn clearhistory" onClick={actionClearHistory}>
+          <FiRefreshCcw />
+        </button>
+        <Tooltip anchorSelect=".clearhistory" place="top">
+          Clear the history
+        </Tooltip>
       </div>
 
       <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
