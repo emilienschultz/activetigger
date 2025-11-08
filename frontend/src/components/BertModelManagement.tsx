@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import { FC, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
@@ -6,6 +7,7 @@ import { Tooltip } from 'react-tooltip';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ModelParametersTab } from '../components/ModelParametersTab';
+import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { LossChart } from '../components/vizualisation/lossChart';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 
@@ -82,37 +84,21 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
 
   return (
     <div>
-      <div className="d-flex align-items-center">
-        <Select
-          options={Object.keys(availableBertModels || {}).map((e) => ({
-            value: e,
-            label: e,
-          }))}
-          value={currentBertModel ? { value: currentBertModel, label: currentBertModel } : null}
-          onChange={(selectedOption) => {
-            setCurrentBertModel(selectedOption ? selectedOption.value : null);
-          }}
-          isSearchable
-          className="w-50 mt-1"
-          placeholder="Select an existing bertmodel"
-        />
+      <ModelsPillDisplay
+        modelNames={Object.keys(availableBertModels || {}).map((model) => model)}
+        currentModelName={currentBertModel}
+        setCurrentModelName={setCurrentBertModel}
+        deleteModelFunction={deleteBertModel}
+      >
         <button
-          className="btn btn p-0"
-          onClick={() => {
-            if (currentBertModel) {
-              deleteBertModel(currentBertModel);
-              setCurrentBertModel(null);
-            }
-          }}
+          onClick={() => setDisplayNewBertModel(true)}
+          className={cx('model-pill ', isComputing ? 'disabled' : '')}
+          id="create-new"
         >
-          <MdOutlineDeleteOutline size={30} />
-        </button>
-      </div>
-      {!isComputing ? (
-        <button onClick={() => setDisplayNewBertModel(true)} className="btn btn-primary my-2">
           Create new model
         </button>
-      ) : (
+      </ModelsPillDisplay>
+      {isComputing && (
         <DisplayTrainingProcesses
           projectSlug={projectSlug || null}
           processes={project?.languagemodels.training}
@@ -150,13 +136,11 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 />
               )}
 
-              <div className="mt-2">
-                <DisplayScores
-                  title={'Validation scores from the training data (internal validation)'}
-                  scores={model.scores.internalvalid_scores as MLStatisticsModel}
-                  modelName={currentBertModel}
-                />
-              </div>
+              <DisplayScores
+                title={'Validation scores from the training data (internal validation)'}
+                scores={model.scores.internalvalid_scores as MLStatisticsModel}
+                modelName={currentBertModel}
+              />
 
               <div className="mt-2">
                 <LossChart loss={loss} />
