@@ -221,13 +221,13 @@ table{
     color: white;
   }
   
-  .model-pill#create-new{
+  .model-pill#create-new, .model-pill#compute-validate{
     font-size: normal;
     background-color: $primary;
     color: white;
     font-weight: bold;
   }
-  .model-pill.disabled#create-new{
+  .model-pill.disabled#create-new, .model-pill.disabled#compute-validate{
     pointer-events: none;
     opacity: 0.8;
   }
