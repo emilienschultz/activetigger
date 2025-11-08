@@ -171,6 +171,7 @@ export const ProjectValidatePage: FC = () => {
                   setCurrentModel={setCurrentBertModelName}
                 />
                 <div>
+                  {/* AM: Necessary ? Confused... */}
                   <DisplayTrainingProcesses
                     projectSlug={projectName || null}
                     processes={project?.languagemodels.training}
