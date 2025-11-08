@@ -127,23 +127,6 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 <summary>
                   <span>Parameters of the model</span>
                 </summary>
-                <div className="d-flex align-items-center">
-                  <label>Batch size</label>
-                  <a className="batch">
-                    <HiOutlineQuestionMarkCircle />
-                  </a>
-                  <Tooltip anchorSelect=".batch" place="top">
-                    Batch used for predict. Keep it small (16 or 32) for small GPU.
-                  </Tooltip>
-                  <input
-                    type="number"
-                    step="1"
-                    className="m-2"
-                    style={{ width: '50px' }}
-                    value={batchSize}
-                    onChange={(e) => setBatchSize(Number(e.target.value))}
-                  />
-                </div>
                 <ModelParametersTab params={model.params as Record<string, unknown>} />
                 <details className="m-2">
                   <summary>Rename</summary>
