@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BERTopic report - {{ bertopic_name }}</title>
+    <style>
+        body{
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+            justify-items: center;
+            border: 1px solid black;
+        }
+        div{
+            display: flex;
+            flex-direction: column;
+            justify-items: center;
+        }
+    </style>
+
+    <script src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>
+
+</head>
+<body>
+    <h1>Topics</h1>
+    <div>{{ topics }}</div>
+    <h1>2D Map</h1>
+    <div>{{ map }}</div>
+    <h1>Hierarchical representation</h1>
+    <div>{{ hierarchical }}</div>
+    <h1>Representative documents</h1>
+    <div>
+        <!-- {% for item in RepresentativeTopics %}
+            <span>{{ item }}</span>
+        {% endfor %} -->
+        {{ RepresentativeTopics }}
+    </div>
+    <h1>Parameters of the model</h1>
+    <div>{{ parameters }}</div>
+
+</body>
+</html>
