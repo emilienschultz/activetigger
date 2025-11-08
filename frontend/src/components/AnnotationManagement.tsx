@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { FaLock, FaPencilAlt } from 'react-icons/fa';
 import { FiRefreshCcw } from 'react-icons/fi';
@@ -59,6 +60,7 @@ export const AnnotationManagement: FC = () => {
   const [comment, setComment] = useState('');
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
+  const [settingChanged, setSettingChanged] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
   const handleCloseComment = () => setDisplayComment(false);
@@ -263,7 +265,10 @@ export const AnnotationManagement: FC = () => {
         {
           // annotation mode
           <div>
-            <SelectionManagement />
+            <SelectionManagement
+              settingChanged={settingChanged}
+              setSettingChanged={setSettingChanged}
+            />
             {/* <div
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
@@ -281,10 +286,11 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 ''
               )}{' '}
-              <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
-                <span>
-                  <LuRefreshCw size={20} /> Fetch
-                </span>
+              <button
+                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
+                onClick={refetchElement}
+              >
+                <LuRefreshCw size={20} /> Fetch
                 <Tooltip anchorSelect=".getelement" place="top">
                   Get next element with the selection mode
                 </Tooltip>

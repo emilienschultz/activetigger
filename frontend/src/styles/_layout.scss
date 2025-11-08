@@ -232,3 +232,23 @@ table{
     opacity: 0.8;
   }
 }
+
+.getelement{
+  background-color: $primary;
+  border: 3px rgba(0,0,0,0) solid;
+  border-radius: 5px;
+}
+
+.getelement.setting-changed{
+  animation: glow 1.5s ease-in-out infinite alternate;
+  color: white;
+}
+
+@-webkit-keyframes glow {
+  from {
+    border: 3px rgba(0,0,0,0) solid;
+  }
+  to {
+    border: 3px rgba(255,255,255, 0.7) solid;
+  }
+}
