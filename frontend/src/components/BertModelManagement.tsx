@@ -1,19 +1,15 @@
 import cx from 'classnames';
 import { FC, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
-import { Tooltip } from 'react-tooltip';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ModelParametersTab } from '../components/ModelParametersTab';
+import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { LossChart } from '../components/vizualisation/lossChart';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 
 import { SubmitHandler, useForm } from 'react-hook-form';
-import Select from 'react-select';
-import { DisplayScores } from '../components/DisplayScores';
 import { useDeleteBertModel, useModelInformations, useRenameBertModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel } from '../types';
@@ -58,9 +54,6 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
     isComputing,
   );
 
-  // compute model prediction
-  const [batchSize, setBatchSize] = useState<number>(32);
-
   // form to rename
   const { renameBertModel } = useRenameBertModel(projectSlug || null);
   const {
@@ -79,8 +72,6 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
   const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
 
   const [displayNewBertModel, setDisplayNewBertModel] = useState(false);
-
-  console.log('TEST', availableBertModels);
 
   return (
     <div>
