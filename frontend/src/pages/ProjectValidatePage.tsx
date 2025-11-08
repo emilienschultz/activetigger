@@ -3,7 +3,7 @@ import { FC, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
-import { ModelsPillDisplay } from '../components//ModelsPillDisplay';
+import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import {
