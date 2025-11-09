@@ -1,10 +1,16 @@
+import cx from 'classnames';
 import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
+import PulseLoader from 'react-spinners/PulseLoader';
 import Select from 'react-select';
-import { useDeleteQuickModel, useGetQuickModel, useTrainQuickModel } from '../core/api';
+import {
+  useDeleteQuickModel,
+  useGetQuickModel,
+  useTrainQuickModel,
+  useStopProcesses,
+} from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
@@ -33,6 +39,7 @@ interface QuickModelManagementProps {
   currentModel?: Record<string, never>;
   featuresOption: FeaturesOptions;
   columns: string[];
+  isComputing: boolean;
 }
 
 export default function ModelsTable(
@@ -81,11 +88,13 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   currentModel,
   featuresOption,
   columns,
+  isComputing,
 }) => {
   const { notify } = useNotifications();
 
   // hooks to update
   const { trainQuickModel } = useTrainQuickModel(projectName, currentScheme);
+  const { stopProcesses } = useStopProcesses();
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
@@ -192,10 +201,23 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         setCurrentModelName={setCurrentQuickModelName}
         deleteModelFunction={deleteQuickModel}
       >
-        <button onClick={() => setDisplayNewModel(true)} className="model-pill" id="create-new">
+        <button
+          onClick={() => setDisplayNewModel(true)}
+          className={cx('model-pill ', isComputing ? 'disabled' : '')}
+          id="create-new"
+        >
           Create new model
         </button>
       </ModelsPillDisplay>
+      {isComputing && (
+        <button
+          key="stop"
+          className="btn btn-primary mt-3 d-flex align-items-center"
+          onClick={() => stopProcesses('all')}
+        >
+          <PulseLoader color={'white'} /> Stop current process
+        </button>
+      )}
       <div>
         <table className="table table-striped table-hover w-100 mt-2">
           <tbody>

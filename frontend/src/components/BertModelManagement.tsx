@@ -1,17 +1,15 @@
+import cx from 'classnames';
 import { FC, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
-import { Tooltip } from 'react-tooltip';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ModelParametersTab } from '../components/ModelParametersTab';
+import { DisplayScores } from './DisplayScores';
+import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { LossChart } from '../components/vizualisation/lossChart';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 
 import { SubmitHandler, useForm } from 'react-hook-form';
-import Select from 'react-select';
-import { DisplayScores } from '../components/DisplayScores';
 import { useDeleteBertModel, useModelInformations, useRenameBertModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel } from '../types';
@@ -56,9 +54,6 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
     isComputing,
   );
 
-  // compute model prediction
-  const [batchSize, setBatchSize] = useState<number>(32);
-
   // form to rename
   const { renameBertModel } = useRenameBertModel(projectSlug || null);
   const {
@@ -78,41 +73,23 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
 
   const [displayNewBertModel, setDisplayNewBertModel] = useState(false);
 
-  console.log('TEST', availableBertModels);
-
   return (
     <div>
-      <div className="d-flex align-items-center">
-        <Select
-          options={Object.keys(availableBertModels || {}).map((e) => ({
-            value: e,
-            label: e,
-          }))}
-          value={currentBertModel ? { value: currentBertModel, label: currentBertModel } : null}
-          onChange={(selectedOption) => {
-            setCurrentBertModel(selectedOption ? selectedOption.value : null);
-          }}
-          isSearchable
-          className="w-50 mt-1"
-          placeholder="Select an existing bertmodel"
-        />
+      <ModelsPillDisplay
+        modelNames={Object.keys(availableBertModels || {}).map((model) => model)}
+        currentModelName={currentBertModel}
+        setCurrentModelName={setCurrentBertModel}
+        deleteModelFunction={deleteBertModel}
+      >
         <button
-          className="btn btn p-0"
-          onClick={() => {
-            if (currentBertModel) {
-              deleteBertModel(currentBertModel);
-              setCurrentBertModel(null);
-            }
-          }}
+          onClick={() => setDisplayNewBertModel(true)}
+          className={cx('model-pill ', isComputing ? 'disabled' : '')}
+          id="create-new"
         >
-          <MdOutlineDeleteOutline size={30} />
-        </button>
-      </div>
-      {!isComputing ? (
-        <button onClick={() => setDisplayNewBertModel(true)} className="btn btn-primary my-2">
           Create new model
         </button>
-      ) : (
+      </ModelsPillDisplay>
+      {isComputing && (
         <DisplayTrainingProcesses
           projectSlug={projectSlug || null}
           processes={project?.languagemodels.training}
@@ -127,37 +104,20 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 <summary>
                   <span>Parameters of the model</span>
                 </summary>
-                <div className="d-flex align-items-center">
-                  <label>Batch size</label>
-                  <a className="batch">
-                    <HiOutlineQuestionMarkCircle />
-                  </a>
-                  <Tooltip anchorSelect=".batch" place="top">
-                    Batch used for predict. Keep it small (16 or 32) for small GPU.
-                  </Tooltip>
-                  <input
-                    type="number"
-                    step="1"
-                    className="m-2"
-                    style={{ width: '50px' }}
-                    value={batchSize}
-                    onChange={(e) => setBatchSize(Number(e.target.value))}
-                  />
-                </div>
                 <ModelParametersTab params={model.params as Record<string, unknown>} />
-                <details className="m-2">
-                  <summary>Rename</summary>
-                  <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                    <input
-                      id="new_name"
-                      className="form-control me-2 mt-2"
-                      type="text"
-                      placeholder="New name of the model"
-                      {...registerRename('new_name')}
-                    />
-                    <button className="btn btn-primary me-2 mt-2">Rename</button>
-                  </form>
-                </details>
+              </details>
+              <details style={{ color: 'gray' }}>
+                <summary>Rename</summary>
+                <form onSubmit={handleSubmitRename(onSubmitRename)}>
+                  <input
+                    id="new_name"
+                    className="form-control me-2 mt-2"
+                    type="text"
+                    placeholder="New name of the model"
+                    {...registerRename('new_name')}
+                  />
+                  <button className="btn btn-primary me-2 mt-2">Rename</button>
+                </form>
               </details>
               {isComputing && (
                 <DisplayTrainingProcesses
@@ -167,13 +127,11 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 />
               )}
 
-              <div className="mt-2">
-                <DisplayScores
-                  title={'Validation scores from the training data (internal validation)'}
-                  scores={model.scores.internalvalid_scores as MLStatisticsModel}
-                  modelName={currentBertModel}
-                />
-              </div>
+              <DisplayScores
+                title={'Validation scores from the training data (internal validation)'}
+                scores={model.scores.internalvalid_scores as MLStatisticsModel}
+                modelName={currentBertModel}
+              />
 
               <div className="mt-2">
                 <LossChart loss={loss} />

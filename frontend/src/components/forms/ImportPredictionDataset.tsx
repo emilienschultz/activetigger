@@ -32,8 +32,8 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
   modelName,
   availablePredictionExternal,
 }) => {
-  const maxSizeMo = 300;
-  const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
+  const maxSizeMB = 300;
+  const maxSize = maxSizeMB * 1024 * 1024; // 100 MB in bytes
 
   const { getPredictionsFile } = useGetPredictionsFile(projectSlug || null);
 
@@ -62,7 +62,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
       if (file.size > maxSize) {
         notify({
           type: 'error',
-          message: `File is too big (only file less than ${maxSizeMo} Mo are allowed)`,
+          message: `File is too big (only file less than ${maxSizeMB} Mo are allowed)`,
         });
         return;
       }

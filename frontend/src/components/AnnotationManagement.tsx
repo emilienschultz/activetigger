@@ -1,5 +1,7 @@
+import cx from 'classnames';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { FaLock, FaPencilAlt } from 'react-icons/fa';
+import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -58,6 +60,7 @@ export const AnnotationManagement: FC = () => {
   const [comment, setComment] = useState('');
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
+  const [settingChanged, setSettingChanged] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
   const handleCloseComment = () => setDisplayComment(false);
@@ -99,6 +102,10 @@ export const AnnotationManagement: FC = () => {
       : 'multiclass',
   );
 
+  // hook to clear history
+  const actionClearHistory = () => {
+    setAppContext((prev) => ({ ...prev, history: [] }));
+  };
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
     projectName || null,
@@ -258,7 +265,10 @@ export const AnnotationManagement: FC = () => {
         {
           // annotation mode
           <div>
-            <SelectionManagement />
+            <SelectionManagement
+              settingChanged={settingChanged}
+              setSettingChanged={setSettingChanged}
+            />
             {/* <div
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
@@ -276,10 +286,11 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 ''
               )}{' '}
-              <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
-                <span>
-                  <LuRefreshCw size={20} /> Fetch
-                </span>
+              <button
+                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
+                onClick={refetchElement}
+              >
+                <LuRefreshCw size={20} /> Fetch
                 <Tooltip anchorSelect=".getelement" place="top">
                   Get next element with the selection mode
                 </Tooltip>
@@ -402,7 +413,6 @@ export const AnnotationManagement: FC = () => {
             Add a comment
           </Tooltip>
         </button>
-
         <button
           className="btn displayconfig"
           onClick={() => {
@@ -425,6 +435,12 @@ export const AnnotationManagement: FC = () => {
             Display the projection
           </Tooltip>
         </button>
+        <button className="btn clearhistory" onClick={actionClearHistory}>
+          <FiRefreshCcw />
+        </button>
+        <Tooltip anchorSelect=".clearhistory" place="top">
+          Clear the history
+        </Tooltip>
       </div>
 
       <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">

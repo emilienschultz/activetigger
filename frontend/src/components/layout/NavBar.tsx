@@ -102,19 +102,6 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
               className="d-flex navbar-nav navbar-text navbar-text-margins align-items-center"
               id="log-container"
             >
-              {/* <li className="d-flex nav-item">
-                  <button
-                  className="btn btn-primary clearhistory mx-1"
-                  onClick={actionClearHistory}
-                  >
-                  <FiRefreshCcw />
-                  <span className="badge badge-warning">{history.length}</span>
-                  </button>
-                  <Tooltip anchorSelect=".clearhistory" place="top">
-                  Clear the history
-                  </Tooltip>
-                </li> */}
-
               <button
                 className="btn btn-primary mx-2 logout"
                 onClick={async () => {
