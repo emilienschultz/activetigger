@@ -39,13 +39,14 @@ export const ProjectExplorePage: FC = () => {
                 <DataTabular
                   projectSlug={projectName || ''}
                   currentScheme={currentScheme || ''}
-                  phase={phase}
                   availableLabels={availableLabels}
                   kindScheme={kindScheme}
+                  isValid={project?.params.valid || false}
+                  isTest={project?.params.test || false}
                 />
               </Tab>
               <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
-                <div className="explanations">Explore your data as a projection</div>
+                <div className="explanations">Explore your train data as a projection</div>
                 {phase != 'test' && (
                   <ProjectionManagement
                     projectName={projectName || null}
@@ -57,7 +58,7 @@ export const ProjectExplorePage: FC = () => {
               </Tab>
               <Tab eventKey="bertopic" title="Topic model">
                 <div className="explanations">
-                  Explore the topics in your data with{' '}
+                  Explore the topics in your train data with{' '}
                   <a href="https://maartengr.github.io/BERTopic/index.html">Bertopic</a>
                 </div>
                 <BertopicPage />
