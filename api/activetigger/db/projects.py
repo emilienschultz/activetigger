@@ -88,7 +88,7 @@ class ProjectsService:
         labels: list[str],
         kind: str,
         user_name: str,
-        codebook: str = "# Empty codebook",
+        codebook: str = "# Empty guidelines\nYou can edit the codebook here.",
     ):
         if not labels:
             labels = []

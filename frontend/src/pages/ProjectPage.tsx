@@ -73,8 +73,7 @@ export const ProjectPage: FC = () => {
 
       {availableLabels.length === 0 && (
         <div className="alert alert-info col-12 mt-2">
-          No labels available for this scheme. Please add labels to use this scheme, or create a new
-          scheme.
+          No labels available for this scheme. Add labels to start annotation.
         </div>
       )}
 

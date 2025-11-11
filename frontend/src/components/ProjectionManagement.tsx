@@ -8,6 +8,7 @@ import PulseLoader from 'react-spinners/PulseLoader';
 import chroma from 'chroma-js';
 import { Modal } from 'react-bootstrap';
 import { FaLock, FaPlusCircle } from 'react-icons/fa';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import {
   useAddAnnotation,
@@ -312,7 +313,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <span className="lock">
               <FaLock /> Lock on selection
             </span>
-            <Tooltip anchorSelect=".lock" place="top">
+            <a className="lockhelp">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".lockhelp" place="top">
               Once a vizualisation computed, you can use the square tool to select an area (or
               remove the square).<br></br> Then you can lock the selection, and only elements in the
               selected area will be available for annoation.
