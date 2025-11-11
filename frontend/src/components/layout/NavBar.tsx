@@ -16,7 +16,6 @@ interface NavBarPropsType {
 
 const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
   const { authenticatedUser, logout } = useAuth();
-  const currentUser = authenticatedUser?.username;
   const navigate = useNavigate();
 
   const [expanded, setExpanded] = useState<boolean>(false);

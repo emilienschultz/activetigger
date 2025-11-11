@@ -274,19 +274,6 @@ export const AnnotationManagement: FC = () => {
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
             <div className="text-center my-2">
-              {statistics ? (
-                <span className=" ms-2">
-                  <span className="d-none d-md-inline">Annotated : </span>
-                  {statisticsDataset(phase)} ;{' '}
-                  <span className="d-none d-md-inline">Selected : </span>
-                  {nSample || ''}
-                  {/* <Tooltip anchorSelect=".currentstatistics" place="top">
-                        statistics for the current scheme
-                      </Tooltip> */}
-                </span>
-              ) : (
-                ''
-              )}{' '}
               <button
                 className={cx('getelement', settingChanged ? 'setting-changed' : '')}
                 onClick={() => {
@@ -300,6 +287,19 @@ export const AnnotationManagement: FC = () => {
                   Get next element with the selection mode
                 </Tooltip> */}
               </button>
+              {statistics ? (
+                <span className="ms-2" style={{ fontSize: '12px', color: 'gray' }}>
+                  <span className="d-none d-md-inline">Annotated: </span>
+                  {statisticsDataset(phase)} -{' '}
+                  <span className="d-none d-md-inline">Selected: </span>
+                  {nSample || ''}
+                  {/* <Tooltip anchorSelect=".currentstatistics" place="top">
+                        statistics for the current scheme
+                      </Tooltip> */}
+                </span>
+              ) : (
+                ''
+              )}{' '}
               <GiTigerHead
                 size={30}
                 onClick={() => setActiveMenu(!activeMenu)}
@@ -452,9 +452,9 @@ export const AnnotationManagement: FC = () => {
         <button className="btn clearhistory" onClick={actionClearHistory} title="Clear the history">
           <FiRefreshCcw />
         </button>
-        {/* <Tooltip anchorSelect=".clearhistory" place="top">
+        <Tooltip anchorSelect=".clearhistory" place="top">
           Clear the history
-        </Tooltip> */}
+        </Tooltip>
       </div>
 
       <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
