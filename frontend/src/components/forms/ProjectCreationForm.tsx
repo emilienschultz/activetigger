@@ -18,6 +18,7 @@ import {
   useGetAvailableDatasets,
   useProjectNameAvailable,
 } from '../../core/api';
+import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
@@ -36,6 +37,8 @@ type Option = {
 
 // component
 export const ProjectCreationForm: FC = () => {
+  const { resetContext } = useAppContext();
+
   // form management
   const maxSizeMB = 400;
   const maxSize = maxSizeMB * 1024 * 1024; // 100 MB in bytes
@@ -200,6 +203,7 @@ export const ProjectCreationForm: FC = () => {
             if (status === 'existing') {
               clearInterval(intervalId);
               addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
+              resetContext();
               navigate(`/projects/${slug}?fromProjectPage=true`);
               return;
             }
@@ -247,9 +251,14 @@ export const ProjectCreationForm: FC = () => {
               onClick={handleClickOnText}
             />
           </div>
-          <div>
+          <div className="mt-2">
             <label>
-              <input type="radio" name="dataset-origin" onClick={() => setDataset('load')} />
+              <input
+                type="radio"
+                name="dataset-origin"
+                onClick={() => setDataset('load')}
+                className="me-2"
+              />
               Load Dataset from disk
             </label>
             <label>
@@ -257,6 +266,7 @@ export const ProjectCreationForm: FC = () => {
                 type="radio"
                 name="dataset-origin"
                 onClick={() => setDataset('from-project')}
+                className="me-2"
               />
               Load Dataset from another project
             </label>
