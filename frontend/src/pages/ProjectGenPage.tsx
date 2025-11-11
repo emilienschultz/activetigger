@@ -1,8 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
-import { BsSave2 } from 'react-icons/bs';
-import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
+import { FaPlusCircle, FaRegSave, FaRegTrashAlt } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle, HiOutlineSparkles } from 'react-icons/hi';
 import { useParams } from 'react-router-dom';
 import Select from 'react-select';
@@ -37,6 +36,68 @@ interface Row {
   endpoint: string;
 }
 
+// Define the table
+const columns: readonly Column<Row>[] = [
+  {
+    name: 'Time',
+    key: 'time',
+    resizable: true,
+    width: '15%',
+  },
+  {
+    name: 'Id',
+    key: 'index',
+    resizable: true,
+    width: '15%',
+  },
+  {
+    name: 'Answer',
+    key: 'answer',
+    resizable: true,
+    width: '35%',
+    renderCell: ({ row }) => (
+      <div
+        style={{
+          maxHeight: '100%',
+          width: '100%',
+          whiteSpace: 'wrap',
+          overflowY: 'auto',
+          userSelect: 'none',
+        }}
+      >
+        {row.answer}
+      </div>
+    ),
+  },
+  {
+    name: 'Prompt',
+    key: 'prompt',
+    resizable: true,
+    width: '25%',
+    renderCell: ({ row }) => (
+      <div
+        style={{
+          maxHeight: '100%',
+          width: '100%',
+          whiteSpace: 'wrap',
+          overflowY: 'auto',
+          userSelect: 'none',
+          backgroundColor: '#f0f0f0',
+        }}
+      >
+        {row.prompt}
+      </div>
+    ),
+  },
+
+  {
+    name: 'Model name',
+    key: 'model name',
+    resizable: true,
+    width: '10%',
+  },
+];
+
 export const GenPage: FC = () => {
   //------------------------------------
   // hooks for the app
@@ -49,16 +110,13 @@ export const GenPage: FC = () => {
   const { notify } = useNotifications();
 
   //------------------------------------
-  // state of the page
-  // genModels
+  // states of the page
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const [configuredModels, setConfiguredModels] = useState<Array<GenModel & { api: string }>>([]);
-  const [showForm, setShowForm] = useState<boolean>(false);
-  // currently generating for the user
+  const [showFormAddModel, setShowFormAddModel] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  // add filters for text treatment
   const [filters, setFilters] = useState<string[]>([]);
-  // to save the prompt name
+  const [showRecordPromptForm, setShowRecordPromptForm] = useState<boolean>(false);
   const [promptName, setPromptName] = useState<string>('');
 
   //------------------------------------
@@ -73,6 +131,7 @@ export const GenPage: FC = () => {
     generateConfig.selectionMode || null,
     generateConfig.token,
   );
+
   // to stop generation
   const { stopGenerate } = useStopGenerate(projectName || null);
 
@@ -98,9 +157,6 @@ export const GenPage: FC = () => {
   const savePrompts = useSavePrompts(projectName || null);
   const deletePrompts = useDeletePrompts(projectName || null);
 
-  //------------------------------------
-  // reacting elements
-
   // check if the user is generating and change the state
   useEffect(() => {
     setIsGenerating(
@@ -109,7 +165,7 @@ export const GenPage: FC = () => {
     );
   }, [authenticatedUser, currentProject]);
 
-  // get existing models and select the first
+  // get existing models from the API
   useEffect(() => {
     const fetchModels = async () => {
       const models = await getProjectGenModels(projectName);
@@ -118,23 +174,26 @@ export const GenPage: FC = () => {
     fetchModels();
   }, [projectName, currentModel]);
 
-  // utility functions for the DOM
-  const showAddForm = () => {
-    setShowForm(true);
-  };
-
-  const hideForm = () => {
-    setShowForm(false);
-  };
-
   // function to add a model
   const addModel = async (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => {
     const id = await createGenModel(projectName, model);
     notify({ type: 'success', message: 'Model added' });
     setConfiguredModels([...configuredModels, { ...model, id }]);
-    setShowForm(false);
+    setShowFormAddModel(false);
   };
 
+  // update the model in the configGeneration
+  useEffect(() => {
+    if (currentModel) {
+      const model = configuredModels.filter((m) => m.name === currentModel)[0];
+      setAppContext((prev) => ({
+        ...prev,
+        generateConfig: { ...prev.generateConfig, selectedModel: model },
+      }));
+    }
+  }, [currentModel, configuredModels, setAppContext]);
+
+  // function to delete a model
   const deleteModel = async (name: string) => {
     const id = configuredModels.filter((m) => m.name === name)[0].id;
     await deleteGenModel(projectName, id).then(() => {
@@ -144,77 +203,7 @@ export const GenPage: FC = () => {
     });
   };
 
-  // function to handle the change of the model
-  // const handleChange = async (e: ChangeEvent<HTMLSelectElement>) => {
-  //   const model = configuredModels.filter((m) => m.id === parseInt(e.target.value))[0];
-  //   setAppContext((prev) => ({
-  //     ...prev,
-  //     generateConfig: { ...prev.generateConfig, selectedModel: model },
-  //   }));
-  // };
-
-  // Define the table
-  const columns: readonly Column<Row>[] = [
-    {
-      name: 'Time',
-      key: 'time',
-      resizable: true,
-      width: '15%',
-    },
-    {
-      name: 'Id',
-      key: 'index',
-      resizable: true,
-      width: '15%',
-    },
-    {
-      name: 'Answer',
-      key: 'answer',
-      resizable: true,
-      width: '35%',
-      renderCell: ({ row }) => (
-        <div
-          style={{
-            maxHeight: '100%',
-            width: '100%',
-            whiteSpace: 'wrap',
-            overflowY: 'auto',
-            userSelect: 'none',
-          }}
-        >
-          {row.answer}
-        </div>
-      ),
-    },
-    {
-      name: 'Prompt',
-      key: 'prompt',
-      resizable: true,
-      width: '25%',
-      renderCell: ({ row }) => (
-        <div
-          style={{
-            maxHeight: '100%',
-            width: '100%',
-            whiteSpace: 'wrap',
-            overflowY: 'auto',
-            userSelect: 'none',
-            backgroundColor: '#f0f0f0',
-          }}
-        >
-          {row.prompt}
-        </div>
-      ),
-    },
-
-    {
-      name: 'Model name',
-      key: 'model name',
-      resizable: true,
-      width: '10%',
-    },
-  ];
-
+  // function to add a context tag
   const addContextTagToPrompt = (context: string) => {
     setAppContext((prev) => ({
       ...prev,
@@ -261,12 +250,17 @@ export const GenPage: FC = () => {
       <div className="container-fluid mt-3">
         <div className="row"></div>
         <div className="explanations">Use external LLM models for generation</div>
-        <Modal show={showForm} id="createmodel-modal" size="xl" onHide={() => setShowForm(false)}>
+        <Modal
+          show={showFormAddModel}
+          id="createmodel-modal"
+          size="xl"
+          onHide={() => setShowFormAddModel(false)}
+        >
           <Modal.Header closeButton>
             <Modal.Title>Add a new generative model</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <GenModelSetupForm add={addModel} cancel={hideForm} />
+            <GenModelSetupForm add={addModel} cancel={() => setShowFormAddModel(false)} />
           </Modal.Body>
         </Modal>
         <ModelsPillDisplay
@@ -275,7 +269,7 @@ export const GenPage: FC = () => {
           setCurrentModelName={setCurrentModel}
           deleteModelFunction={deleteModel}
         >
-          <button onClick={showAddForm} className="model-pill" id="create-new">
+          <button onClick={() => setShowFormAddModel(true)} className="model-pill" id="create-new">
             <FaPlusCircle size={20} /> Add new model
           </button>
         </ModelsPillDisplay>
@@ -318,21 +312,48 @@ export const GenPage: FC = () => {
                 </div>
               </div>
 
-              <div className="explanations mt-3">
-                Select or craft your prompt with the element [[TEXT]] to insert text
-              </div>
-
-              <div className="d-flex align-items-center " style={{ zIndex: 1 }}>
+              <Modal show={showRecordPromptForm} onHide={() => setShowRecordPromptForm(false)}>
+                <Modal.Header>
+                  <Modal.Title>Record the current prompt</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                  <div className="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="promptname"
+                      className="form-control"
+                      value={promptName}
+                      placeholder="Prompt name to save"
+                      onChange={(e) => setPromptName(e.target.value)}
+                    />
+                    <button
+                      className="btn btn-primary mx-2 savebutton"
+                      onClick={() => {
+                        if (!promptName)
+                          notify({ type: 'error', message: 'Prompt name is required' });
+                        savePrompts(generateConfig.prompt || null, promptName);
+                        reFetchPrompts();
+                        setShowRecordPromptForm(false);
+                      }}
+                    >
+                      Save
+                    </button>
+                    <Tooltip anchorSelect=".savebutton" place="top" style={{ zIndex: 99 }}>
+                      Save the prompt
+                    </Tooltip>
+                  </div>
+                </Modal.Body>
+              </Modal>
+              <div className="d-flex align-items-center my-2" style={{ zIndex: 1 }}>
                 <Select
                   id="select-prompt"
-                  className="w-75"
                   options={(prompts || []).map((e) => ({
                     value: e.id as unknown as string,
                     label: e.parameters.name as unknown as string,
                     text: e.text as unknown as string,
                   }))}
                   isClearable
-                  placeholder="Look for a recorded prompt"
+                  placeholder="Saved prompts"
                   onChange={(e) => {
                     setAppContext((prev) => ({
                       ...prev,
@@ -344,47 +365,24 @@ export const GenPage: FC = () => {
                     }));
                   }}
                 />
-
+                <button
+                  onClick={() => {
+                    setShowRecordPromptForm(true);
+                  }}
+                  className="btn btn-primary mx-2 savebutton"
+                >
+                  <FaRegSave size={20} />
+                </button>
                 <button
                   onClick={() => {
                     deletePrompts(generateConfig.promptId || null);
                     reFetchPrompts();
                   }}
-                  className="btn btn-primary mx-2"
+                  className="btn btn-primary"
                 >
                   <FaRegTrashAlt size={20} />
                 </button>
               </div>
-              <div>
-                {' '}
-                <details className="p-1  col-6">
-                  <summary>Save prompt</summary>
-                  <div className="d-flex align-items-center">
-                    <input
-                      type="text"
-                      id="promptname"
-                      className="form-control"
-                      value={promptName}
-                      placeholder="Prompt name to save"
-                      onChange={(e) => setPromptName(e.target.value)}
-                    />
-
-                    <button
-                      className="btn btn-primary mx-2 savebutton"
-                      onClick={() => {
-                        savePrompts(generateConfig.prompt || null, promptName);
-                        reFetchPrompts();
-                      }}
-                    >
-                      <BsSave2 />
-                    </button>
-                    <Tooltip anchorSelect=".savebutton" place="top" style={{ zIndex: 99 }}>
-                      Save the prompt
-                    </Tooltip>
-                  </div>
-                </details>
-              </div>
-              {addContextButtons(currentProject?.params.cols_context)}
               <div className="form-floating mt-2">
                 <textarea
                   id="prompt"
@@ -400,21 +398,22 @@ export const GenPage: FC = () => {
                     }));
                   }}
                 />
-                <span style={{ color: 'gray' }}>
+                {/* <span style={{ color: 'gray' }}>
                   The request will send the data to an external API. Be sure you can trust the API
                   provider with respect to the level of privacy you need for you data
-                </span>
-                <label htmlFor="prompt" style={{ zIndex: 1 }}>
+                </span> */}
+                <label htmlFor="prompt" style={{ zIndex: 0 }}>
                   Prompt
                 </label>
               </div>
+
+              {addContextButtons(currentProject?.params.cols_context)}
+
               <div className="col-12 text-center">
                 {isGenerating ? (
                   <div>
-                    <div>
-                      <PulseLoader />
-                    </div>
                     <button className="btn btn-secondary mt-3" onClick={stopGenerate}>
+                      <PulseLoader className="mx-2" />
                       Stop (
                       {String(
                         currentProject?.generations?.training?.[authenticatedUser?.username || '']
@@ -433,9 +432,6 @@ export const GenPage: FC = () => {
                     <HiOutlineSparkles size={30} /> Generate
                   </button>
                 )}
-                <Tooltip anchorSelect=".generatebutton" place="top">
-                  It can take some time if you have a large batch
-                </Tooltip>
               </div>
             </div>
             <hr />

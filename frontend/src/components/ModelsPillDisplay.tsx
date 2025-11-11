@@ -39,7 +39,7 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
           >
             <MdOutlineDeleteOutline size={20} />
           </button>
-          <Modal show={showDelete} id="deletescheme" onHide={() => setShowDelete(false)}>
+          <Modal show={showDelete} id={`deletescheme-${name}`} onHide={() => setShowDelete(false)}>
             <Modal.Header closeButton>
               <Modal.Title>Delete the current model</Modal.Title>
             </Modal.Header>
