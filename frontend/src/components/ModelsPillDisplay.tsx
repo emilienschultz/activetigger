@@ -8,7 +8,7 @@ interface ModelsNameInput {
   modelNames: string[];
   currentModelName: string | null;
   setCurrentModelName: Dispatch<SetStateAction<string | null>>;
-  deleteModelFunction: (model_name: string) => Promise<true | null>;
+  deleteModelFunction: (model_name: string) => Promise<boolean | null | undefined | void> | void;
   children?: ReactNode;
 }
 

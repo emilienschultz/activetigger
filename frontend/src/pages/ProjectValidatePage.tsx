@@ -1,16 +1,17 @@
 import cx from 'classnames';
 import { FC, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { GrValidate } from 'react-icons/gr';
 import { useParams } from 'react-router-dom';
 import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
-import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
+import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
 import {
   useComputeModelPrediction,
-  useModelInformations,
-  useDeleteQuickModel,
   useDeleteBertModel,
+  useDeleteQuickModel,
+  useModelInformations,
 } from '../core/api';
 import { useAppContext } from '../core/context';
 import { MLStatisticsModel, ModelDescriptionModel } from '../types';
@@ -41,14 +42,14 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, 16);
   return (
     <button
-      className={cx(className ? className : 'btn btn-primary my-2')}
+      className={cx(className ? className : 'btn btn-primary m-4')}
       onClick={() => {
         computeModelPrediction(modelName || '', 'annotable', currentScheme, kind);
         setCurrentModel(null);
       }}
       id={id}
     >
-      Compute statistics on annotations
+      <GrValidate size={20} /> Compute statistics on annotations
     </button>
   );
 };
@@ -116,27 +117,31 @@ export const ProjectValidatePage: FC = () => {
                     currentModelName={currentQuickModelName}
                     setCurrentModelName={setCurrentQuickModelName}
                     deleteModelFunction={deleteQuickModel}
-                  >
+                  ></ModelsPillDisplay>
+                )}
+
+                {quickModelInformations && (
+                  <>
                     <ValidateButtons
                       modelName={currentQuickModelName}
                       kind="quick"
                       currentScheme={currentScheme || null}
                       projectSlug={projectName || null}
                       setCurrentModel={setCurrentQuickModelName}
-                      className={cx('model-pill ', isComputing ? 'disabled' : '')}
                       id="compute-validate"
                     />
-                  </ModelsPillDisplay>
-                )}
 
-                {quickModelInformations && (
-                  <DisplayScoresMenu
-                    scores={
-                      quickModelInformations.scores as unknown as Record<string, MLStatisticsModel>
-                    }
-                    modelName={currentQuickModelName || ''}
-                    skip={['internalvalid_scores']}
-                  />
+                    <DisplayScoresMenu
+                      scores={
+                        quickModelInformations.scores as unknown as Record<
+                          string,
+                          MLStatisticsModel
+                        >
+                      }
+                      modelName={currentQuickModelName || ''}
+                      skip={['internalvalid_scores']}
+                    />
+                  </>
                 )}
               </Tab>
               <Tab eventKey="bert" title="BERT">
@@ -149,17 +154,7 @@ export const ProjectValidatePage: FC = () => {
                     currentModelName={currentBertModelName}
                     setCurrentModelName={setCurrentBertModelName}
                     deleteModelFunction={deleteBertModel}
-                  >
-                    <ValidateButtons
-                      modelName={currentBertModelName}
-                      kind="bert"
-                      currentScheme={currentScheme || null}
-                      projectSlug={projectName || null}
-                      setCurrentModel={setCurrentBertModelName}
-                      className={cx('model-pill ', isComputing ? 'disabled' : '')}
-                      id="compute-validate"
-                    />
-                  </ModelsPillDisplay>
+                  ></ModelsPillDisplay>
                 )}
                 <div>
                   {/* AM: Necessary ? Confused... */}
@@ -180,37 +175,27 @@ export const ProjectValidatePage: FC = () => {
                   )}
 
                   {bertModelInformations && (
-                    <DisplayScoresMenu
-                      scores={
-                        bertModelInformations.scores as unknown as Record<string, MLStatisticsModel>
-                      }
-                      modelName={currentQuickModelName || ''}
-                      skip={['internalvalid_scores']}
-                    />
+                    <>
+                      <ValidateButtons
+                        modelName={currentBertModelName}
+                        kind="bert"
+                        currentScheme={currentScheme || null}
+                        projectSlug={projectName || null}
+                        setCurrentModel={setCurrentBertModelName}
+                        id="compute-validate"
+                      />
+                      <DisplayScoresMenu
+                        scores={
+                          bertModelInformations.scores as unknown as Record<
+                            string,
+                            MLStatisticsModel
+                          >
+                        }
+                        modelName={currentQuickModelName || ''}
+                        skip={['internalvalid_scores']}
+                      />
+                    </>
                   )}
-
-                  {/* {bertModelInformation && (
-                    <DisplayScores
-                      scores={
-                        bertModelInformation.scores.valid_scores as unknown as Record<
-                          string,
-                          number
-                        >
-                      }
-                      modelName={currentBertModelName || ''}
-                      title="Validation scores"
-                    />
-                  )}
-
-                  {bertModelInformation && (
-                    <DisplayScores
-                      scores={
-                        bertModelInformation.scores.test_scores as unknown as Record<string, number>
-                      }
-                      modelName={currentBertModelName || ''}
-                      title="Test scores"
-                    />
-                  )} */}
                 </div>
               </Tab>
             </Tabs>

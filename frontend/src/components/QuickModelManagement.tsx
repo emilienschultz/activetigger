@@ -3,13 +3,13 @@ import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
-import PulseLoader from 'react-spinners/PulseLoader';
 import Select from 'react-select';
+import PulseLoader from 'react-spinners/PulseLoader';
 import {
   useDeleteQuickModel,
   useGetQuickModel,
-  useTrainQuickModel,
   useStopProcesses,
+  useTrainQuickModel,
 } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
@@ -206,7 +206,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
           id="create-new"
         >
-          Create new model
+          <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
       {isComputing && (
