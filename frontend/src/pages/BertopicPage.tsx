@@ -1,7 +1,8 @@
+import cx from 'classnames';
 import chroma from 'chroma-js';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { FaCloudDownloadAlt, FaPlusCircle } from 'react-icons/fa';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { RiFileTransferLine } from 'react-icons/ri';
 import { useParams } from 'react-router-dom';
@@ -20,6 +21,7 @@ import {
   useGetElementById,
 } from '../core/api';
 import { useAppContext } from '../core/context';
+import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
 
 export const BertopicPage: FC = () => {
   const { projectName } = useParams();
@@ -86,6 +88,22 @@ export const BertopicPage: FC = () => {
     // <ProjectPageLayout projectName={projectName} currentAction="explore">
     <div className="row">
       <div className="col-12">
+        <div className="d-flex w-50 my-2" style={{ zIndex: 100 }}>
+          <ModelsPillDisplay
+            modelNames={Object.keys(availableBertopic).map((name) => name)}
+            currentModelName={currentBertopic}
+            setCurrentModelName={setCurrentBertopic}
+            deleteModelFunction={deleteBertopic}
+          >
+            <button
+              onClick={() => setShowComputeNewBertopic(true)}
+              className={cx('model-pill ', isComputing ? 'disabled' : '')}
+              id="create-new"
+            >
+              <FaPlusCircle size={20} /> Compute new BERTopic
+            </button>
+          </ModelsPillDisplay>
+        </div>
         {currentTraining && currentTraining?.length > 0 && (
           <div className="alert alert-info m-2">
             Current computation
@@ -98,48 +116,6 @@ export const BertopicPage: FC = () => {
             </ul>
           </div>
         )}
-        <div className="d-flex w-50 my-2" style={{ zIndex: 1000 }}>
-          <Select
-            className="flex-grow-1"
-            options={Object.keys(availableBertopic).map((e) => ({ value: e, label: e }))}
-            onChange={(e) => {
-              if (e) setCurrentBertopic(e.value);
-            }}
-            value={{ value: currentBertopic, label: currentBertopic }}
-            styles={{
-              menu: (provided) => ({
-                ...provided,
-                zIndex: 1000,
-              }),
-            }}
-          />
-          <button
-            className="btn p-0"
-            onClick={() => {
-              deleteBertopic(currentBertopic);
-              setCurrentBertopic(null);
-            }}
-          >
-            <MdOutlineDeleteOutline size={30} />
-          </button>
-          <button
-            className="btn p-0 convertoscheme"
-            onClick={() => exportBertopicAsAnnotation(currentBertopic)}
-          >
-            <RiFileTransferLine size={30} />
-            <Tooltip anchorSelect=".convertoscheme" place="top">
-              Convert the topic to a schemes
-            </Tooltip>
-          </button>
-        </div>
-
-        <button
-          onClick={() => setShowComputeNewBertopic(true)}
-          className="btn btn-primary my-2"
-          disabled={isComputing}
-        >
-          Compute new BERTopic
-        </button>
         <Modal
           show={showComputeNewBertopic}
           onHide={() => setShowComputeNewBertopic(false)}
@@ -273,16 +249,19 @@ export const BertopicPage: FC = () => {
         )}
         {topics && (
           <>
-            <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
-              <DisplayTableTopics data={(topics as unknown as Row[]) || []} />
-            </div>
             <div style={{ margin: '10px 0px' }}>
               <button
-                className="btn btn-primary"
+                className="btn btn-primary mx-2"
+                onClick={() => exportBertopicAsAnnotation(currentBertopic)}
+              >
+                Export as scheme <RiFileTransferLine size={20} />
+              </button>
+              <button
+                className="btn btn-primary mx-2"
                 id="download-topics"
                 onClick={() => (currentBertopic ? downloadBertopicTopics(currentBertopic) : null)}
               >
-                Topics <FaCloudDownloadAlt />
+                Topics <FaCloudDownloadAlt size={20} />
               </button>
               <Tooltip anchorSelect="#download-topics" place="top">
                 Download the table above with the following columns : Topic, Count, Name,
@@ -294,13 +273,16 @@ export const BertopicPage: FC = () => {
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicClusters(currentBertopic) : null)}
               >
-                Topic per text <FaCloudDownloadAlt />
+                Topic per text <FaCloudDownloadAlt size={20} />
               </button>
               <Tooltip anchorSelect="#download-clusters" place="top">
                 Download a table linking each element to a cluster. The table contains 2
                 <br />
                 columns: id and cluster
               </Tooltip>
+            </div>
+            <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
+              <DisplayTableTopics data={(topics as unknown as Row[]) || []} />
             </div>
           </>
         )}
