@@ -3,14 +3,10 @@ import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
+import { FaGear } from 'react-icons/fa6';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
-import {
-  useDeleteQuickModel,
-  useGetQuickModel,
-  useStopProcesses,
-  useTrainQuickModel,
-} from '../core/api';
+import { useDeleteQuickModel, useGetQuickModel, useTrainQuickModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
@@ -94,7 +90,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
 
   // hooks to update
   const { trainQuickModel } = useTrainQuickModel(projectName, currentScheme);
-  const { stopProcesses } = useStopProcesses();
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
@@ -193,6 +188,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
+  const [showParameters, setShowParameters] = useState(false);
+
   return (
     <div className="w-100">
       <ModelsPillDisplay
@@ -209,31 +206,24 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
+      <hr className="mt-2" />
+
       {isComputing && (
         <div className="btn btn-primary mt-3 d-flex align-items-center">
           <PulseLoader color={'white'} /> Computing
         </div>
       )}
-      <div>
-        <table className="table table-striped table-hover w-100 mt-2">
-          <tbody>
-            {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
-              <tr key={i}>
-                <td>{key}</td>
-                <td>
-                  {Array.isArray(value)
-                    ? (value as string[]).join(', ') // or use bullets if you prefer
-                    : typeof value === 'object' && value !== null
-                      ? JSON.stringify(value, null, 2)
-                      : String(value)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
       {currentModelInformations && (
         <div>
+          <div className="d-flex my-2">
+            <button
+              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
+              onClick={() => setShowParameters(true)}
+            >
+              <FaGear size={18} className="me-1" />
+              Parameters
+            </button>
+          </div>
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}
             scores={currentModelInformations.statistics_test as MLStatisticsModel}
@@ -422,6 +412,29 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
             featuresOption={featuresOption}
             columns={columns}
           />
+        </Modal.Body>
+      </Modal>
+      <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Parameters of {currentQuickModelName}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <table className="table table-striped table-hover w-100 mt-2">
+            <tbody>
+              {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
+                <tr key={i}>
+                  <td>{key}</td>
+                  <td>
+                    {Array.isArray(value)
+                      ? (value as string[]).join(', ') // or use bullets if you prefer
+                      : typeof value === 'object' && value !== null
+                        ? JSON.stringify(value, null, 2)
+                        : String(value)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Modal.Body>
       </Modal>
     </div>

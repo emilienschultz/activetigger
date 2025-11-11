@@ -11,6 +11,8 @@ import { ModelsPillDisplay } from './ModelsPillDisplay';
 
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
+import { FaGear } from 'react-icons/fa6';
+import { MdDriveFileRenameOutline } from 'react-icons/md';
 import { useDeleteBertModel, useModelInformations, useRenameBertModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel } from '../types';
@@ -41,6 +43,9 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
   isComputing,
 }) => {
   const { notify } = useNotifications();
+
+  const [showParameters, setShowParameters] = useState(false);
+  const [showRename, setShowRename] = useState(false);
 
   // current model and automatic selection
 
@@ -97,36 +102,36 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
           displayStopButton={isComputing}
         />
       )}
+      <hr className="mt-2" />
       {currentBertModel && (
         <div>
           {model && (
             <div>
-              <details style={{ color: 'gray' }}>
-                <summary>
-                  <span>Parameters of the model</span>
-                </summary>
-                <ModelParametersTab params={model.params as Record<string, unknown>} />
-              </details>
-              <details style={{ color: 'gray' }}>
-                <summary>Rename</summary>
-                <form onSubmit={handleSubmitRename(onSubmitRename)}>
-                  <input
-                    id="new_name"
-                    className="form-control me-2 mt-2"
-                    type="text"
-                    placeholder="New name of the model"
-                    {...registerRename('new_name')}
+              <div className="d-flex my-2">
+                <button
+                  className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
+                  onClick={() => setShowParameters(true)}
+                >
+                  <FaGear size={18} className="me-1" />
+                  Parameters
+                </button>
+
+                <button
+                  className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                  onClick={() => setShowRename(true)}
+                >
+                  <MdDriveFileRenameOutline size={18} className="me-1" />
+                  Rename
+                </button>
+
+                {isComputing && (
+                  <DisplayTrainingProcesses
+                    projectSlug={projectSlug || null}
+                    processes={project?.languagemodels.training}
+                    displayStopButton={isComputing}
                   />
-                  <button className="btn btn-primary me-2 mt-2">Rename</button>
-                </form>
-              </details>
-              {isComputing && (
-                <DisplayTrainingProcesses
-                  projectSlug={projectSlug || null}
-                  processes={project?.languagemodels.training}
-                  displayStopButton={isComputing}
-                />
-              )}
+                )}
+              </div>
 
               <DisplayScores
                 title={'Validation scores from the training data (internal validation)'}
@@ -170,6 +175,31 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
             isComputing={isComputing}
             setStatusDisplay={setDisplayNewBertModel}
           />
+        </Modal.Body>
+      </Modal>
+      <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Parameters of {currentBertModel}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ModelParametersTab params={model?.params as Record<string, unknown>} />
+        </Modal.Body>
+      </Modal>
+      <Modal show={showRename} id="rename-modal" onHide={() => setShowRename(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Rename {currentBertModel}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSubmitRename(onSubmitRename)}>
+            <input
+              id="new_name"
+              className="form-control me-2 mt-2"
+              type="text"
+              placeholder="New name of the model"
+              {...registerRename('new_name')}
+            />
+            <button className="btn btn-primary me-2 mt-2">Rename</button>
+          </form>
         </Modal.Body>
       </Modal>
     </div>
