@@ -121,7 +121,7 @@ export const BertopicPage: FC = () => {
         >
           <Modal.Header closeButton>
             <Modal.Title>
-              Compute Bertopic on the train dataset to identify the main topics.
+              Compute Bertopic on the train dataset to identify the main topics
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>

@@ -52,9 +52,14 @@ export const ProjectCreationForm: FC = () => {
     { value: 'cn', label: 'Chinese' },
     { value: 'ja', label: 'Japanese' },
   ];
+  function getRandomName() {
+    const timestamp = Date.now();
+    return `Project-${timestamp}`;
+  }
   const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
     {
       defaultValues: {
+        project_name: getRandomName(),
         n_train: 100,
         n_test: 0,
         n_valid: 0,

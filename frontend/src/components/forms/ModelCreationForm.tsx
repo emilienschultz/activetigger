@@ -55,6 +55,10 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     label: value,
   }));
 
+  function getRandomName() {
+    return `Bertmodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
+  }
+
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme].kind
@@ -66,6 +70,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     control,
   } = useForm<newBertModel>({
     defaultValues: {
+      name: getRandomName(),
       class_balance: false,
       loss: 'cross_entropy',
       class_min_freq: 1,

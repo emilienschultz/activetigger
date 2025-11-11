@@ -20,9 +20,12 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
 }) => {
   const { computeBertopic } = useComputeBertopic(projectSlug);
   const { stopProcesses } = useStopProcesses();
+  function getRandomName() {
+    return `BERTopic-${Math.random().toString(36).substring(2, 8)}`;
+  }
   const { handleSubmit: handleSubmitNewModel, register } = useForm<ComputeBertopicModel>({
     defaultValues: {
-      name: 'bertopic',
+      name: getRandomName(),
       outlier_reduction: true,
       // min_topic_size: 10, // Removed because overridden by the hdbscan model - Axel
       // nr_topics: 'auto', // Removed to propose topic reduction later in the pipeline - Axel
@@ -40,6 +43,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
     await computeBertopic(data);
     if (setStatusDisplay) setStatusDisplay(false);
   };
+
   return (
     <div>
       <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
