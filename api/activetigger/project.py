@@ -1007,7 +1007,7 @@ class Project:
         if path is None:
             raise ValueError("Problem of filesystem for project")
 
-        data = self.features.get(features, dataset="all")
+        data = self.features.get(features, dataset="annotable")
 
         file_name = f"extract_schemes_{self.name}.{format}"
 
