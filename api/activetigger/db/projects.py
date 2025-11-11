@@ -82,11 +82,17 @@ class ProjectsService:
             )
 
     def add_scheme(
-        self, project_slug: str, name: str, labels: list[str], kind: str, user_name: str
+        self,
+        project_slug: str,
+        name: str,
+        labels: list[str],
+        kind: str,
+        user_name: str,
+        codebook: str = "# Empty codebook",
     ):
         if not labels:
             labels = []
-        params = {"labels": labels, "codebook": "", "kind": kind}
+        params = {"labels": labels, "codebook": codebook, "kind": kind}
         with self.Session.begin() as session:
             scheme = Schemes(
                 project_slug=project_slug,

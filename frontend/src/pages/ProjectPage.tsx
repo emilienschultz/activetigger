@@ -1,11 +1,11 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { CodebookManagement } from '../components/CodeBookManagement';
 import { LabelsManagement } from '../components/LabelsManagement';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { useAppContext } from '../core/context';
 
+import { CodebookDisplay } from '../components/CodeBookDisplay';
 import { SchemesManagement } from '../components/SchemesManagement';
 import { reorderLabels } from '../core/utils';
 
@@ -60,8 +60,6 @@ export const ProjectPage: FC = () => {
 
   if (!projectSlug || !project) return;
 
-  console.log();
-
   return (
     <ProjectPageLayout projectName={projectSlug}>
       <div className="container-fluid d-flex justify-content-center">
@@ -71,16 +69,15 @@ export const ProjectPage: FC = () => {
         />
       </div>
 
+      <CodebookDisplay projectSlug={projectSlug} currentScheme={currentScheme || null} />
+
       {availableLabels.length === 0 && (
         <div className="alert alert-info col-12 mt-2">
           No labels available for this scheme. Please add labels to use this scheme, or create a new
           scheme.
         </div>
       )}
-      <details className="custom-details p-1">
-        <summary>Guidelines</summary>
-        <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
-      </details>
+
       <LabelsManagement
         projectSlug={projectSlug}
         currentScheme={currentScheme || null}

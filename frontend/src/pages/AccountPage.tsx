@@ -7,7 +7,7 @@ export const AccountPage: FC = () => {
   const { authenticatedUser } = useAuth();
 
   return (
-    <PageLayout currentPage="login">
+    <PageLayout currentPage="account">
       <div className="container-fluid">
         {authenticatedUser?.username && (
           <div className="row">

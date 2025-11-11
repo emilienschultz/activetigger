@@ -294,7 +294,7 @@ export const BertopicPage: FC = () => {
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicClusters(currentBertopic) : null)}
               >
-                Clusters <FaCloudDownloadAlt />
+                Topic per text <FaCloudDownloadAlt />
               </button>
               <Tooltip anchorSelect="#download-clusters" place="top">
                 Download a table linking each element to a cluster. The table contains 2
