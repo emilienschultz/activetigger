@@ -1,7 +1,7 @@
-import { ChangeEvent, FC, useEffect, useState, SetStateAction, Dispatch } from 'react';
+import { ChangeEvent, Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
-import { Tooltip } from 'react-tooltip';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
+import { Tooltip } from 'react-tooltip';
 import { useGetQuickModel } from '../core/api';
 import { useAppContext } from '../core/context';
 
@@ -85,8 +85,6 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
 
   const isValid = project?.params.valid;
   const isTest = project?.params.test;
-
-  console.log(project);
 
   return (
     <div className="w-100">

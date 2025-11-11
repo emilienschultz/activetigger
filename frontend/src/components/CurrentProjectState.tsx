@@ -24,7 +24,6 @@ export const CurrentProjectState: FC = () => {
       : [];
     // case of there is no selected scheme and schemes are available
     if (!appContext.currentScheme && availableSchemes.length > 0) {
-      console.log('Set default scheme');
       setAppContext((state) => ({
         ...state,
         currentScheme: availableSchemes[0],
@@ -69,8 +68,6 @@ export const CurrentProjectState: FC = () => {
       clearInterval(intervalId);
     };
   }, [reFetch, setAppContext]);
-
-  console.log(project?.quickmodel.training);
 
   return null;
 };

@@ -9,6 +9,7 @@ import { MdSkipNext, MdSkipPrevious } from 'react-icons/md';
 import { Modal } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useAddTableAnnotations, useTableElements } from '../core/api';
+import { AppContextValue } from '../core/context';
 import { AnnotationModel } from '../types';
 
 interface Row {
@@ -26,6 +27,8 @@ interface DataTabularModel {
   kindScheme: string;
   isValid: boolean;
   isTest: boolean;
+  currentDataset: string;
+  setAppContext: React.Dispatch<React.SetStateAction<AppContextValue>>;
 }
 
 export const DataTabular: FC<DataTabularModel> = ({
@@ -35,9 +38,19 @@ export const DataTabular: FC<DataTabularModel> = ({
   kindScheme,
   isValid,
   isTest,
+  currentDataset,
+  setAppContext,
 }) => {
   // data modification management
   const [modifiedRows, setModifiedRows] = useState<Record<string, AnnotationModel>>({});
+
+  // change the dataset of the context
+  const changeDataSet = (dataset: string) => {
+    setAppContext((prev: AppContextValue) => ({
+      ...prev,
+      phase: dataset,
+    }));
+  };
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
     if (
@@ -56,7 +69,6 @@ export const DataTabular: FC<DataTabularModel> = ({
   const [page, setPage] = useState<number | null>(1);
   const [search, setSearch] = useState<string | null>(null);
   const [sample, setSample] = useState<string>('all');
-  const [dataset, setDataset] = useState<string>('train');
   const [pageSize, setPageSize] = useState(20);
 
   // get API elements when table shape change
@@ -64,7 +76,7 @@ export const DataTabular: FC<DataTabularModel> = ({
     table,
     getPage,
     total: totalElement,
-  } = useTableElements(projectSlug, currentScheme, page, pageSize, search, sample, dataset);
+  } = useTableElements(projectSlug, currentScheme, page, pageSize, search, sample, currentDataset);
 
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -73,11 +85,11 @@ export const DataTabular: FC<DataTabularModel> = ({
     if (table) {
       setRows(table as Row[]);
     }
-  }, [table, dataset]);
+  }, [table, currentDataset]);
 
   useEffect(() => {
     if (page !== null) getPage({ pageIndex: page, pageSize });
-  }, [page, pageSize, getPage, dataset]);
+  }, [page, pageSize, getPage, currentDataset]);
 
   // define table
   const columns: readonly Column<Row>[] = [
@@ -175,7 +187,7 @@ export const DataTabular: FC<DataTabularModel> = ({
               label: event.target.value,
               scheme: currentScheme as string,
               project_slug: projectSlug as string,
-              dataset: dataset,
+              dataset: currentDataset,
             },
           }));
         }}
@@ -195,7 +207,7 @@ export const DataTabular: FC<DataTabularModel> = ({
   const { addTableAnnotations } = useAddTableAnnotations(
     projectSlug || null,
     currentScheme || null,
-    dataset || null,
+    currentDataset || null,
   );
   function validateChanges() {
     addTableAnnotations(Object.values(modifiedRows)); // send the modifications
@@ -223,9 +235,9 @@ export const DataTabular: FC<DataTabularModel> = ({
             <label className="form-label label-small-gray">Dataset</label>
             <select
               className="form-select"
-              value={dataset}
+              value={currentDataset}
               onChange={(e) => {
-                setDataset(e.target.value);
+                changeDataSet(e.target.value);
               }}
             >
               <option value="train">train</option>

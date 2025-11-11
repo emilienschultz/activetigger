@@ -16,6 +16,7 @@ export const ProjectExplorePage: FC = () => {
   const { projectName } = useParams();
   const {
     appContext: { currentScheme, currentProject: project, phase },
+    setAppContext,
   } = useAppContext();
   const availableLabels =
     currentScheme && project && project.schemes.available[currentScheme]
@@ -43,6 +44,8 @@ export const ProjectExplorePage: FC = () => {
                   kindScheme={kindScheme}
                   isValid={project?.params.valid || false}
                   isTest={project?.params.test || false}
+                  currentDataset={phase}
+                  setAppContext={setAppContext}
                 />
               </Tab>
               <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>

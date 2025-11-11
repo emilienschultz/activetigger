@@ -54,7 +54,6 @@ export const ProjectPage: FC = () => {
     if (currentScheme && fromProjectPage && availableLabels.length > 1) {
       navigate(`/projects/${projectSlug}/tag`);
       setFromProjectPage(false);
-      console.log('fromProjectPage', fromProjectPage, availableLabels, currentScheme);
     }
   }, [fromProjectPage, availableLabels, navigate, projectSlug, currentScheme]);
 
