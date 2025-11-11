@@ -108,7 +108,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const { deleteQuickModel } = useDeleteQuickModel(projectName);
 
   function getRandomName() {
-    return `Quickmodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
+    const timestamp = Date.now();
+    return `Quickmodel-${currentScheme}-${timestamp}`;
   }
 
   // create form

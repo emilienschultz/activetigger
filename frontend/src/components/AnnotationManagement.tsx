@@ -300,19 +300,23 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 ''
               )}{' '}
-              <GiTigerHead
-                size={30}
-                onClick={() => setActiveMenu(!activeMenu)}
-                className="cursor-pointer mx-2 activelearning"
-                style={{ color: activeQuickModel ? 'green' : 'orange' }}
-                title="Active learning"
-              />
-              {/* <Tooltip anchorSelect=".activelearning" place="top">
-                Active learning
-              </Tooltip> */}
-              <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                {activeQuickModel}
-              </span>
+              {phase === 'train' && (
+                <>
+                  <GiTigerHead
+                    size={30}
+                    onClick={() => setActiveMenu(!activeMenu)}
+                    className="cursor-pointer mx-2 activelearning"
+                    style={{ color: activeQuickModel ? 'green' : 'orange' }}
+                    title="Active learning"
+                  />
+                  <Tooltip anchorSelect=".activelearning" place="top">
+                    Active learning
+                  </Tooltip>
+                  <span className="badge rounded-pill bg-light text-dark opacity-50 small">
+                    {activeQuickModel}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         }

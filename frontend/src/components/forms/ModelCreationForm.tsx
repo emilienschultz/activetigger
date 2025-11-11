@@ -56,7 +56,8 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   }));
 
   function getRandomName() {
-    return `Bertmodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
+    const timestamp = Date.now();
+    return `Bertmodel-${currentScheme}-${timestamp}`;
   }
 
   const kindScheme =

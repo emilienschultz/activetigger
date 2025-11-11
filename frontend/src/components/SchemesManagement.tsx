@@ -112,7 +112,12 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
   const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
 
   // hooks to use the objets
-  const { register, handleSubmit } = useForm<SchemeModel>({});
+  const { register, handleSubmit } = useForm<SchemeModel>({
+    defaultValues: {
+      name: getRandomName(),
+    },
+  });
+
   const { notify } = useNotifications();
 
   // hook to get the api call
@@ -154,6 +159,11 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
 
     if (reFetchCurrentProject) reFetchCurrentProject();
   };
+
+  function getRandomName() {
+    const timestamp = Date.now();
+    return `Scheme-${timestamp}`;
+  }
 
   return (
     <div>

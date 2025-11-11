@@ -134,11 +134,12 @@ export const HomePage: FC = () => {
               className="ml-2 d-flex justify-content-center align-items-center"
               style={{ fontSize: '0.8rem' }}
             >
-              {users?.length} current users • API {version} • Client {__BUILD_DATE__} •{' '}
+              {users?.length} current users • API {version} • Client {__BUILD_DATE__}
               <a
                 href="https://www.css.cnrs.fr/active-tigger/"
                 style={{ all: 'unset', cursor: 'pointer' }}
               >
+                {'\u00A0•\u00A0'}
                 CREST / CSS @ IPP © 2025
               </a>
               <a
