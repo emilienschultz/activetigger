@@ -140,25 +140,6 @@ async def postgenerate(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/generate/stop", dependencies=[Depends(verified_user)])
-async def stop_generation(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> None:
-    """
-    Stop current generation
-    """
-    try:
-        orchestrator.stop_user_processes(
-            kind=["generation"],
-            username=current_user.username,
-        )
-        orchestrator.log_action(current_user.username, "STOP GENERATE", project.params.project_slug)
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.post("/generate/elements", dependencies=[Depends(verified_user)])
 async def getgenerate(
     project: Annotated[Project, Depends(get_project)],

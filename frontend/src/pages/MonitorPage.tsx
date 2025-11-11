@@ -11,7 +11,7 @@ import {
   useGetServer,
   useGetUserStatistics,
   useRestartQueue,
-  useStopProcess,
+  useStopProcesses,
   useUsers,
 } from '../core/api';
 import { useAuth } from '../core/auth';
@@ -37,7 +37,7 @@ export const MonitorPage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { activeProjects, gpu, cpu, memory, disk, reFetchQueueState } = useGetServer(null);
   const { restartQueue } = useRestartQueue();
-  const { stopProcess } = useStopProcess();
+  const { stopProcesses } = useStopProcesses();
   const { logs } = useGetLogs('all', 500);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const { userStatistics, reFetchStatistics } = useGetUserStatistics(currentUser);
@@ -130,7 +130,7 @@ export const MonitorPage: FC = () => {
                                   <td>
                                     <button
                                       onClick={() => {
-                                        stopProcess(e.unique_id);
+                                        stopProcesses('all', e.unique_id);
                                         reFetchQueueState();
                                       }}
                                       className="btn btn-danger"

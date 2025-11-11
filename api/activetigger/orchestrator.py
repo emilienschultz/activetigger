@@ -448,6 +448,8 @@ class Orchestrator:
         # kill all the process of a user
         if kind == "all":
             kind = ["train_bert", "predict_bert", "generation", "feature", "bertopic"]
+        if kind == "bert":
+            kind = ["train_bert", "predict_bert"]
         if isinstance(kind, str) and kind != "all":
             kind = [kind]
 

@@ -1160,29 +1160,6 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
 }
 
 /**
- * Stop training process for the user
- */
-export function useStopTrainBertModel(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const stopTraining = useCallback(async () => {
-    if (projectSlug) {
-      const res = await api.POST('/models/bert/stop', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-          },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Training stopped' });
-      return true;
-    }
-    return null;
-  }, [projectSlug, notify]);
-
-  return { stopTraining };
-}
-
-/**
  * Rename bert model
  */
 export function useRenameBertModel(projectSlug: string | null) {
@@ -1931,29 +1908,6 @@ export function useGenerate(
 }
 
 /**
- * Stop generation process for the user
- */
-export function useStopGenerate(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const stopGenerate = useCallback(async () => {
-    if (projectSlug) {
-      const res = await api.POST('/generate/stop', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-          },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Generation stopped' });
-      return true;
-    }
-    return null;
-  }, [projectSlug, notify]);
-
-  return { stopGenerate };
-}
-
-/**
  * Get generated elements
  */
 export function useGeneratedElements(
@@ -2143,39 +2097,16 @@ export function useGetCompareSchemes(project_slug: string, schemeA: string, sche
 }
 
 /**
- * Stop process generation by id
- */
-export function useStopProcess() {
-  const { notify } = useNotifications();
-  const stopProcess = useCallback(
-    async (uniqueId: string) => {
-      const res = await api.POST('/stop', {
-        params: {
-          query: {
-            unique_id: uniqueId,
-          },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Process stopped' });
-      return true;
-    },
-    [notify],
-  );
-
-  return { stopProcess };
-}
-
-/**
  * Stop all process for a user
  */
 export function useStopProcesses() {
   const { notify } = useNotifications();
   const stopProcesses = useCallback(
-    async (kind: string = 'all') => {
+    async (kind: string = 'all', uniqueId: string | null = null) => {
       const res = await api.POST('/stop', {
         params: {
           query: {
-            unique_id: null,
+            unique_id: uniqueId,
             kind: kind,
           },
         },

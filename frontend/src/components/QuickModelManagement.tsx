@@ -210,13 +210,9 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         </button>
       </ModelsPillDisplay>
       {isComputing && (
-        <button
-          key="stop"
-          className="btn btn-primary mt-3 d-flex align-items-center"
-          onClick={() => stopProcesses('all')}
-        >
-          <PulseLoader color={'white'} /> Stop current process
-        </button>
+        <div className="btn btn-primary mt-3 d-flex align-items-center">
+          <PulseLoader color={'white'} /> Computing
+        </div>
       )}
       <div>
         <table className="table table-striped table-hover w-100 mt-2">

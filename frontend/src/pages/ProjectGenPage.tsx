@@ -21,7 +21,7 @@ import {
   useGetGenerationsFile,
   useGetPrompts,
   useSavePrompts,
-  useStopGenerate,
+  useStopProcesses,
 } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
@@ -133,7 +133,7 @@ export const GenPage: FC = () => {
   );
 
   // to stop generation
-  const { stopGenerate } = useStopGenerate(projectName || null);
+  const { stopProcesses } = useStopProcesses();
 
   // to get a sample of elements
   const { generated, reFetchGenerated } = useGeneratedElements(
@@ -412,7 +412,10 @@ export const GenPage: FC = () => {
               <div className="col-12 text-center">
                 {isGenerating ? (
                   <div>
-                    <button className="btn btn-secondary mt-3" onClick={stopGenerate}>
+                    <button
+                      className="btn btn-secondary mt-3"
+                      onClick={() => stopProcesses('generate')}
+                    >
                       <PulseLoader className="mx-2" />
                       Stop (
                       {String(
