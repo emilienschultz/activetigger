@@ -14,7 +14,7 @@ interface TableModel {
 
 export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores, title }) => {
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
-  const labels = (scores?.table?.index as string[]) || [];
+  const labels = (scores?.table?.index as unknown as string[]) || [];
   const colCount = table?.columns.length || 0;
 
   return (
