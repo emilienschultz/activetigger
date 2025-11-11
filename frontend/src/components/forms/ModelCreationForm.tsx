@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { Dispatch, FC, SetStateAction } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
@@ -11,6 +11,7 @@ interface ModelCreationFormProps {
   currentScheme: string | null;
   project: ProjectStateModel | null;
   isComputing: boolean;
+  setStatusDisplay?: Dispatch<SetStateAction<boolean>>;
 }
 
 type BertModel = {
@@ -25,6 +26,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   currentScheme,
   project,
   isComputing,
+  setStatusDisplay,
 }) => {
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
@@ -53,6 +55,10 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     label: value,
   }));
 
+  function getRandomName() {
+    return `Bertmodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
+  }
+
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme].kind
@@ -64,6 +70,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     control,
   } = useForm<newBertModel>({
     defaultValues: {
+      name: getRandomName(),
       class_balance: false,
       loss: 'cross_entropy',
       class_min_freq: 1,
@@ -85,6 +92,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     // setActiveKey('models');
     await trainBertModel(data);
+    if (setStatusDisplay) setStatusDisplay(false);
   };
   return (
     <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>

@@ -22,7 +22,8 @@ interface Props {
   };
   className?: string;
   // bbox
-  frameBbox?: MarqueBoundingBox;
+  // frameBbox?: MarqueBoundingBox;
+  frame?: number[];
   setFrameBbox: (bbox?: MarqueBoundingBox) => void;
   // selection
   selectedId?: string;
@@ -62,7 +63,7 @@ export const ProjectionVizSigma: FC<Props> = ({
   data,
   className,
   // get/set frame from/to app state
-  frameBbox,
+  frame,
   setFrameBbox,
   // manage node selection
   selectedId,
@@ -72,6 +73,19 @@ export const ProjectionVizSigma: FC<Props> = ({
 }) => {
   // internal bbox used by marquee. This state will be updated with setFrameBbox once drawing is done.
   // app state is used as default value
+
+  // transform frame type to bbox type
+  const frameBbox = useMemo(
+    () =>
+      frame
+        ? {
+            x: { min: frame[0], max: frame[1] },
+            y: { min: frame[2], max: frame[3] },
+          }
+        : undefined,
+    [frame],
+  );
+
   const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);
 
   labelColorMapping['NA'] = '#ebebeb';
@@ -88,7 +102,7 @@ export const ProjectionVizSigma: FC<Props> = ({
     console.log('compute graph');
     const graph = new Graph<NodeAttributesType>();
     if (data) {
-      //TODO: refine those simple heuristics
+      //TODO: refine those quick heuristics
       const size = getPointSize(data.x.length);
       data.x.forEach((value, index) => {
         graph.addNode(data.index[index], {
@@ -107,7 +121,6 @@ export const ProjectionVizSigma: FC<Props> = ({
   const nodeReducer = useCallback(
     (node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
       const res: Partial<NodeDisplayData> = { ...data };
-      console.log('nodeReducer', node, data);
 
       // apply color for nodes
       res.color = labelColorMapping[data.label];
@@ -133,7 +146,7 @@ export const ProjectionVizSigma: FC<Props> = ({
 
   return (
     <div className={className}>
-      <div className="m-3">
+      <div>
         <label className="mx-2">Color by: </label>
         <select
           value={selectedColumn}
@@ -154,10 +167,12 @@ export const ProjectionVizSigma: FC<Props> = ({
         settings={settings}
       >
         <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
-        <ControlsContainer position="bottom-left">
-          <Caption labelColorMapping={labelColorMapping} />
-        </ControlsContainer>
-        <ControlsContainer position={'bottom-right'}>
+        {Object.keys(labelColorMapping).length < 15 && (
+          <ControlsContainer position="top-left">
+            <Caption labelColorMapping={labelColorMapping} />
+          </ControlsContainer>
+        )}
+        <ControlsContainer position={'top-right'}>
           <div className="border-bottom">
             {/* Active tools (zoom-pan or marquee)) buttons are managed by the marquee controller */}
             <MarqueeController

@@ -2,12 +2,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from activetigger.app.dependencies import (
-    get_project,
-    verified_user,
-)
+from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
 from activetigger.config import config
-from activetigger.datamodels import BertopicTopicsOutModel, ComputeBertopicModel, UserInDBModel
+from activetigger.datamodels import (
+    BertopicTopicsOutModel,
+    ComputeBertopicModel,
+    TopicsOutModel,
+    UserInDBModel,
+)
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
@@ -24,7 +26,7 @@ async def compute_bertopic(
     Compute BERTopic model for the project.
     """
     # Force the train dataset
-    path_data = project.params.dir.joinpath(config.train_file)
+    path_data = project.params.dir.joinpath(config.train_file)  # type: ignore
     # Force the language of the project
     bertopic.language = project.params.language
     if not project.bertopic.name_available(bertopic.name):
@@ -42,7 +44,9 @@ async def compute_bertopic(
             user=current_user.username,
             force_compute_embeddings=bertopic.force_compute_embeddings,
         )
-        orchestrator.log_action(current_user.username, "COMPUTE BERTopic MODEL", project.name)
+        orchestrator.log_action(
+            current_user.username, f"COMPUTE BERTopic MODEL: {bertopic.name}", project.name
+        )
         return unique_id
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -92,6 +96,62 @@ async def delete_bertopic_model(
     """
     try:
         project.bertopic.delete(name=name)
-        orchestrator.log_action(current_user.username, "DELETE BERTopic MODEL", project.name)
+        orchestrator.log_action(
+            current_user.username, f"DELETE BERTopic MODEL: {name}", project.name
+        )
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bertopic/export-to-scheme", dependencies=[Depends(verified_user)])
+async def export_bertopoc_to_scheme(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    topic_model_name: str = Query(...),
+) -> None:
+    """
+    Export the topic model as a scheme for the train set
+    """
+    try:
+        test_rights(ProjectAction.ADD_ANNOTATION, current_user.username, project.name)
+
+        # Retrieve topics and clusters
+        topics = project.bertopic.get_topics(topic_model_name)
+
+        def get_topic_id(t: str) -> int:
+            return int(t.split("_")[0])
+
+        topic_id_to_topic_name = {
+            get_topic_id(topic.Name): topic.Name
+            for topic in topics
+            if get_topic_id(topic.Name) != -1
+        }
+        clusters: dict[str, int] = project.bertopic.get_clusters(topic_model_name)
+
+        new_scheme_name = f"topic-model-{topic_model_name}"
+        project.schemes.add_scheme(
+            name=new_scheme_name,
+            labels=[topic.Name for topic in topics if get_topic_id(topic.Name) != -1],
+            user=current_user.username,
+        )
+        # Transform the annotation into the right format
+        elements = [
+            {"element_id": el_id, "annotation": topic_id_to_topic_name[cluster], "comment": ""}
+            for (el_id, cluster) in clusters.items()
+            if cluster != -1
+        ]
+        project.schemes.projects_service.add_annotations(
+            dataset="train",
+            user_name=current_user.username,
+            project_slug=project.name,
+            scheme=new_scheme_name,
+            elements=elements,
+        )
+
+        orchestrator.log_action(
+            current_user.username, f"Export BERTopic to scheme : {new_scheme_name}", project.name
+        )
+
+    except Exception as e:
+        orchestrator.log_action(current_user.username, f"DEBUG-EXPORT-TO-SCHEME: {e}", project.name)
         raise HTTPException(status_code=500, detail=str(e))

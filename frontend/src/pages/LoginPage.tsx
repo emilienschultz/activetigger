@@ -13,23 +13,15 @@ export const LoginPage: FC = () => {
     <PageLayout currentPage="login">
       <div className="container-fluid">
         {authenticatedUser?.username && (
-          <div className="row">
-            <div className="col-1"></div>
-
-            <div className="col-11 col-lg-6 ">
-              <div className="user-info">
-                You're logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
-                {authenticatedUser.status})
-              </div>
-            </div>
+          <div className="user-info text-center mb-3">
+            You're logged in as <span>{authenticatedUser.username}</span> (status:{' '}
+            {authenticatedUser.status})
           </div>
         )}
+
         <div className="row">
-          <div className="col-1"></div>
-
-          <div className="col-11 col-lg-6">
-            <div className="subsection m-2">Change account</div>
-
+          <div className="col-11 col-md-8 col-lg-5 mx-auto">
+            <div className="subsection text-center mb-3">Change account</div>
             <LoginForm redirectTo={state?.path || '/projects'} />
           </div>
         </div>

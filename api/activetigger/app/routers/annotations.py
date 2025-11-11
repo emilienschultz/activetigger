@@ -42,6 +42,7 @@ async def get_next(
     """
     Get next element
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_next(
             next=next,
@@ -56,16 +57,18 @@ async def get_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
+    model: str | None = None,
 ) -> ProjectionOutModel | None:
     """
     Get projection if computed
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_projection(
             username=current_user.username,
             scheme=scheme,
+            model=model,
         )
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -81,10 +84,13 @@ async def compute_projection(
     Dedicated process, end with a file on the project
     projection__user.parquet
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
     try:
-        features = project.features.get(projection.features)  # get features from project
+        features = project.features.get(
+            projection.features, dataset=["train"]
+        )  # get features from project
         project.projections.compute(project.name, current_user.username, projection, features)
         orchestrator.log_action(
             current_user.username,
@@ -99,11 +105,13 @@ async def compute_projection(
 @router.post("/elements/table", dependencies=[Depends(verified_user)])
 async def get_list_elements(
     project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     batch: TableBatchInModel,
 ) -> TableOutModel:
     """
     Get a table of elements
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.schemes.get_table(batch)
     except Exception as e:
@@ -119,6 +127,7 @@ async def post_list_elements(
     """
     Update a table of annotations
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     errors = []
     # loop on annotations
     for annotation in table.annotations:
@@ -162,6 +171,7 @@ async def post_annotation_file(
     """
     Load annotations file
     """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.schemes.add_file_annotations(
             annotationsdata=annotationsdata, user=current_user.username, dataset="train"
@@ -183,13 +193,19 @@ async def get_element(
     element_id: str,
     scheme: str | None = None,
     dataset: str = "train",
+    model_active: str | None = None,
 ) -> ElementOutModel:
     """
     Get specific element
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_element(
-            element_id, scheme=scheme, user=current_user.username, dataset=dataset
+            element_id,
+            scheme=scheme,
+            user=current_user.username,
+            dataset=dataset,
+            model_active=model_active,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -197,13 +213,15 @@ async def get_element(
 
 @router.get("/annotation/reconciliate", dependencies=[Depends(verified_user)])
 async def get_reconciliation_table(
-    project: Annotated[Project, Depends(get_project)], scheme: str = Query()
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    scheme: str = Query(),
 ) -> ReconciliationModel:
     """
     Get the reconciliation table
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
-        print(scheme)
         df, users = project.schemes.get_reconciliation_table(scheme)
         return ReconciliationModel(
             table=cast(list[dict[str, str | dict[str, str]]], df.to_dict(orient="records")),
@@ -225,7 +243,7 @@ async def post_reconciliation(
     """
     Post a label for all user in a list
     """
-
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         # for each user
         for u in users:

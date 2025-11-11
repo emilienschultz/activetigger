@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
@@ -17,12 +17,12 @@ from activetigger.app.dependencies import (
 from activetigger.datamodels import (
     AvailableProjectsModel,
     DatasetModel,
+    EvalSetDataModel,
     ProjectAuthsModel,
     ProjectBaseModel,
     ProjectDescriptionModel,
     ProjectStateModel,
     ProjectUpdateModel,
-    TestSetDataModel,
     UserInDBModel,
 )
 from activetigger.functions import slugify
@@ -57,7 +57,7 @@ async def get_project_statistics(
     Statistics for a scheme and a user
     """
     try:
-        return project.get_statistics(scheme=scheme, user=current_user.username)
+        return project.get_statistics(scheme=scheme)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -84,13 +84,14 @@ async def new_project(
     Start the creation of a new project
     """
     test_rights(ServerAction.CREATE_PROJECT, current_user.username)
-    # check if the project already exists
     try:
         project_slug = orchestrator.starting_project_creation(
             project=project,
             username=current_user.username,
         )
-        orchestrator.log_action(current_user.username, "START CREATING PROJECT", project_slug)
+        orchestrator.log_action(
+            current_user.username, f"START CREATING PROJECT: {project_slug}", project_slug
+        )
         return project_slug
     except Exception as e:
         orchestrator.clean_unfinished_project(project_name=project.project_name)
@@ -117,7 +118,9 @@ async def update_project(
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.update_project(update)
-        orchestrator.log_action(current_user.username, "INFO UPDATE PROJECT", project.name)
+        orchestrator.log_action(
+            current_user.username, f"INFO UPDATE PROJECT: {project.name}", project.name
+        )
         del orchestrator.projects[project.name]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -137,8 +140,10 @@ async def delete_project(
     test_rights(ServerAction.DELETE_PROJECT, current_user.username, project_slug)
     try:
         orchestrator.delete_project(project_slug)
+        orchestrator.log_action(
+            current_user.username, f"DELETE PROJECT: {project_slug}", project_slug
+        )
     except Exception as e:
-        print(f"Error deleting project {project_slug}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -164,29 +169,41 @@ async def get_project_status(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/projects/testset/{action}", dependencies=[Depends(verified_user)])
-async def add_testdata(
+@router.post("/projects/evalset/delete", dependencies=[Depends(verified_user)])
+async def delete_evalset(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    action: str,
-    testset: TestSetDataModel | None = None,
+    dataset: str,
 ) -> None:
     """
-    Add a dataset for test when there is none available
+    Delete an existing eval dataset
     """
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
-        if action == "create":
-            if testset is None:
-                raise Exception("No testset sent")
-            project.add_testset(testset, current_user.username, project.name)
-            orchestrator.log_action(current_user.username, "ADD TESTSET", project.name)
-            return None
-        if action == "delete":
-            project.drop_testset()
-            orchestrator.log_action(current_user.username, "DELETE TESTSET", project.name)
-            return None
-        raise Exception("action not found")
+        project.drop_evalset(dataset=dataset)
+        orchestrator.log_action(current_user.username, f"DELETE EVALSET {dataset}", project.name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.post("/projects/evalset/add", dependencies=[Depends(verified_user)])
+async def add_testdata(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    dataset: str,
+    evalset: EvalSetDataModel,
+) -> None:
+    """
+    Delete existing eval/test dataset or
+    Add a dataset for eval/test when there is none available
+    """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    try:
+        if evalset is None:
+            raise Exception("No evalset sent")
+        project.add_evalset(dataset, evalset, current_user.username, project.name)
+        orchestrator.log_action(current_user.username, f"ADD EVALSET {dataset}", project.name)
+        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

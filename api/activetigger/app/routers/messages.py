@@ -7,6 +7,9 @@ from fastapi import (
 )
 
 from activetigger.app.dependencies import (
+    ProjectAction,
+    ServerAction,
+    test_rights,
     verified_user,
 )
 from activetigger.datamodels import MessagesInModel, MessagesOutModel, UserInDBModel
@@ -42,6 +45,7 @@ async def post_message(
     """
     Post a new message
     """
+    test_rights(ServerAction.MANAGE_SERVER, current_user.username)
     try:
         orchestrator.messages.add_message(
             user_name=current_user.username, kind=message.kind, content=message.content
@@ -58,6 +62,7 @@ async def delete_message(
     """
     Delete a message
     """
+    test_rights(ServerAction.MANAGE_SERVER, current_user.username)
     try:
         orchestrator.messages.delete_message(message_id)
     except Exception as e:

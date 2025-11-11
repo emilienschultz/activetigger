@@ -100,7 +100,7 @@ export const LossChart: React.FC<LossChartProps> = ({ loss, xmax }) => {
         <VictoryLine
           data={[
             { x: minValLossPoint.x, y: 0 }, // bottom of chart
-            { x: minValLossPoint.x, y: 2 }, // top of chart
+            { x: minValLossPoint.x, y: maxY }, // top of chart
           ]}
           style={{
             data: { stroke: 'green', strokeWidth: 2, strokeDasharray: '5,5' }, // dashed red line

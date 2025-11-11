@@ -39,7 +39,6 @@ export const ProjectsPage: FC = () => {
       }),
     );
   };
-  console.log(displayConfig.interfaceType);
 
   return (
     <PageLayout currentPage="projects">
@@ -75,7 +74,7 @@ export const ProjectsPage: FC = () => {
                         WebkitTextFillColor: 'transparent',
                       }}
                     >
-                      Create New Project
+                      New Project
                     </span>
                   </Link>
                 </div>

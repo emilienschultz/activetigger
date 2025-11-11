@@ -3,6 +3,7 @@ import Highlighter from 'react-highlight-words';
 import { DisplayConfig, ElementOutModel } from '../types';
 
 import { FC, LegacyRef } from 'react';
+import { Tooltip } from 'react-tooltip';
 
 interface ClassificationPanelProps {
   element: ElementOutModel | undefined;
@@ -75,6 +76,11 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
               caseSensitive={true}
             />
           </span>
+          <Tooltip anchorSelect=".text-out-context" place="bottom" style={{ zIndex: 99 }}>
+            Outside context window.
+            <br />
+            Go to config menu to change context window according to the model you plan to use
+          </Tooltip>
         </motion.div>
       </div>
       {

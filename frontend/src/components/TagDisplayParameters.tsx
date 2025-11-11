@@ -12,7 +12,7 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
   setAppContext,
 }) => {
   return (
-    <div className="mt-2 alert alert-info">
+    <div className="mt-2">
       <label style={{ display: 'block', marginBottom: '10px' }}>
         <input
           type="checkbox"

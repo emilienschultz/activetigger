@@ -11,15 +11,15 @@ import {
   AnnotationsDataModel,
   AvailableProjectsModel,
   ComputeBertopicModel,
+  EvalSetDataModel,
   GenModel,
   LoginParams,
   ProjectBaseModel,
   ProjectStateModel,
   ProjectUpdateModel,
   ProjectionParametersModel,
-  SimpleModelModel,
+  QuickModelInModel,
   SupportedAPI,
-  TestSetDataModel,
   TextDatasetModel,
   newBertModel,
 } from '../types';
@@ -246,14 +246,13 @@ export function useCreateProject() {
 /**
  * Create test set
  */
-export function useCreateTestSet() {
+export function useCreateValidSet() {
   const { notify } = useNotifications();
   const createTestSet = useCallback(
-    async (projectSlug: string, testset: TestSetDataModel) => {
-      const res = await api.POST('/projects/testset/{action}', {
+    async (projectSlug: string, dataset: string, testset: EvalSetDataModel) => {
+      const res = await api.POST('/projects/evalset/add', {
         params: {
-          path: { action: 'create' },
-          query: { project_slug: projectSlug },
+          query: { project_slug: projectSlug, dataset: dataset },
         },
         body: testset,
       });
@@ -265,22 +264,24 @@ export function useCreateTestSet() {
 }
 
 /**
- * Drop test set
+ * Drop valid set
  */
-export function useDropTestSet(projectSlug: string | null) {
+export function useDropEvalSet(projectSlug: string | null) {
   const { notify } = useNotifications();
-  const dropTestSet = useCallback(async () => {
-    if (!projectSlug) return;
-    // do the new projects POST call
-    const res = await api.POST('/projects/testset/{action}', {
-      // POST has a body
-      params: {
-        path: { action: 'delete' },
-        query: { project_slug: projectSlug },
-      },
-    });
-    if (!res.error) notify({ type: 'success', message: 'Test data set dropped' });
-  }, [notify, projectSlug]);
+  const dropTestSet = useCallback(
+    async (dataset: string) => {
+      if (!projectSlug) return;
+      // do the new projects POST call
+      const res = await api.POST('/projects/evalset/delete', {
+        // POST has a body
+        params: {
+          query: { project_slug: projectSlug, dataset: dataset },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: `Data set ${dataset} dropped` });
+    },
+    [notify, projectSlug],
+  );
   return dropTestSet;
 }
 
@@ -292,7 +293,7 @@ export function usePredictOnDataset() {
   const predictOnDataset = useCallback(
     async (projectSlug: string, scheme: string, model_name: string, data: TextDatasetModel) => {
       // do the new projects POST call
-      const res = await api.POST('/models/bert/predict', {
+      const res = await api.POST('/models/predict', {
         // POST has a body
         params: {
           query: {
@@ -300,6 +301,7 @@ export function usePredictOnDataset() {
             model_name: model_name,
             dataset: 'external',
             scheme: scheme,
+            kind: 'bert',
           },
         },
         body: data,
@@ -382,7 +384,7 @@ export function useProject(projectSlug?: string) {
 
   // 1. auth is automatically managed by an API middleware see core/auth.tsx
 
-  // 2. create a fetchTrigger, a simple boolean which we will use to trigger an API call
+  // 2. create a fetchTrigger, a quick boolean which we will use to trigger an API call
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
   const { notify } = useNotifications();
 
@@ -536,7 +538,7 @@ export function useAddFeature() {
           },
           body: { name: featureName, type: featureType, parameters: featureParameters },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Features are computing' });
+        if (!res.error) notify({ type: 'info', message: 'Features are computing' });
         return true;
       }
       return false;
@@ -621,6 +623,7 @@ export function useGetNextElementId(
   },
   history: string[],
   phase: string,
+  activeQuickModel: string | null,
 ) {
   const { notify } = useNotifications();
   const getNextElementId = useCallback(async () => {
@@ -635,9 +638,10 @@ export function useGetNextElementId(
           filter: selectionConfig.filter,
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
-          dataset: phase == 'test' ? 'test' : 'train',
+          dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
           user: selectionConfig.user,
+          model_active: activeQuickModel,
         },
       });
       if (res.data?.element_id)
@@ -647,7 +651,7 @@ export function useGetNextElementId(
       notify({ type: 'error', message: 'Select a project/scheme to get elements' });
       return null;
     }
-  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase]);
+  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase, activeQuickModel]);
 
   return { getNextElementId };
 }
@@ -655,14 +659,23 @@ export function useGetNextElementId(
 /**
  * Get element content by specific id
  */
-export function useGetElementById(projectSlug: string | null, currentScheme: string | null) {
+export function useGetElementById(
+  projectSlug: string | null,
+  currentScheme: string | null,
+  model_active: string | null,
+) {
   const getElementById = useCallback(
     async (elementId: string, dataset: string) => {
       if (projectSlug) {
         const res = await api.GET('/elements/{element_id}', {
           params: {
             path: { element_id: elementId },
-            query: { project_slug: projectSlug, scheme: currentScheme, dataset: dataset },
+            query: {
+              project_slug: projectSlug,
+              scheme: currentScheme,
+              dataset: dataset,
+              model_active: model_active,
+            },
           },
         });
         if (res.response.status === 200) return res.data;
@@ -670,7 +683,7 @@ export function useGetElementById(projectSlug: string | null, currentScheme: str
       }
       return null;
     },
-    [projectSlug, currentScheme],
+    [projectSlug, currentScheme, model_active],
   );
 
   return { getElementById };
@@ -838,19 +851,51 @@ export function useRenameLabel(projectSlug: string | null, scheme: string | null
   return { renameLabel };
 }
 
-export function useUpdateSimpleModel(projectSlug: string | null, scheme: string | null) {
+/**
+ * Retrain a model which aleady exists with a name
+ * @param projectSlug
+ * @param scheme
+ * @returns
+ */
+
+export function useRetrainQuickModel(projectSlug: string | null, scheme: string | null) {
   const { notify } = useNotifications();
 
-  const updateSimpleModel = useCallback(
-    async (formData: SimpleModelModel) => {
+  const retrainQuickModel = useCallback(
+    async (name: string) => {
+      if (projectSlug && scheme) {
+        const res = await api.POST('/models/quick/retrain', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              scheme: scheme,
+              name: name,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'warning', message: 'Retraining model' });
+      }
+      return true;
+    },
+    [projectSlug, scheme, notify],
+  );
+
+  return { retrainQuickModel };
+}
+
+export function useTrainQuickModel(projectSlug: string | null, scheme: string | null) {
+  const { notify } = useNotifications();
+  const trainQuickModel = useCallback(
+    async (formData: QuickModelInModel) => {
       if (projectSlug && formData.features && scheme && formData.model && formData.params) {
-        const res = await api.POST('/models/simplemodel', {
+        const res = await api.POST('/models/quick/train', {
           params: {
             query: {
               project_slug: projectSlug,
             },
           },
           body: {
+            name: formData.name,
             features: formData.features,
             scheme: scheme,
             model: formData.model,
@@ -868,26 +913,53 @@ export function useUpdateSimpleModel(projectSlug: string | null, scheme: string 
     [projectSlug, scheme, notify],
   );
 
-  return { updateSimpleModel };
+  return { trainQuickModel };
 }
 
 /**
- * Get trained simplemodel for a user/scheme
+ * Delete quick model
  */
-export function useGetSimpleModel(
+export function useDeleteQuickModel(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const deleteQuickModel = useCallback(
+    async (model_name: string) => {
+      if (projectSlug) {
+        const res = await api.POST('/models/quick/delete', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: model_name,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Model deleted' });
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { deleteQuickModel };
+}
+
+/**
+ * Get trained quickmodel for a user/scheme
+ */
+export function useGetQuickModel(
   project_slug: string | null,
-  scheme: string | null,
+  name: string | null,
   project: unknown,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
-  const getSimpleModel = useAsyncMemo(async () => {
-    if (scheme && project_slug) {
-      const res = await api.GET('/models/simplemodel', {
+  const getQuickModel = useAsyncMemo(async () => {
+    if (name && project_slug) {
+      const res = await api.GET('/models/quickmodel', {
         params: {
           query: {
             project_slug: project_slug,
-            scheme: scheme,
+            name: name,
           },
         },
       });
@@ -896,11 +968,11 @@ export function useGetSimpleModel(
       }
     }
     return null;
-  }, [project_slug, scheme, fetchTrigger, project]);
+  }, [project_slug, name, fetchTrigger, project]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { currentModel: getAsyncMemoData(getSimpleModel), reFetchSimpleModel: reFetch };
+  return { currentModel: getAsyncMemoData(getQuickModel), reFetchQuickModel: reFetch };
 }
 
 /**
@@ -1088,29 +1160,6 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
 }
 
 /**
- * Stop training process for the user
- */
-export function useStopTrainBertModel(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const stopTraining = useCallback(async () => {
-    if (projectSlug) {
-      const res = await api.POST('/models/bert/stop', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-          },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Training stopped' });
-      return true;
-    }
-    return null;
-  }, [projectSlug, notify]);
-
-  return { stopTraining };
-}
-
-/**
  * Rename bert model
  */
 export function useRenameBertModel(projectSlug: string | null) {
@@ -1169,25 +1218,26 @@ export function useDeleteBertModel(projectSlug: string | null) {
  * Get model informations
  */
 export function useModelInformations(
-  project_slug: string | null,
-  model_name: string | null,
+  projectSlug: string | null,
+  modelName: string | null,
+  modelKind: string | null,
   isComputing: boolean,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const modelInformations = useAsyncMemo(async () => {
-    if (model_name && project_slug) {
-      const res = await api.GET('/models/bert', {
-        params: { query: { project_slug: project_slug, name: model_name } },
+    if (modelName && projectSlug && modelKind) {
+      const res = await api.GET('/models/information', {
+        params: { query: { project_slug: projectSlug, name: modelName, kind: modelKind } },
       });
       if (!res.error) return res.data;
     }
     return null;
-  }, [fetchTrigger, model_name, isComputing]);
+  }, [fetchTrigger, modelName, isComputing, modelKind]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { model: getAsyncMemoData(modelInformations), reFetchModelInformation: reFetch };
+  return { model: getAsyncMemoData(modelInformations), reFetch };
 }
 
 /**
@@ -1196,9 +1246,14 @@ export function useModelInformations(
 export function useComputeModelPrediction(projectSlug: string | null, batchSize: number) {
   const { notify } = useNotifications();
   const computeModelPrediction = useCallback(
-    async (model_name: string, dataset: string, scheme: string) => {
-      if (projectSlug) {
-        const res = await api.POST('/models/bert/predict', {
+    async (
+      model_name: string | null,
+      dataset: string | null,
+      scheme: string | null,
+      kind: string | null,
+    ) => {
+      if (projectSlug && model_name && dataset && scheme && kind) {
+        const res = await api.POST('/models/predict', {
           params: {
             query: {
               project_slug: projectSlug,
@@ -1206,13 +1261,14 @@ export function useComputeModelPrediction(projectSlug: string | null, batchSize:
               dataset: dataset,
               batch_size: batchSize,
               scheme: scheme,
+              kind: kind,
             },
           },
         });
         if (!res.error)
           notify({ type: 'warning', message: 'Computing prediction. It can take some time.' });
         return true;
-      }
+      } else notify({ type: 'error', message: 'Missing parameters' });
       return null;
     },
     [projectSlug, notify, batchSize],
@@ -1355,37 +1411,37 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 }
 
 /**
- * Get file predictions simplemodel
+ * Get file predictions quickmodel
  */
-export function useGetPredictionsSimplemodelFile(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const getPredictionsSimpleModelFile = useCallback(
-    async (scheme: string, format: string) => {
-      if (projectSlug) {
-        const res = await api.GET('/export/prediction/simplemodel', {
-          params: {
-            query: {
-              project_slug: projectSlug,
-              scheme: scheme,
-              format: format,
-            },
-          },
-          parseAs: 'blob',
-        });
+// export function useGetPredictionsQuickmodelFile(projectSlug: string | null) {
+//   const { notify } = useNotifications();
+//   const getPredictionsQuickModelFile = useCallback(
+//     async (name: string, format: string) => {
+//       if (projectSlug) {
+//         const res = await api.GET('/export/prediction/quickmodel', {
+//           params: {
+//             query: {
+//               project_slug: projectSlug,
+//               name: name,
+//               format: format,
+//             },
+//           },
+//           parseAs: 'blob',
+//         });
 
-        if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the predictions data' });
-          saveAs(res.data, `predictions_${projectSlug}_${scheme}.${format}`);
-        }
-        return true;
-      }
-      return null;
-    },
-    [projectSlug, notify],
-  );
+//         if (!res.error) {
+//           notify({ type: 'success', message: 'Exporting the predictions data' });
+//           saveAs(res.data, `predictions_${projectSlug}_${scheme}.${format}`);
+//         }
+//         return true;
+//       }
+//       return null;
+//     },
+//     [projectSlug, notify],
+//   );
 
-  return { getPredictionsSimpleModelFile };
-}
+//   return { getPredictionsQuickModelFile };
+// }
 
 /**
  * Get file generations
@@ -1633,13 +1689,14 @@ export function useUpdateProjection(
 export function useGetProjectionData(
   project_slug: string | undefined | null,
   scheme: string | undefined | null,
+  modelName: string | undefined | null,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getProjectionData = useAsyncMemo(async () => {
     if (scheme && project_slug) {
       const res = await api.GET('/elements/projection', {
-        params: { query: { project_slug: project_slug, scheme: scheme } },
+        params: { query: { project_slug: project_slug, scheme: scheme, model: modelName } },
       });
       if (!res.error) {
         if ('data' in res) return res.data;
@@ -1760,37 +1817,6 @@ export function useReconciliate(projectSlug: string, scheme: string | null) {
   return { postReconciliate };
 }
 
-/**
- * Launch test
- */
-export function useTestModel(
-  projectSlug: string | null,
-  scheme: string | null,
-  model: string | null,
-) {
-  const { notify } = useNotifications();
-
-  const testModel = useCallback(async () => {
-    if (scheme && projectSlug && model) {
-      const res = await api.POST('/models/bert/test', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-            scheme: scheme,
-            model: model,
-          },
-        },
-      });
-      if (!res.error) notify({ type: 'warning', message: 'Starting test computation' });
-
-      return true;
-    }
-    return null;
-  }, [projectSlug, scheme, notify, model]);
-
-  return { testModel };
-}
-
 export function useGetGenModels() {
   const { notify } = useNotifications();
   const models = useCallback(async () => {
@@ -1879,29 +1905,6 @@ export function useGenerate(
   }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);
 
   return { generate };
-}
-
-/**
- * Stop generation process for the user
- */
-export function useStopGenerate(projectSlug: string | null) {
-  const { notify } = useNotifications();
-  const stopGenerate = useCallback(async () => {
-    if (projectSlug) {
-      const res = await api.POST('/generate/stop', {
-        params: {
-          query: {
-            project_slug: projectSlug,
-          },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Generation stopped' });
-      return true;
-    }
-    return null;
-  }, [projectSlug, notify]);
-
-  return { stopGenerate };
 }
 
 /**
@@ -2094,39 +2097,16 @@ export function useGetCompareSchemes(project_slug: string, schemeA: string, sche
 }
 
 /**
- * Stop process generation by id
- */
-export function useStopProcess() {
-  const { notify } = useNotifications();
-  const stopProcess = useCallback(
-    async (uniqueId: string) => {
-      const res = await api.POST('/stop', {
-        params: {
-          query: {
-            unique_id: uniqueId,
-          },
-        },
-      });
-      if (!res.error) notify({ type: 'success', message: 'Process stopped' });
-      return true;
-    },
-    [notify],
-  );
-
-  return { stopProcess };
-}
-
-/**
  * Stop all process for a user
  */
 export function useStopProcesses() {
   const { notify } = useNotifications();
   const stopProcesses = useCallback(
-    async (kind: string = 'all') => {
+    async (kind: string = 'all', uniqueId: string | null = null) => {
       const res = await api.POST('/stop', {
         params: {
           query: {
-            unique_id: null,
+            unique_id: uniqueId,
             kind: kind,
           },
         },
@@ -2697,4 +2677,25 @@ export function useGetAvailableDatasets() {
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
   return { datasets: getAsyncMemoData(getDatasets) || null, reFetchProjects: reFetch };
+}
+
+/**
+ * Hook to export the topics to a dedicated scheme
+ */
+export function useExportTopicsToScheme(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const exportTopicsToScheme = useCallback(
+    async (topicmodelname: string | null) => {
+      if (projectSlug && topicmodelname) {
+        const res = await api.POST('/bertopic/export-to-scheme', {
+          params: {
+            query: { project_slug: projectSlug, topic_model_name: topicmodelname },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Topics exported to a new scheme.' });
+      }
+    },
+    [notify, projectSlug],
+  );
+  return exportTopicsToScheme;
 }

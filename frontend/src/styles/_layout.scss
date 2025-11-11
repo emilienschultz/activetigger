@@ -126,9 +126,136 @@ form button:hover {
 
 #context-button{
   background-color: rgba(0,0,0,0);
-  border: 0px solid red;
+  border: 0px;
+  color: $secondary;
   text-decoration: underline;
   opacity: 1;
   padding: 3px 10px 3px 10px;
   margin: 2px 4px 2px 4px
+}
+
+table{
+  margin: 10px 0px;
+}
+
+.label-small-gray {
+  font-size: 0.8rem;
+  color: #9ca3af; // Tailwind's neutral gray tone (lighter)
+  margin-bottom: -5px;
+}
+
+#tag-parameters-div{
+  width: 100%;
+  display: flex;
+  align-items: start;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+
+  .parameter-div{
+    min-width: 50px;
+    margin: 3px 7px;
+    flex: 1 1 200px
+  }
+
+  .parameter-div-small{
+    width: 20px;
+    margin: 3px 7px;
+    flex: 1 1 30px
+  }
+}
+
+#header{
+  $header-height: 50px;
+  #navbarSupportedContent{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: $header-height;
+    width: 83%;
+  }
+
+  button.navbar-toggler{
+    width: 100px;
+    margin-right: 20px;
+    align-self: center;
+  }
+  
+  @media (max-width: 992px){
+    #navbarSupportedContent{
+      // when switching from large to medium 
+      height: 200px;
+      justify-content: space-around;
+    }
+  }
+  
+  #logo-container{
+    height: $header-height;
+    margin-right: 0px;
+    width: 16.3%;
+  }
+
+  #log-container{
+    height: $header-height;
+    button{
+      color: rgba(256, 256, 256, 0.9);
+    }
+  }
+}
+
+.model-pill-selection{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  .model-pill{
+    background-color: $tertiary;
+    color: black;
+    border: none;
+    border-radius: 20px;
+    padding: 0px 15px;
+    margin: 2px 10px;
+    height: 35px;
+    #bin{
+      background-color: rgba(0,0,0,0);
+      border:none
+    }
+    font-size: smaller;
+  }
+  
+  .model-pill.selected{
+    background-color: $secondary;
+    color: white;
+  }
+  
+  .model-pill#create-new, .model-pill#compute-validate{
+    font-size: normal;
+    background-color: $primary;
+    color: white;
+    font-weight: bold;
+  }
+  .model-pill.disabled#create-new, .model-pill.disabled#compute-validate{
+    pointer-events: none;
+    opacity: 0.8;
+  }
+}
+
+.getelement{
+  background-color: $primary;
+  border: 3px rgba(0,0,0,0) solid;
+  border-radius: 5px;
+  color: white;
+}
+
+.getelement.setting-changed{
+  animation: glow 1.5s ease-in-out infinite alternate;
+}
+
+@-webkit-keyframes glow {
+  from {
+    border: 3px rgba(0,0,0,0) solid;
+  }
+  to {
+    border: 3px rgba(255,255,255, 0.7) solid;
+  }
 }

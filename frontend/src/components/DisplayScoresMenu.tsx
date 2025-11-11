@@ -1,19 +1,26 @@
 import { FC, useEffect, useState } from 'react';
+import { MLStatisticsModel } from '../types';
 import { DisplayScores } from './DisplayScores';
 
+interface Scores {
+  [key: string]: MLStatisticsModel;
+}
+
 interface DisplayScoresMenuPropos {
-  scores: Record<string, Record<string, number>>;
+  scores: Scores;
   modelName?: string;
   displayTitle?: boolean;
+  skip?: string[];
 }
 
 export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   scores,
   modelName,
   displayTitle,
+  skip,
 }) => {
-  const keys = Object.keys(scores || {});
-  const [currentScore, setCurrentScore] = useState<string>(keys[0] || '');
+  const keys = Object.keys(scores);
+  const [currentScore, setCurrentScore] = useState<string>(keys[0]);
 
   // Ensure currentScore is still valid when scores change
   useEffect(() => {
@@ -35,14 +42,17 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
           value={currentScore}
           onChange={(e) => setCurrentScore(e.target.value)}
         >
-          {Object.entries(scores).map(([key]) => (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          ))}
+          {Object.entries(scores)
+            .filter(([_, value]) => value != null)
+            .filter(([key]) => !skip?.includes(key))
+            .map(([key]) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
         </select>
       </label>
-      {scores[currentScore] && (
+      {scores && (
         <DisplayScores
           title={displayTitle ? currentScore : null}
           scores={scores[currentScore]}

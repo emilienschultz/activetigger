@@ -1,12 +1,12 @@
 import datetime
 from io import StringIO
-from pathlib import Path
 from typing import cast
 
-import pandas as pd  # type: ignore[import]
+import pandas as pd
 from pandas import DataFrame
-from sklearn.metrics import cohen_kappa_score
+from sklearn.metrics import cohen_kappa_score  # type: ignore
 
+from activetigger.data import Data
 from activetigger.datamodels import (
     AnnotationsDataModel,
     CodebookModel,
@@ -33,15 +33,14 @@ class Schemes:
 
     project_slug: str
     projects_service: ProjectsService
+    db_manager: DatabaseManager
     content: DataFrame
-    test: DataFrame | None
 
     def __init__(
         self,
         project_slug: str,
-        path_content: Path,  # training data
-        path_test: Path,  # test data
         db_manager: DatabaseManager,
+        data: Data,
     ) -> None:
         """
         Init empty
@@ -49,11 +48,7 @@ class Schemes:
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
         self.db_manager = db_manager
-        self.content = pd.read_parquet(path_content)  # text + context
-        if path_test.exists():
-            self.test = pd.read_parquet(path_test)
-        else:
-            self.test = None
+        self.data = data
 
         available = self.available()
 
@@ -70,37 +65,42 @@ class Schemes:
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
-        Join with text data in separate file (train or test, in this case it is a XOR)
-
-        Comments:
-            For the moment tags can be add, test, predict, reconciliation
+        complete : add text from dataset & all the row
         """
-        if kind is None:
-            kind = ["train"]
+        for k in kind:
+            if k not in ["train", "test", "valid", "predict", "reconciliation"]:
+                raise Exception(f"Kind {k} not recognized")
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
 
-        if isinstance(kind, str):
-            kind = [kind]
-
-        # get all elements from the db
-        # - last element for each id
-        # - for a specific scheme
-
+        # get the current scheme
         results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind, user)
         df = pd.DataFrame(
-            results, columns=["id", "labels", "user", "timestamp", "comment"]
+            results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
         ).set_index("id")
+
         df.index = pd.Index([str(i) for i in df.index])
-        if complete:  # all the elements
-            if "test" in kind and self.test is not None:
-                if len(kind) > 1:
-                    raise Exception("Cannot ask for both train and test")
-                # case if the test, join the text data
-                t = self.test[["text"]].join(df)
-                return t
-            else:
-                return self.content.join(df, rsuffix="_content")
+
+        # only the labels
+        if not complete:
+            df["id"] = df.index
+            return df
+
+        # add the content from the datasets
+        list_texts = []
+        for k in kind:
+            if k == "test":
+                if self.data.test is not None:
+                    list_texts.append(self.data.test[["text"]])
+            elif k == "valid":
+                if self.data.valid is not None:
+                    list_texts.append(self.data.valid[["text"]])
+            elif k == "train":
+                if self.data.train is not None:
+                    list_texts.append(self.data.train[["text"]])
+        texts = pd.concat(list_texts)
+        df = df.join(texts, rsuffix="_content", how="right")
+        df["id"] = df.index
         return df
 
     def get_reconciliation_table(self, scheme: str) -> tuple[DataFrame, list[str]]:
@@ -130,7 +130,7 @@ class Schemes:
         )  # filter for disagreement
         users = list(df.columns)
         df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
-        df = df.join(self.content[["text"]], how="left")  # add the text
+        df = df.join(self.data.train[["text"]], how="left")  # add the text
 
         df["current_label"] = current_labels
         df = df[f_multi].reset_index()
@@ -188,10 +188,10 @@ class Schemes:
         """
         if dataset == "test":
             # TODO: I think it should be tested way before now
-            if self.test is None:
+            if self.data.test is None:
                 raise Exception("Test dataset is not defined")
-            return len(self.test)
-        return len(self.content)
+            return len(self.data.test)
+        return len(self.data.train)
 
     def get_sample(
         self,
@@ -251,7 +251,6 @@ class Schemes:
             complete=True,
             kind=["test"] if batch.dataset == "test" else [batch.dataset],
         )
-
         # manage NaT to avoid problems with json
         df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
 
@@ -260,12 +259,10 @@ class Schemes:
             list_ids = self.projects_service.get_recent_annotations(
                 self.project_slug, user, batch.scheme, batch.max - batch.min, batch.dataset
             )
-            df_r = cast(DataFrame, df.loc[list(list_ids)].reset_index().fillna(" "))
-            table = (
-                df_r.sort_index()
-                .reset_index()
-                .fillna("")[["id", "timestamp", "labels", "text", "comment", "user"]]
-            )
+            df_r = df.loc[list(list_ids)].fillna(" ")
+            table = df_r.sort_index().fillna("")[
+                ["id", "timestamp", "labels", "text", "comment", "user"]
+            ]
             return TableOutModel(
                 items=table.to_dict(orient="records"),
                 total=len(table),
@@ -273,10 +270,10 @@ class Schemes:
 
         # build dataset
         if batch.mode == "tagged":
-            df = cast(DataFrame, df[df["labels"].notnull()])
+            df = df[df["labels"].notnull()]
 
         if batch.mode == "untagged":
-            df = cast(DataFrame, df[df["labels"].isnull()])
+            df = df[df["labels"].isnull()]
 
         # filter for contains
         if batch.contains:
@@ -287,7 +284,7 @@ class Schemes:
                 f_contains = f_labels | f_text
             else:
                 f_contains = df["text"].str.contains(clean_regex(batch.contains))
-            df = cast(DataFrame, df[f_contains]).fillna(False)
+            df = df[f_contains].fillna(False)
 
         # normalize size
         if batch.max == 0:
@@ -302,14 +299,15 @@ class Schemes:
 
         table = (
             df.sort_index()
-            .reset_index()
             .iloc[int(batch.min) : int(batch.max)]
             .fillna("")[["id", "timestamp", "labels", "text", "comment", "user"]]
         )
 
+        print(df.head())
+
         return TableOutModel(
             items=table.to_dict(orient="records"),
-            total=len(table),
+            total=len(df),
         )
 
     def add_scheme(
@@ -331,7 +329,6 @@ class Schemes:
         Add label in a scheme
         """
         available = self.available()
-        print(available)
         if (label is None) or (label == ""):
             raise Exception("Label cannot be empty")
         if scheme not in available:
@@ -509,10 +506,10 @@ class Schemes:
             print("Add null label for ", element_id)
 
         if a[scheme].kind == "multiclass":
-            if label not in a[scheme].labels:
+            if label not in a[scheme].labels and label is not None:
                 raise Exception(f"Label {label} not in the scheme")
 
-        elif a[scheme].kind == "multilabel":
+        elif a[scheme].kind == "multilabel" and label is not None:
             er = [i for i in label.split("|") if i not in a[scheme].labels]
             if len(er) > 0:
                 raise Exception(f"Labels {er} not in the scheme")
@@ -615,7 +612,7 @@ class Schemes:
         col = df[annotationsdata.col_label]
 
         # only elements existing in the dataset
-        common_id = [i for i in col.index if i in self.content.index]
+        common_id = [i for i in col.index if i in self.data.train.index]
 
         # if needed, create the labels in the scheme
         for i in col.unique():
@@ -684,7 +681,7 @@ class Schemes:
         percentage = 0
         if n_overlapping_annotations > 0:
             score_ck = cohen_kappa_score(df["schemeA"], df["schemeB"])
-            percentage = len(df[df["schemeA"] == df["schemeB"]]) / n_overlapping_annotations
+            percentage = len(df[df["schemeA"] == df["schemeB"]]) / n_overlapping_annotations  # type: ignore
 
         return CompareSchemesModel(
             datetime=datetime.datetime.now(),

@@ -44,11 +44,11 @@ export type RequestNextModel = components['schemas']['NextInModel'];
 export type AnnotationModel = components['schemas']['AnnotationModel'];
 export type TableAnnotationsModel = components['schemas']['TableAnnotationsModel'];
 
-export type SimpleModelModel = components['schemas']['SimpleModelModel'];
+export type QuickModelInModel = components['schemas']['QuickModelInModel'];
 
 export type LMParametersModel = components['schemas']['LMParametersModel'];
 
-export type TestSetDataModel = components['schemas']['TestSetDataModel'];
+export type EvalSetDataModel = components['schemas']['EvalSetDataModel'];
 
 export type AnnotationsDataModel = components['schemas']['AnnotationsDataModel'];
 
@@ -62,9 +62,17 @@ export type TextDatasetModel = components['schemas']['TextDatasetModel'];
 
 export type MLStatisticsModel = components['schemas']['MLStatisticsModel'];
 
-export type LMInformationsModel = components['schemas']['LMInformationsModel'];
+export type ModelInformationsModel = components['schemas']['ModelInformationsModel'];
+
+export type ModelScoresModel = components['schemas']['ModelScoresModel'];
 
 export type ComputeBertopicModel = components['schemas']['ComputeBertopicModel'];
+
+export type ModelDescriptionModel = components['schemas']['ModelDescriptionModel'];
+
+export type FeaturesProjectStateModel = components['schemas']['FeaturesProjectStateModel'];
+
+export type ProjectionOutModel = components['schemas']['ProjectionOutModel'];
 
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
@@ -151,12 +159,12 @@ export interface newBertModel {
   exclude_labels?: string[];
 }
 
-export interface TestSetModel {
+export interface EvalSetModel {
   col_id: string;
   cols_text: string[];
   col_label?: string | null;
   scheme?: string | null;
-  n_test: number;
+  n_eval: number;
 }
 
 export type SupportedAPI = 'Ollama' | 'OpenAI' | 'HuggingFace';

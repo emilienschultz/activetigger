@@ -24,7 +24,6 @@ export const CurrentProjectState: FC = () => {
       : [];
     // case of there is no selected scheme and schemes are available
     if (!appContext.currentScheme && availableSchemes.length > 0) {
-      console.log('Set default scheme');
       setAppContext((state) => ({
         ...state,
         currentScheme: availableSchemes[0],
@@ -42,9 +41,9 @@ export const CurrentProjectState: FC = () => {
   // update isComputing context value
   useEffect(() => {
     const isComputing =
-      project && authenticatedUser && authenticatedUser.username && project.languagemodels
+      project && authenticatedUser && authenticatedUser.username
         ? authenticatedUser.username in project.languagemodels.training ||
-          authenticatedUser.username in project.simplemodel.training ||
+          authenticatedUser.username in project.quickmodel.training ||
           authenticatedUser.username in project.projections.training ||
           authenticatedUser.username in project.bertopic.training ||
           Object.values(project.features.training).length > 0
@@ -56,20 +55,6 @@ export const CurrentProjectState: FC = () => {
       if (prev.isComputing !== isComputing) return { ...prev, isComputing };
       return prev;
     });
-    // if (!isNil(project)) {
-    //   const isComputing =
-    //     !isNil(authenticatedUser) &&
-    //     !isNil(project.languagemodels.training) &&
-    //     Object.keys(project.languagemodels.training).includes(authenticatedUser.username);
-
-    //   setAppContext((prev) => {
-    //     if (!isEqual(prev.currentProject, project)) {
-    //       return { ...prev, currentProject: project, isComputing };
-    //     }
-    //     if (prev.isComputing !== isComputing) return { ...prev, isComputing };
-    //     return prev;
-    //   });
-    // }
   }, [project, setAppContext, authenticatedUser]);
 
   // get project state every time interval

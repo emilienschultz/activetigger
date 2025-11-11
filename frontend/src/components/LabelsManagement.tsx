@@ -5,6 +5,7 @@ import { FaEdit } from 'react-icons/fa';
 import { useAddLabel, useDeleteLabel, useRenameLabel, useStatistics } from '../core/api';
 import { useNotifications } from '../core/notifications';
 
+import { Modal } from 'react-bootstrap';
 import { FaCheck } from 'react-icons/fa';
 import { ReactSortable } from 'react-sortablejs';
 import { AppContextValue } from '../core/context';
@@ -25,6 +26,7 @@ interface LabelsManagementProps {
 interface LabelCardProps {
   label: string;
   countTrain: number;
+  countValid?: number;
   countTest?: number;
   removeLabel: (label: string) => void;
   renameLabel: (formerLabel: string, newLabel: string) => void;
@@ -39,24 +41,27 @@ interface LabelType {
 export const LabelCard: FC<LabelCardProps> = ({
   label,
   countTrain,
+  countValid,
   countTest,
   removeLabel,
   renameLabel,
   deactivateModifications,
 }) => {
   const [showRename, setShowRename] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [newLabel, setNewLabel] = useState(label);
   return (
     <tr key={label}>
       <td className="px-4 py-3">{label}</td>
       <td className="px-4 py-3 text-center">{countTrain ? countTrain : 0}</td>
+      <td className="px-4 py-3 text-center">{countValid ? countValid : 0}</td>
       <td className="px-4 py-3 text-center">{countTest ? countTest : 0}</td>
       {!deactivateModifications && (
         <>
           <td className="flex justify-center gap-4">
             <div
               title="Delete"
-              onClick={() => removeLabel(label)}
+              onClick={() => setShowDelete(true)}
               className="cursor-pointer trash-wrapper"
             >
               <FaRegTrashAlt />
@@ -94,6 +99,25 @@ export const LabelCard: FC<LabelCardProps> = ({
           </div>
         </td>
       )}
+      <Modal show={showDelete} id="deletescheme" onHide={() => setShowDelete(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete a label</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Are you sure you want to delete the label <b>{label}</b>?
+          </p>
+          <button
+            className="btn btn-danger"
+            onClick={() => {
+              removeLabel(label);
+              setShowDelete(false);
+            }}
+          >
+            Delete
+          </button>
+        </Modal.Body>
+      </Modal>
     </tr>
   );
 };
@@ -169,39 +193,17 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   return (
     <div className="row">
       <div className="col-12 rounded-2xl bg-white">
-        {kindScheme === 'multiclass' ? (
-          <div className="explanations">
-            The current scheme is a <b>{kindScheme}</b> scheme.
-          </div>
-        ) : (
-          <div className="alert alert-warning">
-            The current scheme is a <b>{kindScheme}</b> scheme. It is experimental and some features
-            does not work. Please read the documentation.
-          </div>
-        )}
-        {!deactivateModifications && (
-          <div className="d-flex align-items-center justify-content-between col-8 col-md-4">
-            <input
-              type="text"
-              id="new-label"
-              value={createLabelValue}
-              onChange={handleCreateLabelChange}
-              placeholder="Enter new label"
-              className="form-control m-4"
-            />
-            <button onClick={createLabel} className="btn btn p-0">
-              <FaPlusCircle size={20} />
-            </button>
-          </div>
-        )}
-        <table className="table table-hover">
-          <thead className="text-xs text-gray-600 uppercase bg-gray-100">
+        <table className="table">
+          <thead>
             <tr>
               <th scope="col" className="px-4 py-3">
-                Label
+                Label <span className="badge rounded-pill bg-light text-dark">{kindScheme}</span>
               </th>
               <th scope="col" className="px-4 py-3 text-center">
                 Train
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Valid
               </th>
               <th scope="col" className="px-4 py-3 text-center">
                 Test
@@ -210,6 +212,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               <th scope="col" className="px-4 py-3 text-center"></th>
             </tr>
           </thead>
+
           <ReactSortable list={labels} setList={updateLabels} tag="tbody">
             {labels.map((label) => (
               <LabelCard
@@ -222,6 +225,11 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                 countTrain={
                   statistics ? Number(statistics['train_annotated_distribution'][label.label]) : 0
                 }
+                countValid={
+                  statistics && statistics['valid_annotated_distribution']
+                    ? Number(statistics['valid_annotated_distribution'][label.label])
+                    : 0
+                }
                 countTest={
                   statistics && statistics['test_annotated_distribution']
                     ? Number(statistics['test_annotated_distribution'][label.label])
@@ -231,6 +239,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               />
             ))}
           </ReactSortable>
+
           <tbody>
             <tr>
               <td className="px-4 py-3">
@@ -238,6 +247,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
               </td>
               <td className="px-4 py-3 text-center">
                 {statistics ? statistics['train_annotated_n'] : ''}
+              </td>
+              <td className="px-4 py-3 text-center">
+                {statistics ? statistics['valid_annotated_n'] : ''}
               </td>
               <td className="px-4 py-3 text-center">
                 {statistics ? statistics['test_annotated_n'] : ''}
@@ -251,10 +263,37 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                 {statistics ? statistics['train_set_n'] : ''}
               </td>
               <td className="px-4 py-3 text-center">
+                {statistics ? statistics['valid_set_n'] : ''}
+              </td>
+              <td className="px-4 py-3 text-center">
                 {statistics ? statistics['test_set_n'] : ''}
               </td>
             </tr>
           </tbody>
+          <tr>
+            <th>
+              <div className="d-flex align-items-center">
+                <input
+                  type="text"
+                  id="new-label"
+                  value={createLabelValue}
+                  onChange={handleCreateLabelChange}
+                  placeholder="Enter new label"
+                  className="form-control"
+                />{' '}
+                {!deactivateModifications && (
+                  <button onClick={createLabel} className="btn btn">
+                    <FaPlusCircle size={20} />
+                  </button>
+                )}
+              </div>
+            </th>
+            <th className="px-4 py-3 text-center"></th>
+            <th> </th>
+            <th> </th>
+            <th> </th>
+            <th> </th>
+          </tr>
         </table>
       </div>
     </div>

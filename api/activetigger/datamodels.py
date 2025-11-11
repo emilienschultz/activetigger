@@ -62,6 +62,7 @@ class ProjectBaseModel(BaseModel):
     col_id: str
     n_train: int
     n_test: int
+    n_valid: int = 0
     from_project: str | None = None
     filename: str | None = None
     dir: Path | None = None
@@ -72,8 +73,10 @@ class ProjectBaseModel(BaseModel):
     cols_label: list[str] = []
     cols_context: list[str] = []
     test: bool = False
+    valid: bool = False
     n_total: int | None = None
     clear_test: bool = False
+    clear_valid: bool = False
     random_selection: bool = False
     cols_stratify: list[str] = []
     stratify_train: bool = False
@@ -107,10 +110,10 @@ class AnnotationsDataModel(BaseModel):
     filename: str | None = None
 
 
-class TestSetDataModel(BaseModel):
+class EvalSetDataModel(BaseModel):
     cols_text: list[str]
     col_id: str
-    n_test: int
+    n_eval: int
     filename: str
     csv: str
     col_label: str | None = None
@@ -142,6 +145,7 @@ class NextInModel(BaseModel):
     filter: str | None = None
     dataset: str = "train"
     user: str | None = None
+    model_active: str | None = None
 
 
 class ElementOutModel(BaseModel):
@@ -249,25 +253,6 @@ class RegexModel(BaseModel):
     user: str
 
 
-class SimpleModelModel(BaseModel):
-    """
-    Request Simplemodel
-    TODO : model for parameters
-    """
-
-    model: str
-    features: list
-    params: (
-        dict[str, str | float | bool | int | None]
-        | dict[str, dict[str, str | float | bool | int | None]]
-        | None
-    )
-    scheme: str
-    standardize: bool | None = True
-    dichotomize: str | None = None
-    cv10: bool = False
-
-
 class LMParametersModel(BaseModel):
     """
     Parameters for bertmodel training
@@ -332,7 +317,6 @@ class UmapModel(BaseModel):
     n_neighbors: int
     n_components: int
     min_dist: float
-    metric: str
 
 
 class TsneModel(BaseModel):
@@ -437,15 +421,15 @@ class BertopicParamsModel(BaseModel):
     """
 
     language: str | None = None
-    min_topic_size: int | None = None
+    # min_topic_size: int | None = None # Removed because overridden by the hdbscan model - Axel
     top_n_words: int = 15
     n_gram_range: tuple[int, int] = (1, 2)
-    nr_topics: int | str = "auto"
+    # nr_topics: int | str = "auto" # Removed to propose topic reduction later in the pipeline - Axel
     outlier_reduction: bool = True
     hdbscan_min_cluster_size: int = 10
     umap_n_neighbors: int = 10
     umap_n_components: int = 2
-    umap_min_dist: float = 0.0
+    # umap_min_dist: float = 0.0 # Removed because 0.0 is the best value to use for clustering - Axel
     embedding_kind: str = "sentence_transformers"
     embedding_model: str = "all-MiniLM-L6-v2"
     filter_text_length: int = 2
@@ -520,7 +504,7 @@ class ProcessComputing(BaseModel):
 
 class LMComputing(ProcessComputing):
     model_name: str
-    status: Literal["training", "testing", "predicting"]
+    status: str
     scheme: Optional[str] = None
     dataset: Optional[str] = None
     get_progress: Callable[[], float | None] | None = None
@@ -565,26 +549,84 @@ class BertopicComputing(ProcessComputing):
     col_text: str | None
     parameters: BertopicParamsModel
     force_compute_embeddings: bool
-    get_progress: Callable[[], float | None] | None = None
+    get_progress: Callable[[], str | float | None] | None = None
 
 
-class SimpleModelComputing(ProcessComputing):
+class QuickModelInModel(BaseModel):
     """
-    Simplemodel object
+    Request Quickmodel
+    TODO : model for parameters
+    """
+
+    name: str
+    scheme: str
+    model: str
+    features: list
+    params: dict[str, str | float | bool | list | None]
+    standardize: bool | None = True
+    dichotomize: str | None = None
+    cv10: bool = False
+
+
+class QuickModelComputing(ProcessComputing):
+    """
+    Quickmodel object
+    """
+
+    status: Literal["training", "predicting"]
+    name: str
+    scheme: str
+    features: list
+    labels: list
+    model_type: str
+    model_params: dict
+    dataset: str
+    standardize: bool = False
+    cv10: bool = False
+    retrain: bool = False
+
+
+class QuickModelComputed(BaseModel):
+    """
+    Quickmodel object
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+    status: str = "trained"
     name: str
-    user: str
     features: list
     scheme: str
     labels: list
+    user: str
+    model_type: str
     model_params: dict
-    standardize: bool
-    model: BaseEstimator
-    proba: DataFrame | None = None
+    time: datetime.datetime
+    standardize: bool = False
     cv10: bool = False
-    statistics: MLStatisticsModel | None = None
+    retrain: bool = False
+    proba: DataFrame | None = None
+    model: BaseEstimator
+    statistics_train: MLStatisticsModel | None = None
+    statistics_test: MLStatisticsModel | None = None
+    statistics_cv10: MLStatisticsModel | None = None
+
+
+class QuickModelOutModel(BaseModel):
+    """
+    Trained quickmodel
+    """
+
+    features: list
+    model: str
+    params: (
+        dict[str, str | float | bool | list | None]
+        | dict[str, dict[str, str | float | bool | None]]
+        | None
+    )
+    scheme: str
+    username: str
+    statistics_train: MLStatisticsModel | None = None
+    statistics_test: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
 
 
@@ -676,27 +718,19 @@ class FeaturesProjectStateModel(BaseModel):
     training: dict[str, dict[str, str | None]]
 
 
-class SimpleModelOutModel(BaseModel):
-    """
-    Trained simplemodel
-    """
-
-    features: list
-    model: str
-    params: (
-        dict[str, str | float | bool | list | None]
-        | dict[str, dict[str, str | float | bool | None]]
-        | None
-    )
+class ModelDescriptionModel(BaseModel):
+    name: str
+    kind: str
     scheme: str
-    username: str
-    statistics: MLStatisticsModel | None = None
-    statistics_cv10: MLStatisticsModel | None = None
+    parameters: dict[str, Any]
+    path: str
 
 
-class SimpleModelsProjectStateModel(BaseModel):
+class QuickModelsProjectStateModel(BaseModel):
     options: dict[str, Any]
-    available: dict[str, dict[str, SimpleModelOutModel]]
+    # available: dict[str, dict[str, QuickModelOutModel]]
+    # training: dict[str, list[str]]
+    available: dict[str, list[ModelDescriptionModel]]
     training: dict[str, list[str]]
 
 
@@ -715,7 +749,7 @@ class ProjectionsProjectStateModel(BaseModel):
 
 class BertopicProjectStateModel(BaseModel):
     available: dict[str, str | None]
-    training: dict[str, dict[str, str]]
+    training: dict[str, dict[str, str | int | None]]
     models: list[str]
 
 
@@ -736,7 +770,7 @@ class ProjectStateModel(BaseModel):
     next: NextProjectStateModel
     schemes: SchemesProjectStateModel
     features: FeaturesProjectStateModel
-    simplemodel: SimpleModelsProjectStateModel
+    quickmodel: QuickModelsProjectStateModel
     languagemodels: LanguageModelsProjectStateModel
     projections: ProjectionsProjectStateModel
     generations: GenerationsProjectStateModel
@@ -757,8 +791,11 @@ class ProjectDescriptionModel(BaseModel):
     train_annotated_n: int
     train_annotated_distribution: dict[str, Any]
     test_set_n: int | None = None
+    valid_set_n: int | None = None
     test_annotated_n: int | None = None
+    valid_annotated_n: int | None = None
     test_annotated_distribution: dict[str, Any] | None = None
+    valid_annotated_distribution: dict[str, Any] | None = None
     sm_10cv: Any | None = None
 
 
@@ -882,26 +919,31 @@ class FeatureDescriptionModel(BaseModel):
     cols: list[str]
 
 
-class FitModelResults(BaseModel):
+class TrainMLResults(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     model: Any
     proba: DataFrame
     statistics: MLStatisticsModel
     statistics_cv10: MLStatisticsModel | None = None
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ReturnTaskPredictModel(BaseModel):
     path: str
-    metrics: MLStatisticsModel | None = None
+    metrics: dict[str, MLStatisticsModel] | None = None
 
 
-class LMInformationsModel(BaseModel):
+class ModelScoresModel(BaseModel):
+    internalvalid_scores: dict | None = None
+    train_scores: dict | None = None
+    valid_scores: dict | None = None
+    test_scores: dict | None = None
+    outofsample_scores: dict | None = None
+
+
+class ModelInformationsModel(BaseModel):
     params: dict | None = None
     loss: dict | None = None
-    train_scores: dict | None = None
-    test_scores: dict | None = None
-    valid_scores: dict | None = None
-    outofsample_scores: dict | None = None
+    scores: ModelScoresModel
 
 
 class ProjectUpdateModel(BaseModel):
@@ -946,13 +988,6 @@ class ExportGenerationsParams(BaseModel):
     filters: list[str] = []
 
 
-class LanguageModelScheme(BaseModel):
-    name: str
-    scheme: str
-    parameters: dict[str, Any]
-    path: str
-
-
 class ProjectCreatingModel(BaseModel):
     project_slug: str
     username: str
@@ -962,9 +997,28 @@ class ProjectCreatingModel(BaseModel):
     status: str
 
 
+class TopicsOutModel(BaseModel):
+    Topic: int
+    Name: str
+    Count: int
+    Representation: str
+    Representative_Docs: str
+
+
+class BertopicOutModelParameters(BaseModel):
+    bertopic_params: ComputeBertopicModel
+    col_text: str
+    col_id: str | None
+    name: str
+    timestamp: str  # Not sure about this one, example: 20251027_104836 # Axel
+    path_data: str
+    path_embeddings: str
+    path_projection: str
+
+
 class BertopicTopicsOutModel(BaseModel):
-    topics: list
-    parameters: dict[str, Any]
+    topics: list[TopicsOutModel]
+    parameters: BertopicOutModelParameters
 
 
 class DatasetModel(BaseModel):

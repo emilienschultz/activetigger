@@ -1,4 +1,3 @@
-import os
 import smtplib
 import ssl
 from email.message import EmailMessage
@@ -6,7 +5,6 @@ from email.message import EmailMessage
 from activetigger.config import config
 from activetigger.datamodels import MessagesOutModel
 from activetigger.db.manager import DatabaseManager
-from activetigger.db.models import Messages
 
 
 class Messages:
@@ -29,10 +27,16 @@ class Messages:
         else:
             print("Mail service is not available")
 
-    def send_mail(self, to: str, subject: str, body: str) -> bool:
+    def send_mail(self, to: str, subject: str, body: str):
         """
         Send a mail
         """
+        if self.mail_server is None:
+            raise Exception("Mail server is not configured")
+        if self.mail_account is None:
+            raise Exception("Mail account is not configured")
+        if self.mail_password is None:
+            raise Exception("Mail password is not configured")
         msg = EmailMessage()
         msg["Subject"] = subject
         msg["From"] = f"Active Tigger <{self.mail_account}>"

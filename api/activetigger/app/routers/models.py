@@ -17,9 +17,9 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     BertModelModel,
-    LMInformationsModel,
-    SimpleModelModel,
-    SimpleModelOutModel,
+    ModelInformationsModel,
+    QuickModelInModel,
+    QuickModelOutModel,
     TextDatasetModel,
     UserInDBModel,
 )
@@ -29,145 +29,220 @@ from activetigger.project import Project
 router = APIRouter(tags=["models"])
 
 
-@router.post("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def post_simplemodel(
+@router.post("/models/quick/train", dependencies=[Depends(verified_user)])
+async def train_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    simplemodel: SimpleModelModel,
+    quickmodel: QuickModelInModel,
 ) -> None:
     """
-    Compute simplemodel
+    Compute quickmodel
     """
     try:
-        project.update_simplemodel(simplemodel, current_user.username)
-        orchestrator.log_action(current_user.username, "TRAIN MODEL: simplemodel", project.name)
+        project.train_quickmodel(quickmodel, current_user.username)
+        orchestrator.log_action(current_user.username, "TRAIN SIMPLE MODEL", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/models/simplemodel", dependencies=[Depends(verified_user)])
-async def get_simplemodel(
+@router.post("/models/quick/retrain", dependencies=[Depends(verified_user)])
+async def retrain_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
-) -> SimpleModelOutModel | None:
+    name: str,
+) -> None:
     """
-    Get available simplemodel for the project/user/scheme if any
+    Retrain quickmodel
     """
     try:
-        return project.simplemodels.get(scheme, current_user.username)
+        project.retrain_quickmodel(name, scheme, current_user.username)
+        orchestrator.log_action(current_user.username, f"RETRAIN SIMPLE MODEL {name}", project.name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/models/bert", dependencies=[Depends(verified_user)])
+@router.post("/models/quick/delete", dependencies=[Depends(verified_user)])
+async def delete_quickmodel(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    name: str,
+) -> None:
+    """
+    Delete quickmodel
+    """
+    try:
+        test_rights(ProjectAction.DELETE, current_user.username, project.name)
+        project.quickmodels.delete(name)
+        orchestrator.log_action(
+            current_user.username, f"DELETE SIMPLE MODEL + FEATURES: {name}", project.name
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/models/quickmodel", dependencies=[Depends(verified_user)])
+async def get_quickmodel(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    name: str,
+) -> QuickModelOutModel | None:
+    """
+    Get available quickmodel by a name
+    """
+    try:
+        sm = project.quickmodels.get(name)
+        return QuickModelOutModel(
+            model=sm.name,
+            params=sm.model_params,
+            features=sm.features,
+            statistics_train=sm.statistics_train,
+            statistics_test=sm.statistics_test,
+            statistics_cv10=sm.statistics_cv10,
+            scheme=sm.scheme,
+            username=sm.user,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/models/information", dependencies=[Depends(verified_user)])
 async def get_bert(
-    project: Annotated[Project, Depends(get_project)], name: str
-) -> LMInformationsModel:
+    project: Annotated[Project, Depends(get_project)], name: str, kind: str
+) -> ModelInformationsModel:
     """
-    Get Bert parameters and statistics
+    Get model information
     """
     try:
-        return project.languagemodels.get_informations(name)
+        if kind == "bert":
+            return project.languagemodels.get_informations(name)
+        elif kind == "quick":
+            return project.quickmodels.get_informations(name)
+        else:
+            raise Exception(f"Model kind {kind} not recognized")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/models/bert/predict", dependencies=[Depends(verified_user)])
+@router.post("/models/predict", dependencies=[Depends(verified_user)])
 async def predict(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_name: str,
     scheme: str,
-    dataset: str = "all",
+    kind: str,
+    dataset: str = "annotable",
     batch_size: int = 32,
     external_dataset: TextDatasetModel | None = None,
 ) -> None:
     """
     Start prediction with a model
+    - quick or bert model
+    - types of dataset
+    Manage specific cases for prediction
+
+    TODO : optimize prediction on whole dataset
+    TODO : manage prediction external/whole dataset for quick models
+
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
-        # get the data
-        if dataset == "train":
-            df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
-            col_label = "labels"
-            col_id = None
-        elif dataset == "all":
-            df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
-            # fix in the case where the id column is the row
-            if project.params.col_id != "dataset_row_number":
-                df[project.params.col_id] = project.features.get_column_raw(
-                    project.params.col_id, index="all"
-                )  # add original id
-            else:
-                df["dataset_row_number"] = df.index
-            col_label = None
-            col_id = project.params.col_id
+        datasets = None
+
+        if kind not in ["quick", "bert"]:
+            raise Exception(f"Model kind {kind} not recognized")
+
+        # managing the perimeter of the prediction
+        if dataset == "annotable":
+            datasets = ["train"]
+            if project.data.valid is not None:
+                datasets.append("valid")
+            if project.data.test is not None:
+                datasets.append("test")
         elif dataset == "external":
-            if external_dataset is None:
-                raise HTTPException(status_code=400, detail="External dataset is missing")
-            csv_buffer = io.StringIO(external_dataset.csv)
-            df = pd.read_csv(
-                csv_buffer,
-            )
-            df["text"] = df[external_dataset.text]
-            df["index"] = df[external_dataset.id].apply(str)
-            df.set_index("index", inplace=True)
-            df = df[["text"]].dropna()
-            col_label = None
-            col_id = None
-            # raise HTTPException(status_code=500, detail="Not implemented yet")
+            if kind != "bert":
+                raise Exception("External dataset prediction is only available for bert models")
+        elif dataset == "all":
+            pass
         else:
-            raise Exception(f"dataset {dataset} not found")
+            raise Exception(f"Dataset {dataset} not recognized")
 
-        # start process to predict
-        project.languagemodels.start_predicting_process(
-            project_slug=project.name,
-            name=model_name,
-            user=current_user.username,
-            df=df,
-            col_text="text",
-            col_label=col_label,
-            col_id=col_id,
-            dataset=dataset,
-            batch_size=batch_size,
+        # case for bert models
+        if kind == "bert":
+            # case the prediction is done on an external dataset
+            if dataset == "external":
+                if external_dataset is None:
+                    raise HTTPException(status_code=400, detail="External dataset is missing")
+                csv_buffer = io.StringIO(external_dataset.csv)
+                df = pd.read_csv(
+                    csv_buffer,
+                )
+                df["text"] = df[external_dataset.text]
+                df["index"] = df[external_dataset.id].apply(str)
+                df["id"] = df["index"]
+                df["dataset"] = "external"
+                df.set_index("index", inplace=True)
+                df = df[["id", "dataset", "text"]].dropna()
+                col_label = None
+                datasets = None
+            # case the prediction is done on all the data
+            elif dataset == "all":
+                df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
+                if project.params.col_id != "dataset_row_number":
+                    df["id"] = project.features.get_column_raw(project.params.col_id, index="all")
+                else:
+                    df["id"] = df.index
+                df["dataset"] = "all"
+                col_label = None
+            # case the prediction is done on annotable data
+            else:
+                if datasets is None:
+                    raise Exception("Datasets variable should be defined for annotable dataset")
+                df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+                col_label = "labels"
+            project.languagemodels.start_predicting_process(
+                project_slug=project.name,
+                name=model_name,
+                user=current_user.username,
+                df=df,
+                col_text="text",
+                col_label=col_label,
+                col_id="id",
+                col_datasets="dataset",
+                dataset=dataset,
+                batch_size=batch_size,
+                statistics=datasets,
+            )
+
+        # case for quick models
+        if kind == "quick":
+            if datasets is None:
+                raise Exception("Dataset parameter must be specified for quick model prediction")
+            sm = project.quickmodels.get(model_name)
+            if sm is None:
+                raise Exception(f"Quick model {model_name} not found")
+            df = project.features.get(sm.features, dataset=dataset, keep_dataset_column=True)
+            cols_features = [col for col in df.columns if col != "dataset"]
+            labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+            df["labels"] = labels["labels"]
+
+            # add the data for the labels
+            project.quickmodels.start_predicting_process(
+                name=model_name,
+                username=current_user.username,
+                df=df,
+                dataset=dataset,
+                col_dataset="dataset",
+                cols_features=cols_features,
+                col_label="labels",
+                statistics=datasets,
+            )
+
+        orchestrator.log_action(
+            current_user.username,
+            f"PREDICT MODEL: {model_name} - {kind} DATASET: {dataset}",
+            project.name,
         )
-        orchestrator.log_action(current_user.username, f"PREDICT MODEL: {model_name}", project.name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/models/bert/test", dependencies=[Depends(verified_user)])
-async def start_test(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str,
-    model: str,
-) -> None:
-    """
-    Start testing the model on the test set
-    """
-    test_rights(ProjectAction.ADD, current_user.username, project.name)
-    if project.schemes.test is None:
-        raise HTTPException(status_code=500, detail="No test dataset for this project")
-
-    try:
-        # get data labels + text
-        df = project.schemes.get_scheme_data(scheme, complete=True, kind=["test"])
-
-        # launch testing process : prediction
-        project.languagemodels.start_testing_process(
-            project_slug=project.name,
-            name=model,
-            user=current_user.username,
-            df=df,
-            col_text="text",
-            col_labels="labels",
-        )
-        orchestrator.log_action(current_user.username, "PREDICT MODEL TEST", project.name)
-        return None
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -192,27 +267,6 @@ async def post_bert(
         orchestrator.log_action(current_user.username, f"TRAIN MODEL: {bert.name}", project.name)
         return None
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/models/bert/stop", dependencies=[Depends(verified_user)])
-async def stop_bert(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    specific_user: str | None = None,
-) -> None:
-    """
-    Stop user process
-    """
-    test_rights(ProjectAction.ADD, current_user.username, project.name)
-    try:
-        if specific_user is not None:
-            user = specific_user
-        else:
-            user = current_user.username
-
-        orchestrator.stop_user_processes(kind=["train_bert", "predict_bert"], username=user)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

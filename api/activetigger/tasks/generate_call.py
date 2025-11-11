@@ -31,7 +31,7 @@ class GenerateCall(BaseTask):
         df: DataFrame,
         model: GenerationModel,
         prompt: str,
-        cols_context : list[str]
+        cols_context: list[str],
     ):
         super().__init__()
         if path_process is None:
@@ -91,8 +91,7 @@ class GenerateCall(BaseTask):
                 if self.event.is_set():
                     raise Exception("Process was interrupted")
 
-            prompt_with_text = self.__replace_tags_with_text(row, self.prompt, 
-                                    self.cols_context)
+            prompt_with_text = self.__replace_tags_with_text(row, self.prompt, self.cols_context)
 
             # Get configured model
 
@@ -104,9 +103,7 @@ class GenerateCall(BaseTask):
                 gen_model = Ollama(self.model.endpoint)
             elif self.model.api == "OpenAI":
                 if self.model.credentials is None:
-                    raise Exception(
-                        "You need to give your API key to call an OpenAI model"
-                    )
+                    raise Exception("You need to give your API key to call an OpenAI model")
                 gen_model = OpenAI(self.model.credentials)
             elif self.model.api == "HuggingFace":
                 gen_model = HuggingFace(
@@ -135,15 +132,17 @@ class GenerateCall(BaseTask):
 
         return results
 
-    def __replace_tags_with_text(self, row : Series, prompt : str, 
-            context_columns: list[str]) -> str:
-        """This function takes in the prompt with tags (eg: "Hello please insert 
-        here with the [[dataset_year]]) slice the prompt where the [[TAGS]] are 
-        and replace the holes with the corresponding text. If a tag appears 
+    def __replace_tags_with_text(self, row: Series, prompt: str, context_columns: list[str]) -> str:
+        """This function takes in the prompt with tags (eg: "Hello please insert
+        here with the [[dataset_year]]) slice the prompt where the [[TAGS]] are
+        and replace the holes with the corresponding text. If a tag appears
         multiple times the content is inserted as often as the tag appears."""
 
-        def format(tag_name : str)-> str : return f"[[{tag_name}]]"
-        def unformat(tag:str)->str: return tag[2:-2]
+        def format(tag_name: str) -> str:
+            return f"[[{tag_name}]]"
+
+        def unformat(tag: str) -> str:
+            return tag[2:-2]
 
         # Retrieve the locations of the tags in the prompt
         indexes = {}
@@ -152,7 +151,7 @@ class GenerateCall(BaseTask):
             start, iteration = 0, 1
             while prompt.find(tag, start) != -1:
                 tag_location = prompt.find(tag, start)
-                indexes[(tag,iteration)] = tag_location
+                indexes[(tag, iteration)] = tag_location
                 start = tag_location + 1
                 iteration += 1
 
@@ -163,33 +162,34 @@ class GenerateCall(BaseTask):
 
         # Sort the indexes so that the holes in the prompt will match the tags
         # https://realpython.com/sort-python-dictionary/#sorting-dictionaries-in-python
-        indexes = dict(sorted(indexes.items(), key = lambda x : x[1])) 
+        indexes = dict(sorted(indexes.items(), key=lambda x: x[1]))
 
         sliced_prompt = self.__slice_prompt(indexes, prompt)
 
-        # Insert the contents 
+        # Insert the contents
         complete_prompt = sliced_prompt[0]
         for i, (tag, iteration) in enumerate(indexes.keys()):
             if tag == "[[TEXT]]":
                 complete_prompt += str(row["text"])
             else:
                 complete_prompt += str(row[unformat(tag)])
-            complete_prompt += sliced_prompt[i+1]
+            complete_prompt += sliced_prompt[i + 1]
         return complete_prompt
 
-    def __slice_prompt(self, indexes : dict[str:int], prompt : str) -> list[str]:
+    def __slice_prompt(self, indexes: dict, prompt: str) -> list[str]:
         """Takes in the prompt and the location of the tags and return the prompt
         as a list of slices where each hole correspond to a tag."""
         # Create a list of splits
         splits = [0]
-        for (tag, iteration) in indexes: 
-            splits += [indexes[(tag,iteration)], indexes[(tag,iteration)] + len(tag)]
+        for tag, iteration in indexes:
+            splits += [indexes[(tag, iteration)], indexes[(tag, iteration)] + len(tag)]
         splits += [len(prompt)]
 
-        # cut the prompt 
+        # cut the prompt
         sliced_prompt, slice_start, slice_end = [], 0, 1
         while slice_end < len(splits):
-            sliced_prompt += [prompt[splits[slice_start]:splits[slice_end]]]
-            slice_start += 2; slice_end += 2
+            sliced_prompt += [prompt[splits[slice_start] : splits[slice_end]]]
+            slice_start += 2
+            slice_end += 2
 
         return sliced_prompt

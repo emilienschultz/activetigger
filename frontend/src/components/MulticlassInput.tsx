@@ -7,6 +7,7 @@ interface MulticlassInputProps {
   elementId: string;
   labels: string[];
   postAnnotation: (label: string, elementId: string) => void;
+  small?: boolean;
 }
 
 interface LabelType {
@@ -18,6 +19,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   elementId,
   postAnnotation,
   labels,
+  small = false,
 }) => {
   // get the context and set the labels
   const {
@@ -85,7 +87,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
             type="button"
             key={e.label}
             value={e.label}
-            className="btn btn-primary grow-1 gap-2 justify-content-center m-1"
+            className={`btn ${small ? 'btn-sm' : ''} btn-primary grow-1 gap-2 justify-content-center m-1`}
             onClick={(v) => {
               postAnnotation(v.currentTarget.value, elementId);
             }}

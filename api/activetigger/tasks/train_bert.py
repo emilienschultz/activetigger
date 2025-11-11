@@ -212,7 +212,6 @@ class TrainBert(BaseTask):
                     e["text"],
                     truncation=True,
                     padding=True,
-                    max_length=512,
                     return_tensors="pt",
                 ),
                 batched=True,
@@ -223,7 +222,6 @@ class TrainBert(BaseTask):
                     e["text"],
                     truncation=True,
                     padding="max_length",
-                    max_length=512,
                     return_tensors="pt",
                 ),
                 batched=True,
@@ -316,10 +314,6 @@ class TrainBert(BaseTask):
             test[["true_label", "predicted_label"]].to_csv(
                 current_path.joinpath("test_dataset_eval.csv")
             )
-            # compute metrics and write
-            metrics_test = get_metrics(test["true_label"], test["predicted_label"], test["text"])
-            with open(str(current_path.joinpath("metrics_validation.json")), "w") as f:
-                json.dump(metrics_test.model_dump(mode="json"), f)
 
             # shape and write the data of the train set
             train = self.df["train"].to_pandas().set_index("id")
@@ -330,12 +324,6 @@ class TrainBert(BaseTask):
             train[["true_label", "predicted_label"]].to_csv(
                 current_path.joinpath("train_dataset_eval.csv")
             )
-            # compute metrics and write
-            metrics_train = get_metrics(
-                train["true_label"], train["predicted_label"], train["text"]
-            )
-            with open(str(current_path.joinpath("metrics_train.json")), "w") as f:
-                json.dump(metrics_train.model_dump(mode="json"), f)
 
             # save model
             bert.save_pretrained(current_path)
@@ -352,6 +340,20 @@ class TrainBert(BaseTask):
 
             with open(current_path.joinpath("parameters.json"), "w") as f:
                 json.dump(params_to_save, f)
+
+            # compute metrics and write
+            metrics_train = get_metrics(
+                train["true_label"], train["predicted_label"], train["text"]
+            )
+            metrics_test = get_metrics(test["true_label"], test["predicted_label"], test["text"])
+            with open(str(current_path.joinpath("metrics_training.json")), "w") as f:
+                json.dump(
+                    {
+                        "train": metrics_train.model_dump(mode="json"),
+                        "trainvalid": metrics_test.model_dump(mode="json"),
+                    },
+                    f,
+                )
 
             # remove intermediate steps and logs if succeed
             shutil.rmtree(current_path.joinpath("train"))

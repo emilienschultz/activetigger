@@ -32,8 +32,8 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
   modelName,
   availablePredictionExternal,
 }) => {
-  const maxSizeMo = 300;
-  const maxSize = maxSizeMo * 1024 * 1024; // 100 MB in bytes
+  const maxSizeMB = 300;
+  const maxSize = maxSizeMB * 1024 * 1024; // 100 MB in bytes
 
   const { getPredictionsFile } = useGetPredictionsFile(projectSlug || null);
 
@@ -62,7 +62,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
       if (file.size > maxSize) {
         notify({
           type: 'error',
-          message: `File is too big (only file less than ${maxSizeMo} Mo are allowed)`,
+          message: `File is too big (only file less than ${maxSizeMB} Mo are allowed)`,
         });
         return;
       }
@@ -94,101 +94,95 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
   };
 
   return (
-    <div className="container-fluid">
-      <div className="row">
-        <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
-          <div className="explanations">
-            One predicted, you can export them in Export as the external dataset. If you predict on
-            a new dataset, it will erase the previous one.
-          </div>
-          {availablePredictionExternal && (
-            <div className="alert alert-warning">
-              You already have a prediction for this model.{' '}
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  getPredictionsFile(modelName, 'csv', 'external');
-                }}
-                className="text-blue-600 hover:underline"
-              >
-                You can export it <FaCloudDownloadAlt />.
-              </a>{' '}
-              If you continue, it will be replaced.
-            </div>
-          )}
-          <div>
-            <label className="form-label" htmlFor="csvFile">
-              Import text dataset to predict
-            </label>
-            <input className="form-control" id="csvFile" type="file" {...register('files')} />
-            {
-              // display datable if data available
-              data !== null && (
-                <div>
-                  <div>Preview</div>
-                  <div className="m-3">
-                    Size of the dataset : <b>{data.data.length - 1}</b>
-                  </div>
-                  <DataTable<Record<DataType['headers'][number], string | number>>
-                    columns={data.headers.map((h) => ({
-                      name: h,
-                      selector: (row) => row[h],
-                      format: (row) => {
-                        const v = row[h];
-                        return typeof v === 'bigint' ? Number(v) : v;
-                      },
-                      width: '200px',
-                    }))}
-                    data={
-                      data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
-                    }
-                  />
-                </div>
-              )
-            }
-          </div>
-
-          {
-            // only display if data
-            data != null && (
-              <div>
-                <div>
-                  <label className="form-label" htmlFor="col_id">
-                    Column for id (they need to be unique, otherwise replaced by a number)
-                  </label>
-                  <select
-                    className="form-control"
-                    id="col_id"
-                    disabled={data === null}
-                    {...register('id')}
-                  >
-                    {columns}
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label" htmlFor="col_text">
-                    Column for text
-                  </label>
-                  <select
-                    className="form-control"
-                    id="col_text"
-                    disabled={data === null}
-                    {...register('text')}
-                  >
-                    <option key="none"></option>
-
-                    {columns}
-                  </select>
-                </div>
-                <button type="submit" className="btn btn-info my-4 form-button col-6">
-                  Launch the prediction on the imported dataset
-                </button>
-              </div>
-            )
-          }
-        </form>
+    <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
+      <div className="explanations">
+        One predicted, you can export them in Export as the external dataset. If you predict on a
+        new dataset, it will erase the previous one.
       </div>
-    </div>
+      {availablePredictionExternal && (
+        <div className="alert alert-warning">
+          You already have a prediction for this model.{' '}
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              getPredictionsFile(modelName, 'csv', 'external');
+            }}
+            className="text-blue-600 hover:underline"
+          >
+            You can export it <FaCloudDownloadAlt />.
+          </a>{' '}
+          If you continue, it will be replaced.
+        </div>
+      )}
+      <div>
+        <label className="form-label" htmlFor="csvFile">
+          Import text dataset to predict
+        </label>
+        <input className="form-control" id="csvFile" type="file" {...register('files')} />
+        {
+          // display datable if data available
+          data !== null && (
+            <div>
+              <div>Preview</div>
+              <div className="m-3">
+                Size of the dataset : <b>{data.data.length - 1}</b>
+              </div>
+              <DataTable<Record<DataType['headers'][number], string | number>>
+                columns={data.headers.map((h) => ({
+                  name: h,
+                  selector: (row) => row[h],
+                  format: (row) => {
+                    const v = row[h];
+                    return typeof v === 'bigint' ? Number(v) : v;
+                  },
+                  width: '200px',
+                }))}
+                data={data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]}
+              />
+            </div>
+          )
+        }
+      </div>
+
+      {
+        // only display if data
+        data != null && (
+          <div>
+            <div>
+              <label className="form-label" htmlFor="col_id">
+                Column for id (they need to be unique, otherwise replaced by a number)
+              </label>
+              <select
+                className="form-control"
+                id="col_id"
+                disabled={data === null}
+                {...register('id')}
+              >
+                {columns}
+              </select>
+            </div>
+            <div>
+              <label className="form-label" htmlFor="col_text">
+                Column for text
+              </label>
+              <select
+                className="form-control"
+                id="col_text"
+                disabled={data === null}
+                {...register('text')}
+              >
+                <option key="none"></option>
+
+                {columns}
+              </select>
+            </div>
+            <button type="submit" className="btn btn-info my-4 form-button col-6">
+              Launch the prediction on the imported dataset
+            </button>
+          </div>
+        )
+      }
+    </form>
   );
 };

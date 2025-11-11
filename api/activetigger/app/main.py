@@ -39,7 +39,7 @@ from activetigger.orchestrator import orchestrator
 
 # to log specific events from api
 logger = logging.getLogger("api")
-logger_simplemodel = logging.getLogger("simplemodel")
+logger_quickmodel = logging.getLogger("quickmodel")
 
 
 @asynccontextmanager
@@ -116,7 +116,6 @@ async def restart_queue(
     test_rights(ServerAction.MANAGE_SERVER, current_user.username)
     try:
         orchestrator.reset()
-        return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -174,13 +173,21 @@ async def stop_process(
 ) -> None:
     """
     Stop processes either by unique_id or by kind for a user
+    - unique_id: stop a specific process (only for administrator)
+    - kind: stop all processes of a given kind for the user
     """
     if unique_id is None and kind is None:
         raise HTTPException(status_code=400, detail="You must provide a unique_id or a kind")
     try:
         if unique_id is not None:
+            test_rights(ServerAction.MANAGE_SERVER, current_user.username)
             orchestrator.stop_process(unique_id, current_user.username)
         if kind is not None:
             orchestrator.stop_user_processes(kind, current_user.username)
+        orchestrator.log_action(
+            current_user.username,
+            f"STOP PROCESS: {kind if kind is not None else unique_id}",
+            "general",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

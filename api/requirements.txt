@@ -51,3 +51,5 @@ bertopic
 stopwordsiso
 hdbscan
 einops
+simplemma
+nbformat

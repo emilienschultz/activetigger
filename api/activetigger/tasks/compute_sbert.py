@@ -69,7 +69,6 @@ class ComputeSbert(BaseTask):
 
         try:
             sbert = SentenceTransformer(self.model, device=str(device), trust_remote_code=True)
-            sbert.max_seq_length = 512
 
             print("start computation")
             embeddings = []
@@ -89,7 +88,6 @@ class ComputeSbert(BaseTask):
                 progress_percent = (i / total_batches) * 100
                 with open(self.path_progress, "w") as f:
                     f.write(str(round(progress_percent, 1)))
-                print("writing", self.path_progress)
                 print(progress_percent)
 
             # shape the data

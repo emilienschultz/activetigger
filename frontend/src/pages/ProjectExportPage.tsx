@@ -1,14 +1,15 @@
 import { FC, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { Tab, Tabs } from 'react-bootstrap';
 import { Tooltip } from 'react-tooltip';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
+import { ModelPredict } from '../components/ModelPredict';
 import {
   useGetAnnotationsFile,
   useGetFeaturesFile,
   useGetModelFile,
   useGetPredictionsFile,
-  useGetPredictionsSimplemodelFile,
   useGetProjectionFile,
   useGetRawDataFile,
   useGetStaticUrls,
@@ -63,7 +64,7 @@ export const ProjectExportPage: FC = () => {
   const { getPredictionsFile } = useGetPredictionsFile(projectName || null);
   const { getModelFile } = useGetModelFile(projectName || null);
   const { getRawDataFile } = useGetRawDataFile(projectName || null);
-  const { getPredictionsSimpleModelFile } = useGetPredictionsSimplemodelFile(projectName || null);
+  // const { getPredictionsQuickModelFile } = useGetPredictionsQuickmodelFile(projectName || null);
   const { getProjectionFile } = useGetProjectionFile(projectName || null);
   const { staticUrls, reFetchUrl } = useGetStaticUrls(projectName || null, model);
 
@@ -71,230 +72,229 @@ export const ProjectExportPage: FC = () => {
     reFetchUrl();
   }, [model, reFetchUrl]);
 
-  const isSimpleModel =
-    authenticatedUser &&
-    currentScheme &&
-    project?.simplemodel.available[authenticatedUser.username]?.[currentScheme];
-
   return (
     <ProjectPageLayout projectName={projectName} currentAction="export">
       <div className="container-fluid">
         <div className="row">
           <div className="col-12">
-            <div className="explanations">
-              Download data (annotations, features, predictions) and fine-tuned models
-            </div>
-
-            <div>Select a format</div>
-            <select
-              className="form-select w-50 w-md-25"
-              onChange={(e) => {
-                setFormat(e.currentTarget.value);
-              }}
-            >
-              <option key="csv">csv</option>
-              <option key="xlsx">xlsx</option>
-              <option key="parquet">parquet</option>
-            </select>
-            <h4 className="subsection">Annotations</h4>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                if (currentScheme) getAnnotationsFile(currentScheme, format, 'train');
-              }}
-            >
-              Export current scheme train tags
-            </button>
-            {project?.params.test && (
-              <button
-                className="btn btn-primary mx-2"
-                onClick={() => {
-                  if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
+            <div className="explanations">Predict and export annotations and models</div>
+            <div className="d-flex align-items-center mt-2">
+              Select a file format
+              <select
+                className="form-select w-25 mx-2"
+                onChange={(e) => {
+                  setFormat(e.currentTarget.value);
                 }}
               >
-                Export current scheme test tags
-              </button>
-            )}
-            <button
-              className="btn btn-primary mx-2"
-              onClick={() => {
-                if (currentScheme) getAnnotationsFile('all', format, 'train');
-              }}
-            >
-              Export all tags
-            </button>
-
-            <h4 className="subsection">Features</h4>
-            <div>
-              <div>
-                <select
-                  className="form-select"
-                  onChange={(e) => {
-                    setFeatures(Array.from(e.target.selectedOptions, (option) => option.value));
-                  }}
-                  multiple
-                >
-                  {(availableFeatures || []).map((e) => (
-                    <option key={e}>{e}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <button
-                  className="btn btn-primary mt-3"
-                  onClick={() => {
-                    if (features) {
-                      getFeaturesFile(features, format);
-                    }
-                  }}
-                >
-                  Export selected features
-                </button>
-              </div>
-
-              {availableProjection && (
+                <option key="csv">csv</option>
+                <option key="xlsx">xlsx</option>
+                <option key="parquet">parquet</option>
+              </select>
+            </div>
+            <Tabs id="panel" className="mt-3" defaultActiveKey="annotations">
+              <Tab eventKey="annotations" title="Annotations">
                 <div>
                   <button
-                    className="btn btn-primary mt-3"
+                    className="btn btn-primary mt-2"
                     onClick={() => {
-                      if (availableProjection) {
-                        getProjectionFile(format);
-                      }
+                      if (currentScheme) getAnnotationsFile(currentScheme, format, 'train');
                     }}
                   >
-                    Export current projection
+                    Tags: train
+                  </button>
+                  {project?.params.valid && (
+                    <button
+                      className="btn btn-primary mx-2 mt-2"
+                      onClick={() => {
+                        if (currentScheme) getAnnotationsFile(currentScheme, format, 'valid');
+                      }}
+                    >
+                      Tags: validation
+                    </button>
+                  )}
+                  {project?.params.test && (
+                    <button
+                      className="btn btn-primary mx-2 mt-2"
+                      onClick={() => {
+                        if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
+                      }}
+                    >
+                      Tags: test
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <button
+                    className="btn btn-primary mt-2"
+                    onClick={() => {
+                      if (currentScheme) getAnnotationsFile('all', format, 'train');
+                    }}
+                  >
+                    Tags: all schemes
                   </button>
                 </div>
-              )}
-
-              <h4 className="subsection">Fine-tuned models and predictions</h4>
-
-              {isSimpleModel && (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    if (currentScheme) getPredictionsSimpleModelFile(currentScheme, format);
-                  }}
-                >
-                  Export simplemodel predictions
-                </button>
-              )}
-
-              <div className="explanations">For BERT, select first a model</div>
-              <div>
+              </Tab>
+              <Tab eventKey="features" title="Features">
                 <div>
                   <select
                     className="form-select"
                     onChange={(e) => {
-                      setModel(e.target.value);
+                      setFeatures(Array.from(e.target.selectedOptions, (option) => option.value));
                     }}
+                    multiple
                   >
-                    <option></option>
-                    {(availableModels || []).map((e) => (
+                    {(availableFeatures || []).map((e) => (
                       <option key={e}>{e}</option>
                     ))}
                   </select>
                 </div>
+                <div>
+                  <button
+                    className="btn btn-primary mt-3"
+                    onClick={() => {
+                      if (features) {
+                        getFeaturesFile(features, format);
+                      }
+                    }}
+                  >
+                    Export selected features
+                  </button>
+                </div>
+                {availableProjection && (
+                  <div>
+                    <button
+                      className="btn btn-primary mt-3"
+                      onClick={() => {
+                        if (availableProjection) {
+                          getProjectionFile(format);
+                        }
+                      }}
+                    >
+                      Export current projection
+                    </button>
+                  </div>
+                )}
+              </Tab>
+              <Tab eventKey="models" title="Models">
+                <div>
+                  <div>BERT models</div>
+                  <div>
+                    <select
+                      className="form-select"
+                      onChange={(e) => {
+                        setModel(e.target.value);
+                      }}
+                    >
+                      <option></option>
+                      {(availableModels || []).map((e) => (
+                        <option key={e}>{e}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <ModelPredict currentModel={model} />
 
-                <div>
-                  {availablePredictionAll && (
-                    <button
-                      className="btn btn-primary mt-3"
-                      onClick={() => {
-                        if (model) {
-                          getPredictionsFile(model, format);
-                        }
-                      }}
-                    >
-                      Export prediction complete dataset
-                    </button>
-                  )}
-                </div>
-                <div>
-                  {availablePredictionTest && (
-                    <button
-                      className="btn btn-primary mt-3"
-                      onClick={() => {
-                        if (model) {
-                          getPredictionsFile(model, format, 'test');
-                        }
-                      }}
-                    >
-                      Export prediction testset
-                    </button>
-                  )}
-                </div>
-                <div>
-                  {availablePredictionExternal && (
-                    <button
-                      className="btn btn-primary mt-3"
-                      onClick={() => {
-                        if (model) {
-                          getPredictionsFile(model, format, 'external');
-                        }
-                      }}
-                    >
-                      Export prediction external dataset
-                    </button>
-                  )}
-                </div>
-                {/*
-            small fix for the direct link when no nging
-            */}
-                <div>
-                  {model &&
-                    (staticUrls && staticUrls.model ? (
-                      <Link
-                        to={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model.path}
-                        target="_blank"
-                        download
-                        className="btn btn-secondary mt-3"
-                      >
-                        Export fine-tuned model (large file)
-                      </Link>
-                    ) : (
+                  <div>
+                    {availablePredictionAll && (
                       <button
                         className="btn btn-primary mt-3"
                         onClick={() => {
-                          getModelFile(model);
+                          if (model) {
+                            getPredictionsFile(model, format);
+                          }
                         }}
                       >
-                        Export fine-tuned model
+                        Export prediction complete dataset
                       </button>
-                    ))}
-                </div>
-              </div>
-            </div>
-            <hr />
-
-            {/*
+                    )}
+                  </div>
+                  <div>
+                    {availablePredictionTest && (
+                      <button
+                        className="btn btn-primary mt-3"
+                        onClick={() => {
+                          if (model) {
+                            getPredictionsFile(model, format, 'test');
+                          }
+                        }}
+                      >
+                        Export prediction testset
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    {availablePredictionExternal && (
+                      <button
+                        className="btn btn-primary mt-3"
+                        onClick={() => {
+                          if (model) {
+                            getPredictionsFile(model, format, 'external');
+                          }
+                        }}
+                      >
+                        Export prediction external dataset
+                      </button>
+                    )}
+                  </div>
+                  {/*
             small fix for the direct link when no nging
             */}
-            {staticUrls ? (
-              <>
-                <a
-                  href={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.dataset.path}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 downloadraw"
-                >
-                  Static link to the raw dataset
-                </a>
-                <Tooltip anchorSelect=".downloadraw" place="top">
-                  If the download does't start, click right and save the target of the link
-                </Tooltip>
-              </>
-            ) : (
-              <button
-                className="btn btn-primary mt-3"
-                onClick={() => {
-                  getRawDataFile();
-                }}
-              >
-                Export raw dataset in parquet
-              </button>
-            )}
+                  <div>
+                    {model &&
+                      (staticUrls && staticUrls.model ? (
+                        <Link
+                          to={
+                            config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.model.path
+                          }
+                          target="_blank"
+                          download
+                          className="btn btn-secondary mt-3"
+                        >
+                          Export fine-tuned model (large file)
+                        </Link>
+                      ) : (
+                        <button
+                          className="btn btn-primary mt-3"
+                          onClick={() => {
+                            getModelFile(model);
+                          }}
+                        >
+                          Export fine-tuned model
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              </Tab>
+            </Tabs>
           </div>
+          <hr className="mt-3" />
+
+          {/*
+            small fix for the direct link when no nging
+            */}
+          {staticUrls ? (
+            <>
+              <a
+                href={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.dataset.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 downloadraw"
+              >
+                Static link to the raw dataset
+              </a>
+              <Tooltip anchorSelect=".downloadraw" place="top">
+                If the download does't start, click right and save the target of the link
+              </Tooltip>
+            </>
+          ) : (
+            <button
+              className="btn btn-primary mt-3"
+              onClick={() => {
+                getRawDataFile();
+              }}
+            >
+              Export raw dataset in parquet
+            </button>
+          )}
         </div>
       </div>
     </ProjectPageLayout>

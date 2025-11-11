@@ -82,11 +82,17 @@ class ProjectsService:
             )
 
     def add_scheme(
-        self, project_slug: str, name: str, labels: list[str], kind: str, user_name: str
+        self,
+        project_slug: str,
+        name: str,
+        labels: list[str],
+        kind: str,
+        user_name: str,
+        codebook: str = "# Empty guidelines\nYou can edit the codebook here.",
     ):
         if not labels:
             labels = []
-        params = {"labels": labels, "codebook": "", "kind": kind}
+        params = {"labels": labels, "codebook": codebook, "kind": kind}
         with self.Session.begin() as session:
             scheme = Schemes(
                 project_slug=project_slug,
@@ -170,7 +176,7 @@ class ProjectsService:
                 delete(Auths).filter_by(project_slug=project_slug, user_name=user_name)
             )
 
-    def get_user_auth_projects(self, user_name: str, auth: str | None = None) -> list[Any]:
+    def get_user_auth_projects(self, user_name: str, auth: str | None = None) -> list:
         """
         Projects user can access (auth)
         """
@@ -190,7 +196,7 @@ class ProjectsService:
                 query = query.where(Auths.status == auth)
 
             result = session.execute(query).all()
-            return result
+            return list(result)
 
     def get_user_auth(self, user_name: str, project_slug: str | None = None):
         session = self.Session()
@@ -227,6 +233,7 @@ class ProjectsService:
                         Annotations.user_name == user,
                     )
                     .group_by(Annotations.element_id)
+                    .subquery()
                 )
             else:  # if no user filter, get all annotations
                 subq = (
@@ -245,6 +252,7 @@ class ProjectsService:
                 select(
                     Annotations.scheme_name,
                     Annotations.element_id,
+                    Annotations.dataset,
                     Annotations.annotation,
                     Annotations.user_name,
                     Annotations.time,
@@ -266,6 +274,7 @@ class ProjectsService:
             return [
                 [
                     row.element_id,
+                    row.dataset,
                     row.annotation,
                     row.user_name,
                     row.time,
@@ -315,14 +324,14 @@ class ProjectsService:
             ).all()
             return [[a.annotation, a.dataset, a.user_name, a.time] for a in annotations]
 
-    def delete_annotations_testset(self, project_slug: str):
+    def delete_annotations_evalset(self, project_slug: str, dataset: str):
         """
-        Delete all annotations for the test set in a project.
-        This is used when the test set is deleted or changed.
+        Delete all annotations for the eval set in a project.
+        This is used when the eval set is deleted or changed.
         """
         with self.Session.begin() as session:
             _ = session.execute(
-                delete(Annotations).filter_by(project_slug=project_slug, dataset="test")
+                delete(Annotations).filter_by(project_slug=project_slug, dataset=dataset)
             )
 
     def add_annotations(
@@ -543,7 +552,7 @@ class ProjectsService:
         name: str,
         parameters: dict[str, Any],
         user_name: str,
-        data: list[dict[str, Any]] | None = None,
+        data: list | None = None,
     ):
         with self.Session.begin() as session:
             feature = Features(
@@ -564,6 +573,13 @@ class ProjectsService:
         ).delete()
         session.commit()
         session.close()
+
+    def delete_project_features(self, project_slug: str):
+        """
+        Delete all features for a project
+        """
+        with self.Session.begin() as session:
+            session.query(Features).filter(Features.project_slug == project_slug).delete()
 
     def delete_all_features(self, project_slug: str):
         with self.Session.begin() as session:

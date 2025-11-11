@@ -54,10 +54,10 @@ class ComputeProjection(BaseTask):
 
         # Check if cuML is available for GPU acceleration
         try:
-            reducer = cuml.UMAP(**self.params)
+            reducer = cuml.UMAP(**self.params, metric="cosine")
             print("Using cuML for UMAP computation")
         except Exception:
-            reducer = umap.UMAP(**self.params)
+            reducer = umap.UMAP(**self.params, metric="cosine")
             print("Using standard UMAP for computation")
 
         reduced_features = reducer.fit_transform(scaled_features)

@@ -1,5 +1,6 @@
 from typing import Annotated
 
+import pandas as pd
 from fastapi import (
     APIRouter,
     Depends,
@@ -17,7 +18,6 @@ from activetigger.datamodels import (
     FeatureDescriptionModel,
     FeatureModel,
     UserInDBModel,
-    WaitingModel,
 )
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
@@ -38,22 +38,36 @@ async def post_embeddings(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     feature: FeatureModel,
-) -> WaitingModel | None:
+):
     """
     Compute features :
     - same prcess
     - specific process : function + temporary file + update
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
-    df = project.content["text"]
+
     try:
+        # gather all text data to compute features on
+        if project.data.train is None:
+            raise HTTPException(
+                status_code=400, detail="No training data available to compute features."
+            )
+        series_list = [project.data.train["text"]]
+        if project.data.valid is not None:
+            series_list.append(project.data.valid["text"])
+        if project.data.test is not None:
+            series_list.append(project.data.test["text"])
+        df = pd.concat(series_list)
+
+        print("Data to compute features on", df.shape, project.data.valid, project.data.test)
+
+        # compute features
         project.features.compute(
             df, feature.name, feature.type, feature.parameters, current_user.username
         )
         orchestrator.log_action(
             current_user.username, f"COMPUTE FEATURE: {feature.type}", project.name
         )
-        return WaitingModel(detail=f"computing {feature.type}, it could take a few minutes")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -79,7 +93,6 @@ async def delete_feature(
 @router.get("/features/available", dependencies=[Depends(verified_user)])
 async def get_feature_info(
     project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> dict[str, FeatureDescriptionModel]:
     """
     Get feature info

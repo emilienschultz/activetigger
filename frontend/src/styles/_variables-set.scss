@@ -1,6 +1,6 @@
-$primary: #878686;
-$secondary: #a5a4a4;
-$tertiary: #8f8d8d;
+$primary: #ea6b1f;
+$secondary: #b04302;
+$tertiary: rgb(239,239,239);
 $quaternary: #faf9f8;
 
 .project-link {
@@ -72,7 +72,7 @@ $quaternary: #faf9f8;
 }
 
 .delete-button {
-  background-color: #ff4c4c;
+  background-color: #e60000;
   color: white;
   border: none;
   border-radius: 5px;
@@ -83,7 +83,7 @@ $quaternary: #faf9f8;
 }
 
 .delete-button:hover {
-  background-color: #e60000;
+  background-color: #cc0000;
 }
 
 .delete-button:focus {
@@ -154,7 +154,7 @@ $quaternary: #faf9f8;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   max-width: 800px;
-  margin: 20px auto;
+  margin: 25px auto;
   white-space: pre-wrap;
   overflow-y: auto; 
 }
@@ -168,7 +168,7 @@ $quaternary: #faf9f8;
   border: 0px solid $tertiary;
   border-radius: 8px;
   padding: 10px;
-  margin: 20px 0; 
+  margin: 5px 0; 
   background-color: #f8f9fa;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -190,7 +190,9 @@ $quaternary: #faf9f8;
 }
 
 .text-out-context{
-  color:#909090;
+  color:$secondary;
+  opacity: 0.7;
+  font-style: italic;
 }
 
 .table-auth {
@@ -304,5 +306,9 @@ $quaternary: #faf9f8;
 
 .trash-wrapper:hover {
   color: red;
+}
+
+.sidemenulabel{
+  color: rgb(0, 0, 0);
 }
 

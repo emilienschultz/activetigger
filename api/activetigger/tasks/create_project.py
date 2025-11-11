@@ -1,10 +1,14 @@
+import csv
 import shutil
+import sys
 
 import pandas as pd
 
 from activetigger.datamodels import ProjectBaseModel, ProjectModel
 from activetigger.functions import slugify
 from activetigger.tasks.base_task import BaseTask
+
+csv.field_size_limit(sys.maxsize)
 
 
 class CreateProject(BaseTask):
@@ -21,6 +25,7 @@ class CreateProject(BaseTask):
         username: str,
         data_all: str = "data_all.parquet",
         train_file: str = "train.parquet",
+        valid_file: str = "valid.parquet",
         test_file: str = "test.parquet",
         features_file: str = "features.parquet",
     ):
@@ -31,9 +36,12 @@ class CreateProject(BaseTask):
         self.data_all = data_all
         self.train_file = train_file
         self.test_file = test_file
+        self.valid_file = valid_file
         self.features_file = features_file
 
-    def __call__(self) -> tuple[ProjectModel, pd.DataFrame | None, pd.DataFrame | None]:
+    def __call__(
+        self,
+    ) -> tuple[ProjectModel, pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
         """
         Create the project with the given name and file, return the project model
         and the train/test schemes to import in the database
@@ -49,7 +57,7 @@ class CreateProject(BaseTask):
         if self.params.filename:
             file_path = self.params.dir.joinpath(self.params.filename)
             if self.params.filename.endswith(".csv"):
-                content = pd.read_csv(file_path, low_memory=False)
+                content = pd.read_csv(file_path, low_memory=False, on_bad_lines="skip")
             elif self.params.filename.endswith(".parquet"):
                 content = pd.read_parquet(file_path)
             elif self.params.filename.endswith(".xlsx"):
@@ -72,10 +80,10 @@ class CreateProject(BaseTask):
             n_total = len(content)
 
             # test if the size of the sample requested is possible
-            if len(content) < self.params.n_test + self.params.n_train:
+            if len(content) < self.params.n_test + self.params.n_valid + self.params.n_train:
                 shutil.rmtree(self.params.dir)
                 raise Exception(
-                    f"Not enough data for creating the train/test dataset. Current : {len(content)} ; Selected : {self.params.n_test + self.params.n_train}"
+                    f"Not enough data for creating the train/valid/test dataset. Current : {len(content)} ; Selected : {self.params.n_test + self.params.n_valid + self.params.n_train}"
                 )
 
             # create the index
@@ -134,32 +142,61 @@ class CreateProject(BaseTask):
         # ------------------------
         # End of the data cleaning
         # ------------------------
-        # Step 2 : test dataset : from the complete dataset + random/stratification
+        # Step 2 : valid/test dataset : from the complete dataset + random/stratification
+        # if both, draw together valid / test set and then separage
         rows_test = []
+        rows_valid = []
         self.params.test = False
+        self.params.valid = False
         testset = None
-        if self.params.n_test != 0:
+        validset = None
+        if self.params.n_test + self.params.n_valid != 0:
+            n_to_draw = self.params.n_test + self.params.n_valid
             # if no stratification
             if len(self.params.cols_stratify) == 0:
-                testset = content.sample(self.params.n_test)
+                draw = content.sample(n_to_draw, random_state=42)
             # if stratification, total cat, number of element per cat, sample with a lim
             else:
                 df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
                 nb_cat = len(df_grouped)
-                nb_elements_cat = round(self.params.n_test / nb_cat)
-                testset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
-            # save the testset
-            testset.to_parquet(self.params.dir.joinpath(self.test_file), index=True)
-            self.params.test = True
-            rows_test = list(testset.index)
+                nb_elements_cat = round(n_to_draw / nb_cat)
+                draw = df_grouped.apply(
+                    lambda x: x.sample(min(len(x), nb_elements_cat), random_state=42)
+                )
+
+            # divide between test and valid
+            if self.params.n_test > 0 and self.params.n_valid == 0:
+                testset = draw
+                testset.to_parquet(self.params.dir.joinpath(self.test_file), index=True)
+                self.params.test = True
+                rows_test = list(testset.index)
+            elif self.params.n_valid > 0 and self.params.n_test == 0:
+                validset = draw
+                validset.to_parquet(self.params.dir.joinpath(self.valid_file), index=True)
+                self.params.valid = True
+                rows_valid = list(validset.index)
+            else:
+                testset = draw.sample(self.params.n_test, random_state=42)
+                validset = draw.drop(index=testset.index)
+                validset.to_parquet(self.params.dir.joinpath(self.valid_file), index=True)
+                testset.to_parquet(self.params.dir.joinpath(self.test_file), index=True)
+                self.params.test = True
+                self.params.valid = True
+                rows_valid = list(validset.index)
+                rows_test = list(testset.index)
 
         # Step 3 : train dataset / different strategies
 
         # remove test rows
         content = content.drop(rows_test)
+        content = content.drop(rows_valid)
 
         # case where there is no test set and the selection is deterministic
-        if not self.params.random_selection and self.params.n_test == 0:
+        if (
+            not self.params.random_selection
+            and self.params.n_test == 0
+            and self.params.n_valid == 0
+        ):
             trainset = content[0 : self.params.n_train]
         # case to force the max of label from one column
         elif self.params.force_label and len(self.params.cols_label) > 0:
@@ -167,29 +204,31 @@ class CreateProject(BaseTask):
             f_na = content[self.params.cols_label[0]].isna()
             # different case regarding the number of labels
             if f_notna.sum() > self.params.n_train:
-                trainset = content[f_notna].sample(self.params.n_train)
+                trainset = content[f_notna].sample(self.params.n_train, random_state=42)
             else:
                 n_train_random = self.params.n_train - f_notna.sum()
-                trainset = pd.concat([content[f_notna], content[f_na].sample(n_train_random)])
+                trainset = pd.concat(
+                    [content[f_notna], content[f_na].sample(n_train_random, random_state=42)]
+                )
         # case there is stratification on the trainset
         elif len(self.params.cols_stratify) > 0 and self.params.stratify_train:
             df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
             nb_cat = len(df_grouped)
             nb_elements_cat = round(self.params.n_train / nb_cat)
-            trainset = df_grouped.apply(lambda x: x.sample(min(len(x), nb_elements_cat)))
+            trainset = df_grouped.apply(
+                lambda x: x.sample(min(len(x), nb_elements_cat)), random_state=42
+            )
         # default with random selection in the remaining elements
         else:
             print("random selection of the trainset")
-            trainset = content.sample(self.params.n_train)
+            trainset = content.sample(self.params.n_train, random_state=42)
 
         # write the trainset
         trainset[list(set(["text", "limit"] + self.params.cols_context + keep_id))].to_parquet(
             self.params.dir.joinpath(self.train_file), index=True
         )
-        trainset[[]].to_parquet(self.params.dir.joinpath(self.features_file), index=True)
 
         # save parameters (without the data)
-        # params.cols_label = []  # reverse dummy
         project = self.params.model_dump()
 
         # add elements for the parameters
@@ -200,13 +239,16 @@ class CreateProject(BaseTask):
         # schemes/labels to import (in the main process)
         import_trainset = None
         import_testset = None
+        import_validset = None
         if len(self.params.cols_label) > 0:
             import_trainset = trainset[self.params.cols_label].dropna(how="all")
             if testset is not None and not self.params.clear_test:
                 import_testset = testset[self.params.cols_label].dropna(how="all")
+            if validset is not None and not self.params.clear_valid:
+                import_validset = validset[self.params.cols_label].dropna(how="all")
 
         # delete the initial file
         if self.params.filename:
             self.params.dir.joinpath(self.params.filename).unlink()
 
-        return ProjectModel(**project), import_trainset, import_testset
+        return ProjectModel(**project), import_trainset, import_validset, import_testset

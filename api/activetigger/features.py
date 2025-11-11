@@ -30,6 +30,7 @@ class Features:
     - for the moment as a file
     - database for informations
     - use "__" as separator
+    - add a column dataset to separate train, valid, test
     """
 
     project_slug: str
@@ -51,6 +52,9 @@ class Features:
         project_slug: str,
         path_features: Path,
         path_all: Path,
+        path_train: Path,
+        path_valid: Path,
+        path_test: Path,
         models_path: Path,
         queue: Any,
         computing: list,
@@ -64,10 +68,13 @@ class Features:
         self.projects_service = db_manager.projects_service
         self.path_features = path_features
         self.path_all = path_all
+        self.path_train = path_train
+        self.path_valid = path_valid
+        self.path_test = path_test
         self.path_models = models_path
         self.queue = queue
         self.informations = {}
-        self.map, self.n = self.get_map()
+
         self.lang = lang
         self.computing = computing
 
@@ -111,14 +118,59 @@ class Features:
             "dataset": {},
         }
 
-        self.get_map()
+        # create the features file if not exist
+        if not self.path_features.exists():
+            self.create_features_file()
+        self.map, self.n = self.get_map()
 
-    def __repr__(self) -> str:
-        return f"Available features : {self.map}"
+    def create_features_file(self):
+        """
+        Create the features file with the dataset information
+        based on train, valid, test files
+        """
+
+        # clear database
+        self.projects_service.delete_project_features(self.project_slug)
+
+        # read file to create the structure
+        train = pd.read_parquet(self.path_train, columns=[])
+        train = pd.DataFrame(index=train.index)
+        train["dataset"] = "train"
+
+        to_concat = [train]
+
+        if self.path_valid.exists():
+            valid = pd.read_parquet(self.path_valid, columns=[])
+            valid = pd.DataFrame(index=valid.index)
+            valid["dataset"] = "valid"
+            to_concat.append(valid)
+        if self.path_test.exists():
+            test = pd.read_parquet(self.path_test, columns=[])
+            test = pd.DataFrame(index=test.index)
+            test["dataset"] = "test"
+            to_concat.append(test)
+
+        df = pd.DataFrame(pd.concat(to_concat))
+        df.to_parquet(self.path_features, index=True)
+        del df
+
+    def reset_features_file(self):
+        """
+        Reset the features file with only the dataset information
+        based on train, valid, test files
+        """
+        if self.path_features.exists():
+            self.path_features.unlink()
+        self.projects_service.delete_project_features(self.project_slug)
+        self.create_features_file()
+        self.map, self.n = self.get_map()
 
     def get_map(self) -> tuple[dict, int]:
+        """
+        Get the structure of features from the parquet file
+        """
         parquet_file = pq.ParquetFile(self.path_features)
-        column_names = parquet_file.schema.names
+        column_names = [i for i in parquet_file.schema.names if i != "dataset"]
 
         def find_strings_with_pattern(strings, pattern):
             matching_strings = [s for s in strings if re.match(pattern, s)]
@@ -142,18 +194,17 @@ class Features:
         username: str,
         parameters: dict[str, Any],
         new_content: DataFrame | Series,
-    ) -> dict:
+    ):
         """
-        Add feature(s) and save
+        Add feature(s) after computing
         """
         # test name
         if name in self.map:
             raise Exception("Feature already exists")
 
         # test length
+        print("New content shape", new_content.shape, self.n)
         if len(new_content) != self.n:
-            print(self.n)
-            print(new_content)
             raise ValueError("Features don't have the right shape")
 
         # change type for series
@@ -188,21 +239,17 @@ class Features:
         # refresh the map
         self.map = self.get_map()[0]
 
-        return {"success": "feature added"}
-
     def delete(self, name: str):
         """
         Delete feature
         """
-        if name not in self.map:
+        if not self.exists(name):
             raise Exception("Feature doesn't exist")
 
-        if self.projects_service.get_feature(self.project_slug, name) is None:
-            raise Exception("Feature doesn't exist in database")
-
-        col = self.get([name])
+        col = self.map[name]
         # read data, delete columns and save
         content = pd.read_parquet(self.path_features)
+
         content[[i for i in content.columns if i not in col]].to_parquet(self.path_features)
         del content
 
@@ -212,9 +259,11 @@ class Features:
         # refresh the map
         self.map = self.get_map()[0]
 
-    def get(self, features: list | str = "all"):
+    def get(
+        self, features: list | str, dataset: list | str = "all", keep_dataset_column: bool = False
+    ) -> DataFrame:
         """
-        Get content for specific features
+        Get content for specific features with a filter on dataset
         """
         features = [i for i in features if i is not None]
         if features == "all":
@@ -222,20 +271,32 @@ class Features:
         if type(features) is str:
             features = [features]
 
-        cols = []
+        # get needed columns
+        cols = ["dataset"]
         missing = []
         for i in features:
             if i in self.map:
                 cols += self.map[i]
             else:
                 missing.append(i)
-
-        if len(i) > 0:
+        if len(missing) > 0:
             print("Missing features:", missing)
 
         # load only needed data from file
         data = pd.read_parquet(self.path_features, columns=cols)
 
+        # filter on dataset
+        if dataset == "annotable":
+            if not keep_dataset_column:
+                return data.drop(columns=["dataset"])
+            return data
+
+        if type(dataset) is str:
+            raise Exception("Dataset should be a list of strings")
+
+        data = data.loc[data["dataset"].isin(dataset)]
+        if not keep_dataset_column:
+            return data.drop(columns=["dataset"])
         return data
 
     def info(self, name: str):
@@ -268,7 +329,6 @@ class Features:
         """
         parquet_file = pq.ParquetFile(self.path_all)
         column_names = parquet_file.schema.names
-        print("column names", column_names)
         if column_name not in list(column_names):
             raise Exception("Column doesn't exist")
         df = pd.read_parquet(self.path_all, columns=[column_name])
@@ -293,6 +353,7 @@ class Features:
     def compute(self, df: pd.Series, name: str, kind: str, parameters: dict, username: str):
         """
         Compute new feature
+        TODO : manage better the queue launching
         """
         if len(self.current_user_processes(username)) > 0:
             raise ValueError("A process is already running")
@@ -307,6 +368,8 @@ class Features:
                 raise ValueError("No value for regex")
 
             regex_name = f"regex_[{parameters['value']}]_by_{username}"
+            if self.exists(regex_name):
+                raise ValueError("This regex already exists")
             pattern = re.compile(parameters["value"])
             f = df.apply(lambda x: bool(pattern.search(x)))
             parameters["count"] = int(f.sum())
@@ -332,6 +395,8 @@ class Features:
             dataset_name = (
                 f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
             )
+            if self.exists(dataset_name):
+                raise ValueError("This dataset feature already exists")
             self.add(dataset_name, kind, username, parameters, column)
             return {"success": "Feature added"}
 
@@ -348,7 +413,9 @@ class Features:
                 model = self.options["sbert"]["models"][0]
             else:
                 model = parameters["model"]
-            print("using model", model)
+            name = f"sbert_{model.replace('/', '_')}"
+            if self.exists(name):
+                raise ValueError("This sbert model already exists")
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
@@ -361,6 +428,9 @@ class Features:
             )
 
         if kind == "fasttext":
+            name = f"fasttext_{parameters['model']}"
+            if self.exists(name):
+                raise ValueError("This fasttext model already exists")
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
@@ -376,6 +446,9 @@ class Features:
                 name = f"{name}_{parameters['model']}"
 
         if kind == "dfm":
+            name = "dfm"
+            if self.exists(name):
+                raise ValueError("This dfm model already exists")
             args = parameters.copy()
             args["texts"] = df
             args["language"] = self.lang

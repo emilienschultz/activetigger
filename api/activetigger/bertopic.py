@@ -11,8 +11,10 @@ from slugify import slugify
 
 from activetigger.datamodels import (
     BertopicComputing,
+    BertopicOutModelParameters,
     BertopicParamsModel,
     BertopicProjectStateModel,
+    TopicsOutModel,
 )
 from activetigger.features import Features
 from activetigger.queue import Queue
@@ -48,7 +50,7 @@ class Bertopic:
     def compute(
         self,
         path_data: Path,
-        col_id: str,
+        col_id: str | None,
         col_text: str,
         parameters: BertopicParamsModel,
         name: str,
@@ -66,18 +68,16 @@ class Bertopic:
 
         print("BERTopic compute called with parameters:", parameters)
 
-        args = {
-            "path_bertopic": self.path,
-            "path_data": path_data,
-            "col_id": col_id,
-            "col_text": col_text,
-            "parameters": parameters,
-            "name": name,
-            "force_compute_embeddings": force_compute_embeddings,
-        }
-        unique_id = self.queue.add_task(
-            "bertopic", self.project_slug, ComputeBertopic(**args), queue="gpu"
+        args = ComputeBertopic(
+            path_bertopic=self.path,
+            path_data=path_data,
+            col_id=col_id,
+            col_text=col_text,
+            parameters=parameters,
+            name=name,
+            force_compute_embeddings=force_compute_embeddings,
         )
+        unique_id = self.queue.add_task("bertopic", self.project_slug, args, queue="gpu")
         self.computing.append(
             BertopicComputing(
                 user=user,
@@ -95,7 +95,7 @@ class Bertopic:
         )
         return unique_id
 
-    def training(self) -> dict[str, dict[str]]:
+    def training(self) -> dict[str, dict[str, str | int | None]]:
         """
         Get available BERTopic models in the current process
         """
@@ -105,7 +105,7 @@ class Bertopic:
             if e.kind == "bertopic"
         }
 
-    def available(self) -> dict[str, str]:
+    def available(self) -> dict[str, str | None]:
         """
         Get available BERTopic models.
         """
@@ -127,7 +127,7 @@ class Bertopic:
     def state(self) -> BertopicProjectStateModel:
         return BertopicProjectStateModel(
             available=self.available(),
-            training=self.training(),
+            training=self.training(),  # type: ignore
             models=self.available_models,
         )
 
@@ -160,35 +160,49 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_topics(self, name: str) -> list:
+    def get_topics(self, name: str) -> list[TopicsOutModel]:
         """
         Get topics from a BERTopic model.
+        Return a list of dictionaries where a dictionary is a row in the dataframe
+        (alike TopicsOutModel).
         """
         path_model = self.path.joinpath("runs").joinpath(name)
         if path_model.exists():
-            return pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0).to_dict(
-                orient="records"
-            )
+            df = pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0)
+            df.columns = df.columns.astype(str)
+            df_list = df.to_dict(orient="records")
+            return [TopicsOutModel(**item) for item in df_list]  # type: ignore
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
-    def get_parameters(self, name: str) -> dict:
+    def get_clusters(self, name: str) -> dict[str, int]:
+        """
+        Get clusters from a BERTopic model.
+        Return a list of dictionaries where a dictionary is a row in the dataframe
+        (structure: {'id' : cluster}).
+        """
+        path_model = self.path.joinpath("runs").joinpath(name)
+        if path_model.exists():
+            return pd.read_csv(path_model.joinpath("bertopic_clusters.csv"), index_col=0).to_dict()[
+                "cluster"
+            ]
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")
+
+    def get_parameters(self, name: str) -> BertopicOutModelParameters:
         """
         Get parameters file from a BERTopic model
         TODO : cache ?
         """
         path_model = self.path.joinpath("runs").joinpath(name)
-        if path_model.exists():
-            params_path = path_model.joinpath("params.json")
-            if params_path.exists():
-                with open(params_path) as f:
-                    r = json.load(f)
-                    print(r)
-                    return r
-            else:
-                raise FileNotFoundError(f"Parameters for model {name} do not exist.")
-        else:
+        if not path_model.exists():
             raise FileNotFoundError(f"Model {name} does not exist.")
+        params_path = path_model.joinpath("params.json")
+        if not params_path.exists():
+            raise FileNotFoundError(f"Parameters for model {name} do not exist.")
+        with open(params_path) as f:
+            r = json.load(f)
+            return BertopicOutModelParameters(**r)
 
     def get_projection(self, name: str) -> dict[str, list | dict]:
         """

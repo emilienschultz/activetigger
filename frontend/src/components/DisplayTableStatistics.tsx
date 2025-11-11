@@ -14,7 +14,7 @@ interface TableModel {
 
 export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores, title }) => {
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
-  const labels = Object.keys(scores['f1_label'] || []);
+  const labels = (scores?.table?.index as string[]) || [];
   const colCount = table?.columns.length || 0;
 
   return (
@@ -30,7 +30,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
             <tr>
               <th></th>
               <th></th>
-              <td colSpan={labels.length} className="bg-gray-300 text-center p-2">
+              <td colSpan={Object.entries(labels).length} className="bg-gray-300 text-center p-2">
                 Predicted
               </td>
               <td colSpan={3} className="bg-gray-300 text-center p-2">

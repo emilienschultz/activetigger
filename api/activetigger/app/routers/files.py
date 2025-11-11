@@ -1,6 +1,3 @@
-#####
-# Those route are not used for the moment
-#####
 import asyncio
 import logging
 import os

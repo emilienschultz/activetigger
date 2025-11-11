@@ -241,6 +241,7 @@ class Features(Base):
 class Models(Base):
     __tablename__ = "models"
     __table_args__ = (
+        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),
         ForeignKeyConstraint(
             ["project_slug", "scheme_name"],
             ["schemes.project_slug", "schemes.name"],
@@ -248,8 +249,7 @@ class Models(Base):
             ondelete="CASCADE",
         ),
     )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str]
     time: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -264,7 +264,6 @@ class Models(Base):
     scheme: Mapped[Schemes] = relationship(back_populates="models")
     scheme_name: Mapped[str]
     kind: Mapped[str]
-    name: Mapped[str]
     parameters: Mapped[dict[str, Any]]
     path: Mapped[str]
     status: Mapped[str]

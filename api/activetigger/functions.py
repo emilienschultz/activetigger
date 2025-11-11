@@ -1,8 +1,10 @@
 import io
+import json
 import os
 import string
 import unicodedata
 from getpass import getpass
+from pathlib import Path
 from typing import Any, cast
 from urllib.parse import quote
 
@@ -139,22 +141,6 @@ def get_gpu_memory_info() -> GpuInformationModel:
             total_memory=round(mem[1] / 1e9, 2),  # Convert to GB
             available_memory=round(mem[0] / 1e9, 2),  # Convert to GB
         )
-
-
-def truncate_text(text: str, max_tokens: int = 512):
-    """
-    Limit a text to a specific number of tokens
-    """
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    tokens = tokenizer.tokenize(text)
-    num_tokens = len(tokens)
-    if num_tokens > max_tokens:
-        print(num_tokens)
-        truncated_tokens = tokens[:max_tokens]
-        text_t = tokenizer.convert_tokens_to_string(truncated_tokens)
-    else:
-        text_t = text
-    return text_t
 
 
 def cat2num(df):
@@ -307,3 +293,38 @@ def process_payload_csv(csv_str: str, cols: list[str]) -> pd.DataFrame:
         csv_buffer,
     )
     return df[cols]
+
+
+def get_model_metrics(path_model: Path) -> dict | None:
+    """
+    Get the scores of the model for a dataset
+    - training metrics
+    - last computed metrics
+    """
+    if not path_model.exists():
+        raise Exception(f"The folder {path_model} does not exist")
+
+    # training metrics
+    if not path_model.joinpath("metrics_training.json").exists():
+        raise Exception(f"The file metrics_training.json does not exist in {path_model}")
+    with open(
+        path_model.joinpath("metrics_training.json"),
+        "r",
+    ) as f:
+        scores = json.load(f)
+
+    # computed metrics and concatenate
+    files = sorted(
+        [
+            f.name
+            for f in path_model.iterdir()
+            if f.is_file() and f.name.startswith("metrics_predict_")
+        ],
+    )
+    if len(files) > 0:
+        last_stat_file = files[-1]
+        with open(path_model.joinpath(last_stat_file), "r") as f:
+            stats = json.load(f)
+        scores = {**scores, **stats}
+
+    return scores

@@ -1,11 +1,11 @@
 import { FC } from 'react';
 import { DisplayScores } from './DisplayScores';
 
-interface SimpleModelDisplayProps {
+interface QuickModelDisplayProps {
   currentModel?: Record<string, never>;
 }
 
-export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }) => {
+export const QuickModelDisplay: FC<QuickModelDisplayProps> = ({ currentModel }) => {
   // if no model, return nothing
   if (!currentModel) return null;
 
@@ -14,7 +14,6 @@ export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }
       <h5 className="subsection">Current {currentModel.model} model</h5>
       <details className="m-2">
         <summary>Model parameters</summary>
-
         <table className="table table-striped table-hover">
           <tbody>
             {currentModel.params &&
@@ -36,7 +35,7 @@ export const SimpleModelDisplay: FC<SimpleModelDisplayProps> = ({ currentModel }
       <div>
         <DisplayScores
           title=""
-          scores={currentModel.statistics as unknown as Record<string, number>}
+          scores={currentModel.statistics_test as unknown as Record<string, number>}
         />
         {currentModel.statistics_cv10 && (
           <DisplayScores

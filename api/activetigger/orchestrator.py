@@ -11,7 +11,7 @@ import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import pandas as pd  # type: ignore[import]
 import psutil  # type: ignore[import]
@@ -50,6 +50,7 @@ class Orchestrator:
     data_all: str
     train_file: str
     test_file: str
+    valid_file: str
     default_user: str
     jwt_algorithm: str
     n_workers_cpu: int
@@ -77,6 +78,8 @@ class Orchestrator:
         self.features_file = config.features_file
         self.train_file = config.train_file
         self.test_file = config.test_file
+        self.valid_file = config.valid_file
+        self.valid_file = config.valid_file
         self.default_user = config.default_user
         self.jwt_algorithm = config.jwt_algorithm
         self.n_workers_cpu = config.n_workers_cpu
@@ -148,6 +151,8 @@ class Orchestrator:
         Start the project creation
         """
         project_slug = self.check_project_name(project.project_name)
+        if project_slug in ["new"]:
+            raise Exception("This project name is not valid - reserved word")
         print("Starting project creation", project.project_name)
         # create a object project and start creation
         p = Project(
@@ -443,6 +448,8 @@ class Orchestrator:
         # kill all the process of a user
         if kind == "all":
             kind = ["train_bert", "predict_bert", "generation", "feature", "bertopic"]
+        if kind == "bert":
+            kind = ["train_bert", "predict_bert"]
         if isinstance(kind, str) and kind != "all":
             kind = [kind]
 

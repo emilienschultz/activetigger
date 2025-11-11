@@ -54,15 +54,17 @@ export const ProjectHistory: FC<ProjectHistoryProps> = ({
   ];
   return (
     <div>
-      <span className="explanations">History of the current session</span>
       <div>
         Session counter{' '}
         <a className="history">
           <HiOutlineQuestionMarkCircle />
         </a>
         <Tooltip anchorSelect=".history" place="top">
-          Element annotated during this session. If you annotate already annotated data, it prevents
-          you to see an element twice. Clear it if you want to be able to re-annotate again.
+          Number of elements that have been annotated during the current session. Sessions are used
+          <br />
+          to prevent users from annotating elements twice. Clear history if you want to be able to
+          <br />
+          re-annotate.
         </Tooltip>{' '}
         <span className="badge rounded-pill text-bg-light text-muted me-2" key={history.length}>
           {history.length}

@@ -1,12 +1,15 @@
+import datetime
 import json
 import shutil
 from pathlib import Path
+from string import punctuation
 
-import hdbscan
+import hdbscan  # type: ignore[import]
 import pandas as pd
-import stopwordsiso as stopwords
-from bertopic import BERTopic
-from sklearn.feature_extraction.text import CountVectorizer
+import stopwordsiso as stopwords  # type: ignore[import]
+from bertopic import BERTopic  # type: ignore[import]
+from simplemma import lemmatize
+from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
 from slugify import slugify
 
 from activetigger.datamodels import BertopicParamsModel
@@ -35,6 +38,31 @@ Rational :
 # TODO : multicolumns for text
 # TODO : manage special case of embeddings of trainset
 # TODO : add the language specific stopwords removal
+
+
+class CustomLemmatizer:
+    """An object to apply the lemmatize function."""
+
+    def __init__(self, language, stop_words) -> None:
+        self.__language = (language,)
+        self.__stop_words = stop_words
+
+    def __call__(self, doc: str) -> list[str]:
+        """ """
+        doc = doc.lower()
+        doc = "".join([c for c in doc if c not in punctuation])
+        out = []
+        for word in doc.split(" "):
+            if (word not in self.__stop_words) and (len(word) > 0):
+                try:
+                    lemma = lemmatize(word, lang=self.__language)
+                except Exception as e:
+                    # if lemmatization failed, skip it and use the word instead
+                    lemma = word
+                    print(f"BERTopic - Lemmatization failed (word: {word}) - Error : {e}")
+                if lemma not in self.__stop_words:
+                    out += [lemma]
+        return out
 
 
 class ComputeBertopic(BaseTask):
@@ -73,6 +101,8 @@ class ComputeBertopic(BaseTask):
         self.path_data = path_data
         self.col_id = col_id
         self.col_text = col_text
+        if name is None:
+            name = f"bertopic_{path_data.stem}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.name = slugify(name)
         self.file_name = slugify(path_data.stem)
         self.parameters = parameters
@@ -170,7 +200,8 @@ class ComputeBertopic(BaseTask):
                 umap_model = cuml.UMAP(
                     n_neighbors=self.parameters.umap_n_neighbors,
                     n_components=self.parameters.umap_n_components,
-                    min_dist=self.parameters.umap_min_dist,
+                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                    min_dist=0.0,
                     metric="cosine",
                 )
             except Exception as e:
@@ -178,7 +209,8 @@ class ComputeBertopic(BaseTask):
                 umap_model = umap.UMAP(
                     n_neighbors=self.parameters.umap_n_neighbors,
                     n_components=self.parameters.umap_n_components,
-                    min_dist=self.parameters.umap_min_dist,
+                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                    min_dist=0.0,
                     metric="cosine",
                 )
 
@@ -192,19 +224,22 @@ class ComputeBertopic(BaseTask):
             # Vectorizer to manage stopwords
             try:
                 stopwords = self.get_stopwords()
-                vectorizer_model = CountVectorizer(stop_words=stopwords)
+                vectorizer_model = CountVectorizer(
+                    tokenizer=CustomLemmatizer(self.parameters.language, stopwords)
+                )
             except ValueError:
                 vectorizer_model = CountVectorizer()
 
             topic_model = BERTopic(
                 language=self.parameters.language,
                 vectorizer_model=vectorizer_model,
-                nr_topics=self.parameters.nr_topics,
-                min_topic_size=self.parameters.min_topic_size,
+                # nr_topics=self.parameters.nr_topics, # Removed because overridden by the hdbscan model - Axel
+                # min_topic_size=self.parameters.min_topic_size, # Removed to propose topic reduction later in the pipeline - Axel
                 umap_model=umap_model,
                 hdbscan_model=hdbscan_model,
             )
 
+            self.update_progress("Fitting the model")
             # Fit the BERTopic model
             topics, _ = topic_model.fit_transform(
                 documents=df[self.col_text],
@@ -228,7 +263,10 @@ class ComputeBertopic(BaseTask):
             df["cluster"] = topics
 
             # Save the topics and documents informations
-            topic_model.get_topic_info().to_csv(self.path_run.joinpath("bertopic_topics.csv"))
+            topics_df: pd.DataFrame = topic_model.get_topic_info()
+            if self.parameters.outlier_reduction:
+                topics_df = topics_df.loc[topics_df.Topic != -1, :]
+            topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"))
             df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
             parameters = {
                 "bertopic_params": self.parameters.model_dump(),
@@ -290,7 +328,7 @@ class ComputeBertopic(BaseTask):
         # save the embeddings to a file
         computed.to_parquet(path_embeddings)
 
-    def compute_projection(self, path_embeddings: Path, path_projection: Path) -> pd.DataFrame:
+    def compute_projection(self, path_embeddings: Path, path_projection: Path):
         """
         Reduce the dimensionality of the embeddings if needed.
         """

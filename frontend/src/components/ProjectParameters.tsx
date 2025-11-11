@@ -77,14 +77,14 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
             <td>{JSON.stringify(project.params.cols_context)}</td>
           </tr>
           <tr>
-            <td>Is test dataset</td>
-            <td>{project.params.test ? project.params.n_test : 'no'}</td>
+            <td>Rows in test set</td>
+            <td>{project.params.test ? project.params.n_test : 'empty'}</td>
           </tr>
         </tbody>
       </table>
 
       <button onClick={handleShow} className="delete-button mt-3">
-        Delete project now
+        Delete project
       </button>
 
       <div>
@@ -94,8 +94,8 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
           </Modal.Header>
           <Modal.Body>Do you really want to delete this project</Modal.Body>
           <Modal.Footer>
-            <button onClick={handleClose}>No</button>
-            <button onClick={actionDelete}>Delete</button>
+            <button onClick={handleClose}>Cancel</button>
+            <button onClick={actionDelete}>Confirm</button>
           </Modal.Footer>
         </Modal>
       </div>

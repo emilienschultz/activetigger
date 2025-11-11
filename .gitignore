@@ -31,7 +31,7 @@ api/key.yaml
 api/activetigger/generation/__pycache__/
 api/activetigger/tasks/__pycache__/
 **/__pycache__/
-
+api/activetigger/.dmypy.json
 
 # DOCKER
 docker/api/projects/

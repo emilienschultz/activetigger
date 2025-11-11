@@ -3,6 +3,7 @@ import json
 import logging
 import multiprocessing
 import os
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -15,7 +16,7 @@ from transformers import (  # type: ignore[import]
     AutoTokenizer,
 )
 
-from activetigger.datamodels import ReturnTaskPredictModel
+from activetigger.datamodels import MLStatisticsModel, ReturnTaskPredictModel
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
@@ -41,7 +42,6 @@ class PredictBert(BaseTask):
     """
 
     kind = "predict_bert"
-    statistics: Optional[str] = None
 
     def __init__(
         self,
@@ -50,9 +50,10 @@ class PredictBert(BaseTask):
         col_text: str,
         col_label: str | None = None,
         col_id: str | None = None,
-        batch: int = 32,
+        col_datasets: str | None = None,
         file_name: str = "predict.parquet",
-        statistics: str | None = None,
+        batch: int = 32,
+        statistics: list | None = None,
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,
         **kwargs,
@@ -63,16 +64,27 @@ class PredictBert(BaseTask):
         self.col_text = col_text
         self.col_label = col_label
         self.col_id = col_id
+        self.col_datasets = col_datasets
         self.event = event
         self.unique_id = unique_id
         self.file_name = file_name
         self.batch = batch
+        self.statistics = statistics
 
-        # indicate if the statistics should be computed
-        if statistics is not None and col_label is not None:
-            self.statistics = statistics
-        else:
-            self.statistics = None
+        if col_text not in self.df.columns:
+            raise ValueError(f"Column text {col_text} not in dataframe")
+
+        if col_label is not None and col_label not in self.df.columns:
+            raise ValueError(f"Column label {col_label} not in dataframe")
+
+        if col_datasets is not None and col_datasets not in self.df.columns:
+            raise ValueError(f"Column datasets {col_datasets} not in dataframe")
+
+        if col_id is not None and col_id not in self.df.columns:
+            raise ValueError(f"Column id {col_id} not in dataframe")
+
+        if statistics is not None and col_label is None:
+            raise ValueError("Column label must be provided to compute statistics")
 
     def __call__(self) -> ReturnTaskPredictModel:
         """
@@ -132,7 +144,6 @@ class PredictBert(BaseTask):
                     list(chunk),
                     padding=True,
                     truncation=True,
-                    max_length=512,
                     return_tensors="pt",
                 )
                 if gpu:
@@ -156,62 +167,69 @@ class PredictBert(BaseTask):
                 index=self.df.index,
             )
 
-            # calculate entropy
             entropy = -1 * (pred * np.log(pred)).sum(axis=1)
             pred["entropy"] = entropy
-
-            # calculate label
             pred["prediction"] = pred.drop(columns="entropy").idxmax(axis=1)
-            print("Prediction ended")
 
-            metrics = None
-
-            # Optional, compute statistics
-            if self.statistics:
-                # add elements in the dataframe
-                pred["label"] = self.df[self.col_label]
-                pred["text"] = self.df[self.col_text]
-                filter = pred["label"].notna()  # only non null values
-
-                # case the statistics should be computed on all values
-                if self.statistics == "full":
-                    metrics = get_metrics(
-                        pred[filter]["label"], pred[filter]["prediction"], pred["text"]
-                    )
-                    # save in a dedicated file
-                    with open(str(self.path.joinpath(f"metrics_{self.file_name}.json")), "w") as f:
-                        json.dump(metrics.model_dump(mode="json"), f)
-
-                # case the statistics should be computed only on element not in the training set
-                # only if there is more than 10 elements
-                if self.statistics == "outofsample":
-                    index_model = pd.read_parquet(
-                        self.path.joinpath("training_data.parquet"), columns=[]
-                    ).index
-                    filter_oos = ~pred.index.isin(index_model) & filter
-                    if filter_oos.sum() > 10:
-                        metrics = get_metrics(
-                            pred[filter_oos]["label"], pred[filter_oos]["prediction"], pred["text"]
-                        )
-                        # save in a dedicated file
-                        with open(str(self.path.joinpath("metrics_outofsample.json")), "w") as f:
-                            json.dump(metrics.model_dump(mode="json"), f)
-                    else:
-                        print(
-                            "Not enough out of sample data to compute statistics, only "
-                            f"{filter_oos.sum()} elements"
-                        )
-
-                # drop the temporary text col
-                pred.drop(columns=["text"], inplace=True)
-                print("Add statistics")
-
-            # add the column id original if available
+            # add columns if available
+            if self.col_datasets:
+                pred[self.col_datasets] = self.df[self.col_datasets]
             if self.col_id:
                 pred[self.col_id] = self.df[self.col_id]
+            if self.col_label:
+                pred["label"] = self.df[self.col_label]
 
-            # write the content in a parquet file
+            print("Prediction ended")
+
+            # save the file of predictions
             pred.to_parquet(self.path.joinpath(self.file_name))
+
+            # return if no statistics
+            if self.statistics is None:
+                return ReturnTaskPredictModel(
+                    path=str(self.path.joinpath(self.file_name)), metrics=None
+                )
+
+            # case where statistics should be computed
+
+            print("Compute statistics")
+            metrics: dict[str, MLStatisticsModel] = {}
+
+            # add text in the dataframe to be able to get mismatch
+            pred["text"] = self.df[self.col_text]
+            filter_label = pred["label"].notna()  # only non null values
+
+            # compute the statistics per dataset
+            for dataset in self.statistics:
+                filter_dataset = pred[self.col_datasets] == dataset
+                filter = filter_label & filter_dataset
+                if filter.sum() < 5:
+                    continue
+                metrics[dataset] = get_metrics(
+                    pred[filter]["label"],
+                    pred[filter]["prediction"],
+                    pred["text"],
+                )
+
+            # add out of sample (labelled data not in training data)
+            index_model = pd.read_parquet(
+                self.path.joinpath("training_data.parquet"), columns=[]
+            ).index
+            filter_oos = (
+                ~pred.index.isin(index_model) & filter_label & pred[self.col_datasets] == "train"
+            )
+            if filter_oos.sum() > 10:
+                metrics["outofsample"] = get_metrics(
+                    pred[filter_oos]["label"], pred[filter_oos]["prediction"], pred["text"]
+                )
+
+            # write the metrics in a json file
+            with open(str(self.path.joinpath(f"metrics_predict_{time.time()}.json")), "w") as f:
+                json.dump({k: v.model_dump(mode="json") for k, v in metrics.items()}, f)
+
+            # drop the temporary text col
+            pred.drop(columns=["text"], inplace=True)
+
             return ReturnTaskPredictModel(
                 path=str(self.path.joinpath(self.file_name)), metrics=metrics
             )
