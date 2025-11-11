@@ -288,7 +288,10 @@ export const AnnotationManagement: FC = () => {
               )}{' '}
               <button
                 className={cx('getelement', settingChanged ? 'setting-changed' : '')}
-                onClick={refetchElement}
+                onClick={() => {
+                  refetchElement();
+                  setSettingChanged(false);
+                }}
               >
                 <LuRefreshCw size={20} /> Fetch
                 <Tooltip anchorSelect=".getelement" place="top">
