@@ -1,15 +1,13 @@
-import cx from 'classnames';
 import chroma from 'chroma-js';
+import cx from 'classnames';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { FaCloudDownloadAlt, FaPlusCircle } from 'react-icons/fa';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { RiFileTransferLine } from 'react-icons/ri';
 import { useParams } from 'react-router-dom';
-import Select from 'react-select';
-import { Tooltip } from 'react-tooltip';
 import { DisplayTableTopics, Row } from '../components/DisplayTableTopics';
 import { BertopicForm } from '../components/forms/BertopicForm';
+import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
 import { BertopicVizSigma } from '../components/ProjectionVizSigma/BertopicVizSigma';
 import {
   useDeleteBertopic,
@@ -21,7 +19,6 @@ import {
   useGetElementById,
 } from '../core/api';
 import { useAppContext } from '../core/context';
-import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
 
 export const BertopicPage: FC = () => {
   const { projectName } = useParams();
@@ -88,7 +85,7 @@ export const BertopicPage: FC = () => {
     // <ProjectPageLayout projectName={projectName} currentAction="explore">
     <div className="row">
       <div className="col-12">
-        <div className="d-flex w-50 my-2" style={{ zIndex: 100 }}>
+        <div className="d-flex my-2" style={{ zIndex: 100 }}>
           <ModelsPillDisplay
             modelNames={Object.keys(availableBertopic).map((name) => name)}
             currentModelName={currentBertopic}
@@ -251,35 +248,35 @@ export const BertopicPage: FC = () => {
           <>
             <div style={{ margin: '10px 0px' }}>
               <button
-                className="btn btn-primary mx-2"
+                className="btn btn-primary me-2"
                 onClick={() => exportBertopicAsAnnotation(currentBertopic)}
               >
-                Export as scheme <RiFileTransferLine size={20} />
+                Convert to scheme <RiFileTransferLine size={20} />
               </button>
               <button
                 className="btn btn-primary mx-2"
                 id="download-topics"
                 onClick={() => (currentBertopic ? downloadBertopicTopics(currentBertopic) : null)}
               >
-                Topics <FaCloudDownloadAlt size={20} />
+                Export topics <FaCloudDownloadAlt size={20} />
               </button>
-              <Tooltip anchorSelect="#download-topics" place="top">
+              {/* <Tooltip anchorSelect="#download-topics" place="top">
                 Download the table above with the following columns : Topic, Count, Name,
                 <br />
                 Representation and Representative Docs
-              </Tooltip>
+              </Tooltip> */}
               <button
                 className="btn btn-primary mx-2"
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicClusters(currentBertopic) : null)}
               >
-                Topic per text <FaCloudDownloadAlt size={20} />
+                Export topic per text <FaCloudDownloadAlt size={20} />
               </button>
-              <Tooltip anchorSelect="#download-clusters" place="top">
+              {/* <Tooltip anchorSelect="#download-clusters" place="top">
                 Download a table linking each element to a cluster. The table contains 2
                 <br />
                 columns: id and cluster
-              </Tooltip>
+              </Tooltip> */}
             </div>
             <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
               <DisplayTableTopics data={(topics as unknown as Row[]) || []} />
