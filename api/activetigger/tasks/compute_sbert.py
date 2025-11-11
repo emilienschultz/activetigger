@@ -69,7 +69,6 @@ class ComputeSbert(BaseTask):
 
         try:
             sbert = SentenceTransformer(self.model, device=str(device), trust_remote_code=True)
-            sbert.max_seq_length = 512
 
             print("start computation")
             embeddings = []

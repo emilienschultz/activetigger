@@ -143,22 +143,6 @@ def get_gpu_memory_info() -> GpuInformationModel:
         )
 
 
-def truncate_text(text: str, max_tokens: int = 512):
-    """
-    Limit a text to a specific number of tokens
-    """
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    tokens = tokenizer.tokenize(text)
-    num_tokens = len(tokens)
-    if num_tokens > max_tokens:
-        print(num_tokens)
-        truncated_tokens = tokens[:max_tokens]
-        text_t = tokenizer.convert_tokens_to_string(truncated_tokens)
-    else:
-        text_t = text
-    return text_t
-
-
 def cat2num(df):
     """
     Transform a categorical variable to numerics

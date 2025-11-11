@@ -144,7 +144,6 @@ class PredictBert(BaseTask):
                     list(chunk),
                     padding=True,
                     truncation=True,
-                    max_length=512,
                     return_tensors="pt",
                 )
                 if gpu:
