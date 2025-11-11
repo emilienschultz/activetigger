@@ -42,7 +42,7 @@ export const CurrentProjectState: FC = () => {
   // update isComputing context value
   useEffect(() => {
     const isComputing =
-      project && authenticatedUser && authenticatedUser.username && project.languagemodels
+      project && authenticatedUser && authenticatedUser.username
         ? authenticatedUser.username in project.languagemodels.training ||
           authenticatedUser.username in project.quickmodel.training ||
           authenticatedUser.username in project.projections.training ||
@@ -56,20 +56,6 @@ export const CurrentProjectState: FC = () => {
       if (prev.isComputing !== isComputing) return { ...prev, isComputing };
       return prev;
     });
-    // if (!isNil(project)) {
-    //   const isComputing =
-    //     !isNil(authenticatedUser) &&
-    //     !isNil(project.languagemodels.training) &&
-    //     Object.keys(project.languagemodels.training).includes(authenticatedUser.username);
-
-    //   setAppContext((prev) => {
-    //     if (!isEqual(prev.currentProject, project)) {
-    //       return { ...prev, currentProject: project, isComputing };
-    //     }
-    //     if (prev.isComputing !== isComputing) return { ...prev, isComputing };
-    //     return prev;
-    //   });
-    // }
   }, [project, setAppContext, authenticatedUser]);
 
   // get project state every time interval
@@ -83,6 +69,8 @@ export const CurrentProjectState: FC = () => {
       clearInterval(intervalId);
     };
   }, [reFetch, setAppContext]);
+
+  console.log(project?.quickmodel.training);
 
   return null;
 };

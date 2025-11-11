@@ -63,7 +63,7 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
           </Modal>
         </button>
       ))}
-      {children}
+      {children ? <>{children}</> : <></>}
     </div>
   );
 };
