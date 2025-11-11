@@ -5,6 +5,7 @@ import { FaEdit } from 'react-icons/fa';
 import { useAddLabel, useDeleteLabel, useRenameLabel, useStatistics } from '../core/api';
 import { useNotifications } from '../core/notifications';
 
+import { Modal } from 'react-bootstrap';
 import { FaCheck } from 'react-icons/fa';
 import { ReactSortable } from 'react-sortablejs';
 import { AppContextValue } from '../core/context';
@@ -47,6 +48,7 @@ export const LabelCard: FC<LabelCardProps> = ({
   deactivateModifications,
 }) => {
   const [showRename, setShowRename] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [newLabel, setNewLabel] = useState(label);
   return (
     <tr key={label}>
@@ -59,7 +61,7 @@ export const LabelCard: FC<LabelCardProps> = ({
           <td className="flex justify-center gap-4">
             <div
               title="Delete"
-              onClick={() => removeLabel(label)}
+              onClick={() => setShowDelete(true)}
               className="cursor-pointer trash-wrapper"
             >
               <FaRegTrashAlt />
@@ -97,6 +99,25 @@ export const LabelCard: FC<LabelCardProps> = ({
           </div>
         </td>
       )}
+      <Modal show={showDelete} id="deletescheme" onHide={() => setShowDelete(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete a label</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Are you sure you want to delete the label <b>{label}</b>?
+          </p>
+          <button
+            className="btn btn-danger"
+            onClick={() => {
+              removeLabel(label);
+              setShowDelete(false);
+            }}
+          >
+            Delete
+          </button>
+        </Modal.Body>
+      </Modal>
     </tr>
   );
 };
