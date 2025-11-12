@@ -20,7 +20,7 @@ interface LabelsManagementProps {
   availableLabels: string[];
   kindScheme: string;
   setAppContext: React.Dispatch<React.SetStateAction<AppContextValue>>;
-  deactivateModifications?: boolean;
+  canEdit?: boolean;
 }
 
 interface LabelCardProps {
@@ -30,7 +30,7 @@ interface LabelCardProps {
   countTest?: number;
   removeLabel: (label: string) => void;
   renameLabel: (formerLabel: string, newLabel: string) => void;
-  deactivateModifications?: boolean;
+  canEdit?: boolean;
 }
 
 interface LabelType {
@@ -45,7 +45,7 @@ export const LabelCard: FC<LabelCardProps> = ({
   countTest,
   removeLabel,
   renameLabel,
-  deactivateModifications,
+  canEdit,
 }) => {
   const [showRename, setShowRename] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -56,7 +56,7 @@ export const LabelCard: FC<LabelCardProps> = ({
       <td className="px-4 py-3 text-center">{countTrain ? countTrain : 0}</td>
       <td className="px-4 py-3 text-center">{countValid ? countValid : 0}</td>
       <td className="px-4 py-3 text-center">{countTest ? countTest : 0}</td>
-      {!deactivateModifications && (
+      {canEdit && (
         <>
           <td className="flex justify-center gap-4">
             <div
@@ -132,7 +132,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   availableLabels,
   kindScheme,
   setAppContext,
-  deactivateModifications,
+  canEdit,
 }) => {
   const { notify } = useNotifications();
 
@@ -235,7 +235,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                     ? Number(statistics['test_annotated_distribution'][label.label])
                     : 0
                 }
-                deactivateModifications={deactivateModifications}
+                canEdit={canEdit}
               />
             ))}
           </ReactSortable>
@@ -281,7 +281,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                   placeholder="Enter new label"
                   className="form-control"
                 />{' '}
-                {!deactivateModifications && (
+                {canEdit && (
                   <button onClick={createLabel} className="btn btn">
                     <FaPlusCircle size={20} />
                   </button>

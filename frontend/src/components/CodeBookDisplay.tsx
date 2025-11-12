@@ -13,9 +13,14 @@ import { MdDriveFileRenameOutline } from 'react-icons/md';
 interface CodebookDisplayProps {
   projectSlug: string | null;
   currentScheme: string | null;
+  canEdit?: boolean;
 }
 
-export const CodebookDisplay: FC<CodebookDisplayProps> = ({ projectSlug, currentScheme }) => {
+export const CodebookDisplay: FC<CodebookDisplayProps> = ({
+  projectSlug,
+  currentScheme,
+  canEdit,
+}) => {
   // get codebook
   const { codebook, time, reFetchCodebook } = useGetSchemeCodebook(
     projectSlug || null,
@@ -76,30 +81,32 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({ projectSlug, current
             <span className="fw-bold d-flex align-items-center">
               📘 <span className="ms-2">Guidelines</span>
             </span>
-            <div className="btn-group btn-group-sm" role="group">
-              <button
-                type="button"
-                className="btn btn-light text-primary border-0"
-                onClick={() => setShowCodebookModal(true)}
-                title="Éditer le codebook"
-              >
-                <MdDriveFileRenameOutline size={16} />
-              </button>
-              <button
-                className="btn btn-light text-primary border-0"
-                onClick={openAsHTML}
-                title="Ouvrir"
-              >
-                <FaBookOpen size={16} />
-              </button>
-              <button
-                className="btn btn-light text-primary border-0"
-                onClick={downloadMarkdown}
-                title="Télécharger"
-              >
-                <FaCloudDownloadAlt size={16} />
-              </button>
-            </div>
+            {canEdit && (
+              <div className="btn-group btn-group-sm" role="group">
+                <button
+                  type="button"
+                  className="btn btn-light text-primary border-0"
+                  onClick={() => setShowCodebookModal(true)}
+                  title="Edit codebook"
+                >
+                  <MdDriveFileRenameOutline size={16} />
+                </button>
+                <button
+                  className="btn btn-light text-primary border-0"
+                  onClick={openAsHTML}
+                  title="Open"
+                >
+                  <FaBookOpen size={16} />
+                </button>
+                <button
+                  className="btn btn-light text-primary border-0"
+                  onClick={downloadMarkdown}
+                  title="Download"
+                >
+                  <FaCloudDownloadAlt size={16} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Corps du codebook avec scroll */}

@@ -36,7 +36,7 @@ export const StatusNotch: FC<{
   const { queueState, gpu } = useGetServer(currentProject || null);
 
   // 2 types of menu
-  const onlyAnnotator = authenticatedUser?.status === 'annotator';
+  const canEdit = authenticatedUser?.status !== 'annotator';
 
   // test if computation is currently undergoing
   const currentComputation =
@@ -79,7 +79,7 @@ export const StatusNotch: FC<{
 
   return (
     <div id="status-notch">
-      {!onlyAnnotator && (
+      {canEdit && (
         <div style={{ display: 'flex' }}>
           {/* Display size of project 2 version (computer and smartphones) */}
           <span className="d-none d-md-inline">

@@ -57,6 +57,8 @@ export const ProjectPage: FC = () => {
     }
   }, [fromProjectPage, availableLabels, navigate, projectSlug, currentScheme]);
 
+  console.log('Interface type', displayConfig.interfaceType);
+
   if (!projectSlug || !project) return;
 
   return (
@@ -64,11 +66,15 @@ export const ProjectPage: FC = () => {
       <div className="container-fluid d-flex justify-content-center">
         <SchemesManagement
           projectSlug={projectSlug}
-          deactivateModifications={displayConfig.interfaceType === 'annotator'}
+          canEdit={displayConfig.interfaceType !== 'annotator'}
         />
       </div>
 
-      <CodebookDisplay projectSlug={projectSlug} currentScheme={currentScheme || null} />
+      <CodebookDisplay
+        projectSlug={projectSlug}
+        currentScheme={currentScheme || null}
+        canEdit={displayConfig.interfaceType !== 'annotator'}
+      />
 
       {availableLabels.length === 0 && (
         <div className="alert alert-info col-12 mt-2">
@@ -82,7 +88,7 @@ export const ProjectPage: FC = () => {
         availableLabels={availableLabelsSorted}
         kindScheme={kindScheme as string}
         setAppContext={setAppContext}
-        deactivateModifications={displayConfig.interfaceType === 'annotator'}
+        canEdit={displayConfig.interfaceType !== 'annotator'}
       />
     </ProjectPageLayout>
   );

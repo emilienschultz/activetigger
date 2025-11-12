@@ -4,7 +4,7 @@ import { FaCloudDownloadAlt } from 'react-icons/fa';
 import { FaListCheck } from 'react-icons/fa6';
 import { HiMiniRectangleGroup } from 'react-icons/hi2';
 import { IoBookSharp, IoSettingsSharp } from 'react-icons/io5';
-import { MdModelTraining, MdOutlineHomeMax } from 'react-icons/md';
+import { MdModelTraining } from 'react-icons/md';
 import { PiTagDuotone } from 'react-icons/pi';
 import { RiAiGenerate } from 'react-icons/ri';
 import { Link } from 'react-router-dom';
@@ -34,7 +34,7 @@ export const ProjectActionsSidebar: FC<{
   // const nbUsers = projectState ? projectState.users.length : 0;
 
   // 2 types of menu
-  const onlyAnnotator = authenticatedUser?.status === 'annotator';
+  const canEdit = authenticatedUser?.status !== 'annotator';
 
   // display the number of current processes on the server
   const { disk } = useGetServer(projectState || null);
@@ -50,7 +50,7 @@ export const ProjectActionsSidebar: FC<{
 
   return (
     <div className={`project-sidebar d-flex flex-column flex-shrink-0 bg-light`}>
-      {!onlyAnnotator && (
+      {canEdit && (
         <ul className="nav nav-pills flex-column mb-auto">
           <li className="nav-item  d-none d-md-inline">
             <div
@@ -167,25 +167,39 @@ export const ProjectActionsSidebar: FC<{
           </li>
         </ul>
       )}
-      {onlyAnnotator && (
+      {!canEdit && (
         <ul className="nav nav-pills flex-column mb-auto">
-          <li className="nav-item mt-3">
+          <li className="nav-item  d-none d-md-inline">
+            <div
+              className="nav-link d-inline-block rounded-pill px-3 py-1 bg-light"
+              style={{ lineHeight: '1.1' }}
+            >
+              <div className="fw-semibold text-dark text-truncate">{projectName}</div>
+              <div
+                className="small text-primary"
+                style={{
+                  marginTop: '-2px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                title={currentScheme}
+              >
+                {currentScheme && currentScheme.length > 15
+                  ? `${currentScheme.substring(0, 15)}…`
+                  : currentScheme}
+              </div>
+            </div>
+          </li>
+          <li className="nav-item">
             <Link
               to={`/projects/${projectName}`}
               className={classNames('nav-link', !currentProjectAction && 'active')}
               aria-current="page"
-              title="Project"
+              title="Access and modify your project parameters"
             >
-              <MdOutlineHomeMax className="m-2" />
-              <span>
-                <b>{projectName}</b>
-              </span>
-              <span
-                className="mx-2 d-none d-md-inline"
-                style={{ fontSize: '0.875rem', color: 'grey' }}
-              >
-                {currentScheme}
-              </span>
+              <IoBookSharp />
+              <span className="ms-1 sidemenulabel">Codebook</span>
             </Link>
           </li>
           <li className="nav-item">
@@ -193,10 +207,10 @@ export const ProjectActionsSidebar: FC<{
               to={`/projects/${projectName}/tag`}
               className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
-              title="Tag"
+              title="Tag your data"
             >
               <PiTagDuotone />
-              <span>Tag</span>
+              <span className="ms-1 sidemenulabel">Annotate</span>
             </Link>
           </li>
         </ul>

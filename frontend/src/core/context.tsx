@@ -89,8 +89,11 @@ const _useAppContext = () => {
 
   // Function to reset the context
   const resetContext = useCallback(() => {
-    setAppContext(DEFAULT_CONTEXT);
-  }, []);
+    const newContext = DEFAULT_CONTEXT;
+    // keep the interface type
+    newContext.displayConfig.interfaceType = appContext.displayConfig.interfaceType;
+    setAppContext(newContext);
+  }, [appContext.displayConfig.interfaceType, setAppContext]);
 
   return {
     appContext,
