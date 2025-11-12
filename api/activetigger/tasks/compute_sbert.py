@@ -27,6 +27,7 @@ class ComputeSbert(BaseTask):
         model: str = "all-mpnet-base-v2",
         batch_size: int = 32,
         min_gpu: int = 6,
+        max_tokens: int = 1024,
         path_progress: Path | None = None,
         event: Optional[multiprocessing.synchronize.Event] = None,
     ):
@@ -36,6 +37,7 @@ class ComputeSbert(BaseTask):
         self.batch_size = batch_size
         self.min_gpu = min_gpu
         self.path_process = path_process
+        self.max_tokens = max_tokens
         self.event = event
         if path_progress:
             self.progress_file_temporary = False
@@ -69,6 +71,7 @@ class ComputeSbert(BaseTask):
 
         try:
             sbert = SentenceTransformer(self.model, device=str(device), trust_remote_code=True)
+            sbert.max_seq_length = self.max_tokens
 
             print("start computation")
             embeddings = []
