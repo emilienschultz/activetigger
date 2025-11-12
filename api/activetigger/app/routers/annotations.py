@@ -224,7 +224,10 @@ async def get_reconciliation_table(
     try:
         df, users = project.schemes.get_reconciliation_table(scheme)
         return ReconciliationModel(
-            table=cast(list[dict[str, str | dict[str, str]]], df.to_dict(orient="records")),
+            table=cast(
+                list[dict[str, str | dict[str, str | None]]],
+                df.to_dict(orient="records"),
+            ),
             users=users,
         )
     except Exception as e:

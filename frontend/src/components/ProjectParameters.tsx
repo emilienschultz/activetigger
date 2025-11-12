@@ -36,8 +36,14 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
       <button className="btn btn-primary" onClick={() => setShowModify(!showModify)}>
         Change parameters
       </button>
-
-      {showModify && <ProjectUpdateForm />}
+      <Modal show={showModify} onHide={() => setShowModify(false)} id="addfeature-modal">
+        <Modal.Header closeButton>
+          <Modal.Title>Add a new feature</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ProjectUpdateForm />
+        </Modal.Body>
+      </Modal>
       <table className="table-statistics">
         <tbody>
           <tr className="table-delimiter">

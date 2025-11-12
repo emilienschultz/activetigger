@@ -273,18 +273,20 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           <tr>
             <th>
               <div className="d-flex align-items-center">
-                <input
-                  type="text"
-                  id="new-label"
-                  value={createLabelValue}
-                  onChange={handleCreateLabelChange}
-                  placeholder="Enter new label"
-                  className="form-control"
-                />{' '}
                 {canEdit && (
-                  <button onClick={createLabel} className="btn btn">
-                    <FaPlusCircle size={20} />
-                  </button>
+                  <>
+                    <input
+                      type="text"
+                      id="new-label"
+                      value={createLabelValue}
+                      onChange={handleCreateLabelChange}
+                      placeholder="Enter new label"
+                      className="form-control"
+                    />{' '}
+                    <button onClick={createLabel} className="btn btn">
+                      <FaPlusCircle size={20} />
+                    </button>
+                  </>
                 )}
               </div>
             </th>
