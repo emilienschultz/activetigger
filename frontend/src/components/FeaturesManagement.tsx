@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 
+import { Modal } from 'react-bootstrap';
 import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
 import { CreateNewFeature } from './CreateNewFeature';
@@ -70,12 +71,17 @@ export const FeaturesManagement: FC = () => {
         >
           Create a new feature
         </button>
-        {showMenu && (
-          <CreateNewFeature
-            columns={project?.params.all_columns || []}
-            featuresOption={project.features.options || {}}
-          />
-        )}
+        <Modal show={showMenu} onHide={() => setShowMenu(false)} id="addfeature-modal">
+          <Modal.Header closeButton>
+            <Modal.Title>Add a new feature</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <CreateNewFeature
+              columns={project?.params.all_columns || []}
+              featuresOption={project.features.options || {}}
+            />
+          </Modal.Body>
+        </Modal>
       </div>
     </div>
   );
