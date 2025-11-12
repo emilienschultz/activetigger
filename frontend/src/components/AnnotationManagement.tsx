@@ -576,7 +576,6 @@ export const AnnotationManagement: FC = () => {
               setAppContext={setAppContext}
               freqRefreshQuickModel={freqRefreshQuickModel}
               activeSimepleModel={activeQuickModel}
-              selectFirstModelTrained={selectFirstModelTrained}
             />
           ) : (
             <div className="text-center">
