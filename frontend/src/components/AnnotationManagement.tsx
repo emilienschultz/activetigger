@@ -62,6 +62,7 @@ export const AnnotationManagement: FC = () => {
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
   const [settingChanged, setSettingChanged] = useState<boolean>(false);
+  const [selectFirstModelTrained, setSelectFirstModelTrained] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
   const handleCloseComment = () => setDisplayComment(false);
@@ -256,7 +257,18 @@ export const AnnotationManagement: FC = () => {
     };
     trainQuickModel(formData);
     setActiveMenu(false);
+    setSelectFirstModelTrained(true);
   };
+
+  // fastrack active learning model
+  useEffect(() => {
+    if (selectFirstModelTrained && availableQuickModels.length > 0) {
+      setAppContext((prev) => ({
+        ...prev,
+        activeQuickModel: availableQuickModels[0].name,
+      }));
+    }
+  }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
 
   if (!projectName || !currentScheme) return;
 
@@ -564,6 +576,7 @@ export const AnnotationManagement: FC = () => {
               setAppContext={setAppContext}
               freqRefreshQuickModel={freqRefreshQuickModel}
               activeSimepleModel={activeQuickModel}
+              selectFirstModelTrained={selectFirstModelTrained}
             />
           ) : (
             <div className="text-center">
