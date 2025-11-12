@@ -20,8 +20,10 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
 }) => {
   const { computeBertopic } = useComputeBertopic(projectSlug);
   const { stopProcesses } = useStopProcesses();
+
   function getRandomName() {
-    return `BERTopic-${Math.random().toString(36).substring(2, 8)}`;
+    const timestamp = Date.now();
+    return `BERTopic-${timestamp}`;
   }
   const { handleSubmit: handleSubmitNewModel, register } = useForm<ComputeBertopicModel>({
     defaultValues: {

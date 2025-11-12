@@ -62,6 +62,7 @@ export const AnnotationManagement: FC = () => {
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
   const [settingChanged, setSettingChanged] = useState<boolean>(false);
+  const [selectFirstModelTrained, setSelectFirstModelTrained] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
   const handleCloseComment = () => setDisplayComment(false);
@@ -256,7 +257,18 @@ export const AnnotationManagement: FC = () => {
     };
     trainQuickModel(formData);
     setActiveMenu(false);
+    setSelectFirstModelTrained(true);
   };
+
+  // fastrack active learning model
+  useEffect(() => {
+    if (selectFirstModelTrained && availableQuickModels.length > 0) {
+      setAppContext((prev) => ({
+        ...prev,
+        activeQuickModel: availableQuickModels[0].name,
+      }));
+    }
+  }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
 
   if (!projectName || !currentScheme) return;
 
@@ -300,19 +312,23 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 ''
               )}{' '}
-              <GiTigerHead
-                size={30}
-                onClick={() => setActiveMenu(!activeMenu)}
-                className="cursor-pointer mx-2 activelearning"
-                style={{ color: activeQuickModel ? 'green' : 'orange' }}
-                title="Active learning"
-              />
-              {/* <Tooltip anchorSelect=".activelearning" place="top">
-                Active learning
-              </Tooltip> */}
-              <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                {activeQuickModel}
-              </span>
+              {phase === 'train' && (
+                <>
+                  <GiTigerHead
+                    size={30}
+                    onClick={() => setActiveMenu(!activeMenu)}
+                    className="cursor-pointer mx-2 activelearning"
+                    style={{ color: activeQuickModel ? 'green' : 'orange' }}
+                    title="Active learning"
+                  />
+                  <Tooltip anchorSelect=".activelearning" place="top">
+                    Active learning
+                  </Tooltip>
+                  <span className="badge rounded-pill bg-light text-dark opacity-50 small">
+                    {activeQuickModel}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         }
