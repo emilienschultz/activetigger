@@ -13,7 +13,7 @@ from pandas import DataFrame, Series
 from activetigger.config import config
 from activetigger.datamodels import (
     FeatureComputing,
-    FeatureDescriptionModel,
+    FeatureDescriptionModelOut,
     FeaturesProjectStateModel,
 )
 from activetigger.db.projects import ProjectsService
@@ -312,7 +312,7 @@ class Features:
             "columns": json.loads(feature.data),
         }
 
-    def get_available(self) -> dict[str, FeatureDescriptionModel]:
+    def get_available(self) -> dict[str, FeatureDescriptionModelOut]:
         """
         Informations on features + update
         Comments:

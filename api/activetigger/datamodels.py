@@ -919,6 +919,14 @@ class FeatureDescriptionModel(BaseModel):
     cols: list[str]
 
 
+class FeatureDescriptionModelOut(BaseModel):
+    name: str
+    parameters: dict[str, Any]
+    user: str
+    time: str
+    kind: str
+
+
 class TrainMLResults(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     model: Any

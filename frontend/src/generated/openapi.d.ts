@@ -2168,8 +2168,8 @@ export interface components {
              */
             filters: string[];
         };
-        /** FeatureDescriptionModel */
-        FeatureDescriptionModel: {
+        /** FeatureDescriptionModelOut */
+        FeatureDescriptionModelOut: {
             /** Name */
             name: string;
             /** Parameters */
@@ -2180,8 +2180,6 @@ export interface components {
             time: string;
             /** Kind */
             kind: string;
-            /** Cols */
-            cols: string[];
         };
         /**
          * FeatureModel
@@ -3043,7 +3041,7 @@ export interface components {
             /** Table */
             table: {
                 [key: string]: (string | {
-                    [key: string]: string | undefined;
+                    [key: string]: (string | null) | undefined;
                 }) | undefined;
             }[];
             /** Users */
@@ -4658,7 +4656,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: components["schemas"]["FeatureDescriptionModel"] | undefined;
+                        [key: string]: components["schemas"]["FeatureDescriptionModelOut"] | undefined;
                     };
                 };
             };
