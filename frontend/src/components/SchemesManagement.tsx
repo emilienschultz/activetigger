@@ -18,7 +18,7 @@ import { SchemeModel } from '../types';
 
 interface SchemeManagementProps {
   projectSlug: string;
-  deactivateModifications?: boolean;
+  canEdit?: boolean;
 }
 
 export const SelectCurrentScheme: FC = () => {
@@ -99,10 +99,7 @@ export const SelectCurrentScheme: FC = () => {
  * Select ; Delete ; Add
  */
 
-export const SchemesManagement: FC<SchemeManagementProps> = ({
-  projectSlug,
-  deactivateModifications,
-}) => {
+export const SchemesManagement: FC<SchemeManagementProps> = ({ projectSlug, canEdit }) => {
   // get element from the context
   const {
     appContext: { currentProject, currentScheme, reFetchCurrentProject },
@@ -169,7 +166,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
     <div>
       <div className="mt-3 col-12 d-flex">
         <SelectCurrentScheme />
-        {!deactivateModifications && (
+        {canEdit && (
           <div className="mx-2">
             <button
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}

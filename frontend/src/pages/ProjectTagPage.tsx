@@ -20,8 +20,9 @@ export const ProjectTagPage: FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const tab = queryParams.get('tab');
   const {
-    appContext: { currentProject: project },
+    appContext: { currentProject: project, displayConfig },
   } = useAppContext();
+  const canEdit = displayConfig.interfaceType !== 'annotator';
   const [activeTab, setActiveTab] = useState<string>('tag');
   useEffect(() => {
     setActiveTab(tab || 'tag');
@@ -34,7 +35,7 @@ export const ProjectTagPage: FC = () => {
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="tag">
-      {nbUsers < 2 ? (
+      {!canEdit || nbUsers < 2 ? (
         <AnnotationManagement />
       ) : (
         <Tabs className="mt-3" activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'tag')}>

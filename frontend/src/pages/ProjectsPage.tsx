@@ -16,7 +16,7 @@ export const ProjectsPage: FC = () => {
     resetContext,
   } = useAppContext();
   const currentProjectSlug = currentProject?.params.project_slug;
-
+  const canEdit = displayConfig.interfaceType !== 'annotator';
   // api call
   const { projects } = useUserProjects();
 
@@ -47,7 +47,7 @@ export const ProjectsPage: FC = () => {
           <div className="row">
             <div className="col-0 col-lg-3" />
             <div className="col-12 col-lg-6">
-              {displayConfig.interfaceType !== 'annotator' && (
+              {canEdit && (
                 <div className="w-100 d-flex align-items-center justify-content-center">
                   <Link
                     to="/projects/new"

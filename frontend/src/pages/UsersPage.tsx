@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
+import { Modal } from 'react-bootstrap';
 import { FaPlusCircle } from 'react-icons/fa';
 import Select from 'react-select';
 import { PageLayout } from '../components/layout/PageLayout';
@@ -117,9 +118,16 @@ export const UsersPage: FC = () => {
                 <MdOutlineDeleteOutline size={30} />
               </button>
             </div>
-            {authenticatedUser?.username === 'root' && showCreateUser && (
-              <div className="alert alert-light">
-                <span className="explanations">Create a new user</span>
+            <Modal
+              show={showCreateUser}
+              onHide={() => setShowCreateUser(false)}
+              size="xl"
+              id="users-modal"
+            >
+              <Modal.Header closeButton>
+                <Modal.Title>Create a new user</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <input
                     className="form-control me-2 mt-2"
@@ -145,8 +153,8 @@ export const UsersPage: FC = () => {
                   </select>
                   <button className="btn btn-primary me-2 mt-2">Add user</button>
                 </form>
-              </div>
-            )}
+              </Modal.Body>
+            </Modal>
             <div className="mt-3">
               <span className="explanations">Project</span>
               <Select
