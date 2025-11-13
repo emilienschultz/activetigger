@@ -48,6 +48,10 @@
             }
           }
         }
+        @include media-breakpoint-down(sm) {
+          gap: 0.1rem;
+          padding: 0.4rem 0.1rem;
+        }
       }
     }
   }
@@ -194,38 +198,22 @@ table {
 
 #header {
   $header-height: 50px;
-  #navbarSupportedContent {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: $header-height;
-    width: 83%;
-  }
-
-  button.navbar-toggler {
-    width: 100px;
-    margin-right: 20px;
-    align-self: center;
-  }
-
-  @media (max-width: 992px) {
+  @include media-breakpoint-down(md) {
     #navbarSupportedContent {
-      // when switching from large to medium
-      height: 200px;
-      justify-content: space-around;
-    }
-  }
-
-  #logo-container {
-    height: $header-height;
-    margin-right: 0px;
-    width: 16.3%;
-  }
-
-  #log-container {
-    height: $header-height;
-    button {
-      color: rgba(256, 256, 256, 0.9);
+      align-items: start;
+      .navbar-nav {
+        .nav-link {
+          padding: 0;
+        }
+      }
+      .navbar-text {
+        padding: 0;
+        // align vertically with menu
+        margin-top: -2px;
+        button {
+          padding: 0;
+        }
+      }
     }
   }
 }

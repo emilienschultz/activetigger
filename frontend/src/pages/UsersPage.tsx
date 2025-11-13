@@ -70,10 +70,10 @@ export const UsersPage: FC = () => {
 
   return (
     <PageLayout currentPage="users">
-      <div className="container-fluid">
+      <div className="container">
         <div className="row">
-          <div className="col-1"></div>
-          <div className="col-8">
+          <div className="col-0 col-sm-1 col-md-2" />
+          <div className="col-12 col-sm-10 col-md-8">
             <div className="explanations">Manage users and rights</div>
 
             <span className="explanations">User</span>
@@ -81,7 +81,7 @@ export const UsersPage: FC = () => {
               {accessToList ? (
                 <Select
                   id="select-user"
-                  className="form-select"
+                  className="flex-grow-1"
                   options={userOptions}
                   onChange={(selectedOption) => {
                     setCurrentUser(selectedOption ? selectedOption.value : null);
@@ -159,7 +159,6 @@ export const UsersPage: FC = () => {
               <span className="explanations">Project</span>
               <Select
                 id="select-project"
-                className="form-select"
                 options={projectOptions}
                 onChange={(selectedOption) => {
                   setCurrentProjectSlug(selectedOption ? selectedOption.value : null);
@@ -181,7 +180,7 @@ export const UsersPage: FC = () => {
                     <tbody>
                       <tr>
                         <th>User</th>
-                        <th>Auth</th>
+                        <th>Role</th>
                         <th>Delete</th>
                       </tr>
                       {Object.entries(authUsers).map(([user, auth]) => (
@@ -208,22 +207,24 @@ export const UsersPage: FC = () => {
               </div>
             </div>
 
-            <div className="alert alert-light d-flex align-items-center m-3">
-              <span className="w-25">
-                Add for user <b>{currentUser}</b> rights :
+            <div className="alert alert-light d-flex justify-content-between align-items-center mt-3 gap-2">
+              <span>
+                Add user <b>{currentUser}</b> to project as:
               </span>
-              <select
-                id="select-auth"
-                className="form-select w-25"
-                onChange={(e) => {
-                  setCurrentAuth(e.target.value);
-                }}
-                defaultValue={'manager'}
-              >
-                <option key={'manager'}>manager</option>
-                <option key={'contributor'}>contributor</option>
-                <option key={'annotator'}>annotator</option>
-              </select>
+              <div className="position-relative flex-grow-1">
+                <select
+                  id="select-auth"
+                  className="form-select"
+                  onChange={(e) => {
+                    setCurrentAuth(e.target.value);
+                  }}
+                  defaultValue={'manager'}
+                >
+                  <option key={'manager'}>manager</option>
+                  <option key={'contributor'}>contributor</option>
+                  <option key={'annotator'}>annotator</option>
+                </select>
+              </div>
               <button
                 onClick={() => {
                   if (currentUser && currentAuth) {
@@ -241,6 +242,7 @@ export const UsersPage: FC = () => {
               </button>
             </div>
           </div>
+          <div className="col-0 col-sm-1 col-md-2" />
         </div>
       </div>
     </PageLayout>
