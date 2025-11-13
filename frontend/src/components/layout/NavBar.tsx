@@ -62,7 +62,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div
-          className={cx('navbar-collapse navbar ', expanded ? 'd-flex' : 'd-none')}
+          className={cx('navbar-collapse navbar navbar-dark', expanded ? 'd-flex' : 'd-none')}
           id="navbarSupportedContent"
         >
           <ul className="navbar-nav">
@@ -91,9 +91,9 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
           </ul>
 
           {authenticatedUser ? (
-            <div className="d-flex navbar-nav navbar-text navbar-text-margins align-items-center">
+            <div className="d-flex navbar-nav  navbar-text navbar-text-margins align-items-center">
               <button
-                className="btn btn-primary logout"
+                className="btn btn-primary logout text-white"
                 onClick={async () => {
                   const success = await logout();
                   if (success) navigate('/');
