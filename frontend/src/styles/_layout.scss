@@ -2,22 +2,51 @@
 .project-sidebar {
   //height: calc(100vh - $navbar-brand-height - $navbar-brand-padding-y);
   border-radius: 10px;
-  margin-top: 5px;
+  margin: 5px 0;
   padding: 5px;
+
   .nav {
+    flex-direction: column;
+    width: 200px;
+    @include media-breakpoint-down(md) {
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      width: 100%;
+      gap: 0.5rem;
+    }
     .nav-item {
+      flex-grow: 1;
       .nav-link {
-        span {
-          display: none;
-          @include media-breakpoint-up(md) {
-            display: inline;
-            text-align: center;
-            // className="d-none dmd-inline"
-          }
+        height: 100%;
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: start;
+        svg {
+          flex-shrink: 0;
         }
+        &.active span {
+          @extend .text-white;
+        }
+
         @include media-breakpoint-down(md) {
-          padding: 0.5em 0;
-          text-align: center;
+          gap: 0.1rem;
+          padding: 0.4rem 0.4rem;
+          justify-content: center;
+
+          // don't show label if not selected
+          &:not(.active) {
+            span {
+              display: none;
+            }
+          }
+          &.active {
+            span {
+              display: flex;
+            }
+          }
         }
       }
     }
@@ -84,28 +113,27 @@ form button:hover {
   overflow: auto;
 }
 
-
 #upload-progress,
-#upload-progress[value]::-webkit-progress-bar{
-    -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
-          border: none;
-    border-radius: 0;
-    background-color: lightgray;
-    height: 6px;
-    color: $secondary;
-    margin: 0
+#upload-progress[value]::-webkit-progress-bar {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: none;
+  border-radius: 0;
+  background-color: lightgray;
+  height: 6px;
+  color: $secondary;
+  margin: 0;
 }
-#upload-progress[value]::-moz-progress-bar{
-    background-color:  $secondary;    
+#upload-progress[value]::-moz-progress-bar {
+  background-color: $secondary;
 }
 
 #upload-progress[value]::-webkit-progress-value {
-    background-color:  $secondary;    
+  background-color: $secondary;
 }
 
-#context-container{
+#context-container {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -113,7 +141,7 @@ form button:hover {
   align-items: center;
 }
 
-#button-context-wrapper{
+#button-context-wrapper {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -121,20 +149,20 @@ form button:hover {
   align-items: center;
   align-content: center;
   width: 60%;
-  flex: 1 0 60%
+  flex: 1 0 60%;
 }
 
-#context-button{
-  background-color: rgba(0,0,0,0);
+#context-button {
+  background-color: rgba(0, 0, 0, 0);
   border: 0px;
   color: $secondary;
   text-decoration: underline;
   opacity: 1;
   padding: 3px 10px 3px 10px;
-  margin: 2px 4px 2px 4px
+  margin: 2px 4px 2px 4px;
 }
 
-table{
+table {
   margin: 10px 0px;
 }
 
@@ -144,29 +172,29 @@ table{
   margin-bottom: -5px;
 }
 
-#tag-parameters-div{
+#tag-parameters-div {
   width: 100%;
   display: flex;
   align-items: start;
   flex-wrap: wrap;
   margin-bottom: 10px;
 
-  .parameter-div{
+  .parameter-div {
     min-width: 50px;
     margin: 3px 7px;
-    flex: 1 1 200px
+    flex: 1 1 200px;
   }
 
-  .parameter-div-small{
+  .parameter-div-small {
     width: 20px;
     margin: 3px 7px;
-    flex: 1 1 30px
+    flex: 1 1 30px;
   }
 }
 
-#header{
+#header {
   $header-height: 50px;
-  #navbarSupportedContent{
+  #navbarSupportedContent {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -174,41 +202,41 @@ table{
     width: 83%;
   }
 
-  button.navbar-toggler{
+  button.navbar-toggler {
     width: 100px;
     margin-right: 20px;
     align-self: center;
   }
-  
-  @media (max-width: 992px){
-    #navbarSupportedContent{
-      // when switching from large to medium 
+
+  @media (max-width: 992px) {
+    #navbarSupportedContent {
+      // when switching from large to medium
       height: 200px;
       justify-content: space-around;
     }
   }
-  
-  #logo-container{
+
+  #logo-container {
     height: $header-height;
     margin-right: 0px;
     width: 16.3%;
   }
 
-  #log-container{
+  #log-container {
     height: $header-height;
-    button{
+    button {
       color: rgba(256, 256, 256, 0.9);
     }
   }
 }
 
-.model-pill-selection{
+.model-pill-selection {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: flex-start;
 
-  .model-pill{
+  .model-pill {
     background-color: $tertiary;
     color: black;
     border: none;
@@ -216,46 +244,48 @@ table{
     padding: 0px 15px;
     margin: 2px 10px;
     height: 35px;
-    #bin{
-      background-color: rgba(0,0,0,0);
-      border:none
+    #bin {
+      background-color: rgba(0, 0, 0, 0);
+      border: none;
     }
     font-size: smaller;
   }
-  
-  .model-pill.selected{
+
+  .model-pill.selected {
     background-color: $secondary;
     color: white;
   }
-  
-  .model-pill#create-new, .model-pill#compute-validate{
+
+  .model-pill#create-new,
+  .model-pill#compute-validate {
     font-size: normal;
     background-color: $primary;
     color: white;
     font-weight: bold;
   }
-  .model-pill.disabled#create-new, .model-pill.disabled#compute-validate{
+  .model-pill.disabled#create-new,
+  .model-pill.disabled#compute-validate {
     pointer-events: none;
     opacity: 0.8;
   }
 }
 
-.getelement{
+.getelement {
   background-color: $primary;
-  border: 3px rgba(0,0,0,0) solid;
+  border: 3px rgba(0, 0, 0, 0) solid;
   border-radius: 5px;
   color: white;
 }
 
-.getelement.setting-changed{
+.getelement.setting-changed {
   animation: glow 1.5s ease-in-out infinite alternate;
 }
 
 @-webkit-keyframes glow {
   from {
-    border: 3px rgba(0,0,0,0) solid;
+    border: 3px rgba(0, 0, 0, 0) solid;
   }
   to {
-    border: 3px rgba(255,255,255, 0.7) solid;
+    border: 3px rgba(255, 255, 255, 0.7) solid;
   }
 }
