@@ -40,6 +40,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
         dfm_min_term_freq: 5,
         dfm_ngrams: 1,
         model: 'generic',
+        max_length_tokens: 1024,
       },
       type: 'sbert',
     },
@@ -95,6 +96,13 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
                 </option>
               ))}
             </select>
+            <label htmlFor="length">Max length tokens</label>
+            <input
+              type="number"
+              className="form-control"
+              placeholder="Max length tokens"
+              {...register('parameters.max_length_tokens')}
+            />
           </details>
         )}
 

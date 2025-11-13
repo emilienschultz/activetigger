@@ -101,6 +101,7 @@ export interface FeatureFasttextParameters {
 
 export interface FeatureSbertParameters {
   model?: string;
+  max_length_tokens?: number;
 }
 
 export interface FeatureModelExtended {
