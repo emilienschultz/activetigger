@@ -138,7 +138,7 @@ class TrainBert(BaseTask):
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,
         loss: Optional[str] = "cross_entropy",
-        max_length=512,
+        max_length: int = 512,
         **kwargs,
     ):
         self.path = path
