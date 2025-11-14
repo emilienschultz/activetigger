@@ -37,7 +37,7 @@ class ComputeSbert(BaseTask):
         self.batch_size = batch_size
         self.min_gpu = min_gpu
         self.path_process = path_process
-        self.max_tokens = max_tokens
+        self.max_tokens = int(max_tokens)
         self.event = event
         if path_progress:
             self.progress_file_temporary = False
