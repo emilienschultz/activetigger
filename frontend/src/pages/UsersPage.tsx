@@ -79,16 +79,36 @@ export const UsersPage: FC = () => {
             <span className="explanations">User</span>
             <div className="d-flex align-items-center">
               {accessToList ? (
-                <Select
-                  id="select-user"
-                  className="form-select"
-                  options={userOptions}
-                  onChange={(selectedOption) => {
-                    setCurrentUser(selectedOption ? selectedOption.value : null);
-                  }}
-                  isClearable
-                  placeholder="Select a user"
-                />
+                <>
+                  <Select
+                    id="select-user"
+                    className="form-select"
+                    options={userOptions}
+                    onChange={(selectedOption) => {
+                      setCurrentUser(selectedOption ? selectedOption.value : null);
+                    }}
+                    isClearable
+                    placeholder="Select a user"
+                  />
+                  <button
+                    className="btn btn p-0 m-2"
+                    onClick={() => {
+                      setShowCreateUser(!showCreateUser);
+                      reFetchUsers();
+                    }}
+                  >
+                    <FaPlusCircle size={25} />
+                  </button>
+                  <button
+                    className="btn btn p-0"
+                    onClick={() => {
+                      deleteUser(currentUser);
+                      reFetchUsers();
+                    }}
+                  >
+                    <MdOutlineDeleteOutline size={30} />
+                  </button>
+                </>
               ) : (
                 <input
                   className="form-control"
@@ -99,24 +119,6 @@ export const UsersPage: FC = () => {
                   placeholder="Write a user handle"
                 />
               )}
-              <button
-                className="btn btn p-0 m-2"
-                onClick={() => {
-                  setShowCreateUser(!showCreateUser);
-                  reFetchUsers();
-                }}
-              >
-                <FaPlusCircle size={25} />
-              </button>
-              <button
-                className="btn btn p-0"
-                onClick={() => {
-                  deleteUser(currentUser);
-                  reFetchUsers();
-                }}
-              >
-                <MdOutlineDeleteOutline size={30} />
-              </button>
             </div>
             <Modal
               show={showCreateUser}
