@@ -160,6 +160,7 @@ export interface newBertModel {
   class_min_freq?: number;
   test_size?: number;
   exclude_labels?: string[];
+  max_length?: number;
 }
 
 export interface EvalSetModel {

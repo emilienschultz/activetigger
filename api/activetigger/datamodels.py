@@ -307,6 +307,7 @@ class BertModelModel(BaseModel):
     class_balance: bool = False
     loss: str = "cross_entropy"
     exclude_labels: list[str] = []
+    max_length: int = 512
 
 
 class UmapModel(BaseModel):
