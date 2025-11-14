@@ -76,6 +76,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       loss: 'cross_entropy',
       class_min_freq: 1,
       test_size: 0.2,
+      max_length: 512,
       parameters: {
         batchsize: 4,
         gradacc: 4.0,
@@ -198,6 +199,18 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
         </label>
         <input type="checkbox" {...registerNewModel('parameters.gpu')} />
       </div>
+      <div>
+        <label>
+          Max context window (tokens){' '}
+          <a className="max_length">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".max_length" place="top">
+            Number of token before truncating (depend of the model)
+          </Tooltip>
+        </label>
+        <input type="number" step="1" {...registerNewModel('max_length')} />
+      </div>
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
         <div>
@@ -261,6 +274,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
           </label>
           <input type="number" step="1" {...registerNewModel('class_min_freq')} />
         </div>
+
         <div className="form-group d-flex align-items-center">
           <label>
             Balance classes

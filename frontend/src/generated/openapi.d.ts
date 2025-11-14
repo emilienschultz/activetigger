@@ -1928,6 +1928,11 @@ export interface components {
              * @default []
              */
             exclude_labels: string[];
+            /**
+             * Max Length
+             * @default 512
+             */
+            max_length: number;
         };
         /** BertopicOutModelParameters */
         BertopicOutModelParameters: {

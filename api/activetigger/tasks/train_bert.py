@@ -138,6 +138,7 @@ class TrainBert(BaseTask):
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,
         loss: Optional[str] = "cross_entropy",
+        max_length=512,
         **kwargs,
     ):
         self.path = path
@@ -153,6 +154,7 @@ class TrainBert(BaseTask):
         self.event = event
         self.unique_id = unique_id
         self.loss = loss
+        self.max_length = max_length
 
     def __call__(self) -> None:
         """
@@ -213,6 +215,7 @@ class TrainBert(BaseTask):
                     truncation=True,
                     padding=True,
                     return_tensors="pt",
+                    max_length=self.max_length,
                 ),
                 batched=True,
             )
@@ -223,6 +226,7 @@ class TrainBert(BaseTask):
                     truncation=True,
                     padding="max_length",
                     return_tensors="pt",
+                    max_length=self.max_length,
                 ),
                 batched=True,
             )
@@ -337,6 +341,7 @@ class TrainBert(BaseTask):
             params_to_save["test_size"] = self.test_size
             params_to_save["base_model"] = self.base_model
             params_to_save["n_train"] = len(self.df["train"])
+            params_to_save["max_length"] = self.max_length
 
             with open(current_path.joinpath("parameters.json"), "w") as f:
                 json.dump(params_to_save, f)

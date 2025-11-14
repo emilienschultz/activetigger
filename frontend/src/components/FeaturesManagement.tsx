@@ -34,16 +34,7 @@ export default function SimpleTable(data: FeatureDescriptionModelOut) {
           <tr>
             <td className="border border-gray-300 px-4 py-2 font-medium">Parameters</td>
             <td className="border border-gray-300 px-4 py-2">
-              <table className="table-auto border-collapse border border-gray-200 w-full mt-2">
-                <tbody>
-                  {Object.entries(data.parameters).map(([key, value]) => (
-                    <tr key={key}>
-                      <td className="border border-gray-200 px-3 py-1 font-medium">{key}</td>
-                      <td className="border border-gray-200 px-3 py-1">{value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {JSON.stringify(data.parameters, null, 2)}
             </td>
           </tr>
         </tbody>
@@ -72,6 +63,8 @@ export const FeaturesManagement: FC = () => {
     await deleteFeature(element);
     setSelectedFeature(null);
   };
+
+  console.log(featuresInfo);
 
   if (!project) {
     return <div>No project selected</div>;

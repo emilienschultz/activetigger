@@ -374,7 +374,13 @@ class Features:
             f = df.apply(lambda x: bool(pattern.search(x)))
             parameters["count"] = int(f.sum())
             self.add(regex_name, kind, username, parameters, f)
-            return {"success": "regex added"}
+            parameters = {
+                "name": regex_name,
+                "kind": kind,
+                "regex": parameters["value"],
+                "count": int(f.sum()),
+                "username": username,
+            }
 
         if kind == "dataset":
             # get the raw column for the train set
@@ -398,10 +404,15 @@ class Features:
             if self.exists(dataset_name):
                 raise ValueError("This dataset feature already exists")
             self.add(dataset_name, kind, username, parameters, column)
-            return {"success": "Feature added"}
+            parameters = {
+                "name": dataset_name,
+                "kind": kind,
+                "dataset_col": parameters["dataset_col"],
+                "dataset_type": parameters["dataset_type"],
+                "username": username,
+            }
 
         # features with queue
-
         unique_id = None
 
         if kind == "sbert":
@@ -413,6 +424,8 @@ class Features:
                 model = self.options["sbert"]["models"][0]
             else:
                 model = parameters["model"]
+            if "max_length_tokens" not in parameters:
+                parameters["max_length_tokens"] = 1024
             name = f"sbert_{model.replace('/', '_')}"
             if self.exists(name):
                 raise ValueError("This sbert model already exists")
@@ -423,9 +436,17 @@ class Features:
                     texts=df,
                     path_process=self.path_all.parent,
                     model=model,
+                    max_tokens=parameters["max_length_tokens"],
                 ),
                 queue="gpu",
             )
+            parameters = {
+                "model": model,
+                "name": name,
+                "kind": kind,
+                "username": username,
+                "max_length_tokens": parameters["max_length_tokens"],
+            }
 
         if kind == "fasttext":
             name = f"fasttext_{parameters['model']}"
@@ -444,6 +465,12 @@ class Features:
             )
             if parameters["model"] is not None and parameters["model"] != "":
                 name = f"{name}_{parameters['model']}"
+            parameters = {
+                "model": parameters["model"],
+                "name": name,
+                "kind": kind,
+                "username": username,
+            }
 
         if kind == "dfm":
             name = "dfm"
@@ -454,6 +481,12 @@ class Features:
             args["language"] = self.lang
             unique_id = self.queue.add_task("feature", self.project_slug, ComputeDfm(**args))
             del args
+            parameters = {
+                "name": name,
+                "kind": kind,
+                "parameters": parameters,
+                "username": username,
+            }
 
         if unique_id:
             self.computing.append(

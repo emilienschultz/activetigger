@@ -101,6 +101,7 @@ export interface FeatureFasttextParameters {
 
 export interface FeatureSbertParameters {
   model?: string;
+  max_length_tokens?: number;
 }
 
 export interface FeatureModelExtended {
@@ -159,6 +160,7 @@ export interface newBertModel {
   class_min_freq?: number;
   test_size?: number;
   exclude_labels?: string[];
+  max_length?: number;
 }
 
 export interface EvalSetModel {

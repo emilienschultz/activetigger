@@ -1297,6 +1297,7 @@ class Project:
             params=bert.params,
             test_size=bert.test_size,
             loss=bert.loss,
+            max_length=bert.max_length,
         )
 
     def start_generation(self, request: GenerationRequest, username: str) -> None:
