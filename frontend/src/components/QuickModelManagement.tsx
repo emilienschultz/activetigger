@@ -8,11 +8,11 @@ import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 import { useDeleteQuickModel, useGetQuickModel, useTrainQuickModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
+import { getRandomName } from '../core/utils';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
-
 // TODO: default values + avoid generic parameters
 
 interface Options {
@@ -107,15 +107,10 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   // delete quickmodel
   const { deleteQuickModel } = useDeleteQuickModel(projectName);
 
-  function getRandomName() {
-    const timestamp = Date.now();
-    return `Quickmodel-${currentScheme}-${timestamp}`;
-  }
-
   // create form
   const { register, handleSubmit, control, watch, setValue } = useForm<QuickModelInModel>({
     defaultValues: {
-      name: getRandomName(),
+      name: getRandomName('QuickModel'),
       model: 'liblinear',
       scheme: currentScheme || undefined,
       params: {

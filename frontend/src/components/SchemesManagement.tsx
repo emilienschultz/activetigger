@@ -10,8 +10,8 @@ import { Tooltip } from 'react-tooltip';
 import { useAddScheme, useDeleteScheme, useDuplicateScheme, useRenameScheme } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
+import { getRandomName } from '../core/utils';
 import { SchemeModel } from '../types';
-
 /*
  * Select current scheme
  */
@@ -111,7 +111,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({ projectSlug, canE
   // hooks to use the objets
   const { register, handleSubmit } = useForm<SchemeModel>({
     defaultValues: {
-      name: getRandomName(),
+      name: getRandomName('Scheme'),
     },
   });
 
@@ -156,11 +156,6 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({ projectSlug, canE
 
     if (reFetchCurrentProject) reFetchCurrentProject();
   };
-
-  function getRandomName() {
-    const timestamp = Date.now();
-    return `Scheme-${timestamp}`;
-  }
 
   return (
     <div>

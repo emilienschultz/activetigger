@@ -3,6 +3,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useComputeBertopic, useStopProcesses } from '../../core/api';
+import { getRandomName } from '../../core/utils';
 import { ComputeBertopicModel } from '../../types';
 
 interface BertopicCreationFormProps {
@@ -21,13 +22,9 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
   const { computeBertopic } = useComputeBertopic(projectSlug);
   const { stopProcesses } = useStopProcesses();
 
-  function getRandomName() {
-    const timestamp = Date.now();
-    return `BERTopic-${timestamp}`;
-  }
   const { handleSubmit: handleSubmitNewModel, register } = useForm<ComputeBertopicModel>({
     defaultValues: {
-      name: getRandomName(),
+      name: getRandomName('BERTopic'),
       outlier_reduction: true,
       // min_topic_size: 10, // Removed because overridden by the hdbscan model - Axel
       // nr_topics: 'auto', // Removed to propose topic reduction later in the pipeline - Axel

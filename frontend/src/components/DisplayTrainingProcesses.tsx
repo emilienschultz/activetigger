@@ -62,7 +62,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
             className="btn btn-primary mt-3 d-flex align-items-center"
             onClick={() => stopProcesses('bert')}
           >
-            <PulseLoader color={'white'} /> Stop current process
+            <PulseLoader color={'white'} /> Stop process
           </button>
         </div>
       )}
