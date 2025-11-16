@@ -18,6 +18,7 @@ from torch import nn
 from transformers import (  # type: ignore[import]  # type: ignore[import]
     AutoModelForSequenceClassification,
     AutoTokenizer,
+    AutoConfig,
     Trainer,
     TrainerCallback,
     TrainerControl,
@@ -156,6 +157,20 @@ class TrainBert(BaseTask):
         self.loss = loss
         self.max_length = max_length
 
+    def retrieve_model_max_length(self) -> int:
+        try: 
+            model_max_length = (AutoConfig.
+                from_pretrained(self.base_model, trust_remote_code=True)
+                .max_position_embeddings
+            )
+        except Exception:
+            model_max_length = np.nan
+            raise ValueError((
+                f"Could not retrieve model's max length. Max length "
+                f"{self.max_length} is used."
+            ))
+        return model_max_length
+
     def __call__(self) -> None:
         """
         Main process to the task
@@ -206,8 +221,11 @@ class TrainBert(BaseTask):
         self.df["text"] = self.df[self.col_text]
         self.df = datasets.Dataset.from_pandas(self.df[["text", "labels"]])
 
+        # cap max_length
+        self.max_length = min(self.max_length,self.retrieve_model_max_length())
+
         # Tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(self.base_model, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained()
         if self.params.adapt:
             self.df = self.df.map(
                 lambda e: tokenizer(
@@ -215,7 +233,7 @@ class TrainBert(BaseTask):
                     truncation=True,
                     padding=True,
                     return_tensors="pt",
-                    max_length=self.max_length,
+                    max_length=int(self.max_length),
                 ),
                 batched=True,
             )
