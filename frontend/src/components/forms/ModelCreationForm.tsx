@@ -199,20 +199,20 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
         </label>
         <input type="checkbox" {...registerNewModel('parameters.gpu')} />
       </div>
-      <div>
-        <label>
-          Max context window (tokens){' '}
-          <a className="max_length">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".max_length" place="top">
-            Number of token before truncating (depend of the model)
-          </Tooltip>
-        </label>
-        <input type="number" step="1" {...registerNewModel('max_length')} />
-      </div>
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
+        <div>
+          <label>
+            Max context window (tokens){' '}
+            <a className="max_length">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".max_length" place="top">
+              Number of token before truncating (depend of the model)
+            </Tooltip>
+          </label>
+          <input type="number" step="1" {...registerNewModel('max_length')} />
+        </div>
         <div>
           <label>
             Batch Size{' '}
