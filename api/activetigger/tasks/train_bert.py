@@ -225,7 +225,7 @@ class TrainBert(BaseTask):
         self.max_length = min(self.max_length,self.retrieve_model_max_length())
 
         # Tokenizer
-        tokenizer = AutoTokenizer.from_pretrained()
+        tokenizer = AutoTokenizer.from_pretrained(self.base_model, trust_remote_code=True)
         if self.params.adapt:
             self.df = self.df.map(
                 lambda e: tokenizer(
