@@ -29,7 +29,8 @@ export const ProjectActionsSidebar: FC<{
   currentScheme,
   //  developmentMode,
 }) => {
-  const projectName = projectState ? projectState.params.project_slug : null;
+  const projectSlug = projectState ? projectState.params.project_slug : null;
+  const projectName = projectState ? projectState.params.project_name : null;
   const { authenticatedUser } = useAuth();
   // const nbUsers = projectState ? projectState.users.length : 0;
 
@@ -49,34 +50,20 @@ export const ProjectActionsSidebar: FC<{
   }
 
   return (
-    <div className={`project-sidebar d-flex flex-column flex-shrink-0 bg-light`}>
+    <div className={`project-sidebar flex-shrink-0 bg-light`}>
       {canEdit && (
-        <ul className="nav nav-pills flex-column mb-auto">
-          <li className="nav-item  d-none d-md-inline">
-            <div
-              className="nav-link d-inline-block rounded-pill px-3 py-1 bg-light"
-              style={{ lineHeight: '1.1' }}
-            >
+        <ul className="nav nav-pills mb-auto">
+          <li className="nav-item  d-none d-md-inline w-100">
+            <div className="nav-link d-inline-block rounded-pill px-3 py-1 bg-light w-100">
               <div className="fw-semibold text-dark text-truncate">{projectName}</div>
-              <div
-                className="small text-primary"
-                style={{
-                  marginTop: '-2px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-                title={currentScheme}
-              >
-                {currentScheme && currentScheme.length > 15
-                  ? `${currentScheme.substring(0, 15)}…`
-                  : currentScheme}
+              <div className="small text-primary" title={currentScheme}>
+                {currentScheme}
               </div>
             </div>
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}`}
+              to={`/projects/${projectSlug}`}
               className={classNames('nav-link', !currentProjectAction && 'active')}
               aria-current="page"
               title="Access and modify your project parameters"
@@ -87,7 +74,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/explore`}
+              to={`/projects/${projectSlug}/explore`}
               className={classNames('nav-link', currentProjectAction === 'explore' && 'active')}
               aria-current="page"
               title="Explore your data"
@@ -98,7 +85,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/tag`}
+              to={`/projects/${projectSlug}/tag`}
               className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
               title="Tag your data"
@@ -109,7 +96,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/model`}
+              to={`/projects/${projectSlug}/model`}
               className={classNames('nav-link', currentProjectAction === 'model' && 'active')}
               aria-current="page"
               title="Manage your models"
@@ -120,7 +107,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/validate`}
+              to={`/projects/${projectSlug}/validate`}
               className={classNames('nav-link', currentProjectAction === 'validate' && 'active')}
               aria-current="page"
               title="Test your model"
@@ -132,7 +119,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/export`}
+              to={`/projects/${projectSlug}/export`}
               className={classNames('nav-link', currentProjectAction === 'export' && 'active')}
               aria-current="page"
               title="Export everything"
@@ -144,7 +131,7 @@ export const ProjectActionsSidebar: FC<{
 
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/generate`}
+              to={`/projects/${projectSlug}/generate`}
               className={classNames('nav-link', currentProjectAction === 'generate' && 'active')}
               aria-current="page"
               title="Use generative tools to annotate your data"
@@ -156,7 +143,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/settings`}
+              to={`/projects/${projectSlug}/settings`}
               className={classNames('nav-link', currentProjectAction === 'settings' && 'active')}
               aria-current="page"
               title="Project settings"
@@ -174,7 +161,7 @@ export const ProjectActionsSidebar: FC<{
               className="nav-link d-inline-block rounded-pill px-3 py-1 bg-light"
               style={{ lineHeight: '1.1' }}
             >
-              <div className="fw-semibold text-dark text-truncate">{projectName}</div>
+              <div className="fw-semibold text-dark text-truncate">{projectSlug}</div>
               <div
                 className="small text-primary"
                 style={{
@@ -193,7 +180,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}`}
+              to={`/projects/${projectSlug}`}
               className={classNames('nav-link', !currentProjectAction && 'active')}
               aria-current="page"
               title="Access and modify your project parameters"
@@ -204,7 +191,7 @@ export const ProjectActionsSidebar: FC<{
           </li>
           <li className="nav-item">
             <Link
-              to={`/projects/${projectName}/tag`}
+              to={`/projects/${projectSlug}/tag`}
               className={classNames('nav-link', currentProjectAction === 'tag' && 'active')}
               aria-current="page"
               title="Tag your data"
