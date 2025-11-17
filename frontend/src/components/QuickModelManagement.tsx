@@ -186,6 +186,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
 
   const [showParameters, setShowParameters] = useState(false);
 
+  console.log(currentQuickModelName);
+
   return (
     <div className="w-100">
       <ModelsPillDisplay
@@ -209,7 +211,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <PulseLoader color={'white'} /> Computing
         </div>
       )}
-      {currentModelInformations && (
+      {currentModelInformations && currentQuickModelName && (
         <div>
           <div className="d-flex my-2">
             <button

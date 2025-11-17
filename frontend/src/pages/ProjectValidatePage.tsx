@@ -25,7 +25,7 @@ interface validateButtonsProps {
   modelName: string | null;
   kind: string | null;
   currentScheme: string | null;
-  setCurrentModel: (val: null | string) => void;
+  setCurrentModel?: (val: null | string) => void;
   className?: string;
   id?: string;
 }
@@ -45,7 +45,7 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
       className={cx(className ? className : 'btn btn-primary m-4')}
       onClick={() => {
         computeModelPrediction(modelName || '', 'annotable', currentScheme, kind);
-        setCurrentModel(null);
+        if (setCurrentModel) setCurrentModel(null);
       }}
       id={id}
     >
@@ -127,7 +127,6 @@ export const ProjectValidatePage: FC = () => {
                       kind="quick"
                       currentScheme={currentScheme || null}
                       projectSlug={projectName || null}
-                      setCurrentModel={setCurrentQuickModelName}
                       id="compute-validate"
                     />
 
@@ -181,7 +180,6 @@ export const ProjectValidatePage: FC = () => {
                         kind="bert"
                         currentScheme={currentScheme || null}
                         projectSlug={projectName || null}
-                        setCurrentModel={setCurrentBertModelName}
                         id="compute-validate"
                       />
                       <DisplayScoresMenu

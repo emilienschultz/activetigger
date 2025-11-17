@@ -51,10 +51,9 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
                 className="btn btn-danger"
                 onClick={() => {
                   deleteModelFunction(name);
-                  if (currentModelName === name) {
-                    setCurrentModelName(null);
-                  }
+                  setCurrentModelName(null);
                   setShowDelete(false);
+                  console.log('delete');
                 }}
               >
                 Delete
