@@ -38,17 +38,14 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
         ];
 
   return (
-    <div className="bg-primary" id="header">
-      <nav
-        className="navbar navbar-dark navbar-expand-lg bg-primary row align-items-start"
-        style={{ width: '100%' }}
-      >
-        <div id="logo-container">
+    <nav className="navbar navbar-dark bg-primary navbar-expand-md" id="header">
+      <div className="container-fluid">
+        <div id="logo-container" className="navbar-brand">
           <Link className="navbar-brand" to="/">
             <img
               src={logo}
               alt="ActiveTigger"
-              className="me-2"
+              className="d-inline-bock me-2"
               style={{ width: '50px', height: '50px' }}
             />
             Active Tigger
@@ -65,10 +62,7 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div
-          className={cx(
-            'navbar-collapse col-10 col-md-9 col-lg-10 ',
-            expanded ? 'd-flex' : 'd-none',
-          )}
+          className={cx('navbar-collapse navbar navbar-dark', expanded ? 'd-flex' : 'd-none')}
           id="navbarSupportedContent"
         >
           <ul className="navbar-nav">
@@ -97,12 +91,9 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
           </ul>
 
           {authenticatedUser ? (
-            <div
-              className="d-flex navbar-nav navbar-text navbar-text-margins align-items-center"
-              id="log-container"
-            >
+            <div className="d-flex navbar-nav  navbar-text navbar-text-margins align-items-center">
               <button
-                className="btn btn-primary mx-2 logout"
+                className="btn btn-primary logout text-white"
                 onClick={async () => {
                   const success = await logout();
                   if (success) navigate('/');
@@ -120,8 +111,8 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
             </Link>
           )}
         </div>
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 };
 

@@ -307,8 +307,6 @@ class Schemes:
             .fillna("")[["id", "timestamp", "labels", "text", "comment", "user"]]
         )
 
-        print(df.head())
-
         return TableOutModel(
             items=table.to_dict(orient="records"),
             total=len(df),

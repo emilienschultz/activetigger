@@ -42,18 +42,17 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
   return (
     <PageLayout currentPage="projects" projectName={projectName || null}>
       <div className="container-fluid" style={{ paddingBottom: '30px' }}>
-        <div className="row">
-          <div className="col-1 col-md-3 col-lg-2">
-            <ProjectActionsSidebar
-              projectState={project || null}
-              currentProjectAction={currentAction}
-              currentScheme={currentScheme}
-              currentUser={authenticatedUser.username}
-              currentMode={phase}
-              developmentMode={developmentMode}
-            />
-          </div>
-          <div className="col-11 col-md-9 col-lg-10">{children}</div>
+        <div className="d-flex flex-column flex-md-row gap-1 gap-md-3 gap-lg-5">
+          <ProjectActionsSidebar
+            projectState={project || null}
+            currentProjectAction={currentAction}
+            currentScheme={currentScheme}
+            currentUser={authenticatedUser.username}
+            currentMode={phase}
+            developmentMode={developmentMode}
+          />
+
+          <div className="flex-grow mb-3">{children}</div>
         </div>
       </div>
       <StatusNotch

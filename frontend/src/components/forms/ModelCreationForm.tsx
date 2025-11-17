@@ -4,8 +4,8 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 import { useTrainBertModel } from '../../core/api';
+import { getRandomName } from '../../core/utils';
 import { newBertModel, ProjectStateModel } from '../../types';
-
 interface ModelCreationFormProps {
   projectSlug: string | null;
   currentScheme: string | null;
@@ -55,11 +55,6 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     label: value,
   }));
 
-  function getRandomName() {
-    const timestamp = Date.now();
-    return `Bertmodel-${currentScheme}-${timestamp}`;
-  }
-
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
       ? project.schemes.available[currentScheme].kind
@@ -71,7 +66,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     control,
   } = useForm<newBertModel>({
     defaultValues: {
-      name: getRandomName(),
+      name: getRandomName('bertmodel'),
       class_balance: false,
       loss: 'cross_entropy',
       class_min_freq: 1,
@@ -199,20 +194,20 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
         </label>
         <input type="checkbox" {...registerNewModel('parameters.gpu')} />
       </div>
-      <div>
-        <label>
-          Max context window (tokens){' '}
-          <a className="max_length">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".max_length" place="top">
-            Number of token before truncating (depend of the model)
-          </Tooltip>
-        </label>
-        <input type="number" step="1" {...registerNewModel('max_length')} />
-      </div>
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
+        <div>
+          <label>
+            Max context window (tokens){' '}
+            <a className="max_length">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".max_length" place="top">
+              Number of token before truncating (depend of the model)
+            </Tooltip>
+          </label>
+          <input type="number" step="1" {...registerNewModel('max_length')} />
+        </div>
         <div>
           <label>
             Batch Size{' '}

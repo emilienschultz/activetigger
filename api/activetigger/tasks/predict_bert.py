@@ -113,7 +113,7 @@ class PredictBert(BaseTask):
         print("load model")
         with open(self.path / "parameters.json", "r") as jsonfile:
             data = json.load(jsonfile)
-            max_length = data.get("max_length", 512)
+            max_length = int(data.get("max_length", 512))
             if "base_model" in data:
                 modeltype = data["base_model"]
             else:

@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from pandas import DataFrame, Series
 from sentence_transformers import SentenceTransformer
+from transformers import AutoConfig
 
 from activetigger.tasks.base_task import BaseTask
 
@@ -37,7 +38,7 @@ class ComputeSbert(BaseTask):
         self.batch_size = batch_size
         self.min_gpu = min_gpu
         self.path_process = path_process
-        self.max_tokens = max_tokens
+        self.max_tokens = int(max_tokens)
         self.event = event
         if path_progress:
             self.progress_file_temporary = False
@@ -45,6 +46,18 @@ class ComputeSbert(BaseTask):
         else:
             self.path_progress = self.path_process.joinpath(self.unique_id)
             self.progress_file_temporary = True
+
+    def retrieve_model_max_length(self) -> int:
+        try:
+            model_max_length = AutoConfig.from_pretrained(
+                self.model, trust_remote_code=True
+            ).max_position_embeddings
+        except Exception:
+            model_max_length = np.nan
+            raise ValueError(
+                (f"Could not retrieve model's max length. Max length {self.max_tokens} is used.")
+            )
+        return model_max_length
 
     def __call__(self) -> DataFrame:
         """
@@ -71,7 +84,7 @@ class ComputeSbert(BaseTask):
 
         try:
             sbert = SentenceTransformer(self.model, device=str(device), trust_remote_code=True)
-            sbert.max_seq_length = self.max_tokens
+            sbert.max_seq_length = int(min(self.max_tokens, self.retrieve_model_max_length()))
 
             print("start computation")
             embeddings = []

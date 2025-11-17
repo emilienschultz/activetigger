@@ -20,7 +20,7 @@ import {
 } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
-import { loadFile } from '../../core/utils';
+import { getRandomName, loadFile } from '../../core/utils';
 import { ProjectModel } from '../../types';
 
 // format of the data table
@@ -52,14 +52,11 @@ export const ProjectCreationForm: FC = () => {
     { value: 'cn', label: 'Chinese' },
     { value: 'ja', label: 'Japanese' },
   ];
-  function getRandomName() {
-    const timestamp = Date.now();
-    return `Project-${timestamp}`;
-  }
+
   const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
     {
       defaultValues: {
-        project_name: getRandomName(),
+        project_name: getRandomName('Project'),
         n_train: 100,
         n_test: 0,
         n_valid: 0,
