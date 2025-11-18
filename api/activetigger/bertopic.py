@@ -256,3 +256,17 @@ class Bertopic:
                 raise FileNotFoundError(f"Clusters for model {name} do not exist.")
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
+
+    def export_report(self, name: str) -> FileResponse:
+        """
+        Export clusters from a BERTopic model.
+        """
+        path_model = self.path.joinpath("runs").joinpath(name)
+        if path_model.exists():
+            report_path = path_model.joinpath("report.html")
+            if report_path.exists():
+                return FileResponse(path=report_path, filename=f"bertopic_report_{name}.html")
+            else:
+                raise FileNotFoundError(f"Report for model {name} do not exist.")
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")
