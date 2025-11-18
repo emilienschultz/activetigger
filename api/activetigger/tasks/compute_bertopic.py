@@ -1,3 +1,5 @@
+RANDOM_SEED = 2306406
+
 import datetime
 import json
 import shutil
@@ -41,7 +43,6 @@ Rational :
 
 # TODO : multicolumns for text
 # TODO : manage special case of embeddings of trainset
-# TODO : add the language specific stopwords removal
 
 def visualize_documents(
         topics : list[int],
@@ -154,7 +155,6 @@ class CustomLemmatizer:
                 if lemma not in self.__stop_words:
                     out += [lemma]
         return out
-
 
 class ComputeBertopic(BaseTask):
     """
@@ -294,6 +294,7 @@ class ComputeBertopic(BaseTask):
                     # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
                     min_dist=0.0,
                     metric="cosine",
+                    random_state=RANDOM_SEED # for deterministic behaviour
                 )
             except Exception as e:
                 print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
@@ -303,6 +304,7 @@ class ComputeBertopic(BaseTask):
                     # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
                     min_dist=0.0,
                     metric="cosine",
+                    random_state=RANDOM_SEED # for deterministic behaviour
                 )
 
             # Clustering with HDBSCAN
@@ -438,10 +440,22 @@ class ComputeBertopic(BaseTask):
         Reduce the dimensionality of the embeddings if needed.
         """
         try:
-            reducer = cuml.UMAP(n_neighbors=10, n_components=2, min_dist=0.1, metric="cosine")
+            reducer = cuml.UMAP(
+                n_neighbors=10, 
+                n_components=2, 
+                min_dist=0.1, 
+                metric="cosine",
+                random_state=RANDOM_SEED # for deterministic behaviour
+            )
             print("Using cuML for UMAP computation")
         except Exception:
-            reducer = umap.UMAP(n_neighbors=10, n_components=2, min_dist=0.1, metric="cosine")
+            reducer = umap.UMAP(
+                n_neighbors=10, 
+                n_components=2, 
+                min_dist=0.1, 
+                metric="cosine",
+                random_state=RANDOM_SEED # for deterministic behaviour
+            )
             print("Using standard UMAP for computation")
         embeddings = pd.read_parquet(path_embeddings)
         reduced_embeddings = reducer.fit_transform(embeddings)
