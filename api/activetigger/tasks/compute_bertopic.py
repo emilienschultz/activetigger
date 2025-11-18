@@ -441,18 +441,18 @@ class ComputeBertopic(BaseTask):
         """
         try:
             reducer = cuml.UMAP(
-                n_neighbors=10, 
+                n_neighbors=self.parameters.umap_n_neighbors, 
                 n_components=2, 
-                min_dist=0.1, 
+                min_dist=0.0, 
                 metric="cosine",
                 random_state=RANDOM_SEED # for deterministic behaviour
             )
             print("Using cuML for UMAP computation")
         except Exception:
             reducer = umap.UMAP(
-                n_neighbors=10, 
+                n_neighbors=self.parameters.umap_n_neighbors, 
                 n_components=2, 
-                min_dist=0.1, 
+                min_dist=0.0, 
                 metric="cosine",
                 random_state=RANDOM_SEED # for deterministic behaviour
             )
