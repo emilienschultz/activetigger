@@ -6,38 +6,69 @@
     <title>BERTopic report - {{ bertopic_name }}</title>
     <style>
         body{
-            width: 80%;
             display: flex;
             flex-direction: column;
-            justify-items: center;
-            border: 1px solid black;
+            justify-content: flex-start;
+            align-items: center;
+            color: rgb(34,34,34);
+            font-family: 'Arial', sans-serif;
         }
-        div{
-            display: flex;
-            flex-direction: column;
-            justify-items: center;
+
+        .panel {
+            width: 80%;
+            h1 {
+                font-family: "Rockwell";
+                color: #b04302;
+            }
+            details{
+                margin: 15px 0px;
+                span {
+                    background-color:#ea6b1f;
+                    color: white;
+                    padding: 2px 10px;
+                    border-radius: 3px;
+                    font-size: 20px;
+                }
+                li{
+                    margin-bottom: 7px;
+                    text-align: justify;
+                }
+            }
         }
     </style>
-
     <script src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>
 
 </head>
 <body>
-    <h1>Topics</h1>
-    <div>{{ topics }}</div>
-    <h1>2D Map</h1>
-    <div>{{ map }}</div>
-    <h1>Hierarchical representation</h1>
-    <div>{{ hierarchical }}</div>
-    <h1>Representative documents</h1>
-    <div>
-        <!-- {% for item in RepresentativeTopics %}
-            <span>{{ item }}</span>
-        {% endfor %} -->
-        {{ RepresentativeTopics }}
+    <div class="panel">
+        <div>{{ topics }}</div>
     </div>
-    <h1>Parameters of the model</h1>
-    <div>{{ parameters }}</div>
-
+    <div class="panel">
+        <h1>2D Map</h1>
+        <div>{{ map }}</div>
+    </div>
+    <div class="panel">
+        <h1>Hierarchical representation</h1>
+        <div>{{ hierarchical }}</div>
+    </div>
+    <div class="panel">
+        <h1>Representative documents</h1>
+        <div>
+            {% for topic, docs in RepresentativeTopics.items() %}
+            <details>
+                <summary>
+                    <span>Topic {{ topic }}</span>
+                </summary>  
+                <ul>
+                    {{ docs }}
+                </ul>
+            </details>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="panel">
+        <h1>Parameters of the model</h1>
+        <div>{{ parameters }}</div>
+    </div>
 </body>
 </html>
